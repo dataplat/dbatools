@@ -67,7 +67,7 @@
     )
     begin {
         $sets = @()
-        $columns = 'ComputerName', 'Name', 'DataCollectorSet', 'CounterDisplayNames', 'Counters', 'DataCollectorType', 'DataSourceName', 'FileName', 'FileNameFormat', 'FileNameFormatPattern', 'LatestOutputLocation', 'LogAppend', 'LogCircular', 'LogFileFormat', 'LogOverwrite', 'SampleInterval', 'SegmentMaxRecords'
+        $columns = 'ComputerName', 'Name', 'DataCollectorSet', 'Counters', 'DataCollectorType', 'DataSourceName', 'FileName', 'FileNameFormat', 'FileNameFormatPattern', 'LatestOutputLocation', 'LogAppend', 'LogCircular', 'LogFileFormat', 'LogOverwrite', 'SampleInterval', 'SegmentMaxRecords'
     }
     process {
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
@@ -109,7 +109,7 @@
                     Counters               = $col.Counter
                     CounterDisplayNames    = $col.CounterDisplayName
                     CollectorXml           = $col
-                    DataCollectorSetObject = $set
+                    DataCollectorSetObject = $set.DataCollectorSetObject
                 } | Select-DefaultView -Property $columns
             }
         }
