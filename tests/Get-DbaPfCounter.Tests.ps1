@@ -4,9 +4,10 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying command works" {
-        It "returns a result with the right computername" {
+        It "returns a result with the right computername and name is not null" {
             $results = Get-DbaPfCounter | Select-Object -First 1
             $results.ComputerName | Should Be $env:COMPUTERNAME
+            $results.Name | Should Not Be $null
         }
     }
 }

@@ -12,10 +12,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $script:set | Stop-DbaPfDataCollectorSet -WarningAction SilentlyContinue
     }
     Context "Verifying command works" {
-        It "returns a result with the right computername" {
+        It "returns a result with the right computername and name is not null" {
             $results = $script:set | Select-Object -First 1 | Start-DbaPfDataCollectorSet -WarningAction SilentlyContinue -WarningVariable warn
             if (-not $warn) {
                 $results.ComputerName | Should Be $env:COMPUTERNAME
+                $results.Name | Should Not Be $null
             }
         }
     }
