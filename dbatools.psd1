@@ -11,7 +11,7 @@
     RootModule              = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion           = '0.9.162'
+    ModuleVersion           = '0.9.170'
 
     # ID used to uniquely identify this module
     GUID                    = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -435,7 +435,13 @@
         'Get-DbaXEObject',
         'ConvertTo-DbaDataTable',
         'Find-DbaDisabledIndex',
-        'Invoke-DbaRelog'
+        'Invoke-DbaRelog',
+        'Get-DbaPfCounter',
+        'Get-DbaPfCounterSample',
+        'Get-DbaPfDataCollector',
+        'Get-DbaPfDataCollectorSet',
+        'Start-DbaPfDataCollectorSet',
+        'Stop-DbaPfDataCollectorSet'
     )
 
     # Cmdlets to export from this module
