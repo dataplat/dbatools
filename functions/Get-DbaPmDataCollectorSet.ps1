@@ -88,36 +88,37 @@
                     $sets.Query($setname, $null)
                     $set = $sets.PSObject.Copy()
                     [pscustomobject]@{
-                        Name                       = $setname
-                        LatestOutputLocation       = $set.LatestOutputLocation
-                        OutputLocation             = $set.OutputLocation
-                        RootPath                   = $set.RootPath
-                        Duration                   = $set.Duration
-                        Description                = $set.Description
-                        DescriptionUnresolved      = $set.DescriptionUnresolved
-                        DisplayName                = $set.DisplayName
-                        DisplayNameUnresolved      = $set.DisplayNameUnresolved
-                        Keywords                   = $set.Keywords
-                        Segment                    = $set.Segment
-                        SegmentMaxDuration         = $set.SegmentMaxDuration
-                        SegmentMaxSize             = $set.SegmentMaxSize
-                        SerialNumber               = $set.SerialNumber
-                        Server                     = $set.Server
-                        Status                     = $set.Status
-                        Subdirectory               = $set.Subdirectory
-                        SubdirectoryFormat         = $set.SubdirectoryFormat
-                        SubdirectoryFormatPattern  = $set.SubdirectoryFormatPattern
-                        Task                       = $set.Task
-                        TaskRunAsSelf              = $set.TaskRunAsSelf
-                        TaskArguments              = $set.TaskArguments
-                        TaskUserTextArguments      = $set.TaskUserTextArguments
-                        Schedules                  = $set.Schedules
-                        SchedulesEnabled           = $set.SchedulesEnabled
-                        UserAccount                = $set.UserAccount
-                        Xml                        = $set.Xml
-                        Security                   = $set.Security
-                        StopOnCompletion           = $set.StopOnCompletion
-                        DataCollectorSetObject     = $set
+                        ComputerName                = $env:COMPUTERNAME
+                        Name                        = $setname
+                        LatestOutputLocation        = $set.LatestOutputLocation
+                        OutputLocation              = $set.OutputLocation
+                        RootPath                    = $set.RootPath
+                        Duration                    = $set.Duration
+                        Description                 = $set.Description
+                        DescriptionUnresolved       = $set.DescriptionUnresolved
+                        DisplayName                 = $set.DisplayName
+                        DisplayNameUnresolved       = $set.DisplayNameUnresolved
+                        Keywords                    = $set.Keywords
+                        Segment                     = $set.Segment
+                        SegmentMaxDuration          = $set.SegmentMaxDuration
+                        SegmentMaxSize              = $set.SegmentMaxSize
+                        SerialNumber                = $set.SerialNumber
+                        Server                      = $set.Server
+                        Status                      = $set.Status
+                        Subdirectory                = $set.Subdirectory
+                        SubdirectoryFormat          = $set.SubdirectoryFormat
+                        SubdirectoryFormatPattern   = $set.SubdirectoryFormatPattern
+                        Task                        = $set.Task
+                        TaskRunAsSelf               = $set.TaskRunAsSelf
+                        TaskArguments               = $set.TaskArguments
+                        TaskUserTextArguments       = $set.TaskUserTextArguments
+                        Schedules                   = $set.Schedules
+                        SchedulesEnabled            = $set.SchedulesEnabled
+                        UserAccount                 = $set.UserAccount
+                        Xml                         = $set.Xml
+                        Security                    = $set.Security
+                        StopOnCompletion            = $set.StopOnCompletion
+                        DataCollectorSetObject      = $set
                     }
                 }
                 catch {
@@ -127,7 +128,7 @@
             }
         }
         
-        $columns = 'Name', 'DisplayName', 'Description', 'Duration', 'OutputLocation', 'LatestOutputLocation',
+        $columns = 'ComputerName','Name', 'DisplayName', 'Description', 'Duration', 'OutputLocation', 'LatestOutputLocation',
         'RootPath', 'SchedulesEnabled', 'Segment', 'SegmentMaxDuration', 'SegmentMaxSize',
         'SerialNumber', 'Server', 'Status', 'StopOnCompletion', 'Subdirectory', 'SubdirectoryFormat',
         'SubdirectoryFormatPattern', 'Task', 'TaskArguments', 'TaskRunAsSelf', 'TaskUserTextArguments', 'UserAccount'
