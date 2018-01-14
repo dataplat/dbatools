@@ -66,13 +66,12 @@
         [switch]$EnableException
     )
     begin {
-        $sets = @()
         $columns = 'ComputerName', 'Name', 'DataCollectorSet', 'Counters', 'DataCollectorType', 'DataSourceName', 'FileName', 'FileNameFormat', 'FileNameFormatPattern', 'LatestOutputLocation', 'LogAppend', 'LogCircular', 'LogFileFormat', 'LogOverwrite', 'SampleInterval', 'SegmentMaxRecords'
     }
     process {
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
-                $sets += Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet
+                $InputObject += Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet
             }
         }
         
@@ -81,12 +80,9 @@
                 Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet"
                 return
             }
-            else {
-                $sets += $InputObject
-            }
         }
         
-        foreach ($set in $sets) {
+        foreach ($set in $InputObject) {
             $collectorxml = ([xml]$set.Xml).DataCollectorSet.PerformanceCounterDataCollector
             foreach ($col in $collectorxml) {
                 if ($Collector -and $Collector -notcontains $col.Name) { continue }

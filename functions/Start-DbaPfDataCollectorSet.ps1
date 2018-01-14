@@ -56,7 +56,7 @@
             Starts 'System Correlation' Collector
     #>
     param (
-        [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
+        [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
         [string[]]$CollectorSet,
         [parameter(ValueFromPipeline)]
@@ -65,7 +65,6 @@
         [switch]$EnableException
     )
     begin {
-        $sets = @()
         $wait = $NoWait -eq $false
         
         $setscript = {
@@ -78,7 +77,7 @@
     process {
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
-                $sets += Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet
+                $InputObject += Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet
             }
         }
         
@@ -87,13 +86,10 @@
                 Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet"
                 return
             }
-            else {
-                $sets += $InputObject
-            }
         }
         
         # Check to see if its running first
-        foreach ($set in $sets) {
+        foreach ($set in $InputObject) {
             $setname = $set.Name
             $computer = $set.ComputerName
             $status = $set.State
@@ -111,6 +107,8 @@
             catch {
                 Stop-Function -Message "Failure starting $setname on $computer" -ErrorRecord $_ -Target $computer -Continue
             }
+            
+            Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $setname
         }
     }
 }

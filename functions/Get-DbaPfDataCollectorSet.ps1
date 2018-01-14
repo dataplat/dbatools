@@ -145,7 +145,7 @@
                         Xml                             = $set.Xml
                         Security                        = $set.Security
                         StopOnCompletion                = $set.StopOnCompletion
-                        State                           = $state
+                        State                           = $state.Trim()
                         DataCollectorSetObject          = $set
                         TaskObject                      = $task
                     }
