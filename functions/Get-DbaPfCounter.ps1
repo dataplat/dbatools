@@ -70,30 +70,33 @@
         $columns = 'ComputerName', 'Name', 'DataCollectorSet', 'Counters', 'DataCollectorType', 'DataSourceName', 'FileName', 'FileNameFormat', 'FileNameFormatPattern', 'LatestOutputLocation', 'LogAppend', 'LogCircular', 'LogFileFormat', 'LogOverwrite', 'SampleInterval', 'SegmentMaxRecords'
     }
     process {
+        if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
+            $Credential = $InputObject.Credential
+        }
+        
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
                 $InputObject += Get-DbaPfDataCollector -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet -Collector $Collector
             }
         }
         
-        if ($InputObject) {
-            if (-not $InputObject.CollectorXml) {
-                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollector"
-                return
-            }
+        if (-not $InputObject.CollectorXml) {
+            Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollector"
+            return
         }
         
-        foreach ($col in $InputObject) {
-            foreach ($counter in $col.Counters) {
-                if ($Counter -and $Counter -notcontains $counter) { continue }
+        foreach ($counterobject in $InputObject) {
+            foreach ($countername in $counterobject.Counters) {
+                if ($Counter -and $Counter -notcontains $counterobject.Name) { continue }
                 [pscustomobject]@{
-                    ComputerName               = $col.ComputerName
-                    DataCollectorSet           = $col.DataCollectorSet
-                    DataCollector              = $col.Name
-                    Name                       = $counter
-                    FileName                   = $col.FileName
-                    DataCollectorSetObject     = $col.DataCollectorSetObject
-                } | Select-DefaultView -ExcludeProperty DataCollectorSetObject
+                    ComputerName                    = $counterobject.ComputerName
+                    DataCollectorSet                = $counterobject.DataCollectorSet
+                    DataCollector                   = $counterobject.Name
+                    Name                            = $countername
+                    FileName                        = $counterobject.FileName
+                    DataCollectorSetObject          = $counterobject.DataCollectorSetObject
+                    Credential                      = $Credential
+                } | Select-DefaultView -ExcludeProperty DataCollectorSetObject, Credential
             }
         }
     }
