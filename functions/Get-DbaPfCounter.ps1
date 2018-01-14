@@ -1,10 +1,10 @@
 ﻿function Get-DbaPfCounter {
     <#
         .SYNOPSIS
-            Gets Peformance Monitor Counter
+            Gets Peformance Counters
 
         .DESCRIPTION
-            Gets Peformance Monitor Counter
+            Gets Peformance Counters
 
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.

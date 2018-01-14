@@ -1,10 +1,10 @@
 ﻿function Get-DbaPfCounterSample {
     <#
         .SYNOPSIS
-            Gets Peformance Monitor Counter Samples
+            Gets Peformance Counter Samples
 
         .DESCRIPTION
-            Gets Peformance Monitor Counter Samples
+            Gets Peformance Counter Samples
 
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.
