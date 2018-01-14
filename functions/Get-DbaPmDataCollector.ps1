@@ -67,6 +67,7 @@
     )
     begin {
         $sets = @()
+        $columns = 'ComputerName', 'Name', 'DataCollectorSet', 'CounterDisplayNames', 'Counters', 'DataCollectorType', 'DataSourceName', 'FileName', 'FileNameFormat', 'FileNameFormatPattern', 'LatestOutputLocation', 'LogAppend', 'LogCircular', 'LogFileFormat', 'LogOverwrite', 'SampleInterval', 'SegmentMaxRecords'
     }
     process {
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
@@ -90,25 +91,26 @@
             foreach ($col in $collectorxml) {
                 if ($Collector -and $Collector -notcontains $col.Name) { continue }
                 [pscustomobject]@{
-                    ComputerName          = $set.ComputerName
-                    DataCollectorSet      = $set.Name
-                    Name                  = $col.Name
-                    FileName              = $col.DataCollector01
-                    DataCollectorType     = $col.DataCollectorType
-                    FileNameFormat        = $col.FileNameFormat
-                    FileNameFormatPattern = $col.FileNameFormatPattern
-                    LogAppend             = $col.LogAppend
-                    LogCircular           = $col.LogCircular
-                    LogOverwrite          = $col.LogOverwrite
-                    LatestOutputLocation  = $col.LatestOutputLocation
-                    DataSourceName        = $col.DataSourceName
-                    SampleInterval        = $col.SampleInterval
-                    SegmentMaxRecords     = $col.SegmentMaxRecords
-                    LogFileFormat         = $col.LogFileFormat
-                    Counters              = $col.Counter
-                    CounterDisplayNames   = $col.CounterDisplayName
-                    CollectorXml          = $col
-                }
+                    ComputerName           = $set.ComputerName
+                    DataCollectorSet       = $set.Name
+                    Name                   = $col.Name
+                    FileName               = $col.FileName
+                    DataCollectorType      = $col.DataCollectorType
+                    FileNameFormat         = $col.FileNameFormat
+                    FileNameFormatPattern  = $col.FileNameFormatPattern
+                    LogAppend              = $col.LogAppend
+                    LogCircular            = $col.LogCircular
+                    LogOverwrite           = $col.LogOverwrite
+                    LatestOutputLocation   = $col.LatestOutputLocation
+                    DataSourceName         = $col.DataSourceName
+                    SampleInterval         = $col.SampleInterval
+                    SegmentMaxRecords      = $col.SegmentMaxRecords
+                    LogFileFormat          = $col.LogFileFormat
+                    Counters               = $col.Counter
+                    CounterDisplayNames    = $col.CounterDisplayName
+                    CollectorXml           = $col
+                    DataCollectorSetObject = $set
+                } | Select-DefaultView -Property $columns
             }
         }
     }
