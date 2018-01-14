@@ -44,8 +44,15 @@
             Get-DbaPmDataCollectorSet -ComputerName sql2017 -Credential (Get-Credential) -CollectorSet 'System Correlation'
     
             Gets the 'System Correlation' collector set on sql2017 using alternative credentials
+    
+            .EXAMPLE
+            Get-DbaPmDataCollectorSet | Select *
+    
+            Displays extra columns and also exposes the original COM object in DataCollectorSetObject
     #>
+    [CmdletBinding()]
     param (
+        [parameter(ValueFromPipeline)]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [string[]]$CollectorSet,
@@ -134,7 +141,7 @@
         'SubdirectoryFormatPattern', 'Task', 'TaskArguments', 'TaskRunAsSelf', 'TaskUserTextArguments', 'UserAccount'
     }
     process {
-        foreach ($computer in $ComputerName) {
+        foreach ($computer in $ComputerName.ComputerName) {
             Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $CollectorSet -ErrorAction Stop |
