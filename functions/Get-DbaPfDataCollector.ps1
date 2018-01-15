@@ -95,7 +95,7 @@
                 $outputlocation = $col.LatestOutputLocation
                 if ($outputlocation) {
                     $dir = ($outputlocation).Replace(':', '$')
-                    $remote = "\\$env:COMPUTERNAME\$dir"
+                    $remote = "\\$($set.ComputerName)\$dir"
                 }
                 else {
                     $remote = $null
