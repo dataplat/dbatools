@@ -62,7 +62,7 @@
         [PSCredential]$Credential,
         [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
-        [Alias("CollectorSet")]
+        [Alias("DataCollector")]
         [string[]]$Collector,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
