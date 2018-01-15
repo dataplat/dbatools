@@ -56,6 +56,9 @@
     .PARAMETER Raw
     Output the results of the DOS command instead of Get-ChildItem
     
+    .PARAMETER InputObject
+    Allows input from Get-DbaPfDataCollector and Get-DbaPfDataCollectorSet
+    
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
