@@ -139,51 +139,58 @@
         if (Test-Bound -ParameterName EndTime) {
             $endstring = ($EndTime -f 'M/d/yyyy hh:mm:ss' | Out-String).Trim()
         }
+        
+        $allpaths = @()
+        $allpaths += $Path
     }
     process {
         if ($Append -and $Type -ne "bin") {
-            Stop-Function -Message "Append can only be used with -Type bin" -Target $file
+            Stop-Function -Message "Append can only be used with -Type bin" -Target $Path
             return
         }
         
         if ($InputObject) {
-            # DataCollectorSet
-            if ($InputObject.OutputLocation -and $InputObject.RemoteOutputLocation) {
-                $instance = [dbainstance]$InputObject.ComputerName
-                
-                if ($instance.IsLocalHost) {
-                    $Path += (Get-ChildItem -Recurse -Path $InputObject.OutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+            foreach ($object in $InputObject) {
+                # DataCollectorSet
+                if ($object.OutputLocation -and $object.RemoteOutputLocation) {
+                    $instance = [dbainstance]$object.ComputerName
+                    
+                    if ($instance.IsLocalHost) {
+                        $allpaths += (Get-ChildItem -Recurse -Path $object.OutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                    }
+                    else {
+                        $allpaths += (Get-ChildItem -Recurse -Path $object.RemoteOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                    }
                 }
-                else {
-                    $Path += (Get-ChildItem -Recurse -Path $InputObject.RemoteOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
-                }
-            }
-            # DataCollector
-            if ($InputObject.LatestOutputLocation -and $InputObject.RemoteLatestOutputLocation) {
-                $instance = [dbainstance]$InputObject.ComputerName
-                
-                if ($instance.IsLocalHost) {
-                    $Path += (Get-ChildItem -Recurse -Path $InputObject.LatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
-                }
-                else {
-                    $Path += (Get-ChildItem -Recurse -Path $InputObject.RemoteLatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                # DataCollector
+                if ($object.LatestOutputLocation -and $object.RemoteLatestOutputLocation) {
+                    $instance = [dbainstance]$object.ComputerName
+                    
+                    if ($instance.IsLocalHost) {
+                        $allpaths += (Get-ChildItem -Recurse -Path (Split-Path $object.LatestOutputLocation) -Include *.blg -ErrorAction SilentlyContinue).FullName
+                    }
+                    else {
+                        $allpaths += (Get-ChildItem -Recurse -Path (Split-Path $object.RemoteLatestOutputLocation) -Include *.blg -ErrorAction SilentlyContinue).FullName
+                    }
                 }
             }
         }
+    }
+    
+    # Gotta collect all the paths first then process them otherwise there may be duplicates
+    end {
+        $allpaths = $allpaths | Where-Object { $_ -match '.blg' } | Select-Object -Unique
         
-        $Path = $Path | Where-Object { $_ -match '.blg' }
-        
-        foreach ($file in $Path) {
-            
+        foreach ($file in $allpaths) {
             $item = Get-ChildItem -Path $file -ErrorAction SilentlyContinue
             
             if ($item -eq $null) {
-                Stop-Function -Message "$file does not exist" -Target $file
+                Stop-Function -Message "$file does not exist" -Target $file -Continue
                 return
             }
             
             if ((Test-Bound -ParameterName Destination -Not) -and -not $Append) {
-                $Destination = Join-Path (Split-Path $Path) $item.BaseName
+                $Destination = Join-Path (Split-Path $file) $item.BaseName
             }
             
             $params = @("`"$file`"")
@@ -227,95 +234,95 @@
                 $params += "-q"
             }
             
-        }
-        
-        if (-not ($Destination.StartsWith("DSN"))) {
-            $outputisfile = $true
-        }
-        else {
-            $outputisfile = $false
-        }
-        
-        if ($outputisfile) {
-            if ($Destination) {
-                $dir = Split-Path $Destination
-                if (-not (Test-Path -Path $dir)) {
-                    try {
-                        $null = New-Item -ItemType Directory -Path $dir -ErrorAction Stop
-                    }
-                    catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $Destination
-                    }
-                }
-                
-                if ((Test-Path $Destination) -and -not $Append -and ((Get-Item $Destination) -isnot [System.IO.DirectoryInfo])) {
-                    if ($AllowClobber) {
-                        try {
-                            Remove-Item -Path "$Destination" -ErrorAction Stop
-                        }
-                        catch {
-                            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-                        }
-                    }
-                    else {
-                        if ($Type -eq "bin") {
-                            Stop-Function -Message "$Destination exists. Use -AllowClobber to overwrite or -Append to append." -Continue
-                        }
-                        else {
-                            Stop-Function -Message "$Destination exists. Use -AllowClobber to overwrite." -Continue
-                        }
-                    }
-                }
-                
-                if ((Test-Path "$Destination.$type") -and -not $Append) {
-                    if ($AllowClobber) {
-                        try {
-                            Remove-Item -Path "$Destination.$type" -ErrorAction Stop
-                        }
-                        catch {
-                            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-                        }
-                    }
-                    else {
-                        if ($Type -eq "bin") {
-                            Stop-Function -Message "$("$Destination.$type") exists. Use -AllowClobber to overwrite or -Append to append." -Continue
-                        }
-                        else {
-                            Stop-Function -Message "$("$Destination.$type") exists. Use -AllowClobber to overwrite." -Continue
-                        }
-                    }
-                }
-            }
-        }
-        
-        $arguments = ($params -join " ")
-        
-        try {
-            if ($Raw) {
-                Write-Message -Level Output -Message "relog $arguments"
-                cmd /c "relog $arguments"
+            
+            if (-not ($Destination.StartsWith("DSN"))) {
+                $outputisfile = $true
             }
             else {
-                Write-Message -Level Verbose -Message "relog $arguments"
-                $output = (cmd /c "relog $arguments" | Out-String).Trim()
-                
-                if ($output -match "Error") {
-                    Stop-Function -Continue -Message "relog $arguments`n$output"
-                }
-                else {
-                    Write-Message -Level Verbose -Message $output
-                    $array = $output -Split [environment]::NewLine
-                    $files = $array | Select-String "File:"
+                $outputisfile = $false
+            }
+            
+            if ($outputisfile) {
+                if ($Destination) {
+                    $dir = Split-Path $Destination
+                    if (-not (Test-Path -Path $dir)) {
+                        try {
+                            $null = New-Item -ItemType Directory -Path $dir -ErrorAction Stop
+                        }
+                        catch {
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $Destination -Continue
+                        }
+                    }
                     
-                    foreach ($file in $files) {
-                        $file = $file.ToString().Replace("File:","").Trim()
-                        Get-ChildItem $file
+                    if ((Test-Path $Destination) -and -not $Append -and ((Get-Item $Destination) -isnot [System.IO.DirectoryInfo])) {
+                        if ($AllowClobber) {
+                            try {
+                                Remove-Item -Path "$Destination" -ErrorAction Stop
+                            }
+                            catch {
+                                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                            }
+                        }
+                        else {
+                            if ($Type -eq "bin") {
+                                Stop-Function -Message "$Destination exists. Use -AllowClobber to overwrite or -Append to append." -Continue
+                            }
+                            else {
+                                Stop-Function -Message "$Destination exists. Use -AllowClobber to overwrite." -Continue
+                            }
+                        }
+                    }
+                    
+                    if ((Test-Path "$Destination.$type") -and -not $Append) {
+                        if ($AllowClobber) {
+                            try {
+                                Remove-Item -Path "$Destination.$type" -ErrorAction Stop
+                            }
+                            catch {
+                                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                            }
+                        }
+                        else {
+                            if ($Type -eq "bin") {
+                                Stop-Function -Message "$("$Destination.$type") exists. Use -AllowClobber to overwrite or -Append to append." -Continue
+                            }
+                            else {
+                                Stop-Function -Message "$("$Destination.$type") exists. Use -AllowClobber to overwrite." -Continue
+                            }
+                        }
                     }
                 }
             }
-        }
-        catch {
-            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $path
+            
+            $arguments = ($params -join " ")
+            
+            try {
+                if ($Raw) {
+                    Write-Message -Level Output -Message "relog $arguments"
+                    cmd /c "relog $arguments"
+                }
+                else {
+                    Write-Message -Level Verbose -Message "relog $arguments"
+                    $output = (cmd /c "relog $arguments" | Out-String).Trim()
+                    
+                    if ($output -notmatch "Success") {
+                        Stop-Function -Continue -Message $output.Trim("Input")
+                    }
+                    else {
+                        Write-Message -Level Verbose -Message $output
+                        $array = $output -Split [environment]::NewLine
+                        $files = $array | Select-String "File:"
+                        
+                        foreach ($rawfile in $files) {
+                            $rawfile = $rawfile.ToString().Replace("File:", "").Trim()
+                            Get-ChildItem $rawfile
+                        }
+                    }
+                }
+            }
+            catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $path
+            }
         }
     }
 }
