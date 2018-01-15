@@ -512,7 +512,7 @@ function Backup-DbaDatabase {
                 $OutputExclude += ('Notes', 'FirstLsn', 'DatabaseBackupLsn', 'CheckpointLsn', 'LastLsn', 'BackupSetId', 'LastRecoveryForkGuid')
             }
             $headerinfo | Select-DefaultView -ExcludeProperty $OutputExclude
-            $BackupFileName = $null
+            $BackupFileName  = $null
         }
     }
 }
