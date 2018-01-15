@@ -1704,6 +1704,42 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPermission -SqlInstance ServerA\\sql987\r\n\r\nReturns a custom object with Server name, Database name, permission state, permission type, grantee and securable.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPermission -SqlInstance ServerA\\sql987 | Format-Table -AutoSize\r\n\r\nReturns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, \r\nsecurable and securabletype.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPermission -SqlInstance ServerA\\sql987 -NoSystemObjects -IncludeServerLevel\r\n\r\nReturns a custom object with Server name, Database name, permission state, permission type, grantee and securable\r\nin all databases and on the server level, but not on system securables.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPermission -SqlInstance sql2016 -Database master\r\n\r\nReturns a custom object with permissions for the master database.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaPfCounter",
+        "Description":  "Gets Peformance Counters",
+        "Tags":  "PerfMon",
+        "Synopsis":  "Gets Peformance Counters",
+        "Name":  "Get-DbaPfCounter",
+        "Links":  "https://dbatools.io/Get-DbaPfCounter",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfCounter\r\n\r\nGets all counters for all collector sets on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfCounter -ComputerName sql2017\r\n\r\nGets all counters for all collector sets on  on sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfCounter -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet \u0027System Correlation\u0027\r\n\r\nGets all counters for \u0027System Correlation\u0027 Collector on sql2017 and sql2016 using alternative credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Get-DbaPfDataCollector | Get-DbaPfCounter\r\n\r\nGets all counters for \u0027System Correlation\u0027 Collector\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaPfCounterSample",
+        "Description":  "Gets Peformance Counter Samples",
+        "Tags":  "PerfMon",
+        "Synopsis":  "Gets Peformance Counter Samples",
+        "Name":  "Get-DbaPfCounterSample",
+        "Links":  "https://dbatools.io/Get-DbaPfCounterSample",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfCounterSample\r\n\r\nGets a single sample for all counters for all collector sets on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfCounterSample -Counter \u0027\\Processor(_Total)\\% Processor Time\u0027\r\n\r\nGets a single sample for all counters for all collector sets on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfCounter -ComputerName sql2017 | Out-GridView -PassThru | Get-DbaPfCounterSample -MaxSamples\r\n\r\nGets 10 samples for all counters for all collector sets on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfCounterSample -ComputerName sql2017\r\n\r\nGets a single sample for all counters for all collector sets on  on sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfCounterSample -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet \u0027System \r\nCorrelation\u0027\r\n\r\nGets a single sample for all counters for \u0027System Correlation\u0027 Collector on sql2017 and sql2016 using alternative \r\ncredentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Get-DbaPfDataCollector | Get-DbaPfCounterSample\r\n\r\nGets a single sample for all counters for \u0027System Correlation\u0027 Collector\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaPfDataCollector",
+        "Description":  "Gets Peformance Monitor Data Collectors",
+        "Tags":  "PerfMon",
+        "Synopsis":  "Gets Peformance Monitor Data Collectors",
+        "Name":  "Get-DbaPfDataCollector",
+        "Links":  "https://dbatools.io/Get-DbaPfDataCollector",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollector\r\n\r\nGets all Collectors on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollector -ComputerName sql2017\r\n\r\nGets all Collectors on sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollector -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet \u0027System \r\nCorrelation\u0027\r\n\r\nGets all Collectors for \u0027System Correlation\u0027 Collector on sql2017 and sql2016 using alternative credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Get-DbaPfDataCollector\r\n\r\nGets all Collectors for \u0027System Correlation\u0027 Collector\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaPfDataCollectorSet",
+        "Description":  "Gets Peformance Monitor Data Collector Set",
+        "Tags":  "PerfMon",
+        "Synopsis":  "Gets Peformance Monitor Data Collector Set",
+        "Name":  "Get-DbaPfDataCollectorSet",
+        "Links":  "https://dbatools.io/Get-DbaPfDataCollectorSet",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet\r\n\r\nGets all collector sets on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -ComputerName sql2017\r\n\r\nGets all collector sets on sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -ComputerName sql2017 -Credential (Get-Credential) -CollectorSet \u0027System Correlation\u0027\r\n\r\nGets the \u0027System Correlation\u0027 collector set on sql2017 using alternative credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet | Select *\r\n\r\nDisplays extra columns and also exposes the original COM object in DataCollectorSetObject\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaPolicy",
         "Description":  "Returns details of policies with the option to filter on Category and SystemObjects.",
         "Tags":  [
@@ -3473,6 +3509,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaMigration -Source sqlserver\\instance -Destination sqlcluster -DetachAttach\r\n\r\nAll databases, logins, job objects and sp_configure options will be migrated from sqlserver\\instance to sqlcluster. \r\nDatabases will be migrated using the detach/copy files/attach method. Dbowner will be updated. User passwords, SIDs, \r\ndatabase roles and server roles will be migrated along with the login.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential $scred \r\n-ReuseSourceFolderStructure -DestinationSqlCredential $cred -Force -NetworkShare \r\n\\\\fileserver\\share\\sqlbackups\\Migration -BackupRestore\r\n\r\nMigrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management \r\nServer, SQL global configuration.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -NoDatabases -NoLogins\r\n\r\nMigrates everything but logins and databases.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly\r\n\r\nMigrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates \r\neverything else.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Start-DbaPfDataCollectorSet",
+        "Description":  "Starts Peformance Monitor Data Collector Set",
+        "Tags":  "PerfMon",
+        "Synopsis":  "Starts Peformance Monitor Data Collector Set",
+        "Name":  "Start-DbaPfDataCollectorSet",
+        "Links":  "https://dbatools.io/Start-DbaPfDataCollectorSet",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPfDataCollectorSet\r\n\r\nAttempts to start all ready Collectors on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPfDataCollectorSet -ComputerName sql2017\r\n\r\nAttempts to start all ready Collectors on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet \u0027System \r\nCorrelation\u0027\r\n\r\nStarts the \u0027System Correlation\u0027 Collector on sql2017 and sql2016 using alternative credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Start-DbaPfDataCollectorSet\r\n\r\nStarts \u0027System Correlation\u0027 Collector\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Start-DbaSqlService",
         "Description":  "Starts the SQL Server related services on one or more computers. Will follow SQL Server service dependencies.\n\nRequires Local Admin rights on destination computer(s).",
         "Tags":  "",
@@ -3523,6 +3568,15 @@
         "Name":  "Stop-DbaAgentJob",
         "Links":  "https://dbatools.io/Stop-DbaAgentJob",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaAgentJob -SqlInstance localhost\r\n\r\nStops all running SQL Agent Jobs on the local SQL Server instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Stop-DbaAgentJob\r\n\r\nStops the cdc.DBWithCDC_capture SQL Agent Job on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture\r\n\r\nStops the cdc.DBWithCDC_capture SQL Agent Job on sql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Stop-DbaPfDataCollectorSet",
+        "Description":  "Starts Peformance Monitor Data Collector Set",
+        "Tags":  "PerfMon",
+        "Synopsis":  "Starts Peformance Monitor Data Collector Set",
+        "Name":  "Stop-DbaPfDataCollectorSet",
+        "Links":  "https://dbatools.io/Stop-DbaPfDataCollectorSet",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaPfDataCollectorSet\r\n\r\nAttempts to start all ready Collectors on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaPfDataCollectorSet -ComputerName sql2017\r\n\r\nAttempts to start all ready Collectors on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet \u0027System \r\nCorrelation\u0027\r\n\r\nStarts the \u0027System Correlation\u0027 Collector on sql2017 and sql2016 using alternative credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Stop-DbaPfDataCollectorSet\r\n\r\nStarts \u0027System Correlation\u0027 Collector\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Stop-DbaProcess",
