@@ -1,31 +1,69 @@
 ﻿function Import-DbaPfTemplate {
  <#
     .SYNOPSIS
-    Imports a new XESession XML Template
+    Imports a new Performance Monitor Data Collector Set Template either from our repo or a file you specify
 
     .DESCRIPTION
-    Imports a new XESession XML Template either from our repo or a file you specify
+    Imports a new Performance Monitor Data Collector Set Template either from our repo or a file you specify. When importing data collector sets from the local instance, Run As Admin is required.
 
     .PARAMETER ComputerName
-    The SQL Instances that you're connecting to.
+    The target server.
 
-    .PARAMETER SqlCredential
-    Credential object used to connect to the SQL Server as a different user
-
-    .PARAMETER Name
-    The Name of the session
+    .PARAMETER Credential
+    Credential object used to connect to the server as a different user.
 
     .PARAMETER Path
     The path to the xml file or files
-
+    
     .PARAMETER Template
-    From one of the templates we curated for you (tab through -Template to see options)
+    From one or more of the templates we curated for you (tab through -Template to see options)
+    
+    .PARAMETER RootPath
+    Sets the base path where the subdirectories are created.
+    
+    .PARAMETER DisplayName
+    Sets the display name of the data collector set.
+    
+    .PARAMETER SchedulesEnabled
+    Sets a value that indicates whether the schedules are enabled.
+    
+    .PARAMETER Segment
+    Sets a value that indicates whether PLA creates new logs if the maximum size or segment duration is reached before the data collector set is stopped.
+    
+    .PARAMETER SegmentMaxDuration
+    Sets the duration that the data collector set can run before it begins writing to new log files.
+    
+    .PARAMETER SegmentMaxSize
+    Sets the maximum size of any log file in the data collector set.
+    
+    .PARAMETER SubdirectoryFormat
+    Sets flags that describe how to decorate the subdirectory name. PLA appends the decoration to the folder name. For example, if you specify plaMonthDayHour, PLA appends the current month, day, and hour values to the folder name. If the folder name is MyFile, the result could be MyFile110816.
+    
+    .PARAMETER SubdirectoryFormatPattern
+    Sets a format pattern to use when decorating the folder name. Default is 'yyyyMMdd\-NNNNNN'.
+    
+    .PARAMETER Task
+    Sets the name of a Task Scheduler job to start each time the data collector set stops, including between segments.
+    
+    .PARAMETER TaskRunAsSelf
+    Sets a value that determines whether the task runs as the data collector set user or as the user specified in the task.
+    
+    .PARAMETER TaskArguments
+    Sets the command-line arguments to pass to the Task Scheduler job specified in the IDataCollectorSet::Task property.
+    See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371992 for more information.
+    
+    .PARAMETER TaskUserTextArguments
+    Sets the command-line arguments that are substituted for the {usertext} substitution variable in the IDataCollectorSet::TaskArguments property.
+    See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371993 for more inforamation.
 
-    .PARAMETER TargetFilePath
-    By default, files will be created in the default xel directory. Use TargetFilePath to change all instances of
-    filename = "file.xel" to filename = "$TargetFilePath\file.xel". Only specify the directory, not the file itself.
+    .PARAMETER StopOnCompletion
+    From one of the templates we curated for you
+    
+    .PARAMETER WhatIf
+    Shows what would happen if the command were to run **and the collector set exists**. Otherwise, the import is performed (default)
 
-    This path is relative to the destination directory
+    .PARAMETER Confirm
+    Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -41,18 +79,18 @@
     https://dbatools.io/Import-DbaPfTemplate
 
     .EXAMPLE
-    Import-DbaPfTemplate -SqlInstance sql2017 -Template db_query_wait_stats
+    Import-DbaPfTemplate -SqlInstance sql2017 -Template 'Long Running Query'
 
-    Creates a new XESession named db_query_wait_stats from our repo to the SQL Server sql2017
-
-    .EXAMPLE
-    Import-DbaPfTemplate -SqlInstance sql2017 -Template db_query_wait_stats -Name "Query Wait Stats"
-
-    Creates a new XESession named "Query Wait Stats" using the db_query_wait_stats template
+    Creates a new data collector set named 'Long Running Query' from our repo to the SQL Server sql2017
 
     .EXAMPLE
-    Get-DbaPfDataCollectorSet -SqlInstance sql2017 -Session db_ola_health | Remove-DbaXESession
-    Import-DbaPfTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaXESession
+    Import-DbaPfTemplate -SqlInstance sql2017 -Template 'Long Running Query' -DisplayName 'New Long running query' -Confirm
+
+    Creates a new data collector set named "New Long Running Query" using the 'Long Running Query' template. Forces a confirmation if the template exists.
+
+    .EXAMPLE
+    Get-DbaPfDataCollectorSet -SqlInstance sql2017 -Session db_ola_health | Remove-Dbadata collector set
+    Import-DbaPfTemplate -SqlInstance sql2017 -Template db_ola_health | Start-Dbadata collector set
 
     Imports a session if it exists then recreates it using a template
 
@@ -60,16 +98,27 @@
     Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfTemplate -SqlInstance sql2017
 
     Allows you to select a Session template then import to an instance named sql2017
-    
-    <RootPath></RootPath>
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]$SqlInstance,
+        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$SqlCredential,
-        [string]$Name,
+        [string]$DisplayName,
+        [switch]$SchedulesEnabled,
+        [string]$RootPath,
+        [switch]$Segment,
+        [int]$SegmentMaxDuration,
+        [int]$SegmentMaxSize,
+        [string]$Subdirectory,
+        [int]$SubdirectoryFormat = 3,
+        [string]$SubdirectoryFormatPattern = 'yyyyMMdd\-NNNNNN',
+        [string]$Task,
+        [switch]$TaskRunAsSelf,
+        [string]$TaskArguments,
+        [string]$TaskUserTextArguments,
+        [switch]$StopOnCompletion,
         [parameter(ValueFromPipelineByPropertyName)]
         [Alias("FullName")]
         [string[]]$Path,
@@ -78,32 +127,31 @@
         [switch]$EnableException
     )
     begin {
-        $metadata = Import-Clixml "$script:PSModuleRoot\bin\xetemplates-metadata.xml"
+        $metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates-metadata.xml"
+        
+        $setscript = {
+            $setname = $args[0]; $templatexml = $args[1]
+            $collectorset = New-Object -ComObject Pla.DataCollectorSet
+            $collectorset.SetXml($templatexml)
+            ##Commit codes: http://msdn.microsoft.com/en-us/library/aa371873(VS.85).aspx this is add or modify.  Can't do this on a system created PLA instances (read only).
+            $null = $collectorset.Commit($setname, $null, 0x0003)
+            $null = $collectorset.Query($setname, $Null)
+        }
     }
     process {
         if ((Test-Bound -ParameterName Path -Not) -and (Test-Bound -ParameterName Template -Not)) {
             Stop-Function -Message "You must specify Path or Template"
         }
         
-        if (($Path.Count -gt 1 -or $Tempalte.Count -gt 1) -and (Test-Bound -ParameterName Template)) {
+        if (($Path.Count -gt 1 -or $Template.Count -gt 1) -and (Test-Bound -ParameterName Template)) {
             Stop-Function -Message "Name cannot be specified with multiple files or templates because the Session will already exist"
         }
         
-        foreach ($instance in $SqlInstance) {
-            try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-            
-            $SqlConn = $server.ConnectionContext.SqlConnectionObject
-            $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-            $store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
+        foreach ($computer in $ComputerName) {
+            $null = Test-ElevationRequirement -ComputerName $computer -Continue
             
             foreach ($file in $template) {
-                $templatepath = "$script:PSModuleRoot\bin\xetemplates\$file.xml"
+                $templatepath = "$script:PSModuleRoot\bin\perfmontemplates\$file.xml"
                 if ((Test-Path $templatepath)) {
                     $Path += $templatepath
                 }
@@ -114,73 +162,81 @@
             
             foreach ($file in $Path) {
                 
-                if ((Test-Bound -Not -ParameterName TargetFilePath)) {
-                    Write-Message -Level Verbose -Message "Importing $file to $instance"
-                    try {
-                        $xml = [xml](Get-Content $file -ErrorAction Stop)
-                    }
-                    catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
-                    }
+                if ((Test-Bound -ParameterName DisplayName -Not)) {
+                    Set-Variable -Name DisplayName -Value (Get-ChildItem -Path $file).BaseName
                 }
-                else {
-                    Write-Message -Level Verbose -Message "TargetFilePath specified, changing all file locations in $file for $instance"
-                    # Handle whatever people specify
-                    $TargetFilePath = $TargetFilePath.TrimEnd("\")
-                    $TargetFilePath = "$TargetFilePath\"
+                
+                $Name = $DisplayNameUnresolved = $DisplayName
+                
+                Write-Message -Level Verbose -Message "Processing $file for $computer"
+                
+                if ((Test-Bound -ParameterName RootPath -Not)) {
+                    Set-Variable -Name RootName -Value "%systemdrive%\PerfLogs\Admin\$Name"
+                }
+                
+                # Perform replace
+                $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("").TrimEnd("\")
+                $tempfile = "$temp\import-dbatools-perftemplate.xml"
+                
+                try {
+                    # Get content
+                    $contents = Get-Content $file -ErrorAction Stop
                     
-                    # Perform replace
-                    $phrase = 'name="filename" value="'
-                    try {
-                        $contents = Get-Content $file -ErrorAction Stop
-                        $contents = $contents.Replace($phrase, "$phrase$TargetFilePath")
-                        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("").TrimEnd("\")
-                        $tempfile = "$temp\import-dbatools-xetemplate.xml"
-                        $null = Set-Content -Path $tempfile -Value $contents -Encoding UTF8
-                        $xml = [xml](Get-Content $tempfile -ErrorAction Stop)
-                        $file = $tempfile
-                    }
-                    catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
-                    }
+                    # Replace content
+                    $replacements = 'RootPath', 'DisplayName', 'SchedulesEnabled', 'Segment', 'SegmentMaxDuration', 'SegmentMaxSize', 'SubdirectoryFormat', 'SubdirectoryFormatPattern', 'Task', 'TaskRunAsSelf', 'TaskArguments', 'TaskUserTextArguments', 'StopOnCompletion', 'DisplayNameUnresolved'
                     
-                    Write-Message -Level Verbose -Message "$TargetFilePath does not exist on $server, creating now"
-                    try {
-                        if (-not (Test-DbaSqlPath -SqlInstance $server -Path $TargetFilePath)) {
-                            $null = New-DbaSqlDirectory -SqlInstance $server -Path $TargetFilePath
+                    foreach ($replacement in $replacements) {
+                        $phrase = "<$replacement></$replacement>"
+                        $value = (Get-Variable -Name $replacement).Value
+                        if ($value -eq $false) {
+                            $value = "0"
                         }
+                        if ($value -eq $true) {
+                            $value = "1"
+                        }
+                        $replacephrase = "<$replacement>$value</$replacement>"
+                        $contents = $contents.Replace($phrase, $replacephrase)
                     }
-                    catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
-                    }
+                    
+                    # Set content
+                    $null = Set-Content -Path $tempfile -Value $contents -Encoding Unicode
+                    $xml = [xml](Get-Content $tempfile -ErrorAction Stop)
+                    $plainxml = Get-Content $tempfile -ErrorAction Stop -Raw
+                    $file = $tempfile
                 }
-                
-                if (-not $xml.event_sessions) {
-                    Stop-Function -Message "$file is not a valid XESession template document" -Continue
+                catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                 }
-                
-                if ((Test-Bound -ParameterName Name -not)) {
-                    $Name = (Get-ChildItem $file).BaseName
-                }
-                
-                $no2012 = ($metadata | Where-Object Compatability -gt 2012).Name
-                
-                if ($Name -in $no2012 -and $server.VersionMajor -eq 11) {
-                    Stop-Function -Message "$Name is not supported in SQL Server 2012 ($server)" -Continue
-                }
-                
-                if ((Get-DbaPfDataCollectorSet -SqlInstance $server -Session $Name)) {
-                    Stop-Function -Message "$Name already exists on $instance" -Continue
+                if (-not $xml.DataCollectorSet) {
+                    Stop-Function -Message "$file is not a valid Performance Monitor template document" -Continue
                 }
                 
                 try {
                     Write-Message -Level Verbose -Message "Importing $file as $name "
-                    $session = $store.CreateSessionFromTemplate($Name, $file)
-                    $session.Create()
-                    if ($file -eq $tempfile) {
-                        Remove-Item $tempfile -ErrorAction SilentlyContinue
+                    Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
+                    
+                    $scriptblock = {
+                        try {
+                            $results = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $Name, $plainxml -ErrorAction Stop
+                            Write-Message -Level Verbose -Message " $results"
+                        }
+                        catch {
+                            Stop-Function -Message "Failure starting $setname on $computer" -ErrorRecord $_ -Target $computer -Continue
+                        }
                     }
-                    Get-DbaPfDataCollectorSet -SqlInstance $server -Session $session.Name
+                    
+                    if ((Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name)) {
+                        if ($Pscmdlet.ShouldProcess($computer, "CollectorSet $Name already exists. Modify?")) {
+                            Invoke-Command -Scriptblock $scriptblock
+                            Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
+                        }
+                    }
+                    else {
+                        Invoke-Command -Scriptblock $scriptblock
+                        Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
+                    }
+                    
+                    Remove-Item $tempfile -ErrorAction SilentlyContinue
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $store -Continue
