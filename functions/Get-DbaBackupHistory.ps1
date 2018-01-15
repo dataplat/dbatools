@@ -402,7 +402,7 @@ function Get-DbaBackupHistory {
                               backupset.backup_finish_date AS [End],
                               DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
                               mediafamily.physical_device_name AS Path,
-                              backupset.$backupSizeColumn AS TotalSize,
+                              $BackupCols,
                               CASE backupset.type
                                 WHEN 'L' THEN 'Log'
                                 WHEN 'D' THEN 'Full'
@@ -520,6 +520,7 @@ function Get-DbaBackupHistory {
                     $historyObject.Path = $group.Group.Path
                     $historyObject.TotalSize = $group.Group[0].TotalSize
                     $historyObject.CompressedBackupSize = $group.Group[0].CompressedBackupSize
+                    $HistoryObject.CompressionRatio = [Math]::Round(($historyObject.TotalSize.Byte)/($historyObject.CompressedBackupSize.Byte),2)
                     $historyObject.Type = $group.Group[0].Type
                     $historyObject.BackupSetId = $group.Group[0].BackupSetId
                     $historyObject.DeviceType = $group.Group[0].DeviceType
