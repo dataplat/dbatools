@@ -83,7 +83,7 @@
             Stop-Function -Message "You must specify Path or Template"
         }
 
-        if (($Path.Count -gt 1 -or $Tempalte.Count -gt 1) -and (Test-Bound -ParameterName Template)) {
+        if (($Path.Count -gt 1 -or $Template.Count -gt 1) -and (Test-Bound -ParameterName Template)) {
             Stop-Function -Message "Name cannot be specified with multiple files or templates because the Session will already exist"
         }
 
