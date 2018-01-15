@@ -4,7 +4,7 @@
     Removes Extended Events sessions.
 
     .DESCRIPTION
-    This script starts Extended Events sessions on a SQL Server instance.
+    This script removes Extended Events sessions on a SQL Server instance.
 
     .PARAMETER SqlInstance
     The SQL Instances that you're connecting to.
