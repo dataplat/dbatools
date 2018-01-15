@@ -58,28 +58,28 @@
         if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
             $Credential = $InputObject.Credential
         }
-        
+
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
                 $InputObject += Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet
             }
         }
-        
+
         foreach ($object in $InputObject) {
             if (-not $object.DataCollectorSetObject) {
                 Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet"
                 return
             }
-            
+
             $csname = Remove-InvalidFileNameChars -Name $object.Name
-            
+
             if ($path.EndsWith(".xml")) {
                 $filename = $path
             }
             else {
                 $filename = "$path\$csname.xml"
                 if (-not (Test-Path -Path $path)) {
-                    $null = New-Item -Type Directory -Path $path    
+                    $null = New-Item -Type Directory -Path $path
                 }
             }
             Write-Message -Level Verbose -Message "Wrote $csname to $filename"

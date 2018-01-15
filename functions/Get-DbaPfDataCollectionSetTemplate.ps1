@@ -1,4 +1,4 @@
-﻿function Get-DbaPfTemplate {
+﻿function DbaPfDataCollectionSetTemplate {
  <#
     .SYNOPSIS
     Parses Perf Monitor templates. Defaults to parsing templates in our template repository (\bin\perfmontemplates\)
@@ -10,7 +10,7 @@
     The path to the template directory. Defaults to our template repository (\bin\perfmontemplates\)
     
     .PARAMETER Pattern
-    Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaPfTemplate
+    Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaPfDataCollectionSetTemplate
 
     .PARAMETER Template
     From one or more of the templates we curated for you (tab through -Template to see options)
@@ -26,20 +26,20 @@
     License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
-    https://dbatools.io/Get-DbaPfTemplate
+    https://dbatools.io/DbaPfDataCollectionSetTemplate
 
     .EXAMPLE
-    Get-DbaPfTemplate
+    DbaPfDataCollectionSetTemplate
 
     Returns information about all the templates in the local dbatools repository
 
     .EXAMPLE
-    Get-DbaPfTemplate | Out-GridView -PassThru | Import-DbaPfTemplate -ComputerName sql2017 | Start-DbaPfDataCollectorSet
+    DbaPfDataCollectionSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectionSetTemplate -ComputerName sql2017 | Start-DbaPfDataCollectorSet
 
     Allows you to select a template then deploy sit to sql2017 and immediately starts the datacollectorset
 
     .EXAMPLE
-    Get-DbaPfTemplate | Select *
+    DbaPfDataCollectionSetTemplate | Select *
 
     Returns more information about the template, including the full path/filename
 #>
