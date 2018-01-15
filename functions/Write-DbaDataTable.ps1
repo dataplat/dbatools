@@ -182,9 +182,151 @@ function Write-DbaDataTable {
         [switch]$RegularUser,
         [switch][Alias('Silent')]$EnableException
     )
-
+    
     begin {
-        if (!$Truncate) { $ConfirmPreference = "None" }
+        #region Utility Functions
+        function Invoke-BulkCopy {
+        <#
+            .SYNOPSIS
+                Copies a datatable in bulk over to a table.
+            
+            .DESCRIPTION
+                Copies a datatable in bulk over to a table.
+            
+            .PARAMETER DataTable
+                The datatable to copy.
+            
+            .PARAMETER SqlInstance
+                Needs not be specified. The SqlInstance targeted. For message purposes only.
+            
+            .PARAMETER Fqtn
+                Needs not be specified. The fqtn written to. For message purposes only.
+            
+            .PARAMETER BulkCopy
+                Needs not be specified. The bulk copy object used to perform the copy operation.
+        #>
+            [CmdletBinding()]
+            Param (
+                $DataTable,
+                [DbaInstance]$SqlInstance = $SqlInstance,
+                [string]$Fqtn = $fqtn,
+                $BulkCopy = $bulkCopy
+            )
+            Write-Message -Level Verbose -Message "Importing in bulk to $fqtn"
+            
+            $rowCount = $DataTable.Rows.Count
+            if ($rowCount -eq 0) {
+                $rowCount = 1
+            }
+            
+            if ($Pscmdlet.ShouldProcess($SqlInstance, "Writing $rowCount rows to $Fqtn")) {
+                $bulkCopy.WriteToServer($DataTable)
+                if ($rowCount -is [int]) {
+                    Write-Progress -id 1 -activity "Inserting $rowCount rows" -status "Complete" -Completed
+                }
+            }
+        }
+        
+        function New-Table {
+        <#
+            .SYNOPSIS
+                Creates a table, based upon a DataTable.
+            
+            .DESCRIPTION
+                Creates a table, based upon a DataTable.
+            
+            .PARAMETER DataTable
+                The DataTable to base the table structure upon.
+            
+            .PARAMETER PStoSQLTypes
+                Automatically inherits from parent.
+            
+            .PARAMETER SqlInstance
+                Automatically inherits from parent.
+            
+            .PARAMETER Fqtn
+                Automatically inherits from parent.
+            
+            .PARAMETER Server
+                Automatically inherits from parent.
+            
+            .PARAMETER DatabaseName
+                Automatically inherits from parent.
+            
+            .PARAMETER EnableException
+                By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+                This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+                Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        #>
+            [CmdletBinding()]
+            Param (
+                $DataTable,
+                $PStoSQLTypes = $PStoSQLTypes,
+                $SqlInstance = $SqlInstance,
+                $Fqtn = $fqtn,
+                $Server = $server,
+                $DatabaseName = $databaseName,
+                [switch]$EnableException
+            )
+            
+            Write-Message -Level Verbose -Message "Creating table for $fqtn"
+            
+            # Get SQL datatypes by best guess on first data row
+            $sqlDataTypes = @();
+            $columns = $DataTable.Columns
+            
+            if ($columns -eq $null) {
+                $columns = $DataTable.Table.Columns
+            }
+            
+            foreach ($column in $columns) {
+                $sqlColumnName = $column.ColumnName
+                
+                try {
+                    $columnValue = $DataTable.Rows[0].$sqlColumnName
+                }
+                catch {
+                    $columnValue = $DataTable.$sqlColumnName
+                }
+                
+                if ($columnValue -eq $null) {
+                    $columnValue = $DataTable.$sqlColumnName
+                }
+                
+            <#
+                PS to SQL type conversion
+                If data type exists in hash table, use the corresponding SQL type
+                Else, fallback to nvarchar
+            #>
+                if ($PStoSQLTypes.Keys -contains $column.DataType) {
+                    $sqlDataType = $PStoSQLTypes[$($column.DataType.toString())]
+                }
+                else {
+                    $sqlDataType = "nvarchar(MAX)"
+                }
+                
+                $sqlDataTypes += "[$sqlColumnName] $sqlDataType"
+            }
+            
+            $sql = "BEGIN CREATE TABLE $fqtn ($($sqlDataTypes -join ' NULL,')) END"
+            
+            Write-Message -Level Debug -Message $sql
+            
+            if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating table $Fqtn")) {
+                try {
+                    $null = $Server.Databases[$DatabaseName].Query($sql)
+                }
+                catch {
+                    Stop-Function -Message "The following query failed: $sql" -ErrorRecord $_
+                    return
+                }
+            }
+        }
+        
+        #endregion Utility Functions
+        
+        #region Prepare type for bulk copy
+        if (-not $Truncate) { $ConfirmPreference = "None" }
 
         # Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
         # http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
@@ -206,39 +348,53 @@ function Write-DbaDataTable {
         }'
 
         Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction SilentlyContinue
-
-        $dotCount = ([regex]::Matches($table, "\.")).count
+        #endregion Prepare type for bulk copy
+        
+        #region Resolve Full Qualified Table Name
+        $dotCount = ([regex]::Matches($Table, "\.")).count
 
         if ($dotCount -lt 2 -and $Database -eq $null) {
             Stop-Function -Message "You must specify a database or fully qualified table name."
             return
         }
-
+        
+        if (Test-Bound -ParameterName Database) {
+            $databaseName = "$Database"
+        }
+        if (Test-Bound -ParameterName Schema) {
+            $schemaName = $Schema
+        }
+        
+        $tableName = $Table
+        
         if ($dotCount -eq 1) {
-            $schema = $Table.Split(".")[0]
-            $table = $Table.Split(".")[1]
+            $schemaName = $Table.Split(".")[0]
+            $tableName = $Table.Split(".")[1]
         }
 
         if ($dotCount -eq 2) {
-            $Database = $Table.Split(".")[0]
-            $schema = $Table.Split(".")[1]
-            $table = $Table.Split(".")[2]
+            $databaseName = $Table.Split(".")[0]
+            $schemaName = $Table.Split(".")[1]
+            $tableName = $Table.Split(".")[2]
         }
 
-        if ($Database -match "\[.*\]") {
-            $Database = ($Database -replace '\[', '') -replace '\]', ''
+        if ($databaseName -match "\[.*\]") {
+            $databaseName = ($databaseName -replace '\[', '') -replace '\]', ''
         }
 
-        if ($Schema -match "\[.*\]") {
-            $Schema = ($Schema -replace '\[', '') -replace '\]', ''
+        if ($schemaName -match "\[.*\]") {
+            $schemaName = ($schemaName -replace '\[', '') -replace '\]', ''
         }
 
-        if ($table -match "\[.*\]") {
-            $table = ($table -replace '\[', '') -replace '\]', ''
+        if ($tableName -match "\[.*\]") {
+            $tableName = ($tableName -replace '\[', '') -replace '\]', ''
         }
+        
+        $fqtn = "[$databaseName].[$schemaName].[$tableName]"
+        Write-Message -Level SomewhatVerbose -Message "FQTN processed: $fqtn"
+        #endregion Resolve Full Qualified Table Name
 
-        $fqtn = "[$Database].[$Schema].[$table]"
-
+        #region Connect to server and get database
         Write-Message -Message "Attempting to connect to $SqlInstance." -Level Verbose -Target $SqlInstance
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -RegularUser:$RegularUser
@@ -260,13 +416,28 @@ function Write-DbaDataTable {
                 #do nothing
             }
         }
-        $db = $server.Databases | Where-Object Name -eq $Database
+        $databaseObject = $server.Databases[$databaseName]
+        #endregion Connect to server and get database
 
-        if ($db -eq $null) {
-            Stop-Function -Message "$Database does not exist." -Target $SqlInstance
+        #region Prepare database and bulk operations
+        if ($databaseObject -eq $null) {
+            Stop-Function -Message "$databaseName does not exist." -Target $SqlInstance
             return
         }
-
+        
+        $databaseObject.Tables.Refresh()
+        if ($schemaName -notin $databaseObject.Schemas.Name) {
+            Stop-Function -Message "Schema does not exist."
+            return
+        }
+        
+        $tableExists = ($tableName -in $databaseObject.Tables.Name) -and ($databaseObject.Tables.Schema -eq $schemaName)
+        
+        if ((-not $tableExists) -and (-not $AutoCreateTable)) {
+            Stop-Function -Message "Table does not exist and automatic creation of the table has not been selected. Specify the '-AutoCreateTable'-parameter to generate a suitable table."
+            return
+        }
+        
         $bulkCopyOptions = 0
         $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
 
@@ -280,11 +451,11 @@ function Write-DbaDataTable {
             }
         }
 
-        if ($truncate -eq $true) {
+        if ($Truncate -eq $true) {
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Truncating $fqtn")) {
                 try {
                     Write-Message -Level Output -Message "Truncating $fqtn."
-                    $null = $server.Databases[$Database].Query("TRUNCATE TABLE $fqtn")
+                    $null = $server.Databases[$databaseName].Query("TRUNCATE TABLE $fqtn")
                 }
                 catch {
                     Write-Message -Level Warning -Message "Could not truncate $fqtn. Table may not exist or may have key constraints." -ErrorRecord $_
@@ -292,7 +463,7 @@ function Write-DbaDataTable {
             }
         }
 
-        $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$Database", $bulkCopyOptions)
+        $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$databaseName", $bulkCopyOptions)
         $bulkCopy.DestinationTableName = $fqtn
         $bulkCopy.BatchSize = $BatchSize
         $bulkCopy.NotifyAfter = $NotifyAfter
@@ -347,105 +518,114 @@ function Write-DbaDataTable {
             'int'             = 'int';
             'long'            = 'bigint';
         }
+        
+        $validTypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]])
+        #endregion Prepare database and bulk operations
+        
+        #region ConvertTo-DbaDataTable wrapper
+        try {
+            $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('ConvertTo-DbaDataTable', [System.Management.Automation.CommandTypes]::Function)
+            $splatCDDT = @{
+                TimeSpanType  = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.timespantype' -Fallback 'TotalMilliseconds')
+                SizeType       = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.sizetype' -Fallback 'Int64')
+                IgnoreNull     = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.ignorenull' -Fallback $false)
+                Raw = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.raw' -Fallback $false)
+            }
+            $scriptCmd = { & $wrappedCmd @splatCDDT }
+            $steppablePipeline = $scriptCmd.GetSteppablePipeline()
+            $steppablePipeline.Begin($true)
+        }
+        catch {
+            Stop-Function -Message "Failed to initialize "
+        }
+        #endregion ConvertTo-DbaDataTable wrapper
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        if ($InputObject -eq $null) {
-            Stop-Function -Message "Input object is null."
-            return
+        
+        if ($InputObject -ne $null) { $inputType = $InputObject.GetType() }
+        else { $inputType = $null }
+        
+        if ($inputType -eq [System.Data.DataSet]) {
+            $inputData = $InputObject.Tables
+            $inputType = [System.Data.DataTable[]]
         }
-
-        $validTypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]])
-
-        if ($InputObject.GetType() -notin $validTypes) {
-            Stop-Function -Message "Data is not of the right type (DbDataReader, DataTable, or DataRow). Tip: Try using Out-DbaDataTable to convert the object first."
-            return
+        else {
+            $inputData = $InputObject
         }
-
-        if ($InputObject.GetType() -eq [System.Data.DataSet]) {
-            if ($InputObject.Tables -ne $null) { $InputObject = $InputObject.Tables }
-        }
-
-        $db.Tables.Refresh()
-        $tableExists = $db | Where-Object { $table -in $_.Tables.Name -and $_.Tables.Schema -eq $schema }
-
-        if ($tableExists -eq $null) {
-            if ($AutoCreateTable -eq $false) {
-                Stop-Function -Message "$fqtn does not exist. Use -AutoCreateTable to AutoCreate."
-                return
-            }
-            else {
-                if ($schema -notin $db.Schemas.Name) {
-                    Stop-Function -Message "Schema does not exist."
+        
+        #region Scenario 1: Single valid table
+        if ($inputType -in $validTypes) {
+            if (-not $tableExists) {
+                try {
+                    New-Table -DataTable $InputObject -EnableException
+                    $tableExists = $true
+                }
+                catch {
+                    Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance
                     return
                 }
-
-                # Get SQL datatypes by best guess on first data row
-                $sqlDataTypes = @();
-                $columns = $InputObject.Columns
-
-                if ($columns -eq $null) {
-                    $columns = $InputObject.Table.Columns
-                }
-
-                foreach ($column in $columns) {
-                    $sqlColumnName = $column.ColumnName
-
+            }
+            
+            try { Invoke-BulkCopy -DataTable $InputObject }
+            catch {
+                Stop-Function -Message "Failed to bulk import to $fqtn" -ErrorRecord $_ -Target $SqlInstance
+            }
+            return
+        }
+        #endregion Scenario 1: Single valid table
+        
+        foreach ($object in $inputData) {
+            #region Scenario 2: Multiple valid tables
+            if ($object.GetType() -in $validTypes) {
+                if (-not $tableExists) {
                     try {
-                        $columnValue = $InputObject.Rows[0].$sqlColumnName
+                        New-Table -DataTable $object -EnableException
+                        $tableExists = $true
                     }
                     catch {
-                        $columnValue = $InputObject.$sqlColumnName
-                    }
-
-                    if ($columnValue -eq $null) {
-                        $columnValue = $InputObject.$sqlColumnName
-                    }
-
-                    <#
-                        PS to SQL type conversion
-                        If data type exists in hash table, use the corresponding SQL type
-                        Else, fallback to nvarchar
-                    #>
-                    if ($PStoSQLTypes.Keys -contains $column.DataType) {
-                        $sqlDataType = $PStoSQLTypes[$($column.DataType.toString())]
-                    }
-                    else {
-                        $sqlDataType = "nvarchar(MAX)"
-                    }
-
-                    $sqlDataTypes += "[$sqlColumnName] $sqlDataType"
-                }
-
-                $sql = "BEGIN CREATE TABLE $fqtn ($($sqlDataTypes -join ' NULL,')) END"
-
-                Write-Message -Level Debug -Message $sql
-
-                if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating table $fqtn")) {
-                    try {
-                        $null = $server.Databases[$Database].Query($sql)
-                    }
-                    catch {
-                        Stop-Function -Message "The following query failed: $sql" -ErrorRecord $_
+                        Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance
                         return
                     }
                 }
+                
+                try { Invoke-BulkCopy -DataTable $object }
+                catch {
+                    Stop-Function -Message "Failed to bulk import to $fqtn" -ErrorRecord $_ -Target $SqlInstance -Continue
+                }
+                continue
             }
-        }
-
-        $rowCount = $InputObject.Rows.Count
-        if ($rowCount -eq 0) {
-            $rowCount = 1
-        }
-
-        if ($Pscmdlet.ShouldProcess($SqlInstance, "Writing $rowCount rows to $fqtn")) {
-            $bulkCopy.WriteToServer($InputObject)
-            if ($rowCount -is [int]) {
-                Write-Progress -id 1 -activity "Inserting $rowCount rows" -status "Complete" -Completed
+            #endregion Scenario 2: Multiple valid tables
+            
+            #region Scenario 3: Invalid data types
+            else {
+                $null = $steppablePipeline.Process($object)
+                continue
             }
+            #endregion Scenario 3: Invalid data types
         }
     }
     end {
+        #region ConvertTo-DbaDataTable wrapper
+        $dataTable = $steppablePipeline.End()
+        
+        if (-not $tableExists) {
+            try {
+                New-Table -DataTable $dataTable[0] -EnableException
+                $tableExists = $true
+            }
+            catch {
+                Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance
+                return
+            }
+        }
+        
+        try { Invoke-BulkCopy -DataTable $dataTable[0] }
+        catch {
+            Stop-Function -Message "Failed to bulk import to $fqtn" -ErrorRecord $_ -Target $SqlInstance
+        }
+        #endregion ConvertTo-DbaDataTable wrapper
+        
         if ($bulkCopy) {
             $bulkCopy.Close()
             $bulkCopy.Dispose()
