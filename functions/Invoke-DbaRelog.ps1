@@ -115,7 +115,17 @@
     )
     process {
         foreach ($file in $Path) {
-
+            $item = Get-ChildItem -Path $file -ErrorAction SilentlyContinue
+            
+            if ($item -eq $null) {
+                Stop-Function -Message "$file does not exist" -Target $file
+                return
+            }
+            
+            if ((Test-Bound -ParameterName Destination -Not)) {
+                $Destination = Join-Path (Split-Path $Path) $item.BaseName
+            }
+            
             $params = @("`"$file`"")
 
             if ($Append) {
@@ -138,7 +148,7 @@
             }
 
             if ($Destination) {
-                $params += "-o $Destination"
+                $params += "-o `"$Destination`""
             }
 
             if ($BeginTime) {
@@ -165,11 +175,12 @@
         else {
             $outputisfile = $false
         }
-
+        
         if ($outputisfile -and $Destination) {
-            if (-not (Test-Path -Path $Destination)) {
+            $dir = Split-Path $Destination
+            if (-not (Test-Path -Path $dir)) {
                 try {
-                    $null = New-Item -ItemType Directory -Path $Destination -ErrorAction Stop
+                    $null = New-Item -ItemType Directory -Path $dir -ErrorAction Stop
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $Destination
