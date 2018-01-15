@@ -297,7 +297,13 @@
                 }
                 else {
                     Write-Message -Level Verbose -Message $output
-                    $output
+                    $array = $output -Split [environment]::NewLine
+                    $files = $array | Select-String "File:"
+                    
+                    foreach ($file in $files) {
+                        $file = $file.ToString().Replace("File:","").Trim()
+                        Get-ChildItem $file
+                    }
                 }
             }
         }
