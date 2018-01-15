@@ -429,7 +429,6 @@
         'Start-DbaTrace',
         'Stop-DbaTrace',
         'Remove-DbaTrace',
-        'Find-DbaDisabledIndex',
         'Set-DbaLogin',
         'Copy-DbaXESessionTemplate',
         'Get-DbaXEObject',
