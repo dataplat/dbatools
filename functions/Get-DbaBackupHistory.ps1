@@ -349,6 +349,7 @@ function Get-DbaBackupHistory {
                                     WHEN 6 THEN 'Pipe'
                                     WHEN 106 THEN 'Permanent Pipe Device'
                                     WHEN 7 THEN 'Virtual Device'
+                                    WHEN 9 THEN 'URL'
                                     ELSE 'Unknown'
                                     END AS DeviceType,
                                   backupset.position,
@@ -411,6 +412,7 @@ function Get-DbaBackupHistory {
                                 WHEN 6 THEN 'Pipe'
                                 WHEN 106 THEN 'Permanent Pipe Device'
                                 WHEN 7 THEN 'Virtual Device'
+                                WHEN 9 THEN 'URL'
                                 ELSE 'Unknown'
                               END AS DeviceType,
                               backupset.position,
