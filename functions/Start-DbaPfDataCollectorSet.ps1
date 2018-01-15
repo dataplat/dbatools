@@ -1,10 +1,10 @@
 ﻿function Start-DbaPfDataCollectorSet {
     <#
         .SYNOPSIS
-            Starts Peformance Monitor Data Collector Set
+            Starts Performance Monitor Data Collector Set
 
         .DESCRIPTION
-            Starts Peformance Monitor Data Collector Set
+            Starts Performance Monitor Data Collector Set
 
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.
