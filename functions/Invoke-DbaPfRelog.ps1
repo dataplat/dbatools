@@ -1,4 +1,4 @@
-﻿function Invoke-DbaRelog {
+﻿function Invoke-DbaPfRelog {
  <#
     .SYNOPSIS
     Pipable wrapper for the relog command which is available on modern Windows platforms.
@@ -10,6 +10,8 @@
     such as text-TSV (for tab-delimited text), text-CSV (for comma-delimited text), binary-BIN, or SQL.
 
     relog "C:\PerfLogs\Admin\System Correlation\WORKSTATIONX_20180112-000001\DataCollector01.blg" -o C:\temp\foo.csv -f tsv
+    
+    *** if you find any command hangs, please send us the output so we can accomdoate for it ** then use -Raw for an immediate solution
 
     .PARAMETER Path
     Specifies the pathname of an existing performance counter log or performance counter path. You can specify multiple input files.
@@ -26,6 +28,9 @@
 
     .PARAMETER Append
     Appends output file instead of overwriting. This option does not apply to SQL format where the default is always to append.
+
+    .PARAMETER AllowClobber
+    Ovewrites the destination file if it exists
 
     .PARAMETER PerformanceCounter
     Specifies the performance counter path to log.
@@ -48,6 +53,9 @@
     .PARAMETER Summary
     Displays the performance counters and time ranges of log files specified in the input file.
 
+    .PARAMETER Raw
+    Output the results of the DOS command instead of Get-ChildItem
+    
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -59,14 +67,14 @@
     License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
-    https://dbatools.io/Invoke-DbaRelog
+    https://dbatools.io/Invoke-DbaPfRelog
 
     .EXAMPLE
-    Invoke-DbaRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c
+    Invoke-DbaPfRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c
 
     Creats the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg
     
-    [Invoke-DbaRelog][21:21:35] relog "C:\temp\perfmon.blg" -f csv -o C:\temp\a\b\c
+    [Invoke-DbaPfRelog][21:21:35] relog "C:\temp\perfmon.blg" -f csv -o C:\temp\a\b\c
 
     Input
     ----------------
@@ -90,7 +98,7 @@
     The command completed successfully.
 
     .EXAMPLE
-    Invoke-DbaRelog -Path 'C:\temp\perflog with spaces.blg' -Destination C:\temp\a\b\c -Type csv -BeginTime ((Get-Date).AddDays(-30)) -EndTime ((Get-Date).AddDays(-1))
+    Invoke-DbaPfRelog -Path 'C:\temp\perflog with spaces.blg' -Destination C:\temp\a\b\c -Type csv -BeginTime ((Get-Date).AddDays(-30)) -EndTime ((Get-Date).AddDays(-1))
     
     Creates the temp, a, and b directories if needed, then generates c.csv (comma separated) from C:\temp\perflog with spaces.blg', starts 30 day ago and ends one day ago
 
@@ -104,6 +112,7 @@
         [ValidateSet("tsv", "csv", "bin", "sql")]
         [string]$Type = "tsv",
         [switch]$Append,
+        [switch]$AllowClobber,
         [string[]]$PerformanceCounter,
         [string]$PerformanceCounterPath,
         [int]$Interval,
@@ -111,6 +120,9 @@
         [datetime]$EndTime,
         [string]$ConfigPath,
         [switch]$Summary,
+        [parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
+        [switch]$Raw,
         [switch]$EnableException
     )
     begin {
@@ -122,7 +134,40 @@
         }
     }
     process {
+        if ($Append -and $Type -ne "bin") {
+            Stop-Function -Message "Append can only be used with -Type bin" -Target $file
+            return
+        }
+        
+        if ($InputObject) {
+            # DataCollectorSet
+            if ($InputObject.OutputLocation -and $InputObject.RemoteOutputLocation) {
+                $instance = [dbainstance]$InputObject.ComputerName
+                
+                if ($instance.IsLocalHost) {
+                    $Path += (Get-ChildItem -Recurse -Path $InputObject.OutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                }
+                else {
+                    $Path += (Get-ChildItem -Recurse -Path $InputObject.RemoteOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                }
+            }
+            # DataCollector
+            if ($InputObject.LatestOutputLocation -and $InputObject.RemoteLatestOutputLocation) {
+                $instance = [dbainstance]$InputObject.ComputerName
+                
+                if ($instance.IsLocalHost) {
+                    $Path += (Get-ChildItem -Recurse -Path $InputObject.LatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                }
+                else {
+                    $Path += (Get-ChildItem -Recurse -Path $InputObject.RemoteLatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                }
+            }
+        }
+        
+        $Path = $Path | Where-Object { $_ -match '.blg' }
+        
         foreach ($file in $Path) {
+            
             $item = Get-ChildItem -Path $file -ErrorAction SilentlyContinue
             
             if ($item -eq $null) {
@@ -130,53 +175,53 @@
                 return
             }
             
-            if ((Test-Bound -ParameterName Destination -Not)) {
+            if ((Test-Bound -ParameterName Destination -Not) -and -not $Append) {
                 $Destination = Join-Path (Split-Path $Path) $item.BaseName
             }
             
             $params = @("`"$file`"")
-
+            
             if ($Append) {
                 $params += "-a"
             }
-
+            
             if ($PerformanceCounter) {
                 $parsedcounters = $PerformanceCounter -join " "
                 $params += "-c `"$parsedcounters`""
             }
-
+            
             if ($PerformanceCounterPath) {
                 $params += "-cf `"$PerformanceCounterPath`""
             }
-
+            
             $params += "-f $Type"
-
+            
             if ($Interval) {
                 $params += "-t $Interval"
             }
-
+            
             if ($Destination) {
                 $params += "-o `"$Destination`""
             }
-
+            
             if ($beginstring) {
                 $params += "-b $beginstring"
             }
-
+            
             if ($endstring) {
                 $params += "-e $endstring"
             }
-
+            
             if ($ConfigPath) {
                 $params += "-config $ConfigPath"
             }
-
+            
             if ($Summary) {
                 $params += "-q"
             }
-
+            
         }
-
+        
         if (-not ($Destination.StartsWith("DSN"))) {
             $outputisfile = $true
         }
@@ -184,22 +229,77 @@
             $outputisfile = $false
         }
         
-        if ($outputisfile -and $Destination) {
-            $dir = Split-Path $Destination
-            if (-not (Test-Path -Path $dir)) {
-                try {
-                    $null = New-Item -ItemType Directory -Path $dir -ErrorAction Stop
+        if ($outputisfile) {
+            if ($Destination) {
+                $dir = Split-Path $Destination
+                if (-not (Test-Path -Path $dir)) {
+                    try {
+                        $null = New-Item -ItemType Directory -Path $dir -ErrorAction Stop
+                    }
+                    catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $Destination
+                    }
                 }
-                catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $Destination
+                
+                if ((Test-Path $Destination) -and -not $Append -and ((Get-Item $Destination) -isnot [System.IO.DirectoryInfo])) {
+                    if ($AllowClobber) {
+                        try {
+                            Remove-Item -Path "$Destination" -ErrorAction Stop
+                        }
+                        catch {
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                        }
+                    }
+                    else {
+                        if ($Type -eq "bin") {
+                            Stop-Function -Message "$Destination exists. Use -AllowClobber to overwrite or -Append to append." -Continue
+                        }
+                        else {
+                            Stop-Function -Message "$Destination exists. Use -AllowClobber to overwrite." -Continue
+                        }
+                    }
+                }
+                
+                if ((Test-Path "$Destination.$type") -and -not $Append) {
+                    if ($AllowClobber) {
+                        try {
+                            Remove-Item -Path "$Destination.$type" -ErrorAction Stop
+                        }
+                        catch {
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                        }
+                    }
+                    else {
+                        if ($Type -eq "bin") {
+                            Stop-Function -Message "$("$Destination.$type") exists. Use -AllowClobber to overwrite or -Append to append." -Continue
+                        }
+                        else {
+                            Stop-Function -Message "$("$Destination.$type") exists. Use -AllowClobber to overwrite." -Continue
+                        }
+                    }
                 }
             }
         }
         
+        $arguments = ($params -join " ")
+        
         try {
-            $arguments = ($params -join " ")
-            Write-Message -Level Output -Message "relog $arguments"
-            cmd /c "relog $arguments"
+            if ($Raw) {
+                Write-Message -Level Output -Message "relog $arguments"
+                cmd /c "relog $arguments"
+            }
+            else {
+                Write-Message -Level Verbose -Message "relog $arguments"
+                $output = (cmd /c "relog $arguments" | Out-String).Trim()
+                
+                if ($output -match "Error") {
+                    Stop-Function -Continue -Message "relog $arguments`n$output"
+                }
+                else {
+                    Write-Message -Level Verbose -Message $output
+                    $output
+                }
+            }
         }
         catch {
             Stop-Function -Message "Failure" -ErrorRecord $_ -Target $path
