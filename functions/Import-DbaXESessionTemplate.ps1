@@ -4,7 +4,7 @@
     Imports a new XESession XML Template
 
     .DESCRIPTION
-    Imports a new XESession XML Template either from our repo or a file you specify
+    Imports a new XESession XML Template either from our repo or a file you specify.
 
     .PARAMETER SqlInstance
     The SQL Instances that you're connecting to.

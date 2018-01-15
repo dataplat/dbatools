@@ -4,7 +4,7 @@
             Removes a Performance Monitor Data Collector Set
 
         .DESCRIPTION
-            Removes a Performance Monitor Data Collector Set
+            Removes a Performance Monitor Data Collector Set. When removing data collector sets from the local instance, Run As Admin is required.
 
         .PARAMETER ComputerName
             The target computer.
@@ -18,6 +18,12 @@
         .PARAMETER InputObject
             Enables piped results from Get-DbaPfDataCollectorSet
 
+        .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+        
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -38,9 +44,9 @@
             Attempts to remove all ready Collectors on localhost
 
         .EXAMPLE
-            Remove-DbaPfDataCollectorSet -ComputerName sql2017
+            Remove-DbaPfDataCollectorSet -ComputerName sql2017 -Confirm:$false
     
-            Attempts to remove all ready Collectors on localhost
+            Attempts to remove all ready Collectors on localhost and does not prompt to confirm
     
         .EXAMPLE
             Remove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
@@ -57,7 +63,7 @@
     
             Stops and removes 'System Correlation' Collector
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
@@ -100,7 +106,7 @@
             $computer = $set.ComputerName
             $status = $set.State
             
-            $null = Test-ElevationRequirement -ComputerName $instance -Continue
+            $null = Test-ElevationRequirement -ComputerName $computer -Continue
             
             Write-Message -Level Verbose -Message "$setname on $ComputerName is $status"
             
