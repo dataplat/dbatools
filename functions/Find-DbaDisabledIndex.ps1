@@ -160,11 +160,8 @@
                 Write-Message -Level Output -Message "There are no databases to analyse."
             }
         }
-        end {
-            if (Test-FunctionInterrupt) {
-                return
-            }
-            Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlDisabledIndex
-        }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlDisabledIndex
     }
 }
