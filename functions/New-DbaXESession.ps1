@@ -31,7 +31,7 @@
     https://dbatools.io/New-DbaXESession
 
     .EXAMPLE
-    $session = New-DbaXESession -SqlInstance sql2017
+    $session = New-DbaXESession -SqlInstance sql2017 -Name XeSession_Test
     $event = $session.AddEvent("sqlserver.file_written")
     $event.AddAction("package0.callstack")
     $session.Create()
