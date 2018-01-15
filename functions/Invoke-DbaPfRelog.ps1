@@ -11,7 +11,7 @@
 
     relog "C:\PerfLogs\Admin\System Correlation\WORKSTATIONX_20180112-000001\DataCollector01.blg" -o C:\temp\foo.csv -f tsv
     
-    *** if you find any command hangs, please send us the output so we can accomdoate for it ** then use -Raw for an immediate solution
+    *** if you find any input hangs, please send us the output so we can accommodate for it ** then use -Raw for an immediate solution
 
     .PARAMETER Path
     Specifies the pathname of an existing performance counter log or performance counter path. You can specify multiple input files.
