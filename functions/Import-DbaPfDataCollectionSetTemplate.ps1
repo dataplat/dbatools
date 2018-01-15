@@ -1,4 +1,4 @@
-﻿function Import-DbaPfTemplate {
+﻿function Import-DbaPfDataCollectionSetTemplate {
  <#
     .SYNOPSIS
     Imports a new Performance Monitor Data Collector Set Template either from our repo or a file you specify
@@ -6,6 +6,7 @@
     .DESCRIPTION
     Imports a new Performance Monitor Data Collector Set Template either from our repo or a file you specify. When importing data collector sets from the local instance, Run As Admin is required.
 
+    See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371952 for more information
     .PARAMETER ComputerName
     The target server.
 
@@ -35,6 +36,9 @@
     
     .PARAMETER SegmentMaxSize
     Sets the maximum size of any log file in the data collector set.
+    
+    .PARAMETER Subdirectory
+    sets a base subdirectory of the root path where the next instance of the data collector set will write its logs.
     
     .PARAMETER SubdirectoryFormat
     Sets flags that describe how to decorate the subdirectory name. PLA appends the decoration to the folder name. For example, if you specify plaMonthDayHour, PLA appends the current month, day, and hour values to the folder name. If the folder name is MyFile, the result could be MyFile110816.
@@ -76,35 +80,34 @@
     License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
-    https://dbatools.io/Import-DbaPfTemplate
+    https://dbatools.io/Import-DbaPfDataCollectionSetTemplate
 
     .EXAMPLE
-    Import-DbaPfTemplate -SqlInstance sql2017 -Template 'Long Running Query'
+    Import-DbaPfDataCollectionSetTemplate -SqlInstance sql2017 -Template 'Long Running Query'
 
     Creates a new data collector set named 'Long Running Query' from our repo to the SQL Server sql2017
 
     .EXAMPLE
-    Import-DbaPfTemplate -SqlInstance sql2017 -Template 'Long Running Query' -DisplayName 'New Long running query' -Confirm
+    Import-DbaPfDataCollectionSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -DisplayName 'New Long running query' -Confirm
 
     Creates a new data collector set named "New Long Running Query" using the 'Long Running Query' template. Forces a confirmation if the template exists.
 
     .EXAMPLE
     Get-DbaPfDataCollectorSet -SqlInstance sql2017 -Session db_ola_health | Remove-Dbadata collector set
-    Import-DbaPfTemplate -SqlInstance sql2017 -Template db_ola_health | Start-Dbadata collector set
+    Import-DbaPfDataCollectionSetTemplate -SqlInstance sql2017 -Template db_ola_health | Start-Dbadata collector set
 
     Imports a session if it exists then recreates it using a template
 
     .EXAMPLE
-    Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfTemplate -SqlInstance sql2017
+    Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectionSetTemplate -SqlInstance sql2017
 
     Allows you to select a Session template then import to an instance named sql2017
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-        [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
         [string]$DisplayName,
         [switch]$SchedulesEnabled,
         [string]$RootPath,
@@ -123,7 +126,6 @@
         [Alias("FullName")]
         [string[]]$Path,
         [string[]]$Template,
-        [string]$TargetFilePath,
         [switch]$EnableException
     )
     begin {
@@ -133,8 +135,7 @@
             $setname = $args[0]; $templatexml = $args[1]
             $collectorset = New-Object -ComObject Pla.DataCollectorSet
             $collectorset.SetXml($templatexml)
-            ##Commit codes: http://msdn.microsoft.com/en-us/library/aa371873(VS.85).aspx this is add or modify.  Can't do this on a system created PLA instances (read only).
-            $null = $collectorset.Commit($setname, $null, 0x0003)
+            $null = $collectorset.Commit($setname, $null, 0x0003) #add or modify.
             $null = $collectorset.Query($setname, $Null)
         }
     }
