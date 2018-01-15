@@ -109,7 +109,7 @@
                                 Name             = $session.event_session.name
                                 Category         = $session.event_session.TemplateCategory.'#text'
                                 Source           = $meta.Source
-                                Compatability    = $meta.Compatability.ToString().Replace(",", "")
+                                Compatability    = ("$($meta.Compatability)").ToString().Replace(",", "")
                                 Description      = $session.event_session.TemplateDescription.'#text'
                                 TemplateName     = $session.event_session.TemplateName.'#text'
                                 Path             = $file
