@@ -1,10 +1,10 @@
 ﻿function Get-DbaPfDataCollector {
     <#
         .SYNOPSIS
-            Gets Peformance Monitor Data Collectors
+            Gets Performance Monitor Data Collectors
 
         .DESCRIPTION
-           Gets Peformance Monitor Data Collectors
+           Gets Performance Monitor Data Collectors
 
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.
