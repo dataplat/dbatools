@@ -435,7 +435,7 @@
         'Get-DbaXEObject',
         'ConvertTo-DbaDataTable',
         'Find-DbaDisabledIndex',
-        'Invoke-DbaRelog',
+        'Invoke-DbaPfRelog',
         'Get-DbaPfCounter',
         'Get-DbaPfCounterSample',
         'Get-DbaPfDataCollector',
