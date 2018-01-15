@@ -216,17 +216,17 @@ function Get-DbaBackupHistory {
                 Stop-Function -Message "SQL Server 2000 not supported." -Category LimitsExceeded -Target $instance -Continue
             }
 
-			if ($server.VersionMajor -ge 10) {
-				# 2008 introduced compressed_backup_size
-				$BackupCols = "
-				backupset.backup_size AS TotalSize,			
-				backupset.compressed_backup_size as CompressedBackupSize"
-			}
-			else {
-				$BackupCols = "
-				backupset.backup_size AS TotalSize,			
-				NULL as CompressedBackupSize"
-			}
+            if ($server.VersionMajor -ge 10) {
+                # 2008 introduced compressed_backup_size
+                $BackupCols = "
+                backupset.backup_size AS TotalSize,
+                backupset.compressed_backup_size as CompressedBackupSize"
+            }
+            else {
+                $BackupCols = "
+                backupset.backup_size AS TotalSize,
+                NULL as CompressedBackupSize"
+            }
 
 
             $databases = @()
