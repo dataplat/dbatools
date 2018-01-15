@@ -60,7 +60,9 @@
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
+        [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
+        [Alias("CollectorSet")]
         [string[]]$Collector,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
