@@ -74,6 +74,13 @@
 
     Creats the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg
     
+    Returns the newly created file as a file object
+    
+    .EXAMPLE
+    Invoke-DbaPfRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c -Raw
+
+    Creats the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg then outputs the raw results of the relog command.
+    
     [Invoke-DbaPfRelog][21:21:35] relog "C:\temp\perfmon.blg" -f csv -o C:\temp\a\b\c
 
     Input
