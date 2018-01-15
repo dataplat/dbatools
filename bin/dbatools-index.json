@@ -659,7 +659,7 @@
         "Synopsis":  "Exports an new XESession XML Template",
         "Name":  "Export-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Export-DbaXESessionTemplate",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\\temp\\xe\r\n\r\nReturns a new XE Session object from sql2017 then adds an event, an action then creates it.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 -Session session_health | Export-DbaXESessionTemplate -Path C:\\temp\r\n\r\nReturns a new XE Session object from sql2017 then adds an event, an action then creates it.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\\temp\\xe\r\n\r\nExports XE Session Template to the C:\\temp\\xe folder.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 -Session session_health | Export-DbaXESessionTemplate -Path C:\\temp\r\n\r\nReturns a new XE Session object from sql2017 then adds an event, an action then creates it.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Find-DbaAgentJob",
@@ -2427,12 +2427,12 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShippingRecovery -SqlServer server1\r\n\r\nRecovers all the databases on the instance that are enabled for log shipping\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShippingRecovery -SqlServer server1 -SqlCredential $cred -Verbose\r\n\r\nRecovers all the databases on the instance that are enabled for log shipping using a credential\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShippingRecovery -SqlServer server1 -database db_logship -Verbose\r\n\r\nRecovers the database \"db_logship\" to a normal status\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003edb1, db2, db3, db4 | Invoke-DbaLogShippingRecovery -SqlServer server1 -Verbose\r\n\r\nRecovers the database db1, db2, db3, db4 to a normal status\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShippingRecovery -SqlServer server1 -WhatIf\r\n\r\nShows what would happen if the command were executed.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Invoke-DbaRelog",
-        "Description":  "Pipable wrapper for the relog command. Relog is useful for converting Windows Perfmon.\n\nExtracts performance counters from performance counter logs into other formats,\nsuch as text-TSV (for tab-delimited text), text-CSV (for comma-delimited text), binary-BIN, or SQL.\n\nrelog \"C:\\PerfLogs\\Admin\\System Correlation\\WORKSTATIONX_20180112-000001\\DataCollector01.blg\" -o C:\\temp\\foo.csv -f tsv",
+        "CommandName":  "Invoke-DbaPfRelog",
+        "Description":  "Pipable wrapper for the relog command. Relog is useful for converting Windows Perfmon.\n\nExtracts performance counters from performance counter logs into other formats,\nsuch as text-TSV (for tab-delimited text), text-CSV (for comma-delimited text), binary-BIN, or SQL.\n\nrelog \"C:\\PerfLogs\\Admin\\System Correlation\\WORKSTATIONX_20180112-000001\\DataCollector01.blg\" -o C:\\temp\\foo.csv -f tsv\n\n*** if you find any input hangs, please send us the output so we can accommodate for it ** then use -Raw for an immediate solution",
         "Synopsis":  "Pipable wrapper for the relog command which is available on modern Windows platforms.",
-        "Name":  "Invoke-DbaRelog",
-        "Links":  "https://dbatools.io/Invoke-DbaRelog",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaRelog -Path C:\\temp\\perfmon.blg -Destination C:\\temp\\a\\b\\c\r\n\r\nCreats the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\\temp\\perfmon.blg\r\n\r\n[Invoke-DbaRelog][21:21:35] relog \"C:\\temp\\perfmon.blg\" -f csv -o C:\\temp\\a\\b\\c\r\n\r\nInput\r\n----------------\r\nFile(s):\r\n     C:\\temp\\perfmon.blg (Binary)\r\n\r\nBegin:    1/13/2018 5:13:23\r\nEnd:      1/13/2018 14:29:55\r\nSamples:  2227\r\n\r\n100.00%\r\n\r\nOutput\r\n----------------\r\nFile:     C:\\temp\\a\\b\\c.csv\r\n\r\nBegin:    1/13/2018 5:13:23\r\nEnd:      1/13/2018 14:29:55\r\nSamples:  2227\r\n\r\nThe command completed successfully.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaRelog -Path \u0027C:\\temp\\perflog with spaces.blg\u0027 -Destination C:\\temp\\a\\b\\c -Type csv\r\n\r\nCreates the temp, a, and b directories if needed, then generates c.csv (comma separated) from C:\\temp\\perflog with \r\nspaces.blg\u0027\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Name":  "Invoke-DbaPfRelog",
+        "Links":  "https://dbatools.io/Invoke-DbaPfRelog",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaPfRelog -Path C:\\temp\\perfmon.blg -Destination C:\\temp\\a\\b\\c\r\n\r\nCreats the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\\temp\\perfmon.blg\r\n\r\nReturns the newly created file as a file object\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaPfRelog -Path C:\\temp\\perfmon.blg -Destination C:\\temp\\a\\b\\c -Raw\r\n\r\nCreats the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\\temp\\perfmon.blg then \r\noutputs the raw results of the relog command.\r\n\r\n[Invoke-DbaPfRelog][21:21:35] relog \"C:\\temp\\perfmon.blg\" -f csv -o C:\\temp\\a\\b\\c\r\n\r\nInput\r\n----------------\r\nFile(s):\r\n     C:\\temp\\perfmon.blg (Binary)\r\n\r\nBegin:    1/13/2018 5:13:23\r\nEnd:      1/13/2018 14:29:55\r\nSamples:  2227\r\n\r\n100.00%\r\n\r\nOutput\r\n----------------\r\nFile:     C:\\temp\\a\\b\\c.csv\r\n\r\nBegin:    1/13/2018 5:13:23\r\nEnd:      1/13/2018 14:29:55\r\nSamples:  2227\r\n\r\nThe command completed successfully.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaPfRelog -Path \u0027C:\\temp\\perflog with spaces.blg\u0027 -Destination C:\\temp\\a\\b\\c -Type csv -BeginTime \r\n((Get-Date).AddDays(-30)) -EndTime ((Get-Date).AddDays(-1))\r\n\r\nCreates the temp, a, and b directories if needed, then generates c.csv (comma separated) from C:\\temp\\perflog with \r\nspaces.blg\u0027, starts 30 day ago and ends one day ago\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Invoke-DbaSqlCmd",
@@ -2722,7 +2722,7 @@
         "Synopsis":  "Creates a new XESession object - for the dogged.",
         "Name":  "New-DbaXESession",
         "Links":  "https://dbatools.io/New-DbaXESession",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$session = New-DbaXESession -SqlInstance sql2017\r\n\r\n$event = $session.AddEvent(\"sqlserver.file_written\")\r\n$event.AddAction(\"package0.callstack\")\r\n$session.Create()\r\n\r\nReturns a new XE Session object from sql2017 then adds an event, an action then creates it.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$session = New-DbaXESession -SqlInstance sql2017 -Name XeSession_Test\r\n\r\n$event = $session.AddEvent(\"sqlserver.file_written\")\r\n$event.AddAction(\"package0.callstack\")\r\n$session.Create()\r\n\r\nReturns a new XE Session object from sql2017 then adds an event, an action then creates it.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "New-DbaXESmartEmail",
@@ -3051,7 +3051,7 @@
     },
     {
         "CommandName":  "Remove-DbaXESession",
-        "Description":  "This script starts Extended Events sessions on a SQL Server instance.",
+        "Description":  "This script removes Extended Events sessions on a SQL Server instance.",
         "Tags":  "Xevent",
         "Synopsis":  "Removes Extended Events sessions.",
         "Name":  "Remove-DbaXESession",
