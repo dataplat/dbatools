@@ -37,10 +37,10 @@
     Specifies sample intervals in "n" records. Includes every nth data point in the relog file. Default is every data point.
 
     .PARAMETER BeginTime
-    Date and time must be in this exact format M/d/yyyy hh:mm:ss.
+    This is is Get-Date object and we format it for you.
 
     .PARAMETER EndTime
-    Specifies end time for copying last record from the input file. Date and time must be in this exact format M/d/yyyy hh:mm:ss.
+    Specifies end time for copying last record from the input file. This is is Get-Date object and we format it for you.
 
     .PARAMETER ConfigPath
     Specifies the pathname of the settings file that contains command-line parameters.
@@ -90,9 +90,9 @@
     The command completed successfully.
 
     .EXAMPLE
-    Invoke-DbaRelog -Path 'C:\temp\perflog with spaces.blg' -Destination C:\temp\a\b\c -Type csv
+    Invoke-DbaRelog -Path 'C:\temp\perflog with spaces.blg' -Destination C:\temp\a\b\c -Type csv -BeginTime ((Get-Date).AddDays(-30)) -EndTime ((Get-Date).AddDays(-1))
     
-    Creates the temp, a, and b directories if needed, then generates c.csv (comma separated) from C:\temp\perflog with spaces.blg'
+    Creates the temp, a, and b directories if needed, then generates c.csv (comma separated) from C:\temp\perflog with spaces.blg', starts 30 day ago and ends one day ago
 
 #>
     [CmdletBinding()]
@@ -107,12 +107,20 @@
         [string[]]$PerformanceCounter,
         [string]$PerformanceCounterPath,
         [int]$Interval,
-        [string]$BeginTime,
-        [string]$EndTime,
+        [datetime]$BeginTime,
+        [datetime]$EndTime,
         [string]$ConfigPath,
         [switch]$Summary,
         [switch]$EnableException
     )
+    begin {
+        if (Test-Bound -ParameterName BeginTime) {
+            $beginstring = ($BeginTime -f 'M/d/yyyy hh:mm:ss' | Out-String).Trim()
+        }
+        if (Test-Bound -ParameterName EndTime) {
+            $endstring = ($EndTime -f 'M/d/yyyy hh:mm:ss' | Out-String).Trim()
+        }
+    }
     process {
         foreach ($file in $Path) {
             $item = Get-ChildItem -Path $file -ErrorAction SilentlyContinue
@@ -151,12 +159,12 @@
                 $params += "-o `"$Destination`""
             }
 
-            if ($BeginTime) {
-                $params += "-b $BeginTime"
+            if ($beginstring) {
+                $params += "-b $beginstring"
             }
 
-            if ($EndTime) {
-                $params += "-e $EndTime"
+            if ($endstring) {
+                $params += "-e $endstring"
             }
 
             if ($ConfigPath) {
