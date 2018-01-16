@@ -17,5 +17,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries'
             $results.Name | Should Be $null
         }
+        
+        $null = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' | Import-DbaPfDataCollectorSetTemplate
+        
+        It "returns no results" {
+            $results = Remove-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries'
+            $results.Name | Should Be $null
+        }
     }
 }
