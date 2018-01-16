@@ -10,13 +10,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Remove-DbaPfDataCollectorSet -Confirm:$false
     }
     Context "Verifying command returns all the required results" {
-        It "returns a file system object" {
-            $results = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Export-DbaPfDataCollectorSetTemplate
-            $results.BaseName | Should Be 'Long Running Queries'
-        }
-        It "returns a file system object" {
-            $results = Export-DbaPfDataCollectorSetTemplate -CollectorSet 'Long Running Queries'
-            $results.BaseName | Should Be 'Long Running Queries'
+        It "returns the correct values" {
+            $results = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Get-DbaPfDataCollector |
+            Get-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length' |
+            Remove-DbaPfDataCollectorCounter -Counter '\LogicalDisk(*)\Avg. Disk Queue Length' -Confirm:$false
+            $results.DataCollectorSet | Should Be 'Long Running Queries'
+            $results.Name | Should Be '\LogicalDisk(*)\Avg. Disk Queue Length'
+            $results.Status | Should Be 'Removed'
         }
     }
 }
