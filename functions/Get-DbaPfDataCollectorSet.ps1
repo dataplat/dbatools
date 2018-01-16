@@ -1,10 +1,10 @@
 ﻿function Get-DbaPfDataCollectorSet {
     <#
         .SYNOPSIS
-            Gets Peformance Monitor Data Collector Set
+            Gets Performance Monitor Data Collector Set
 
         .DESCRIPTION
-            Gets Peformance Monitor Data Collector Set
+            Gets Performance Monitor Data Collector Set
 
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.
@@ -55,6 +55,7 @@
         [parameter(ValueFromPipeline)]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
+        [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
         [switch]$EnableException
     )

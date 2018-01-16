@@ -1,10 +1,10 @@
 ﻿function Get-DbaPfDataCollector {
     <#
         .SYNOPSIS
-            Gets Peformance Monitor Data Collectors
+            Gets Performance Monitor Data Collectors
 
         .DESCRIPTION
-           Gets Peformance Monitor Data Collectors
+           Gets Performance Monitor Data Collectors
 
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.
@@ -60,7 +60,9 @@
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
+        [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
+        [Alias("DataCollector")]
         [string[]]$Collector,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
@@ -80,7 +82,7 @@
             }
         }
         
-       if ($InputObject) {
+        if ($InputObject) {
             if (-not $InputObject.DataCollectorSetObject) {
                 Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet"
                 return
@@ -91,27 +93,38 @@
             $collectorxml = ([xml]$set.Xml).DataCollectorSet.PerformanceCounterDataCollector
             foreach ($col in $collectorxml) {
                 if ($Collector -and $Collector -notcontains $col.Name) { continue }
+                
+                $outputlocation = $col.LatestOutputLocation
+                if ($outputlocation) {
+                    $dir = ($outputlocation).Replace(':', '$')
+                    $remote = "\\$($set.ComputerName)\$dir"
+                }
+                else {
+                    $remote = $null
+                }
+                
                 [pscustomobject]@{
-                    ComputerName            = $set.ComputerName
-                    DataCollectorSet        = $set.Name
-                    Name                    = $col.Name
-                    FileName                = $col.FileName
-                    DataCollectorType       = $col.DataCollectorType
-                    FileNameFormat          = $col.FileNameFormat
-                    FileNameFormatPattern   = $col.FileNameFormatPattern
-                    LogAppend               = $col.LogAppend
-                    LogCircular             = $col.LogCircular
-                    LogOverwrite            = $col.LogOverwrite
-                    LatestOutputLocation    = $col.LatestOutputLocation
-                    DataSourceName          = $col.DataSourceName
-                    SampleInterval          = $col.SampleInterval
-                    SegmentMaxRecords       = $col.SegmentMaxRecords
-                    LogFileFormat           = $col.LogFileFormat
-                    Counters                = $col.Counter
-                    CounterDisplayNames     = $col.CounterDisplayName
-                    CollectorXml            = $col
-                    DataCollectorSetObject  = $set.DataCollectorSetObject
-                    Credential              = $Credential
+                    ComputerName             = $set.ComputerName
+                    DataCollectorSet         = $set.Name
+                    Name                     = $col.Name
+                    FileName                 = $col.FileName
+                    DataCollectorType        = $col.DataCollectorType
+                    FileNameFormat           = $col.FileNameFormat
+                    FileNameFormatPattern    = $col.FileNameFormatPattern
+                    LogAppend                = $col.LogAppend
+                    LogCircular              = $col.LogCircular
+                    LogOverwrite             = $col.LogOverwrite
+                    LatestOutputLocation     = $col.LatestOutputLocation
+                    RemoteLatestOutputLocation = $remote
+                    DataSourceName           = $col.DataSourceName
+                    SampleInterval           = $col.SampleInterval
+                    SegmentMaxRecords        = $col.SegmentMaxRecords
+                    LogFileFormat            = $col.LogFileFormat
+                    Counters                 = $col.Counter
+                    CounterDisplayNames      = $col.CounterDisplayName
+                    CollectorXml             = $col
+                    DataCollectorSetObject   = $set.DataCollectorSetObject
+                    Credential               = $Credential
                 } | Select-DefaultView -Property $columns
             }
         }
