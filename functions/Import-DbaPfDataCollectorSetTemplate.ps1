@@ -64,7 +64,7 @@
     From one of the templates we curated for you
     
     .PARAMETER WhatIf
-    Shows what would happen if the command were to run **and the collector set exists**. Otherwise, the import is performed (default)
+    Shows what would happen if the command were to run the command. No modifications are actually performed.
 
     .PARAMETER Confirm
     Prompts you for confirmation before executing any changing operations within the command.
@@ -233,8 +233,10 @@
                         }
                     }
                     else {
-                        Invoke-Command -Scriptblock $scriptblock
-                        Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
+                        if ($Pscmdlet.ShouldProcess($computer, "Importing collector set $Name")) {
+                            Invoke-Command -Scriptblock $scriptblock
+                            Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
+                        }
                     }
                     
                     Remove-Item $tempfile -ErrorAction SilentlyContinue
