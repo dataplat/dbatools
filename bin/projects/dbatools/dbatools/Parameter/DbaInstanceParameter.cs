@@ -508,8 +508,15 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 case "microsoft.sqlserver.management.smo.server":
                     try
                     {
-                        if (tempInput.Properties["NetName"] != null) { _ComputerName = (string)tempInput.Properties["NetName"].Value; }
-                        else { _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["DomainInstanceName"].Value)).ComputerName; }
+                        if (tempInput.Properties["ServerType"] != null && (string)tempInput.Properties["ServerType"].Value == "SqlAzureDatabase")
+                            _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["DomainInstanceName"].Value)).ComputerName;
+                        else
+                        { 
+                            if (tempInput.Properties["NetName"] != null)
+                                _ComputerName = (string)tempInput.Properties["NetName"].Value;
+                            else
+                                _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["DomainInstanceName"].Value)).ComputerName;
+                        }
                         _InstanceName = (string)tempInput.Properties["InstanceName"].Value;
                         PSObject tempObject = new PSObject(tempInput.Properties["ConnectionContext"].Value);
 
