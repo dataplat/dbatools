@@ -55,6 +55,7 @@
         [parameter(ValueFromPipeline)]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
+        [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
         [switch]$EnableException
     )

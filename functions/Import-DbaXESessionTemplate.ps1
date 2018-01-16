@@ -4,7 +4,7 @@
     Imports a new XESession XML Template
 
     .DESCRIPTION
-    Imports a new XESession XML Template either from our repo or a file you specify
+    Imports a new XESession XML Template either from our repo or a file you specify.
 
     .PARAMETER SqlInstance
     The SQL Instances that you're connecting to.
@@ -83,7 +83,7 @@
             Stop-Function -Message "You must specify Path or Template"
         }
 
-        if (($Path.Count -gt 1 -or $Tempalte.Count -gt 1) -and (Test-Bound -ParameterName Template)) {
+        if (($Path.Count -gt 1 -or $Template.Count -gt 1) -and (Test-Bound -ParameterName Template)) {
             Stop-Function -Message "Name cannot be specified with multiple files or templates because the Session will already exist"
         }
 

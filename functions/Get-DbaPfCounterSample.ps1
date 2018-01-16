@@ -87,7 +87,9 @@
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
+        [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
+        [Alias("DataCollector")]
         [string[]]$Collector,
         [string[]]$Counter,
         [switch]$Continuous,
