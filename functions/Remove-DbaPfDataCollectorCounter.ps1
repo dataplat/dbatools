@@ -57,14 +57,14 @@
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
-        [DbaInstance[]]$ComputerName=$env:COMPUTERNAME,
+        [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
         [Alias("DataCollector")]
         [string[]]$Collector,
-        [Alias("Name")]
         [parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Alias("Name")]
         [object[]]$Counter,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
@@ -105,12 +105,6 @@
             
             $xml = [xml]($InputObject.DataCollectorSetXml)
             
-            <#
-            $newItemtoAdd = $xml.CreateElement('newItemtoAdd')
-            $newItemtoAdd.PsBase.InnerText = '1900-01-01'
-            $xml.Entity.App.AppendChild($newItemtoAdd) | Out-Null
-            #>
-            
             foreach ($countername in $counter) {
                 $node = $xml.SelectSingleNode("//Name[.='$collectorname']").SelectSingleNode("//Counter[.='$countername']")
                 $null = $node.ParentNode.RemoveChild($node)
@@ -124,12 +118,12 @@
                 try {
                     $results = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $plainxml -ErrorAction Stop
                     Write-Message -Level Verbose -Message " $results"
-                    $null = [pscustomobject]@{
-                        ComputerName                                         = $computer
-                        DataCollectorSet                                     = $setname
-                        DataCollector                                        = $collectorname
-                        DataCollectorCounter                                 = $counterName
-                        Status                                               = "Removed"
+                    [pscustomobject]@{
+                        ComputerName                                           = $computer
+                        DataCollectorSet                                       = $setname
+                        DataCollector                                          = $collectorname
+                        Name                                                   = $counterName
+                        Status                                                 = "Removed"
                     }
                 }
                 catch {
