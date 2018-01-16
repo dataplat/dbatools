@@ -57,7 +57,7 @@
     #>
     [CmdletBinding()]
     param (
-        [DbaInstance[]]$ComputerName,
+        [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
