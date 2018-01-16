@@ -9,9 +9,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
         $null = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Remove-DbaPfDataCollectorSet
     }
-    Context "Verifying command returns all the required results" {
+    Context "Verifying command returns all the required results with pipe" {
         It "returns only one (and the proper) template" {
             $results = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' | Import-DbaPfDataCollectorSetTemplate
+            $results.Name | Should Be 'Long Running Queries'
+            $results.ComputerName | Should Be $env:COMPUTERNAME
+        }
+        It "returns only one (and the proper) template without pipe" {
+            $results = Import-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries'
             $results.Name | Should Be 'Long Running Queries'
             $results.ComputerName | Should Be $env:COMPUTERNAME
         }

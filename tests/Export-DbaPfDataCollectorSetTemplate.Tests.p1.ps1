@@ -14,5 +14,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Export-DbaPfDataCollectorSetTemplate
             $results.BaseName | Should Be 'Long Running Queries'
         }
+        It "returns a file system object" {
+            $results = Export-DbaPfDataCollectorSetTemplate -CollectorSet 'Long Running Queries'
+            $results.BaseName | Should Be 'Long Running Queries'
+        }
     }
 }
