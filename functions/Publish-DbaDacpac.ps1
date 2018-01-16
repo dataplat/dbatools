@@ -221,7 +221,7 @@ function Publish-DbaDacpac {
                     }
                 }
                 catch [Microsoft.SqlServer.Dac.DacServicesException] {
-                    $message = ("Deployment failed: {0} `n Reason: {1}" -f $_.Exception.Message, $_.Exception.InnerException.Message)
+                        Stop-Function -Message "Deployment failed" -ErrorRecord $_ -EnableException $true
                 }
                 finally {
                     Unregister-Event -SourceIdentifier "msg"
@@ -257,9 +257,6 @@ function Publish-DbaDacpac {
                         SqlCmdVariableValues = $dacProfile.DeployOptions.SqlCommandVariableValues.Keys
 
                     } | Select-DefaultView -Property $defaultcolumns
-                    if ($message) {
-                        Stop-Function -Message "Deployment failed" -ErrorRecord $message
-                    }
                 }
             }
         }
