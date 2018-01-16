@@ -25,6 +25,9 @@
     .PARAMETER Pattern
     Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaXESessionTemplate
 
+    .PARAMETER Template
+    From one or more of the templates we curated for you (tab through -Template to see options)
+    
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -68,6 +71,7 @@
     param (
         [string[]]$Path = "$script:PSModuleRoot\bin\xetemplates",
         [string]$Pattern,
+        [string[]]$Template,
         [switch]$EnableException
     )
     begin {
@@ -76,6 +80,11 @@
     process {
         foreach ($directory in $Path) {
             $files = Get-ChildItem "$directory\*.xml"
+            
+            if ($Template) {
+              $files = $files | Where-Object BaseName -in $Template
+            }
+            
             foreach ($file in $files) {
                 try {
                     $xml = [xml](Get-Content $file)
@@ -100,7 +109,7 @@
                                 Name             = $session.event_session.name
                                 Category         = $session.event_session.TemplateCategory.'#text'
                                 Source           = $meta.Source
-                                Compatability    = $meta.Compatability.ToString().Replace(",", "")
+                                Compatability    = ("$($meta.Compatability)").ToString().Replace(",", "")
                                 Description      = $session.event_session.TemplateDescription.'#text'
                                 TemplateName     = $session.event_session.TemplateName.'#text'
                                 Path             = $file

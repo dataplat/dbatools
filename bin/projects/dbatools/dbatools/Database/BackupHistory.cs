@@ -65,6 +65,11 @@ namespace Sqlcollaborative.Dbatools.Database
         public Size CompressedBackupSize;
 
         /// <summary>
+        /// What is the ratio of total size to compressed size of the backup
+        /// </summary>
+        public double CompressionRatio;
+
+        /// <summary>
         /// The kind of backup this was
         /// </summary>
         public string Type;
