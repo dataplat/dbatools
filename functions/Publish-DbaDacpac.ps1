@@ -225,9 +225,6 @@ function Publish-DbaDacpac {
                 }
                 finally {
                     Unregister-Event -SourceIdentifier "msg"
-                    if ($message) {
-                        Stop-Function -Message $message
-                    }
                     if ($GenerateDeploymentReport) {
                         $result.DeploymentReport | Out-File $DeploymentReport
                         Write-Message -Level Verbose -Message "Deployment Report - $DeploymentReport."
@@ -260,6 +257,9 @@ function Publish-DbaDacpac {
                         SqlCmdVariableValues = $dacProfile.DeployOptions.SqlCommandVariableValues.Keys
 
                     } | Select-DefaultView -Property $defaultcolumns
+                    if ($message) {
+                        Stop-Function -Message "Deployment failed" -ErrorRecord $message
+                    }
                 }
             }
         }
