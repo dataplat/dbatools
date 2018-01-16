@@ -1,12 +1,10 @@
 ﻿function Remove-DbaPfDataCollectorCounter {
     <#
         .SYNOPSIS
-            Removes a Performance Data Collector Counter right from the server itself, no templates required.
+            Removes a Performance Data Collector Counter
 
         .DESCRIPTION
-            Removes a Performance Data Collector Counter right from the server itself, no templates required.
-    
-            Copies line for line from a source server. For more configurable options, use Remove-DbaPfDataCollectorCounterTemplate.
+            Removes a Performance Data Collector Counter
 
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.
@@ -24,7 +22,7 @@
             The Counter name - in the form of '\Processor(_Total)\% Processor Time'. This field is required.
     
         .PARAMETER InputObject
-            Enables piped results from Get-DbaPfDataCollector. This field is required
+            Enables piped results from Get-DbaPfDataCollector.
     
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
@@ -49,7 +47,7 @@
         .EXAMPLE
             Remove-DbaPfDataCollectorCounter -ComputerName sql2017 -CollectorSet 'System Correlation' -Collector DataCollector01  -Counter '\LogicalDisk(*)\Avg. Disk Queue Length'
     
-            Removes the '\LogicalDisk(*)\Avg. Disk Queue Length' counter within the datacollector1 collector within the system correlation collector set on sql2017
+            Prompts for confirmation then removes the '\LogicalDisk(*)\Avg. Disk Queue Length' counter within the DataCollector01 collector within the System Correlation collector set on sql2017
     
         .EXAMPLE
             Get-DbaPfDataCollectorCounter | Out-GridView -PassThru | Remove-DbaPfDataCollectorCounter -Confirm:$false
