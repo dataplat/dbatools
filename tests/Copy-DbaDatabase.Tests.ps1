@@ -15,7 +15,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             if ($db.AutoClose) {
                 $db.AutoClose = $false
                 $db.Alter()
-                # Appv Trigger
             }
         }
         Stop-DbaProcess -SqlInstance $script:instance1 -Database model
@@ -49,7 +48,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should say skipped" {
-            $results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $detachattachdb -DetachAttach -Reattach 
+            $results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $detachattachdb -DetachAttach -Reattach
             $results.Status | Should be "Skipped"
             $results.Notes | Should be "Already exists"
         }
@@ -60,7 +59,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             It "copies a database and retain its name, recovery model, and status." {
 
                 Set-DbaDatabaseOwner -SqlInstance $script:instance1 -Database $backuprestoredb -TargetLogin sa
-                Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath 
+                Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
  
                 $db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $backuprestoredb
                 $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $backuprestoredb
