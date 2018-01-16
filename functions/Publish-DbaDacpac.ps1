@@ -221,13 +221,10 @@ function Publish-DbaDacpac {
                     }
                 }
                 catch [Microsoft.SqlServer.Dac.DacServicesException] {
-                    $message = ("Deployment failed: {0} `n Reason: {1}" -f $_.Exception.Message, $_.Exception.InnerException.Message)
+                        Stop-Function -Message "Deployment failed" -ErrorRecord $_ -EnableException $true
                 }
                 finally {
                     Unregister-Event -SourceIdentifier "msg"
-                    if ($message) {
-                        Stop-Function -Message $message
-                    }
                     if ($GenerateDeploymentReport) {
                         $result.DeploymentReport | Out-File $DeploymentReport
                         Write-Message -Level Verbose -Message "Deployment Report - $DeploymentReport."
