@@ -15,6 +15,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             if ($db.AutoClose) {
                 $db.AutoClose = $false
                 $db.Alter()
+                # Appv Trigger
             }
         }
         Stop-DbaProcess -SqlInstance $script:instance1 -Database model
