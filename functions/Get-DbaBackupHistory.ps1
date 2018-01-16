@@ -174,6 +174,7 @@ function Get-DbaBackupHistory {
             'Pipe'                  = 6
             'Permanent Pipe Device' = 106
             'Virtual Device'        = 7
+            'URL'                   = 9
         }
         $DeviceTypeFilter = @()
         foreach ($DevType in $DeviceType) {
@@ -211,11 +212,22 @@ function Get-DbaBackupHistory {
                 Stop-Function -Message "Failed to process Instance $Instance." -InnerErrorRecord $_ -Target $instance -Continue
             }
 
-            $backupSizeColumn = 'backup_size'
+            if ($server.VersionMajor -lt 9) {
+                Stop-Function -Message "SQL Server 2000 not supported." -Category LimitsExceeded -Target $instance -Continue
+            }
+
             if ($server.VersionMajor -ge 10) {
                 # 2008 introduced compressed_backup_size
-                $backupSizeColumn = 'compressed_backup_size'
+                $BackupCols = "
+                backupset.backup_size AS TotalSize,
+                backupset.compressed_backup_size as CompressedBackupSize"
             }
+            else {
+                $BackupCols = "
+                backupset.backup_size AS TotalSize,
+                NULL as CompressedBackupSize"
+            }
+
 
             $databases = @()
             if ($null -ne $Database) {
@@ -302,6 +314,7 @@ function Get-DbaBackupHistory {
                                     a.[Path],
                                     a.Type,
                                     a.TotalSize,
+                                    a.CompressedBackupSize,
                                     a.MediaSetId,
                                     a.BackupSetID,
                                     a.Software,
@@ -327,7 +340,7 @@ function Get-DbaBackupHistory {
                                   backupset.backup_finish_date AS [End],
                                   DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
                                   mediafamily.physical_device_name AS Path,
-                                  backupset.$backupSizeColumn AS TotalSize,
+                                  $BackupCols,
                                   CASE backupset.type
                                     WHEN 'L' THEN 'Log'
                                     WHEN 'D' THEN 'Full'
@@ -390,7 +403,7 @@ function Get-DbaBackupHistory {
                               backupset.backup_finish_date AS [End],
                               DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
                               mediafamily.physical_device_name AS Path,
-                              backupset.$backupSizeColumn AS TotalSize,
+                              $BackupCols,
                               CASE backupset.type
                                 WHEN 'L' THEN 'Log'
                                 WHEN 'D' THEN 'Full'
@@ -508,6 +521,8 @@ function Get-DbaBackupHistory {
                     $historyObject.Duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
                     $historyObject.Path = $group.Group.Path
                     $historyObject.TotalSize = $group.Group[0].TotalSize
+                    $historyObject.CompressedBackupSize = $group.Group[0].CompressedBackupSize
+                    $HistoryObject.CompressionRatio = [Math]::Round(($historyObject.TotalSize.Byte)/($historyObject.CompressedBackupSize.Byte),2)
                     $historyObject.Type = $group.Group[0].Type
                     $historyObject.BackupSetId = $group.Group[0].BackupSetId
                     $historyObject.DeviceType = $group.Group[0].DeviceType

@@ -40,11 +40,11 @@
 
     .EXAMPLE
     Export-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\temp\xe
-     Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
+    Exports XE Session Template to the C:\temp\xe folder.
 
     .EXAMPLE
     Get-DbaXESession -SqlInstance sql2017 -Session session_health | Export-DbaXESessionTemplate -Path C:\temp
-     Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
+    Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
 
 #>
     [CmdletBinding()]
