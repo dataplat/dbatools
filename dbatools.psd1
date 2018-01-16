@@ -440,7 +440,11 @@
         'Get-DbaPfDataCollector',
         'Get-DbaPfDataCollectorSet',
         'Start-DbaPfDataCollectorSet',
-        'Stop-DbaPfDataCollectorSet'
+        'Stop-DbaPfDataCollectorSet',
+        'Export-DbaPfDataCollectorSetTemplate',
+        'Get-DbaPfDataCollectorSetTemplate',
+        'Import-DbaPfDataCollectorSetTemplate',
+        'Remove-DbaPfDataCollectorSet'
     )
 
     # Cmdlets to export from this module
