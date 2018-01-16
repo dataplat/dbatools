@@ -509,7 +509,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     try
                     {
                         if (tempInput.Properties["ServerType"] != null && (string)tempInput.Properties["ServerType"].Value == "SqlAzureDatabase")
-                            _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["DomainInstanceName"].Value)).ComputerName;
+                            _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["Name"].Value)).ComputerName;
                         else
                         { 
                             if (tempInput.Properties["NetName"] != null)
