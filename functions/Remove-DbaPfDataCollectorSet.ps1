@@ -1,13 +1,13 @@
-﻿function Stop-DbaPfDataCollectorSet {
+﻿function Remove-DbaPfDataCollectorSet {
     <#
         .SYNOPSIS
-            Starts Performance Monitor Data Collector Set
+            Removes a Performance Monitor Data Collector Set
 
         .DESCRIPTION
-            Starts Performance Monitor Data Collector Set
+            Removes a Performance Monitor Data Collector Set. When removing data collector sets from the local instance, Run As Admin is required.
 
         .PARAMETER ComputerName
-            The target computer. Defaults to localhost.
+            The target computer.
 
         .PARAMETER Credential
             Allows you to login to $ComputerName using alternative credentials.
@@ -15,12 +15,15 @@
         .PARAMETER CollectorSet
             The Collector Set name
     
-        .PARAMETER NoWait
-            Stop the collector and immediately return the results
-    
         .PARAMETER InputObject
             Enables piped results from Get-DbaPfDataCollectorSet
 
+        .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+        
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -33,29 +36,34 @@
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
     
         .LINK
-            https://dbatools.io/Stop-DbaPfDataCollectorSet
+            https://dbatools.io/Remove-DbaPfDataCollectorSet
 
         .EXAMPLE
-            Stop-DbaPfDataCollectorSet
+            Remove-DbaPfDataCollectorSet
     
-            Attempts to start all ready Collectors on localhost
+            Attempts to remove all ready Collectors on localhost
 
         .EXAMPLE
-            Stop-DbaPfDataCollectorSet -ComputerName sql2017
+            Remove-DbaPfDataCollectorSet -ComputerName sql2017 -Confirm:$false
     
-            Attempts to start all ready Collectors on localhost
-    
-        .EXAMPLE
-            Stop-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
-    
-            Starts the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials
+            Attempts to remove all ready Collectors on localhost and does not prompt to confirm
     
         .EXAMPLE
-            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Stop-DbaPfDataCollectorSet
+            Remove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
     
-            Starts 'System Correlation' Collector
+            Removes the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials
+    
+        .EXAMPLE
+            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Remove-DbaPfDataCollectorSet
+    
+            Removes 'System Correlation' Collector
+    
+        .EXAMPLE
+            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Stop-DbaPfDataCollectorSet | Remove-DbaPfDataCollectorSet
+    
+            Stops and removes 'System Correlation' Collector
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
@@ -63,18 +71,19 @@
         [string[]]$CollectorSet,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
-        [switch]$NoWait,
         [switch]$EnableException
     )
     begin {
-        $sets = @()
-        $wait = $NoWait -eq $false
-        
         $setscript = {
-            $setname = $args[0]; $wait = $args[1]
+            $setname = $args
             $collectorset = New-Object -ComObject Pla.DataCollectorSet
             $collectorset.Query($setname, $null)
-            $null = $collectorset.Stop($wait)
+            if ($collectorset.name -eq $setname) {
+                $null = $collectorset.Delete()
+            }
+            else {
+                Write-Warning "Data Collector Set $setname does not exist on $env:COMPUTERNAME"
+            }
         }
     }
     process {
@@ -97,19 +106,26 @@
             $computer = $set.ComputerName
             $status = $set.State
             
+            $null = Test-ElevationRequirement -ComputerName $computer -Continue
+            
             Write-Message -Level Verbose -Message "$setname on $ComputerName is $status"
-            if ($status -ne "Running") {
-                Stop-Function -Message "$setname on $computer is already stopped" -Continue
-            }
-            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
-            try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
-            }
-            catch {
-                Stop-Function -Message "Failure stopping $setname on $computer" -ErrorRecord $_ -Target $computer -Continue
+            
+            if ($status -eq "Running") {
+                Stop-Function -Message "$setname on $computer is running. Use Stop-DbaPfDataCollectorSet to stop first." -Continue
             }
             
-            Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $setname
+            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
+            try {
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname -ErrorAction Stop
+                [pscustomobject]@{
+                    ComputerName       = $computer
+                    Name               = $setname
+                    Status             = "Successful"
+                }
+            }
+            catch {
+                Stop-Function -Message "Failure Removing $setname on $computer" -ErrorRecord $_ -Target $computer -Continue
+            }
         }
     }
 }

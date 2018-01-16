@@ -1,10 +1,10 @@
 ﻿function Get-DbaPfCounterSample {
     <#
         .SYNOPSIS
-            Gets Peformance Counter Samples
+            Gets Performance Counter Samples
 
         .DESCRIPTION
-            Gets Peformance Counter Samples
+            Gets Performance Counter Samples
 
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.
@@ -87,7 +87,9 @@
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
+        [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
+        [Alias("DataCollector")]
         [string[]]$Collector,
         [string[]]$Counter,
         [switch]$Continuous,
