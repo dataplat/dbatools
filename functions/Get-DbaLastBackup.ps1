@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaLastBackup {
     <#
         .SYNOPSIS
@@ -73,7 +74,15 @@ function Get-DbaLastBackup {
         [object[]]$ExcludeDatabase,
         [switch][Alias('Silent')]$EnableException
     )
-
+    begin {
+        function Get-DbaDateOrNull ($TimeSpan) {
+            if ($TimeSpan -eq 0) {
+                return $null
+            }
+            return $TimeSpan
+        }
+        $StartOfTime = [DbaTimeSpan](New-TimeSpan -Start ([datetime]0))
+    }
     process {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -94,65 +103,50 @@ function Get-DbaLastBackup {
             if ($ExcludeDatabase) {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
-
+            # Get-DbaBackupHistory -Last would make the job in one query but SMO's (and this) report the last backup of this type irregardless of the chain
+            $FullHistory = Get-DbaBackupHistory -SqlInstance $instance  -Database $dbs.Name -LastFull -IncludeCopyOnly -Raw
+            $DiffHistory = Get-DbaBackupHistory -SqlInstance $instance  -Database $dbs.Name -LastDiff -IncludeCopyOnly -Raw
+            $IncrHistory = Get-DbaBackupHistory -SqlInstance $instance  -Database $dbs.Name -LastLog -IncludeCopyOnly -Raw
             foreach ($db in $dbs) {
-                $result = $null
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 
                 if ($db.IsAccessible -eq $false) {
                     Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
                     Continue
                 }
-                # To avoid complicated manipulations on datetimes depending on locale settings and culture,
-                # dates are compared to 0, which represents 1/01/0001 0:00:00
-                $SinceFull = if ($db.LastBackupdate -eq 0) {
-                    [String]::Empty
+                $LastFullBackup = ($FullHistory | Where-Object Database -eq $db.Name).End
+                if ($null -ne $LastFullBackup) {
+                    $SinceFull_ = [DbaTimeSpan](New-TimeSpan -Start $LastFullBackup)
                 }
                 else {
-                    (New-TimeSpan -Start $db.LastBackupdate).Tostring()
-                }
-                $SinceFull = if ($db.LastBackupdate -eq 0) {
-                    [String]::Empty
-                }
-                else {
-                    $SinceFull.split('.')[0 .. ($SinceFull.split('.').count - 2)] -join ' days '
+                    $SinceFull_ = $StartOfTime
                 }
 
-                $SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {
-                    [String]::Empty
+                $LastDiffBackup = ($DiffHistory | Where-Object Database -eq $db.Name).End
+                if ($null -ne $LastDiffBackup) {
+                    $SinceDiff_ = [DbaTimeSpan](New-TimeSpan -Start $LastDiffBackup)
                 }
                 else {
-                    (New-TimeSpan -Start $db.LastDifferentialBackupDate).Tostring()
-                }
-                $SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {
-                    [String]::Empty
-                }
-                else {
-                    $SinceDiff.split('.')[0 .. ($SinceDiff.split('.').count - 2)] -join ' days '
+                    $SinceDiff_ = $StartOfTime
                 }
 
-                $SinceLog = if ($db.LastLogBackupDate -eq 0) {
-                    [String]::Empty
+                $LastIncrBackup = ($IncrHistory | Where-Object Database -eq $db.Name).End
+                if ($null -ne $LastIncrBackup) {
+                    $SinceLog_ = [DbaTimeSpan](New-TimeSpan -Start $LastIncrBackup)
                 }
                 else {
-                    (New-TimeSpan -Start $db.LastLogBackupDate).Tostring()
-                }
-                $SinceLog = if ($db.LastLogBackupDate -eq 0) {
-                    [String]::Empty
-                }
-                else {
-                    $SinceLog.split('.')[0 .. ($SinceLog.split('.').count - 2)] -join ' days '
+                    $SinceLog_ = $StartOfTime
                 }
 
                 $daysSinceDbCreated = (New-TimeSpan -Start $db.createDate).Days
 
-                if ($daysSinceDbCreated -lt 1 -and $db.LastBackupDate -eq 0) {
+                if ($daysSinceDbCreated -lt 1 -and $SinceFull_ -eq 0) {
                     $Status = 'New database, not backed up yet'
                 }
-                elseif ((New-TimeSpan -Start $db.LastBackupDate).Days -gt 0 -and (New-TimeSpan -Start $db.LastDifferentialBackupDate).Days -gt 0) {
+                elseif ($SinceFull_.Days -gt 0 -and $SinceDiff_.Days -gt 0) {
                     $Status = 'No Full or Diff Back Up in the last day'
                 }
-                elseif ($db.RecoveryModel -eq "Full" -and (New-TimeSpan -Start $db.LastLogBackupDate).Hours -gt 0) {
+                elseif ($db.RecoveryModel -eq "Full" -and $SinceLog_.Hours -gt 0) {
                     $Status = 'No Log Back Up in the last hour'
                 }
                 else {
@@ -163,14 +157,14 @@ function Get-DbaLastBackup {
                     ComputerName       = $server.NetName
                     InstanceName       = $server.ServiceName
                     SqlInstance        = $server.DomainInstanceName
-                    Database           = $db.name
-                    RecoveryModel      = $db.recoverymodel
-                    LastFullBackup     = if ($db.LastBackupdate -eq 0) { $null } else { [DbaDateTime]$db.LastBackupdate}
-                    LastDiffBackup     = if ($db.LastDifferentialBackupDate -eq 0) { $null } else { [DbaDateTime]$db.LastDifferentialBackupDate }
-                    LastLogBackup      = if ($db.LastLogBackupDate -eq 0) { $null } else { [DbaDateTime]$db.LastLogBackupDate }
-                    SinceFull          = $SinceFull
-                    SinceDiff          = $SinceDiff
-                    SinceLog           = $SinceLog
+                    Database           = $db.Name
+                    RecoveryModel      = $db.RecoveryModel
+                    LastFullBackup     = [DbaDateTime]$LastFullBackup
+                    LastDiffBackup     = [DbaDateTime]$LastDiffBackup
+                    LastLogBackup      = [DbaDateTime]$LastIncrBackup
+                    SinceFull          = Get-DbaDateOrNull -TimeSpan $SinceFull_
+                    SinceDiff          = Get-DbaDateOrNull -TimeSpan $SinceDiff_
+                    SinceLog           = Get-DbaDateOrNull -TimeSpan $SinceLog_
                     DatabaseCreated    = $db.createDate
                     DaysSinceDbCreated = $daysSinceDbCreated
                     Status             = $status
