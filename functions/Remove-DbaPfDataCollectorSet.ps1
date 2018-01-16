@@ -65,7 +65,7 @@
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
-        [DbaInstance[]]$ComputerName,
+        [DbaInstance[]]$ComputerName=$env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
@@ -119,9 +119,9 @@
                 try {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname -ErrorAction Stop
                     [pscustomobject]@{
-                        ComputerName                                          = $computer
-                        DataCollectorSet                                      = $setname
-                        Status                                                = "Removed"
+                        ComputerName                                           = $computer
+                        Name                                                   = $setname
+                        Status                                                 = "Removed"
                     }
                 }
                 catch {
