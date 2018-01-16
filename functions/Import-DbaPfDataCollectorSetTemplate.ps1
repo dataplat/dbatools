@@ -1,4 +1,4 @@
-﻿function Import-DbaPfDataCollectionSetTemplate {
+﻿function Import-DbaPfDataCollectorSetTemplate {
  <#
     .SYNOPSIS
     Imports a new Performance Monitor Data Collector Set Template either from our repo or a file you specify
@@ -80,26 +80,26 @@
     License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
-    https://dbatools.io/Import-DbaPfDataCollectionSetTemplate
+    https://dbatools.io/Import-DbaPfDataCollectorSetTemplate
 
     .EXAMPLE
-    Import-DbaPfDataCollectionSetTemplate -SqlInstance sql2017 -Template 'Long Running Query'
+    Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query'
 
     Creates a new data collector set named 'Long Running Query' from our repo to the SQL Server sql2017
 
     .EXAMPLE
-    Import-DbaPfDataCollectionSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -DisplayName 'New Long running query' -Confirm
+    Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -DisplayName 'New Long running query' -Confirm
 
     Creates a new data collector set named "New Long Running Query" using the 'Long Running Query' template. Forces a confirmation if the template exists.
 
     .EXAMPLE
     Get-DbaPfDataCollectorSet -SqlInstance sql2017 -Session db_ola_health | Remove-Dbadata collector set
-    Import-DbaPfDataCollectionSetTemplate -SqlInstance sql2017 -Template db_ola_health | Start-Dbadata collector set
+    Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template db_ola_health | Start-Dbadata collector set
 
     Imports a session if it exists then recreates it using a template
 
     .EXAMPLE
-    Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectionSetTemplate -SqlInstance sql2017
+    Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017
 
     Allows you to select a Session template then import to an instance named sql2017
 #>
