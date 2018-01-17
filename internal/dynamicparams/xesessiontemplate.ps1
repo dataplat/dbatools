@@ -14,7 +14,10 @@ $ScriptBlock = {
         $fakeBoundParameter
     )
 
-    (Get-ChildItem "$script:PSModuleRoot\bin\xetemplates\*.xml").BaseName
+    $files = (Get-ChildItem "$script:PSModuleRoot\bin\xetemplates\*.xml").BaseName
+    foreach ($file in $files) {
+        "'$file'"
+    }
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name xesessiontemplate

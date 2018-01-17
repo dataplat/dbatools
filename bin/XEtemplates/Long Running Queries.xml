@@ -1,0 +1,75 @@
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventsconfig">
+   <event_session name="Long Running Queries" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+    <templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->Query Execution</templateCategory>
+    <templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Long Running Queries</templateName>
+    <templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Tracks queries that take longer than 10 seconds to run.</templateDescription>
+      <event package="sqlserver" name="rpc_completed">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="database_name" />
+         <action package="sqlserver" name="nt_username" />
+         <action package="sqlserver" name="query_hash" />
+         <action package="sqlserver" name="server_principal_name" />
+         <action package="sqlserver" name="session_id" />
+         <action package="sqlserver" name="sql_text" />
+         <predicate>
+            <and>
+               <and>
+                  <leaf>
+                     <comparator name="greater_than_uint64" package="package0" />
+                     <global name="database_id" package="sqlserver" />
+                     <value>4</value>
+                  </leaf>
+                  <leaf>
+                     <comparator name="equal_boolean" package="package0" />
+                     <global name="is_system" package="sqlserver" />
+                     <value>false</value>
+                  </leaf>
+               </and>
+               <leaf>
+                  <comparator name="greater_than_equal_uint64" package="package0" />
+                  <event name="rpc_completed" package="sqlserver" field="duration" />
+                  <value>1000000</value>
+               </leaf>
+            </and>
+         </predicate>
+      </event>
+      <event package="sqlserver" name="sql_batch_completed">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="query_hash" />
+         <action package="sqlserver" name="session_id" />
+         <parameter name="collect_batch_text" value="1" />
+         <predicate>
+            <and>
+               <and>
+                  <leaf>
+                     <comparator name="greater_than_uint64" package="package0" />
+                     <global name="database_id" package="sqlserver" />
+                     <value>4</value>
+                  </leaf>
+                  <leaf>
+                     <comparator name="equal_boolean" package="package0" />
+                     <global name="is_system" package="sqlserver" />
+                     <value>false</value>
+                  </leaf>
+               </and>
+               <leaf>
+                  <comparator name="greater_than_equal_uint64" package="package0" />
+                  <event name="sql_batch_completed" package="sqlserver" field="duration" />
+                  <value>500000</value>
+               </leaf>
+            </and>
+         </predicate>
+      </event>
+      <target package="package0" name="event_file">
+         <parameter name="filename" value="Long Running Queries" />
+         <parameter name="max_file_size" value="100" />
+      </target>
+      <target package="package0" name="ring_buffer" />
+   </event_session>
+</event_sessions>

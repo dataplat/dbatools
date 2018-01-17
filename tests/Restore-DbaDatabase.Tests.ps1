@@ -196,8 +196,26 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Start-Sleep -Seconds 5
     Clear-DbaSqlConnectionPool
 
-    Context "Properly restores an instance using ola-style backups" {
+    Context "Properly restores an instance using ola-style backups via pipe" {
         $results = Get-ChildItem $script:appveyorlabrepo\sql2008-backups | Restore-DbaDatabase -SqlInstance $script:instance1
+        It "Restored files count should be the right number" {
+            $results.DatabaseName.Count | Should Be 26
+        }
+        It "Should return successful restore" {
+            ($results.RestoreComplete -contains $false) | Should Be $false
+            ($results.count -gt 0) | Should be $True
+        }
+    }
+
+    Context "Database is properly removed again after ola pipe test" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        It "Should say the status was dropped" {
+            $results | ForEach-Object { $_.Status | Should Be "Dropped" }
+        }
+    }
+
+    Context "Properly restores an instance using ola-style backups via string" {
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\sql2008-backups
         It "Restored files count should be the right number" {
             $results.DatabaseName.Count | Should Be 26
         }
