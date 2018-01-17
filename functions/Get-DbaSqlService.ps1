@@ -130,8 +130,8 @@ function Get-DbaSqlService {
     PROCESS {
         foreach ($Computer in $ComputerName.ComputerName) {
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
-            if ($Server.ComputerName) {
-                $Computer = $server.ComputerName
+            if ($Server.FullComputerName) {
+                $Computer = $server.FullComputerName
                 Write-Message -Level VeryVerbose -Message "Getting SQL Server namespace on $Computer" -Target $Computer
                 try { $namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -EnableException -Credential $credential | Sort-Object Name -Descending }
                 catch { }

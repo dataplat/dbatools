@@ -38,7 +38,12 @@
         [object[]]$ArgumentList,
         [switch]$Raw
     )
-
+    
+    if ($ComputerName.IsLocalHost -and $Credential) {
+        Stop-Function -Message "Credentials cannot be passed to localhost. Run As Different User instead."
+        return
+    }
+    
     $InvokeCommandSplat = @{
         ScriptBlock = $ScriptBlock
     }

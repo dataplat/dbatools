@@ -25,7 +25,10 @@ function Invoke-DbaSqlCmd {
             Consider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as "MyTable".
 
         .PARAMETER File
-            Specifies the full path to a file to be used as the query input to Invoke-Sqlcmd2. The file can contain Transact-SQL statements, XQuery statements, sqlcmd commands and scripting variables.
+            Specifies the path to one or several files to be used as the query input to Invoke-Sqlcmd2. The file can contain Transact-SQL statements, XQuery statements, sqlcmd commands and scripting variables.
+    
+        .PARAMETER SqlObject
+            Specify on or multiple SQL objects. Those will be converted to script and their scripts run on the target system(s).
 
         .PARAMETER As
             Specifies output type. Valid options for this parameter are 'DataSet', 'DataTable', 'DataRow', 'PSObject', and 'SingleValue'
@@ -74,10 +77,14 @@ function Invoke-DbaSqlCmd {
         [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Query")]
         [string]
         $Query,
-
+        
         [Parameter(Mandatory = $true, ParameterSetName = "File")]
-        [string]
+        [object[]]
         $File,
+        
+        [Parameter(Mandatory = $true, ParameterSetName = "SMO")]
+        [Microsoft.SqlServer.Management.Smo.SqlSmoObject[]]
+        $SqlObject,
 
         [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "SingleValue")]
         [string]
@@ -110,12 +117,112 @@ function Invoke-DbaSqlCmd {
         if (Test-Bound -ParameterName "Query") {
             $splatInvokeSqlCmd2["Query"] = $Query
         }
+        
         if (Test-Bound -ParameterName "File") {
-            $splatInvokeSqlCmd2["InputFile"] = $File
+            $files = @()
+            $temporaryFiles = @()
+            $temporaryFilesCount = 0
+            $temporaryFilesPrefix = (97 .. 122 | Get-Random -Count 10 | ForEach-Object { [char]$_ }) -join ''
+            
+            foreach ($item in $File) {
+                if ($item -eq $null) { continue }
+                
+                $type = $item.GetType().FullName
+                
+                switch ($type) {
+                    "System.IO.DirectoryInfo" {
+                        if (-not $item.Exists) {
+                            Stop-Function -Message "Directory not found!" -Category ObjectNotFound
+                            return
+                        }
+                        
+                        $item.GetFiles() | Where-Object Extension -EQ ".sql" | ForEach-Object { $files += $_.FullName }
+                    }
+                    "System.IO.FileInfo" {
+                        if (-not $item.Exists) {
+                            Stop-Function -Message "Directory not found!" -Category ObjectNotFound
+                            return
+                        }
+                        
+                        $files += $item.FullName
+                    }
+                    "System.String" {
+                        $uri = [uri]$item
+                        
+                        switch -regex ($uri.Scheme) {
+                            "http" {
+                                $tempfile = "$env:TEMP\$temporaryFilesPrefix-$temporaryFilesCount.sql"
+                                try {
+                                    Invoke-WebRequest -Uri $item -OutFile $tempfile -ErrorAction Stop
+                                    $files += $tempfile
+                                    $temporaryFilesCount++
+                                    $temporaryFiles += $tempfile
+                                }
+                                catch {
+                                    Stop-Function -Message "Failed to download file $item" -ErrorRecord $_
+                                    return
+                                }
+                            }
+                            default {
+                                try {
+                                    $paths = Resolve-Path $item | Select-Object -ExpandProperty Path | Get-Item -ErrorAction Stop
+                                }
+                                catch {
+                                    Stop-Function -Message "Failed to resolve path: $item" -ErrorRecord $_
+                                    return
+                                }
+                                
+                                foreach ($path in $paths) {
+                                    if (-not $path.PSIsContainer) {
+                                        if (([uri]$path.FullName).Scheme -ne 'file') {
+                                            Stop-Function -Message "Could not resolve path $path as filesystem object"
+                                            return
+                                        }
+                                        $files += $path.FullName
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    default {
+                        Stop-Function -Message "Unkown input type: $type" -Category InvalidArgument
+                        return
+                    }
+                }
+            }
+        }
+        
+        if (Test-Bound -ParameterName "SqlObject") {
+            $files = @()
+            $temporaryFiles = @()
+            $temporaryFilesCount = 0
+            $temporaryFilesPrefix = (97 .. 122 | Get-Random -Count 10 | ForEach-Object { [char]$_ }) -join ''
+            
+            foreach ($object in $SqlObject) {
+                try { $code = Export-DbaScript -InputObject $object -Passthru -EnableException }
+                catch {
+                    Stop-Function -Message "Failed to generate script for object $object" -ErrorRecord $_
+                    return
+                }
+                
+                try {
+                    $newfile = "$env:TEMP\$temporaryFilesPrefix-$temporaryFilesCount.sql"
+                    Set-Content -Value $code -Path $newfile -Force -ErrorAction Stop -Encoding UTF8
+                    $files += $newfile
+                    $temporaryFilesCount++
+                    $temporaryFiles += $newfile
+                }
+                catch {
+                    Stop-Function -Message "Failed to write sql script to temp" -ErrorRecord $_
+                    return
+                }
+            }
         }
     }
-
+    
     process {
+        if (Test-FunctionInterrupt) { return }
+        
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level VeryVerbose -Message "Connecting to $instance." -Target $instance
@@ -131,10 +238,26 @@ function Invoke-DbaSqlCmd {
                     $conncontext = $server.ConnectionContext.Copy()
                     $conncontext.DatabaseName = $Database
                 }
-                Invoke-Sqlcmd2 -SQLConnection $conncontext.SqlConnectionObject @splatInvokeSqlCmd2
+                if ($File -or $SqlObject) {
+                    foreach ($item in $files) {
+                        Invoke-Sqlcmd2 -SQLConnection $conncontext.SqlConnectionObject @splatInvokeSqlCmd2 -InputFile $item
+                    }
+                }
+                else { Invoke-Sqlcmd2 -SQLConnection $conncontext.SqlConnectionObject @splatInvokeSqlCmd2 }
             }
             catch {
                 Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
+            }
+        }
+    }
+    
+    end {
+        # Execute end even when interrupting, as only used for cleanup
+        
+        if ($temporaryFiles) {
+            # Clean up temporary files that were downloaded
+            foreach ($item in $temporaryFiles) {
+                Remove-Item -Path $item -ErrorAction Ignore
             }
         }
     }

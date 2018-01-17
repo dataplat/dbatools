@@ -4,7 +4,8 @@
     Exports an new XESession XML Template
 
     .DESCRIPTION
-    Exports an XESession XML Template either from our repo or a file you specify
+    Exports an XESession XML Template either from our repo or a file you specify. Exports to
+    "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates" by default
 
     .PARAMETER SqlInstance
     The SQL Instances that you're connecting to.
@@ -39,11 +40,11 @@
 
     .EXAMPLE
     Export-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\temp\xe
-     Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
+    Exports XE Session Template to the C:\temp\xe folder.
 
     .EXAMPLE
     Get-DbaXESession -SqlInstance sql2017 -Session session_health | Export-DbaXESessionTemplate -Path C:\temp
-     Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
+    Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
 
 #>
     [CmdletBinding()]
@@ -52,7 +53,7 @@
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$Session,
-        [string]$Path,
+        [string]$Path = "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates",
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
         [switch]$EnableException
@@ -67,14 +68,14 @@
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         }
-        
+
         foreach ($xes in $InputObject) {
-            $xesname = $xes.Name
-            
+            $xesname = Remove-InvalidFileNameChars -Name $xes.Name
+
             if (-not (Test-Path -Path $Path)) {
                 Stop-Function -Message "$Path does not exist" -Target $Path
             }
-            
+
             if ($path.EndsWith(".xml")) {
                 $filename = $path
             }
