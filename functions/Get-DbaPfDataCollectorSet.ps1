@@ -146,7 +146,7 @@
                         Security                         = $set.Security
                         StopOnCompletion                 = $set.StopOnCompletion
                         State                            = $state.Trim()
-                        DataCollectorSetObject           = $set
+                        DataCollectorSetObject           = $true
                         TaskObject                       = $task
                         Credential                       = $args[1]
                     }
@@ -167,7 +167,7 @@
         foreach ($computer in $ComputerName.ComputerName) {
             Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
             try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $CollectorSet, $Credential -ErrorAction Stop | Select-DefaultView -Property $columns
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $CollectorSet, $Credential -ErrorAction Stop -Raw | Select-DefaultView -Property $columns
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue

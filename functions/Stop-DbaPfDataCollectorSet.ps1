@@ -57,7 +57,7 @@
     #>
     [CmdletBinding()]
     param (
-        [DbaInstance[]]$ComputerName,
+        [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
@@ -103,7 +103,7 @@
             }
             Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
             try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop -Raw
             }
             catch {
                 Stop-Function -Message "Failure stopping $setname on $computer" -ErrorRecord $_ -Target $computer -Continue

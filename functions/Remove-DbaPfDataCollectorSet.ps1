@@ -41,7 +41,7 @@
         .EXAMPLE
             Remove-DbaPfDataCollectorSet
     
-            Attempts to remove all ready Collectors on localhost
+            Prompts for confirmation then removes all ready Collectors on localhost
 
         .EXAMPLE
             Remove-DbaPfDataCollectorSet -ComputerName sql2017 -Confirm:$false
@@ -51,7 +51,7 @@
         .EXAMPLE
             Remove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
     
-            Removes the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials
+            Prompts for confirmation then removes the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials
     
         .EXAMPLE
             Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Remove-DbaPfDataCollectorSet
@@ -65,7 +65,7 @@
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
-        [DbaInstance[]]$ComputerName,
+        [DbaInstance[]]$ComputerName=$env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias("DataCollectorSet")]
         [string[]]$CollectorSet,
@@ -114,17 +114,19 @@
                 Stop-Function -Message "$setname on $computer is running. Use Stop-DbaPfDataCollectorSet to stop first." -Continue
             }
             
-            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
-            try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname -ErrorAction Stop
-                [pscustomobject]@{
-                    ComputerName       = $computer
-                    Name               = $setname
-                    Status             = "Successful"
+            if ($Pscmdlet.ShouldProcess("$computer", "Removing collector set $setname")) {
+                Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
+                try {
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname -ErrorAction Stop -Raw
+                    [pscustomobject]@{
+                        ComputerName                                           = $computer
+                        Name                                                   = $setname
+                        Status                                                 = "Removed"
+                    }
                 }
-            }
-            catch {
-                Stop-Function -Message "Failure Removing $setname on $computer" -ErrorRecord $_ -Target $computer -Continue
+                catch {
+                    Stop-Function -Message "Failure Removing $setname on $computer" -ErrorRecord $_ -Target $computer -Continue
+                }
             }
         }
     }

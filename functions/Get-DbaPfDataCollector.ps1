@@ -104,27 +104,28 @@
                 }
                 
                 [pscustomobject]@{
-                    ComputerName             = $set.ComputerName
-                    DataCollectorSet         = $set.Name
-                    Name                     = $col.Name
-                    FileName                 = $col.FileName
-                    DataCollectorType        = $col.DataCollectorType
-                    FileNameFormat           = $col.FileNameFormat
-                    FileNameFormatPattern    = $col.FileNameFormatPattern
-                    LogAppend                = $col.LogAppend
-                    LogCircular              = $col.LogCircular
-                    LogOverwrite             = $col.LogOverwrite
-                    LatestOutputLocation     = $col.LatestOutputLocation
-                    RemoteLatestOutputLocation = $remote
-                    DataSourceName           = $col.DataSourceName
-                    SampleInterval           = $col.SampleInterval
-                    SegmentMaxRecords        = $col.SegmentMaxRecords
-                    LogFileFormat            = $col.LogFileFormat
-                    Counters                 = $col.Counter
-                    CounterDisplayNames      = $col.CounterDisplayName
-                    CollectorXml             = $col
-                    DataCollectorSetObject   = $set.DataCollectorSetObject
-                    Credential               = $Credential
+                    ComputerName                = $set.ComputerName
+                    DataCollectorSet            = $set.Name
+                    Name                        = $col.Name
+                    FileName                    = $col.FileName
+                    DataCollectorType           = $col.DataCollectorType
+                    FileNameFormat              = $col.FileNameFormat
+                    FileNameFormatPattern       = $col.FileNameFormatPattern
+                    LogAppend                   = $col.LogAppend
+                    LogCircular                 = $col.LogCircular
+                    LogOverwrite                = $col.LogOverwrite
+                    LatestOutputLocation        = $col.LatestOutputLocation
+                    DataCollectorSetXml         = $set.Xml
+                    RemoteLatestOutputLocation  = $remote
+                    DataSourceName              = $col.DataSourceName
+                    SampleInterval              = $col.SampleInterval
+                    SegmentMaxRecords           = $col.SegmentMaxRecords
+                    LogFileFormat               = $col.LogFileFormat
+                    Counters                    = $col.Counter
+                    CounterDisplayNames         = $col.CounterDisplayName
+                    CollectorXml                = $col
+                    DataCollectorObject         = $true
+                    Credential                  = $Credential
                 } | Select-DefaultView -Property $columns
             }
         }

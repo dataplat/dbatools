@@ -1,4 +1,4 @@
-﻿function Get-DbaPfCounterSample {
+﻿function Get-DbaPfDataCollectorCounterSample {
     <#
         .SYNOPSIS
             Gets Performance Counter Samples
@@ -30,13 +30,13 @@
         .PARAMETER MaxSamples
         Specifies the number of samples to get from each counter. The default is 1 sample. To get samples continuously (no maximum sample size), use the Continuous parameter.
 
-        To collect a very large data set, consider running a Get-DbaPfCounterSample command as a Windows PowerShell background job.
+        To collect a very large data set, consider running a Get-DbaPfDataCollectorCounterSample command as a Windows PowerShell background job.
 
         .PARAMETER SampleInterval
         Specifies the time between samples in seconds. The minimum value and the default value are 1 second.
 
         .PARAMETER InputObject
-            Enables piped results from Get-DbaPfCounter
+            Enables piped results from Get-DbaPfDataCollectorCounter
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -51,35 +51,35 @@
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
         .LINK
-            https://dbatools.io/Get-DbaPfCounterSample
+            https://dbatools.io/Get-DbaPfDataCollectorCounterSample
 
         .EXAMPLE
-            Get-DbaPfCounterSample
+            Get-DbaPfDataCollectorCounterSample
 
             Gets a single sample for all counters for all collector sets on localhost
 
         .EXAMPLE
-            Get-DbaPfCounterSample -Counter '\Processor(_Total)\% Processor Time'
+            Get-DbaPfDataCollectorCounterSample -Counter '\Processor(_Total)\% Processor Time'
 
             Gets a single sample for all counters for all collector sets on localhost
 
         .EXAMPLE
-            Get-DbaPfCounter -ComputerName sql2017 | Out-GridView -PassThru | Get-DbaPfCounterSample -MaxSamples
+            Get-DbaPfDataCollectorCounter -ComputerName sql2017, sql2016 | Out-GridView -PassThru | Get-DbaPfDataCollectorCounterSample -MaxSamples 10
 
-             Gets 10 samples for all counters for all collector sets on localhost
+             Gets 10 samples for all counters for all collector sets for servers sql2016 and sql2017
 
         .EXAMPLE
-            Get-DbaPfCounterSample -ComputerName sql2017
+            Get-DbaPfDataCollectorCounterSample -ComputerName sql2017
 
              Gets a single sample for all counters for all collector sets on  on sql2017
 
         .EXAMPLE
-            Get-DbaPfCounterSample -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+            Get-DbaPfDataCollectorCounterSample -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
 
             Gets a single sample for all counters for 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials
 
         .EXAMPLE
-            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPfDataCollector | Get-DbaPfCounterSample
+            Get-DbaPfDataCollectorCounterSample -CollectorSet 'System Correlation'
 
             Gets a single sample for all counters for 'System Correlation' Collector
     #>
@@ -101,87 +101,92 @@
         [switch]$EnableException
     )
     process {
-
+        
         if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
             $Credential = $InputObject.Credential
         }
-
+        
         if ($InputObject.Counter -and (Test-Bound -ParameterName Counter -Not)) {
             $Counter = $InputObject.Counter
         }
-
+        
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
-                $InputObject += Get-DbaPfCounter -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet -Collector $Collector
+                $InputObject += Get-DbaPfDataCollectorCounter -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet -Collector $Collector
             }
         }
-
+        
         if ($InputObject) {
             if (-not $InputObject.CounterObject) {
-                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfCounter"
+                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorCounter"
                 return
             }
         }
-
+        
         foreach ($counterobject in $InputObject) {
             if ((Test-Bound -ParameterName Counter) -and ($Counter -notcontains $counterobject.Name)) { continue }
             $params = @{
-                Counter                      = $counterobject.Name
+                Counter                       = $counterobject.Name
             }
-
+            
             if (-not ([dbainstance]$counterobject.ComputerName).IsLocalHost) {
                 $params.Add("ComputerName", $counterobject.ComputerName)
             }
-
+            
             if ($Credential) {
                 $params.Add("Credential", $Credential)
             }
-
+            
             if ($Continuous) {
                 $params.Add("Continuous", $Continuous)
             }
-
+            
             if ($ListSet) {
                 $params.Add("ListSet", $ListSet)
             }
-
+            
             if ($MaxSamples) {
                 $params.Add("MaxSamples", $MaxSamples)
             }
-
+            
             if ($SampleInterval) {
                 $params.Add("SampleInterval", $SampleInterval)
             }
-
+            
             if ($Continuous) {
                 Get-Counter @params
             }
             else {
-                $pscounters = Get-Counter @params
-
+                try {
+                    $pscounters = Get-Counter @params -ErrorAction Stop
+                }
+                catch {
+                    Stop-Function -Message "Failiure for $($counterobject.Name) on $($counterobject.ComputerName)" -ErrorRecord $_ -Continue
+                }
+                
                 foreach ($pscounter in $pscounters) {
                     foreach ($sample in $pscounter.CounterSamples) {
                         [pscustomobject]@{
-                            ComputerName                                = $counterobject.ComputerName
-                            DataCollectorSet                            = $counterobject.DataCollectorSet
-                            DataCollector                               = $counterobject.DataCollector
-                            Name                                        = $counterobject.Name
-                            Timestamp                                   = $pscounter.Timestamp
-                            Path                                        = $sample.Path
-                            InstanceName                                = $sample.InstanceName
-                            CookedValue                                 = $sample.CookedValue
-                            RawValue                                    = $sample.RawValue
-                            SecondValue                                 = $sample.SecondValue
-                            MultipleCount                               = $sample.MultipleCount
-                            CounterType                                 = $sample.CounterType
-                            SampleTimestamp                             = $sample.Timestamp
-                            SampleTimestamp100NSec                      = $sample.Timestamp100NSec
-                            Status                                      = $sample.Status
-                            DefaultScale                                = $sample.DefaultScale
-                            TimeBase                                    = $sample.TimeBase
-                            Sample                                      = $pscounter.CounterSamples
-                            DataCollectorSetObject                      = $counterobject.DataCollectorSetObject
-                        } | Select-DefaultView -ExcludeProperty Sample, DataCollectorSetObject
+                            ComputerName                                 = $counterobject.ComputerName
+                            DataCollectorSet                             = $counterobject.DataCollectorSet
+                            DataCollector                                = $counterobject.DataCollector
+                            Name                                         = $counterobject.Name
+                            Timestamp                                    = $pscounter.Timestamp
+                            Path                                         = $sample.Path
+                            InstanceName                                 = $sample.InstanceName
+                            CookedValue                                  = $sample.CookedValue
+                            RawValue                                     = $sample.RawValue
+                            SecondValue                                  = $sample.SecondValue
+                            MultipleCount                                = $sample.MultipleCount
+                            CounterType                                  = $sample.CounterType
+                            SampleTimestamp                              = $sample.Timestamp
+                            SampleTimestamp100NSec                       = $sample.Timestamp100NSec
+                            Status                                       = $sample.Status
+                            DefaultScale                                 = $sample.DefaultScale
+                            TimeBase                                     = $sample.TimeBase
+                            Sample                                       = $pscounter.CounterSamples
+                            CounterSampleObject                          = $true
+                        } | Select-DefaultView -ExcludeProperty Sample, CounterSampleObject
                     }
                 }
             }
