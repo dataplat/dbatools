@@ -84,6 +84,13 @@
             $Credential = $InputObject.Credential
         }
         
+        if (($InputObject | Get-Member -MemberType NoteProperty).Count -le 3 -and $InputObject.ComputerName -and $InputObject.Name) {
+            # it's coming from Get-DbaPfAvailableCounter
+            $ComputerName = $InputObject.ComputerName
+            $Counter = $InputObject.Name
+            $InputObject = $null
+        }
+        
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
                 $InputObject += Get-DbaPfDataCollector -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet -Collector $Collector
@@ -92,7 +99,7 @@
         
         if ($InputObject) {
             if (-not $InputObject.DataCollectorObject) {
-                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollector"
+                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollector or Get-DbaPfAvailableCounter"
                 return
             }
         }

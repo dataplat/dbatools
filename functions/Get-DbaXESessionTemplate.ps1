@@ -76,6 +76,8 @@
     )
     begin {
         $metadata = Import-Clixml "$script:PSModuleRoot\bin\xetemplates-metadata.xml"
+        # In case ppl really wanted a like, which is slower
+        $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
     }
     process {
         foreach ($directory in $Path) {
