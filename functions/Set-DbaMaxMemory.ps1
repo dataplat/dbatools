@@ -69,7 +69,7 @@ function Set-DbaMaxMemory {
 	param (
 		[Parameter(Position = 0)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers", "ComputerName")]
-		[DbaInstance[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential]$SqlCredential,
 		[Parameter(Position = 1)]
