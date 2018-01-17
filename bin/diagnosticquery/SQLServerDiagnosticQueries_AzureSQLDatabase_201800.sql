@@ -1,7 +1,7 @@
 
 -- Azure SQL Database Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 10, 2018
+-- Last Modified: January 16, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -34,7 +34,7 @@
 -- Make sure you are connected a user database, rather than the master system database
 
 
--- Instance level queries *******************************
+-- Server level queries *******************************
 
 -- SQL and OS Version information for current instance  (Query 1) (Version Info)
 SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info];

@@ -50,7 +50,7 @@ function Copy-DbaDatabase {
             Specifies the network location for the backup files. The SQL Server service accounts must have read/write permission on this path.
 
         .PARAMETER WithReplace
-            If this switch is enabled, the restore is executed with WITH REPLACE. This is useful if you want to stage some complex file paths.
+            If this switch is enabled, the restore is executed with WITH REPLACE.
 
         .PARAMETER NoRecovery
             If this switch is enabled, the restore is executed with WITH NORECOVERY. Ideal for staging.
