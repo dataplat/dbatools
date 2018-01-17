@@ -116,7 +116,7 @@
             
             if ($Pscmdlet.ShouldProcess("$computer", "Remove $countername from $collectorname with the $setname collection set")) {
                 try {
-                    $results = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $plainxml -ErrorAction Stop
+                    $results = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $plainxml -ErrorAction Stop -Raw
                     Write-Message -Level Verbose -Message " $results"
                     [pscustomobject]@{
                         ComputerName                                           = $computer
