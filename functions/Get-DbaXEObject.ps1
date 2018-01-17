@@ -7,7 +7,7 @@
             This function returns a list of Traces on the specified SQL Server instance(s) and identifies the default Trace File
 
         .PARAMETER SqlInstance 
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
         .PARAMETER SqlCredential
             Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -42,12 +42,12 @@
         .EXAMPLE
             Get-DbaXEObject -SqlInstance sql2016
 
-            Lists all the XE Objects on the sql2016 SQL Server
+            Lists all the XE Objects on the sql2016 SQL Server.
 
         .EXAMPLE
             Get-DbaXEObject -SqlInstance sql2017 -Type Action, Event
 
-            Lists all the XE Objects of type Action and Event on the sql2017 SQL Server
+            Lists all the XE Objects of type Action and Event on the sql2017 SQL Server.
 
     #>
 	[CmdletBinding()]
