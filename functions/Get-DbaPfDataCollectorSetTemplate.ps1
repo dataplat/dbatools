@@ -52,6 +52,8 @@
     )
     begin {
         $metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates-metadata.xml"
+        # In case ppl really wanted a like, which is slower
+        $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
     }
     process {
         foreach ($directory in $Path) {
