@@ -47,7 +47,7 @@
         .EXAMPLE
             Get-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017 | Start-DbaXESession
 
-            Allows you to select a Session template, then import to the specified instance and start the session.
+            Allows you to select a Session template, then import it to the specified instance and start the session.
 
         .EXAMPLE
             Get-DbaXESessionTemplate -Path "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates"

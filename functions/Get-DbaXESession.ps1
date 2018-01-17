@@ -7,7 +7,7 @@ function Get-DbaXESession {
             Retrieves a list of Extended Events Sessions present on the specified SQL Server instance(s).
 
         .PARAMETER SqlInstance 
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
         .PARAMETER SqlCredential
             Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
