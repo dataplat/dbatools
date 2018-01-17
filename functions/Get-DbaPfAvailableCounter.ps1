@@ -69,40 +69,31 @@
         $scriptblock = {
             $counters = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib\009' -Name 'counter' | Select-Object -ExpandProperty Counter |
             Where-Object { $_ -notmatch '[0-90000]' } | Sort-Object | Get-Unique
-            # why different output? Speed/needs mostly.
-            if ($args) {
-                foreach ($counter in $counters) {
-                    [pscustomobject]@{
-                        ComputerName      = $env:COMPUTERNAME
-                        Name              = $counter
-                        Credential        = $args
-                    }
-                }
-            }
-            else {
-                foreach ($counter in $counters) {
-                    [pscustomobject]@{
-                        ComputerName       = $env:COMPUTERNAME
-                        Name               = $counter
-                    }
+            
+            foreach ($counter in $counters) {
+                [pscustomobject]@{
+                    ComputerName            = $env:COMPUTERNAME
+                    Name                    = $counter
+                    Credential              = $args
                 }
             }
         }
-
+        
         # In case ppl really wanted a like, which is slower
-        $Pattern = $Pattern.Replace("*",".*").Replace("..*", ".*")
+        $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
     }
     process {
         foreach ($computer in $ComputerName) {
             Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
-
+            
             try {
                 if ($pattern) {
-                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
-                    Where-Object Name -match $pattern
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop -Raw |
+                    Where-Object Name -match $pattern | Select-DefaultView -ExcludeProperty Credential
                 }
                 else {
-                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop -Raw |
+                    Select-DefaultView -ExcludeProperty Credential
                 }
             }
             catch {
