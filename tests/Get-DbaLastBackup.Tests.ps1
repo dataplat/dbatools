@@ -10,10 +10,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $dbname = "dbatoolsci_getlastbackup$random"
         $server.Query("CREATE DATABASE $dbname")
         $server.Query("ALTER DATABASE $dbname SET RECOVERY FULL WITH NO_WAIT")
+        $backupdir = Join-Path $server.BackupDirectory $dbname
+        if (-not(Test-Path $backupdir -Type Container)) {
+            $null = New-Item -Path $backupdir -Type Container
+        }
     }
 
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        Remove-Item -Path $backupdir -Recurse -Force -ErrorAction SilentlyContinue
     }
 
     Context "Get null history for database" {
@@ -26,9 +31,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     $yesterday = (Get-Date).AddDays(-1)
-    Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Backup-DbaDatabase
-    Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Backup-DbaDatabase -Type Differential
-    Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Backup-DbaDatabase -Type Log
+    $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupdir
+    $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupdir -Type Differential
+    $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Backup-DbaDatabase -BackupDirectory $backupdir -Type Log
 
     Context "Get last history for single database" {
         $results = Get-DbaLastBackup -SqlInstance $script:instance2 -Database $dbname

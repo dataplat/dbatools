@@ -174,6 +174,7 @@ function Get-DbaBackupHistory {
             'Pipe'                  = 6
             'Permanent Pipe Device' = 106
             'Virtual Device'        = 7
+            'URL'                   = 9
         }
         $DeviceTypeFilter = @()
         foreach ($DevType in $DeviceType) {
@@ -205,7 +206,7 @@ function Get-DbaBackupHistory {
 
             try {
                 Write-Message -Level VeryVerbose -Message "Connecting to $instance." -Target $instance
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
             catch {
                 Stop-Function -Message "Failed to process Instance $Instance." -InnerErrorRecord $_ -Target $instance -Continue
@@ -214,11 +215,19 @@ function Get-DbaBackupHistory {
             if ($server.VersionMajor -lt 9) {
                 Stop-Function -Message "SQL Server 2000 not supported." -Category LimitsExceeded -Target $instance -Continue
             }
-            $backupSizeColumn = 'backup_size'
+
             if ($server.VersionMajor -ge 10) {
                 # 2008 introduced compressed_backup_size
-                $backupSizeColumn = 'compressed_backup_size'
+                $BackupCols = "
+                backupset.backup_size AS TotalSize,
+                backupset.compressed_backup_size as CompressedBackupSize"
             }
+            else {
+                $BackupCols = "
+                backupset.backup_size AS TotalSize,
+                NULL as CompressedBackupSize"
+            }
+
 
             $databases = @()
             if ($null -ne $Database) {
@@ -262,7 +271,7 @@ function Get-DbaBackupHistory {
                             continue
                         }
                     }
-                    $Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN -IncludeCopyOnly:$IncludeCopyOnly | Where-Object {
+                    $Allbackups += Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN -IncludeCopyOnly:$IncludeCopyOnly | Where-Object {
                         $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $Fulldb.LastRecoveryForkGuid
                     }
                     #This line does the output for -Last!!!
@@ -305,6 +314,7 @@ function Get-DbaBackupHistory {
                                     a.[Path],
                                     a.Type,
                                     a.TotalSize,
+                                    a.CompressedBackupSize,
                                     a.MediaSetId,
                                     a.BackupSetID,
                                     a.Software,
@@ -330,7 +340,7 @@ function Get-DbaBackupHistory {
                                   backupset.backup_finish_date AS [End],
                                   DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
                                   mediafamily.physical_device_name AS Path,
-                                  backupset.$backupSizeColumn AS TotalSize,
+                                  $BackupCols,
                                   CASE backupset.type
                                     WHEN 'L' THEN 'Log'
                                     WHEN 'D' THEN 'Full'
@@ -352,6 +362,7 @@ function Get-DbaBackupHistory {
                                     WHEN 6 THEN 'Pipe'
                                     WHEN 106 THEN 'Permanent Pipe Device'
                                     WHEN 7 THEN 'Virtual Device'
+                                    WHEN 9 THEN 'URL'
                                     ELSE 'Unknown'
                                     END AS DeviceType,
                                   backupset.position,
@@ -392,7 +403,7 @@ function Get-DbaBackupHistory {
                               backupset.backup_finish_date AS [End],
                               DATEDIFF(SECOND, backupset.backup_start_date, backupset.backup_finish_date) AS Duration,
                               mediafamily.physical_device_name AS Path,
-                              backupset.$backupSizeColumn AS TotalSize,
+                              $BackupCols,
                               CASE backupset.type
                                 WHEN 'L' THEN 'Log'
                                 WHEN 'D' THEN 'Full'
@@ -414,6 +425,7 @@ function Get-DbaBackupHistory {
                                 WHEN 6 THEN 'Pipe'
                                 WHEN 106 THEN 'Permanent Pipe Device'
                                 WHEN 7 THEN 'Virtual Device'
+                                WHEN 9 THEN 'URL'
                                 ELSE 'Unknown'
                               END AS DeviceType,
                               backupset.position,
@@ -436,7 +448,6 @@ function Get-DbaBackupHistory {
                              INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
                 if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $DeviceTypeFilter -or $LastLsn -or $BackupTypeFilter) {
                     $where = " WHERE "
-                    write-verbose "setting where"
                 }
 
                 $wherearray = @()
@@ -447,20 +458,17 @@ function Get-DbaBackupHistory {
                 }
 
                 if ($true -ne $IncludeCopyOnly) {
-                    Write-Verbose "excluding copyonly Ico = $IncludeCopyOnly"
                     $wherearray += "is_copy_only='0'"
                 }
 
                 if ($Last -or $LastFull -or $LastLog -or $LastDiff) {
                     $tempwhere = $wherearray -join " AND "
-                    $wherearray += "type = 'Full' AND mediaset.media_set_id = (select top 1 mediaset.media_set_id $from $tempwhere order by backupset.last_lsn DESC)"
+                    $wherearray += "type = 'Full' AND mediaset.media_set_id = (SELECT TOP 1 mediaset.media_set_id $from $tempwhere ORDER BY backupset.last_lsn DESC)"
                 }
 
-                if ($Since -ne $null) {
+                if ($null -ne $Since) {
                     $wherearray += "backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
                 }
-
-
 
                 if ($DeviceTypeFilter) {
                     $wherearray += "mediafamily.device_type $DeviceTypeFilterRight"
@@ -494,13 +502,14 @@ function Get-DbaBackupHistory {
                 $GroupedResults = $results | Group-Object -Property backupsetid
                 Write-Message -Level SomewhatVerbose -Message "$($GroupedResults.Count) result-groups found."
                 $groupResults = @()
+                $BackupSetIds = $GroupedResults.Name
+                $BackupSetIds_List = $BackupSetIds -Join "','"
+                $BackupSetIds_Where = "backup_set_id IN ('$BackupSetIds_List')"
+                $fileAllSql = "SELECT backup_set_id, file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
+                               FROM msdb..backupfile WHERE $BackupSetIds_Where"
+                Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
+                $FileListResults = $server.Query($fileAllSql)
                 foreach ($group in $GroupedResults) {
-
-                    $fileSql = "select file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
-                                from msdb.dbo.backupfile where backup_set_id='$($Group.group[0].BackupSetID)'"
-
-                    Write-Message -Level Debug -Message "FileSQL: $fileSql"
-
                     $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
                     $historyObject.ComputerName = $server.NetName
                     $historyObject.InstanceName = $server.ServiceName
@@ -512,24 +521,21 @@ function Get-DbaBackupHistory {
                     $historyObject.Duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
                     $historyObject.Path = $group.Group.Path
                     $historyObject.TotalSize = $group.Group[0].TotalSize
+                    $historyObject.CompressedBackupSize = $group.Group[0].CompressedBackupSize
+                    $HistoryObject.CompressionRatio = [Math]::Round(($historyObject.TotalSize.Byte)/($historyObject.CompressedBackupSize.Byte),2)
                     $historyObject.Type = $group.Group[0].Type
                     $historyObject.BackupSetId = $group.Group[0].BackupSetId
                     $historyObject.DeviceType = $group.Group[0].DeviceType
                     $historyObject.Software = $group.Group[0].Software
                     $historyObject.FullName = $group.Group.Path
-                    $historyObject.FileList = $server.ConnectionContext.ExecuteWithResults($fileSql).Tables.Rows
+                    $historyObject.FileList = $FileListResults | Where-Object backup_set_id -eq $Group.group[0].BackupSetID | Select-Object FileType, LogicalName, PhysicalName
                     $historyObject.Position = $group.Group[0].Position
                     $historyObject.FirstLsn = $group.Group[0].First_LSN
                     $historyObject.DatabaseBackupLsn = $group.Group[0].database_backup_lsn
                     $historyObject.CheckpointLsn = $group.Group[0].checkpoint_lsn
                     $historyObject.LastLsn = $group.Group[0].Last_Lsn
                     $historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
-                    $historyObject.IsCopyOnly = if ($group.Group[0].is_copy_only -eq 1) {
-                        $true
-                    }
-                    else {
-                        $false
-                    }
+                    $historyObject.IsCopyOnly = ($group.Group[0].is_copy_only -eq 1)
                     $HistoryObject.LastRecoveryForkGuid = $group.Group[0].last_recovery_fork_guid
                     $groupResults += $historyObject
                 }

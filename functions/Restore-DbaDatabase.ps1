@@ -592,6 +592,10 @@ function Restore-DbaDatabase {
     end {
         if (Test-FunctionInterrupt) { return }
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
+            if ($BackupHistory.Count -eq 0) {
+                Write-Message -Level Warning -Message "No backups passed through. `n This could mean the SQL instance cannot see the referenced files, the file's headers could not be read or some other issue"
+                return
+            }
             Write-Message -message "Processing DatabaseName - $DatabaseName" -Level Verbose
             $FilteredBackupHistory = @()
             if (Test-Bound -ParameterName GetBackupInformation) {

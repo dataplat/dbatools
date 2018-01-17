@@ -4,12 +4,12 @@ function Watch-DbaXESession {
     Watch live XEvent Data as it happens
 
     .DESCRIPTION
-    Watch live XEvent Data as it happens - this command runs until you kill the PowerShell session or Ctrl-C.
+    Watch live XEvent Data as it happens - this command runs until you stop the session, kill the PowerShell session, or Ctrl-C a few hundred times ;).
 
     Thanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html
 
     .PARAMETER SqlInstance
-    The SQL Instances that you're connecting to.
+    The SQL Instance that you're connecting to.
 
     .PARAMETER SqlCredential
     Credential object used to connect to the SQL Server as a different user
@@ -20,7 +20,7 @@ function Watch-DbaXESession {
     .PARAMETER Raw
     Returns the Microsoft.SqlServer.XEvent.Linq.QueryableXEventData enumeration object
 
-    .PARAMETER SessionObject
+    .PARAMETER InputObject
     Internal parameter
 
     .PARAMETER EnableException
@@ -38,27 +38,19 @@ function Watch-DbaXESession {
     https://dbatools.io/Watch-DbaXESession
 
     .EXAMPLE
-    Watch-DbaXESession -SqlInstance ServerA\sql987 -Session system_health
+    Watch-DbaXESession -SqlInstance sql2017 -Session system_health
 
     Shows events for the system_health session as it happens
 
     .EXAMPLE
-    Get-DbaXESession  -SqlInstance sql2016 -Session system_health | Watch-DbaXESession | Select -ExpandProperty Fields
+    Watch-DbaXESession -SqlInstance sql2017 -Session system_health | Export-Csv -NoTypeInformation -Path C:\temp\system_health.csv
 
-    Also shows events for the system_health session as it happens and expands the Fields property. Looks a bit like this
+    Exports live events to CSV. Ctrl-C may not not cancel out of it - fastest way is to stop the session.
+    
+    .EXAMPLE
+    Get-DbaXESession -SqlInstance sql2017 -Session system_health | Start-DbaXESession | Watch-DbaXESession | Export-Csv -NoTypeInformation -Path C:\temp\system_health.csv
 
-    Name                Type                                   Value
-    ----                ----                                   -----
-    id                  System.UInt32                              0
-    timestamp           System.UInt64                              0
-    process_utilization System.UInt32                              0
-    system_idle         System.UInt32                             99
-    user_mode_time      System.UInt64                        8906250
-    kernel_mode_time    System.UInt64                         468750
-    page_faults         System.UInt32                             60
-    working_set_delta   System.Int64                               0
-    memory_utilization  System.UInt32                             99
-
+    Exports live events to CSV. Ctrl-C may not not cancel out of it - fastest way is to stop the session.
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
@@ -68,13 +60,14 @@ function Watch-DbaXESession {
         [PSCredential]$SqlCredential,
         [string]$Session,
         [parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
-        [Microsoft.SqlServer.Management.XEvent.Session]$SessionObject,
+        [Microsoft.SqlServer.Management.XEvent.Session]$InputObject,
         [switch]$Raw,
-        [switch][Alias('Silent')]$EnableException
+        [switch][Alias('Silent')]
+        $EnableException
     )
     process {
         if (-not $SqlInstance) {
-            $server = $SessionObject.Parent
+            $server = $InputObject.Parent
         }
         else {
             try {
@@ -88,32 +81,73 @@ function Watch-DbaXESession {
             $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
             $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
             Write-Message -Level Verbose -Message "Getting XEvents Sessions on $SqlInstance."
-            $SessionObject = $XEStore.sessions | Where-Object Name -eq $Session | Select-Object -First 1
+            $InputObject = $XEStore.sessions | Where-Object Name -eq $Session | Select-Object -First 1
         }
-
-        if ($SessionObject) {
+        
+        if ($InputObject) {
+            $status = $InputObject.Status
+            if ($status -ne "Running") {
+                Stop-Function -Message "$($InputObject.Name) is in a $status state"
+                return
+            }
+            
+            # Setup all columns for csv but do it in an order
+            $columns = @("name", "timestamp")
+            $newcolumns = @()
+            
+            $fields = ($InputObject.Events.EventFields.Name | Select-Object -Unique)
+            foreach ($column in $fields) {
+                $newcolumns += $column.TrimStart("collect_")
+            }
+            
+            $actions = ($InputObject.Events.Actions.Name | Select-Object -Unique)
+            foreach ($action in $actions) {
+                $newcolumns += ($action -Split '\.')[-1]
+            }
+            
+            $newcolumns = $newcolumns | Sort-Object
+            $columns = ($columns += $newcolumns) | Select-Object -Unique
+            
             try {
                 $xevent = New-Object -TypeName Microsoft.SqlServer.XEvent.Linq.QueryableXEventData(
                     ($server.ConnectionContext.ConnectionString),
-                    ($SessionObject.Name),
+                    ($InputObject.Name),
                     [Microsoft.SqlServer.XEvent.Linq.EventStreamSourceOptions]::EventStream,
                     [Microsoft.SqlServer.XEvent.Linq.EventStreamCacheOptions]::DoNotCache
                 )
-
+                
                 if ($raw) {
-                    foreach ($row in $xevent) {
-                        $row
-                    }
+                    return $xevent
                 }
-                else {
-                    # make it pretty
-                    foreach ($row in $xevent) {
-                        Select-DefaultView -InputObject $row -Property Name, Timestamp, Fields, Actions
+                
+                # make it pretty
+                foreach ($event in $xevent) {
+                    $hash = [ordered]@{}
+                    
+                    foreach ($column in $columns) {
+                            $null = $hash.Add($column, $event.$column) # this basically adds name and timestamp then nulls
                     }
+                    
+                    foreach ($action in $event.Actions) {
+                        $hash[$action.Name] = $action.Value
+                    }
+                    
+                    foreach ($field in $event.Fields) {
+                        $hash[$field.Name] = $field.Value
+                    }
+                    
+                    [pscustomobject]($hash)
                 }
             }
             catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $session
+                Start-Sleep 1
+                $status = Get-DbaXESession -SqlInstance $server -Session $Session
+                if ($status.Status -ne "Running") {
+                    Stop-Function -Message "$($InputObject.Name) was stopped"
+                }
+                else {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $session
+                }
             }
             finally {
                 if ($xevent -is [IDisposable]) {
