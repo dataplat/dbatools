@@ -1,4 +1,4 @@
-﻿function Get-DbaPfCounter {
+﻿function Get-DbaPfDataCollectorCounter {
     <#
         .SYNOPSIS
             Gets Performance Counters
@@ -17,6 +17,9 @@
   
         .PARAMETER Collector
             The Collector name
+   
+        .PARAMETER Counter
+            The Counter name - in the form of '\Processor(_Total)\% Processor Time'
     
         .PARAMETER InputObject
             Enables piped results from Get-DbaPfDataCollectorSet
@@ -34,25 +37,30 @@
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
     
         .LINK
-            https://dbatools.io/Get-DbaPfCounter
+            https://dbatools.io/Get-DbaPfDataCollectorCounter
 
         .EXAMPLE
-            Get-DbaPfCounter
+            Get-DbaPfDataCollectorCounter
     
             Gets all counters for all collector sets on localhost
 
         .EXAMPLE
-            Get-DbaPfCounter -ComputerName sql2017
+            Get-DbaPfDataCollectorCounter -ComputerName sql2017
     
              Gets all counters for all collector sets on  on sql2017
     
         .EXAMPLE
-            Get-DbaPfCounter -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+            Get-DbaPfDataCollectorCounter -ComputerName sql2017 -Counter '\Processor(_Total)\% Processor Time'
+
+            Gets the '\Processor(_Total)\% Processor Time' counter on sql2017
+    
+        .EXAMPLE
+            Get-DbaPfDataCollectorCounter -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
     
             Gets all counters for 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials
     
         .EXAMPLE
-            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPfDataCollector | Get-DbaPfCounter
+            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPfDataCollector | Get-DbaPfDataCollectorCounter
     
             Gets all counters for 'System Correlation' Collector
     #>
@@ -64,6 +72,7 @@
         [string[]]$CollectorSet,
         [Alias("DataCollector")]
         [string[]]$Collector,
+        [string[]]$Counter,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$EnableException
@@ -82,24 +91,26 @@
             }
         }
         
-        if (-not $InputObject.CollectorXml) {
-            Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollector"
-            return
+        if ($InputObject) {
+            if (-not $InputObject.DataCollectorObject) {
+                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollector"
+                return
+            }
         }
         
         foreach ($counterobject in $InputObject) {
             foreach ($countername in $counterobject.Counters) {
                 if ($Counter -and $Counter -notcontains $countername) { continue }
                 [pscustomobject]@{
-                    ComputerName                     = $counterobject.ComputerName
-                    DataCollectorSet                 = $counterobject.DataCollectorSet
-                    DataCollector                    = $counterobject.Name
-                    Name                             = $countername
-                    FileName                         = $counterobject.FileName
-                    DataCollectorSetObject           = $counterobject.DataCollectorSetObject
-                    CounterObject                    = $counterobject
-                    Credential                       = $Credential
-                } | Select-DefaultView -ExcludeProperty DataCollectorSetObject, Credential, CounterObject
+                    ComputerName                          = $counterobject.ComputerName
+                    DataCollectorSet                      = $counterobject.DataCollectorSet
+                    DataCollector                         = $counterobject.Name
+                    DataCollectorSetXml                   = $counterobject.DataCollectorSetXml
+                    Name                                  = $countername
+                    FileName                              = $counterobject.FileName
+                    CounterObject                         = $true
+                    Credential                            = $Credential
+                } | Select-DefaultView -ExcludeProperty DataCollectorObject, Credential, CounterObject, DataCollectorSetXml
             }
         }
     }
