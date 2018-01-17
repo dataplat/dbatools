@@ -23,11 +23,6 @@ function Get-DbaUptime {
         .PARAMETER Credential
             Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials.
 
-        .PARAMETER WindowsCredential
-            Allows you to authenticate to Windows servers using alternate credentials.
-
-            $wincred = Get-Credential, then pass $wincred object to the -WindowsCredential parameter.
-
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
