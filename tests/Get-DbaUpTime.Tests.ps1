@@ -20,14 +20,14 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         $results = Get-DbaUptime -SqlInstance $script:instance1
-        It "should have correct properties" {
+        It "Should have correct properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlServer,SqlUptime,WindowsUptime,SqlStartTime,WindowsBootTime,SinceSqlStart,SinceWindowsBoot'.Split(',')
             ($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
     }
     Context "Command can handle multiple SqlInstances" {
         $results = Get-DbaUptime -SqlInstance $script:instance1,$script:instance2
-            It "command resultset could contain 2 results" {
+            It "Command resultset could contain 2 results" {
                 $results.count | Should Be 2
             }
         foreach ($result in $results) {
