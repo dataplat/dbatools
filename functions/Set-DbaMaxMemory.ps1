@@ -111,7 +111,7 @@ function Set-DbaMaxMemory {
 
 			try {
 				if ($UseRecommended) {
-					Write-Message -Level Verbose -Message "Changing $server SQL Server max from $($currentServer.SqlMaxMB) to $($currentServer.RecommendedMB) MB"
+					Write-Message -Level Verbose -Message "Change $server SQL Server Max Memory from $($currentServer.SqlMaxMB) to $($currentServer.RecommendedMB) MB"
 
 					if ($currentServer.RecommendedMB -eq 0 -or $currentServer.RecommendedMB -eq $null) {
 						$maxMem = (Test-DbaMaxMemory -SqlInstance $server).RecommendedMB
@@ -123,10 +123,10 @@ function Set-DbaMaxMemory {
 					}
 				}
 				else {
-					Write-Message -Level Verbose -Message "Changing $server SQL Server max from $($currentServer.SqlMaxMB) to $MaxMB MB"
+					Write-Message -Level Verbose -Message "Change $server SQL Server Max Memory from $($currentServer.SqlMaxMB) to $MaxMB MB"
 					$server.Configuration.MaxServerMemory.ConfigValue = $MaxMB
 				}
-				if ($PSCmdlet.ShouldProcess($server, "Changing maximum memory from $($currentServer.OldMaxValue) to $($server.Configuration.MaxServerMemory.ConfigValue)")) {
+				if ($PSCmdlet.ShouldProcess($server, "Change Max Memory from $($currentServer.OldMaxValue) to $($server.Configuration.MaxServerMemory.ConfigValue)")) {
 					try {
 						$server.Configuration.Alter()
 						$currentServer.SqlMaxMB = $server.Configuration.MaxServerMemory.ConfigValue
