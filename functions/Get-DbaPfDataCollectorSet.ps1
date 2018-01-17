@@ -146,7 +146,7 @@
                         Security                         = $set.Security
                         StopOnCompletion                 = $set.StopOnCompletion
                         State                            = $state.Trim()
-                        DataCollectorSetObject           = $set
+                        DataCollectorSetObject           = $true
                         TaskObject                       = $task
                         Credential                       = $args[1]
                     }
