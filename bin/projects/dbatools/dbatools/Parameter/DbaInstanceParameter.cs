@@ -508,7 +508,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 case "microsoft.sqlserver.management.smo.server":
                     try
                     {
-                        if (tempInput.Properties["ServerType"] != null && (string)tempInput.Properties["ServerType"].Value == "SqlAzureDatabase")
+                        if (tempInput.Properties["ServerType"] != null && (string)tempInput.Properties["ServerType"].Value.ToString() == "SqlAzureDatabase")
                             _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["Name"].Value)).ComputerName;
                         else
                         { 
