@@ -1,11 +1,10 @@
 function Test-DbaMaxMemory {
-    <#
+	<#
         .SYNOPSIS
             Calculates the recommended value for SQL Server 'Max Server Memory' configuration setting. Works on SQL Server 2000-2014.
 
         .DESCRIPTION
-            Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server's:
-            total memory, currently configured SQL max memory, and the calculated recommendation.
+            Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server's: total memory, currently configured SQL max memory, and the calculated recommendation.
 
             Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment.
 
@@ -24,7 +23,7 @@ function Test-DbaMaxMemory {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Memory
+            Tags: MaxMemory, Memory
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -42,81 +41,82 @@ function Test-DbaMaxMemory {
 
             Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value.
     #>
-    [CmdletBinding()]
-    param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer", "SqlServers")]
-        [DbaInstance[]]$SqlInstance,
-        [PSCredential]$SqlCredential,
-        [PSCredential]$Credential,
-        [switch][Alias('Silent')]$EnableException
-    )
+	[CmdletBinding()]
+	param (
+		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
+		[PSCredential]$Credential,
+        [Alias('Silent')]
+		[switch]$EnableException
+	)
 
-    process {
-        foreach ($instance in $SqlInstance) {
-            Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
+	process {
+		foreach ($instance in $SqlInstance) {
+			Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
 
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
 
-            Write-Message -Level Verbose -Target $instance -Message "Retrieving maximum memory statistics from $instance"
-            $serverMemory = Get-DbaMaxMemory -SqlInstance $server
-            try {
-                Write-Message -Level Verbose -Target $instance -Message "Retrieving number of instances from $($instance.ComputerName)"
-                if ($Credential) {
-                    $serverService = Get-DbaSqlService -ComputerName $instance -Credential $Credential -EnableException
-                }
-                else {
-                    $serverService = Get-DbaSqlService -ComputerName $instance -EnableException
-                }
-                $instanceCount = ($serverService | Where-Object State -Like Running | Where-Object InstanceName | Group-Object InstanceName | Measure-Object Count).Count
-            }
-            catch {
-                Write-Message -Level Warning -Message "Couldn't get accurate SQL Server instance count on $instance. Defaulting to 1." -Target $instance -ErrorRecord $_
-                $instanceCount = 1
-            }
+			Write-Message -Level Verbose -Target $instance -Message "Retrieving maximum memory statistics from $instance"
+			$serverMemory = Get-DbaMaxMemory -SqlInstance $server
+			try {
+				Write-Message -Level Verbose -Target $instance -Message "Retrieving number of instances from $($instance.ComputerName)"
+				if ($Credential) {
+					$serverService = Get-DbaSqlService -ComputerName $instance -Credential $Credential -EnableException
+				}
+				else {
+					$serverService = Get-DbaSqlService -ComputerName $instance -EnableException
+				}
+				$instanceCount = ($serverService | Where-Object State -Like Running | Where-Object InstanceName | Group-Object InstanceName | Measure-Object Count).Count
+			}
+			catch {
+				Write-Message -Level Warning -Message "Couldn't get accurate SQL Server instance count on $instance. Defaulting to 1." -Target $instance -ErrorRecord $_
+				$instanceCount = 1
+			}
 
-            if ($null -eq $serverMemory) {
-                continue
-            }
-            $reserve = 1
+			if ($null -eq $serverMemory) {
+				continue
+			}
+			$reserve = 1
 
-            $maxMemory = $serverMemory.SqlMaxMB
-            $totalMemory = $serverMemory.TotalMB
+			$maxMemory = $serverMemory.SqlMaxMB
+			$totalMemory = $serverMemory.TotalMB
 
-            if ($totalMemory -ge 4096) {
-                $currentCount = $totalMemory
-                while ($currentCount / 4096 -gt 0) {
-                    if ($currentCount -gt 16384) {
-                        $reserve += 1
-                        $currentCount += -8192
-                    }
-                    else {
-                        $reserve += 1
-                        $currentCount += -4096
-                    }
-                }
-                $recommendedMax = [int]($totalMemory - ($reserve * 1024))
-            }
-            else {
-                $recommendedMax = $totalMemory * .5
-            }
+			if ($totalMemory -ge 4096) {
+				$currentCount = $totalMemory
+				while ($currentCount / 4096 -gt 0) {
+					if ($currentCount -gt 16384) {
+						$reserve += 1
+						$currentCount += -8192
+					}
+					else {
+						$reserve += 1
+						$currentCount += -4096
+					}
+				}
+				$recommendedMax = [int]($totalMemory - ($reserve * 1024))
+			}
+			else {
+				$recommendedMax = $totalMemory * .5
+			}
 
-            $recommendedMax = $recommendedMax / $instanceCount
+			$recommendedMax = $recommendedMax / $instanceCount
 
-            [pscustomobject]@{
-                ComputerName  = $serverMemory.ComputerName
-                InstanceName  = $serverMemory.InstanceName
-                SqlInstance   = $serverMemory.SqlInstance
-                InstanceCount = $instanceCount
-                TotalMB       = [int]$totalMemory
-                SqlMaxMB      = [int]$maxMemory
-                RecommendedMB = [int]$recommendedMax
-            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, InstanceCount, TotalMB, SqlMaxMB, RecommendedMB
-        }
-    }
+			[pscustomobject]@{
+				ComputerName  = $server.NetName
+				InstanceName  = $server.ServiceName
+				SqlInstance   = $server.DomainInstanceName
+				InstanceCount = $instanceCount
+				TotalMB       = [int]$totalMemory
+				SqlMaxMB      = [int]$maxMemory
+				RecommendedMB = [int]$recommendedMax
+			} | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, InstanceCount, TotalMB, SqlMaxMB, RecommendedMB
+		}
+	}
 }
