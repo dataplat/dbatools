@@ -1,22 +1,22 @@
 ﻿function Get-DbaPfAvailableCounter {
  <#
     .SYNOPSIS
-    
+
     Gathers list of all available counters on local or remote machines
 
     .DESCRIPTION
-    
+
     Gathers list of all available counters on local or remote machines. Note, if you pass a credential object, it will be included in the output for easy reuse in your next piped command.
-    
-    Thanks to Daniel Streefkerk for this super fast way of counters 
+
+    Thanks to Daniel Streefkerk for this super fast way of counters
     https://daniel.streefkerkonline.com/2016/02/18/use-powershell-to-list-all-windows-performance-counters-and-their-numeric-ids
-    
+
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.
-    
+
     .PARAMETER Pattern
     Specify a pattern for filtering
 
@@ -37,25 +37,25 @@
     Get-DbaPfAvailableCounter
 
     Gets all available counters on the local machine
-    
+
     .EXAMPLE
     Get-DbaPfAvailableCounter -Pattern *sql*
 
     Gets all counters matching sql on the local machine
-    
+
     .EXAMPLE
     Get-DbaPfAvailableCounter -ComputerName sql2017 -Pattern *sql*
 
     Gets all counters matching sql on the remote server sql2017
-    
+
     .EXAMPLE
     Get-DbaPfAvailableCounter -Pattern *sql*
 
     Gets all counters matching sql on the local machine
-    
-    .EXAMPLE    
+
+    .EXAMPLE
     Get-DbaPfAvailableCounter -Pattern *sql* | Add-DbaPfDataCollectorCounter -CollectorSet 'Test Collector Set' -Collector DataCollector01
-    
+
     Adds all counters matching "sql" to the DataCollector01 within the Test Collector Set collector set
 #>
     [CmdletBinding()]
@@ -88,14 +88,14 @@
                 }
             }
         }
-        
+
         # In case ppl really wanted a like, which is slower
         $Pattern = $Pattern.Replace("*",".*").Replace("..*", ".*")
     }
     process {
         foreach ($computer in $ComputerName) {
             Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
-            
+
             try {
                 if ($pattern) {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |
