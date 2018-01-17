@@ -1,3 +1,5 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+
 function Set-DbaMaxMemory {
 	<#
         .SYNOPSIS
