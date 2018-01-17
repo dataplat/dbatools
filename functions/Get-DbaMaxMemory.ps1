@@ -60,17 +60,16 @@ function Get-DbaMaxMemory {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
-			$totalmemory = $server.PhysicalMemory
+			$totalMemory = $server.PhysicalMemory
 
 			# Some servers under-report by 1MB.
-			if (($totalmemory % 1024) -ne 0) { $totalmemory = $totalmemory + 1 }
+			if (($totalMemory % 1024) -ne 0) { $totalMemory = $totalMemory + 1 }
 
 			[pscustomobject]@{
-				Server       = $server.name
 				ComputerName = $server.NetName
 				InstanceName = $server.ServiceName
 				SqlInstance  = $server.DomainInstanceName
-				TotalMB      = [int]$totalmemory
+				TotalMB      = [int]$totalMemory
 				SqlMaxMB     = [int]$server.Configuration.MaxServerMemory.ConfigValue
 			} | Select-DefaultView -ExcludeProperty Server
 		}
