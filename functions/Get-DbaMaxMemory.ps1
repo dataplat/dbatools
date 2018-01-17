@@ -63,7 +63,9 @@ function Get-DbaMaxMemory {
 			$totalMemory = $server.PhysicalMemory
 
 			# Some servers under-report by 1MB.
-			if (($totalMemory % 1024) -ne 0) { $totalMemory = $totalMemory + 1 }
+			if (($totalMemory % 1024) -ne 0) {
+                $totalMemory = $totalMemory + 1
+            }
 
 			[pscustomobject]@{
 				ComputerName = $server.NetName
