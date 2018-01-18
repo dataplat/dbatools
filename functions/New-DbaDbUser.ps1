@@ -21,9 +21,9 @@ function New-DbaDbUser {
 		.PARAMETER IncludeSystem
 			If this switch is enabled, the user will be added to system databases.
 		.PARAMETER Login
-			When specified, the user will be associated to this SQL login and have the same name as the Login. Username or Login may be specified but not both.
+			When specified, the user will be associated to this SQL login and have the same name as the Login.
 		.PARAMETER Username
-			When specified, the user will have this name. Username or Login may be specified but not both.
+			When specified, the user will have this name.
 		.PARAMETER Force
 			If user exists, drop and recreate.
 		.PARAMETER WhatIf
@@ -53,6 +53,10 @@ function New-DbaDbUser {
 		Creates a new sql user without login named user1 in the specified database
 
 		.EXAMPLE
+		New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login Login1 -Username user1
+		Creates a new sql user named user1 mapped to Login1 in the specified database
+
+		.EXAMPLE
 		Get-DbaDatabaseUser -SqlInstance sqlserver1 -Database DB1 | New-DbaDbUser -SqlInstance sqlserver2 -Database DB1
 		Copies users from sqlserver1.DB1 to sqlserver2.DB1. Does not copy permissions!
 
@@ -72,26 +76,67 @@ function New-DbaDbUser {
 
 		[switch]$IncludeSystem,
 
-		[Alias("Name", "LoginName")]
 		[parameter(ParameterSetName = "Login")]
 		[string[]]$Login,
 
-		# [parameter(ParameterSetName = "Contained")]
-		[parameter(ParameterSetName = "Login")]
 		[parameter(ParameterSetName = "NoLogin")]
+		[parameter(ParameterSetName = "Login")]
 		[string[]]$Username,
-
-		# [parameter(ParameterSetName = "Contained")]
-		# [Security.SecureString]$Password,
 
 		[switch]$Force,
 		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
+		function Test-SqlLoginInDatabase {
+			param(
+				[Microsoft.SqlServer.Management.Smo.Login]$Login,
+				[Microsoft.SqlServer.Management.Smo.Database]$Database
+			)
 
+			# Does user exist with same login?
+			if ( $existingUser = ( $Database.Users | Where-Object Login -eq $smoLogin ) ) {
+				if ($force) {
+					if ($Pscmdlet.ShouldProcess($existingUser, "Dropping existing user $($existingUser.Name) because -Force was used")) {
+						try {
+							$existingUser.Drop()
+						}
+						catch {
+							Stop-Function -Message "Could not remove existing user $($existingUser.Name), skipping." -Target $existingUser -Continue
+						}
+					}
+				}
+				else {
+					Stop-Function -Message "User $($existingUser.Name) already exists and -Force was not specified" -Target $existingUser -Continue
+				}
+			}
+		}
 
+		function Test-SqlUserInDatabase {
+			param(
+				[string[]]$Username,
+				[Microsoft.SqlServer.Management.Smo.Database]$Database
+			)
+
+			# Does user exist with same login?
+			if ( $existingUser = ( $Database.Users | Where-Object Name -eq $Username ) ) {
+				if ($force) {
+					if ($Pscmdlet.ShouldProcess($existingUser, "Dropping existing user $($existingUser.Name) because -Force was used")) {
+						try {
+							$existingUser.Drop()
+						}
+						catch {
+							Stop-Function -Message "Could not remove existing user $($existingUser.Name), skipping." -Target $existingUser -Continue
+						}
+					}
+				}
+				else {
+					Stop-Function -Message "User $($existingUser.Name) already exists and -Force was not specified" -Target $existingUser -Continue
+				}
+			}
+		}
 	}
+
 	process {
 		foreach ($instance in $SqlInstance) {
 			try {
@@ -100,10 +145,9 @@ function New-DbaDbUser {
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-				return
 			}
 
-			$databases = $server.Databases | Where-Object Status -EQ "normal"
+			$databases = $server.Databases | Where-Object IsAccessible -eq $true
 
 			if ($Database) {
 				$databases = $databases | Where-Object Name -In $Database
@@ -111,7 +155,7 @@ function New-DbaDbUser {
 			if ($ExcludeDatabase) {
 				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
 			}
-			If ( -Not $IncludeSystem) {
+			if ( -Not $IncludeSystem) {
 				$databases = $databases | Where-Object IsSystemObject -NE $true
 			}
 
@@ -119,66 +163,43 @@ function New-DbaDbUser {
 			foreach ($db in $databases) {
 				Write-Message -Level Verbose -Message "Add users to Database $db on target $server";
 
-				switch ($PSCmdlet.ParameterSetName) {
-					"Login" {
+				switch -Wildcard ($PSCmdlet.ParameterSetName) {
+					"Login*" {
 						# Creates a user with Login
 						Write-Message -Level Verbose -Message "Using UserType: SqlLogin"
 
 						if ($PSBoundParameters.Keys -notcontains 'Login') {
 							Stop-Function -Message "Parameter -Login is required " -Target $instance
-							return
 						}
-
 
 						if ($Login.GetType().Name -eq 'Login') {
-							$smoLogin = $Login
+                            $smoLogin = $Login
+                        }
+                        else {
+                            #get the login associated with the given name.
+                            $smoLogin = $server.Logins | Where-Object Name -eq $Login
+                            if ($smoLogin -eq $null) { 
+								Stop-Function -Message "Invalid Login: $Login is not found on $Server" -Target $instance; 
+								return 
+							}
+                        }
+						
+						Test-SqlLoginInDatabase -Database $db -Login $smoLogin
+						
+						if ( $PSCmdlet.ParameterSetName -eq "LoginWithNewUsername" ) {
+							$Name = $Username;
+							Write-Message -Level Verbose -Message "Using UserName: $Username"
 						}
 						else {
-							#get the login associated with the given name.
-							$smoLogin = $server.Logins | Where-Object Name -eq $Login
-							if ($smoLogin -eq $null) { Stop-Function -Message "Invalid Login: $Login is not found on $Server"  -Target $instance ; return }
+							$Name = $smoLogin.Name;
+							Write-Message -Level Verbose -Message "Using LoginName: $Name"
 						}
-
-						# Does user exist with same login?
-						if ( $existingUser = ( $db.Users | Where-Object Login -eq $smoLogin ) ) {
-							if ($force) {
-								if ($Pscmdlet.ShouldProcess($existingUser, "Dropping existing user $($existingUser.Name) because -Force was used")) {
-									try {
-										$existingUser.Drop()
-									}
-									catch {
-										Stop-Function -Message "Could not remove existing user $($existingUser.Name), skipping." -Target $existingUser -Continue
-										return
-									}
-								}
-							}
-							else {
-								Stop-Function -Message "User $($existingUser.Name) already exists and -Force was not specified" -Target $existingUser
-								return
-							}
-						}
+												
 
 						$Login = $smoLogin
-						$Name = $smoLogin.Name;
 						$UserType = [Microsoft.SqlServer.Management.Smo.UserType]::SqlLogin
 
 					}
-
-					# "Contained" {
-					#     # creates a user with password in a contained database
-					#     Write-Message -Level Verbose -Message "Using ParamaterSetName: Contained"
-					#     # Is this database contained?
-					#     If($db.ContainmentType -ne "Partial" ){
-					#         Stop-Function -Message "Sql User's with passwords can only be created on partially contained databases."  -Category InvalidOperation -Target $instance;
-					#         return
-					#     } else {
-					#         Write-Message -Level Verbose -Message $db.ContainmentType
-					#     }
-
-
-					#     $UserType = [Microsoft.SqlServer.Management.Smo.UserType]::SqlUser
-
-					# }
 
 					"NoLogin" {
 						# Creates a user without login
@@ -189,23 +210,7 @@ function New-DbaDbUser {
 				} #switch
 
 				# Does user exist with same name?
-				if ( $existingUser = $db.Users[$Name] ) {
-					if ($force) {
-						if ($Pscmdlet.ShouldProcess($existingUser, "Dropping existing user $Name because -Force was used")) {
-							try {
-								$existingUser.Drop()
-							}
-							catch {
-								Stop-Function -Message "Could not remove existing user $Name, skipping." -Target $Name -Continue
-								return
-							}
-						}
-					}
-					else {
-						Stop-Function -Message "User $Name already exists and -Force was not specified" -Target $Name
-						return
-					}
-				}
+				Test-SqlUserInDatabase -Database $db -Username $Name
 
 
 				if ($Pscmdlet.ShouldProcess($db, "Creating user $Name")) {
@@ -222,7 +227,6 @@ function New-DbaDbUser {
 					}
 					catch {
 						Stop-Function -Message "Failed to add user $Name in $db to $instance"  -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue;
-						return
 					}
 					$smoUser.Refresh();
 
@@ -230,11 +234,6 @@ function New-DbaDbUser {
 						$smoUser.Rename($Username);
 					}
 
-					# if ( $PSBoundParameters.Keys -contains 'Password' ) {
-					#     $smoUser.ChangePassword('',$Password);
-					#     $smoUser.Alter();
-					#     $smoUser.Refresh();
-					# }
 
 					Write-Message -Level Verbose -Message "Successfully added $smoUser in $db to $instance."
 
@@ -246,11 +245,6 @@ function New-DbaDbUser {
 		} #foreach ($instance in $SqlInstance)
 
 
-	}
-
-
-	end {
-		if (Test-FunctionInterrupt) { return }
 	}
 
 
