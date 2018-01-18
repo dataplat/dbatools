@@ -134,7 +134,7 @@ function Restore-DbaDatabase {
         The name of the SQL Server credential to be used if restoring from an Azure hosted backup
 
     .PARAMETER ReplaceDbNameInFile
-        If switch set and occurence of the original database's name in a data or log file will be replace with the name specified in the Databasename paramter
+        If switch set and occurence of the original database's name in a data or log file will be replace with the name specified in the Databasename parameter
 
     .PARAMETER Recover
         If set will perform recovery on the indicated database
