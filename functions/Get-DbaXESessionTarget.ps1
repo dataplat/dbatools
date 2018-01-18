@@ -1,5 +1,5 @@
 function Get-DbaXESessionTarget {
-	<#
+    <#
         .SYNOPSIS
             Get a list of Extended Events Session Targets from the specified SQL Server instance(s).
 
@@ -56,105 +56,105 @@ function Get-DbaXESessionTarget {
 
             Return only the package0.event_file target for the system_health session on sql2016.
     #>
-	[CmdletBinding(DefaultParameterSetName = "Default")]
-	param (
-		[parameter(ValueFromPipeline, ParameterSetName = "instance", Mandatory)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[string[]]$Session,
-		[string[]]$Target,
-		[parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
-		[Microsoft.SqlServer.Management.XEvent.Session[]]$SessionObject,
-		[switch][Alias('Silent')]$EnableException
-	)
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    param (
+        [parameter(ValueFromPipeline, ParameterSetName = "instance", Mandatory)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string[]]$Session,
+        [string[]]$Target,
+        [parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
+        [Microsoft.SqlServer.Management.XEvent.Session[]]$SessionObject,
+        [switch][Alias('Silent')]$EnableException
+    )
 
-	begin {
-		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null) {
-			Stop-Function -Message "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
-			return
-		}
+    begin {
+        if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null) {
+            Stop-Function -Message "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
+            return
+        }
 
-		function Get-Target {
-			[CmdletBinding()]
-			param (
-				$Sessions,
-				$Session,
-				$Server,
-				$Target
-			)
+        function Get-Target {
+            [CmdletBinding()]
+            param (
+                $Sessions,
+                $Session,
+                $Server,
+                $Target
+            )
 
-			foreach ($xsession in $Sessions) {
+            foreach ($xsession in $Sessions) {
 
-				if ($null -eq $server) {
-					$server = $xsession.Parent
-				}
+                if ($null -eq $server) {
+                    $server = $xsession.Parent
+                }
 
-				if ($Session -and $xsession.Name -notin $Session) { continue }
-				$status = switch ($xsession.IsRunning) { $true { "Running" } $false { "Stopped" } }
-				$sessionname = $xsession.Name
+                if ($Session -and $xsession.Name -notin $Session) { continue }
+                $status = switch ($xsession.IsRunning) { $true { "Running" } $false { "Stopped" } }
+                $sessionname = $xsession.Name
 
-				foreach ($xtarget in $xsession.Targets) {
-					if ($Target -and $xtarget.Name -notin $Target) { continue }
+                foreach ($xtarget in $xsession.Targets) {
+                    if ($Target -and $xtarget.Name -notin $Target) { continue }
 
-					$files = $xtarget.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
+                    $files = $xtarget.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
 
-					$filecollection = $remotefile = @()
+                    $filecollection = $remotefile = @()
 
-					if ($files) {
-						foreach ($file in $files) {
-							if ($file -notmatch ':\\' -and $file -notmatch '\\\\') {
-								$directory = $server.ErrorLogPath.TrimEnd("\")
-								$file = "$directory\$file"
-							}
-							$filecollection += $file
-							$remotefile += Join-AdminUnc -servername $server.netName -filepath $file
-						}
-					}
+                    if ($files) {
+                        foreach ($file in $files) {
+                            if ($file -notmatch ':\\' -and $file -notmatch '\\\\') {
+                                $directory = $server.ErrorLogPath.TrimEnd("\")
+                                $file = "$directory\$file"
+                            }
+                            $filecollection += $file
+                            $remotefile += Join-AdminUnc -servername $server.netName -filepath $file
+                        }
+                    }
 
-					Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name ComputerName -Value $server.NetName
-					Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-					Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-					Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name Session -Value $sessionname
-					Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name SessionStatus -Value $status
-					Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name TargetFile -Value $filecollection
-					Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name RemoteTargetFile -Value $remotefile
+                    Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                    Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                    Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name Session -Value $sessionname
+                    Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name SessionStatus -Value $status
+                    Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name TargetFile -Value $filecollection
+                    Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name RemoteTargetFile -Value $remotefile
 
-					Select-DefaultView -InputObject $xtarget -Property ComputerName, InstanceName, SqlInstance, Session, SessionStatus, Name, ID, 'TargetFields as Field', PackageName, 'TargetFile as File', Description, ScriptName
-				}
-			}
-		}
-	}
+                    Select-DefaultView -InputObject $xtarget -Property ComputerName, InstanceName, SqlInstance, Session, SessionStatus, Name, ID, 'TargetFields as Field', PackageName, 'TargetFile as File', Description, ScriptName
+                }
+            }
+        }
+    }
 
-	process {
-		if (Test-FunctionInterrupt) { return }
+    process {
+        if (Test-FunctionInterrupt) { return }
 
-		foreach ($instance in $SqlInstance) {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance"
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-			$SqlConn = $server.ConnectionContext.SqlConnectionObject
-			$SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-			$xsessionEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
+            $SqlConn = $server.ConnectionContext.SqlConnectionObject
+            $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
+            $xsessionEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
 
-			Write-Message -Level Verbose -Message "Getting XEvents Session Targets on $instance."
+            Write-Message -Level Verbose -Message "Getting XEvents Session Targets on $instance."
 
-			$xsessions = $xsessionEStore.sessions
+            $xsessions = $xsessionEStore.sessions
 
-			if ($Session) {
-				$xsessions = $xsessions | Where-Object { $_.Name -in $Session }
-			}
+            if ($Session) {
+                $xsessions = $xsessions | Where-Object { $_.Name -in $Session }
+            }
 
-			Get-Target -Sessions $xsessions -Session $Session -Server $server -Target $Target
-		}
+            Get-Target -Sessions $xsessions -Session $Session -Server $server -Target $Target
+        }
 
-		if ((Test-Bound -ParameterName SqlInstance -Not)) {
-			Get-Target -Sessions $SessionObject -Session $Session -Target $Target
-		}
-	}
+        if ((Test-Bound -ParameterName SqlInstance -Not)) {
+            Get-Target -Sessions $SessionObject -Session $Session -Target $Target
+        }
+    }
 }
