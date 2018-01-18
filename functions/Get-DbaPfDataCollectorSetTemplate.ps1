@@ -45,13 +45,13 @@
 #>
     [CmdletBinding()]
     param (
-        [string[]]$Path = "$script:PSModuleRoot\bin\perfmontemplates",
+        [string[]]$Path = "$script:PSModuleRoot\bin\perfmontemplates\collectorsets",
         [string]$Pattern,
         [string[]]$Template,
         [switch]$EnableException
     )
     begin {
-        $metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates-metadata.xml"
+        $metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates\collectorsets.xml"
         # In case ppl really wanted a like, which is slower
         $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
     }
