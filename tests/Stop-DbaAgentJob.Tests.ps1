@@ -4,8 +4,8 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "executes and returns the accurate info" {
-        $agent = Get-DbaAgentJob -SqlInstance $script:instance2 -Job 'DatabaseBackup - SYSTEM_DATABASES - FULL' | Start-DbaAgentJob | Stop-DbaAgentJob
         It -Skip "returns a CurrentRunStatus of Idle" {
+            $agent = Get-DbaAgentJob -SqlInstance $script:instance2 -Job 'DatabaseBackup - SYSTEM_DATABASES - FULL' | Start-DbaAgentJob | Stop-DbaAgentJob
             $results.CurrentRunStatus -eq 'Idle' | Should Be $true
         }
     }
