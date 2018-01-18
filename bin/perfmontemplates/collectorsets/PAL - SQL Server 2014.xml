@@ -1,9 +1,13 @@
 ﻿<DataCollectorSet>
-<Name>PAL_Microsoft_SQL_Server_2014</Name>
+<Name>PAL - SQL Server 2014 and Up</Name>
+<DisplayName>PAL - SQL Server 2014 and Up</DisplayName>
+<DisplayNameUnresolved>PAL - SQL Server 2014 and Up</DisplayNameUnresolved>
+<Description>Data Collector Sets from PAL, a performance monitor data aggregation tool by Microsoft. The toolset was created by Microsoft PFE Clint Huffman who worked with fellow experts to create a list specialized lists of counters. You can find the project at github.com/clinthuffman/PAL</Description>
+<DescriptionUnresolved>Data Collector Sets from PAL, a performance monitor data aggregation tool by Microsoft. The toolset was created by Microsoft PFE Clint Huffman who worked with fellow experts to create a list specialized lists of counters. You can find the project at github.com/clinthuffman/PAL</DescriptionUnresolved>
 <SubdirectoryFormat>3</SubdirectoryFormat>
 <SubdirectoryFormatPattern>yyyyMMdd\-NNNNNN</SubdirectoryFormatPattern>
 <PerformanceCounterDataCollector>
-    <Name>PAL_Microsoft_SQL_Server_2014</Name>
+    <Name>PAL - SQL Server 2014 and Up Collector</Name>
     <SampleInterval>15</SampleInterval>
     <Counter>\Cache\Dirty Pages</Counter>
     <Counter>\Cache\Lazy Write Flushes/sec</Counter>
