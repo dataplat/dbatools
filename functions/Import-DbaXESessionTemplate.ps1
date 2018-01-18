@@ -6,7 +6,7 @@
         .DESCRIPTION
             Imports a new XESession XML Template either from the dbatools repository or a file you specify.
 
-        .PARAMETER SqlInstance 
+        .PARAMETER SqlInstance
             Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
         .PARAMETER SqlCredential
