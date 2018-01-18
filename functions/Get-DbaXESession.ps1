@@ -6,7 +6,7 @@ function Get-DbaXESession {
         .DESCRIPTION
             Retrieves a list of Extended Events Sessions present on the specified SQL Server instance(s).
 
-        .PARAMETER SqlInstance 
+        .PARAMETER SqlInstance
             Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
         .PARAMETER SqlCredential
