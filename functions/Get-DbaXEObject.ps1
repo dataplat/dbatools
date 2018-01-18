@@ -1,5 +1,5 @@
 ﻿function Get-DbaXEObject {
-	<#
+    <#
         .SYNOPSIS
             Gets a list of trace(s) from specified SQL Server instance(s).
 
@@ -50,24 +50,24 @@
             Lists all the XE Objects of type Action and Event on the sql2017 SQL Server.
 
     #>
-	[CmdletBinding()]
-	Param (
-		[parameter(Position = 0, Mandatory, ValueFromPipeline)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[ValidateSet("Type", "Event", "Target", "Action", "Map", "Message", "PredicateComparator", "PredicateSource")]
-		[string[]]$Type,
-		[switch]$EnableException
-	)
-	begin {
-		if ($Type) {
-			$join = $Type -join "','"
-			$where = "AND o.object_type in ('$join')"
-			$where.Replace("PredicateComparator", "pred_compare")
-			$where.Replace("PredicateSource", "pred_source")
-		}
-		$sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
+    [CmdletBinding()]
+    Param (
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [ValidateSet("Type", "Event", "Target", "Action", "Map", "Message", "PredicateComparator", "PredicateSource")]
+        [string[]]$Type,
+        [switch]$EnableException
+    )
+    begin {
+        if ($Type) {
+            $join = $Type -join "','"
+            $where = "AND o.object_type in ('$join')"
+            $where.Replace("PredicateComparator", "pred_compare")
+            $where.Replace("PredicateSource", "pred_source")
+        }
+        $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
                 ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
                 SERVERPROPERTY('ServerName') AS SqlInstance,
                 p.name AS PackageName,
@@ -93,24 +93,24 @@
                 AND (o.capabilities IS NULL OR o.capabilities & 1 = 0)
                 ORDER BY o.object_type
                 "
-	}
-	process {
-		foreach ($instance in $SqlInstance) {
+    }
+    process {
+        foreach ($instance in $SqlInstance) {
 
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-				return
-			}
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                return
+            }
 
-			try {
-				$server.Query($sql) | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ObjectTypeRaw
-			}
-			catch {
-				Stop-Function -Message "Issue collecting trace data on $server." -Target $server -ErrorRecord $_
-			}
-		}
-	}
+            try {
+                $server.Query($sql) | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ObjectTypeRaw
+            }
+            catch {
+                Stop-Function -Message "Issue collecting trace data on $server." -Target $server -ErrorRecord $_
+            }
+        }
+    }
 }

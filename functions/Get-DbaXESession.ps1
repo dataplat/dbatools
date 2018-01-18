@@ -1,5 +1,5 @@
 function Get-DbaXESession {
-	<#
+    <#
         .SYNOPSIS
             Gets a list of Extended Events Sessions from the specified SQL Server instance(s).
 
@@ -52,75 +52,75 @@ function Get-DbaXESession {
             Returns a custom object with ComputerName, SqlInstance, Session, StartTime, Status and other properties, from multiple SQL instances.
 
     #>
-	[CmdletBinding()]
-	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[Alias("Sessions")]
-		[object[]]$Session,
-		[switch][Alias('Silent')]$EnableException
-	)
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Alias("Sessions")]
+        [object[]]$Session,
+        [switch][Alias('Silent')]$EnableException
+    )
 
-	begin {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaXEsSession
-	}
+    begin {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaXEsSession
+    }
 
-	process {
+    process {
 
-		foreach ($instance in $SqlInstance) {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance."
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance."
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-			$SqlConn = $server.ConnectionContext.SqlConnectionObject
-			$SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-			$XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
-			Write-Message -Level Verbose -Message "Getting XEvents Sessions on $instance."
+            $SqlConn = $server.ConnectionContext.SqlConnectionObject
+            $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
+            $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
+            Write-Message -Level Verbose -Message "Getting XEvents Sessions on $instance."
 
-			$xesessions = $XEStore.sessions
+            $xesessions = $XEStore.sessions
 
-			if ($Session) {
-				$xesessions = $xesessions | Where-Object { $_.Name -in $Session }
-			}
+            if ($Session) {
+                $xesessions = $xesessions | Where-Object { $_.Name -in $Session }
+            }
 
-			foreach ($x in $xesessions) {
-				$status = switch ($x.IsRunning) { $true { "Running" } $false { "Stopped" } }
-				$files = $x.Targets.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
+            foreach ($x in $xesessions) {
+                $status = switch ($x.IsRunning) { $true { "Running" } $false { "Stopped" } }
+                $files = $x.Targets.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
 
-				$filecollection = $remotefile = @()
+                $filecollection = $remotefile = @()
 
-				if ($files) {
-					foreach ($file in $files) {
-						if ($file -notmatch ':\\' -and $file -notmatch '\\\\') {
-							$directory = $server.ErrorLogPath.TrimEnd("\")
-							$file = "$directory\$file"
-						}
-						$filecollection += $file
-						$remotefile += Join-AdminUnc -servername $server.netName -filepath $file
-					}
-				}
+                if ($files) {
+                    foreach ($file in $files) {
+                        if ($file -notmatch ':\\' -and $file -notmatch '\\\\') {
+                            $directory = $server.ErrorLogPath.TrimEnd("\")
+                            $file = "$directory\$file"
+                        }
+                        $filecollection += $file
+                        $remotefile += Join-AdminUnc -servername $server.netName -filepath $file
+                    }
+                }
 
-				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.NetName
-				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Status -Value $status
-				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Session -Value $x.Name
-				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name TargetFile -Value $filecollection
-				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name RemoteTargetFile -Value $remotefile
-				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Parent -Value $server
-				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Store -Value $XEStore
-				Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, TargetFile, Events, MaxMemory, MaxEventSize
+                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Status -Value $status
+                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Session -Value $x.Name
+                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name TargetFile -Value $filecollection
+                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name RemoteTargetFile -Value $remotefile
+                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Parent -Value $server
+                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Store -Value $XEStore
+                Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, TargetFile, Events, MaxMemory, MaxEventSize
                 try {
                     $xesessions.Refresh()
                 } catch {
                 }
-			}
-		}
-	}
+            }
+        }
+    }
 }
