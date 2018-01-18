@@ -1,36 +1,42 @@
 ﻿function Get-DbaXEStore {
- <#
-    .SYNOPSIS
-    Get a Extended Events store
+    <#
+        .SYNOPSIS
+            Get a Extended Events store
 
-    .DESCRIPTION
-    Get a Extended Events store
+        .DESCRIPTION
+            Get a Extended Events store
 
-    .PARAMETER SqlInstance
-    The SQL Instances that you're connecting to.
+       .PARAMETER SqlInstance 
+            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-    .PARAMETER SqlCredential
-    Credential object used to connect to the SQL Server as a different user
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    .NOTES
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-    .LINK
-    https://dbatools.io/Get-DbaXEStore
+            To connect as a different Windows user, run PowerShell as that user.
 
-    .EXAMPLE
-    Get-DbaXEStore -SqlInstance ServerA\sql987
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    Returns a XEvent Store
+        .NOTES
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-#>
+        .LINK
+            https://dbatools.io/Get-DbaXEStore
+
+        .EXAMPLE
+            Get-DbaXEStore -SqlInstance ServerA\sql987
+
+            Returns an XEvent Store.
+
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -43,7 +49,7 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
+                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {
