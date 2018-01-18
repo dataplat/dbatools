@@ -10,7 +10,7 @@
     such as text-TSV (for tab-delimited text), text-CSV (for comma-delimited text), binary-BIN, or SQL.
 
     relog "C:\PerfLogs\Admin\System Correlation\WORKSTATIONX_20180112-000001\DataCollector01.blg" -o C:\temp\foo.csv -f tsv
-    
+
     *** if you find any input hangs, please send us the output so we can accommodate for it ** then use -Raw for an immediate solution
 
     .PARAMETER Path
@@ -53,12 +53,15 @@
     .PARAMETER Summary
     Displays the performance counters and time ranges of log files specified in the input file.
 
+    .PARAMETER Multithread
+    Parallelize the processing. This may speed up large batches or large files.
+
     .PARAMETER Raw
-    Output the results of the DOS command instead of Get-ChildItem
-    
+    Output the results of the DOS command instead of Get-ChildItem - does not multithread.
+
     .PARAMETER InputObject
     Allows input from Get-DbaPfDataCollector and Get-DbaPfDataCollectorSet
-    
+
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -76,14 +79,14 @@
     Invoke-DbaPfRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c
 
     Creats the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg
-    
+
     Returns the newly created file as a file object
-    
+
     .EXAMPLE
     Invoke-DbaPfRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c -Raw
 
     Creats the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg then outputs the raw results of the relog command.
-    
+
     [Invoke-DbaPfRelog][21:21:35] relog "C:\temp\perfmon.blg" -f csv -o C:\temp\a\b\c
 
     Input
@@ -109,7 +112,7 @@
 
     .EXAMPLE
     Invoke-DbaPfRelog -Path 'C:\temp\perflog with spaces.blg' -Destination C:\temp\a\b\c -Type csv -BeginTime ((Get-Date).AddDays(-30)) -EndTime ((Get-Date).AddDays(-1))
-    
+
     Creates the temp, a, and b directories if needed, then generates c.csv (comma separated) from C:\temp\perflog with spaces.blg', starts 30 day ago and ends one day ago
 
 #>
@@ -132,6 +135,7 @@
         [switch]$Summary,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
+        [switch]$Multithread,
         [switch]$Raw,
         [switch]$EnableException
     )
@@ -142,7 +146,7 @@
         if (Test-Bound -ParameterName EndTime) {
             $endstring = ($EndTime -f 'M/d/yyyy hh:mm:ss' | Out-String).Trim()
         }
-        
+
         $allpaths = @()
         $allpaths += $Path
     }
@@ -151,13 +155,13 @@
             Stop-Function -Message "Append can only be used with -Type bin" -Target $Path
             return
         }
-        
+
         if ($InputObject) {
             foreach ($object in $InputObject) {
                 # DataCollectorSet
                 if ($object.OutputLocation -and $object.RemoteOutputLocation) {
                     $instance = [dbainstance]$object.ComputerName
-                    
+
                     if ($instance.IsLocalHost) {
                         $allpaths += (Get-ChildItem -Recurse -Path $object.OutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
                     }
@@ -168,7 +172,7 @@
                 # DataCollector
                 if ($object.LatestOutputLocation -and $object.RemoteLatestOutputLocation) {
                     $instance = [dbainstance]$object.ComputerName
-                    
+
                     if ($instance.IsLocalHost) {
                         $allpaths += (Get-ChildItem -Recurse -Path (Split-Path $object.LatestOutputLocation) -Include *.blg -ErrorAction SilentlyContinue).FullName
                     }
@@ -179,72 +183,72 @@
             }
         }
     }
-    
+
     # Gotta collect all the paths first then process them otherwise there may be duplicates
     end {
         $allpaths = $allpaths | Where-Object { $_ -match '.blg' } | Select-Object -Unique
-        
+
         foreach ($file in $allpaths) {
             $item = Get-ChildItem -Path $file -ErrorAction SilentlyContinue
-            
+
             if ($item -eq $null) {
                 Stop-Function -Message "$file does not exist" -Target $file -Continue
                 return
             }
-            
+
             if ((Test-Bound -ParameterName Destination -Not) -and -not $Append) {
                 $Destination = Join-Path (Split-Path $file) $item.BaseName
             }
-            
+
             $params = @("`"$file`"")
-            
+
             if ($Append) {
                 $params += "-a"
             }
-            
+
             if ($PerformanceCounter) {
                 $parsedcounters = $PerformanceCounter -join " "
                 $params += "-c `"$parsedcounters`""
             }
-            
+
             if ($PerformanceCounterPath) {
                 $params += "-cf `"$PerformanceCounterPath`""
             }
-            
+
             $params += "-f $Type"
-            
+
             if ($Interval) {
                 $params += "-t $Interval"
             }
-            
+
             if ($Destination) {
                 $params += "-o `"$Destination`""
             }
-            
+
             if ($beginstring) {
                 $params += "-b $beginstring"
             }
-            
+
             if ($endstring) {
                 $params += "-e $endstring"
             }
-            
+
             if ($ConfigPath) {
                 $params += "-config $ConfigPath"
             }
-            
+
             if ($Summary) {
                 $params += "-q"
             }
-            
-            
+
+
             if (-not ($Destination.StartsWith("DSN"))) {
                 $outputisfile = $true
             }
             else {
                 $outputisfile = $false
             }
-            
+
             if ($outputisfile) {
                 if ($Destination) {
                     $dir = Split-Path $Destination
@@ -256,7 +260,7 @@
                             Stop-Function -Message "Failure" -ErrorRecord $_ -Target $Destination -Continue
                         }
                     }
-                    
+
                     if ((Test-Path $Destination) -and -not $Append -and ((Get-Item $Destination) -isnot [System.IO.DirectoryInfo])) {
                         if ($AllowClobber) {
                             try {
@@ -275,7 +279,7 @@
                             }
                         }
                     }
-                    
+
                     if ((Test-Path "$Destination.$type") -and -not $Append) {
                         if ($AllowClobber) {
                             try {
@@ -296,9 +300,9 @@
                     }
                 }
             }
-            
+
             $arguments = ($params -join " ")
-            
+
             try {
                 if ($Raw) {
                     Write-Message -Level Output -Message "relog $arguments"
@@ -306,20 +310,28 @@
                 }
                 else {
                     Write-Message -Level Verbose -Message "relog $arguments"
-                    $output = (cmd /c "relog $arguments" | Out-String).Trim()
-                    
-                    if ($output -notmatch "Success") {
-                        Stop-Function -Continue -Message $output.Trim("Input")
+                    $scriptblock = {
+                        $output = (cmd /c "relog $arguments" | Out-String).Trim()
+
+                        if ($output -notmatch "Success") {
+                            Stop-Function -Continue -Message $output.Trim("Input")
+                        }
+                        else {
+                            Write-Message -Level Verbose -Message $output
+                            $array = $output -Split [environment]::NewLine
+                            $files = $array | Select-String "File:"
+
+                            foreach ($rawfile in $files) {
+                                $rawfile = $rawfile.ToString().Replace("File:", "").Trim()
+                                Get-ChildItem $rawfile | Add-Member -MemberType NoteProperty -Name RelogFile -Value $true -PassThru
+                            }
+                        }
+                    }
+                    if ($Multithread) {
+                        $true | Invoke-Parallel -ImportVariables -ImportModules -ScriptBlock $scriptblock -Quiet
                     }
                     else {
-                        Write-Message -Level Verbose -Message $output
-                        $array = $output -Split [environment]::NewLine
-                        $files = $array | Select-String "File:"
-                        
-                        foreach ($rawfile in $files) {
-                            $rawfile = $rawfile.ToString().Replace("File:", "").Trim()
-                            Get-ChildItem $rawfile | Add-Member -MemberType NoteProperty -Name RelogFile -Value $true -PassThru
-                        }
+                        Invoke-Command -ScriptBlock $scriptblock
                     }
                 }
             }
