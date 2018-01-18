@@ -335,7 +335,7 @@ function Restore-DbaDatabase {
 		[parameter(ParameterSetName = "Restore")]
 		[string]$DestinationFilePrefix = '',
 		[parameter(ParameterSetName = "Restore")]
-        [Alias("RestoredDatababaseNamePrefix")]
+		[Alias("RestoredDatababaseNamePrefix")]
 		[string]$RestoredDatabaseNamePrefix,
 		[parameter(ParameterSetName = "Restore")]
 		[parameter(ParameterSetName = "RestorePage")]
