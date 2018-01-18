@@ -138,6 +138,11 @@
             $null = $collectorset.Commit($setname, $null, 0x0003) #add or modify.
             $null = $collectorset.Query($setname, $Null)
         }
+        
+        $instancescript = {
+            $services = Get-Service -DisplayName *sql* | Select-Object -ExpandProperty DisplayName
+            [regex]::matches($services, '(?<=\().+?(?=\))').Value | Where-Object { $PSItem -ne 'MSSQLSERVER' } | Select-Object -Unique
+        }
     }
     process {
         if ((Test-Bound -ParameterName Path -Not) -and (Test-Bound -ParameterName Template -Not)) {
@@ -216,6 +221,8 @@
                     Write-Message -Level Verbose -Message "Importing $file as $name "
                     Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
                     
+                    $instances = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $instancescript -ErrorAction Stop -Raw
+
                     $scriptblock = {
                         try {
                             $results = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $Name, $plainxml -ErrorAction Stop
@@ -239,6 +246,26 @@
                         }
                     }
                     
+                    $newcollection = @()
+                    foreach ($instance in $instances) {
+                        $datacollector = Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name | Get-DbaPfDataCollector
+                        $sqlcounters = $datacollector | Get-DbaPfDataCollectorCounter | Where-Object { $_.Name -match 'sql.*\:' -and $_.Name -notmatch 'sqlclient' } | Select-Object -ExpandProperty Name
+                        
+                        foreach ($counter in $sqlcounters) {
+                            $split = $counter.Split(":")
+                            $firstpart = switch ($split[0]) {
+                                'SQLServer' { 'MSSQL' }
+                                '\SQLServer' { '\MSSQL' }
+                                default { $split[0] }
+                            }
+                            $secondpart = $split[-1]
+                            $finalcounter = "$firstpart`$$instance`:$secondpart"
+                            $newcollection += $finalcounter
+                        }
+                    }
+                    
+                    Write-Message -Level Verbose -Message "Adding $($newcollection.Count) additional counters"
+                    $null = Add-DbaPfDataCollectorCounter -InputObject $datacollector -Counter $newcollection
                     Remove-Item $tempfile -ErrorAction SilentlyContinue
                 }
                 catch {
