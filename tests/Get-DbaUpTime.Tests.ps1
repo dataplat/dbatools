@@ -32,7 +32,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
         foreach ($result in $results) {
             It "Windows up time should be more than SQL Uptime" {
-                $result.SqlUptime | Should BeLessThan $result.WindowsUpTime 
+                $result.SqlUptime | Should BeLessThan $result.WindowsUpTime
             }
         }
     }
