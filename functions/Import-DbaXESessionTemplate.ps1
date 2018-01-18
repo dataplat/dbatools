@@ -141,17 +141,20 @@
                     # Handle whatever people specify
                     $TargetFilePath = $TargetFilePath.TrimEnd("\")
                     $TargetFileMetadataPath = $TargetFileMetadataPath.TrimEnd("\")
-
+                    $TargetFilePath = "$TargetFilePath\"
+                    $TargetFileMetadataPath = "$TargetFileMetadataPath\"
+                    
                     # Perform replace
                     $xelphrase = 'name="filename" value="'
                     $xemphrase = 'name="metadatafile" value="'
                     
                     try {
+                        $basename = (Get-ChildItem $file).Basename
                         $contents = Get-Content $file -ErrorAction Stop
-                        $contents = $contents.Replace($xelphrase, "$xelphrase\$TargetFilePath")
-                        $contents = $contents.Replace($xemphrase, "$xemphrase\$TargetFileMetadataPath")
+                        $contents = $contents.Replace($xelphrase, "$xelphrase$TargetFilePath")
+                        $contents = $contents.Replace($xemphrase, "$xemphrase$TargetFileMetadataPath")
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("").TrimEnd("\")
-                        $tempfile = "$temp\import-dbatools-xetemplate.xml"
+                        $tempfile = "$temp\$basename"
                         $null = Set-Content -Path $tempfile -Value $contents -Encoding UTF8
                         $xml = [xml](Get-Content $tempfile -ErrorAction Stop)
                         $file = $tempfile
