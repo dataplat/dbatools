@@ -6,7 +6,7 @@
         .DESCRIPTION
             This function returns a list of Traces on the specified SQL Server instance(s) and identifies the default Trace File
 
-        .PARAMETER SqlInstance 
+        .PARAMETER SqlInstance
             Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
         .PARAMETER SqlCredential

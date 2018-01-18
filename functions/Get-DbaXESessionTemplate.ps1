@@ -5,13 +5,13 @@
 
         .DESCRIPTION
             Parses Extended Event XML templates. Defaults to parsing templates in our template repository (\bin\xetemplates\).
-            
+
             The default repository contains templates from:
                     Microsoft's Templates that come with SSMS
                     Jes Borland's "Everyday Extended Events" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)
                     Christian Gräfe's XE Repo: https://github.com/chrgraefe/sqlscripts/blob/master/XE-Events/
                     Erin Stellato's Blog: https://www.sqlskills.com/blogs/erin/
-            
+
             Some profile templates converted using:
                     sp_SQLskills_ConvertTraceToExtendedEvents.sql
                     Jonathan M. Kehayias, SQLskills.com
@@ -19,13 +19,13 @@
 
         .PARAMETER Path
             The path to the template directory. Defaults to our template repository (\bin\xetemplates\).
-        
+
         .PARAMETER Pattern
             Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaXESessionTemplate
 
         .PARAMETER Template
             Specifies one or more of the templates provided by dbatools. Press tab to cycle through the list to the options.
-        
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -53,12 +53,12 @@
             Get-DbaXESessionTemplate -Path "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates"
 
             Returns information about all the templates in your local XEventTemplates repository.
-        
+
         .EXAMPLE
             Get-DbaXESessionTemplate -Pattern duration
 
             Returns information about all the templates that match the word "duration" in the title, category or body.
-        
+
         .EXAMPLE
             Get-DbaXESessionTemplate | Select-Object *
 
@@ -80,11 +80,11 @@
 	process {
 		foreach ($directory in $Path) {
 			$files = Get-ChildItem "$directory\*.xml"
-            
+
 			if ($Template) {
 				$files = $files | Where-Object BaseName -in $Template
 			}
-            
+
 			foreach ($file in $files) {
 				try {
 					$xml = [xml](Get-Content $file)
@@ -92,7 +92,7 @@
 				catch {
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
 				}
-                
+
 				foreach ($session in $xml.event_sessions) {
 					$meta = $metadata | Where-Object Name -eq $session.event_session.name
 					if ($Pattern) {
