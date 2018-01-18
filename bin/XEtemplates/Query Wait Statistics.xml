@@ -5,7 +5,7 @@
     <templateName>
       <!-- _locID_text = "templateName" _locComment = "" -->Query Wait Statistics</templateName>
     <templateDescription>
-      <!-- _locID_text = "templateDescription" _locComment = "" -->Description</templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Tracks internal and external wait statistics.</templateDescription>
       <event package="sqlos" name="wait_completed">
          <action package="sqlserver" name="database_id" />
          <action package="sqlserver" name="database_name" />
