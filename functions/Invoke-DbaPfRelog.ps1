@@ -318,7 +318,7 @@
                         
                         foreach ($rawfile in $files) {
                             $rawfile = $rawfile.ToString().Replace("File:", "").Trim()
-                            Get-ChildItem $rawfile
+                            Get-ChildItem $rawfile | Add-Member -MemberType NoteProperty -Name RelogFile -Value $true -PassThru
                         }
                     }
                 }

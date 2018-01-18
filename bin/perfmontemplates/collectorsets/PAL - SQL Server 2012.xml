@@ -1,0 +1,224 @@
+﻿<DataCollectorSet>
+<Name>PAL - SQL Server 2012</Name>
+<DisplayName>PAL - SQL Server 2012</DisplayName>
+<DisplayNameUnresolved>PAL - SQL Server 2012</DisplayNameUnresolved>
+<Description>Data Collector Sets from PAL, a performance monitor data aggregation tool by Microsoft. The toolset was created by Microsoft PFE Clint Huffman who worked with fellow experts to create a list specialized lists of counters. You can find the project at github.com/clinthuffman/PAL</Description>
+<DescriptionUnresolved>Data Collector Sets from PAL, a performance monitor data aggregation tool by Microsoft. The toolset was created by Microsoft PFE Clint Huffman who worked with fellow experts to create a list specialized lists of counters. You can find the project at github.com/clinthuffman/PAL</DescriptionUnresolved>
+<SubdirectoryFormat>3</SubdirectoryFormat>
+<SubdirectoryFormatPattern>yyyyMMdd\-NNNNNN</SubdirectoryFormatPattern>
+<PerformanceCounterDataCollector>
+    <Name>PAL - SQL Server 2012 Collector</Name>
+    <SampleInterval>15</SampleInterval>
+    <Counter>\Cache\Dirty Pages</Counter>
+    <Counter>\Cache\Lazy Write Flushes/sec</Counter>
+    <Counter>\LogicalDisk(*)\% Free Space</Counter>
+    <Counter>\LogicalDisk(*)\% Idle Time</Counter>
+    <Counter>\LogicalDisk(*)\Avg. Disk Bytes/Read</Counter>
+    <Counter>\LogicalDisk(*)\Avg. Disk Bytes/Transfer</Counter>
+    <Counter>\LogicalDisk(*)\Avg. Disk Bytes/Write</Counter>
+    <Counter>\LogicalDisk(*)\Avg. Disk Queue Length</Counter>
+    <Counter>\LogicalDisk(*)\Avg. Disk sec/Read</Counter>
+    <Counter>\LogicalDisk(*)\Avg. Disk sec/Transfer</Counter>
+    <Counter>\LogicalDisk(*)\Avg. Disk sec/Write</Counter>
+    <Counter>\LogicalDisk(*)\Current Disk Queue Length</Counter>
+    <Counter>\LogicalDisk(*)\Disk Bytes/sec</Counter>
+    <Counter>\LogicalDisk(*)\Disk Reads/sec</Counter>
+    <Counter>\LogicalDisk(*)\Disk Transfers/sec</Counter>
+    <Counter>\LogicalDisk(*)\Disk Writes/sec</Counter>
+    <Counter>\LogicalDisk(*)\Free Megabytes</Counter>
+    <Counter>\Memory\% Committed Bytes In Use</Counter>
+    <Counter>\Memory\Available MBytes</Counter>
+    <Counter>\Memory\Commit Limit</Counter>
+    <Counter>\Memory\Committed Bytes</Counter>
+    <Counter>\Memory\Free &amp; Zero Page List Bytes</Counter>
+    <Counter>\Memory\Free System Page Table Entries</Counter>
+    <Counter>\Memory\Long-Term Average Standby Cache Lifetime (s)</Counter>
+    <Counter>\Memory\Pages Input/sec</Counter>
+    <Counter>\Memory\Pages Output/sec</Counter>
+    <Counter>\Memory\Pages/sec</Counter>
+    <Counter>\Memory\Pool Nonpaged Bytes</Counter>
+    <Counter>\Memory\Pool Paged Bytes</Counter>
+    <Counter>\Memory\Pool Paged Resident Bytes</Counter>
+    <Counter>\Memory\System Cache Resident Bytes</Counter>
+    <Counter>\Memory\Transition Pages RePurposed/sec</Counter>
+    <Counter>\MSRS 2011 Web Service\Cache Misses/Sec</Counter>
+    <Counter>\MSRS 2011 Web Service\Report Requests</Counter>
+    <Counter>\MSRS 2011 Web Service\Total Memory Cache Misses</Counter>
+    <Counter>\MSRS 2011 Web Service\Total Requests</Counter>
+    <Counter>\Network Inspection System\Average inspection latency (sec/bytes)</Counter>
+    <Counter>\Network Interface(*)\Bytes Received/sec</Counter>
+    <Counter>\Network Interface(*)\Bytes Sent/sec</Counter>
+    <Counter>\Network Interface(*)\Bytes Total/sec</Counter>
+    <Counter>\Network Interface(*)\Current Bandwidth</Counter>
+    <Counter>\Network Interface(*)\Output Queue Length</Counter>
+    <Counter>\Network Interface(*)\Packets Outbound Errors</Counter>
+    <Counter>\Network Interface(*)\Packets Received/sec</Counter>
+    <Counter>\Network Interface(*)\Packets Sent/sec</Counter>
+    <Counter>\Network Interface(*)\Packets/sec</Counter>
+    <Counter>\Paging File(*)\% Usage</Counter>
+    <Counter>\PhysicalDisk(*)\Avg. Disk Queue Length</Counter>
+    <Counter>\PhysicalDisk(*)\Avg. Disk sec/Read</Counter>
+    <Counter>\PhysicalDisk(*)\Avg. Disk sec/Write</Counter>
+    <Counter>\PhysicalDisk(*)\Current Disk Queue Length</Counter>
+    <Counter>\PhysicalDisk(*)\Disk Bytes/sec</Counter>
+    <Counter>\Process(*)\Handle Count</Counter>
+    <Counter>\Process(*)\ID Process</Counter>
+    <Counter>\Process(*)\IO Data Operations/sec</Counter>
+    <Counter>\Process(*)\IO Other Operations/sec</Counter>
+    <Counter>\Process(*)\IO Read Operations/sec</Counter>
+    <Counter>\Process(*)\IO Write Operations/sec</Counter>
+    <Counter>\Process(*)\Private Bytes</Counter>
+    <Counter>\Process(*)\Thread Count</Counter>
+    <Counter>\Process(*)\Virtual Bytes</Counter>
+    <Counter>\Process(*)\Working Set</Counter>
+    <Counter>\Process(sqlservr)\% Privileged Time</Counter>
+    <Counter>\Process(sqlservr)\% Processor Time</Counter>
+    <Counter>\Processor Information(*)\% DPC Time</Counter>
+    <Counter>\Processor Information(*)\% Interrupt Time</Counter>
+    <Counter>\Processor Information(*)\% of Maximum Frequency</Counter>
+    <Counter>\Processor Information(*)\% Privileged Time</Counter>
+    <Counter>\Processor Information(*)\% Processor Time</Counter>
+    <Counter>\Processor Information(*)\% User Time</Counter>
+    <Counter>\Processor Information(*)\DPC Rate</Counter>
+    <Counter>\Processor Information(*)\Parking Status</Counter>
+    <Counter>\Processor(*)\% DPC Time</Counter>
+    <Counter>\Processor(*)\% Interrupt Time</Counter>
+    <Counter>\Processor(*)\% Privileged Time</Counter>
+    <Counter>\Processor(*)\% Processor Time</Counter>
+    <Counter>\Processor(*)\% User Time</Counter>
+    <Counter>\Processor(*)\DPC Rate</Counter>
+    <Counter>\ReportServer:Service\Errors Total</Counter>
+    <Counter>\ReportServer:Service\Errors/sec</Counter>
+    <Counter>\ReportServer:Service\Memory Pressure State</Counter>
+    <Counter>\ReportServer:Service\Memory Shrink Amount</Counter>
+    <Counter>\ReportServer:Service\Memory Shrink Notifications/sec</Counter>
+    <Counter>\Server\Pool Nonpaged Failures</Counter>
+    <Counter>\Server\Pool Paged Failures</Counter>
+    <Counter>\SQLAgent:Jobs\Active jobs</Counter>
+    <Counter>\SQLAgent:Jobs\Failed jobs</Counter>
+    <Counter>\SQLAgent:Jobs\Job success rate</Counter>
+    <Counter>\SQLAgent:Jobs\Successful jobs</Counter>
+    <Counter>\SQLAgent:JobSteps\Active steps</Counter>
+    <Counter>\SQLAgent:JobSteps\Total step retries</Counter>
+    <Counter>\SQLServer:Access Methods\Forwarded Records/sec</Counter>
+    <Counter>\SQLServer:Access Methods\FreeSpace Scans/sec</Counter>
+    <Counter>\SQLServer:Access Methods\Full Scans/sec</Counter>
+    <Counter>\SQLServer:Access Methods\Index Searches/sec</Counter>
+    <Counter>\SQLServer:Access Methods\Page Splits/sec</Counter>
+    <Counter>\SQLServer:Access Methods\Scan Point Revalidations/sec</Counter>
+    <Counter>\SQLServer:Access Methods\Table Lock Escalations/sec</Counter>
+    <Counter>\SQLServer:Access Methods\Workfiles Created/sec</Counter>
+    <Counter>\SQLServer:Access Methods\Worktables Created/sec</Counter>
+    <Counter>\SQLServer:Access Methods\Worktables From Cache Ratio</Counter>
+    <Counter>\SQLServer:Availability Replica(*)\Bytes Received from Replica/sec</Counter>
+    <Counter>\SQLServer:Availability Replica(*)\Bytes Sent to Replica/sec</Counter>
+    <Counter>\SQLServer:Availability Replica(*)\Bytes Sent to Transport/sec</Counter>
+    <Counter>\SQLServer:Availability Replica(_Total)\Receives from Replica/sec</Counter>
+    <Counter>\SQLServer:Availability Replica(_Total)\Resent Messages/sec</Counter>
+    <Counter>\SQLServer:Availability Replica(_Total)\Sends to Replica/sec</Counter>
+    <Counter>\SQLServer:Buffer Manager\Background writer pages/sec</Counter>
+    <Counter>\SQLServer:Buffer Manager\Buffer cache hit ratio</Counter>
+    <Counter>\SQLServer:Buffer Manager\Checkpoint pages/sec</Counter>
+    <Counter>\SQLServer:Buffer Manager\Free list stalls/sec</Counter>
+    <Counter>\SQLServer:Buffer Manager\Free pages</Counter>
+    <Counter>\SQLServer:Buffer Manager\Lazy writes/sec</Counter>
+    <Counter>\SQLServer:Buffer Manager\Page life expectancy</Counter>
+    <Counter>\SQLServer:Buffer Manager\Page lookups/sec</Counter>
+    <Counter>\SQLServer:Buffer Manager\Page reads/sec</Counter>
+    <Counter>\SQLServer:Buffer Manager\Page writes/sec</Counter>
+    <Counter>\SQLServer:Buffer Manager\Readahead pages/sec</Counter>
+    <Counter>\SQLServer:Buffer Manager\Target pages</Counter>
+    <Counter>\SQLServer:Buffer Node(*)\Database pages</Counter>
+    <Counter>\SQLServer:Buffer Node(*)\Foreign pages</Counter>
+    <Counter>\SQLServer:Buffer Node(*)\Local node page lookups/sec</Counter>
+    <Counter>\SQLServer:Buffer Node(*)\Page life expectancy</Counter>
+    <Counter>\SQLServer:Buffer Node(*)\Remote node page lookups/sec</Counter>
+    <Counter>\SQLServer:Database Replica(*)\Log Bytes Received/sec</Counter>
+    <Counter>\SQLServer:Database Replica(*)\Mirrored Write Transactions/sec</Counter>
+    <Counter>\SQLServer:Database Replica(*)\Recovery Queue</Counter>
+    <Counter>\SQLServer:Database Replica(_Total)\Log remaining for undo</Counter>
+    <Counter>\SQLServer:Database Replica(_Total)\Log Send Queue</Counter>
+    <Counter>\SQLServer:Database Replica(_Total)\Redo blocked/sec</Counter>
+    <Counter>\SQLServer:Database Replica(_Total)\Redo Bytes Remaining</Counter>
+    <Counter>\SQLServer:Database Replica(_Total)\Redone Bytes/sec</Counter>
+    <Counter>\SQLServer:Database Replica(_Total)\Total Log requiring undo</Counter>
+    <Counter>\SQLServer:Database Replica(_Total)\Transaction Delay</Counter>
+    <Counter>\SQLServer:Databases(*)\Active Transactions</Counter>
+    <Counter>\SQLServer:Databases(*)\Backup/Restore Throughput/sec</Counter>
+    <Counter>\SQLServer:Databases(*)\Bulk Copy Throughput/sec</Counter>
+    <Counter>\SQLServer:Databases(*)\Data File(s) Size (KB)</Counter>
+    <Counter>\SQLServer:Databases(*)\Log Bytes Flushed/sec</Counter>
+    <Counter>\SQLServer:Databases(*)\Log File(s) Size (KB)</Counter>
+    <Counter>\SQLServer:Databases(*)\Log File(s) Used Size (KB)</Counter>
+    <Counter>\SQLServer:Databases(*)\Log Flush Wait Time</Counter>
+    <Counter>\SQLServer:Databases(*)\Log Flush Waits/sec</Counter>
+    <Counter>\SQLServer:Databases(*)\Log Flushes/sec</Counter>
+    <Counter>\SQLServer:Databases(*)\Log Growths</Counter>
+    <Counter>\SQLServer:Databases(*)\Log Shrinks</Counter>
+    <Counter>\SQLServer:Databases(*)\Log Truncations</Counter>
+    <Counter>\SQLServer:Databases(*)\Percent Log Used</Counter>
+    <Counter>\SQLServer:Deprecated Features(*)\Usage</Counter>
+    <Counter>\SQLServer:General Statistics\Active Temp Tables</Counter>
+    <Counter>\SQLServer:General Statistics\Logins/sec</Counter>
+    <Counter>\SQLServer:General Statistics\Logouts/sec</Counter>
+    <Counter>\SQLServer:General Statistics\Temp Tables Creation Rate</Counter>
+    <Counter>\SQLServer:General Statistics\Temp Tables For Destruction</Counter>
+    <Counter>\SQLServer:General Statistics\User Connections</Counter>
+    <Counter>\SQLServer:Latches\Latch Waits/sec</Counter>
+    <Counter>\SQLServer:Latches\Total Latch Wait Time (ms)</Counter>
+    <Counter>\SQLServer:Locks(*)\Average Wait Time (ms)</Counter>
+    <Counter>\SQLServer:Locks(*)\Lock Requests/sec</Counter>
+    <Counter>\SQLServer:Locks(*)\Lock Timeouts/sec</Counter>
+    <Counter>\SQLServer:Locks(*)\Lock Wait Time (ms)</Counter>
+    <Counter>\SQLServer:Locks(*)\Lock Waits/sec</Counter>
+    <Counter>\SQLServer:Locks(*)\Number of Deadlocks/sec</Counter>
+    <Counter>\SQLServer:Memory Manager\Granted Workspace Memory (KB)</Counter>
+    <Counter>\SQLServer:Memory Manager\Maximum Workspace Memory (KB)</Counter>
+    <Counter>\SQLServer:Memory Manager\Memory Grants Outstanding</Counter>
+    <Counter>\SQLServer:Memory Manager\Memory Grants Pending</Counter>
+    <Counter>\SQLServer:Memory Manager\Optimizer Memory (KB)</Counter>
+    <Counter>\SQLServer:Memory Manager\Stolen Server Memory (KB)</Counter>
+    <Counter>\SQLServer:Memory Manager\Target Server Memory (KB)</Counter>
+    <Counter>\SQLServer:Memory Manager\Target Server Memory(KB)</Counter>
+    <Counter>\SQLServer:Memory Manager\Total Server Memory (KB)</Counter>
+    <Counter>\SQLServer:Memory Node(*)\Database Node Memory (KB)</Counter>
+    <Counter>\SQLServer:Memory Node(*)\Foreign Node Memory (KB)</Counter>
+    <Counter>\SQLServer:Memory Node(*)\Stolen Node Memory (KB)</Counter>
+    <Counter>\SQLServer:Memory Node(*)\Target Node Memory (KB)</Counter>
+    <Counter>\SQLServer:Memory Node(000)\Total Node Memory (KB)</Counter>
+    <Counter>\SQLServer:Plan Cache(*)\Cache Hit Ratio</Counter>
+    <Counter>\SQLServer:Resource Pool Stats(*)\CPU usage %</Counter>
+    <Counter>\SQLServer:Resource Pool Stats(*)\Max memory (KB)</Counter>
+    <Counter>\SQLServer:Resource Pool Stats(*)\Target memory (KB)</Counter>
+    <Counter>\SQLServer:Resource Pool Stats(*)\Used memory (KB)</Counter>
+    <Counter>\SQLServer:SQL Errors(*)\Errors/sec</Counter>
+    <Counter>\SQLServer:SQL Statistics\Auto-Param Attempts/sec</Counter>
+    <Counter>\SQLServer:SQL Statistics\Batch Requests/sec</Counter>
+    <Counter>\SQLServer:SQL Statistics\Failed Auto-Params/sec</Counter>
+    <Counter>\SQLServer:SQL Statistics\Safe Auto-Params/sec</Counter>
+    <Counter>\SQLServer:SQL Statistics\SQL Attention rate</Counter>
+    <Counter>\SQLServer:SQL Statistics\SQL Compilations/sec</Counter>
+    <Counter>\SQLServer:SQL Statistics\SQL Re-Compilations/sec</Counter>
+    <Counter>\SQLServer:SQL Statistics\Unsafe Auto-Params/sec</Counter>
+    <Counter>\SQLServer:Transactions\Free Space in tempdb (KB)</Counter>
+    <Counter>\SQLServer:Transactions\Longest Transaction Running Time</Counter>
+    <Counter>\SQLServer:Transactions\NonSnapshot Version Transactions</Counter>
+    <Counter>\SQLServer:Transactions\Snapshot Transactions</Counter>
+    <Counter>\SQLServer:Transactions\Transactions</Counter>
+    <Counter>\SQLServer:Transactions\Version Cleanup rate (KB/s)</Counter>
+    <Counter>\SQLServer:Transactions\Version Generation rate (KB/s)</Counter>
+    <Counter>\SQLServer:Transactions\Version Store Size (KB)</Counter>
+    <Counter>\SQLServer:User Settable(*)\Query</Counter>
+    <Counter>\SQLServer:Workload Group Stats(*)\Active parallel threads</Counter>
+    <Counter>\SQLServer:Workload Group Stats(*)\Active requests</Counter>
+    <Counter>\SQLServer:Workload Group Stats(*)\CPU usage %</Counter>
+    <Counter>\SQLServer:Workload Group Stats(*)\Queued requests</Counter>
+    <Counter>\SQLServer:Workload Group Stats(*)\Reduced memory grants/sec</Counter>
+    <Counter>\SQLServer:Workload Group Stats(*)\Requests completed/sec</Counter>
+    <Counter>\SQLServer:Workload Group Stats(*)\Suboptimal plans/sec</Counter>
+    <Counter>\System\Context Switches/sec</Counter>
+    <Counter>\System\Processor Queue Length</Counter>
+    <Counter>\System\System Calls/sec</Counter>
+    <Counter>\TCPv4\Connection Failures</Counter>
+</PerformanceCounterDataCollector>
+</DataCollectorSet>
