@@ -53,8 +53,11 @@
     .PARAMETER Summary
     Displays the performance counters and time ranges of log files specified in the input file.
 
+    .PARAMETER Multithread
+    Parallelize the processing. This may speed up large batches or large files.
+ 
     .PARAMETER Raw
-    Output the results of the DOS command instead of Get-ChildItem
+    Output the results of the DOS command instead of Get-ChildItem - does not multithread.
     
     .PARAMETER InputObject
     Allows input from Get-DbaPfDataCollector and Get-DbaPfDataCollectorSet
@@ -132,6 +135,7 @@
         [switch]$Summary,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
+        [switch]$Multithread,
         [switch]$Raw,
         [switch]$EnableException
     )
@@ -306,20 +310,28 @@
                 }
                 else {
                     Write-Message -Level Verbose -Message "relog $arguments"
-                    $output = (cmd /c "relog $arguments" | Out-String).Trim()
-                    
-                    if ($output -notmatch "Success") {
-                        Stop-Function -Continue -Message $output.Trim("Input")
+                    $scriptblock = {
+                        $output = (cmd /c "relog $arguments" | Out-String).Trim()
+                        
+                        if ($output -notmatch "Success") {
+                            Stop-Function -Continue -Message $output.Trim("Input")
+                        }
+                        else {
+                            Write-Message -Level Verbose -Message $output
+                            $array = $output -Split [environment]::NewLine
+                            $files = $array | Select-String "File:"
+                            
+                            foreach ($rawfile in $files) {
+                                $rawfile = $rawfile.ToString().Replace("File:", "").Trim()
+                                Get-ChildItem $rawfile | Add-Member -MemberType NoteProperty -Name RelogFile -Value $true -PassThru
+                            }
+                        }
+                    }
+                    if ($Multithread) {
+                        $true | Invoke-Parallel -ImportVariables -ImportModules -ScriptBlock $scriptblock -Quiet
                     }
                     else {
-                        Write-Message -Level Verbose -Message $output
-                        $array = $output -Split [environment]::NewLine
-                        $files = $array | Select-String "File:"
-                        
-                        foreach ($rawfile in $files) {
-                            $rawfile = $rawfile.ToString().Replace("File:", "").Trim()
-                            Get-ChildItem $rawfile | Add-Member -MemberType NoteProperty -Name RelogFile -Value $true -PassThru
-                        }
+                        Invoke-Command -ScriptBlock $scriptblock    
                     }
                 }
             }
