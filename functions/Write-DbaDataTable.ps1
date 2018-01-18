@@ -300,6 +300,9 @@ function Write-DbaDataTable {
             #>
                 if ($PStoSQLTypes.Keys -contains $column.DataType) {
                     $sqlDataType = $PStoSQLTypes[$($column.DataType.toString())]
+                    if($column.MaxLength -gt 0 -and ($column.DataType -in ("String", "System.String"))) {
+                        $sqlDataType = $sqlDataType.Replace("(MAX)", "($($column.MaxLength))")
+                    }
                 }
                 else {
                     $sqlDataType = "nvarchar(MAX)"
