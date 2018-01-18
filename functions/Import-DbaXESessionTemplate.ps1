@@ -32,6 +32,12 @@
             filename = "file.xel" to filename = "$TargetFilePath\file.xel". Only specify the directory, not the file itself.
 
             This path is relative to the destination directory
+    
+        .PARAMETER TargetFileMetadataPath
+            By default, files will be created in the default xem directory. Use TargetFileMetadataPath to change all instances of
+            filename = "file.xem" to filename = "$TargetFilePath\file.xem". Only specify the directory, not the file itself.
+
+            This path is relative to the destination directory
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -79,6 +85,7 @@
         [string[]]$Path,
         [string[]]$Template,
         [string]$TargetFilePath,
+        [string]$TargetFileMetadataPath,
         [switch]$EnableException
     )
     begin {
@@ -129,15 +136,20 @@
                 }
                 else {
                     Write-Message -Level Verbose -Message "TargetFilePath specified, changing all file locations in $file for $instance."
+                    Write-Message -Level Verbose -Message "TargetFileMetadataPath specified, changing all metadata file locations in $file for $instance."
+                    
                     # Handle whatever people specify
                     $TargetFilePath = $TargetFilePath.TrimEnd("\")
-                    $TargetFilePath = "$TargetFilePath\"
+                    $TargetFileMetadataPath = $TargetFileMetadataPath.TrimEnd("\")
 
                     # Perform replace
-                    $phrase = 'name="filename" value="'
+                    $xelphrase = 'name="filename" value="'
+                    $xemphrase = 'name="metadatafile" value="'
+                    
                     try {
                         $contents = Get-Content $file -ErrorAction Stop
-                        $contents = $contents.Replace($phrase, "$phrase$TargetFilePath")
+                        $contents = $contents.Replace($xelphrase, "$xelphrase\$TargetFilePath")
+                        $contents = $contents.Replace($xemphrase, "$xemphrase\$TargetFileMetadataPath")
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("").TrimEnd("\")
                         $tempfile = "$temp\import-dbatools-xetemplate.xml"
                         $null = Set-Content -Path $tempfile -Value $contents -Encoding UTF8
