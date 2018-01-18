@@ -12,11 +12,11 @@ Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.Linq.dll"
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying command output" {
         It "returns some results" {
-            $results = Get-DbaXESession -SqlInstance $script:instance2 | Read-DbaXEFile -Raw
+            $results = Get-DbaXESession -SqlInstance $script:instance2 | Read-DbaXEFile -Raw -WarningAction SilentlyContinue
             [System.Linq.Enumerable]::Count($results) -gt 1 | Should Be $true
         }
         It "returns some results" {
-            $results = Get-DbaXESession -SqlInstance $script:instance2 | Read-DbaXEFile
+            $results = Get-DbaXESession -SqlInstance $script:instance2 | Read-DbaXEFile -WarningAction SilentlyContinue
             $results.Count -gt 1 | Should Be $true
         }
     }
