@@ -1,51 +1,57 @@
 function Get-DbaXESession {
     <#
-    .SYNOPSIS
-    Get a list of Extended Events Sessions
+        .SYNOPSIS
+            Gets a list of Extended Events Sessions from the specified SQL Server instance(s).
 
-    .DESCRIPTION
-    Retrieves a list of Extended Events Sessions
+        .DESCRIPTION
+            Retrieves a list of Extended Events Sessions present on the specified SQL Server instance(s).
 
-    .PARAMETER SqlInstance
-    The SQL Instances that you're connecting to.
+        .PARAMETER SqlInstance
+            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-    .PARAMETER SqlCredential
-    Credential object used to connect to the SQL Server as a different user
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-    .PARAMETER Session
-    Only return specific sessions. This parameter is auto-populated.
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-    .NOTES
-    Tags: Memory
-    Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            To connect as a different Windows user, run PowerShell as that user.
 
-    .LINK
-    https://dbatools.io/Get-DbaXESession
+        .PARAMETER Session
+            Only return specific sessions. Options for this parameter are auto-populated from the server.
 
-    .EXAMPLE
-    Get-DbaXESession -SqlInstance ServerA\sql987
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
+        .NOTES
+            Tags: Memory
+            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-    .EXAMPLE
-    Get-DbaXESession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SqlInstance, Session, Status -AutoSize
+        .LINK
+            https://dbatools.io/Get-DbaXESession
 
-    Returns a formatted table displaying ComputerName, SqlInstance, Session, and Status.
+        .EXAMPLE
+            Get-DbaXESession -SqlInstance ServerA\sql987
 
-    .EXAMPLE
-    'ServerA\sql987','ServerB' | Get-DbaXESession
+            Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
 
-    Returns a custom object with ComputerName, SqlInstance, Session, StartTime, Status and other properties, from multiple SQL Instances.
+        .EXAMPLE
+            Get-DbaXESession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SqlInstance, Session, Status -AutoSize
 
-#>
+            Returns a formatted table displaying ComputerName, SqlInstance, Session, and Status.
+
+        .EXAMPLE
+            'ServerA\sql987','ServerB' | Get-DbaXESession
+
+            Returns a custom object with ComputerName, SqlInstance, Session, StartTime, Status and other properties, from multiple SQL instances.
+
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -65,7 +71,7 @@ function Get-DbaXESession {
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
+                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {
@@ -110,7 +116,10 @@ function Get-DbaXESession {
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Parent -Value $server
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Store -Value $XEStore
                 Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, TargetFile, Events, MaxMemory, MaxEventSize
-                try { $xesessions.Refresh() } catch {}
+                try {
+                    $xesessions.Refresh()
+                } catch {
+                }
             }
         }
     }
