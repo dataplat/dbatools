@@ -2,19 +2,19 @@
  <#
     .SYNOPSIS
     Stops an XESmartTarget PowerShell Job. Useful if you want to reuse the same target templates.
-    
+
     .DESCRIPTION
     Stops an XESmartTarget PowerShell Job. Useful if you want to reuse the same target templates.
-    
+
     .PARAMETER InputObject
     The XESmartTarget job object
-    
+
     .PARAMETER WhatIf
     Shows what would happen if the command were to run. No actions are actually performed.
 
     .PARAMETER Confirm
     Prompts you for confirmation before executing any changing operations within the command.
-        
+
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -32,12 +32,12 @@
 
     .EXAMPLE
     Get-DbaXESmartTarget | Stop-DbaXESmartTarget
-    
+
     Stops all XESmartTarget jobs
-    
+
     .EXAMPLE
     Get-DbaXESmartTarget | Where-Object Id -eq 2 | Stop-DbaXESmartTarget
-    
+
     Stops a specific XESmartTarget job
 
 #>
