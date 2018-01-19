@@ -31,7 +31,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($results | Where-Object {$_.name -eq 'DisableDefaultConstraintCheck'}).Value | Should Be $False
         }
         It "Should get the correct DefaultFile location" {
-            $defaultFiles = Get-DbaDefaultPath -SqlInstance svtsqlrestore
+            $defaultFiles = Get-DbaDefaultPath -SqlInstance $script:instance2
             ($results | Where-Object {$_.name -eq 'DefaultFile'}).Value | Should BeLike "$($defaultFiles.Data)*"
         }
     }
