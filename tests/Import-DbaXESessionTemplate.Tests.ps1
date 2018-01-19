@@ -4,13 +4,13 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
-        $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Function Executions' | Stop-DbaXESession | Remove-DbaXESession
+        $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Overly Complex Queries' | Remove-DbaXESession
     }
     Context "Test Importing Session Template" {
-        $results = Import-DbaXESessionTemplate -SqlInstance $script:instance2 -Template 'Function Executions' | Start-DbaXESession
-        It -Skip "session imports and is running" {
-            $results.Name | Should Be "Function Executions"
-            $results.Status | Should Be "Running"
+        It -Skip "session imports with proper name and non-default target file location" {
+            $result = Import-DbaXESessionTemplate -SqlInstance $script:instance2 -Template 'Overly Complex Queries' -TargetFilePath C:\temp
+            $result.Name | Should Be "Overly Complex Queries"
+            $result.TargetFile -match 'C\:\\temp' | Should Be $true
         }
     }
 }

@@ -339,6 +339,16 @@
             What is the total size of the backup
             </summary>
         </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.CompressedBackupSize">
+            <summary>
+            What is the total compressesed size of the backup
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.CompressionRatio">
+            <summary>
+            What is the ratio of total size to compressed size of the backup
+            </summary>
+        </member>
         <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Type">
             <summary>
             The kind of backup this was
