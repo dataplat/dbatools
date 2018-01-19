@@ -448,7 +448,9 @@
         'Add-DbaPfDataCollectorCounter',
         'Remove-DbaPfDataCollectorCounter',
         'Get-DbaPfAvailableCounter',
-        'Get-DbaXESmartTarget'
+        'Get-DbaXESmartTarget',
+        'Remove-DbaXESmartTarget'
+        'Stop-DbaXESmartTarget'
     )
 
     # Cmdlets to export from this module
