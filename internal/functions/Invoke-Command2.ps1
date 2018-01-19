@@ -48,15 +48,7 @@
         ScriptBlock = $ScriptBlock
     }
     if ($ArgumentList) { $InvokeCommandSplat["ArgumentList"] = $ArgumentList }
-    if (-not $ComputerName.IsLocalhost) {
-        #$InvokeCommandSplat["ComputerName"] = $ComputerName.ComputerName
-        if (-not ($currentsession = Get-PSSession -ComputerName $ComputerName.ComputerName)) {
-            $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName)
-        }
-        else {
-            $InvokeCommandSplat["Session"] = $currentsession
-        }
-    }
+    if (-not $ComputerName.IsLocalhost) { $InvokeCommandSplat["ComputerName"] = $ComputerName.ComputerName }
     if ($Credential) { $InvokeCommandSplat["Credential"] = $Credential }
 
     if ($Raw) { Invoke-Command @InvokeCommandSplat }
