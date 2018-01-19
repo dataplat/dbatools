@@ -35,4 +35,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($results | Where-Object {$_.name -eq 'DefaultFile'}).Value | Should BeLike "$($defaultFiles.Data)*"
         }
     }
+    Context "Command warns when can't connect to instance" {
+        $null = Get-DbaSqlInstanceProperty -SqlInstance MadeUpServer -WarningVariable warn -WarningAction SilentlyContinue
+        It "Should warn cannot connect to MadeUpServer" {
+            $warn | Should Match "Can't connect to MadeUpServer"
+        }
+    }
 }
