@@ -56,17 +56,17 @@
     .EXAMPLE
     $response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning
     Start-DbaXESmartTarget -SqlInstance sql2016 -Session loadrelay -Responder $response
-        
+
     Replays events from sql2016 on sql2017 in the planning database. Returns a PowerShell job object.
-    
+
     To see a list of all SmartTarget job objects, use Get-DbaXESmartTarget
-    
+
     .EXAMPLE
     $response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning
     Start-DbaXESmartTarget -SqlInstance sql2017 -Session 'Profiler Standard' -Responder $response -NotAsJob
-    
+
      Replays events from the 'Profiler Standard' session on sql2016 to sql2017's planning database. Does not run as a job so you can see the raw output.
-    
+
 #>
     [CmdletBinding()]
     param (
@@ -96,7 +96,7 @@
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -105,7 +105,7 @@
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             try {
                 $replay = New-Object -TypeName XESmartTarget.Core.Responses.ReplayResponse
                 $replay.ServerName = $instance
@@ -117,12 +117,12 @@
                 #$replay.IsSingleEvent = $IsSingleEvent
                 #$replay.FailOnSingleEventViolation = $FailOnSingleEventViolation
                 $replay.ReplayIntervalSeconds = $ReplayIntervalSeconds
-                
+
                 if ($SqlCredential) {
                     $replay.UserName = $SqlCredential.UserName
                     $replay.Password = $SqlCredential.GetNetworkCredential().Password
                 }
-                
+
                 $replay
             }
             catch {
