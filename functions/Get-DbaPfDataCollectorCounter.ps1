@@ -10,7 +10,9 @@
             The target computer. Defaults to localhost.
 
         .PARAMETER Credential
-            Allows you to login to $ComputerName using alternative credentials.
+            Allows you to login to servers using alternative credentials. To use:
+
+            $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
         .PARAMETER CollectorSet
             The Collector Set name
@@ -19,10 +21,10 @@
             The Collector name
    
         .PARAMETER Counter
-            The Counter name - in the form of '\Processor(_Total)\% Processor Time'
+            The Counter name to capture. This must be in the form of '\Processor(_Total)\% Processor Time'.
     
         .PARAMETER InputObject
-            Enables piped results from Get-DbaPfDataCollectorSet
+            Accepts the output of Get-DbaPfDataCollectorSet
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -42,27 +44,27 @@
         .EXAMPLE
             Get-DbaPfDataCollectorCounter
     
-            Gets all counters for all collector sets on localhost
+            Gets all counters for all Collector Sets on localhost.
 
         .EXAMPLE
             Get-DbaPfDataCollectorCounter -ComputerName sql2017
     
-             Gets all counters for all collector sets on  on sql2017
+             Gets all counters for all Collector Sets on  on sql2017
     
         .EXAMPLE
             Get-DbaPfDataCollectorCounter -ComputerName sql2017 -Counter '\Processor(_Total)\% Processor Time'
 
-            Gets the '\Processor(_Total)\% Processor Time' counter on sql2017
+            Gets the '\Processor(_Total)\% Processor Time' counter on sql2017.
     
         .EXAMPLE
             Get-DbaPfDataCollectorCounter -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
     
-            Gets all counters for 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials
+            Gets all counters for the 'System Correlation' CollectorSet on sql2017 and sql2016 using alternative credentials.
     
         .EXAMPLE
             Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPfDataCollector | Get-DbaPfDataCollectorCounter
     
-            Gets all counters for 'System Correlation' Collector
+            Gets all counters for the 'System Correlation' CollectorSet.
     #>
     [CmdletBinding()]
     param (
@@ -93,7 +95,7 @@
         
         if ($InputObject) {
             if (-not $InputObject.DataCollectorObject) {
-                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollector"
+                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollector."
                 return
             }
         }
@@ -102,14 +104,14 @@
             foreach ($countername in $counterobject.Counters) {
                 if ($Counter -and $Counter -notcontains $countername) { continue }
                 [pscustomobject]@{
-                    ComputerName                          = $counterobject.ComputerName
-                    DataCollectorSet                      = $counterobject.DataCollectorSet
-                    DataCollector                         = $counterobject.Name
-                    DataCollectorSetXml                   = $counterobject.DataCollectorSetXml
-                    Name                                  = $countername
-                    FileName                              = $counterobject.FileName
-                    CounterObject                         = $true
-                    Credential                            = $Credential
+                    ComputerName        = $counterobject.ComputerName
+                    DataCollectorSet    = $counterobject.DataCollectorSet
+                    DataCollector       = $counterobject.Name
+                    DataCollectorSetXml = $counterobject.DataCollectorSetXml
+                    Name                = $countername
+                    FileName            = $counterobject.FileName
+                    CounterObject       = $true
+                    Credential          = $Credential
                 } | Select-DefaultView -ExcludeProperty DataCollectorObject, Credential, CounterObject, DataCollectorSetXml
             }
         }
