@@ -76,7 +76,7 @@
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
         [string]$Database,
-        [string[]]$Events= "sql_batch_completed",
+        [string[]]$Events = "sql_batch_completed",
         [string]$Filter,
         [int]$DelaySeconds,
         [switch]$StopOnError,
@@ -96,7 +96,7 @@
     }
     process {
         if (Test-FunctionInterrupt) { return }
-
+        
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -105,7 +105,7 @@
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
             try {
                 $replay = New-Object -TypeName XESmartTarget.Core.Responses.ReplayResponse
                 $replay.ServerName = $instance
@@ -117,16 +117,17 @@
                 #$replay.IsSingleEvent = $IsSingleEvent
                 #$replay.FailOnSingleEventViolation = $FailOnSingleEventViolation
                 $replay.ReplayIntervalSeconds = $ReplayIntervalSeconds
-
+                
                 if ($SqlCredential) {
                     $replay.UserName = $SqlCredential.UserName
                     $replay.Password = $SqlCredential.GetNetworkCredential().Password
                 }
-
+                
                 $replay
             }
             catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
+                $message = $_.Exception.InnerException.InnerException | Out-String
+                Stop-Function -Message $message -Target "XESmartTarget" -Continue
             }
         }
     }
