@@ -10,16 +10,18 @@
             The target computer. Defaults to localhost.
 
         .PARAMETER Credential
-            Allows you to login to $ComputerName using alternative credentials.
+            Allows you to login to servers using alternative credentials. To use:
+
+            $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
         .PARAMETER CollectorSet
-            The Collector Set name
+            The Collector Set name.
   
         .PARAMETER Collector
-            The Collector name
+            The Collector name.
     
         .PARAMETER InputObject
-            Enables piped results from Get-DbaPfDataCollectorSet
+            Accepts the output of Get-DbaPfDataCollectorSet
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -44,17 +46,17 @@
         .EXAMPLE
             Get-DbaPfDataCollector -ComputerName sql2017
     
-            Gets all Collectors on sql2017
+            Gets all Collectors on sql2017.
     
         .EXAMPLE
             Get-DbaPfDataCollector -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
     
-            Gets all Collectors for 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials
+            Gets all Collectors for the 'System Correlation' CollectorSet on sql2017 and sql2016 using alternative credentials.
     
         .EXAMPLE
             Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPfDataCollector
     
-            Gets all Collectors for 'System Correlation' Collector
+            Gets all Collectors for the 'System Correlation' CollectorSet.
     #>
     [CmdletBinding()]
     param (
@@ -84,7 +86,7 @@
         
         if ($InputObject) {
             if (-not $InputObject.DataCollectorSetObject) {
-                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet"
+                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet."
                 return
             }
         }
@@ -104,28 +106,28 @@
                 }
                 
                 [pscustomobject]@{
-                    ComputerName                = $set.ComputerName
-                    DataCollectorSet            = $set.Name
-                    Name                        = $col.Name
-                    FileName                    = $col.FileName
-                    DataCollectorType           = $col.DataCollectorType
-                    FileNameFormat              = $col.FileNameFormat
-                    FileNameFormatPattern       = $col.FileNameFormatPattern
-                    LogAppend                   = $col.LogAppend
-                    LogCircular                 = $col.LogCircular
-                    LogOverwrite                = $col.LogOverwrite
-                    LatestOutputLocation        = $col.LatestOutputLocation
-                    DataCollectorSetXml         = $set.Xml
-                    RemoteLatestOutputLocation  = $remote
-                    DataSourceName              = $col.DataSourceName
-                    SampleInterval              = $col.SampleInterval
-                    SegmentMaxRecords           = $col.SegmentMaxRecords
-                    LogFileFormat               = $col.LogFileFormat
-                    Counters                    = $col.Counter
-                    CounterDisplayNames         = $col.CounterDisplayName
-                    CollectorXml                = $col
-                    DataCollectorObject         = $true
-                    Credential                  = $Credential
+                    ComputerName               = $set.ComputerName
+                    DataCollectorSet           = $set.Name
+                    Name                       = $col.Name
+                    FileName                   = $col.FileName
+                    DataCollectorType          = $col.DataCollectorType
+                    FileNameFormat             = $col.FileNameFormat
+                    FileNameFormatPattern      = $col.FileNameFormatPattern
+                    LogAppend                  = $col.LogAppend
+                    LogCircular                = $col.LogCircular
+                    LogOverwrite               = $col.LogOverwrite
+                    LatestOutputLocation       = $col.LatestOutputLocation
+                    DataCollectorSetXml        = $set.Xml
+                    RemoteLatestOutputLocation = $remote
+                    DataSourceName             = $col.DataSourceName
+                    SampleInterval             = $col.SampleInterval
+                    SegmentMaxRecords          = $col.SegmentMaxRecords
+                    LogFileFormat              = $col.LogFileFormat
+                    Counters                   = $col.Counter
+                    CounterDisplayNames        = $col.CounterDisplayName
+                    CollectorXml               = $col
+                    DataCollectorObject        = $true
+                    Credential                 = $Credential
                 } | Select-DefaultView -Property $columns
             }
         }
