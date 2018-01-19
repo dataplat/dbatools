@@ -1,55 +1,61 @@
 function Get-DbaXESessionTarget {
     <#
-    .SYNOPSIS
-    Get a list of Extended Events Session Targets
+        .SYNOPSIS
+            Get a list of Extended Events Session Targets from the specified SQL Server instance(s).
 
-    .DESCRIPTION
-    Retrieves a list of Extended Events Session Targets
+        .DESCRIPTION
+            Retrieves a list of Extended Events Session Targets from the specified SQL Server instance(s).
 
-    .PARAMETER SqlInstance
-    SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+        .PARAMETER SqlInstance
+            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-    .PARAMETER SqlCredential
-    SqlCredential object to connect as. If not specified, current Windows login will be used.
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-    .PARAMETER Session
-    Only return a specific session. This parameter is auto-populated.
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    .PARAMETER Target
-    Only return a specific target.
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-    .PARAMETER SessionObject
-    Internal pipeline parameter
+            To connect as a different Windows user, run PowerShell as that user.
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER Session
+            Only return a specific session. Options for this parameter are auto-populated from the server.
 
-    .NOTES
-    Tags: Xevent
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .PARAMETER Target
+            Only return a specific target.
 
-    .LINK
-    https://dbatools.io/Get-DbaXESessionTarget
+        .PARAMETER SessionObject
+            Specifies an XE session returned by by Get-DbaXESession to search.
 
-    .EXAMPLE
-    Get-DbaXESessionTarget -SqlInstance ServerA\sql987 -Session system_health
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    Shows targets for the system_health session on ServerA\sql987
+        .NOTES
+            Tags: Xevent
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-    .EXAMPLE
-    Get-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget
+        .LINK
+            https://dbatools.io/Get-DbaXESessionTarget
 
-    Returns the targets for the system_health session on sql2016
+        .EXAMPLE
+            Get-DbaXESessionTarget -SqlInstance ServerA\sql987 -Session system_health
 
-    .EXAMPLE
-    Get-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget -Target package0.event_file
+            Shows targets for the system_health session on ServerA\sql987.
 
-    Return only the package0.event_file target for the system_health session on sql2016
-#>
+        .EXAMPLE
+            Get-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget
+
+            Returns the targets for the system_health session on sql2016.
+
+        .EXAMPLE
+            Get-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget -Target package0.event_file
+
+            Return only the package0.event_file target for the system_health session on sql2016.
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(ValueFromPipeline, ParameterSetName = "instance", Mandatory)]

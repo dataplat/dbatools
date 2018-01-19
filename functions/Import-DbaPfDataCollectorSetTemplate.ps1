@@ -129,7 +129,7 @@
         [switch]$EnableException
     )
     begin {
-        $metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates-metadata.xml"
+        $metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates\collectorsets.xml"
         
         $setscript = {
             $setname = $args[0]; $templatexml = $args[1]
@@ -152,7 +152,7 @@
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
             
             foreach ($file in $template) {
-                $templatepath = "$script:PSModuleRoot\bin\perfmontemplates\$file.xml"
+                $templatepath = "$script:PSModuleRoot\bin\perfmontemplates\collectorsets\$file.xml"
                 if ((Test-Path $templatepath)) {
                     $Path += $templatepath
                 }

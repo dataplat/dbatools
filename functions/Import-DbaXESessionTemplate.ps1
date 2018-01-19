@@ -1,66 +1,78 @@
 ﻿function Import-DbaXESessionTemplate {
- <#
-    .SYNOPSIS
-    Imports a new XESession XML Template
+    <#
+        .SYNOPSIS
+            Imports a new XESession XML Template
 
-    .DESCRIPTION
-    Imports a new XESession XML Template either from our repo or a file you specify.
+        .DESCRIPTION
+            Imports a new XESession XML Template either from the dbatools repository or a file you specify.
 
-    .PARAMETER SqlInstance
-    The SQL Instances that you're connecting to.
+        .PARAMETER SqlInstance
+            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-    .PARAMETER SqlCredential
-    Credential object used to connect to the SQL Server as a different user
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-    .PARAMETER Name
-    The Name of the session
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    .PARAMETER Path
-    The path to the xml file or files
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-    .PARAMETER Template
-    From one of the templates we curated for you (tab through -Template to see options)
+            To connect as a different Windows user, run PowerShell as that user.
 
-    .PARAMETER TargetFilePath
-    By default, files will be created in the default xel directory. Use TargetFilePath to change all instances of
-    filename = "file.xel" to filename = "$TargetFilePath\file.xel". Only specify the directory, not the file itself.
+        .PARAMETER Name
+            The Name of the session to create.
 
-    This path is relative to the destination directory
+        .PARAMETER Path
+            The path to the xml file or files for the session(s).
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER Template
+            Specifies the name of one of the templates from the dbatools repository. Press tab to cycle through the provided templates.
 
-    .NOTES
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .PARAMETER TargetFilePath
+            By default, files will be created in the default xel directory. Use TargetFilePath to change all instances of
+            filename = "file.xel" to filename = "$TargetFilePath\file.xel". Only specify the directory, not the file itself.
 
-    .LINK
-    https://dbatools.io/Import-DbaXESessionTemplate
+            This path is relative to the destination directory
+    
+        .PARAMETER TargetFileMetadataPath
+            By default, files will be created in the default xem directory. Use TargetFileMetadataPath to change all instances of
+            filename = "file.xem" to filename = "$TargetFilePath\file.xem". Only specify the directory, not the file itself.
 
-    .EXAMPLE
-    Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats
+            This path is relative to the destination directory
 
-    Creates a new XESession named db_query_wait_stats from our repo to the SQL Server sql2017
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .EXAMPLE
-    Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -Name "Query Wait Stats"
+        .NOTES
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-    Creates a new XESession named "Query Wait Stats" using the db_query_wait_stats template
+        .LINK
+            https://dbatools.io/Import-DbaXESessionTemplate
 
-    .EXAMPLE
-    Get-DbaXESession -SqlInstance sql2017 -Session db_ola_health | Remove-DbaXESession
-    Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaXESession
+        .EXAMPLE
+            Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats
 
-    Imports a session if it exists then recreates it using a template
+            Creates a new XESession named db_query_wait_stats from the dbatools repository to the SQL Server sql2017.
 
-    .EXAMPLE
-    Get-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017
+        .EXAMPLE
+            Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -Name "Query Wait Stats"
 
-    Allows you to select a Session template then import to an instance named sql2017
-#>
+            Creates a new XESession named "Query Wait Stats" using the db_query_wait_stats template.
+
+        .EXAMPLE
+            Get-DbaXESession -SqlInstance sql2017 -Session db_ola_health | Remove-DbaXESession
+            Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaXESession
+
+            Imports a session if it exists, then recreates it using a template.
+
+        .EXAMPLE
+            Get-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017
+
+            Allows you to select a Session template then import to an instance named sql2017.
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -73,6 +85,7 @@
         [string[]]$Path,
         [string[]]$Template,
         [string]$TargetFilePath,
+        [string]$TargetFileMetadataPath,
         [switch]$EnableException
     )
     begin {
@@ -80,16 +93,16 @@
     }
     process {
         if ((Test-Bound -ParameterName Path -Not) -and (Test-Bound -ParameterName Template -Not)) {
-            Stop-Function -Message "You must specify Path or Template"
+            Stop-Function -Message "You must specify Path or Template."
         }
 
         if (($Path.Count -gt 1 -or $Template.Count -gt 1) -and (Test-Bound -ParameterName Template)) {
-            Stop-Function -Message "Name cannot be specified with multiple files or templates because the Session will already exist"
+            Stop-Function -Message "Name cannot be specified with multiple files or templates because the Session will already exist."
         }
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
+                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {
@@ -106,7 +119,7 @@
                     $Path += $templatepath
                 }
                 else {
-                    Stop-Function -Message "Invalid template ($templatepath does not exist)" -Continue
+                    Stop-Function -Message "Invalid template ($templatepath does not exist)." -Continue
                 }
             }
 
@@ -122,18 +135,26 @@
                     }
                 }
                 else {
-                    Write-Message -Level Verbose -Message "TargetFilePath specified, changing all file locations in $file for $instance"
+                    Write-Message -Level Verbose -Message "TargetFilePath specified, changing all file locations in $file for $instance."
+                    Write-Message -Level Verbose -Message "TargetFileMetadataPath specified, changing all metadata file locations in $file for $instance."
+                    
                     # Handle whatever people specify
                     $TargetFilePath = $TargetFilePath.TrimEnd("\")
+                    $TargetFileMetadataPath = $TargetFileMetadataPath.TrimEnd("\")
                     $TargetFilePath = "$TargetFilePath\"
-
+                    $TargetFileMetadataPath = "$TargetFileMetadataPath\"
+                    
                     # Perform replace
-                    $phrase = 'name="filename" value="'
+                    $xelphrase = 'name="filename" value="'
+                    $xemphrase = 'name="metadatafile" value="'
+                    
                     try {
+                        $basename = (Get-ChildItem $file).Basename
                         $contents = Get-Content $file -ErrorAction Stop
-                        $contents = $contents.Replace($phrase, "$phrase$TargetFilePath")
+                        $contents = $contents.Replace($xelphrase, "$xelphrase$TargetFilePath")
+                        $contents = $contents.Replace($xemphrase, "$xemphrase$TargetFileMetadataPath")
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("").TrimEnd("\")
-                        $tempfile = "$temp\import-dbatools-xetemplate.xml"
+                        $tempfile = "$temp\$basename"
                         $null = Set-Content -Path $tempfile -Value $contents -Encoding UTF8
                         $xml = [xml](Get-Content $tempfile -ErrorAction Stop)
                         $file = $tempfile
@@ -142,7 +163,7 @@
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                     }
 
-                    Write-Message -Level Verbose -Message "$TargetFilePath does not exist on $server, creating now"
+                    Write-Message -Level Verbose -Message "$TargetFilePath does not exist on $server, creating now."
                     try {
                         if (-not (Test-DbaSqlPath -SqlInstance $server -Path $TargetFilePath)) {
                             $null = New-DbaSqlDirectory -SqlInstance $server -Path $TargetFilePath
@@ -154,14 +175,14 @@
                 }
 
                 if (-not $xml.event_sessions) {
-                    Stop-Function -Message "$file is not a valid XESession template document" -Continue
+                    Stop-Function -Message "$file is not a valid XESession template document." -Continue
                 }
 
                 if ((Test-Bound -ParameterName Name -not)) {
                     $Name = (Get-ChildItem $file).BaseName
                 }
 
-                $no2012 = ($metadata | Where-Object Compatability -gt 2012).Name
+                $no2012 = ($metadata | Where-Object Compatibility -gt 2012).Name
 
                 if ($Name -in $no2012 -and $server.VersionMajor -eq 11) {
                     Stop-Function -Message "$Name is not supported in SQL Server 2012 ($server)" -Continue

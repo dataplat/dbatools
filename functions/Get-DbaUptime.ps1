@@ -20,10 +20,8 @@ function Get-DbaUptime {
 
             To connect to SQL Server as a different Windows user, run PowerShell as that user.
 
-        .PARAMETER WindowsCredential
-            Allows you to authenticate to Windows servers using alternate credentials.
-
-            $wincred = Get-Credential, then pass $wincred object to the -WindowsCredential parameter.
+        .PARAMETER Credential
+            Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -62,9 +60,8 @@ function Get-DbaUptime {
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [PSCredential]$WindowsCredential,
+        [PSCredential]$Credential,
         [switch][Alias('Silent')]$EnableException
     )
 
@@ -73,7 +70,6 @@ function Get-DbaUptime {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            $SqlOnly = $false;
             if ($instance.Gettype().FullName -eq [System.Management.Automation.PSCustomObject] ) {
                 $servername = $instance.SqlInstance
             }
@@ -93,15 +89,15 @@ function Get-DbaUptime {
             }
             Write-Message -Level Verbose -Message "Getting start times for $servername"
             #Get tempdb creation date
-            $SQLStartTime = $server.Databases["tempdb"].CreateDate
+            [dbadatetime]$SQLStartTime = $server.Databases["tempdb"].CreateDate
             $SQLUptime = New-TimeSpan -Start $SQLStartTime.ToUniversalTime() -End $nowutc
             $SQLUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($SQLUptime.Days), $($SQLUptime.Hours), $($SQLUptime.Minutes), $($SQLUptime.Seconds)
 
-            $WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $WindowsCredential).FullComputerName
+            $WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $Credential).FullComputerName
 
             try {
                 Write-Message -Level Verbose -Message "Getting WinBootTime via CimInstance for $servername"
-                $WinBootTime = (Get-DbaOperatingSystem -ComputerName $windowsServerName -Credential $WindowsCredential -ErrorAction SilentlyContinue).LastBootTime
+                $WinBootTime = (Get-DbaOperatingSystem -ComputerName $windowsServerName -Credential $Credential -ErrorAction SilentlyContinue).LastBootTime
                 $WindowsUptime = New-TimeSpan -start $WinBootTime.ToUniversalTime() -end $nowutc
                 $WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
             }
@@ -109,8 +105,8 @@ function Get-DbaUptime {
                 try {
                     Write-Message -Level Verbose -Message "Getting WinBootTime via CimInstance DCOM"
                     $CimOption = New-CimSessionOption -Protocol DCOM
-                    $CimSession = New-CimSession -Credential:$WindowsCredential -ComputerName $WindowsServerName -SessionOption $CimOption
-                    $WinBootTime = ($CimSession | Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime
+                    $CimSession = New-CimSession -Credential:$Credential -ComputerName $WindowsServerName -SessionOption $CimOption
+                    [dbadatetime]$WinBootTime = ($CimSession | Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime
                     $WindowsUptime = New-TimeSpan -start $WinBootTime.ToUniversalTime() -end $nowutc
                     $WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
                 }
