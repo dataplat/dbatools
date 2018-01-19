@@ -25,7 +25,7 @@ function Get-DbaXESessionTarget {
             Only return a specific target.
 
         .PARAMETER SessionObject
-            Specifies an XE session returned by by Get-DbaXESession to search.
+            Specifies an XE session returned by Get-DbaXESession to search.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
