@@ -1,10 +1,10 @@
 ﻿function Stop-DbaXESmartTarget {
  <#
     .SYNOPSIS
-    Stops an XESmartTarget PowerShell Job. Useful if you want to reuse the same target templates.
+    Stops an XESmartTarget PowerShell Job. Useful if you want to run a target, but not right now.
 
     .DESCRIPTION
-    Stops an XESmartTarget PowerShell Job. Useful if you want to reuse the same target templates.
+    Stops an XESmartTarget PowerShell Job. Useful if you want to run a target, but not right now.
 
     .PARAMETER InputObject
     The XESmartTarget job object
@@ -52,7 +52,7 @@
             try {
                 $id = $InputObject.Id
                 Write-Message -Level Output -Message "Stopping job $id, this may take a couple minutes"
-                Get-Job -ID $InputObject.Id | Stop-Job -Force
+                Get-Job -ID $InputObject.Id | Stop-Job
                 Write-Message -Level Output -Message "Successfully Stopped $id. If you need to remove the job for good, use Remove-DbaXESmartTarget."
             }
             catch {
