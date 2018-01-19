@@ -167,7 +167,7 @@
                 return
             }
         }
-        
+
         if ($NotAsJob) {
             Start-SmartFunction @PSBoundParameters
         }
