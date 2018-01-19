@@ -1,48 +1,48 @@
 ﻿function Get-DbaPfDataCollectorSetTemplate {
- <#
-    .SYNOPSIS
-    Parses Perf Monitor templates. Defaults to parsing templates in our template repository (\bin\perfmontemplates\)
+    <#
+        .SYNOPSIS
+            Parses Perf Monitor templates. Defaults to parsing templates in the dbatools template repository (\bin\perfmontemplates\)
 
-    .DESCRIPTION
-    Parses Perf Monitor XML templates. Defaults to parsing templates in our template repository (\bin\perfmontemplates\)
+        .DESCRIPTION
+            Parses Perf Monitor XML templates. Defaults to parsing templates in the dbatools template repository (\bin\perfmontemplates\)
 
-    .PARAMETER Path
-    The path to the template directory. Defaults to our template repository (\bin\perfmontemplates\)
-    
-    .PARAMETER Pattern
-    Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaPfDataCollectorSetTemplate
+        .PARAMETER Path
+            The path to the template directory. Defaults to the dbatools template repository (\bin\perfmontemplates\).
+        
+        .PARAMETER Pattern
+            Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaPfDataCollectorSetTemplate
 
-    .PARAMETER Template
-    From one or more of the templates we curated for you (tab through -Template to see options)
-    
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER Template
+            Specifies one or more of the templates provided by dbatools. Press tab to cycle through the list to the options.
 
-    .NOTES
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .LINK
-    https://dbatools.io/Get-DbaPfDataCollectorSetTemplate
+        .NOTES
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-    .EXAMPLE
-    Get-DbaPfDataCollectorSetTemplate
+        .LINK
+            https://dbatools.io/Get-DbaPfDataCollectorSetTemplate
 
-    Returns information about all the templates in the local dbatools repository
+        .EXAMPLE
+            Get-DbaPfDataCollectorSetTemplate
 
-    .EXAMPLE
-    Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 | Start-DbaPfDataCollectorSet
+            Returns information about all the templates in the local dbatools repository.
 
-    Allows you to select a template then deploy sit to sql2017 and immediately starts the datacollectorset
+        .EXAMPLE
+            Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 | Start-DbaPfDataCollectorSet
 
-    .EXAMPLE
-    Get-DbaPfDataCollectorSetTemplate | Select *
+            Allows you to select a template, then deploys it to sql2017 and immediately starts the DataCollectorSet.
 
-    Returns more information about the template, including the full path/filename
-#>
+        .EXAMPLE
+            Get-DbaPfDataCollectorSetTemplate | Select-Object *
+
+            Returns more information about the template, including the full path/filename.
+    #>
     [CmdletBinding()]
     param (
         [string[]]$Path = "$script:PSModuleRoot\bin\perfmontemplates\collectorsets",
@@ -52,7 +52,7 @@
     )
     begin {
         $metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates\collectorsets.xml"
-        # In case ppl really wanted a like, which is slower
+        # In case people really want a "like" search, which is slower
         $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
     }
     process {
@@ -79,23 +79,23 @@
                             ($dataset.Description -match $Pattern)
                         ) {
                             [pscustomobject]@{
-                                Name                   = $dataset.name
-                                Source                 = $meta.Source
-                                UserAccount            = $dataset.useraccount
-                                Description            = $dataset.Description
-                                Path                   = $file
-                                File                   = $file.Name
+                                Name        = $dataset.name
+                                Source      = $meta.Source
+                                UserAccount = $dataset.useraccount
+                                Description = $dataset.Description
+                                Path        = $file
+                                File        = $file.Name
                             } | Select-DefaultView -ExcludeProperty File, Path
                         }
                     }
                     else {
                         [pscustomobject]@{
-                            Name                    = $dataset.name
-                            Source                  = $meta.Source
-                            UserAccount             = $dataset.useraccount
-                            Description             = $dataset.Description
-                            Path                    = $file
-                            File                    = $file.Name
+                            Name        = $dataset.name
+                            Source      = $meta.Source
+                            UserAccount = $dataset.useraccount
+                            Description = $dataset.Description
+                            Path        = $file
+                            File        = $file.Name
                         } | Select-DefaultView -ExcludeProperty File, Path
                     }
                 }
