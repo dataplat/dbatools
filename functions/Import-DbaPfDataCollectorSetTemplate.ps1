@@ -4,9 +4,14 @@
     Imports a new Performance Monitor Data Collector Set Template either from our repo or a file you specify
 
     .DESCRIPTION
-    Imports a new Performance Monitor Data Collector Set Template either from our repo or a file you specify. When importing data collector sets from the local instance, Run As Admin is required.
+    Imports a new Performance Monitor Data Collector Set Template either from our repo or a file you specify. 
+    When importing data collector sets from the local instance, Run As Admin is required.
 
+    Note: The included counters will be added for all SQL instances on the machine by default. 
+    For specific instances in addition to the default, use -Instance.
+    
     See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371952 for more information
+    
     .PARAMETER ComputerName
     The target server.
 
@@ -61,7 +66,10 @@
     See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371993 for more inforamation.
 
     .PARAMETER StopOnCompletion
-    From one of the templates we curated for you
+    Sets a value that determines whether the data collector set stops when all the data collectors in the set are in a completed state.
+
+    .PARAMETER Instance
+    By default, the template will be applied to all instances. If you want to set specific ones in addition to the default, supply just the instance name.
     
     .PARAMETER WhatIf
     Shows what would happen if the command were to run the command. No modifications are actually performed.
@@ -102,6 +110,13 @@
     Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017
 
     Allows you to select a Session template then import to an instance named sql2017
+    
+    .EXAMPLE
+    Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -Instance SHAREPOINT
+
+    Creates a new data collector set named 'Long Running Query' from our repo to the SQL Server sql2017 for both the default and the SHAREPOINT instance.
+    
+    If you'd like to remove counters for the default instance, use Remove-DbaPfDataCollectorCounter.
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
@@ -126,6 +141,7 @@
         [Alias("FullName")]
         [string[]]$Path,
         [string[]]$Template,
+        [string[]]$Instances,
         [switch]$EnableException
     )
     begin {
@@ -236,13 +252,13 @@
                     if ((Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name)) {
                         if ($Pscmdlet.ShouldProcess($computer, "CollectorSet $Name already exists. Modify?")) {
                             Invoke-Command -Scriptblock $scriptblock
-                            Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
+                            $output = Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
                         }
                     }
                     else {
                         if ($Pscmdlet.ShouldProcess($computer, "Importing collector set $Name")) {
                             Invoke-Command -Scriptblock $scriptblock
-                            Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
+                            $output = Get-DbaPfDataCollectorSet -ComputerName $computer -CollectorSet $Name
                         }
                     }
                     
@@ -264,9 +280,13 @@
                         }
                     }
                     
-                    Write-Message -Level Verbose -Message "Adding $($newcollection.Count) additional counters"
-                    $null = Add-DbaPfDataCollectorCounter -InputObject $datacollector -Counter $newcollection
+                    if ($newcollection.Count) {
+                        Write-Message -Level Verbose -Message "Adding $($newcollection.Count) additional counters"
+                        $null = Add-DbaPfDataCollectorCounter -InputObject $datacollector -Counter $newcollection
+                    }
+                    
                     Remove-Item $tempfile -ErrorAction SilentlyContinue
+                    $output
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $store -Continue
