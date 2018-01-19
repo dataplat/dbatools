@@ -51,7 +51,7 @@
     if (-not $ComputerName.IsLocalhost) {
         #$InvokeCommandSplat["ComputerName"] = $ComputerName.ComputerName
         if (-not ($currentsession = Get-PSSession -ComputerName $ComputerName.ComputerName)) {
-            $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName)
+            $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name "dbatools_$([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)")
         }
         else {
             $InvokeCommandSplat["Session"] = $currentsession
