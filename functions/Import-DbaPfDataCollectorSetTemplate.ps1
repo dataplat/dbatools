@@ -141,7 +141,7 @@
         [Alias("FullName")]
         [string[]]$Path,
         [string[]]$Template,
-        [string[]]$Instances,
+        [string[]]$Instance,
         [switch]$EnableException
     )
     begin {
@@ -237,8 +237,13 @@
                     Write-Message -Level Verbose -Message "Importing $file as $name "
                     Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
                     
-                    $instances = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $instancescript -ErrorAction Stop -Raw
-
+                    if ($instance) {
+                        $instances = $instance
+                    }
+                    else {
+                        $instances = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $instancescript -ErrorAction Stop -Raw
+                    }
+                    
                     $scriptblock = {
                         try {
                             $results = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $Name, $plainxml -ErrorAction Stop
