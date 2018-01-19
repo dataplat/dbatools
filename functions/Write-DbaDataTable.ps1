@@ -88,9 +88,9 @@ function Write-DbaDataTable {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .PARAMETER UseDynamicStringLength
-            By default, all string columns will be NVARCHAR(MAX). 
+            By default, all string columns will be NVARCHAR(MAX).
             If this switch is enabled, all columns will get the length specified by the column's MaxLength property (if specified)
-            
+
         .NOTES
             Tags: DataTable, Insert
             Website: https://dbatools.io
@@ -304,11 +304,11 @@ function Write-DbaDataTable {
             <#
                 PS to SQL type conversion
                 If data type exists in hash table, use the corresponding SQL type
-                Else, fallback to nvarchar
+                Else, fallback to nvarchar.
+                If UseDynamicStringLength is specified, the DataColumn MaxLength is used if specified
             #>
                 if ($PStoSQLTypes.Keys -contains $column.DataType) {
                     $sqlDataType = $PStoSQLTypes[$($column.DataType.toString())]
-                    #Global parameter Write-DbaDataTable. Couldn't get Test-Bound to work
                     if($UseDynamicStringLength -and $column.MaxLength -gt 0 -and ($column.DataType -in ("String", "System.String"))) {
                         $sqlDataType = $sqlDataType.Replace("(MAX)", "($($column.MaxLength))")
                     }
