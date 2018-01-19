@@ -150,10 +150,10 @@ EXEC master.sys.sp_help_log_shipping_monitor"
         if ($Database -or $ExcludeDatabase) {
 
             if ($database) {
-                $where += "DatabaseName IN ('$($Database -join ',')')"
+                $where += "DatabaseName IN ('$($Database -join ''',''')')"
             }
             elseif ($ExcludeDatabase) {
-                $where += "DatabaseName NOTIN ('$($ExcludeDatabase -join ',')')"
+                $where += "DatabaseName NOT IN ('$($ExcludeDatabase -join ''',''')')"
             }
 
             $select = "$select WHERE $where"
