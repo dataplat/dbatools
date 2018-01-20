@@ -84,7 +84,7 @@
             $Credential = $InputObject.Credential
         }
         
-        if (($InputObject | Get-Member -MemberType NoteProperty).Count -le 3 -and $InputObject.ComputerName -and $InputObject.Name) {
+        if (($InputObject | Get-Member -MemberType NoteProperty -ErrorAction SilentlyContinue).Count -le 3 -and $InputObject.ComputerName -and $InputObject.Name) {
             # it's coming from Get-DbaPfAvailableCounter
             $ComputerName = $InputObject.ComputerName
             $Counter = $InputObject.Name
@@ -112,11 +112,6 @@
             $xml = [xml]($InputObject.DataCollectorSetXml)
             
             foreach ($countername in $counter) {
-                
-                if ((Get-DbaPfDataCollectorCounter -ComputerName $computer -Credential $Credential -CollectorSet $setname -Collector $collectorname -Counter $countername)) {
-                    Stop-Function -Message "$countername already exists in $collectorname within $setname on $computer" -Continue
-                }
-                
                 $node = $xml.SelectSingleNode("//Name[.='$collectorname']")
                 $newitem = $xml.CreateElement('Counter')
                 $null = $newitem.PsBase.InnerText = $countername
@@ -127,11 +122,11 @@
             }
             $plainxml = $xml.OuterXml
             
-            if ($Pscmdlet.ShouldProcess("$computer", "Add $countername from $collectorname with the $setname collection set")) {
+            if ($Pscmdlet.ShouldProcess("$computer", "Adding $counters to $collectorname with the $setname collection set")) {
                 try {
                     $results = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $plainxml -ErrorAction Stop
                     Write-Message -Level Verbose -Message " $results"
-                    Get-DbaPfDataCollectorCounter -ComputerName $computer -Credential $Credential -CollectorSet $setname -Collector $collectorname -Counter $countername
+                    Get-DbaPfDataCollectorCounter -ComputerName $computer -Credential $Credential -CollectorSet $setname -Collector $collectorname -Counter $counter
                 }
                 catch {
                     Stop-Function -Message "Failure importing $Countername to $computer" -ErrorRecord $_ -Target $computer -Continue
