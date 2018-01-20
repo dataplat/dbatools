@@ -37,7 +37,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Command can handle multiple instances" {
         It "Should have results for 2 instances" {
-            $(Get-DbaSqlInstanceProperty -SqlInstance $script:instance1, $script:instance2 | Select-Object -unique computername).count | Should Be 2
+            $(Get-DbaSqlInstanceProperty -SqlInstance $script:instance1, $script:instance2 | Select-Object -unique SqlInstance).count | Should Be 2
         }
     }
     Context "Command stops when can't connect" {
