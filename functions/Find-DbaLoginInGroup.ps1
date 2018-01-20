@@ -1,48 +1,48 @@
 function Find-DbaLoginInGroup {
-	<#
-		.SYNOPSIS
-			Finds Logins in Active Directory groups that have logins on the SQL Instance.
+    <#
+        .SYNOPSIS
+            Finds Logins in Active Directory groups that have logins on the SQL Instance.
 
-		.DESCRIPTION
-			Outputs all the active directory groups members for a server, or limits it to find a specific AD user in the groups
+        .DESCRIPTION
+            Outputs all the active directory groups members for a server, or limits it to find a specific AD user in the groups
 
-		.NOTES
-			Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-			Author: Simone Bizzotto, @niphlod
+        .NOTES
+            Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+            Author: Simone Bizzotto, @niphlod
 
-			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-			Copyright (C) 2016 Chrissy LeMaire
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-		.PARAMETER SqlInstance
-			SQL Server name or SMO object representing the SQL Server to connect to. This can be a
-			collection and receive pipeline input.
+        .PARAMETER SqlInstance
+            SQL Server name or SMO object representing the SQL Server to connect to. This can be a
+            collection and receive pipeline input.
 
-		.PARAMETER SqlCredential
-			PSCredential object to connect under. If not specified, current Windows login will be used.
+        .PARAMETER SqlCredential
+            PSCredential object to connect under. If not specified, current Windows login will be used.
 
-		.PARAMETER Login
-			Find all AD Groups used on the instance that an individual login is a member of.
+        .PARAMETER Login
+            Find all AD Groups used on the instance that an individual login is a member of.
 
-		.LINK
-			https://dbatools.io/Find-DbaLoginInGroup
+        .LINK
+            https://dbatools.io/Find-DbaLoginInGroup
 
-		.EXAMPLE
-			Find-DbaLoginInGroup -SqlInstance DEV01 -Login "MyDomain\Stephen.Bennett"
+        .EXAMPLE
+            Find-DbaLoginInGroup -SqlInstance DEV01 -Login "MyDomain\Stephen.Bennett"
 
-			Returns all active directory groups with logins on Sql Instance DEV01 that contain the AD user Stephen.Bennett.
+            Returns all active directory groups with logins on Sql Instance DEV01 that contain the AD user Stephen.Bennett.
 
-		.EXAMPLE
-			Find-DbaLoginInGroup -SqlInstance DEV01
+        .EXAMPLE
+            Find-DbaLoginInGroup -SqlInstance DEV01
 
-			Returns all active directory users within all windows AD groups that have logins on the instance.
+            Returns all active directory users within all windows AD groups that have logins on the instance.
 
-		.EXAMPLE
-			Find-DbaLoginInGroup -SqlInstance DEV01 | Where-Object Login -like '*stephen*'
+        .EXAMPLE
+            Find-DbaLoginInGroup -SqlInstance DEV01 | Where-Object Login -like '*stephen*'
 
-			Returns all active directory users within all windows AD groups that have logins on the instance whose login contains 'stephen'
+            Returns all active directory users within all windows AD groups that have logins on the instance whose login contains 'stephen'
 
-	#>
+    #>
     [CmdletBinding()]
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -59,7 +59,7 @@ function Find-DbaLoginInGroup {
             Write-warning "Failed to load Assembly needed"
             break
         }
-        
+
         function Get-AllLogins {
             param
             (
@@ -119,7 +119,7 @@ function Find-DbaLoginInGroup {
             }
         }
     }
-    
+
     process {
         foreach ($Instance in $SqlInstance) {
             try {
@@ -130,14 +130,14 @@ function Find-DbaLoginInGroup {
                 Write-Warning "Failed to connect to: $Instance"
                 continue
             }
-            
+
             $AdGroups = $server.Logins | Where-Object { $_.LoginType -eq "WindowsGroup" -and $_.Name -ne "BUILTIN\Administrators" -and $_.Name -notlike "*NT SERVICE*" }
-            
+
             foreach ($AdGroup in $AdGroups) {
                 Write-Verbose "Looking at Group: $AdGroup"
                 $ADGroupOut += Get-AllLogins $AdGroup.Name -ParentADGroup $AdGroup.Name
             }
-            
+
             if (-not $Login) {
                 $res = $ADGroupOut
             }
