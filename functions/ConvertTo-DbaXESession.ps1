@@ -1,50 +1,50 @@
 ﻿function ConvertTo-DbaXESession {
     <#
         .SYNOPSIS
-        Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events
+            Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events.
 
         .DESCRIPTION
-        Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events
+            Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events.
 
-        T-SQL code by: Jonathan M. Kehayias, SQLskills.com. T-SQL can be found in this module directory and at
-        https://www.sqlskills.com/blogs/jonathan/converting-sql-trace-to-extended-events-in-sql-server-2012/
+            T-SQL code by: Jonathan M. Kehayias, SQLskills.com. T-SQL can be found in this module directory and at
+            https://www.sqlskills.com/blogs/jonathan/converting-sql-trace-to-extended-events-in-sql-server-2012/
 
         .PARAMETER InputObject
-        Piped input from Get-DbaTrace
+            Specifies a Trace object output by Get-DbaTrace.
 
         .PARAMETER Name
-        The name of the Trace - if the name exists, extra characters will be appended
+            The name of the Trace to convert. If the name exists, characters will be appended to it.
 
         .PARAMETER OutputScriptOnly
-        Output the script in plain-ol T-SQL instead of executing it
+            Outputs the T-SQL script to create the XE session and does not execute it.
 
         .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-        Tags: Trace, ExtendedEvent
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            Tags: Trace, ExtendedEvent
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
         .EXAMPLE
-        Get-DbaTrace -SqlInstance sql2017, sql2012 | Where Id -eq 2 | ConvertTo-DbaXESession -Name 'Test'
+            Get-DbaTrace -SqlInstance sql2017, sql2012 | Where Id -eq 2 | ConvertTo-DbaXESession -Name 'Test'
 
-        Converts Trace with ID 2 to a Session named Test on SQL Server instances named sql2017 and sql2012
-        and creates the Session on each respective server
+            Converts Trace with ID 2 to a Session named Test on SQL Server instances named sql2017 and sql2012
+            and creates the Session on each respective server.
 
        .EXAMPLE
-        Get-DbaTrace -SqlInstance sql2014 | Out-GridView -PassThru | ConvertTo-DbaXESession -Name 'Test' | Start-DbaXESession
+            Get-DbaTrace -SqlInstance sql2014 | Out-GridView -PassThru | ConvertTo-DbaXESession -Name 'Test' | Start-DbaXESession
 
-        Converts selected traces on sql2014 to sessions, creates the session and starts it
+            Converts selected traces on sql2014 to sessions, creates the session, and starts it.
 
         .EXAMPLE
-        Get-DbaTrace -SqlInstance sql2014 | Where Id -eq 1 | ConvertTo-DbaXESession -Name 'Test' -OutputScriptOnly
+            Get-DbaTrace -SqlInstance sql2014 | Where Id -eq 1 | ConvertTo-DbaXESession -Name 'Test' -OutputScriptOnly
 
-        Converts trace ID 1 on sql2014 to an Extended Event and outputs the resulting T-SQL
-#>
+            Converts trace ID 1 on sql2014 to an Extended Event and outputs the resulting T-SQL.
+    #>
     [CmdletBinding()]
     Param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -77,24 +77,24 @@
             if ((Get-DbaXESession -SqlInstance $server -Session $PSBoundParameters.Name)) {
                 $oldname = $name
                 $Name = "$name-$traceid"
-                Write-Message -Level Output -Message "XE Session $oldname already exists on $server, trying $name"
+                Write-Message -Level Output -Message "XE Session $oldname already exists on $server, trying $name."
             }
 
             if ((Get-DbaXESession -SqlInstance $server -Session $Name)) {
                 $oldname = $name
                 $Name = "$name-$(Get-Random)"
-                Write-Message -Level Output -Message "XE Session $oldname already exists on $server, trying $name"
+                Write-Message -Level Output -Message "XE Session $oldname already exists on $server, trying $name."
             }
 
             $sql = $rawsql.Replace("--TRACEID--", $traceid)
             $sql = $sql.Replace("--SESSIONNAME--", $name)
 
             try {
-                Write-Message -Level Verbose -Message "Executing SQL in tempdb"
+                Write-Message -Level Verbose -Message "Executing SQL in tempdb."
                 $results = $tempdb.ExecuteWithResults($sql).Tables.Rows.SqlString
             }
             catch {
-                Stop-Function -Message "Issue creating, dropping or executing sp_SQLskills_ConvertTraceToExtendedEvents in tempdb on $server" -Target $server -ErrorRecord $_
+                Stop-Function -Message "Issue creating, dropping or executing sp_SQLskills_ConvertTraceToExtendedEvents in tempdb on $server." -Target $server -ErrorRecord $_
             }
 
             $results = $results -join "`r`n"
@@ -103,12 +103,12 @@
                 $results
             }
             else {
-                Write-Message -Level Verbose -Message "Creating XE Session $name"
+                Write-Message -Level Verbose -Message "Creating XE Session $name."
                 try {
                     $tempdb.ExecuteNonQuery($results)
                 }
                 catch {
-                    Stop-Function -Message "Issue creating extended event $name on $server" -Target $server -ErrorRecord $_
+                    Stop-Function -Message "Issue creating extended event $name on $server." -Target $server -ErrorRecord $_
                 }
                 Get-DbaXESession -SqlInstance $server -Session $name
             }
