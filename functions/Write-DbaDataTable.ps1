@@ -87,6 +87,10 @@ function Write-DbaDataTable {
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+        .PARAMETER UseDynamicStringLength
+            By default, all string columns will be NVARCHAR(MAX).
+            If this switch is enabled, all columns will get the length specified by the column's MaxLength property (if specified)
+
         .NOTES
             Tags: DataTable, Insert
             Website: https://dbatools.io
@@ -180,7 +184,8 @@ function Write-DbaDataTable {
         [ValidateNotNull()]
         [int]$bulkCopyTimeOut = 5000,
         [switch]$RegularUser,
-        [switch][Alias('Silent')]$EnableException
+        [switch][Alias('Silent')]$EnableException,
+        [switch]$UseDynamicStringLength
     )
     
     begin {
@@ -257,6 +262,9 @@ function Write-DbaDataTable {
                 By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
                 This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
                 Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+            .PARAMETER UseDynamicStringLength
+                Automatically inherits from parent.
         #>
             [CmdletBinding()]
             Param (
@@ -296,10 +304,14 @@ function Write-DbaDataTable {
             <#
                 PS to SQL type conversion
                 If data type exists in hash table, use the corresponding SQL type
-                Else, fallback to nvarchar
+                Else, fallback to nvarchar.
+                If UseDynamicStringLength is specified, the DataColumn MaxLength is used if specified
             #>
                 if ($PStoSQLTypes.Keys -contains $column.DataType) {
                     $sqlDataType = $PStoSQLTypes[$($column.DataType.toString())]
+                    if($UseDynamicStringLength -and $column.MaxLength -gt 0 -and ($column.DataType -in ("String", "System.String"))) {
+                        $sqlDataType = $sqlDataType.Replace("(MAX)", "($($column.MaxLength))")
+                    }
                 }
                 else {
                     $sqlDataType = "nvarchar(MAX)"
