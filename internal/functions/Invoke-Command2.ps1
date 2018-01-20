@@ -39,13 +39,8 @@
         [switch]$Raw
     )
     
-    if ($ComputerName.IsLocalHost -and $Credential) {
-        Stop-Function -Message "Credentials cannot be passed to localhost. Run As Different User instead."
-        return
-    }
-    
     $InvokeCommandSplat = @{
-        ScriptBlock = $ScriptBlock
+        ScriptBlock  = $ScriptBlock
     }
     if ($ArgumentList) { $InvokeCommandSplat["ArgumentList"] = $ArgumentList }
     if (-not $ComputerName.IsLocalhost) {
@@ -53,7 +48,12 @@
         $sessionname = "dbatools_$runspaceid"
         if (-not ($currentsession = Get-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname)) {
             $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
-            $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout)
+            if ($Credential) {
+                $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout -Credential $Credential)
+            }
+            else {
+                $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout)
+            }
         }
         else {
             if ($currentsession.State -eq "Disconnected") {
@@ -62,8 +62,7 @@
             $InvokeCommandSplat["Session"] = $currentsession
         }
     }
-    if ($Credential) { $InvokeCommandSplat["Credential"] = $Credential }
-
+    
     if ($Raw) { Invoke-Command @InvokeCommandSplat }
     else { Invoke-Command @InvokeCommandSplat | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName }
 }
