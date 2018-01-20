@@ -24,8 +24,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $ExpectedProps = 'ComputerName,InstanceName,PropertyType,SqlInstance'.Split(',')
             (($results | Get-Member -MemberType NoteProperty).name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
-        It "Should return that instance2 is running developer edition" {
-            ($results | Where-Object {$_.name -eq 'Edition'}).Value | Should Be "Developer Edition (64-bit)"
+        It "Should return that returns a valid build" {
+            $(Get-DbaSqlBuildReference -Build ($results | Where-Object {$_.name -eq 'ResourceVersionString'}).Value).MatchType | Should Be "Exact"
         }
         It "Should have DisableDefaultConstraintCheck set false" {
             ($results | Where-Object {$_.name -eq 'DisableDefaultConstraintCheck'}).Value | Should Be $False
@@ -35,10 +35,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($results | Where-Object {$_.name -eq 'DefaultFile'}).Value | Should BeLike "$($defaultFiles.Data)*"
         }
     }
-    Context "Command warns when can't connect to instance" {
-        $null = Get-DbaSqlInstanceProperty -SqlInstance MadeUpServer -WarningVariable warn -WarningAction SilentlyContinue
+    Context "Command can handle multiple instances" {
+        It "Should have results for 2 instances" {
+            $(Get-DbaSqlInstanceProperty -SqlInstance $instances | Select-Object -unique computername).count | Should Be 2
+        }
+    }
+    Context "Command stops when can't connect" {
         It "Should warn cannot connect to MadeUpServer" {
-            $warn | Should Match "Can't connect to MadeUpServer"
+            { Get-DbaSqlInstanceProperty -SqlInstance MadeUpServer -EnableException } | Should Throw "Can't connect to MadeUpServer"
         }
     }
 }
