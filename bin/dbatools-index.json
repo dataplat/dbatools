@@ -93,15 +93,15 @@
     },
     {
         "CommandName":  "ConvertTo-DbaXESession",
-        "Description":  "Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events\n\nT-SQL code by: Jonathan M. Kehayias, SQLskills.com. T-SQL can be found in this module directory and at\nhttps://www.sqlskills.com/blogs/jonathan/converting-sql-trace-to-extended-events-in-sql-server-2012/",
+        "Description":  "Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events.\n\nT-SQL code by: Jonathan M. Kehayias, SQLskills.com. T-SQL can be found in this module directory and at\nhttps://www.sqlskills.com/blogs/jonathan/converting-sql-trace-to-extended-events-in-sql-server-2012/",
         "Tags":  [
                      "Trace",
                      "ExtendedEvent"
                  ],
-        "Synopsis":  "Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events",
+        "Synopsis":  "Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events.",
         "Name":  "ConvertTo-DbaXESession",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2017, sql2012 | Where Id -eq 2 | ConvertTo-DbaXESession -Name \u0027Test\u0027\r\n\r\nConverts Trace with ID 2 to a Session named Test on SQL Server instances named sql2017 and sql2012\r\nand creates the Session on each respective server\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2014 | Out-GridView -PassThru | ConvertTo-DbaXESession -Name \u0027Test\u0027 | \r\nStart-DbaXESession\r\n\r\nConverts selected traces on sql2014 to sessions, creates the session and starts it\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2014 | Where Id -eq 1 | ConvertTo-DbaXESession -Name \u0027Test\u0027 -OutputScriptOnly\r\n\r\nConverts trace ID 1 on sql2014 to an Extended Event and outputs the resulting T-SQL\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2017, sql2012 | Where Id -eq 2 | ConvertTo-DbaXESession -Name \u0027Test\u0027\r\n\r\nConverts Trace with ID 2 to a Session named Test on SQL Server instances named sql2017 and sql2012\r\nand creates the Session on each respective server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2014 | Out-GridView -PassThru | ConvertTo-DbaXESession -Name \u0027Test\u0027 | \r\nStart-DbaXESession\r\n\r\nConverts selected traces on sql2014 to sessions, creates the session, and starts it.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2014 | Where Id -eq 1 | ConvertTo-DbaXESession -Name \u0027Test\u0027 -OutputScriptOnly\r\n\r\nConverts trace ID 1 on sql2014 to an Extended Event and outputs the resulting T-SQL.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Copy-DbaAgentAlert",
@@ -474,11 +474,11 @@
     },
     {
         "CommandName":  "Copy-DbaXESessionTemplate",
-        "Description":  "Copies non-Microsoft templates from our template repository (\\bin\\xetemplates\\) to $home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates\n\nUseful for when you want to use the SSMS GUI",
-        "Synopsis":  "Copies non-Microsoft templates from our template repository (\\bin\\xetemplates\\) to $home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates",
+        "Description":  "Copies non-Microsoft templates from the dbatools template repository (\\bin\\xetemplates\\) to $home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates.\n\nUseful for when you want to use the SSMS GUI.",
+        "Synopsis":  "Copies non-Microsoft templates from the dbatools template repository (\\bin\\xetemplates\\) to $home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates.",
         "Name":  "Copy-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Copy-DbaXESessionTemplate",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaXESessionTemplate\r\n\r\nCopies non-Microsoft templates from our template repository (\\bin\\xetemplates\\) to $home\\Documents\\SQL Server \r\nManagement Studio\\Templates\\XEventTemplates\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaXESessionTemplate -Path C:\\temp\\xetemplates\r\n\r\nCopies your templates from C:\\temp\\xetemplates to $home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaXESessionTemplate\r\n\r\nCopies non-Microsoft templates from the dbatools template repository (\\bin\\xetemplates\\) to $home\\Documents\\SQL Server \r\nManagement Studio\\Templates\\XEventTemplates.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaXESessionTemplate -Path C:\\temp\\xetemplates\r\n\r\nCopies your templates from C:\\temp\\xetemplates to $home\\Documents\\SQL Server Management \r\nStudio\\Templates\\XEventTemplates.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Disable-DbaAgHadr",
@@ -672,8 +672,8 @@
     },
     {
         "CommandName":  "Export-DbaXESessionTemplate",
-        "Description":  "Exports an XESession XML Template either from our repo or a file you specify. Exports to\n\"$home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates\" by default",
-        "Synopsis":  "Exports an new XESession XML Template",
+        "Description":  "Exports an XESession XML Template either from the dbatools repository or a file you specify. Exports to \"$home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates\" by default",
+        "Synopsis":  "Exports an XESession XML Template.",
         "Name":  "Export-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Export-DbaXESessionTemplate",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\\temp\\xe\r\n\r\nExports XE Session Template to the C:\\temp\\xe folder.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 -Session session_health | Export-DbaXESessionTemplate -Path C:\\temp\r\n\r\nReturns a new XE Session object from sql2017 then adds an event, an action then creates it.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
@@ -2271,11 +2271,19 @@
     },
     {
         "CommandName":  "Get-DbaXESessionTemplate",
-        "Description":  "Parses Extended Event XML templates. Defaults to parsing templates in our template repository (\\bin\\xetemplates\\).\n\nThe default repository contains templates from:\n        Microsoft\u0027s Templates that come with SSMS\n        Jes Borland\u0027s \"Everyday Extended Events\" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)\n        Christian Gräfe\u0027s XE Repo: https://github.com/chrgraefe/sqlscripts/blob/master/XE-Events/\n        Erin Stellato\u0027s Blog: https://www.sqlskills.com/blogs/erin/\n\nSome profile templates converted using:\n        sp_SQLskills_ConvertTraceToExtendedEvents.sql\n        Jonathan M. Kehayias, SQLskills.com\n        http://sqlskills.com/blogs/jonathan",
-        "Synopsis":  "Parses Extended Event XML templates. Defaults to parsing templates in our template repository (\\bin\\xetemplates\\).",
+        "Description":  "Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\\bin\\xetemplates\\).\n\nThe default repository contains templates from:\n        Microsoft\u0027s Templates that come with SSMS\n        Jes Borland\u0027s \"Everyday Extended Events\" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)\n        Christian Gräfe\u0027s XE Repo: https://github.com/chrgraefe/sqlscripts/blob/master/XE-Events/\n        Erin Stellato\u0027s Blog: https://www.sqlskills.com/blogs/erin/\n\nSome profile templates converted using:\n        sp_SQLskills_ConvertTraceToExtendedEvents.sql\n        Jonathan M. Kehayias, SQLskills.com\n        http://sqlskills.com/blogs/jonathan",
+        "Synopsis":  "Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\\bin\\xetemplates\\).",
         "Name":  "Get-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Get-DbaXESessionTemplate",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate\r\n\r\nReturns information about all the templates in the local dbatools repository.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017 | \r\nStart-DbaXESession\r\n\r\nAllows you to select a Session template, then import it to the specified instance and start the session.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate -Path \"$home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates\"\r\n\r\nReturns information about all the templates in your local XEventTemplates repository.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate -Pattern duration\r\n\r\nReturns information about all the templates that match the word \"duration\" in the title, category or body.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate | Select-Object *\r\n\r\nReturns more information about the template, including the full path/filename.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaXESmartTarget",
+        "Description":  "Gets an XESmartTarget PowerShell Job created by Start-DbaXESmartTarget.",
+        "Synopsis":  "Gets an XESmartTarget PowerShell Job created by Start-DbaXESmartTarget.",
+        "Name":  "Get-DbaXESmartTarget",
+        "Links":  "https://dbatools.io/Get-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESmartTarget\r\n\r\nGets an XESmartTarget PowerShell Job created by Start-DbaXESmartTarget.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaXEStore",
@@ -2297,11 +2305,11 @@
     },
     {
         "CommandName":  "Import-DbaPfDataCollectorSetTemplate",
-        "Description":  "Imports a new Performance Monitor Data Collector Set Template either from our repo or a file you specify. When importing data collector sets from the local instance, Run As Admin is required.\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/aa371952 for more information",
+        "Description":  "Imports a new Performance Monitor Data Collector Set Template either from our repo or a file you specify.\nWhen importing data collector sets from the local instance, Run As Admin is required.\n\nNote: The included counters will be added for all SQL instances on the machine by default.\nFor specific instances in addition to the default, use -Instance.\n\nSee https://msdn.microsoft.com/en-us/library/windows/desktop/aa371952 for more information",
         "Synopsis":  "Imports a new Performance Monitor Data Collector Set Template either from our repo or a file you specify",
         "Name":  "Import-DbaPfDataCollectorSetTemplate",
         "Links":  "https://dbatools.io/Import-DbaPfDataCollectorSetTemplate",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template \u0027Long Running Query\u0027\r\n\r\nCreates a new data collector set named \u0027Long Running Query\u0027 from our repo to the SQL Server sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template \u0027Long Running Query\u0027 -DisplayName \u0027New Long \r\nrunning query\u0027 -Confirm\r\n\r\nCreates a new data collector set named \"New Long Running Query\" using the \u0027Long Running Query\u0027 template. Forces a \r\nconfirmation if the template exists.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -SqlInstance sql2017 -Session db_ola_health | Remove-Dbadata collector set\r\n\r\nImport-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template db_ola_health | Start-Dbadata collector set\r\n\r\nImports a session if it exists then recreates it using a template\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -SqlInstance \r\nsql2017\r\n\r\nAllows you to select a Session template then import to an instance named sql2017\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template \u0027Long Running Query\u0027\r\n\r\nCreates a new data collector set named \u0027Long Running Query\u0027 from our repo to the SQL Server sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template \u0027Long Running Query\u0027 -DisplayName \u0027New Long \r\nrunning query\u0027 -Confirm\r\n\r\nCreates a new data collector set named \"New Long Running Query\" using the \u0027Long Running Query\u0027 template. Forces a \r\nconfirmation if the template exists.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -SqlInstance sql2017 -Session db_ola_health | Remove-Dbadata collector set\r\n\r\nImport-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template db_ola_health | Start-Dbadata collector set\r\n\r\nImports a session if it exists then recreates it using a template\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -SqlInstance \r\nsql2017\r\n\r\nAllows you to select a Session template then import to an instance named sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template \u0027Long Running Query\u0027 -Instance SHAREPOINT\r\n\r\nCreates a new data collector set named \u0027Long Running Query\u0027 from our repo to the SQL Server sql2017 for both the \r\ndefault and the SHAREPOINT instance.\r\n\r\nIf you\u0027d like to remove counters for the default instance, use Remove-DbaPfDataCollectorCounter.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Import-DbaSpConfigure",
@@ -2787,7 +2795,7 @@
         "Synopsis":  "This Response type can be used to replay execution related events to a target SQL Server instance.",
         "Name":  "New-DbaXESmartReplay",
         "Links":  "https://dbatools.io/New-DbaXESmartReplay\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning\r\n\r\nStart-DbaXESmartTarget -SqlInstance sql2016 -Session loadrelay -Responder $response\r\n\r\nReplays events from sql2016 on sql2017.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning\r\n\r\nStart-DbaXESmartTarget -SqlInstance sql2016 -Session loadrelay -Responder $response\r\n\r\nReplays events from sql2016 on sql2017 in the planning database. Returns a PowerShell job object.\r\n\r\nTo see a list of all SmartTarget job objects, use Get-DbaXESmartTarget\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning\r\n\r\nStart-DbaXESmartTarget -SqlInstance sql2017 -Session \u0027Profiler Standard\u0027 -Responder $response -NotAsJob\r\n\r\n Replays events from the \u0027Profiler Standard\u0027 session on sql2016 to sql2017\u0027s planning database. Does not run as a job \r\nso you can see the raw output.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "New-DbaXESmartTableWriter",
@@ -3116,6 +3124,14 @@
         "Name":  "Remove-DbaXESession",
         "Links":  "https://dbatools.io/Remove-DbaXESession",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaXESession -SqlInstance sql2012 -AllSessions\r\n\r\nRemoves all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaXESession -SqlInstance sql2012 -Session xesession1,xesession2\r\n\r\nRemoves the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 | Remove-DbaXESession -Confirm:$false\r\n\r\nRemoves all sessions from sql2017, bypassing prompting\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2012 -Session xesession1 | Remove-DbaXESession\r\n\r\nRemoves the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Remove-DbaXESmartTarget",
+        "Description":  "Removes an XESmartTarget PowerShell Job",
+        "Synopsis":  "Removes an XESmartTarget PowerShell Job",
+        "Name":  "Remove-DbaXESmartTarget",
+        "Links":  "https://dbatools.io/Remove-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESmartTarget | Remove-DbaXESmartTarget\r\n\r\nRemoves all XESmartTarget jobs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESmartTarget | Where-Object Id -eq 2 | Remove-DbaXESmartTarget\r\n\r\nRemoves a specific XESmartTarget job\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Rename-DbaDatabase",
@@ -3606,7 +3622,7 @@
         "Synopsis":  "Starts Extended Events sessions.",
         "Name":  "Start-DbaXESession",
         "Links":  "https://dbatools.io/Start-DbaXESession",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -AllSessions\r\n\r\nStarts all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2\r\n\r\nStarts the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Start-DbaXESession\r\n\r\nStarts the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -AllSessions\r\n\r\nStarts all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2\r\n\r\nStarts the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2 -StopAt (Get-Date).AddMinutes(30)\r\n\r\nStarts the xesession1 and xesession2 Extended Event sessions and stops them in 30 minutes.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Start-DbaXESession\r\n\r\nStarts the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Start-DbaXESmartTarget",
@@ -3677,6 +3693,14 @@
         "Name":  "Stop-DbaXESession",
         "Links":  "https://dbatools.io/Stop-DbaXESession",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaXESession -SqlInstance sqlserver2012 -AllSessions\r\n\r\nStops all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2\r\n\r\nStops the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Stop-DbaXESession\r\n\r\nStops the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Stop-DbaXESmartTarget",
+        "Description":  "Stops an XESmartTarget PowerShell Job. Useful if you want to run a target, but not right now.",
+        "Synopsis":  "Stops an XESmartTarget PowerShell Job. Useful if you want to run a target, but not right now.",
+        "Name":  "Stop-DbaXESmartTarget",
+        "Links":  "https://dbatools.io/Stop-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESmartTarget | Stop-DbaXESmartTarget\r\n\r\nStops all XESmartTarget jobs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESmartTarget | Where-Object Id -eq 2 | Stop-DbaXESmartTarget\r\n\r\nStops a specific XESmartTarget job\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Sync-DbaSqlLoginPermission",
