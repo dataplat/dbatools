@@ -18,8 +18,11 @@ function Start-DbaXESession {
     .PARAMETER AllSessions
     Start all Extended Events sessions on an instance, ignoring the packaged sessions: AlwaysOn_health, system_health, telemetry_xevents.
 
-    .PARAMETER SessionCollection
+    .PARAMETER InputObject
     Internal parameter to support piping from Get-DbaXESession
+
+    .PARAMETER StopAt
+    Sets up a self-deleting schedule to stop the Session at a specified time.
 
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -47,6 +50,11 @@ function Start-DbaXESession {
     Starts the xesession1 and xesession2 Extended Event sessions.
 
     .EXAMPLE
+    Start-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2 -StopAt (Get-Date).AddMinutes(30)
+
+    Starts the xesession1 and xesession2 Extended Event sessions and stops them in 30 minutes.
+
+    .EXAMPLE
     Get-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Start-DbaXESession
 
     Starts the sessions returned from the Get-DbaXESession function.
@@ -58,20 +66,17 @@ function Start-DbaXESession {
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-
         [parameter(ParameterSetName = 'Session')]
         [parameter(ParameterSetName = 'All')]
         [PSCredential]$SqlCredential,
-
         [parameter(Mandatory, ParameterSetName = 'Session')]
         [Alias("Sessions")]
         [object[]]$Session,
-
+        [datetime]$StopAt,
         [parameter(Mandatory, ParameterSetName = 'All')]
         [switch]$AllSessions,
-
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Object')]
-        [Microsoft.SqlServer.Management.XEvent.Session[]]$SessionCollection,
+        [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -99,11 +104,37 @@ function Start-DbaXESession {
                 Get-DbaXESession -SqlInstance $xe.Parent -Session $session
             }
         }
-    }
 
+        function New-StopJob {
+            [CmdletBinding()]
+            param (
+                [Microsoft.SqlServer.Management.XEvent.Session[]]$xeSessions,
+                [datetime]$StopAt
+            )
+
+            foreach ($xe in $xeSessions) {
+                $server = $xe.Parent
+                $session = $xe.Name
+                $name = "XE Session Stop - $session"
+
+                # Setup the schedule time
+                $time = ($StopAt).ToString("HHmmss")
+
+                # Create the schedule
+                $schedule = New-DbaAgentSchedule -SqlInstance $server -Schedule $name -FrequencyType Once -StartTime ($StopAt).ToString("HHmmss") -Force
+
+                # Create the job and attach the schedule
+                $job = New-DbaAgentJob -SqlInstance $server -Job $name -Schedule $schedule -DeleteLevel Always -Force
+
+                # Create the job step
+                $sql = "ALTER EVENT SESSION [$session] ON SERVER STATE = stop;"
+                $jobstep = New-DbaAgentJobStep -SqlInstance $server -Job $job -StepName 'T-SQL Stop' -Subsystem TransactSql -Command $sql -Force
+            }
+        }
+    }
     process {
-        if ($SessionCollection) {
-            Start-XESessions $SessionCollection
+        if ($InputObject) {
+            Start-XESessions $InputObject
         }
         else {
             foreach ($instance in $SqlInstance) {
@@ -119,6 +150,10 @@ function Start-DbaXESession {
                 }
 
                 Start-XESessions $xeSessions
+
+                if ($StopAt) {
+                    New-StopJob -xeSessions $xeSessions -StopAt $stopat
+                }
             }
         }
     }
