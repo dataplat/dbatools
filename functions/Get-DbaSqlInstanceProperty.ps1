@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,Pipeline#
 function Get-DbaSqlInstanceProperty {
     <#
         .SYNOPSIS
