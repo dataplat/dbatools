@@ -16,7 +16,7 @@ function Invoke-DbaXeReplay {
 
     .PARAMETER Database
         The database(s) to execute the queries against. If left blank, the original database name will be used.
-    
+
     .PARAMETER Event
         Each Response can be limited to processing specific events, while ignoring all the other ones. When this attribute is omitted, all events are processed.
 
