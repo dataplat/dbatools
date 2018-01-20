@@ -1,4 +1,3 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaSqlInstanceProperty {
     <#
         .SYNOPSIS
