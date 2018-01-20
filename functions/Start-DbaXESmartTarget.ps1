@@ -149,7 +149,8 @@
                         $target.Start()
                     }
                     catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
+                        $message = $_.Exception.InnerException.InnerException | Out-String
+                        Stop-Function -Message $message -Target "XESmartTarget" -Continue
                     }
                 }
             }
@@ -166,7 +167,7 @@
                 return
             }
         }
-        
+
         if ($NotAsJob) {
             Start-SmartFunction @PSBoundParameters
         }

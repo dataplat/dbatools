@@ -15,7 +15,7 @@
     .PARAMETER Database
     Name of the initial catalog to connect to. Statements will be replayed by changing database to the same database where the event was originally captured, so this property only controls the initial database to connect to.
 
-    .PARAMETER Events
+    .PARAMETER Event
     Each Response can be limited to processing specific events, while ignoring all the other ones. When this attribute is omitted, all events are processed.
 
     .PARAMETER Filter
@@ -56,8 +56,17 @@
     .EXAMPLE
     $response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning
     Start-DbaXESmartTarget -SqlInstance sql2016 -Session loadrelay -Responder $response
-    
-    Replays events from sql2016 on sql2017.
+
+    Replays events from sql2016 on sql2017 in the planning database. Returns a PowerShell job object.
+
+    To see a list of all SmartTarget job objects, use Get-DbaXESmartTarget
+
+    .EXAMPLE
+    $response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning
+    Start-DbaXESmartTarget -SqlInstance sql2017 -Session 'Profiler Standard' -Responder $response -NotAsJob
+
+     Replays events from the 'Profiler Standard' session on sql2016 to sql2017's planning database. Does not run as a job so you can see the raw output.
+
 #>
     [CmdletBinding()]
     param (
@@ -67,7 +76,7 @@
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
         [string]$Database,
-        [string[]]$Events= "sql_batch_completed",
+        [string[]]$Event = "sql_batch_completed",
         [string]$Filter,
         [int]$DelaySeconds,
         [switch]$StopOnError,
@@ -101,7 +110,7 @@
                 $replay = New-Object -TypeName XESmartTarget.Core.Responses.ReplayResponse
                 $replay.ServerName = $instance
                 $replay.DatabaseName = $Database
-                $replay.Events = $Events
+                $replay.Events = $Event
                 $replay.StopOnError = $StopOnError
                 $replay.Filter = $Filter
                 $replay.DelaySeconds = $DelaySeconds
@@ -117,7 +126,8 @@
                 $replay
             }
             catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
+                $message = $_.Exception.InnerException.InnerException | Out-String
+                Stop-Function -Message $message -Target "XESmartTarget" -Continue
             }
         }
     }

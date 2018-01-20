@@ -1,44 +1,50 @@
 ﻿function New-DbaXESession {
- <#
-    .SYNOPSIS
-    Creates a new XESession object - for the dogged.
+    <#
+        .SYNOPSIS
+            Creates a new XESession object - for the dogged.
 
-    .DESCRIPTION
-    Creates a new XESession object - for the dogged (very manual, Import-DbaXESession is recommended). See the following for more info:
+        .DESCRIPTION
+            Creates a new XESession object - for the dogged (very manual, Import-DbaXESession is recommended). See the following for more info:
 
-    https://docs.microsoft.com/en-us/sql/relational-databases/extended-events/use-the-powershell-provider-for-extended-events
+            https://docs.microsoft.com/en-us/sql/relational-databases/extended-events/use-the-powershell-provider-for-extended-events
 
-    .PARAMETER SqlInstance
-    The SQL Instances that you're connecting to.
+        .PARAMETER SqlInstance
+            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-    .PARAMETER SqlCredential
-    Credential object used to connect to the SQL Server as a different user
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-    .PARAMETER Name
-    The Name of the session
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-    .NOTES
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            To connect as a different Windows user, run PowerShell as that user.
 
-    .LINK
-    https://dbatools.io/New-DbaXESession
+        .PARAMETER Name
+            The Name of the session to be created.
 
-    .EXAMPLE
-    $session = New-DbaXESession -SqlInstance sql2017 -Name XeSession_Test
-    $event = $session.AddEvent("sqlserver.file_written")
-    $event.AddAction("package0.callstack")
-    $session.Create()
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
+        .NOTES
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-#>
+        .LINK
+            https://dbatools.io/New-DbaXESession
+
+        .EXAMPLE
+            $session = New-DbaXESession -SqlInstance sql2017 -Name XeSession_Test
+            $event = $session.AddEvent("sqlserver.file_written")
+            $event.AddAction("package0.callstack")
+            $session.Create()
+
+            Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
+
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -52,7 +58,7 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
+                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {
