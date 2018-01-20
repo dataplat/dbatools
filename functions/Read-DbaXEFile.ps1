@@ -130,6 +130,8 @@ function Read-DbaXEFile {
                     $null = $hash.Add($column, $event.$column)
                 }
                 
+                $null = $hash.Add('xeventdata', $true)
+                
                 foreach ($action in $event.Actions) {
                     $hash[$action.Name] = $action.Value
                 }
