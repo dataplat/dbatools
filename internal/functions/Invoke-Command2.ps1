@@ -49,11 +49,16 @@
     }
     if ($ArgumentList) { $InvokeCommandSplat["ArgumentList"] = $ArgumentList }
     if (-not $ComputerName.IsLocalhost) {
-        #$InvokeCommandSplat["ComputerName"] = $ComputerName.ComputerName
-        if (-not ($currentsession = Get-PSSession -ComputerName $ComputerName.ComputerName)) {
-            $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name "dbatools_$([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)")
+        $runspaceid = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId
+        $sessionname = "dbatools_$runspaceid"
+        if (-not ($currentsession = Get-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname)) {
+            $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
+            $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout)
         }
         else {
+            if ($currentsession.State -eq "Disconnected") {
+                $currentsession | Connect-PSSession
+            }
             $InvokeCommandSplat["Session"] = $currentsession
         }
     }
