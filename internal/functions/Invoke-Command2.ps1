@@ -46,7 +46,7 @@
     if (-not $ComputerName.IsLocalhost) {
         $runspaceid = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId
         $sessionname = "dbatools_$runspaceid"
-        if (-not ($currentsession = Get-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname)) {
+        if (-not ($currentsession = Get-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -ErrorAction Ignore)) {
             $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
             if ($Credential) {
                 $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout -Credential $Credential)
