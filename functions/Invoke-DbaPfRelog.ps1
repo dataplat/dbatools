@@ -56,8 +56,8 @@
     .PARAMETER Multithread
     Parallelize the processing. This may speed up large batches or large files.
 
-    .PARAMETER Latest
-    When piping in a datacollector or datacollector set, only uses the latest log
+    .PARAMETER AllTime
+    When piping in a datacollector or datacollector set, collects all logs, not just the latest.
 
     .PARAMETER Raw
     Output the results of the DOS command instead of Get-ChildItem - does not multithread.
@@ -93,7 +93,7 @@
     .EXAMPLE
     Get-DbaPfDataCollectorSet -ComputerName sql2016 | Get-DbaPfDataCollector | Invoke-DbaPfRelog -Destination C:\temp\perf
 
-    Creates C:\temp\perf if needed, then generates computername-datacollectorname.tsv (tab separated) from
+    Creates C:\temp\perf if needed, then generates computername-datacollectorname.tsv (tab separated) from the latest logs of all
     all data collector sets on sql2016. This destination format was chosen to avoid naming conflicts with piped input.
 
     .EXAMPLE
@@ -132,12 +132,12 @@
     .EXAMPLE
     $servers | Get-DbaPfDataCollectorSet | Get-DbaPfDataCollector | Invoke-DbaPfRelog -Multithread -AllowClobber
 
-    Relogs all data files from all collectors within the servers listed in $servers.
+    Relogs latest data files from all collectors within the servers listed in $servers.
 
     .EXAMPLE
-    Get-DbaPfDataCollector -Collector DataCollector01 | Invoke-DbaPfRelog -AllowClobber -Latest
+    Get-DbaPfDataCollector -Collector DataCollector01 | Invoke-DbaPfRelog -AllowClobber -AllTime
 
-    Relogs the latest log file from the DataCollector01 on the local computer and allows overwrite
+    Relogs all the log files from the DataCollector01 on the local computer and allows overwrite
 
 #>
     [CmdletBinding()]
@@ -160,8 +160,7 @@
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$Multithread,
-        [Alias("Last")]
-        [switch]$Latest,
+        [switch]$AllTime,
         [switch]$Raw,
         [switch]$EnableException
     )
@@ -197,12 +196,12 @@
                 if ($object.OutputLocation -and $object.RemoteOutputLocation) {
                     $instance = [dbainstance]$object.ComputerName
 
-                    if ($latest) {
+                    if (-not $AllTime) {
                         if ($instance.IsLocalHost) {
-                            $allpaths += (Get-ChildItem -Path $object.LatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                            $allpaths += (Get-ChildItem -Recurse -Path $object.LatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
                         }
                         else {
-                            $allpaths += (Get-ChildItem -Path $object.RemoteLatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                            $allpaths += (Get-ChildItem -Recurse -Path $object.RemoteLatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
                         }
                     }
                     else {
@@ -221,12 +220,12 @@
                 if ($object.LatestOutputLocation -and $object.RemoteLatestOutputLocation) {
                     $instance = [dbainstance]$object.ComputerName
 
-                    if ($latest) {
+                    if (-not $AllTime) {
                         if ($instance.IsLocalHost) {
-                            $allpaths += (Get-ChildItem -Path $object.LatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                            $allpaths += (Get-ChildItem -Recurse -Path $object.LatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
                         }
                         else {
-                            $allpaths += (Get-ChildItem -Path $object.RemoteLatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                            $allpaths += (Get-ChildItem -Recurse -Path $object.RemoteLatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
                         }
                     }
                     else {
@@ -278,7 +277,9 @@
                     else {
                         $computer = $file.Split("\")[2]
                     }
-                    $Destination = Join-Path $originaldestination "$computer - $($item.BaseName)"
+                    # Avoid naming conflicts
+                    $timestamp = Get-Date -format yyyyMMddHHmmfff
+                    $Destination = Join-Path $originaldestination "$computer - $($item.BaseName) - $timestamp"
                 }
             }
 
@@ -399,13 +400,17 @@
                             Stop-Function -Continue -Message $output.Trim("Input")
                         }
                         else {
-                            Write-Message -Level Verbose -Message $output
+                            Write-Message -Level Verbose -Message "$output"
                             $array = $output -Split [environment]::NewLine
                             $files = $array | Select-String "File:"
 
                             foreach ($rawfile in $files) {
                                 $rawfile = $rawfile.ToString().Replace("File:", "").Trim()
-                                Get-ChildItem $rawfile | Add-Member -MemberType NoteProperty -Name RelogFile -Value $true -PassThru
+                                $gcierror = $null
+                                Get-ChildItem $rawfile -ErrorAction SilentlyContinue -ErrorVariable gcierror | Add-Member -MemberType NoteProperty -Name RelogFile -Value $true -PassThru -ErrorAction Ignore
+                                if ($gcierror) {
+                                    Write-Message -Level Verbose -Message "$gcierror"
+                                }
                             }
                         }
                     }
@@ -418,7 +423,10 @@
         }
 
         if ($Multithread) {
-            $allpaths | Invoke-Parallel -ImportVariables -ImportModules -ScriptBlock $scriptblock
+            $allpaths | Invoke-Parallel -ImportVariables -ImportModules -ScriptBlock $scriptblock -ErrorAction SilentlyContinue -ErrorVariable parallelerror
+            if ($parallelerror) {
+                Write-Message -Level Verbose -Message "$parallelerror"
+            }
         }
         else {
             foreach ($file in $allpaths) { Invoke-Command -ScriptBlock $scriptblock -ArgumentList $file }
