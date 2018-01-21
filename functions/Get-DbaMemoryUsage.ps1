@@ -61,9 +61,10 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
         [dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$Simple,
-        [switch][Alias('Silent')]$EnableException
+        [switch][Alias('Silent')]
+        $EnableException
     )
-
+    
     begin {
         if ($Simple) {
             $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
@@ -79,117 +80,121 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
             $SSAScounters = '(\\memory )'
             $SSIScounters = '(memory)'
         }
-
+        
         $scriptblock = {
-            param( $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters )
+            param ($Memcounters,
+                $Plancounters,
+                $BufManpagecounters,
+                $SSAScounters,
+                $SSIScounters)
             Write-Verbose "Searching for Memory Manager Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue).paths
                 (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $Memcounters } |
-                    ForEach-Object {
+                Where-Object { $_.Path -match $Memcounters } |
+                ForEach-Object {
                     $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
-                        ComputerName    = $env:computername
-                        SqlInstance     = $instance
-                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                        Counter         = $_.Path.split("\")[-1]
-                        Pages           = $null
-                        MemKB           = $_.cookedvalue
-                        MemMB           = $_.cookedvalue / 1024
+                        ComputerName     = $env:computername
+                        SqlInstance      = $instance
+                        CounterInstance  = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter          = $_.Path.split("\")[-1]
+                        Pages            = $null
+                        MemKB            = $_.cookedvalue
+                        MemMB            = $_.cookedvalue / 1024
                     }
                 }
             }
             catch {
                 Write-Verbose "No Memory Manager Counters on $Computer"
             }
-
+            
             Write-Verbose "Searching for Plan Cache Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet '*sql*:Plan Cache*' -ErrorAction SilentlyContinue).paths
                 (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $Plancounters } |
-                    ForEach-Object {
+                Where-Object { $_.Path -match $Plancounters } |
+                ForEach-Object {
                     $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
-                        ComputerName    = $env:computername
-                        SqlInstance     = $instance
-                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                        Counter         = $_.Path.split("\")[-1]
-                        Pages           = $_.cookedvalue
-                        MemKB           = $_.cookedvalue * 8192 / 1024
-                        MemMB           = $_.cookedvalue * 8192 / 1048576
+                        ComputerName     = $env:computername
+                        SqlInstance      = $instance
+                        CounterInstance  = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter          = $_.Path.split("\")[-1]
+                        Pages            = $_.cookedvalue
+                        MemKB            = $_.cookedvalue * 8192 / 1024
+                        MemMB            = $_.cookedvalue * 8192 / 1048576
                     }
                 }
             }
             catch {
                 Write-Verbose "No Plan Cache Counters on $Computer"
             }
-
+            
             Write-Verbose "Searching for Buffer Manager Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet "*Buffer Manager*" -ErrorAction SilentlyContinue).paths
                 (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $BufManpagecounters } |
-                    ForEach-Object {
+                Where-Object { $_.Path -match $BufManpagecounters } |
+                ForEach-Object {
                     $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
-                        ComputerName    = $env:computername
-                        SqlInstance     = $instance
-                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                        Counter         = $_.Path.split("\")[-1]
-                        Pages           = $_.cookedvalue
-                        MemKB           = $_.cookedvalue * 8192 / 1024.0
-                        MemMB           = $_.cookedvalue * 8192 / 1048576.0
+                        ComputerName     = $env:computername
+                        SqlInstance      = $instance
+                        CounterInstance  = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter          = $_.Path.split("\")[-1]
+                        Pages            = $_.cookedvalue
+                        MemKB            = $_.cookedvalue * 8192 / 1024.0
+                        MemMB            = $_.cookedvalue * 8192 / 1048576.0
                     }
                 }
             }
             catch {
                 Write-Verbose "No Buffer Manager Counters on $Computer"
             }
-
+            
             Write-Verbose "Searching for SSAS Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet "MSAS*:Memory" -ErrorAction SilentlyContinue).paths
                 (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $SSAScounters } |
-                    ForEach-Object {
+                Where-Object { $_.Path -match $SSAScounters } |
+                ForEach-Object {
                     $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
-                        ComputerName    = $env:COMPUTERNAME
-                        SqlInstance     = $instance
-                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                        Counter         = $_.Path.split("\")[-1]
-                        Pages           = $null
-                        MemKB           = $_.cookedvalue
-                        MemMB           = $_.cookedvalue / 1024
+                        ComputerName     = $env:COMPUTERNAME
+                        SqlInstance      = $instance
+                        CounterInstance  = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter          = $_.Path.split("\")[-1]
+                        Pages            = $null
+                        MemKB            = $_.cookedvalue
+                        MemMB            = $_.cookedvalue / 1024
                     }
                 }
             }
             catch {
                 Write-Verbose "No SSAS Counters on $Computer"
             }
-
+            
             Write-Verbose "Searching for SSIS Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet "*SSIS*" -ErrorAction SilentlyContinue).paths
                 (Get-Counter -Counter $availablecounters -ErrorAction SilentlyContinue).countersamples |
-                    Where-Object { $_.Path -match $SSIScounters } |
-                    ForEach-Object {
+                Where-Object { $_.Path -match $SSIScounters } |
+                ForEach-Object {
                     $instance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[0]
                     if ($instance -eq 'sqlserver') { $instance = 'mssqlserver' }
                     [PSCustomObject]@{
-                        ComputerName    = $env:computername
-                        SqlInstance     = $instance
-                        CounterInstance = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
-                        Counter         = $_.Path.split("\")[-1]
-                        Pages           = $null
-                        MemKB           = $_.cookedvalue / 1024
-                        MemMB           = $_.cookedvalue / 1024 / 1024
+                        ComputerName     = $env:computername
+                        SqlInstance      = $instance
+                        CounterInstance  = (($_.Path.split("\")[-2]).replace("mssql`$", "")).split(':')[1]
+                        Counter          = $_.Path.split("\")[-1]
+                        Pages            = $null
+                        MemKB            = $_.cookedvalue / 1024
+                        MemMB            = $_.cookedvalue / 1024 / 1024
                     }
                 }
             }
@@ -198,14 +203,19 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
             }
         }
     }
-
+    
     process {
         foreach ($Computer in $ComputerName.ComputerName) {
             $reply = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -ErrorAction SilentlyContinue
             if ($reply.FullComputerName) {
                 $Computer = $reply.FullComputerName
-                Write-Message -Level Verbose -Message "Connecting to $Computer"
-                Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters
+                try {
+                    Write-Message -Level Verbose -Message "Connecting to $Computer"
+                    Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters
+                }
+                catch {
+                    Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                }
             }
             else {
                 Write-Message -Level Warning -Message "Can't resolve $Computer."
