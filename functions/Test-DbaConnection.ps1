@@ -69,8 +69,8 @@ function Test-DbaConnection {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            # Get local enviornment
-            Write-Message -Level Verbose -Message "Getting local enivornment information"
+            # Get local environment
+            Write-Message -Level Verbose -Message "Getting local environment information"
             $localInfo = [pscustomobject]@{
                 Windows    = [environment]::OSVersion.Version.ToString()
                 PowerShell = $PSVersionTable.PSversion.ToString()
