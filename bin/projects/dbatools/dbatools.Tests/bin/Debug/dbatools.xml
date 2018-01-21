@@ -169,6 +169,66 @@
             The drive is a RAM disk
             </summary>
         </member>
+        <member name="T:Sqlcollaborative.Dbatools.Computer.PageFileSetting">
+            <summary>
+            Data container, listing pagefile settings.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Computer.PageFileSetting.ComputerName">
+            <summary>
+            The name of the computer
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Computer.PageFileSetting.AutoPageFile">
+            <summary>
+            Whether Automatic PageFile management is enabled
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Computer.PageFileSetting.FileName">
+            <summary>
+            The pagefile name
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Computer.PageFileSetting.Status">
+            <summary>
+            The pagefile status
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Computer.PageFileSetting.LastModified">
+            <summary>
+            When were the settings last changed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Computer.PageFileSetting.LastAccessed">
+            <summary>
+            When were the settings last accessed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Computer.PageFileSetting.AllocatedBaseSize">
+            <summary>
+            The base allocated pagefile size in MB
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Computer.PageFileSetting.InitialSize">
+            <summary>
+            The initial pagefile size in MB
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Computer.PageFileSetting.MaximumSize">
+            <summary>
+            The maximum pagefile size in MB
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Computer.PageFileSetting.PeakUsage">
+            <summary>
+            The maximum percent of the pagefile limit that has been used
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Computer.PageFileSetting.CurrentUsage">
+            <summary>
+            The currently used percentage of the pagefile limit that is in use.
+            </summary>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Configuration.ConfigScope">
             <summary>
             The location where a setting was applied

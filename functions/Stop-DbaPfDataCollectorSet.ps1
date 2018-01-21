@@ -103,7 +103,7 @@
             }
             Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
             try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop -Raw
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
             }
             catch {
                 Stop-Function -Message "Failure stopping $setname on $computer" -ErrorRecord $_ -Target $computer -Continue

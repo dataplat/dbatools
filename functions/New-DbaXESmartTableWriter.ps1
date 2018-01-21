@@ -1,71 +1,78 @@
 ﻿function New-DbaXESmartTableWriter {
- <#
-    .SYNOPSIS
-     This Response type is used to write Extended Events to a database table.
+    <#
+        .SYNOPSIS
+            This Response type is used to write Extended Events to a database table.
 
-    .DESCRIPTION
-    This Response type is used to write Extended Events to a database table. The events are temporarily stored in memory before being written to the database at regular intervals.
+        .DESCRIPTION
+            This Response type is used to write Extended Events to a database table. The events are temporarily stored in memory before being written to the database at regular intervals.
 
-    The target table can be created manually upfront or you can let the TableAppenderResponse create a target table based on the fields and actions available in the events captured.
-    The columns of the target table and the fields/actions of the events are mapped by name (case-sensitive).
+            The target table can be created manually upfront or you can let the TableAppenderResponse create a target table based on the fields and actions available in the events captured.
 
-    .PARAMETER SqlInstance
-    The SQL Instances that you're connecting to.
+            The columns of the target table and the fields/actions of the events are mapped by name (case-sensitive).
 
-    .PARAMETER SqlCredential
-    Credential object used to connect to the SQL Server as a different user
+       .PARAMETER SqlInstance
+            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-    .PARAMETER Database
-    Specifies the name of the database that contains the target table.
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-    .PARAMETER Table
-    Specifies the name of the target table.
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    .PARAMETER AutoCreateTargetTable
-    When true, XESmartTarget will infer the definition of the target table from the columns captured in the Extended Events session.
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-    If the target table already exists, it will not be recreated.
+            To connect as a different Windows user, run PowerShell as that user.
 
-    .PARAMETER UploadIntervalSeconds
-    Specifies the number of seconds XESmartTarget will keep the events in memory befory dumping them to the target table. The default is 10 seconds.
+        .PARAMETER Database
+            Specifies the name of the database that contains the target table.
 
-    .PARAMETER OutputColumns
-    Specifies the list of columns to output from the events. XESmartTarget will capture in memory and write to the target table only the columns (fields or targets) that are present in this list.
+        .PARAMETER Table
+            Specifies the name of the target table.
 
-    Fields and actions are matched in a case-sensitive manner.
+        .PARAMETER AutoCreateTargetTable
+            If this switch is enabled, XESmartTarget will infer the definition of the target table from the columns captured in the Extended Events session.
 
-    Expression columns are supported too: specify a column with ColumnName AS Expression to add an expression column (Example: Total AS Reads + Writes)
+            If the target table already exists, it will not be recreated.
 
-    .PARAMETER Events
-    Each Response can be limited to processing specific events, while ignoring all the other ones. When this attribute is omitted, all events are processed.
+        .PARAMETER UploadIntervalSeconds
+            Specifies the number of seconds XESmartTarget will keep the events in memory before dumping them to the target table. The default is 10 seconds.
 
-    .PARAMETER Filter
-    You can specify a filter expression by using this attribute. The filter expression is in the same form that you would use in a SQL query.
+        .PARAMETER OutputColumns
+            Specifies the list of columns to output from the events. XESmartTarget will capture in memory and write to the target table only the columns (fields or targets) that are present in this list.
 
-    For example, a valid example looks like this: duration > 10000 AND cpu_time > 10000
+            Fields and actions are matched in a case-sensitive manner.
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            Expression columns are supported. Specify a column with ColumnName AS Expression to add an expression column (Example: Total AS Reads + Writes)
 
-    .NOTES
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-    SmartTarget: by Gianluca Sartori (@spaghettidba)
+        .PARAMETER Events
+            Specifies a list of events to be processed (with others being ignored. By default, all events are processed.
 
-    .LINK
-    https://dbatools.io/New-DbaXESmartTableWriter
-    https://github.com/spaghettidba/XESmartTarget/wiki
+        .PARAMETER Filter
+            Specifies a filter expression in the same form as you would use in the WHERE clause of a SQL query.
 
-    .EXAMPLE
-    $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"
-    $response = New-DbaXESmartTableWriter -SqlInstance sql2017 -Database dbadb -Table deadlocktracker -OutputColumns $columns -Filter "duration > 10000"
-    Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
-    
-    Writes Extended Events to the deadlocktracker table in dbadb on sql2017.
-#>
+            Example: duration > 10000 AND cpu_time > 10000
+
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+        .NOTES
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            SmartTarget: by Gianluca Sartori (@spaghettidba)
+
+        .LINK
+            https://dbatools.io/New-DbaXESmartTableWriter
+            https://github.com/spaghettidba/XESmartTarget/wiki
+
+        .EXAMPLE
+            $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"
+            $response = New-DbaXESmartTableWriter -SqlInstance sql2017 -Database dbadb -Table deadlocktracker -OutputColumns $columns -Filter "duration > 10000"
+            Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
+            
+            Writes Extended Events to the deadlocktracker table in dbadb on sql2017.
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -97,7 +104,7 @@
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
+                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {
