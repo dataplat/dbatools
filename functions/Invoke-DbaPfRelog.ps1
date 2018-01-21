@@ -56,6 +56,9 @@
     .PARAMETER Multithread
     Parallelize the processing. This may speed up large batches or large files.
 
+    .PARAMETER AllTime
+    When piping in a datacollector or datacollector set, collects all logs, not just the latest.
+
     .PARAMETER Raw
     Output the results of the DOS command instead of Get-ChildItem - does not multithread.
 
@@ -76,16 +79,27 @@
     https://dbatools.io/Invoke-DbaPfRelog
 
     .EXAMPLE
+    Invoke-DbaPfRelog -Path C:\temp\perfmon.blg
+
+    Creates C:\temp\perfmon.tsv from C:\temp\perfmon.blg
+
+    .EXAMPLE
     Invoke-DbaPfRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c
 
-    Creats the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg
+    Creates the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg
 
     Returns the newly created file as a file object
 
     .EXAMPLE
+    Get-DbaPfDataCollectorSet -ComputerName sql2016 | Get-DbaPfDataCollector | Invoke-DbaPfRelog -Destination C:\temp\perf
+
+    Creates C:\temp\perf if needed, then generates computername-datacollectorname.tsv (tab separated) from the latest logs of all
+    all data collector sets on sql2016. This destination format was chosen to avoid naming conflicts with piped input.
+
+    .EXAMPLE
     Invoke-DbaPfRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c -Raw
 
-    Creats the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg then outputs the raw results of the relog command.
+    Creates the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg then outputs the raw results of the relog command.
 
     [Invoke-DbaPfRelog][21:21:35] relog "C:\temp\perfmon.blg" -f csv -o C:\temp\a\b\c
 
@@ -115,6 +129,16 @@
 
     Creates the temp, a, and b directories if needed, then generates c.csv (comma separated) from C:\temp\perflog with spaces.blg', starts 30 day ago and ends one day ago
 
+    .EXAMPLE
+    $servers | Get-DbaPfDataCollectorSet | Get-DbaPfDataCollector | Invoke-DbaPfRelog -Multithread -AllowClobber
+
+    Relogs latest data files from all collectors within the servers listed in $servers.
+
+    .EXAMPLE
+    Get-DbaPfDataCollector -Collector DataCollector01 | Invoke-DbaPfRelog -AllowClobber -AllTime
+
+    Relogs all the log files from the DataCollector01 on the local computer and allows overwrite
+
 #>
     [CmdletBinding()]
     param (
@@ -136,19 +160,29 @@
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$Multithread,
+        [switch]$AllTime,
         [switch]$Raw,
         [switch]$EnableException
     )
     begin {
         if (Test-Bound -ParameterName BeginTime) {
-            $beginstring = ($BeginTime -f 'M/d/yyyy hh:mm:ss' | Out-String).Trim()
+            $script:beginstring = ($BeginTime -f 'M/d/yyyy hh:mm:ss' | Out-String).Trim()
         }
         if (Test-Bound -ParameterName EndTime) {
-            $endstring = ($EndTime -f 'M/d/yyyy hh:mm:ss' | Out-String).Trim()
+            $script:endstring = ($EndTime -f 'M/d/yyyy hh:mm:ss' | Out-String).Trim()
         }
 
         $allpaths = @()
         $allpaths += $Path
+
+        # to support multithreading
+        if (Test-Bound -ParameterName Destination) {
+            $script:destinationset = $true
+            $originaldestination = $Destination
+        }
+        else {
+            $script:destinationset = $false
+        }
     }
     process {
         if ($Append -and $Type -ne "bin") {
@@ -162,23 +196,47 @@
                 if ($object.OutputLocation -and $object.RemoteOutputLocation) {
                     $instance = [dbainstance]$object.ComputerName
 
-                    if ($instance.IsLocalHost) {
-                        $allpaths += (Get-ChildItem -Recurse -Path $object.OutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                    if (-not $AllTime) {
+                        if ($instance.IsLocalHost) {
+                            $allpaths += (Get-ChildItem -Recurse -Path $object.LatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                        }
+                        else {
+                            $allpaths += (Get-ChildItem -Recurse -Path $object.RemoteLatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                        }
                     }
                     else {
-                        $allpaths += (Get-ChildItem -Recurse -Path $object.RemoteOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                        if ($instance.IsLocalHost) {
+                            $allpaths += (Get-ChildItem -Recurse -Path $object.OutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                        }
+                        else {
+                            $allpaths += (Get-ChildItem -Recurse -Path $object.RemoteOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                        }
                     }
+
+
+                    $script:perfmonobject = $true
                 }
                 # DataCollector
                 if ($object.LatestOutputLocation -and $object.RemoteLatestOutputLocation) {
                     $instance = [dbainstance]$object.ComputerName
 
-                    if ($instance.IsLocalHost) {
-                        $allpaths += (Get-ChildItem -Recurse -Path (Split-Path $object.LatestOutputLocation) -Include *.blg -ErrorAction SilentlyContinue).FullName
+                    if (-not $AllTime) {
+                        if ($instance.IsLocalHost) {
+                            $allpaths += (Get-ChildItem -Recurse -Path $object.LatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                        }
+                        else {
+                            $allpaths += (Get-ChildItem -Recurse -Path $object.RemoteLatestOutputLocation -Include *.blg -ErrorAction SilentlyContinue).FullName
+                        }
                     }
                     else {
-                        $allpaths += (Get-ChildItem -Recurse -Path (Split-Path $object.RemoteLatestOutputLocation) -Include *.blg -ErrorAction SilentlyContinue).FullName
+                        if ($instance.IsLocalHost) {
+                            $allpaths += (Get-ChildItem -Recurse -Path (Split-Path $object.LatestOutputLocation) -Include *.blg -ErrorAction SilentlyContinue).FullName
+                        }
+                        else {
+                            $allpaths += (Get-ChildItem -Recurse -Path (Split-Path $object.RemoteLatestOutputLocation) -Include *.blg -ErrorAction SilentlyContinue).FullName
+                        }
                     }
+                    $script:perfmonobject = $true
                 }
             }
         }
@@ -188,7 +246,13 @@
     end {
         $allpaths = $allpaths | Where-Object { $_ -match '.blg' } | Select-Object -Unique
 
-        foreach ($file in $allpaths) {
+        $scriptblock = {
+            if ($args) {
+                $file = $args
+            }
+            else {
+                $file = $psitem
+            }
             $item = Get-ChildItem -Path $file -ErrorAction SilentlyContinue
 
             if ($item -eq $null) {
@@ -196,8 +260,27 @@
                 return
             }
 
-            if ((Test-Bound -ParameterName Destination -Not) -and -not $Append) {
+            if (-not $script:destinationset -and $file -match "C\:\\.*Admin.*") {
+                Test-ElevationRequirement -ComputerName $env:COMPUTERNAME -Continue
+            }
+
+            if ($script:destinationset -eq $false -and -not $Append) {
                 $Destination = Join-Path (Split-Path $file) $item.BaseName
+            }
+
+            if ($Destination -and $Destination -notmatch "\." -and -not $Append -and $script:perfmonobject) {
+                # if destination is set, then it needs a different name
+                if ($script:destinationset -eq $true) {
+                    if ($file -match "\:") {
+                        $computer = $env:COMPUTERNAME
+                    }
+                    else {
+                        $computer = $file.Split("\")[2]
+                    }
+                    # Avoid naming conflicts
+                    $timestamp = Get-Date -format yyyyMMddHHmmfff
+                    $Destination = Join-Path $originaldestination "$computer - $($item.BaseName) - $timestamp"
+                }
             }
 
             $params = @("`"$file`"")
@@ -225,12 +308,12 @@
                 $params += "-o `"$Destination`""
             }
 
-            if ($beginstring) {
-                $params += "-b $beginstring"
+            if ($script:beginstring) {
+                $params += "-b $script:beginstring"
             }
 
-            if ($endstring) {
-                $params += "-e $endstring"
+            if ($script:endstring) {
+                $params += "-e $script:endstring"
             }
 
             if ($ConfigPath) {
@@ -317,27 +400,36 @@
                             Stop-Function -Continue -Message $output.Trim("Input")
                         }
                         else {
-                            Write-Message -Level Verbose -Message $output
+                            Write-Message -Level Verbose -Message "$output"
                             $array = $output -Split [environment]::NewLine
                             $files = $array | Select-String "File:"
 
                             foreach ($rawfile in $files) {
                                 $rawfile = $rawfile.ToString().Replace("File:", "").Trim()
-                                Get-ChildItem $rawfile | Add-Member -MemberType NoteProperty -Name RelogFile -Value $true -PassThru
+                                $gcierror = $null
+                                Get-ChildItem $rawfile -ErrorAction SilentlyContinue -ErrorVariable gcierror | Add-Member -MemberType NoteProperty -Name RelogFile -Value $true -PassThru -ErrorAction Ignore
+                                if ($gcierror) {
+                                    Write-Message -Level Verbose -Message "$gcierror"
+                                }
                             }
                         }
                     }
-                    if ($Multithread) {
-                        $true | Invoke-Parallel -ImportVariables -ImportModules -ScriptBlock $scriptblock -Quiet
-                    }
-                    else {
-                        Invoke-Command -ScriptBlock $scriptblock
-                    }
+                    Invoke-Command -ScriptBlock $scriptblock
                 }
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $path
             }
+        }
+
+        if ($Multithread) {
+            $allpaths | Invoke-Parallel -ImportVariables -ImportModules -ScriptBlock $scriptblock -ErrorAction SilentlyContinue -ErrorVariable parallelerror
+            if ($parallelerror) {
+                Write-Message -Level Verbose -Message "$parallelerror"
+            }
+        }
+        else {
+            foreach ($file in $allpaths) { Invoke-Command -ScriptBlock $scriptblock -ArgumentList $file }
         }
     }
 }
