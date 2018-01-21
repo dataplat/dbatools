@@ -3,18 +3,15 @@
 function Get-DbaPageFileSetting {
 <#
     .SYNOPSIS
-        Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
+        Returns information on the pagefile configuration of the target computer.
     
     .DESCRIPTION
-        WMI class Win32_ComputerSystem tells us if Page File is managed automatically.
-        If TRUE all other properties do not exist.
-        If FALSE classes Win32_PageFile, Win32_PageFileSetting en Win32_PageFileUsage are examined.
-        CIM is used, first via WinRM, and if not successful, via DCOM.
-        This function needs to be executed as a user with local admin rights on the target computer(s).
+        This command uses CIM (or other, related computer management tools) to detect the pagefile configuration of the target compuer(s).
+        Note that this may require local administrator privileges for the relevant computers.
     
     .PARAMETER ComputerName
         The Server that you're connecting to.
-        This can be the name of a computer, a SMO object, an IP address or a SQL Instance.
+        This can be the name of a computer, a SMO object, an IP address, an AD COmputer object, a connection string or a SQL Instance.
     
     .PARAMETER Credential
         Credential object used to connect to the Computer as a different user
