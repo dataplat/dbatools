@@ -1,50 +1,50 @@
 function Read-DbaXEFile {
     <#
-    .SYNOPSIS
-    Read XEvents from a xel or xem file
+        .SYNOPSIS
+            Read XEvents from a xel or xem file.
 
-    .DESCRIPTION
-    Read XEvents from a xel or xem file.
+        .DESCRIPTION
+            Read XEvents from a xel or xem file.
 
-    .PARAMETER Path
-    The path to the file. This is relative to the computer executing the command. UNC paths supported.
+        .PARAMETER Path
+            The path to the xel or xem file. This is relative to the computer executing the command. UNC paths are supported.
 
-    .PARAMETER Exact
-    By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters. Use this to skip the addition of the wildcard.
+        .PARAMETER Exact
+            If this switch is enabled, only an exact search will be used for the Path. By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters.
 
-    .PARAMETER Raw
-    Returns the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object
+        .PARAMETER Raw
+            If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object will be returned.
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .NOTES
-    Tags: Xevent
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .NOTES
+            Tags: Xevent
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-    .LINK
-    https://dbatools.io/Read-DbaXEFile
+        .LINK
+            https://dbatools.io/Read-DbaXEFile
 
-    .EXAMPLE
-    Read-DbaXEFile -Path C:\temp\deadocks.xel
+        .EXAMPLE
+            Read-DbaXEFile -Path C:\temp\deadocks.xel
 
-    Returns events from C:\temp\deadocks.xel
+            Returns events from C:\temp\deadocks.xel.
 
-    .EXAMPLE
-    Get-ChildItem C:\temp\xe\*.xel | Read-DbaXEFile
+        .EXAMPLE
+            Get-ChildItem C:\temp\xe\*.xel | Read-DbaXEFile
 
-    Returns events from all .xel files in C:\temp\xe
+            Returns events from all .xel files in C:\temp\xe.
 
-    .EXAMPLE
-    Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEFile
+        .EXAMPLE
+            Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEFile
 
-    Reads remote xevents by acccessing the file over the admin UNC share
+            Reads remote XEvents by accessing the file over the admin UNC share.
 
-#>
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -71,12 +71,12 @@ function Read-DbaXEFile {
             }
             else {
                 if ($file -isnot [Microsoft.SqlServer.Management.XEvent.Session]) {
-                    Stop-Function -Message "Unsupported file type"
+                    Stop-Function -Message "Unsupported file type."
                     return
                 }
 
                 if ($file.TargetFile.Length -eq 0) {
-                    Stop-Function -Message "This session does not have an associated Target File"
+                    Stop-Function -Message "This session does not have an associated Target File."
                     return
                 }
 
