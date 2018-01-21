@@ -117,7 +117,7 @@
             if ($Pscmdlet.ShouldProcess("$computer", "Removing collector set $setname")) {
                 Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
                 try {
-                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname -ErrorAction Stop -Raw
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname -ErrorAction Stop
                     [pscustomobject]@{
                         ComputerName                                           = $computer
                         Name                                                   = $setname
