@@ -1,4 +1,4 @@
-#ValidationTags#Messaging,Pipeline#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaSqlInstanceProperty {
     <#
         .SYNOPSIS
@@ -69,8 +69,7 @@ function Get-DbaSqlInstanceProperty {
             }
 
             try {
-                $props = $server.Information.Properties
-                foreach ($prop in $props) {
+                foreach ($prop in $server.Information.Properties) {
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
@@ -80,12 +79,10 @@ function Get-DbaSqlInstanceProperty {
             }
             catch {
                 Stop-Function -Message "Issue gathering information properties for $instance." -Target $instance -ErrorRecord $_ -Continue
-                continue
             }
 
             try {
-            $props = $server.Useroptions.Properties
-                foreach ($prop in $props) {
+                foreach ($prop in $server.Useroptions.Properties) {
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
@@ -95,12 +92,10 @@ function Get-DbaSqlInstanceProperty {
             }
             catch {
                 Stop-Function -Message "Issue gathering user options for $instance." -Target $instance -ErrorRecord $_ -Continue
-                continue
             }
 
             try {
-                $props = $server.Settings.Properties
-                foreach ($prop in $props) {
+                foreach ($prop in $server.Settings.Properties) {
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
@@ -110,7 +105,6 @@ function Get-DbaSqlInstanceProperty {
             }
             catch {
                 Stop-Function -Message "Issue gathering settings for $instance." -Target $instance -ErrorRecord $_ -Continue
-                continue
             }
         }
     }
