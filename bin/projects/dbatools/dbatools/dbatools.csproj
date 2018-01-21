@@ -76,6 +76,7 @@
   <ItemGroup>
     <Compile Include="Computer\DiskSpace.cs" />
     <Compile Include="Computer\DriveType.cs" />
+    <Compile Include="Computer\PageFileSetting.cs" />
     <Compile Include="Configuration\ConfigScope.cs" />
     <Compile Include="Configuration\ConfigurationHost.cs" />
     <Compile Include="Database\BackupHistory.cs" />
