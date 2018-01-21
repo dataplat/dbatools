@@ -1,45 +1,51 @@
 ﻿function New-DbaXESmartQueryExec {
- <#
-    .SYNOPSIS
-     This Response type executes a T-SQL command against a target database whenever an event is recorded.
+    <#
+        .SYNOPSIS
+            This Response type executes a T-SQL command against a target database whenever an event is recorded.
 
-    .DESCRIPTION
-    This Response type executes a T-SQL command against a target database whenever an event is recorded.
+        .DESCRIPTION
+            This Response type executes a T-SQL command against a target database whenever an event is recorded.
 
-    .PARAMETER SqlInstance
-    The SQL Instances that you're connecting to.
+        .PARAMETER SqlInstance
+            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-    .PARAMETER SqlCredential
-    Credential object used to connect to the SQL Server as a different user
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-    .PARAMETER Database
-    Specifies the name of the database that contains the target table.
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    .PARAMETER Query
-    The T-SQL command to execute. This string can contain placeholders for properties taken from the events.
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-    Placeholders are in the form {PropertyName}, where PropertyName is one of the fields or actions available in the Event object.
+            To connect as a different Windows user, run PowerShell as that user.
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER Database
+            Specifies the name of the database that contains the target table.
 
-    .NOTES
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .PARAMETER Query
+            The T-SQL command to execute. This string can contain placeholders for properties taken from the events.
 
-    .LINK
-    https://dbatools.io/New-DbaXESmartQueryExec
-    https://github.com/spaghettidba/XESmartTarget/wiki
+            Placeholders are in the form {PropertyName}, where PropertyName is one of the fields or actions available in the Event object.
 
-     .EXAMPLE
-    $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
-    Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
-    
-    Executes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.
-#>
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+        .NOTES
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
+        .LINK
+            https://dbatools.io/New-DbaXESmartQueryExec
+            https://github.com/spaghettidba/XESmartTarget/wiki
+
+        .EXAMPLE
+            $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
+            Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
+            
+            Executes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -60,11 +66,13 @@
         }
     }
     process {
-        if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) {
+            return
+        }
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
+                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {
