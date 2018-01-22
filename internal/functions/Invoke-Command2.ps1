@@ -56,6 +56,7 @@
             else {
                 $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout)
             }
+            $currentsession = $InvokeCommandSplat["Session"]
         }
         else {
             if ($currentsession.State -eq "Disconnected") {
