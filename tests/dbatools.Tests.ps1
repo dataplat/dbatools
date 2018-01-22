@@ -39,13 +39,13 @@ Describe "$ModuleName indentation" -Tag 'Compliance' {
     foreach ($f in $AllFiles) {
         $LeadingTabs = Select-String -Path $f -Pattern '^[\t]+'
         if ($LeadingTabs.Count -gt 0) {
-            It "$f is not indented with tabs" {
+            It "$f is not indented with tabs (line(s) $($LeadingTabs.LineNumber -join ','))" {
                 $LeadingTabs.Count | Should Be 0
             }
         }
         $TrailingSpaces = Select-String -Path $f -Pattern '([^ \t\r\n])[ \t]+$'
         if ($TrailingSpaces.Count -gt 0) {
-            It "$f has no trailing spaces" {
+            It "$f has no trailing spaces (line(s) $($TrailingSpaces.LineNumber -join ','))" {
                 $TrailingSpaces.Count | Should Be 0
             }
         }
