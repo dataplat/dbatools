@@ -104,7 +104,7 @@
                             InstanceName = $xe.Parent.ServiceName
                             SqlInstance  = $xe.Parent.DomainInstanceName
                             Session      = $session
-                            Status       = "Successful"
+                            Status       = "Removed"
                         }
                     }
                     catch {
