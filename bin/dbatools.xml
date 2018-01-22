@@ -344,215 +344,62 @@
             The finalized value to put into the registry value when using policy to set this setting.
             </summary>
         </member>
-        <member name="T:Sqlcollaborative.Dbatools.Database.BackupHistory">
+        <member name="T:Sqlcollaborative.Dbatools.Connection.PSSessionContainer">
             <summary>
-            Object containing the information about the history of mankind ... or a database backup. WHo knows.
+            The container that lists all sessions for a given runspace
             </summary>
         </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.ComputerName">
+        <member name="F:Sqlcollaborative.Dbatools.Connection.PSSessionContainer.Runspace">
             <summary>
-            The name of the computer running MSSQL Server
+            The runspace that owns the sessions
             </summary>
         </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.InstanceName">
+        <member name="P:Sqlcollaborative.Dbatools.Connection.PSSessionContainer.CountExpired">
             <summary>
-            The Instance that was queried
+            The count of expired sessions registered
             </summary>
         </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.SqlInstance">
+        <member name="F:Sqlcollaborative.Dbatools.Connection.PSSessionContainer.Sessions">
             <summary>
-            The full Instance name as seen from outside
+            List of sessions and their associated computer names
             </summary>
         </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Database">
+        <member name="F:Sqlcollaborative.Dbatools.Connection.PSSessionContainer.ConnectionTimestamps">
             <summary>
-            The Database that was backed up
+            List of timestamps, when the last command was run against them
             </summary>
         </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.UserName">
+        <member name="M:Sqlcollaborative.Dbatools.Connection.PSSessionContainer.#ctor(System.Guid)">
             <summary>
-            The user that is running the backup
+            Creates a list of sessions the current runspace is connected to.
             </summary>
+            <param name="Runspace">The Guid of the runspace that is the owner of the registered sessions</param>
         </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Start">
+        <member name="M:Sqlcollaborative.Dbatools.Connection.PSSessionContainer.Get(System.String)">
             <summary>
-            When was the backup started
+            Returns the requested session.
             </summary>
+            <param name="ComputerName">The name of the host whose connection to retrieve</param>
+            <returns>The established connection to the host, null if none exists.</returns>
         </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.End">
+        <member name="M:Sqlcollaborative.Dbatools.Connection.PSSessionContainer.Set(System.String,System.Management.Automation.Runspaces.PSSession)">
             <summary>
-            When did the backup end
+            Sets a session and writes its timestamp to the cache
             </summary>
+            <param name="ComputerName">The hostname it connects to.</param>
+            <param name="Session">The session that is being registered.</param>
         </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Duration">
+        <member name="M:Sqlcollaborative.Dbatools.Connection.PSSessionContainer.GetExpiredNames">
             <summary>
-            What was the longest duration among the backups
+            Returns the name of hostnames with expired sessions
             </summary>
+            <returns>THe hostnames whose session has expired</returns>
         </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Path">
+        <member name="M:Sqlcollaborative.Dbatools.Connection.PSSessionContainer.PurgeExpiredSession">
             <summary>
-            Where is the backup stored
+            Removes an expired session from the cache, an returns it, so it can be properly closed.
             </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.TotalSize">
-            <summary>
-            What is the total size of the backup
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.CompressedBackupSize">
-            <summary>
-            What is the total compressesed size of the backup
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.CompressionRatio">
-            <summary>
-            What is the ratio of total size to compressed size of the backup
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Type">
-            <summary>
-            The kind of backup this was
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.BackupSetId">
-            <summary>
-            The ID for the Backup job
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.DeviceType">
-            <summary>
-            What kind of backup-device was the backup stored to
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Software">
-            <summary>
-            What is the name of the backup software?
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.FullName">
-            <summary>
-            The full name of the backup
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.FileList">
-            <summary>
-            The files that are part of this backup
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Position">
-            <summary>
-            The position of the backup
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.FirstLsn">
-            <summary>
-            The first Log Sequence Number
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.DatabaseBackupLsn">
-            <summary>
-            The Log Squence Number that marks the beginning of the backup
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.CheckpointLsn">
-            <summary>
-            The checkpoint's Log Sequence Number
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.LastLsn">
-            <summary>
-            The last Log Sequence Number
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.SoftwareVersionMajor">
-            <summary>
-            The primary version number of the Sql Server
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.IsCopyOnly">
-            <summary>
-            Was the backup performed with the CopyOnlyOption
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.LastRecoveryForkGUID">
-            <summary>
-            Recovery Fork backup was takeon
-            </summary>
-        </member>
-        <member name="T:Sqlcollaborative.Dbatools.Database.Dependency">
-            <summary>
-            Class containing all dependency information over a database object
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.ComputerName">
-            <summary>
-            The name of the SQL server from whence the query came
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.ServiceName">
-            <summary>
-            Name of the service running the database containing the dependency
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.SqlInstance">
-            <summary>
-            The Instance the database containing the dependency is running in.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Dependent">
-            <summary>
-            The name of the dependent
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Type">
-            <summary>
-            The kind of object the dependent is
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Owner">
-            <summary>
-            The owner of the dependent (usually the Database)
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.IsSchemaBound">
-            <summary>
-            Whether the dependency is Schemabound. If it is, then the creation statement order is of utmost importance.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Parent">
-            <summary>
-            The immediate parent of the dependent. Useful in multi-tier dependencies.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.ParentType">
-            <summary>
-            The type of object the immediate parent is.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Script">
-            <summary>
-            The script used to create the object.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Tier">
-            <summary>
-            The tier in the dependency hierarchy tree. Used to determine, which dependency must be applied in which order.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Object">
-            <summary>
-            The smo object of the dependent.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Urn">
-            <summary>
-            The Uniform Resource Name of the dependent.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.OriginalResource">
-            <summary>
-            The object of the original resource, from which the dependency hierachy has been calculated.
-            </summary>
+            <returns>Returns a session to disconnect</returns>
         </member>
         <member name="T:Sqlcollaborative.Dbatools.Connection.ConnectionHost">
             <summary>
@@ -622,6 +469,48 @@
         <member name="F:Sqlcollaborative.Dbatools.Connection.ConnectionHost.SqlConnectionTimeout">
             <summary>
             The number of seconds before a sql connection attempt times out
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Connection.ConnectionHost.PSSessions">
+            <summary>
+            List of all session containers used to maintain a cache
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Connection.ConnectionHost.PSSessionGet(System.Guid,System.String)">
+            <summary>
+            Returns a registered session for a given computer on a given runspace. Returns null if nothing is registered.
+            </summary>
+            <param name="Runspace">The host runspace that opened the session</param>
+            <param name="ComputerName">The computer connected to</param>
+            <returns></returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Connection.ConnectionHost.PSSessionSet(System.Guid,System.String,System.Management.Automation.Runspaces.PSSession)">
+            <summary>
+            Registeres a remote session under the owning runspace in its respective computer name
+            </summary>
+            <param name="Runspace">The runspace that owns the session</param>
+            <param name="ComputerName">The computer the session connects to</param>
+            <param name="Session">The session object</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Connection.ConnectionHost.PSSessionPurgeExpired">
+            <summary>
+            Searches the cache for an expired remoting session and purges it. After purging it from the list, it still needs to be closed!
+            </summary>
+            <returns>The session purged that then needs to be closed</returns>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Connection.ConnectionHost.PSSessionCountExpired">
+            <summary>
+            The number of expired sessions 
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Connection.ConnectionHost.PSSessionTimeout">
+            <summary>
+            The time until established connections will be considered expired (if available)
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Connection.ConnectionHost.PSSessionCacheEnabled">
+            <summary>
+            Whether sessions should be cached at all
             </summary>
         </member>
         <member name="T:Sqlcollaborative.Dbatools.Connection.ManagementConnection">
@@ -950,6 +839,216 @@
         <member name="F:Sqlcollaborative.Dbatools.Connection.SqlConnectionProtocol.NP">
             <summary>
             Connect using named pipes or shared memory
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Database.BackupHistory">
+            <summary>
+            Object containing the information about the history of mankind ... or a database backup. WHo knows.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.ComputerName">
+            <summary>
+            The name of the computer running MSSQL Server
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.InstanceName">
+            <summary>
+            The Instance that was queried
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.SqlInstance">
+            <summary>
+            The full Instance name as seen from outside
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Database">
+            <summary>
+            The Database that was backed up
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.UserName">
+            <summary>
+            The user that is running the backup
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Start">
+            <summary>
+            When was the backup started
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.End">
+            <summary>
+            When did the backup end
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Duration">
+            <summary>
+            What was the longest duration among the backups
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Path">
+            <summary>
+            Where is the backup stored
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.TotalSize">
+            <summary>
+            What is the total size of the backup
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.CompressedBackupSize">
+            <summary>
+            What is the total compressesed size of the backup
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.CompressionRatio">
+            <summary>
+            What is the ratio of total size to compressed size of the backup
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Type">
+            <summary>
+            The kind of backup this was
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.BackupSetId">
+            <summary>
+            The ID for the Backup job
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.DeviceType">
+            <summary>
+            What kind of backup-device was the backup stored to
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Software">
+            <summary>
+            What is the name of the backup software?
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.FullName">
+            <summary>
+            The full name of the backup
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.FileList">
+            <summary>
+            The files that are part of this backup
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.Position">
+            <summary>
+            The position of the backup
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.FirstLsn">
+            <summary>
+            The first Log Sequence Number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.DatabaseBackupLsn">
+            <summary>
+            The Log Squence Number that marks the beginning of the backup
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.CheckpointLsn">
+            <summary>
+            The checkpoint's Log Sequence Number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.LastLsn">
+            <summary>
+            The last Log Sequence Number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.SoftwareVersionMajor">
+            <summary>
+            The primary version number of the Sql Server
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.IsCopyOnly">
+            <summary>
+            Was the backup performed with the CopyOnlyOption
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.BackupHistory.LastRecoveryForkGUID">
+            <summary>
+            Recovery Fork backup was takeon
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Database.Dependency">
+            <summary>
+            Class containing all dependency information over a database object
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.ComputerName">
+            <summary>
+            The name of the SQL server from whence the query came
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.ServiceName">
+            <summary>
+            Name of the service running the database containing the dependency
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.SqlInstance">
+            <summary>
+            The Instance the database containing the dependency is running in.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Dependent">
+            <summary>
+            The name of the dependent
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Type">
+            <summary>
+            The kind of object the dependent is
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Owner">
+            <summary>
+            The owner of the dependent (usually the Database)
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.IsSchemaBound">
+            <summary>
+            Whether the dependency is Schemabound. If it is, then the creation statement order is of utmost importance.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Parent">
+            <summary>
+            The immediate parent of the dependent. Useful in multi-tier dependencies.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.ParentType">
+            <summary>
+            The type of object the immediate parent is.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Script">
+            <summary>
+            The script used to create the object.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Tier">
+            <summary>
+            The tier in the dependency hierarchy tree. Used to determine, which dependency must be applied in which order.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Object">
+            <summary>
+            The smo object of the dependent.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.Urn">
+            <summary>
+            The Uniform Resource Name of the dependent.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Database.Dependency.OriginalResource">
+            <summary>
+            The object of the original resource, from which the dependency hierachy has been calculated.
             </summary>
         </member>
         <member name="T:Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry">
