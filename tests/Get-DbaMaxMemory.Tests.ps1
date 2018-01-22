@@ -31,14 +31,14 @@ Describe "$commandname Unit Test" -Tags Unittest {
         }
 
         Context 'Validate functionality ' {
-            It 'Server name reported correctly the installed memory' {
+            It 'Server SqlInstance reported correctly' {
                 Mock Connect-SqlInstance {
                     return @{
-                        Name = 'ABC'
+                        DomainInstanceName = 'ABC'
                     }
                 }
 
-                (Get-DbaMaxMemory -SqlInstance 'ABC').Server | Should be 'ABC'
+                (Get-DbaMaxMemory -SqlInstance 'ABC').SqlInstance | Should be 'ABC'
             }
 
             It 'Server under-report by 1MB the memory installed on the host' {
