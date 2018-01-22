@@ -1,4 +1,4 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaComputerCertificate {
     <#
         .SYNOPSIS
