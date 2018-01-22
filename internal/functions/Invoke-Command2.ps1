@@ -48,7 +48,7 @@
         $sessionname = "dbatools_$runspaceid"
         
         # Retrieve a session from the session cache, if available (it's unique per runspace)
-        if (-not ($currentsession = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceid, $ComputerName.ComputerName))) {
+        if (-not ($currentsession = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceid, $ComputerName.ComputerName) | Where-Object State -EQ Opened)) {
             $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
             if ($Credential) {
                 $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout -Credential $Credential)
