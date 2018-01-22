@@ -181,13 +181,19 @@
                 if ((Test-Bound -ParameterName Name -not)) {
                     $Name = (Get-ChildItem $file).BaseName
                 }
-
+                
+                # This could be done better but not today
                 $no2012 = ($metadata | Where-Object Compatibility -gt 2012).Name
+                $no2014 = ($metadata | Where-Object Compatibility -gt 2014).Name
 
                 if ($Name -in $no2012 -and $server.VersionMajor -eq 11) {
                     Stop-Function -Message "$Name is not supported in SQL Server 2012 ($server)" -Continue
                 }
-
+                
+                if ($Name -in $no2014 -and $server.VersionMajor -eq 12) {
+                    Stop-Function -Message "$Name is not supported in SQL Server 2014 ($server)" -Continue
+                }
+                
                 if ((Get-DbaXESession -SqlInstance $server -Session $Name)) {
                     Stop-Function -Message "$Name already exists on $instance" -Continue
                 }
