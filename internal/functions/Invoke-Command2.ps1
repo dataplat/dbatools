@@ -46,7 +46,9 @@
     if (-not $ComputerName.IsLocalhost) {
         $runspaceid = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId
         $sessionname = "dbatools_$runspaceid"
-        if (-not ($currentsession = Get-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -ErrorAction Ignore)) {
+        
+        # Retrieve a session from the session cache, if available (it's unique per runspace)
+        if (-not ($currentsession = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceid, $ComputerName.ComputerName))) {
             $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
             if ($Credential) {
                 $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout -Credential $Credential)
@@ -60,9 +62,17 @@
                 $currentsession | Connect-PSSession
             }
             $InvokeCommandSplat["Session"] = $currentsession
+            
+            # Refresh the session registration if registered, to reset countdown until purge
+            [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionSet($runspaceid, $ComputerName.ComputerName, $currentsession)
         }
     }
     
     if ($Raw) { Invoke-Command @InvokeCommandSplat }
     else { Invoke-Command @InvokeCommandSplat | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName }
+    
+    if (-not $ComputerName.IsLocalhost) {
+        # Tell the system to clean up if the session expires
+        [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionSet($runspaceid, $ComputerName.ComputerName, $currentsession)
+    }
 }
