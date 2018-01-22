@@ -321,7 +321,7 @@ function Copy-DbaCredential {
                     DateTime          = [DbaDateTime](Get-Date)
                 }
 
-                if ($destServer.Credentials[$credentialName] -ne $null) {
+                if ($null -ne $destServer.Credentials[$credentialName]) {
                     if (!$force) {
                         $copyCredentialStatus.Status = "Skipping"
                         $copyCredentialStatus.Notes = "Already exists"
@@ -369,7 +369,7 @@ function Copy-DbaCredential {
         $source = $sourceServer.DomainInstanceName
         $destination = $destServer.DomainInstanceName
 
-        if ($SourceSqlCredential.Username -ne $null) {
+        if ($null -ne $SourceSqlCredential.Username) {
             Write-Message -Level Verbose -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
         }
 

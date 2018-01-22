@@ -211,7 +211,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         }
 
         # Check of the FrequencyInterval value is of type string and set the integer value
-        if (($FrequencyType -ne $null)) {
+        if (($null -ne $FrequencyType)) {
             # Create the interval to hold the value(s)
             [int]$Interval = 0
 
@@ -275,7 +275,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         }
 
         # Check of the relative FrequencyInterval value is of type string and set the integer value
-        if (($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) -and $FrequencyRelativeInterval -ne $null) {
+        if (($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) -and $null -ne $FrequencyRelativeInterval) {
             [int]$FrequencyRelativeInterval = switch ($FrequencyRelativeInterval) { "First" { 1 } "Second" { 2 } "Third" { 4 } "Fourth" { 8 } "Last" { 16 } "Unused" { 0 } default { 0 }}
         }
 

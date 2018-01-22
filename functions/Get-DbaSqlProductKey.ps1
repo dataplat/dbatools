@@ -97,7 +97,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
     PROCESS {
 
         if ($SqlCms) {
-            if ([Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers") -eq $null)
+            if ($null -eq [Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.RegisteredServers"))
             { throw "Can't load CMS assemblies. You must have SQL Server Management Studio installed to use the -SqlCms switch." }
 
             Write-Verbose "Gathering SQL Servers names from Central Management Server"
@@ -153,7 +153,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
 
                 $subkeys = $reg.OpenSubKey("$basepath", $false)
                 $instancekey = $subkeys.GetSubKeynames() | Where-Object { $_ -like "*.$instance" }
-                if ($instancekey -eq $null) { $instancekey = $instance } # SQL 2k5
+                if ($null -eq $instancekey) { $instancekey = $instance } # SQL 2k5
 
                 # Cluster instance hostnames are required for SMO connection
                 $cluster = $reg.OpenSubKey("$basepath\$instancekey\Cluster", $false)

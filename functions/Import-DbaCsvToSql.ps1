@@ -225,7 +225,7 @@ function Import-DbaCsvToSql {
                 $SqlCredential = Import-CliXml $SqlCredentialPath
             }
 
-            if ($SqlCredential.count -eq 0 -or $SqlCredential -eq $null) {
+            if ($SqlCredential.count -eq 0 -or $null -eq $SqlCredential) {
                 $paramconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;"
             }
             else {
@@ -605,7 +605,7 @@ function Import-DbaCsvToSql {
         # UniqueIdentifier kills OLE DB / SqlBulkCopy imports. Check to see if destination table contains this datatype.
         if ($safe -eq $true) {
             $sqlcheckconn = New-Object System.Data.SqlClient.SqlConnection
-            if ($SqlCredential.count -eq 0 -or $SqlCredential -eq $null) {
+            if ($SqlCredential.count -eq 0 -or $null -eq $SqlCredential) {
                 $sqlcheckconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3; Initial Catalog=master"
             }
             else {
@@ -657,13 +657,13 @@ function Import-DbaCsvToSql {
                 $provider = (New-Object System.Data.OleDb.OleDbEnumerator).GetElements() | Where-Object { $_.SOURCES_NAME -like "Microsoft.ACE.OLEDB.*" }
             }
 
-            if ($provider -eq $null) {
+            if ($null -eq $provider) {
                 $provider = (New-Object System.Data.OleDb.OleDbEnumerator).GetElements() | Where-Object { $_.SOURCES_NAME -like "Microsoft.Jet.OLEDB.*" }
             }
 
             # If a suitable provider cannot be found (If x64 and Access hasn't been installed)
             # switch to x86, because it natively supports JET
-            if ($provider -ne $null) {
+            if ($null -ne $provider) {
                 if ($provider -is [system.array]) {
                     $provider = $provider[$provider.GetUpperBound(0)].SOURCES_NAME
                 }
@@ -673,7 +673,7 @@ function Import-DbaCsvToSql {
             }
 
             # If a provider doesn't exist, it is necessary to switch to x86 which natively supports JET.
-            if ($provider -eq $null) {
+            if ($null -eq $provider) {
                 # While Install-Module takes care of installing modules to x86 and x64, Import-Module doesn't.
                 # Because of this, the Module must be exported, written to file, and imported in the x86 shell.
                 $definition = (Get-Command Import-DbaCsvToSql).Definition
@@ -908,7 +908,7 @@ function Import-DbaCsvToSql {
         }
 
         # Get columns for column mapping
-        if ($columnMappings -eq $null) {
+        if ($null -eq $columnMappings) {
             $olecolumns = ($columns | ForEach-Object { $_ -Replace "\[|\]" })
             $sql = "select name from sys.columns where object_id = object_id('$schema.$table') order by column_id"
             $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
@@ -1124,7 +1124,7 @@ function Import-DbaCsvToSql {
                         $pattern = "((?<=`")[^`"]*(?=`"($InternalDelimiter|$)+)|(?<=$InternalDelimiter|^)[^$InternalDelimiter`"]*(?=$InternalDelimiter|$))"
                     }
                     if ($turbo -eq $true -and $first -eq 0) {
-                        while (($line = $reader.ReadLine()) -ne $null) {
+                        while ($null -ne ($line = $reader.ReadLine())) {
                             $i++
                             if ($quoted -eq $true) {
                                 $null = $datatable.Rows.Add(($line.TrimStart('"').TrimEnd('"')) -Split "`"$InternalDelimiter`"")
@@ -1143,7 +1143,7 @@ function Import-DbaCsvToSql {
                     else {
                         if ($turbo -eq $true -and $first -gt 0) { Write-Warning -Message "Using -First makes turbo a little slower." }
                         # Start import!
-                        while (($line = $reader.ReadLine()) -ne $null) {
+                        while ($null -ne ($line = $reader.ReadLine())) {
                             $i++
                             try {
                                 if ($quoted -eq $true) {

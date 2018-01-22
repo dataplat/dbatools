@@ -170,7 +170,7 @@ function Copy-DbaResourceGovernor {
                 DateTime          = [DbaDateTime](Get-Date)
             }
 
-            if ($destServer.ResourceGovernor.ResourcePools[$poolName] -ne $null) {
+            if ($null -ne $destServer.ResourceGovernor.ResourcePools[$poolName]) {
                 if ($force -eq $false) {
                     Write-Message -Level Verbose -Message "Pool '$poolName' was skipped because it already exists on $destination. Use -Force to drop and recreate."
 

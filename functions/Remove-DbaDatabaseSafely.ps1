@@ -654,7 +654,7 @@ function Remove-DbaDatabaseSafely {
 
             $refreshRetries = 1
 
-            while (($destserver.databases[$dbname] -eq $null) -and $refreshRetries -lt 6) {
+            while ($null -eq ($destserver.databases[$dbname]) -and $refreshRetries -lt 6) {
                 Write-Message -Level verbose -Message "Database $dbname not found! Refreshing collection."
 
                 #refresh database list, otherwise the next step (DBCC) can fail

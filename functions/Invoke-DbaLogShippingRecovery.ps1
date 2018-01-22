@@ -117,7 +117,7 @@ function Invoke-DbaLogShippingRecovery {
             # Check the instance if it is a named instance
             $servername, $instancename = $sqlinstance.Split("\")
 
-            if ($instancename -eq $null) {
+            if ($null -eq $instancename) {
                 $instancename = "MSSQLSERVER"
             }
 
@@ -231,7 +231,7 @@ function Invoke-DbaLogShippingRecovery {
             }
 
             # Check if there are any databases to recover
-            if ($logshipping_details -eq $null) {
+            if ($null -eq $logshipping_details) {
                 Stop-Function -Message "The database $db is not configured as a secondary database for log shipping." -Continue
             }
             else {
@@ -324,7 +324,7 @@ function Invoke-DbaLogShippingRecovery {
                         $latestrestore = $server.Query($query)
 
                         # Check if the last copied file is newer than the last restored file
-                        if ((([string]$latestcopy.last_copied_file).Split('\')[-1] -ne ([string]$latestrestore.last_restored_file).Split('\')[-1]) -or (([string]$latestcopy.last_copied_file).Split('\')[-1]) -eq $null) {
+                        if ((([string]$latestcopy.last_copied_file).Split('\')[-1] -ne ([string]$latestrestore.last_restored_file).Split('\')[-1]) -or ($null -eq ([string]$latestcopy.last_copied_file).Split('\')[-1])) {
                             Write-Message -Message "Restore is not up-to-date" -Level Verbose
 
                             # Start the restore job

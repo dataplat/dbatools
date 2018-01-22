@@ -150,7 +150,7 @@ function Copy-DbaSsisCatalog {
                 $cmd.Parameters.Add("@folder_name", $Folder) | out-null;
                 $cmd.Parameters.Add("@project_name", $Project) | out-null;
                 [byte[]]$results = $cmd.ExecuteScalar();
-                if ($results -ne $null) {
+                if ($null -ne $results) {
                     $destFolder = $destinationFolders | Where-Object { $_.Name -eq $Folder }
                     $deployedProject = $destFolder.DeployProject($Project, $results)
                     if ($deployedProject.Status -ne "Success") {

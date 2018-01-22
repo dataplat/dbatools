@@ -125,7 +125,7 @@ function Invoke-DbaSqlCmd {
             $temporaryFilesPrefix = (97 .. 122 | Get-Random -Count 10 | ForEach-Object { [char]$_ }) -join ''
             
             foreach ($item in $File) {
-                if ($item -eq $null) { continue }
+                if ($null -eq $item) { continue }
                 
                 $type = $item.GetType().FullName
                 

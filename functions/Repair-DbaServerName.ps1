@@ -243,7 +243,7 @@ function Repair-DbaServerName {
                 $renamed = $true
             }
 
-            if ($allsqlservices -eq $null) {
+            if ($null -eq $allsqlservices) {
                 Write-Warning "Could not contact $($server.ComputerNamePhysicalNetBIOS) using Get-Service. You must manually restart the SQL Server instance."
                 $needsrestart = $true
             }
