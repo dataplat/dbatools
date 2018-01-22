@@ -39,18 +39,45 @@
         [switch]$Raw
     )
     
-    if ($ComputerName.IsLocalHost -and $Credential) {
-        Stop-Function -Message "Credentials cannot be passed to localhost. Run As Different User instead."
-        return
-    }
-    
     $InvokeCommandSplat = @{
-        ScriptBlock = $ScriptBlock
+        ScriptBlock  = $ScriptBlock
     }
     if ($ArgumentList) { $InvokeCommandSplat["ArgumentList"] = $ArgumentList }
-    if (-not $ComputerName.IsLocalhost) { $InvokeCommandSplat["ComputerName"] = $ComputerName.ComputerName }
-    if ($Credential) { $InvokeCommandSplat["Credential"] = $Credential }
-
+    if (-not $ComputerName.IsLocalhost) {
+        $runspaceid = [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId
+        $sessionname = "dbatools_$runspaceid"
+        
+        # Retrieve a session from the session cache, if available (it's unique per runspace)
+        if (-not ($currentsession = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceid, $ComputerName.ComputerName) | Where-Object State -Match "Opened|Disconnected")) {
+            $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
+            if ($Credential) {
+                $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout -Credential $Credential)
+            }
+            else {
+                $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout)
+            }
+            $currentsession = $InvokeCommandSplat["Session"]
+        }
+        else {
+            if ($currentsession.State -eq "Disconnected") {
+                $null = $currentsession | Connect-PSSession
+            }
+            $InvokeCommandSplat["Session"] = $currentsession
+            
+            # Refresh the session registration if registered, to reset countdown until purge
+            [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionSet($runspaceid, $ComputerName.ComputerName, $currentsession)
+        }
+    }
+    
     if ($Raw) { Invoke-Command @InvokeCommandSplat }
     else { Invoke-Command @InvokeCommandSplat | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName }
+    
+    if (-not $ComputerName.IsLocalhost) {
+        # Tell the system to clean up if the session expires
+        [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionSet($runspaceid, $ComputerName.ComputerName, $currentsession)
+        
+        if (-not (Get-DbaConfigValue -FullName 'PSRemoting.Sessions.Enable' -Fallback $true)) {
+            $currentsession | Remove-PSSession
+        }
+    }
 }

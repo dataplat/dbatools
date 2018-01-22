@@ -53,100 +53,106 @@ function Get-DbaComputerSystem {
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$IncludeAws,
-        [switch][Alias('Silent')]$EnableException
+        [switch][Alias('Silent')]
+        $EnableException
     )
     process {
         foreach ($computer in $ComputerName) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $computer"
-            $server = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential
-
-            $computerResolved = $server.FullComputerName
-
-            if (!$computerResolved) {
-                Write-Message -Level Warning -Message "Unable to resolve hostname of $computer. Skipping."
-                continue
-            }
-
-            if (Test-Bound "Credential") {
-                $computerSystem = Get-DbaCmObject -ClassName Win32_ComputerSystem -ComputerName $computerResolved -Credential $Credential
-            }
-            else {
-                $computerSystem = Get-DbaCmObject -ClassName Win32_ComputerSystem -ComputerName $computerResolved
-            }
-
-            $adminPasswordStatus =
-            switch ($computerSystem.AdminPasswordStatus) {
-                0 {"Disabled"}
-                1 {"Enabled"}
-                2 {"Not Implemented"}
-                3 {"Unknown"}
-                default {"Unknown"}
-            }
-
-            $domainRole =
-            switch ($computerSystem.DomainRole) {
-                0 {"Standalone Workstation"}
-                1 {"Member Workstation"}
-                2 {"Standalone Server"}
-                3 {"Member Server"}
-                4 {"Backup Domain Controller"}
-                5 {"Primary Domain Controller"}
-            }
-
-            $isHyperThreading = $false
-            if ($computerSystem.NumberOfLogicalProcessors -gt $computerSystem.NumberofProcessors) {
-                $isHyperThreading = $true
-            }
-
-            if ($IncludeAws) {
-                $isAws = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { ((Invoke-WebRequest -TimeoutSec 15 -Uri 'http://169.254.169.254').StatusCode) -eq 200} -Raw
-
-                if ($isAws) {
-                    $scriptBlock = {
-                        [PSCustomObject]@{
-                            AmiId            = (Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/ami-id').Content
-                            IamRoleArn       = ((Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/iam/info').Content | ConvertFrom-Json).InstanceProfileArn
-                            InstanceId       = (Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/instance-id').Content
-                            InstanceType     = (Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/instance-type').Content
-                            AvailabilityZone = (Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/placement/availability-zone').Content
-                            PublicHostname   = (Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/public-hostname').Content
-                        }
-                    }
-                    $awsProps = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock $scriptBlock
+            try {
+                Write-Message -Level Verbose -Message "Attempting to connect to $computer"
+                $server = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential
+                
+                $computerResolved = $server.FullComputerName
+                
+                if (!$computerResolved) {
+                    Write-Message -Level Warning -Message "Unable to resolve hostname of $computer. Skipping."
+                    continue
+                }
+                
+                if (Test-Bound "Credential") {
+                    $computerSystem = Get-DbaCmObject -ClassName Win32_ComputerSystem -ComputerName $computerResolved -Credential $Credential
                 }
                 else {
-                    Write-Message -Level Warning -Message "$computerResolved was not found to be an EC2 instance. Verify http://169.254.169.254 is accessible on the computer."
+                    $computerSystem = Get-DbaCmObject -ClassName Win32_ComputerSystem -ComputerName $computerResolved
                 }
+                
+                $adminPasswordStatus =
+                switch ($computerSystem.AdminPasswordStatus) {
+                    0 { "Disabled" }
+                    1 { "Enabled" }
+                    2 { "Not Implemented" }
+                    3 { "Unknown" }
+                    default { "Unknown" }
+                }
+                
+                $domainRole =
+                switch ($computerSystem.DomainRole) {
+                    0 { "Standalone Workstation" }
+                    1 { "Member Workstation" }
+                    2 { "Standalone Server" }
+                    3 { "Member Server" }
+                    4 { "Backup Domain Controller" }
+                    5 { "Primary Domain Controller" }
+                }
+                
+                $isHyperThreading = $false
+                if ($computerSystem.NumberOfLogicalProcessors -gt $computerSystem.NumberofProcessors) {
+                    $isHyperThreading = $true
+                }
+                
+                if ($IncludeAws) {
+                    $isAws = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { ((Invoke-WebRequest -TimeoutSec 15 -Uri 'http://169.254.169.254').StatusCode) -eq 200 } -Raw
+                    
+                    if ($isAws) {
+                        $scriptBlock = {
+                            [PSCustomObject]@{
+                                AmiId                 = (Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/ami-id').Content
+                                IamRoleArn            = ((Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/iam/info').Content | ConvertFrom-Json).InstanceProfileArn
+                                InstanceId            = (Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/instance-id').Content
+                                InstanceType          = (Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/instance-type').Content
+                                AvailabilityZone      = (Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/placement/availability-zone').Content
+                                PublicHostname        = (Invoke-WebRequest -Uri 'http://169.254.169.254/latest/meta-data/public-hostname').Content
+                            }
+                        }
+                        $awsProps = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock $scriptBlock
+                    }
+                    else {
+                        Write-Message -Level Warning -Message "$computerResolved was not found to be an EC2 instance. Verify http://169.254.169.254 is accessible on the computer."
+                    }
+                }
+                $inputObject = [PSCustomObject]@{
+                    ComputerName                 = $computerResolved
+                    Domain                       = $computerSystem.Domain
+                    DomainRole                   = $domainRole
+                    Manufacturer                 = $computerSystem.Manufacturer
+                    Model                        = $computerSystem.Model
+                    SystemFamily                 = $computerSystem.SystemFamily
+                    SystemSkuNumber              = $computerSystem.SystemSKUNumber
+                    SystemType                   = $computerSystem.SystemType
+                    NumberLogicalProcessors      = $computerSystem.NumberOfLogicalProcessors
+                    NumberProcessors             = $computerSystem.NumberOfProcessors
+                    IsHyperThreading             = $isHyperThreading
+                    TotalPhysicalMemory          = [DbaSize]$computerSystem.TotalPhysicalMemory
+                    IsDaylightSavingsTime        = $computerSystem.EnableDaylightSavingsTime
+                    DaylightInEffect             = $computerSystem.DaylightInEffect
+                    DnsHostName                  = $computerSystem.DNSHostName
+                    IsSystemManagedPageFile      = $computerSystem.AutomaticManagedPagefile
+                    AdminPasswordStatus          = $adminPasswordStatus
+                }
+                if ($IncludeAws -and $isAws) {
+                    Add-Member -Force -InputObject $inputObject -MemberType NoteProperty -Name AwsAmiId -Value $awsProps.AmiId
+                    Add-Member -Force -InputObject $inputObject -MemberType NoteProperty -Name AwsIamRoleArn -Value $awsProps.IamRoleArn
+                    Add-Member -Force -InputObject $inputObject -MemberType NoteProperty -Name AwsEc2InstanceId -Value $awsProps.InstanceId
+                    Add-Member -Force -InputObject $inputObject -MemberType NoteProperty -Name AwsEc2InstanceType -Value $awsProps.InstanceType
+                    Add-Member -Force -InputObject $inputObject -MemberType NoteProperty -Name AwsAvailabilityZone -Value $awsProps.AvailabilityZone
+                    Add-Member -Force -InputObject $inputObject -MemberType NoteProperty -Name AwsPublicHostName -Value $awsProps.PublicHostname
+                }
+                $excludes = 'SystemSkuNumber', 'IsDaylightSavingsTime', 'DaylightInEffect', 'DnsHostName', 'AdminPasswordStatus'
+                Select-DefaultView -InputObject $inputObject -ExcludeProperty $excludes
             }
-            $inputObject = [PSCustomObject]@{
-                ComputerName            = $computerResolved
-                Domain                  = $computerSystem.Domain
-                DomainRole              = $domainRole
-                Manufacturer            = $computerSystem.Manufacturer
-                Model                   = $computerSystem.Model
-                SystemFamily            = $computerSystem.SystemFamily
-                SystemSkuNumber         = $computerSystem.SystemSKUNumber
-                SystemType              = $computerSystem.SystemType
-                NumberLogicalProcessors = $computerSystem.NumberOfLogicalProcessors
-                NumberProcessors        = $computerSystem.NumberOfProcessors
-                IsHyperThreading        = $isHyperThreading
-                TotalPhysicalMemory     = [DbaSize]$computerSystem.TotalPhysicalMemory
-                IsDaylightSavingsTime   = $computerSystem.EnableDaylightSavingsTime
-                DaylightInEffect        = $computerSystem.DaylightInEffect
-                DnsHostName             = $computerSystem.DNSHostName
-                IsSystemManagedPageFile = $computerSystem.AutomaticManagedPagefile
-                AdminPasswordStatus     = $adminPasswordStatus
+            catch {
+                Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
-            if ($IncludeAws -and $isAws) {
-                Add-Member -Force -InputObject $inputObject -MemberType NoteProperty -Name AwsAmiId -Value $awsProps.AmiId
-                Add-Member -Force -InputObject $inputObject -MemberType NoteProperty -Name AwsIamRoleArn -Value $awsProps.IamRoleArn
-                Add-Member -Force -InputObject $inputObject -MemberType NoteProperty -Name AwsEc2InstanceId -Value $awsProps.InstanceId
-                Add-Member -Force -InputObject $inputObject -MemberType NoteProperty -Name AwsEc2InstanceType -Value $awsProps.InstanceType
-                Add-Member -Force -InputObject $inputObject -MemberType NoteProperty -Name AwsAvailabilityZone -Value $awsProps.AvailabilityZone
-                Add-Member -Force -InputObject $inputObject -MemberType NoteProperty -Name AwsPublicHostName -Value $awsProps.PublicHostname
-            }
-            $excludes = 'SystemSkuNumber', 'IsDaylightSavingsTime', 'DaylightInEffect', 'DnsHostName', 'AdminPasswordStatus'
-            Select-DefaultView -InputObject $inputObject -ExcludeProperty $excludes
         }
     }
 }
