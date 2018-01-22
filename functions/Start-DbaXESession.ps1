@@ -1,65 +1,71 @@
 function Start-DbaXESession {
     <#
-    .SYNOPSIS
-    Starts Extended Events sessions.
+        .SYNOPSIS
+            Starts Extended Events sessions.
 
-    .DESCRIPTION
-    This script starts Extended Events sessions on a SQL Server instance.
+        .DESCRIPTION
+            This script starts Extended Events sessions on a SQL Server instance.
 
-    .PARAMETER SqlInstance
-    The SQL Instances that you're connecting to.
+        .PARAMETER SqlInstance
+            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-    .PARAMETER SqlCredential
-    Credential object used to connect to the SQL Server as a different user
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-    .PARAMETER Session
-    Only start specific Extended Events sessions.
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    .PARAMETER AllSessions
-    Start all Extended Events sessions on an instance, ignoring the packaged sessions: AlwaysOn_health, system_health, telemetry_xevents.
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-    .PARAMETER InputObject
-    Internal parameter to support piping from Get-DbaXESession
+            To connect as a different Windows user, run PowerShell as that user.
 
-    .PARAMETER StopAt
-    Sets up a self-deleting schedule to stop the Session at a specified time.
+        .PARAMETER Session
+            Only start specific Extended Events sessions.
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER AllSessions
+            Start all Extended Events sessions on an instance, ignoring the packaged sessions: AlwaysOn_health, system_health, telemetry_xevents.
 
-    .NOTES
-    Tags: Xevent
-    Author: Doug Meyers
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .PARAMETER InputObject
+            Internal parameter to support piping from Get-DbaXESession
 
-    .LINK
-    https://dbatools.io/Start-DbaXESession
+        .PARAMETER StopAt
+            Specifies a datetime at which the session will be stopped. This is done via a self-deleting schedule.
 
-    .EXAMPLE
-    Start-DbaXESession -SqlInstance sqlserver2012 -AllSessions
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    Starts all Extended Event Session on the sqlserver2014 instance.
+        .NOTES
+            Tags: Xevent
+            Author: Doug Meyers
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-    .EXAMPLE
-    Start-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2
+        .LINK
+            https://dbatools.io/Start-DbaXESession
 
-    Starts the xesession1 and xesession2 Extended Event sessions.
+        .EXAMPLE
+            Start-DbaXESession -SqlInstance sqlserver2012 -AllSessions
 
-    .EXAMPLE
-    Start-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2 -StopAt (Get-Date).AddMinutes(30)
+            Starts all Extended Event Session on the sqlserver2014 instance.
 
-    Starts the xesession1 and xesession2 Extended Event sessions and stops them in 30 minutes.
+        .EXAMPLE
+            Start-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2
 
-    .EXAMPLE
-    Get-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Start-DbaXESession
+            Starts the xesession1 and xesession2 Extended Event sessions.
 
-    Starts the sessions returned from the Get-DbaXESession function.
+        .EXAMPLE
+            Start-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2 -StopAt (Get-Date).AddMinutes(30)
 
-#>
+            Starts the xesession1 and xesession2 Extended Event sessions and stops them in 30 minutes.
+
+        .EXAMPLE
+            Get-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Start-DbaXESession
+
+            Starts the sessions returned from the Get-DbaXESession function.
+
+    #>
     [CmdletBinding(DefaultParameterSetName = 'Session')]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
@@ -95,11 +101,11 @@ function Start-DbaXESession {
                         $xe.Start()
                     }
                     catch {
-                        Stop-Function -Message "Could not start XEvent Session on $instance" -Target $session -ErrorRecord $_ -Continue
+                        Stop-Function -Message "Could not start XEvent Session on $instance." -Target $session -ErrorRecord $_ -Continue
                     }
                 }
                 else {
-                    Write-Message -Level Warning -Message "$session on $instance is already running"
+                    Write-Message -Level Warning -Message "$session on $instance is already running."
                 }
                 Get-DbaXESession -SqlInstance $xe.Parent -Session $session
             }
