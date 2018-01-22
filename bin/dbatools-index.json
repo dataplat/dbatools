@@ -75,62 +75,12 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eClear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012\r\n\r\nAfter confirmation, clears wait stats on servers sql2008 and sqlserver2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eClear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false\r\n\r\nClears wait stats on servers sql2008 and sqlserver2012, without prompting\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Connect-AsServer",
-        "Description":  "Internal function that creates SMO server object.",
-        "Synopsis":  "Internal function that creates SMO server object.",
-        "Name":  "Connect-AsServer",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eConnect-AsServer -AsServer localhost\r\n\r\nConnects to SSAS on the local server\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Connect-DbaInstance",
         "Description":  "This command is robust because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials.\n\nBy default, this command also sets the connection\u0027s ApplicationName property  to \"dbatools PowerShell module - dbatools.io - custom connection\". If you\u0027re doing anything that requires profiling, you can look for this client name.\n\nAlternatively, you can pass in whichever client name you\u0027d like using the -ClientName parameter. There are a ton of other parameters for you to explore as well.\n\nSee https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx,\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx\n\nTo execute SQL commands, you can use $server.ConnectionContext.ExecuteReader($sql) or $server.Databases[\u0027master\u0027].ExecuteNonQuery($sql)",
         "Synopsis":  "Creates a robust SMO SQL Server object.",
         "Name":  "Connect-DbaInstance",
         "Links":  "https://dbatools.io/Connect-DbaInstance",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql2014\r\n\r\nCreates an SMO Server object that connects using Windows Authentication\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\r\n\r\nConnect-DbaInstance -SqlInstance sql2014 -Credential $wincred\r\n\r\nCreates an SMO Server object that connects using alternative Windows credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\r\n\r\n$server = Connect-DbaInstance -SqlInstance sql2014 -Credential $sqlcred\r\n\r\nLogin to sql2014 as SQL login sqladmin.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -ClientName \"my connection\"\r\n\r\nCreates an SMO Server object that connects using Windows Authentication and uses the client name \"my connection\". So \r\nwhen you open up profiler or use extended events, you can search for \"my connection\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString \"Packet \r\nSize=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\r\n\r\nCreates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this \r\ncan also be done via -PacketSize) and other connection attributes.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\r\n\r\nCreates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover \r\nenabled.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly\r\n\r\nConnects with ReadOnly ApplicationIntent.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Connect-SqlInstance",
-        "Description":  "Internal function to establish smo connections.\n\nCan interpret any of the following types of information:\n- String\n- Smo Server objects\n- Smo Linked Server objects",
-        "Synopsis":  "Internal function to establish smo connections.",
-        "Name":  "Connect-SqlInstance",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eConnect-SqlInstance -SqlInstance sql2014\r\n\r\nConnect to the Server sql2014 with native credentials.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Convert-ByteToHexString",
-        "Description":  "Converts byte object ([byte[]]@(1,100,23,54)) into the hex string (e.g. \u00270x01641736\u0027)\nUsed when working with SMO logins and their byte parameters: sids and hashed passwords",
-        "Tags":  [
-                     "Login",
-                     "Internal"
-                 ],
-        "Author":  "Kirill Kravtsov (@nvarscar)",
-        "Synopsis":  "Converts byte object into hex string",
-        "Name":  "Convert-ByteToHexString",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eConvert-ByteToHexString ([byte[]]@(1,100,23,54))\r\n\r\nReturns hex string \u00270x01641736\u0027\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eConvert-ByteToHexString 18,52\r\n\r\nReturns hex string \u00270x1234\u0027\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Convert-DbVersionToSqlVersion",
-        "Description":  "Internal function that makes db versions human readable",
-        "Synopsis":  "Internal function that makes db versions human readable",
-        "Name":  "Convert-DbVersionToSqlVersion",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eConvert-DbVersionToSqlVersion -dbversion 856\r\n\r\nReturns \"SQL Server vNext CTP1\"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Convert-HexStringToByte",
-        "Description":  "Converts hex string (e.g. \u00270x01641736\u0027) into the byte object ([byte[]]@(1,100,23,54))\nUsed when working with SMO logins and their byte parameters: sids and hashed passwords",
-        "Tags":  [
-                     "Login",
-                     "Internal"
-                 ],
-        "Author":  "Kirill Kravtsov (@nvarscar)",
-        "Synopsis":  "Converts hex string into byte object",
-        "Name":  "Convert-HexStringToByte",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eConvert-HexStringToByte \u00270x01641736\u0027\r\n\r\nReturns byte[] object [byte[]]@(1,100,23,54)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eConvert-HexStringToByte \u00271234\u0027\r\n\r\nReturns byte[] object [byte[]]@(18,52)\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "ConvertTo-DbaDataTable",
@@ -899,33 +849,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$History | Format-DbaBackupInformation -ReplaceDatabaseName NewDb\r\n\r\nChanges as databasename references to NewDb, both in the database name and any restore paths. Note, this will fail if \r\nthe BackupHistory object contains backups for more than 1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$History | Format-DbaBackupInformation -ReplaceDatabaseName @{\u0027OldB\u0027=\u0027NewDb\u0027;\u0027ProdHr\u0027=\u0027DevHr\u0027}\r\n\r\nWill change all occurences of original database name in the backup history (names and restore paths) using the mapping \r\nin the hashtable.\r\nIn this example any occurance of OldDb will be replaced with NewDb and ProdHr with DevPR\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$History | Format-DbaBackupInformation -DataFileDirectory \u0027D:\\DataFiles\\\u0027 -LogFileDirectory \u0027E:\\LogFiles\\\r\n\r\nThis example with change the restore path for all datafiles (everything that is not a log file) to d:\\datafiles\r\nAnd all Transaction Log files will be restored to E:\\Logfiles\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$History | Formate-DbaBackupInformation -RebaseBackupFolder f:\\backups\r\n\r\nThis example changes the location that SQL Server will look for the backups. This is useful if you\u0027ve moved the backups \r\nto a different location\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Get-BackupAncientHistory",
-        "Description":  "Backup History command to pull limited history from a SQL 2000 instance. If not using SQL 2000, please use Get-DbaBackupHistory which pulls more infomation, and has more options. This is just here to cope with 2k and copy-DbaDatabase issues",
-        "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
-        "Synopsis":  "Returns details of the last full backup of a SQL Server 2000 database",
-        "Name":  "Get-BackupAncientHistory",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Get-CodePage",
-        "Description":  "Converts Microsoft\u0027s code page ID to human readable format",
-        "Synopsis":  "Converts Microsoft\u0027s code page ID to human readable format",
-        "Name":  "Get-CodePage",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-CodePage 1252\r\n\r\nReturns a pscustomobject with id, alias and name\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-DbaADObject",
-        "Description":  "As working with multiple domains, forests, ldap filters, partitions, etc is quite hard to grasp, let\u0027s try to do \"the right thing\" here and\nfacilitate everybody\u0027s work with it. It either returns the exact matched result or None if it isn\u0027t found. You can inspect the raw object\ncalling GetUnderlyingObject() on the returned object.",
-        "Tags":  "",
-        "Author":  "Niphlod, https://github.com/niphlod",
-        "Synopsis":  "Get-DbaADObject tries to facilitate searching AD with dbatools, which ATM can\u0027t require AD cmdlets.",
-        "Name":  "Get-DbaADObject",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaADObject -ADObject \"contoso\\ctrlb\" -Type User\r\n\r\nSearches in the contoso domain for a ctrlb user\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaADObject -ADObject \"ctrlb@contoso.com\" -Type User -IdentityType UserPrincipalName\r\n\r\nSearches in the contoso domain for a ctrlb user using the UserPrincipalName format. Again, beware of the UPN suffixes \r\nin elaborate AD structures!\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaADObject -ADObject \"contoso\\ctrlb@super.contoso.com\" -Type User -IdentityType UserPrincipalName\r\n\r\nSearches in the contoso domain for a ctrlb@super.contoso.com user using the UserPrincipalName format. This kind of \r\nsearch is better than the previous one\r\nbecause it takes into account possible UPN suffixes\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaADObject -ADObject \"ctrlb@super.contoso.com\" -Type User -IdentityType UserPrincipalName -SearchAllDomains\r\n\r\nAs a last resort, searches in all the current forest for a ctrlb@super.contoso.com user using the UserPrincipalName \r\nformat\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaADObject -ADObject \"contoso\\sqlcollaborative\" -Type Group\r\n\r\nSearches in the contoso domain for a sqlcollaborative group\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaADObject -ADObject \"contoso\\SqlInstance2014$\" -Type Group\r\n\r\nSearches in the contoso domain for a SqlInstance2014 computer (remember the ending $ for computer objects)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaADObject -ADObject \"contoso\\ctrlb\" -Type User -EnableException\r\n\r\nSearches in the contoso domain for a ctrlb user, suppressing all error messages and throw exceptions that can be caught \r\ninstead\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Get-DbaAgDatabase",
         "Description":  "Default view provides most common set of properties for information on the database in an Availability Group(s).\n\nInformation returned on the database will be specific to that replica, whether it is primary or a secondary.\n\nThis command will return an SMO object, but it is the AvailabilityDatabases object and not the Server.Databases object.",
         "Tags":  [
@@ -1431,15 +1354,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbMailLog -SqlInstance sql01\\sharepoint\r\n\r\nReturns the entire dbmail log on sql01\\sharepoint\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbMailLog -SqlInstance sql01\\sharepoint | Select *\r\n\r\nReturns the entire dbmail log on sql01\\sharepoint then return a bunch more columns\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\r\n\r\n$servers | Get-DbaDbMailLog -Type Error, Information\r\n\r\nReturns only the Error and Information dbmail log for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Get-DbaDbPhysicalFile",
-        "Description":  "Fastest way to fetch just the paths of the physical files for every database on the instance, also for offline databases.\nIncidentally, it also fetches the paths for MMO and FS filegroups.\nThis is partly already in Get-DbaDatabaseFile, but this internal needs to stay lean and fast, as it\u0027s heavily used in top-level functions",
-        "Author":  "Simone Bizzotto",
-        "Synopsis":  "Gets raw information about physical files linked to databases",
-        "Name":  "Get-DbaDbPhysicalFile",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbPhysicalFile -SqlInstance server1\\instance2\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Get-DbaDbQueryStoreOptions",
         "Description":  "Retrieves and returns the Query Store configuration for every database that has the Query Store feature enabled.",
         "Tags":  "QueryStore",
@@ -1599,15 +1513,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance sqlserver2014a -Path E:\\Dir1\r\n\r\nLogs into the SQL Server \"sqlserver2014a\" using Windows credentials and searches E:\\Dir for all files\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance sqlserver2014a -SqlCredential $cred -Path \u0027E:\\sql files\u0027\r\n\r\nLogs into the SQL Server \"sqlserver2014a\" using alternative credentials and returns all files in \u0027E:\\sql files\u0027\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$all = Get-DbaDefaultPath -SqlInstance sql2014\r\n\r\nGet-DbaFile -SqlInstance sql2014 -Path $all.Data, $all.Log, $all.Backup -Depth 3\r\nReturns the files in the default data, log and backup directories on sql2014, 3 directories deep (recursively).\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance sql2014 -Path \u0027E:\\Dir1\u0027, \u0027E:\\Dir2\u0027\r\n\r\nReturns the files in \"E:\\Dir1\" and \"E:Dir2\" on sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance -Path \u0027E:\\Dir1\u0027 sql2014, sql2016 -FileType fsf, mld\r\n\r\nFinds files in E:\\Dir1 ending with \".fsf\" and \".mld\" for both the servers sql2014 and sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance -Path \u0027E:\\Dir1\u0027 sql2014, sql2016 -FileType fsf, mld\r\n\r\nFinds files in E:\\Dir1 ending with \".fsf\" and \".mld\" for both the servers sql2014 and sql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Get-DbaFileStreamFolder",
-        "Description":  "Given a SQL Instance, and an optional list of databases returns the FileStream containing folders on that Instance. Without the Database parameter, all dbs with FileStream are returned",
-        "Author":  "Stuart Moore (@napalmgram stuart-moore.com )",
-        "Synopsis":  "Returns basic information about Filestream folders from a Sql Instance",
-        "Name":  "Get-DbaFileStreamFolder",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFileStreamFolder -SqlInstance server1\\instance2\r\n\r\nReturns all FileStream folders from server1\\instance2\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFileStreamFolder -SqlInstance server1\\instance2 -Database Archive\r\n\r\nReturns any FileStream folders from the Archive database on server1\\instance2\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Get-DbaForceNetworkEncryption",
         "Description":  "Gets Force Encryption settings for a SQL Server instance. Note that this requires access to the Windows Server - not the SQL instance itself.\n\nThis setting is found in Configuration Manager.",
         "Tags":  "Certificate",
@@ -1710,7 +1615,10 @@
     {
         "CommandName":  "Get-DbaMaxMemory",
         "Description":  "This command retrieves the SQL Server \u0027Max Server Memory\u0027 configuration setting as well as the total  physical installed on the server.",
-        "Tags":  "Memory",
+        "Tags":  [
+                     "MaxMemory",
+                     "Memory"
+                 ],
         "Synopsis":  "Gets the \u0027Max Server Memory\u0027 configuration setting and the memory of the server.  Works on SQL Server 2000-2014.",
         "Name":  "Get-DbaMaxMemory",
         "Links":  "https://dbatools.io/Get-DbaMaxMemory",
@@ -1975,14 +1883,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRunningJob -SqlInstance localhost\r\n\r\nReturns any active jobs on localhost.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRunningJob -SqlInstance localhost -Detailed\r\n\r\nReturns a detailed output of any active jobs on localhost.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e\u0027localhost\u0027,\u0027localhost\\namedinstance\u0027 | Get-DbaRunningJob\r\n\r\nReturns all active jobs on multiple instances piped into the function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Get-DbaRunspace",
-        "Description":  "Returns a list of runspaces that have been registered with dbatools",
-        "Synopsis":  "Returns registered runspaces.",
-        "Name":  "Get-DbaRunspace",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRunspace\r\n\r\nReturns all registered runspaces\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRunspace -Name \u0027mymodule.maintenance\u0027\r\n\r\nReturns the runspace registered under the name \u0027mymodule.maintenance\u0027\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Get-DbaSchemaChangeHistory",
         "Description":  "Queries the default system trace for any DDL changes in the specified timeframe\nOnly works with SQL 2005 and later, as the system trace didn\u0027t exist before then",
         "Tags":  [
@@ -2045,14 +1945,6 @@
         "Name":  "Get-DbaServerRole",
         "Links":  "https://dbatools.io/Get-DbaServerRole",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sql2016a\r\n\r\nOutputs list of server-level roles for sql2016a instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sql2017a -ExcludeFixedRole\r\n\r\nOutputs the server-level role(s) that are not fixed roles on sql2017a instance.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-DbaService",
-        "Description":  "Uses WMI/CIM to scan for the existance of a specific windows services.\n\nUse Get-DbaSqlService if you are interested in scanning for sql server services exclusively.",
-        "Synopsis":  "Uses WMI/CIM to scan for the existance of a specific windows services.",
-        "Name":  "Get-DbaService",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaService -Name LanmanServer\r\n\r\nReturns information on the LanmanServer service from localhost.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-ADComputer -Filter * | Get-DbaService -Name Browser\r\n\r\nFirst retrieves all computer accounts from active directory, then scans all of those computers for the browser service.\r\nNote: THis may take seriously long time, you may also want to filter out computers that are offline before scanning for \r\nservices.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaService -ComputerName \"server1\",\"server2\",\"server3\" -Name Lanman%\r\n\r\nScans the servers server1, server2 and server3 for all services whose name starts with \u0027lanman\u0027\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaSpConfigure",
@@ -2167,14 +2059,6 @@
         "Name":  "Get-DbaSqlService",
         "Links":  "https://dbatools.io/Get-DbaSqlService",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlService -ComputerName sqlserver2014a\r\n\r\nGets the SQL Server related services on computer sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaSqlService\r\n\r\nGets the SQL Server related services on computers sql1, sql2 and sql3.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlService -ComputerName sql1,sql2 | Out-Gridview\r\n\r\nGets the SQL Server related services on computers sql1 and sql2, and shows them in a grid view.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlService -ComputerName $MyServers -Type SSRS\r\n\r\nGets the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$services = Get-DbaSqlService -ComputerName sql1 -Type Agent,Engine\r\n\r\n$services.ChangeStartMode(\u0027Manual\u0027)\r\n\r\nGets the SQL Server related services of types Sql Agent and DB Engine on computer sql1 and changes their startup mode \r\nto \u0027Manual\u0027.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e(Get-DbaSqlService sql1 -Type Engine).Restart($true)\r\n\r\nCalls a Restart method for each Engine service on computer sql1 with -Force option.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-DBASQLServiceErrorMessage",
-        "Description":  null,
-        "Synopsis":  "Internal function. Returns the list of error code messages for Windows service management.",
-        "Name":  "Get-DBASQLServiceErrorMessage",
-        "Links":  null,
-        "Examples":  ""
     },
     {
         "CommandName":  "Get-DbaSsisEnvironmentVariable",
@@ -2389,15 +2273,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTarget -SqlInstance ServerA\\sql987 -Session system_health\r\n\r\nShows targets for the system_health session on ServerA\\sql987.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget\r\n\r\nReturns the targets for the system_health session on sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget -Target package0.event_file\r\n\r\nReturn only the package0.event_file target for the system_health session on sql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Get-DbaXESessionTargetFile",
-        "Description":  "Get a file system object from the Extended Events Session Target Files.\n\nNote: this performs a Get-ChildItem on remote servers if the specified target SQL Server is remote.",
-        "Tags":  "Xevent",
-        "Synopsis":  "Get a file system object from the Extended Events Session Target Files.",
-        "Name":  "Get-DbaXESessionTargetFile",
-        "Links":  "https://dbatools.io/Get-DbaXESessionTargetFile",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTargetFile -SqlInstance sql2017 -Session \u0027Long Running Queries\u0027\r\n\r\nShows Target Files for the \u0027Long Running Queries\u0027 session on sql2017.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2016 -Session \u0027Long Running Queries\u0027 | Get-DbaXESessionTarget | \r\nGet-DbaXESessionTargetFile\r\n\r\nReturns the Target Files for the system_health session on sql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Get-DbaXESessionTemplate",
         "Description":  "Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\\bin\\xetemplates\\).\n\nThe default repository contains templates from:\n        Microsoft\u0027s Templates that come with SSMS\n        Jes Borland\u0027s \"Everyday Extended Events\" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)\n        Christian Gräfe\u0027s XE Repo: https://github.com/chrgraefe/sqlscripts/blob/master/XE-Events/\n        Erin Stellato\u0027s Blog: https://www.sqlskills.com/blogs/erin/\n\nSome profile templates converted using:\n        sp_SQLskills_ConvertTraceToExtendedEvents.sql\n        Jonathan M. Kehayias, SQLskills.com\n        http://sqlskills.com/blogs/jonathan",
         "Synopsis":  "Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\\bin\\xetemplates\\).",
@@ -2420,125 +2295,6 @@
         "Name":  "Get-DbaXEStore",
         "Links":  "https://dbatools.io/Get-DbaXEStore",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXEStore -SqlInstance ServerA\\sql987\r\n\r\nReturns an XEvent Store.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-DirectoryRestoreFile",
-        "Description":  "Takes path, checks for validity. Scans for usual backup file",
-        "Synopsis":  "Internal Function to get SQL Server backfiles from a specified folder",
-        "Name":  "Get-DirectoryRestoreFile",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Get-JobList",
-        "Description":  "Helper function to get all SQL Agent jobs or provide filter",
-        "Author":  "Shawn Melton (@wsmelton)",
-        "Synopsis":  "Helper function to get SQL Agent jobs.",
-        "Name":  "Get-JobList",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-JobList -SqlInstance sql2016\r\n\r\nReturns the full JobServer.Jobs object found on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-JobList -SqlInstance sql2016 -JobFilter \u0027*job*\u0027\r\n\r\nReturns the Job object for each job name found to have \"job\" in the name on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-JobList -SqlInstance sql2016 -JobFilter \u0027*job*\u0027 -Not\r\n\r\nReturns any Job object that does not have \"job\" in the name on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-JobList -SqlInstance YourServer -JobFilter \u0027JobName\u0027\r\n\r\nReturns the Job object where the job name is \u0027JobName\u0027 on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-JobList -SqlInstance YourServer -JobFilter \u0027JobName\u0027 -Not\r\n\r\nReturns any Job object where the job name is not \u0027JobName\u0027 on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-JobList -SqlInstance YourServer -JobFilter job_3_upload, job_3_download\r\n\r\nReturns the Job object for where job is job_3_upload or job_3_download on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eGet-JobList -SqlInstance YourServer -JobFilter job_3_upload, job_3_download -Not\r\n\r\nReturns any Job object where job is not job_3_upload or job_3_download on sql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-Language",
-        "Description":  "Converts Microsoft\u0027s language ID to human readable format",
-        "Synopsis":  "Converts Microsoft\u0027s language ID to human readable format",
-        "Name":  "Get-Language",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-Language 1033\r\n\r\nReturns a pscustomobject with id, alias and name\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-OfflineSqlFileStructure",
-        "Description":  null,
-        "Synopsis":  "Internal function. Returns dictionary object that contains file structures for SQL databases.",
-        "Name":  "Get-OfflineSqlFileStructure",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Get-PasswordHash",
-        "Description":  "Generates a hash string based on the plaintext or securestring password and a SQL Server version. Salt is optional",
-        "Tags":  [
-                     "Login",
-                     "Internal"
-                 ],
-        "Author":  "Kirill Kravtsov (@nvarscar)",
-        "Synopsis":  "Generates a password hash for SQL Server login",
-        "Name":  "Get-PasswordHash",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-PasswordHash $securePassword 11\r\n\r\nGenerates password hash for SQL 2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-PasswordHash $securePassword 9 $byte\r\n\r\nGenerates password hash for SQL 2005 using custom salt from the $byte variable\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-RestoreContinuableDatabase",
-        "Description":  "Takes a SQL instance and checks for databases with a redo_start_lsn value, and returns the database name and that value\n-gt SQl 2005 it comes from master.sys.master_files\n-eq SQL 2000 DBCC DBINFO",
-        "Synopsis":  "Gets a list of databases from a SQL instance that are in a state for further restores",
-        "Name":  "Get-RestoreContinuableDatabase",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Get-SaLoginName",
-        "Description":  "Gets the login matching the standard \"sa\" user, useful in case of renames",
-        "Synopsis":  "Gets the login matching the standard \"sa\" user",
-        "Name":  "Get-SaLoginName",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-SaLoginName -SqlInstance base\\sql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-SmoServerForDynamicParams",
-        "Description":  null,
-        "Synopsis":  "\r\nGet-SmoServerForDynamicParams \r\n",
-        "Name":  "Get-SmoServerForDynamicParams",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Get-SqlCmdVars",
-        "Description":  "Attempt to resolve SQLCmd variables via matching powershell variables explicitly defined in the current context.\nTo try and avoid \u0027bad\u0027 default values getting deployed, block a deployment if we have SqlCmd variables that aren\u0027t defined in current context.\nFunction has one reference and is executed when the \"getSqlCmdVars\" switch is included.",
-        "Author":  "Richie lee (@bzzzt_io)",
-        "Synopsis":  "Retrieves the values of PowerShell parameters and updates values of SqlmdVars listed in the publish.xml.",
-        "Name":  "Get-SqlCmdVars",
-        "Links":  "https://dbatools.io/Test-Noun",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eImagine content of MyDbProject.publish.xml is as follows -\r\n\r\n\u003c?xml version=\"1.0\" encoding=\"utf-8\"?\u003e\r\n\u003cProject ToolsVersion=\"14.0\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\"\u003e\r\n\u003cPropertyGroup\u003e\r\n    \u003cIncludeCompositeObjects\u003eTrue\u003c/IncludeCompositeObjects\u003e\r\n    \u003cTargetDatabaseName\u003eMyDbProject\u003c/TargetDatabaseName\u003e\r\n    \u003cDeployScriptFileName\u003eMyDbProject.sql\u003c/DeployScriptFileName\u003e\r\n    \u003cTargetConnectionString\u003eData Source=.;Integrated Security=True;Persist Security \r\nInfo=False;Pooling=False;MultipleActiveResultSets=False;Connect \r\nTimeout=60;Encrypt=False;TrustServerCertificate=True\u003c/TargetConnectionString\u003e\r\n    \u003cBlockOnPossibleDataLoss\u003eTrue\u003c/BlockOnPossibleDataLoss\u003e\r\n    \u003cCreateNewDatabase\u003eFalse\u003c/CreateNewDatabase\u003e\r\n    \u003cProfileVersionNumber\u003e1\u003c/ProfileVersionNumber\u003e\r\n\u003c/PropertyGroup\u003e\r\n\u003cItemGroup\u003e\r\n    \u003cSqlCmdVariable Include=\"DeployTag\"\u003e\r\n    \u003cValue\u003eOldValue\u003c/Value\u003e\r\n    \u003c/SqlCmdVariable\u003e\r\n\u003c/ItemGroup\u003e\r\n\u003c/Project\u003e\r\nWe will need one PowerShell parameter named $DeployTag to update the value\r\n\r\nThe following scenario will fail as no $deployTag -\r\n\"\r\n    $publishXml =  \"C:\\MyDbProject\\bin\\Debug\\MyDbProject.publish.xml\"\r\n    $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($publishXml)\r\n    Get-SqlCmdVars $dacProfile.DeployOptions.SqlCommandVariableValues -EnableException\r\n\"\r\nThis scenario will pass.\r\n\"\r\n    $deployTag = \"NewValue\"\r\n    $publishXml =  \"C:\\MyDbProject\\bin\\Debug\\MyDbProject.publish.xml\"\r\n    $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($publishXml)\r\n    Get-SqlCmdVars $dacProfile.DeployOptions.SqlCommandVariableValues -EnableException\r\n\"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-SqlDefaultPaths",
-        "Description":  null,
-        "Synopsis":  "Internal function. Returns the default data and log paths for SQL Server. Needed because SMO\u0027s server.defaultpath is sometimes null.",
-        "Name":  "Get-SqlDefaultPaths",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Get-SqlDefaultSpConfigure",
-        "Description":  null,
-        "Synopsis":  "Internal function. Returns the default sp_configure options for a given version of SQL Server.",
-        "Name":  "Get-SqlDefaultSpConfigure",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-SqlDefaultSpConfigure -SqlVersion 11\r\n\r\nReturns a list of sp_configure (sys.configurations) items for SQL 2012.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-SqlFileStructure",
-        "Description":  null,
-        "Synopsis":  "Internal function. Returns custom object that contains file structures on destination paths (\\\\SqlInstance\\m$\\mssql\\etc\\etc\\file.mdf) for\nsource and destination servers.",
-        "Name":  "Get-SqlFileStructure",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Get-SqlSaLogin",
-        "Description":  null,
-        "Synopsis":  "Internal function. Gets the name of the sa login in case someone changed it.",
-        "Name":  "Get-SqlSaLogin",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Get-XpDirTreeRestoreFile",
-        "Description":  "Takes path, checks for validity. Scans for usual backup file",
-        "Synopsis":  "Internal Function to get SQL Server backfiles from a specified folder using xp_dirtree",
-        "Name":  "Get-XpDirTreeRestoreFile",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-XpDirTreeRestoreFile -Path \u0027\\\\foo\\bar\\\u0027 -SqlInstance $SqlInstance\r\n\r\nTests whether the instance $SqlInstance has access to the path \\\\foo\\bar\\\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Import-DbaCsvToSql",
@@ -2573,14 +2329,6 @@
         "Name":  "Import-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Import-DbaXESessionTemplate",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats\r\n\r\nCreates a new XESession named db_query_wait_stats from the dbatools repository to the SQL Server sql2017.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -Name \"Query Wait Stats\"\r\n\r\nCreates a new XESession named \"Query Wait Stats\" using the db_query_wait_stats template.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 -Session db_ola_health | Remove-DbaXESession\r\n\r\nImport-DbaXESessionTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaXESession\r\n\r\nImports a session if it exists, then recreates it using a template.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017\r\n\r\nAllows you to select a Session template then import to an instance named sql2017.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Import-ModuleFile",
-        "Description":  "Helps import dbatools files according to configuration\nAlways dotsource this function!",
-        "Synopsis":  "Helps import dbatools files according to configuration",
-        "Name":  "Import-ModuleFile",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eImport-ModuleFile -Path $function.FullName\r\n\r\nImports the file stored at \u0027$function.FullName\u0027\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Install-DbaFirstResponderKit",
@@ -2619,14 +2367,6 @@
         "Name":  "Install-DbaWhoIsActive",
         "Links":  "https://dbatools.io/Install-DbaWhoIsActive",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master\r\n\r\nDownloads sp_WhoisActive from the internet and installs to sqlserver2014a\u0027s master database. Connects to SQL Server \r\nusing Windows Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred\r\n\r\nPops up a dialog box asking which database on sqlserver2014a you want to install the procedure into. Connects to SQL \r\nServer using SQL Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile \r\nc:\\SQLAdmin\\whoisactive_install.sql\r\n\r\nInstalls sp_WhoisActive to sqlserver2014a\u0027s master database from the local file whoisactive_install.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$instances = Get-DbaRegisteredServer sqlserver\r\n\r\nInstall-DbaWhoIsActive -SqlInstance $instances -Database master\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Invoke-Command2",
-        "Description":  "Wrapper function that calls Invoke-Command and gracefully handles credentials.",
-        "Synopsis":  "Wrapper function that calls Invoke-Command and gracefully handles credentials.",
-        "Name":  "Invoke-Command2",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-Command2 -ComputerName sql2014 -Credential $Credential -ScriptBlock { dir }\r\n\r\nExecutes the scriptblock \u0027{ dir }\u0027 on the computer sql2014 using the credentials stored in $Credential.\r\nIf $Credential is null, no harm done.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Invoke-DbaAdvancedRestore",
@@ -2675,19 +2415,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone\r\n\r\nClones mydb to myclone on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone, myclone2 -UpdateStatistics\r\n\r\nUpdates the statistics of mydb then clones to myclone and myclone2\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Invoke-DbaDatabaseCorruption",
-        "Description":  "This command can be used to verify your tests for corruption are successful, and to demo various scenarios for corrupting page data.\nThis command will take an instance and database (and optionally a table) and set the database to single user mode, corrupt either the specified table or the first table it finds, and returns it to multi-user.",
-        "Tags":  [
-                     "Corruption",
-                     "Testing"
-                 ],
-        "Author":  "Constantine Kokkinos (@mobileck https://constantinekokkinos.com)",
-        "Synopsis":  "Utilizes the DBCC WRITEPAGE functionality  to corrupt a specific database table for testing.  In no uncertain terms, this is a non-production command.\nThis will absolutely break your databases and that is its only purpose.\nUsing DBCC WritePage will definitely void any support options for your database.",
-        "Name":  "Invoke-DbaDatabaseCorruption",
-        "Links":  "https://dbatools.io/Invoke-DbaDatabaseCorruption",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseCorruption -SqlInstance sql2016 -Database containeddb\r\n\r\nPrompts for confirmation then selects the first table in database containeddb and corrupts it (by putting database into \r\nsingle user mode, writing to garbage to its first non-iam page, and returning it to multi-user.)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseCorruption -SqlInstance sql2016 -Database containeddb -Table Customers -Confirm:$false\r\n\r\nDoes not prompt and immediately corrupts table customers in database containeddb on the sql2016 instance (by putting \r\ndatabase into single user mode, writing to garbage to its first non-iam page, and returning it to multi-user.)\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Invoke-DbaDatabaseShrink",
         "Description":  "Shrinks all files in a database. Databases should be shrunk only when completely necessary.\n\nMany awesome SQL people have written about why you should not shrink your data files. Paul Randal and Kalen Delaney wrote great posts about this topic:\n\n    http://www.sqlskills.com/blogs/paul/why-you-should-not-shrink-your-data-files\n    http://sqlmag.com/sql-server/shrinking-data-files\n\nHowever, there are some cases where a database will need to be shrunk. In the event that you must shrink your database:\n\n1. Ensure you have plenty of space for your T-Log to grow\n2. Understand that shrinks require a lot of CPU and disk resources\n3. Consider running DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE after the shrink is complete.",
         "Tags":  [
@@ -2724,14 +2451,6 @@
         "Name":  "Invoke-DbaDiagnosticQuery",
         "Links":  "https://dbatools.io/Invoke-DbaDiagnosticQuery",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance sql2016\r\n\r\nRun the selection made by the user on the Sql Server instance specified.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDiagnosticQuery -SqlInstance sql2016 -UseSelectionHelper | Export-DbaDiagnosticQuery -Path \r\nC:\\temp\\gboutput\r\n\r\nProvides a gridview with all the queries to choose from and will run the selection made by the user on the SQL Server \r\ninstance specified.\r\n\r\nThen it will export the results to Export-DbaDiagnosticQuery.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Invoke-DbaDiagnosticQueryScriptParser",
-        "Description":  null,
-        "Synopsis":  "\r\nInvoke-DbaDiagnosticQueryScriptParser [-filename] \u003cFileInfo\u003e [-NoQueryTextColumn] [-NoPlanColumn] [-NoColumnParsing] [\u003cCommonParameters\u003e]\r\n",
-        "Name":  "Invoke-DbaDiagnosticQueryScriptParser",
-        "Links":  null,
-        "Examples":  ""
     },
     {
         "CommandName":  "Invoke-DbaLogShipping",
@@ -2785,38 +2504,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a\r\n\r\nExecute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the master database. Logs into \r\nthe SQL Server with Windows credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -SqlCredential $credential -Database dbatools\r\n\r\nExecute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the dbatools database. Logs into \r\nthe SQL Server with SQL Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetAverageTime\r\n\r\nSimilar to running sp_WhoIsActive @get_avg_time\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetOuterCommand -FindBlockLeaders\r\n\r\nSimilar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Invoke-DbaXeReplay",
-        "Description":  "This function is a wrapper command around Invoke-SqlCmd2.\nIt was designed to be more convenient to use in a pipeline and to behave in a way consistent with the rest of our functions.",
-        "Synopsis":  "A command to run explicit T-SQL commands or files.",
-        "Name":  "Invoke-DbaXeReplay",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaSqlCmd -SqlInstance sql2017 -Database tempdb\r\n\r\nRuns all batch_text for sql_batch_completed against tempdb on sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaSqlCmd -SqlInstance sql2017, sql2016 -Database tempdb, db1\r\n\r\nRuns all batch_text for sql_batch_completed against tempdb and db1 on sql2017 and sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eWatch-DbaXESession -SqlInstance sql2017 -Session \u0027Profile New App\u0027 | Invoke-DbaSqlCmd -SqlInstance sql2017, \r\nsql2016 -Database tempdb, db1\r\n\r\nRuns all batch_text for sql_batch_completed against tempdb and db1 on sql2017 and sql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Invoke-ManagedComputerCommand",
-        "Description":  "Runs wmi commands against a target system.\nEither directly or over PowerShell remoting.",
-        "Synopsis":  "Runs wmi commands against a target system.",
-        "Name":  "Invoke-ManagedComputerCommand",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Invoke-Parallel",
-        "Description":  "Function to control parallel processing using runspaces\n\n    Note that each runspace will not have access to variables and commands loaded in your session or in other runspaces by default.\n    This behaviour can be changed with parameters.",
-        "Synopsis":  "Function to control parallel processing using runspaces",
-        "Name":  "Invoke-Parallel",
-        "Links":  "https://github.com/RamblingCookieMonster/Invoke-Parallel",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eEach example uses Test-ForPacs.ps1 which includes the following code:\r\n\r\nparam($computer)\r\n\r\n    if(test-connection $computer -count 1 -quiet -BufferSize 16){\r\n        $object = [pscustomobject] @{\r\n            Computer=$computer;\r\n            Available=1;\r\n            Kodak=$(\r\n                if((test-path \"\\\\$computer\\c$\\users\\public\\desktop\\Kodak Direct View Pacs.url\") -or (test-path \r\n\"\\\\$computer\\c$\\documents and settings\\all users\\desktop\\Kodak Direct View Pacs.url\") ){\"1\"}else{\"0\"}\r\n            )\r\n        }\r\n    }\r\n    else{\r\n        $object = [pscustomobject] @{\r\n            Computer=$computer;\r\n            Available=0;\r\n            Kodak=\"NA\"\r\n        }\r\n    }\r\n\r\n    $object\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-Parallel -scriptfile C:\\public\\Test-ForPacs.ps1 -inputobject $(get-content C:\\pcs.txt) -runspaceTimeout \r\n10 -throttle 10\r\n\r\nPulls list of PCs from C:\\pcs.txt,\r\n    Runs Test-ForPacs against each\r\n    If any query takes longer than 10 seconds, it is disposed\r\n    Only run 10 threads at a time\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-Parallel -scriptfile C:\\public\\Test-ForPacs.ps1 -inputobject c-is-ts-91, c-is-ts-95\r\n\r\nRuns against c-is-ts-91, c-is-ts-95 (-computername)\r\n    Runs Test-ForPacs against each\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$stuff = [pscustomobject] @{\r\n\r\nContentFile = \"windows\\system32\\drivers\\etc\\hosts\"\r\n    Logfile = \"C:\\temp\\log.txt\"\r\n}\r\n\r\n$computers | Invoke-Parallel -parameter $stuff {\r\n    $contentFile = join-path \"\\\\$_\\c$\" $parameter.contentfile\r\n    Get-Content $contentFile |\r\n        set-content $parameter.logfile\r\n}\r\n\r\nThis example uses the parameter argument.  This parameter is a single object.  To pass multiple items into the script \r\nblock, we create a custom object (using a PowerShell v3 language) with properties we want to pass in.\r\n\r\nInside the script block, $parameter is used to reference this parameter object.  This example sets a content file, gets \r\ncontent from that file, and sets it to a predefined log file.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$test = 5\r\n\r\n1..2 | Invoke-Parallel -ImportVariables {$_ * $test}\r\n\r\nAdd variables from the current session to the session state.  Without -ImportVariables $Test would not be accessible\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e$test = 5\r\n\r\n1..2 | Invoke-Parallel {$_ * $Using:test}\r\n\r\nReference a variable from the current session with the $Using:\u003cVariable\u003e syntax.  Requires PowerShell 3 or later. Note \r\nthat -ImportVariables parameter is no longer necessary.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Invoke-SmoCheck",
-        "Description":  null,
-        "Synopsis":  "Checks for PowerShell SMO version vs SQL Server\u0027s SMO version.",
-        "Name":  "Invoke-SmoCheck",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
         "CommandName":  "Invoke-Sqlcmd2",
         "Description":  "Runs a T-SQL script. Invoke-Sqlcmd2 runs the whole script and only captures the first selected result set, such as the output of PRINT statements when -verbose parameter is specified.\nParameterized queries are supported.\n\nHelp details below borrowed from Invoke-Sqlcmd",
         "Synopsis":  "Runs a T-SQL script.",
@@ -2826,22 +2513,6 @@
                       "https://github.com/RamblingCookieMonster/PowerShell"
                   ],
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-Sqlcmd2 -ServerInstance \"MyComputer\\MyInstance\" -Query \"SELECT login_time AS \u0027StartTime\u0027 FROM \r\nsysprocesses WHERE spid = 1\"\r\n\r\nConnects to a named instance of the Database Engine on a computer and runs a basic T-SQL query.\r\n\r\nStartTime\r\n-----------\r\n2010-08-12 21:21:03.593\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-Sqlcmd2 -ServerInstance \"MyComputer\\MyInstance\" -InputFile \"C:\\MyFolder\\tsqlscript.sql\" | Out-File \r\n-filePath \"C:\\MyFolder\\tsqlscript.rpt\"\r\n\r\nReads a file containing T-SQL statements, runs the file, and writes the output to another file.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-Sqlcmd2  -ServerInstance \"MyComputer\\MyInstance\" -Query \"PRINT \u0027hello world\u0027\" -Verbose\r\n\r\nUses the PowerShell -Verbose parameter to return the message output of the PRINT command.\r\nVERBOSE: hello world\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eInvoke-Sqlcmd2 -ServerInstance MyServer\\MyInstance -Query \"SELECT ServerName, VCNumCPU FROM tblServerInfo\" -as \r\nPSObject | ?{$_.VCNumCPU -gt 8}\r\n\r\nInvoke-Sqlcmd2 -ServerInstance MyServer\\MyInstance -Query \"SELECT ServerName, VCNumCPU FROM tblServerInfo\" -as PSObject \r\n| ?{$_.VCNumCPU}\r\n\r\nThis example uses the PSObject output type to allow more flexibility when working with results.\r\n\r\nIf we used DataRow rather than PSObject, we would see the following behavior:\r\n    Each row where VCNumCPU does not exist would produce an error in the first example\r\n    Results would include rows where VCNumCPU has DBNull value in the second example\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027Instance1\u0027, \u0027Server1/Instance1\u0027, \u0027Server2\u0027 | Invoke-Sqlcmd2 -query \"Sp_databases\" -as psobject \r\n-AppendServerInstance\r\n\r\nThis example lists databases for each instance.  It includes a column for the ServerInstance in question.\r\n    DATABASE_NAME          DATABASE_SIZE REMARKS        ServerInstance\r\n    -------------          ------------- -------        --------------\r\n    REDACTED                       88320                Instance1\r\n    master                         17920                Instance1\r\n    ...\r\n    msdb                          618112                Server1/Instance1\r\n    tempdb                        563200                Server1/Instance1\r\n    ...\r\n    OperationsManager           20480000                Server2\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e#Construct a query using SQL parameters\r\n\r\n$Query = \"SELECT ServerName, VCServerClass, VCServerContact FROM tblServerInfo WHERE VCServerContact LIKE \r\n@VCServerContact AND VCServerClass LIKE @VCServerClass\"\r\n\r\n#Run the query, specifying values for SQL parameters\r\n    Invoke-Sqlcmd2 -ServerInstance SomeServer\\NamedInstance -Database ServerDB -query $query -SqlParameters @{ \r\nVCServerContact=\"%cookiemonster%\"; VCServerClass=\"Prod\" }\r\n\r\n    ServerName    VCServerClass VCServerContact\r\n    ----------    ------------- ---------------\r\n    SomeServer1   Prod          cookiemonster, blah\r\n    SomeServer2   Prod          cookiemonster\r\n    SomeServer3   Prod          blah, cookiemonster\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eInvoke-Sqlcmd2 -SQLConnection $Conn -Query \"SELECT login_time AS \u0027StartTime\u0027 FROM sysprocesses WHERE spid = 1\"\r\n\r\nUses an existing SQLConnection and runs a basic T-SQL query against it\r\n\r\nStartTime\r\n-----------\r\n2010-08-12 21:21:03.593\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 8 --------------------------\r\n\r\nPS C:\\\u003eInvoke-SqlCmd -SQLConnection $Conn -Query \"SELECT ServerName FROM tblServerInfo WHERE ServerName LIKE \r\n@ServerName\" -SqlParameters @{\"ServerName = \"c-is-hyperv-1\"}\r\n\r\nExecutes a parameterized query against the existing SQLConnection, with a collection of one parameter to be passed to \r\nthe query when executed.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Invoke-TagCommand",
-        "Description":  null,
-        "Synopsis":  "An internal command, feel free to ignore.",
-        "Name":  "Invoke-TagCommand",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTag-Command -Tag Restore -Keyword Restore\r\n\r\nTag-Command -Tag Backup -Keyword Backup\r\nTag-Command -Tag Orphan -Keyword Orphan\r\nTag-Command -Tag DisasterRecovery -Keyword Attach\r\nTag-Command -Tag DisasterRecovery -Keyword Detach\r\nTag-Command -Tag Snapshot -Keyword Snapshot\r\nTag-Command -Tag Memory -Keyword Memory\r\nTag-Command -Tag DisasterRecovery -Keyword Restore\r\nTag-Command -Tag DisasterRecovery -Keyword Backup\r\nTag-Command -Tag Storage -Keyword disk\r\nTag-Command -Tag Storage -Keyword storage\r\nTag-Command -Tag Migration -Keyword \"Copy-\"\r\nTag-Command -Tag SPN -Keyword Kerberos\r\nTag-Command -Tag SPN -Keyword SPN\r\nTag-Command -Tag CIM -Keyword CimSession\r\nTag-Command -Tag SQLWMI -Keyword Invoke-ManagedComputerCommand\r\nTag-Command -Tag WSMan -Keyword Invoke-Command\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Join-AdminUnc",
-        "Description":  null,
-        "Synopsis":  "Internal function. Parses a path to make it an admin UNC.",
-        "Name":  "Join-AdminUnc",
-        "Links":  null,
-        "Examples":  ""
     },
     {
         "CommandName":  "Measure-DbaBackupThroughput",
@@ -3012,60 +2683,6 @@
         "Name":  "New-DbaLogin",
         "Links":  "https://dbatools.io/New-DbaLogin",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaLogin -SqlInstance Server1,Server2 -Login Newlogin\r\n\r\nYou will be prompted to securely enter the password for a login [Newlogin]. The login would be created on servers \r\nServer1 and Server2 with default parameters.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$securePassword = Read-Host \"Input password\" -AsSecureString\r\n\r\nNew-DbaLogin -SqlInstance Server1\\sql1 -Login Newlogin -Password $securePassword -PasswordPolicy -PasswordExpiration\r\n\r\nCreates a login on Server1\\sql1 with a predefined password. The login will have password and expiration policies \r\nenforced onto it.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql1 -Login Oldlogin | New-DbaLogin -SqlInstance sql1 -LoginRenameHashtable @{Oldlogin \r\n= \u0027Newlogin\u0027} -Force -NewSid -Disabled:$false\r\n\r\nCopies a login [Oldlogin] to the same instance sql1 with the same parameters (including password). New login will have \r\na new sid, a new name [Newlogin] and will not be disabled. Existing login [Newlogin] will be removed prior to creation.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql1 -Login Login1,Login2 | New-DbaLogin -SqlInstance sql2 -PasswordPolicy \r\n-PasswordExpiration -DefaultDatabase tempdb -Disabled\r\n\r\nCopies logins [Login1] and [Login2] from instance sql1 to instance sql2, but enforces password and expiration policies \r\nfor the new logins. New logins will also have a default database set to [tempdb] and will be created in a disabled \r\nstate.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "New-DbaLogShippingPrimaryDatabase",
-        "Description":  "New-DbaLogShippingPrimaryDatabase will add the primary database to log shipping.\nThis is executed on the primary server.",
-        "Tags":  [
-                     "Log shippin",
-                     "primary database"
-                 ],
-        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
-        "Synopsis":  "New-DbaLogShippingPrimaryDatabase add the primary database to log shipping",
-        "Name":  "New-DbaLogShippingPrimaryDatabase",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirectory D:\\data\\logshipping \r\n-BackupJob LSBackup_DB1 -BackupRetention 4320 -BackupShare \"\\\\sql1\\logshipping\" -BackupThreshold 60 -CompressBackup \r\n-HistoryRetention 14420 -MonitorServer sql1 -ThresholdAlertEnabled\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "New-DbaLogShippingPrimarySecondary",
-        "Description":  "New-DbaLogShippingPrimarySecondary adds an entry for a secondary database.\nThis is executed on the primary server.",
-        "Tags":  [
-                     "Log shipping",
-                     "primary database",
-                     "secondary database"
-                 ],
-        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
-        "Synopsis":  "New-DbaLogShippingPrimarySecondary adds an entry for a secondary database.",
-        "Name":  "New-DbaLogShippingPrimarySecondary",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -SecondaryServer sql2 \r\n-SecondaryDatabase DB1_DR\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "New-DbaLogShippingSecondaryDatabase",
-        "Description":  "New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping.\nThis is executed on the secondary server.",
-        "Tags":  [
-                     "Log shippin",
-                     "secondary database"
-                 ],
-        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
-        "Synopsis":  "New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping.",
-        "Name":  "New-DbaLogShippingSecondaryDatabase",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR -PrimaryServer sql1 \r\n-PrimaryDatabase DB1 -RestoreDelay 0 -RestoreMode standby -DisconnectUsers -RestoreThreshold 45 -ThresholdAlertEnabled \r\n-HistoryRetention 14420\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "New-DbaLogShippingSecondaryPrimary",
-        "Description":  "New-DbaLogShippingPrimarySecondary sets up the primary information, adds local and remote monitor links,\nand creates copy and restore jobs for the specified primary database.\nThis is executed on the secondary server.",
-        "Tags":  [
-                     "Log shippin",
-                     "primary database",
-                     "secondary database"
-                 ],
-        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
-        "Synopsis":  "New-DbaLogShippingPrimarySecondary sets up the primary information for the primary database.",
-        "Name":  "New-DbaLogShippingSecondaryPrimary",
-        "Links":  "https://dbatools.io/New-DbaLogShippingPrimarySecondary",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory \"\\\\sql1\\logshipping\\DB1\" \r\n-BackupDestinationDirectory D:\\Data\\logshippingdestination\\DB1_DR -CopyJob LSCopy_sql2_DB1_DR -FileRetentionPeriod 4320 \r\n-MonitorServer sql2 -MonitorServerSecurityMode \u0027Windows\u0027 -PrimaryServer sql1 -PrimaryDatabase DB1 -RestoreJob \r\nLSRestore_sql2_DB1_DR\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "New-DbaPublishProfile",
@@ -3259,54 +2876,6 @@
         "Name":  "Register-DbaConfig",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaConfig message.* | Register-DbaConfig\r\n\r\nRetrieves all configuration items that that start with message. and registers them in registry for the current user.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaConfig -FullName \"developer.mode.enable\" -Scope SystemDefault\r\n\r\nRetrieves the configuration item \"developer.mode.enable\" and registers it in registry as the default setting for all \r\nusers on this machine.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaConfig -Module message -Scope SystemMandatory\r\n\r\nRetrieves all configuration items of the module MyModule, then registers them in registry to enforce them for all users \r\non the current system.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Register-DbaConfigValidation",
-        "Description":  "Registers a validation scriptblock for use with the configuration system.\n\nThe scriptblock must be designed according to a few guidelines:\n- It must not throw exceptions\n- It must accept a single parameter (the value to be tested)\n- It must return an object with three properties: \u0027Message\u0027, \u0027Value\u0027 and \u0027Success\u0027.\nThe Success property should be boolean and indicate whether the value is valid.\nThe Value property contains the validated input. The scriptblock may legally convert the input (For example from string to int in case of integer validation)\nThe message contains a string that will be passed along to an exception in case the input is NOT valid.",
-        "Synopsis":  "Registers a validation scriptblock for use with the configuration system.",
-        "Name":  "Register-DbaConfigValidation",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaConfigValidation -Name IntPositive -ScriptBlock $scriptblock\r\n\r\nRegisters the scriptblock stored in $scriptblock as validation with the name IntPositive\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Register-DbaMaintenanceTask",
-        "Description":  "Allows scheduling maintenance tasks, that are perfomed in the background.\n\nAll scriptblocks scheduled like this will be performed on a separate runspace and have access to all internal dbatools commands.\nNone of the scriptblocks will affect the main session (so you cannot manipulate variables, etc.)",
-        "Synopsis":  "Allows scheduling maintenance tasks, that are perfomed in the background.",
-        "Name":  "Register-DbaMaintenanceTask",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaMaintenanceTask -Name \u0027value1\u0027 -ScriptBlock $ScriptBlock -Once\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Register-DbaRunspace",
-        "Description":  "This function registers a scriptblock to run in separate runspace.\nThis is different from most runspace solutions, in that it is designed for permanent background tasks that need to be done.\nIt guarantees a single copy of the task to run within the powershell process, even when running the same module in many runspaces in parallel.\n\nUpdating:\nIf this function is called multiple times, targeting the same name, it will update the scriptblock.\n- If that scriptblock is the same as the previous scriptblock, nothing changes\n- If that scriptblock is different from the previous ones, it will be registered, but will not be executed right away!\n  Only after stopping and starting the runspace will it operate under the new scriptblock.",
-        "Synopsis":  "Registers a scriptblock to run in the background.",
-        "Name":  "Register-DbaRunspace",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaRunspace -ScriptBlock $scriptBlock -Name \u0027mymodule.maintenance\u0027\r\n\r\nRegisters the script defined in $scriptBlock under the name \u0027mymodule.maintenance\u0027\r\nIt does not start the runspace yet. If it already exists, it will overwrite the scriptblock without affecting the \r\nrunning script.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaRunspace -ScriptBlock $scriptBlock -Name \u0027mymodule.maintenance\u0027\r\n\r\nPS C:\\\u003e Start-DbaRunspace -Name \u0027mymodule.maintenance\u0027\r\n\r\nRegisters the script defined in $scriptBlock under the name \u0027mymodule.maintenance\u0027\r\nThen it starts the runspace, running the registered $scriptBlock\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Register-DbaTeppArgumentCompleter",
-        "Description":  "Registers a parameter for a prestored Tepp.\nThis function allows easily registering a function\u0027s parameter for Tepp in the function-file, rather than in a centralized location.",
-        "Synopsis":  "Registers a parameter for a prestored Tepp.",
-        "Name":  "Register-DbaTeppArgumentCompleter",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaTeppArgumentCompleter -Command Get-DbaBackupHistory -Parameter Database\r\n\r\nRegisters the \"Database\" parameter of the Get-DbaBackupHistory to receive Database-Tepp\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Register-DbaTeppInstanceCacheBuilder",
-        "Description":  "Registers a scriptblock used to build the TEPP cache from an instance connection.\nUsed only on import of the module.",
-        "Synopsis":  "Registers a scriptblock used to build the TEPP cache from an instance connection.",
-        "Name":  "Register-DbaTeppInstanceCacheBuilder",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock\r\n\r\nRegisters the scriptblock stored in the aptly named variable $ScriptBlock as a fest cache building scriptblock.\r\nNote: The scriptblock must execute swiftly! (less than 25ms)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock -Slow\r\n\r\nRegisters the scriptblock stored in the aptly named variable $ScriptBlock as a slow cache building scriptblock.\r\nThis is suitable for cache building scriptblocks that take a while to execute.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Register-DbaTeppScriptblock",
-        "Description":  "Registers a scriptblock under name, to later be available for TabExpansion.",
-        "Synopsis":  "Registers a scriptblock under name, to later be available for TabExpansion.",
-        "Name":  "Register-DbaTeppScriptblock",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaTeppScriptblock -ScriptBlock $scriptBlock -Name MyFirstTeppScriptBlock\r\n\r\nStores the scriptblock stored in $scriptBlock under the name \"MyFirstTeppScriptBlock\"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-DbaAgentJob",
@@ -3557,31 +3126,15 @@
         "Synopsis":  "Removes Extended Events sessions.",
         "Name":  "Remove-DbaXESession",
         "Links":  "https://dbatools.io/Remove-DbaXESession",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaXESession -SqlInstance sql2012 -AllSessions\r\n\r\nRemoves all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaXESession -SqlInstance sql2012 -Session xesession1,xesession2\r\n\r\nRemoves the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 | Remove-DbaXESession -Confirm:$false\r\n\r\nRemoves all sessions from sql2017, bypassing prompting\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2012 -Session xesession1 | Remove-DbaXESession\r\n\r\nRemoves the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaXESession -SqlInstance sql2012 -AllSessions\r\n\r\nRemoves all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaXESession -SqlInstance sql2012 -Session xesession1,xesession2\r\n\r\nRemoves the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 | Remove-DbaXESession -Confirm:$false\r\n\r\nRemoves all sessions from sql2017, bypassing prompts.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2012 -Session xesession1 | Remove-DbaXESession\r\n\r\nRemoves the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-DbaXESmartTarget",
-        "Description":  "Removes an XESmartTarget PowerShell Job",
-        "Synopsis":  "Removes an XESmartTarget PowerShell Job",
+        "Description":  "Removes an XESmartTarget PowerShell Job.",
+        "Synopsis":  "Removes an XESmartTarget PowerShell Job.",
         "Name":  "Remove-DbaXESmartTarget",
         "Links":  "https://dbatools.io/Remove-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESmartTarget | Remove-DbaXESmartTarget\r\n\r\nRemoves all XESmartTarget jobs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESmartTarget | Where-Object Id -eq 2 | Remove-DbaXESmartTarget\r\n\r\nRemoves a specific XESmartTarget job\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Remove-InvalidFileNameChars",
-        "Description":  null,
-        "Synopsis":  "\r\nRemove-InvalidFileNameChars [-Name] \u003cstring\u003e [\u003cCommonParameters\u003e]\r\n",
-        "Name":  "Remove-InvalidFileNameChars",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Remove-SqlDatabase",
-        "Description":  null,
-        "Synopsis":  "Internal function. Uses SMO\u0027s KillDatabase to drop all user connections then drop a database. $server is\nan SMO server object.\nTHIS FUNCTION IS HERE BECAUSE OF LEGACY REQUIREMENTS. (Copy-DbaDatabase, Test-DbaLastBackup, Remove-DbaDatabaseSafely)",
-        "Name":  "Remove-SqlDatabase",
-        "Links":  null,
-        "Examples":  ""
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESmartTarget | Remove-DbaXESmartTarget\r\n\r\nRemoves all XESmartTarget jobs.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESmartTarget | Where-Object Id -eq 2 | Remove-DbaXESmartTarget\r\n\r\nRemoves a specific XESmartTarget job.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Rename-DbaDatabase",
@@ -3643,30 +3196,6 @@
         "Name":  "Resolve-DbaNetworkName",
         "Links":  "https://dbatools.io/Resolve-DbaNetworkName",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eResolve-DbaNetworkName -ComputerName ServerA\r\n\r\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, \r\nFQDN, DNSHostEntry for ServerA\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eResolve-DbaNetworkName -SqlInstance sql2016\\sqlexpress\r\n\r\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, \r\nFQDN, DNSHostEntry  for the SQL instance sql2016\\sqlexpress\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eResolve-DbaNetworkName -SqlInstance sql2016\\sqlexpress, sql2014\r\n\r\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, \r\nFQDN, DNSHostEntry  for the SQL instance sql2016\\sqlexpress and sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2014 | Resolve-DbaNetworkName\r\n\r\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers \r\nreturned by Get-DbaRegisteredServer\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Resolve-IpAddress",
-        "Description":  null,
-        "Synopsis":  "\r\nResolve-IpAddress [-Server] \u003cObject\u003e [\u003cCommonParameters\u003e]\r\n",
-        "Name":  "Resolve-IpAddress",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Resolve-NetBiosName",
-        "Description":  null,
-        "Synopsis":  "Internal function. Takes a best guess at the NetBIOS name of a server.",
-        "Name":  "Resolve-NetBiosName",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Resolve-SqlIpAddress",
-        "Description":  null,
-        "Synopsis":  "\r\nResolve-SqlIpAddress [-SqlInstance] \u003cObject\u003e [[-SqlCredential] \u003cpscredential\u003e] [\u003cCommonParameters\u003e]\r\n",
-        "Name":  "Resolve-SqlIpAddress",
-        "Links":  null,
-        "Examples":  ""
     },
     {
         "CommandName":  "Restart-DbaSqlService",
@@ -3755,14 +3284,6 @@
         "Name":  "Select-DbaBackupInformation",
         "Links":  "https://dbatools.io/Select-DbaBackupInformation",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\\\server1\\backups$\r\n\r\n$FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1)\r\n\r\nReturns all backups needed to restore all the backups in \\\\server1\\backups$ to 1 hour ago\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\\\server1\\backups$\r\n\r\n$FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1) -DatabaseName ProdFinance\r\n\r\nReturns all the backups needed to restore Database ProdFinance to an hour ago\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\\\server1\\backups$\r\n\r\n$FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1) -IgnoreLogs\r\n\r\nReturns all the backups in \\\\server1\\backups$ to restore to as close prior to 1 hour ago as can be managed with only \r\nfull and differential backups\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\\\server1\\backups$\r\n\r\n$FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1) -IgnoreDiffs\r\n\r\nReturns all the backups in \\\\server1\\backups$ to restore to 1 hour ago using only Full and Diff backups.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Select-DefaultView",
-        "Description":  null,
-        "Synopsis":  "\r\nSelect-DefaultView [[-InputObject] \u003cObject\u003e] [[-Property] \u003cstring[]\u003e] [[-ExcludeProperty] \u003cstring[]\u003e] [[-TypeName] \u003cstring\u003e] [\u003cCommonParameters\u003e]\r\n",
-        "Name":  "Select-DefaultView",
-        "Links":  null,
-        "Examples":  ""
     },
     {
         "CommandName":  "Set-DbaAgentJob",
@@ -3940,7 +3461,10 @@
     {
         "CommandName":  "Set-DbaMaxMemory",
         "Description":  "Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings.\n\nInspired by Jonathan Kehayias\u0027s post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this uses a formula to\ndetermine the default optimum RAM to use, then sets the SQL max value to that number.\n\nJonathan notes that the formula used provides a *general recommendation* that doesn\u0027t account for everything that may\nbe going on in your specific environment.",
-        "Tags":  "MaxMemory",
+        "Tags":  [
+                     "MaxMemory",
+                     "Memory"
+                 ],
         "Synopsis":  "Sets SQL Server \u0027Max Server Memory\u0027 configuration setting to a new value then displays information this setting.",
         "Name":  "Set-DbaMaxMemory",
         "Links":  "https://dbatools.io/Set-DbaMaxMemory",
@@ -4022,15 +3546,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000\r\n\r\nCreates tempdb with a number of data files equal to the logical cores where each file is equal to 1000MB divided by the \r\nnumber of logical cores, with a log file of 250MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -DataFileCount 8\r\n\r\nCreates tempdb with 8 data files, each one sized at 125MB, with a log file of 250MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly\r\n\r\nProvides a SQL script output to configure tempdb according to the passed parameters.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -DisableGrowth\r\n\r\nDisables the growth for the data and log files.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly\r\n\r\nReturns the T-SQL script representing tempdb configuration.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Set-ServiceStartMode",
-        "Description":  "Accepts objects from Get-DbaSqlService and performs a corresponding action.",
-        "Author":  "Kirill Kravtsov ( @nvarscar )",
-        "Synopsis":  "Internal function. Implements the method that changes startup mode of the SQL Server service.",
-        "Name":  "Set-ServiceStartMode",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlService -ComputerName sql1 | Set-ServiceStartMode -Mode \u0027Manual\u0027\r\n\r\nSets all SQL services on sql1 to Manual startup.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$services = Get-DbaSqlService -ComputerName sql1\r\n\r\nSet-ServiceStartMode -ServiceCollection $services -Mode \u0027Automatic\u0027\r\n\r\nSets all SQL services on sql1 to Automatic startup.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Show-DbaDatabaseList",
         "Description":  "Shows a list of databases in a GUI. Returns a string holding the name of the selected database. Hitting cancel returns null.",
         "Synopsis":  "Shows a list of databases in a GUI.",
@@ -4046,14 +3561,6 @@
         "Name":  "Show-DbaServerFileSystem",
         "Links":  "https://dbatools.io/Show-DbaServerFileSystem",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eShow-DbaServerFileSystem -SqlInstance sqlserver2014a\r\n\r\nShows a list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected \r\npath.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eShow-DbaServerFileSystem -Source sqlserver2014a -SqlCredential $cred\r\n\r\nShows a list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected path.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Show-Notification",
-        "Description":  null,
-        "Synopsis":  "\r\nShow-Notification [[-Title] \u003cObject\u003e] [[-Text] \u003cObject\u003e]\r\n",
-        "Name":  "Show-Notification",
-        "Links":  null,
-        "Examples":  ""
     },
     {
         "CommandName":  "Start-DbaAgentJob",
@@ -4092,22 +3599,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPfDataCollectorSet\r\n\r\nAttempts to start all ready Collectors on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPfDataCollectorSet -ComputerName sql2017\r\n\r\nAttempts to start all ready Collectors on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet \u0027System \r\nCorrelation\u0027\r\n\r\nStarts the \u0027System Correlation\u0027 Collector on sql2017 and sql2016 using alternative credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Start-DbaPfDataCollectorSet\r\n\r\nStarts \u0027System Correlation\u0027 Collector\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Start-DbaPowerBi",
-        "Description":  "Launches the PowerBi dashboard for dbatools",
-        "Synopsis":  "Launches the PowerBi dashboard for dbatools",
-        "Name":  "Start-DbaPowerBi",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPowerBi\r\n\r\nLaunches PowerBi from \"$script:ModuleRoot\\bin\\pbix\\dbatools.pbix\" using \"C:\\windows\\Temp\\dbatools\\\" (generated by \r\nUpdate-DbaPowerBiDataSource) as the datasource.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPowerBi -Path \\\\nas\\projects\\dbatools.pbix\r\n\r\nLaunches \\\\nas\\projects\\dbatools.pbix\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Start-DbaRunspace",
-        "Description":  "Starts a runspace that was registered to dbatools\nSimply registering does not automatically start a given runspace. Only by executing this function will it take effect.",
-        "Synopsis":  "Starts a managed runspace",
-        "Name":  "Start-DbaRunspace",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaRunspace -Name \u0027mymodule.maintenance\u0027\r\n\r\nStarts the runspace registered under the name \u0027mymodule.maintenance\u0027\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Start-DbaSqlService",
         "Description":  "Starts the SQL Server related services on one or more computers. Will follow SQL Server service dependencies.\n\nRequires Local Admin rights on destination computer(s).",
         "Tags":  "",
@@ -4141,19 +3632,11 @@
     },
     {
         "CommandName":  "Start-DbaXESmartTarget",
-        "Description":  "XESmartTarget offers the ability to set up complex actions in response to Extended Events captured in sessions, without writing a single line of code.\n\nSee more: https://github.com/spaghettidba/XESmartTarget/wiki",
-        "Synopsis":  "XESmartTarget runs as a client application for an Extended Events session running on a SQL Server instance",
+        "Description":  "XESmartTarget offers the ability to set up complex actions in response to Extended Events captured in sessions, without writing a single line of code.\n\nSee more at https://github.com/spaghettidba/XESmartTarget/wiki",
+        "Synopsis":  "XESmartTarget runs as a client application for an Extended Events session running on a SQL Server instance.",
         "Name":  "Start-DbaXESmartTarget",
         "Links":  "https://dbatools.io/Start-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query \"update table set whatever = 1\"\r\n\r\nStart-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response\r\n\r\nExecutes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query \"update table set whatever = 1\"\r\n\r\n$params = @{\r\n    SmtpServer = \"smtp.ad.local\"\r\n    To = \"admin@ad.local\"\r\n    Sender = \"reports@ad.local\"\r\n    Subject = \"Query executed\"\r\n    Body = \"Query executed at {collection_time}\"\r\n    Attachment = \"batch_text\"\r\n    AttachmentFileName = \"query.sql\"\r\n}\r\n$emailresponse = New-DbaXESmartEmail @params\r\nStart-DbaXESmartTarget -SqlInstance sql2017 -Session querytracker -Responder $response, $emailresponse\r\n\r\nExecutes a T-SQL command against dbadb on sql2017 whenever a querytracker event is recorded. Also sends an email.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$columns = \"cpu_time\", \"duration\", \"physical_reads\", \"logical_reads\", \"writes\", \"row_count\", \"batch_text\"\r\n\r\n$response = New-DbaXESmartTableWriter -SqlInstance sql2017 -Database dbadb -Table deadlocktracker -OutputColumns \r\n$columns -Filter \"duration \u003e 10000\"\r\nStart-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response\r\n\r\nWrites Extended Events to the deadlocktracker table in dbadb on sql2017.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Start-DbccCheck",
-        "Description":  null,
-        "Synopsis":  "\r\nStart-DbccCheck [[-server] \u003cObject\u003e] [[-dbname] \u003cstring\u003e] [-table] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n",
-        "Name":  "Start-DbccCheck",
-        "Links":  null,
-        "Examples":  ""
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query \"update table set whatever = 1\"\r\n\r\nStart-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response\r\n\r\nExecutes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query \"update table set whatever = 1\"\r\n\r\n$params = @{\r\n    SmtpServer = \"smtp.ad.local\"\r\n    To = \"admin@ad.local\"\r\n    Sender = \"reports@ad.local\"\r\n    Subject = \"Query executed\"\r\n    Body = \"Query executed at {collection_time}\"\r\n    Attachment = \"batch_text\"\r\n    AttachmentFileName = \"query.sql\"\r\n}\r\n$emailresponse = New-DbaXESmartEmail @params\r\nStart-DbaXESmartTarget -SqlInstance sql2017 -Session querytracker -Responder $response, $emailresponse\r\n\r\nExecutes a T-SQL command against dbadb on sql2017 and sends an email whenever a querytracker event is recorded.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$columns = \"cpu_time\", \"duration\", \"physical_reads\", \"logical_reads\", \"writes\", \"row_count\", \"batch_text\"\r\n\r\n$response = New-DbaXESmartTableWriter -SqlInstance sql2017 -Database dbadb -Table deadlocktracker -OutputColumns \r\n$columns -Filter \"duration \u003e 10000\"\r\nStart-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response\r\n\r\nWrites Extended Events to the deadlocktracker table in dbadb on sql2017.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Stop-DbaAgentJob",
@@ -4184,14 +3667,6 @@
         "Name":  "Stop-DbaProcess",
         "Links":  "https://dbatools.io/Stop-DbaProcess",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaProcess -SqlInstance sqlserver2014a -Login base\\ctrlb, sa\r\n\r\nFinds all processes for base\\ctrlb and sa on sqlserver2014a, then kills them. Uses Windows Authentication to login to \r\nsqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spids 56, 77\r\n\r\nFinds processes for spid 56 and 57, then kills them. Uses alternative (SQL or Windows) credentials to login to \r\nsqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaProcess -SqlInstance sqlserver2014a -Programs \u0027Microsoft SQL Server Management Studio\u0027\r\n\r\nFinds processes that were created in Microsoft SQL Server Management Studio, then kills them.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaProcess -SqlInstance sqlserver2014a -Hosts workstationx, server100\r\n\r\nFinds processes that were initiated by hosts (computers/clients) workstationx and server 1000, then kills them.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaProcess -SqlInstance sqlserver2014  -Database tempdb -WhatIf\r\n\r\nShows what would happen if the command were executed.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaProcess -SqlInstance sql2016 -Programs \u0027dbatools PowerShell module - dbatools.io\u0027 | Stop-DbaProcess\r\n\r\nFinds processes that were created with dbatools, then kills them.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Stop-DbaRunspace",
-        "Description":  "Stops a runspace that was registered to dbatools.\nWill not cause errors if the runspace is already halted.\n\nRunspaces may not automatically terminate immediately when calling this function.\nDepending on the implementation of the scriptblock, this may in fact take a little time.\nIf the scriptblock hasn\u0027t finished and terminated the runspace in a seemingly time, it will be killed by the system.\nThis timeout is by default 30 seconds, but can be altered by using the Configuration System.\nFor example, this line will increase the timeout to 60 seconds:\nSet-DbaConfig Runspace.StopTimeout 60",
-        "Synopsis":  "Stops a managed runspace",
-        "Name":  "Stop-DbaRunspace",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaRunspace -Name \u0027mymodule.maintenance\u0027\r\n\r\nStops the runspace registered under the name \u0027mymodule.maintenance\u0027\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Stop-DbaSqlService",
@@ -4231,15 +3706,7 @@
         "Synopsis":  "Stops an XESmartTarget PowerShell Job. Useful if you want to run a target, but not right now.",
         "Name":  "Stop-DbaXESmartTarget",
         "Links":  "https://dbatools.io/Stop-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESmartTarget | Stop-DbaXESmartTarget\r\n\r\nStops all XESmartTarget jobs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESmartTarget | Where-Object Id -eq 2 | Stop-DbaXESmartTarget\r\n\r\nStops a specific XESmartTarget job\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Stop-Function",
-        "Description":  "Function that interrupts a function.\n\nThis function is a utility function used by other functions to reduce error catching overhead.\nIt is designed to allow gracefully terminating a function with a warning by default and also allow opt-in into terminating errors.\nIt also allows simple integration into loops.\n\nNote:\nWhen calling this function with the intent to terminate the calling function in non-EnableException mode too, you need to add a return below the call.",
-        "Synopsis":  "Function that interrupts a function.",
-        "Name":  "Stop-Function",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-Function -Message \"Foo failed bar!\" -EnableException $EnableException -ErrorRecord $_\r\n\r\nreturn\r\n\r\nDepending on whether $EnableException is true or false it will:\r\n- Throw a bloody terminating error. Game over.\r\n- Write a nice warning about how Foo failed bar, then terminate the function. The return on the next line will then end \r\nthe calling function.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStop-Function -Message \"Foo failed bar!\" -EnableException $EnableException -Category InvalidOperation -Target \r\n$foo -Continue\r\n\r\nDepending on whether $silent is true or false it will:\r\n- Throw a bloody terminating error. Game over.\r\n- Write a nice warning about how Foo failed bar, then call continue to process the next item in the loop.\r\nIn both cases, the error record added to $error will have the content of $foo added, the better to figure out what went \r\nwrong.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESmartTarget | Stop-DbaXESmartTarget\r\n\r\nStops all XESmartTarget jobs.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESmartTarget | Where-Object Id -eq 2 | Stop-DbaXESmartTarget\r\n\r\nStops a specific XESmartTarget job.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Sync-DbaSqlLoginPermission",
@@ -4253,22 +3720,6 @@
         "Name":  "Sync-DbaSqlLoginPermission",
         "Links":  "https://dbatools.io/Sync-DbaSqlLoginPermission",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSync-DbaSqlLoginPermission -Source sqlserver2014a -Destination sqlcluster\r\n\r\nSyncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. To copy logins and their \r\npermissions, use Copy-SqlLogin.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSync-DbaSqlLoginPermission -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun \r\n-SourceSqlCredential $scred -DestinationSqlCredential $dcred\r\n\r\nCopies all login permissions except for realcajun using SQL Authentication to connect to each server. If a login \r\nalready exists on the destination, the permissions will not be migrated.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSync-DbaSqlLoginPermission -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds\r\n\r\nCopies permissions ONLY for logins netnerds and realcajun.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Test-Bound",
-        "Description":  "Helperfunction that tests, whether a parameter was bound.",
-        "Synopsis":  "Helperfunction that tests, whether a parameter was bound.",
-        "Name":  "Test-Bound",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eif (Test-Bound \"Day\")\r\n\r\n{\r\n\r\n}\r\n\r\nSnippet as part of a function. Will check whether the parameter \"Day\" was bound. If yes, whatever logic is in the \r\nconditional will be executed.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-Bound -Not \u0027Login\u0027, \u0027Spid\u0027, \u0027ExcludeSpid\u0027, \u0027Host\u0027, \u0027Program\u0027, \u0027Database\u0027\r\n\r\nReturns whether none of the parameters above were specified.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-Bound -And \u0027Login\u0027, \u0027Spid\u0027, \u0027ExcludeSpid\u0027, \u0027Host\u0027, \u0027Program\u0027, \u0027Database\u0027\r\n\r\nReturns whether any of the specified parameters was not bound\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Test-ComputerTarget",
-        "Description":  "Validates whether the input string can be legally used to target a computer.\nIt will consider:\n- Names (NETBIOS/dns)\n- IPv4 Addresses\n- IPv6 Addresses\nIt will resolve idn names into default ascii names according to the official rules, before rendering judgement.",
-        "Synopsis":  "Validates wheher the input string can be legally used to target a computer.",
-        "Name":  "Test-ComputerTarget",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-ComputerTarget -ComputerName \u0027server1\u0027\r\n\r\nWill test whether \u0027server1\u0027 is a legal computername (hint: it is)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\"foo\", \"bar\", \"foo bar\" | Test-ComputerTarget\r\n\r\nWill test, whether the names passed to it are legal targets.\r\n- The first two will pass, the last one will fail\r\n- Note that it will only return boolean values, so the order needs to be remembered (due to this, using it by pipeline \r\non more than one object is not really recommended).\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaBackupInformation",
@@ -4359,14 +3810,6 @@
         "Name":  "Test-DbaDbCompression",
         "Links":  "https://dbatools.io/Test-DbaCompression",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaCompression -SqlInstance localhost\r\n\r\nReturns all user database files and free space information for the local host\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaCompression -SqlInstance ServerA -Database DBName | Out-GridView\r\n\r\nReturns results of all potential compression options for a single database\r\nwith the recommendation of either Page or Row into and nicely formated GridView\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaCompression -SqlInstance ServerA\r\n\r\nReturns results of all potential compression options for all databases\r\nwith the recommendation of either Page or Row\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$cred = Get-Credential sqladmin\r\n\r\nTest-DbaCompression -SqlInstance ServerA -ExcludeDatabase Database -SqlCredential $cred\r\nReturns results of all potential compression options for all databases\r\nwith the recommendation of either Page or Row\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$servers = \u0027Server1\u0027,\u0027Server2\u0027\r\n\r\nforeach ($svr in $servers)\r\n{\r\n    Test-DbaCompression -SqlInstance $svr | Export-Csv -Path C:\\temp\\CompressionAnalysisPAC.csv -Append\r\n}\r\n\r\nThis produces a full analysis of all your servers listed and is pushed to a csv for you to\r\nanalyize.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Test-DbaDeprecation",
-        "Description":  "Tests whether a function or one of its parameters was called by a bad name.\nThis allows giving deprecation warnings - once per session - whenever a user uses something we are planning on removing.\n\nFor example, when renaming a function, we give a grace period by adding an Alias for that function with its old name.\nHowever, we do not want to carry along this alias forever, so we give warning ahead of time using this function.\nWhen reaching the specified version, we then can safely remove the alias.\n\nFurthermore, this function is used for testing, whether such a removal was properly done.",
-        "Synopsis":  "Tests whether a function or one of its parameters was called by a bad name.",
-        "Name":  "Test-DbaDeprecation",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDeprecation -DeprecatedOn \"1.0.0.0\" -Parameter \u0027Details\u0027\r\n\r\nWill - once per session - complain if the parameter \u0027Details\u0027 is used.\r\nWill cause tests to fail, if it\u0027s still in the code after release 1.0.0.0.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDeprecation -DeprecatedOn \"1.0.0.0\" -Alias Copy-SqlDatabase\r\n\r\nWill - once per session - complain if the alias \u0027Copy-SqlDatabase\u0027 is used.\r\nWill cause tests to fail, if it\u0027s still in the code after release 1.0.0.0.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaDiskAlignment",
@@ -4460,16 +3903,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLogShippingStatus -SqlInstance sql1\r\n\r\nRetrieves the log ship informaton from sql1 and displays all the information present including the status.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLogShippingStatus -SqlInstance sql1 -Database AdventureWorks2014\r\n\r\nRetrieves the log ship information for just the database AdventureWorks.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLogShippingStatus -SqlInstance sql1 -Primary\r\n\r\nRetrieves the log ship information and only returns the information for the databases on the primary instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLogShippingStatus -SqlInstance sql1 -Secondary\r\n\r\nRetrieves the log ship information and only returns the information for the databases on the secondary instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLogShippingStatus -SqlInstance sql1 -Simple\r\n\r\nRetrieves the log ship information and only returns the columns SQL Instance, Database, Instance Type and Status\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Test-DbaLsnChain",
-        "Description":  "Finds the anchoring Full backup (or multiple if it\u0027s a striped set).\nThen filters to ensure that all the backups are from that anchor point (LastLSN) and that they\u0027re all on the same RecoveryForkID\nThen checks that we have either enough Diffs and T-log backups to get to where we want to go. And checks that there is no break between\nLastLSN and FirstLSN in sequential files",
-        "Tags":  "",
-        "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
-        "Synopsis":  "Checks that a filtered array from Get-FilteredRestore contains a restorabel chain of LSNs",
-        "Name":  "Test-DbaLsnChain",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLsnChain -FilteredRestoreFiles $FilteredFiles\r\n\r\nChecks that the Restore chain in $FilteredFiles is complete and can be fully restored\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Test-DbaMaxDop",
         "Description":  "Inspired by Sakthivel Chidambaram\u0027s post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/),\nthis script displays a SQL Server\u0027s: max dop configured, and the calculated recommendation.\n\nFor SQL Server 2016 shows:\n    - Instance max dop configured and the calculated recommendation\n    - max dop configured per database (new feature)\n\nMore info:\n    https://support.microsoft.com/en-us/kb/2806535\n    https://blogs.msdn.microsoft.com/sqlsakthi/2012/05/23/wow-we-have-maxdop-calculator-for-sql-server-it-makes-my-job-easier/\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"max degree of parallelism\" option.",
         "Tags":  [
@@ -4483,8 +3916,11 @@
     },
     {
         "CommandName":  "Test-DbaMaxMemory",
-        "Description":  "Inspired by Jonathan Kehayias\u0027s post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server\u0027s:\ntotal memory, currently configured SQL max memory, and the calculated recommendation.\n\nJonathan notes that the formula used provides a *general recommendation* that doesn\u0027t account for everything that may be going on in your specific environment.",
-        "Tags":  "Memory",
+        "Description":  "Inspired by Jonathan Kehayias\u0027s post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server\u0027s: total memory, currently configured SQL max memory, and the calculated recommendation.\n\nJonathan notes that the formula used provides a *general recommendation* that doesn\u0027t account for everything that may be going on in your specific environment.",
+        "Tags":  [
+                     "MaxMemory",
+                     "Memory"
+                 ],
         "Synopsis":  "Calculates the recommended value for SQL Server \u0027Max Server Memory\u0027 configuration setting. Works on SQL Server 2000-2014.",
         "Name":  "Test-DbaMaxMemory",
         "Links":  "https://dbatools.io/Test-DbaMaxMemory",
@@ -4533,16 +3969,6 @@
         "Name":  "Test-DbaPowerPlan",
         "Links":  "https://dbatools.io/Test-DbaPowerPlan",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaPowerPlan -ComputerName sqlserver2014a\r\n\r\nChecks the Power Plan settings for sqlserver2014a and indicates whether or not it complies with best practices.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan \u0027Maximum Performance\u0027\r\n\r\nChecks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the custom plan \"Maximum \r\nPerformance\".\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Test-DbaRestoreVersion",
-        "Description":  "Finds the anchoring Full backup (or multiple if it\u0027s a striped set).\nThen filters to ensure that all the backups are from that anchor point (LastLSN) and that they\u0027re all on the same RecoveryForkID\nThen checks that we have either enough Diffs and T-log backups to get to where we want to go. And checks that there is no break between\nLastLSN and FirstLSN in sequential files",
-        "Tags":  "",
-        "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
-        "Synopsis":  "Checks that the restore files are from a version of SQL Server that can be restored on the target version",
-        "Name":  "Test-DbaRestoreVersion",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlInstance server1\\instance1\r\n\r\nChecks that the Restore chain in $FilteredFiles is compatible with the SQL Server version of server1\\instance1\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaServerName",
@@ -4634,70 +4060,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaVirtualLogFile -SqlInstance sqlcluster\r\n\r\nReturns all user database virtual log file counts for the sqlcluster instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}\r\n\r\nReturns user databases that have 50 or more VLFs.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e@(\u0027sqlserver\u0027,\u0027sqlcluster\u0027) | Test-DbaVirtualLogFile\r\n\r\nReturns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaVirtualLogFile -SqlInstance sqlcluster -Database db1, db2\r\n\r\nReturns VLF counts for the db1 and db2 databases on sqlcluster.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Test-ElevationRequirement",
-        "Description":  "Command that tests, whether the process runs elevated and has to run as such.\nSome commands require to be run elevated, when executed against localhost, but not when run against a remote computer.\nThis command handles that test and manages the reaction to it.",
-        "Synopsis":  "Command that tests, whether the process runs elevated and has to run as such.",
-        "Name":  "Test-ElevationRequirement",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$null = Test-ElevationRequirement -ComputerName $instance -Continue\r\n\r\nThis will test whether the currently processed instance is localhost and the process is running elevated.\r\nIf it should have elevation but is not running with elevation:\r\n- In silent mode it will termiante with an exception\r\n- In default mode, it will continue with the next instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eif (-not ( Test-ElevationRequirement -ComputerName $instance -NoStop)) {\r\n\r\n# Do whatever\r\n}\r\n\r\nThis will test whether the currently processed instance is localhost and the process is running elevated.\r\nIf it isn\u0027t running elevated but should be, the overall condition will be met and the if-block is executed.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Test-FunctionInterrupt",
-        "Description":  "This helper function is designed to work in tandem with Stop-Function.\nWhen gracefully terminating a function, there is a major issue:\n\"Return\" will only stop the current one of the three blocks (Begin, Process, End).\nAll other statements have side effects or produce lots of red text.\n\nSo, Stop-Function writes a variable into the parent scope, that signals the function should cease.\nThis function then checks for that very variable and returns true if it is set.\n\nThis avoids having to handle odd variables in the parent function and causes the least impact on contributors.",
-        "Synopsis":  "Internal tool, used to gracefully interrupt a function.",
-        "Name":  "Test-FunctionInterrupt",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eif (Test-FunctionInterrupt) { return }\r\n\r\nThe calling function will stop if this function returns true.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Test-HostOSLinux",
-        "Description":  null,
-        "Synopsis":  "\r\nTest-HostOSLinux [[-SqlInstance] \u003cObject\u003e] [[-sqlcredential] \u003cObject\u003e]\r\n",
-        "Name":  "Test-HostOSLinux",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Test-PSRemoting",
-        "Description":  null,
-        "Synopsis":  "\r\nTest-PSRemoting [-ComputerName] \u003cDbaInstanceParameter\u003e [-Credential \u003cObject\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n",
-        "Name":  "Test-PSRemoting",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Test-SqlAgent",
-        "Description":  null,
-        "Synopsis":  "Internal function. Checks to see if SQL Server Agent is running on a server.",
-        "Name":  "Test-SqlAgent",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Test-SqlLoginAccess",
-        "Description":  null,
-        "Synopsis":  "Internal function. Ensures login has access on SQL Server.",
-        "Name":  "Test-SqlLoginAccess",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Test-SqlQueryComplete",
-        "Description":  null,
-        "Synopsis":  "\r\nTest-SqlQueryComplete [[-server] \u003cObject\u003e] [[-sql] \u003cstring\u003e] [-checkpid]\r\n",
-        "Name":  "Test-SqlQueryComplete",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Test-SqlSa",
-        "Description":  null,
-        "Synopsis":  "Internal function. Ensures sysadmin account access on SQL Server.",
-        "Name":  "Test-SqlSa",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
         "CommandName":  "Uninstall-DbaWatchUpdate",
         "Description":  "Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.",
         "Tags":  [
@@ -4708,14 +4070,6 @@
         "Name":  "Uninstall-DbaWatchUpdate",
         "Links":  "https://dbatools.io/Uninstall-DbaWatchUpdate",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eUninstall-DbaWatchUpdate\r\n\r\nRemoves the scheduled task created by Install-DbaWatchUpdate.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Update-DbaPowerBiDataSource",
-        "Description":  "Converts the results of dbatools commands for our PowerBI Dashboard related commands. This command is specific to our toolset and not a general Power BI command.",
-        "Synopsis":  "Converts the results of dbatools commands for our PowerBI Dashboard related commands. This command is specific to our toolset and not a general Power BI command.",
-        "Name":  "Update-DbaPowerBiDataSource",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -ComputerName sql2016 | Invoke-DbaPfRelog -AllowClobber | Update-DbaPowerBiDataSource \r\n| Start-DbaPowerBi\r\n\r\nConverts the results of the performance monitor data source and stores it in the appropriate directory then launches \r\nour Power BI dashboard\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Update-DbaSqlServiceAccount",
@@ -4735,40 +4089,6 @@
         "Name":  "Update-Dbatools",
         "Links":  "https://dbatools.io/Update-DbaTools",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eUpdate-Dbatools\r\n\r\nUpdates dbatools. Deletes current copy and replaces it with freshest copy.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eUpdate-Dbatools -dev\r\n\r\nUpdates dbatools to the current development branch. Deletes current copy and replaces it with latest from github.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Update-ServiceStatus",
-        "Description":  "Accepts objects from Get-DbaSqlService and performs a corresponding action.",
-        "Tags":  "",
-        "Author":  "Kirill Kravtsov ( @nvarscar )",
-        "Synopsis":  "Internal function. Sends start/stop request to a SQL Server service and wait for the result.",
-        "Name":  "Update-ServiceStatus",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$serviceCollection = Get-DbaSqlService -ComputerName sql1\r\n\r\nUpdate-ServiceStatus -ServiceCollection $serviceCollection -Action \u0027stop\u0027 -Timeout 30\r\nUpdate-ServiceStatus -ServiceCollection $serviceCollection -Action \u0027start\u0027 -Timeout 30\r\n\r\nRestarts SQL services on sql1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$serviceCollection = Get-DbaSqlService -ComputerName sql1\r\n\r\n$credential = Get-Credential\r\nUpdate-ServiceStatus -ServiceCollection $serviceCollection -Action \u0027stop\u0027 -Timeout 0 -Credential $credential\r\n\r\nStops SQL services on sql1 and waits indefinitely for them to stop. Uses $credential to authorize on the server.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Update-SqlDbOwner",
-        "Description":  null,
-        "Synopsis":  "Internal function. Updates specified database dbowner.",
-        "Name":  "Update-SqlDbOwner",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Update-SqlDbReadOnly",
-        "Description":  null,
-        "Synopsis":  "Internal function. Updates specified database to read-only or read-write. Necessary because SMO doesn\u0027t appear to support NO_WAIT.",
-        "Name":  "Update-SqlDbReadOnly",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Update-SqlPermissions",
-        "Description":  null,
-        "Synopsis":  "Internal function. Updates permission sets, roles, database mappings on server and databases",
-        "Name":  "Update-SqlPermissions",
-        "Links":  null,
-        "Examples":  ""
     },
     {
         "CommandName":  "Watch-DbaDbLogin",
@@ -4794,12 +4114,12 @@
     },
     {
         "CommandName":  "Watch-DbaXESession",
-        "Description":  "Watch live XEvent Data as it happens - this command runs until you stop the session, kill the PowerShell session, or Ctrl-C a few hundred times ;).\n\nThanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html",
+        "Description":  "Watch live XEvent Data as it happens. This command runs until you stop the session, kill the PowerShell session, or Ctrl-C.\n\nThanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html",
         "Tags":  "Xevent",
         "Synopsis":  "Watch live XEvent Data as it happens",
         "Name":  "Watch-DbaXESession",
         "Links":  "https://dbatools.io/Watch-DbaXESession",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eWatch-DbaXESession -SqlInstance sql2017 -Session system_health\r\n\r\nShows events for the system_health session as it happens\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eWatch-DbaXESession -SqlInstance sql2017 -Session system_health | Export-Csv -NoTypeInformation -Path \r\nC:\\temp\\system_health.csv\r\n\r\nExports live events to CSV. Ctrl-C may not not cancel out of it - fastest way is to stop the session.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 -Session system_health | Start-DbaXESession | Watch-DbaXESession | \r\nExport-Csv -NoTypeInformation -Path C:\\temp\\system_health.csv\r\n\r\nExports live events to CSV. Ctrl-C may not not cancel out of it - fastest way is to stop the session.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eWatch-DbaXESession -SqlInstance sql2017 -Session system_health\r\n\r\nShows events for the system_health session as it happens.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eWatch-DbaXESession -SqlInstance sql2017 -Session system_health | Export-Csv -NoTypeInformation -Path \r\nC:\\temp\\system_health.csv\r\n\r\nExports live events to CSV. Ctrl-C may not not cancel out of it - fastest way is to stop the session.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 -Session system_health | Start-DbaXESession | Watch-DbaXESession | \r\nExport-Csv -NoTypeInformation -Path C:\\temp\\system_health.csv\r\n\r\nExports live events to CSV. Ctrl-C may not not cancel out of this. The fastest way to do so is to stop the session.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Write-DbaDataTable",
@@ -4812,37 +4132,5 @@
         "Name":  "Write-DbaDataTable",
         "Links":  "https://dbatools.io/Write-DbaDataTable",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv | Out-DbaDataTable\r\n\r\nWrite-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers\r\n\r\nPerforms a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar \r\nwill be shown as rows are inserted. If the destination table does not exist, the import will be halted.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv | Out-DbaDataTable\r\n\r\n$DataTable | Write-DbaDataTable -SqlInstance sql2014 -Table mydb.dbo.customers\r\n\r\nPerforms a row by row insert of the data in customers.csv. This is significantly slower than a bulk insert and will not \r\nshow a progress bar.\r\n\r\nThis method is not recommended. Use -InputObject instead.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv | Out-DbaDataTable\r\n\r\nWrite-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable\r\n\r\nPerforms a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with \r\ninefficient but forgiving DataTypes.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv | Out-DbaDataTable\r\n\r\nWrite-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate\r\n\r\nPerforms a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is \r\ninformed that the table will be truncated and asks for confirmation. The user is prompted again to perform the import.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$DataTable = Import-Csv C:\\temp\\customers.csv | Out-DbaDataTable\r\n\r\nWrite-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls\r\n\r\nPerforms a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo \r\nwas used. NULL values in the destination table will be preserved.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e$passwd = ConvertTo-SecureString \"P@ssw0rd\" -AsPlainText -Force\r\n\r\n$AzureCredential = Mew-Object System.Management.Automation.PSCredential(\"AzureAccount\"),$passwd)\r\n$DataTable = Import-Csv C:\\temp\\customers.csv | Out-DbaDataTable\r\nWrite-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers \r\n-KeepNulls -Credential $AzureCredential -RegularUser -BulkCopyTimeOut 300\r\n\r\nThis performs the same operation as the previous example, but against a SQL Azure Database instance using the required \r\ncredentials. The -RegularUser switch is needed to prevent trying to get administrative privilege, and we increase the \r\nBulkCopyTimeout value to cope with any latency.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003e$process = Get-Process | Out-DbaDataTable\r\n\r\nWrite-DbaDataTable -InputObject $process -SqlInstance sql2014 -Database mydb -Table myprocesses -AutoCreateTable\r\n\r\nCreates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server \r\ndata types. After the table is created a bulk insert is performed to add process information into the table.\r\n\r\nThis is an example of the type conversion in action. All process properties are converted, including special types like \r\nTimeSpan. Script properties are resolved before the type conversion starts thanks to Out-DbaDataTable.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Write-Exception",
-        "Description":  null,
-        "Synopsis":  "Internal function. Writes exception to disk (my docs\\dbatools-exceptions.txt) for later analysis.",
-        "Name":  "Write-Exception",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eWrite-Exception $_\r\n\r\nWrites inner exception to disk\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Write-HostColor",
-        "Description":  "Function that recognizes html-style tags to insert color into printed text.\n\nColor tags should be designed to look like this:\n\u003cc=\"\u003cconsole color\u003e\"\u003eText\u003c/c\u003e\nFor example this would be a valid string:\n\"This message should \u003cc=\"red\"\u003epartially be painted in red\u003c/c\u003e!\"\n\nThis allows specifying color within strings and avoids having to piece together colored text in multiple calls to Write-Host.\nOnly colors that are part of the ConsoleColor enumeration can be used. Bad colors will be ignored in favor of the default color.",
-        "Synopsis":  "Function that recognizes html-style tags to insert color into printed text.",
-        "Name":  "Write-HostColor",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nWrite-HostColor -String \u0027This is going to be \u003cc=\"red\"\u003ebloody red\u003c/c\u003e text! And this is \u003cc=\"green\"\u003egreen stuff\u003c/c\u003e for \r\nextra color\u0027\r\n\r\nWill print the specified line in multiple colors\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\n$string1 = \u0027This is going to be \u003cc=\"red\"\u003ebloody red\u003c/c\u003e text! And this is \u003cc=\"green\"\u003egreen stuff\u003c/c\u003e for extra color\u0027\r\n\r\n$string2 = \u0027\u003cc=\"red\"\u003ebloody red\u003c/c\u003e text! And this is \u003cc=\"green\"\u003egreen stuff\u003c/c\u003e for extra color\u0027\r\n$string3 = \u0027This is going to be \u003cc=\"red\"\u003ebloody red\u003c/c\u003e text! And this is \u003cc=\"green\"\u003egreen stuff\u003c/c\u003e\u0027\r\n$string1, $string2, $string3 | Write-HostColor -DefaultColor \"Magenta\"\r\n\r\nWill print all three lines, respecting the color-codes, but use the color \"Magenta\" as default color.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$stringLong = @\"\r\n\r\nDear \u003cc=\"red\"\u003eSirs\u003c/c\u003e\u003cc=\"green\"\u003e and\u003c/c\u003e \u003cc=\"blue\"\u003eMadams\u003c/c\u003e,\r\n\r\nit has come to our attention that you are not sufficiently \u003cc=\"darkblue\"\u003eawesome!\u003c/c\u003e\r\nKindly improve your \u003cc=\"yellow\"\u003eAP\u003c/c\u003e (\u003cc=\"magenta\"\u003eawesome-ness points\u003c/c\u003e) by at least 50% to maintain you \r\nmembership in Awesome Inc!\r\n\r\nYou have \u003cc=\"green\"\u003e27 3/4\u003c/c\u003e days time to meet this deadline. \u003cc=\"darkyellow\"\u003eAfter this we will unfortunately be \r\nforced to rend you assunder and sacrifice your remains to the devil\u003c/c\u003e.\r\n\r\nBest regards,\r\n\u003cc=\"red\"\u003eLuzifer\u003c/c\u003e\r\n\"@\r\nWrite-HostColor -String $stringLong\r\n\r\nWill print a long multiline text in its entirety while still respecting the colorcodes\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Write-ImportTime",
-        "Description":  "Writes an entry to the import module time debug list",
-        "Synopsis":  "Writes an entry to the import module time debug list",
-        "Name":  "Write-ImportTime",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eWrite-ImportTime -Text \"Starting SMO Import\"\r\n\r\nAdds the message \"Starting SMO Import\" to the debug list\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Write-Message",
-        "Description":  "This function acts as central information node for dbatools.\nOther functions hand off all their information output for processing to this function.\n\nThis function will then handle:\n- Warning output\n- Error management for non-terminating errors (For errors that terminate execution or continue on with the next object use \"Stop-Function\")\n- Logging\n- Verbose output\n- Message output to users\n\nAt what complexity what path for the information is chosen is determined by the configuration settings:\nmessage.maximuminfo\nmessage.maximumverbose\nmessage.maximumdebug\nmessage.minimuminfo\nmessage.minimumverbose\nmessage.minimumdebug\nWhich can be set to any level from 1 through 9\nDepending on the configuration it is very possible to have multiple paths chosen simultaneously",
-        "Synopsis":  "This function acts as central information node for dbatools.",
-        "Name":  "Write-Message",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eWrite-Message -Message \u0027Connecting to Database1\u0027 -Level 4 -EnableException $EnableException\r\n\r\nWrites the message \u0027Connecting to Database1\u0027. By default, this will be\r\n- Written to the in-memory message log\r\n- Written to the logfile\r\n- Written to the Verbose stream (Write-Verbose)\r\n- Written to the Debug stream (Write-Debug)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eWrite-Message -Message \"Connecting to Database 2 failed\" -EnableException $EnableException -Warning -ErrorRecord \r\n$_ -Target $Database\r\n\r\nWrites the message \"Connecting to Database 2 failed\". By default, this will be\r\n- Written to the in-memory message log\r\n- Written to the in-memory error queue\r\n- Written to the $error variable\r\n- Written to the logfile\r\n- Written to the error log files\r\n- Written to the Warning stream (Write-Warning, not if silent)\r\n- Written to the Debug stream (Write-Debug)\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     }
 ]

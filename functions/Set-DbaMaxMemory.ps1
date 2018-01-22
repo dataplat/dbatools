@@ -1,3 +1,5 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+
 function Set-DbaMaxMemory {
     <#
         .SYNOPSIS
@@ -26,9 +28,6 @@ function Set-DbaMaxMemory {
             Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials
             being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-        .PARAMETER Collection
-            Results of Get-DbaMaxMemory to be passed into the command
-
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -40,9 +39,8 @@ function Set-DbaMaxMemory {
         .PARAMETER Confirm
             Prompts you for confirmation before running the cmdlet.
 
-
         .NOTES
-            Tags: MaxMemory
+            Tags: MaxMemory, Memory
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -70,16 +68,15 @@ function Set-DbaMaxMemory {
     param (
         [Parameter(Position = 0)]
         [Alias("ServerInstance", "SqlServer", "SqlServers", "ComputerName")]
-        [DbaInstance[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [Parameter(Position = 1)]
         [int]$MaxMB,
-        [Parameter(ValueFromPipeline = $True)]
-        [object]$Collection,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
-    process {
+    begin {
         if ((Test-Bound -Not -Parameter SqlInstance) -and (Test-Bound -Not -Parameter Collection)) {
             Stop-Function -Category InvalidArgument -Message "You must specify a server list source using -SqlInstance or you can pipe results from Test-DbaMaxMemory"
             return
@@ -88,22 +85,11 @@ function Set-DbaMaxMemory {
         if ($MaxMB -eq 0) {
             $UseRecommended = $true
         }
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
 
-        if ((Test-Bound -Not -Parameter Collection)) {
-            $Collection = Test-DbaMaxMemory -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-
-        # We ignore errors, because this will error if we pass the same collection items twice.
-        # Given that it is an engine internal command, there is no other plausible error it could encounter.
-        $Collection | Add-Member -Force -NotePropertyName OldMaxValue -NotePropertyValue 0 -ErrorAction Ignore
-
-        foreach ($currentServer in $Collection) {
-            $instance = $currentServer.SqlInstance
-            if ($instance -eq $null) {
-                $currentServer = Test-DbaMaxMemory -SqlInstance $instance
-                $currentServer | Add-Member -Force -NotePropertyName OldMaxValue -NotePropertyValue 0
-            }
-
+        foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -113,18 +99,25 @@ function Set-DbaMaxMemory {
             }
 
             if (!(Test-SqlSa -SqlInstance $server)) {
-                Stop-Function -Message "Not a sysadmin on $server. Skipping." -Category PermissionDenied -ErrorRecord $_ -Target $currentServer -Continue
+                Stop-Function -Message "Not a sysadmin on $server. Skipping." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
             }
 
-            $currentServer.OldMaxValue = $currentServer.SqlMaxMB
+            try {
+                $currentServer = Test-DbaMaxMemory -SqlInstance $server
+                Add-Member -Force -InputObject $currentServer -NotePropertyName OldMaxValue -NotePropertyValue 0
+                $currentServer.OldMaxValue = $currentServer.SqlMaxMB
+            }
+            catch {
+                Stop-Function -Mesage "Issue collecting memory information on $server" -Target $server -ErrorRecord $_ -InnerException $_.Exception -Continue
+            }
 
             try {
                 if ($UseRecommended) {
-                    Write-Message -Level Verbose -Message "Changing $server SQL Server max from $($currentServer.SqlMaxMB) to $($currentServer.RecommendedMB) MB"
+                    Write-Message -Level Verbose -Message "Change $server SQL Server Max Memory from $($currentServer.SqlMaxMB) to $($currentServer.RecommendedMB) MB"
 
                     if ($currentServer.RecommendedMB -eq 0 -or $currentServer.RecommendedMB -eq $null) {
                         $maxMem = (Test-DbaMaxMemory -SqlInstance $server).RecommendedMB
-                        Write-Warning $maxMem
+                        Write-Message -Level VeryVerbose -Message "Max memory recommended: $maxMem"
                         $server.Configuration.MaxServerMemory.ConfigValue = $maxMem
                     }
                     else {
@@ -132,10 +125,10 @@ function Set-DbaMaxMemory {
                     }
                 }
                 else {
-                    Write-Message -Level Verbose -Message "Changing $server SQL Server max from $($currentServer.SqlMaxMB) to $MaxMB MB"
+                    Write-Message -Level Verbose -Message "Change $server SQL Server Max Memory from $($currentServer.SqlMaxMB) to $MaxMB MB"
                     $server.Configuration.MaxServerMemory.ConfigValue = $MaxMB
                 }
-                if ($PSCmdlet.ShouldProcess($server, "Changing maximum memory from $($currentServer.OldMaxValue) to $($server.Configuration.MaxServerMemory.ConfigValue)")) {
+                if ($PSCmdlet.ShouldProcess($server, "Change Max Memory from $($currentServer.OldMaxValue) to $($server.Configuration.MaxServerMemory.ConfigValue)")) {
                     try {
                         $server.Configuration.Alter()
                         $currentServer.SqlMaxMB = $server.Configuration.MaxServerMemory.ConfigValue
