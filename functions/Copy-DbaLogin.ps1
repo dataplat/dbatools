@@ -215,7 +215,7 @@ function Copy-DbaLogin {
                     }
                 }
 
-                if ($destServer.Logins.Item($userName) -ne $null -and !$force) {
+                if ($null -ne $destServer.Logins.Item($userName) -and !$force) {
                     if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it exists at destination.")) {
                         Write-Message -Level Verbose -Message "$userName already exists in destination. Use -Force to drop and recreate."
                     }
@@ -226,7 +226,7 @@ function Copy-DbaLogin {
                     continue
                 }
 
-                if ($destServer.Logins.Item($userName) -ne $null -and $force) {
+                if ($null -ne $destServer.Logins.Item($userName) -and $force) {
                     if ($userName -eq $destServer.ServiceAccount) {
                         Write-Message -Level Verbose -Message "$userName is the destination service account. Skipping drop."
 
@@ -302,7 +302,7 @@ function Copy-DbaLogin {
                     Write-Message -Level Verbose -Message "Setting login language to $($sourceLogin.Language)."
                     $destLogin.Language = $sourceLogin.Language
 
-                    if ($destServer.databases[$defaultDb] -eq $null) {
+                    if ($null -eq $destServer.databases[$defaultDb]) {
                         # we end up here when the default database on source doesn't exist on dest
                         # if source login is a sysadmin, then set the default database to master
                         # if not, set it to tempdb (see #303)

@@ -139,7 +139,7 @@ function Import-DbaSpConfigure {
                     $displayname = $sourceprop.DisplayName
 
                     $destprop = $destprops | where-object { $_.Displayname -eq $displayname }
-                    if ($destprop -ne $null) {
+                    if ($null -ne $destprop) {
                         try {
                             $destprop.configvalue = $sourceprop.configvalue
                             $destserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null

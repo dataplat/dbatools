@@ -167,7 +167,7 @@ function Get-DbaRestoreHistory {
                     $wherearray += "destination_database_name in ('$dblist')"
                 }
 
-                if ($Since -ne $null) {
+                if ($null -ne $Since) {
                     $wherearray += "rsh.restore_date >= '$since'"
                 }
 
