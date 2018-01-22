@@ -75,5 +75,9 @@
     if (-not $ComputerName.IsLocalhost) {
         # Tell the system to clean up if the session expires
         [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionSet($runspaceid, $ComputerName.ComputerName, $currentsession)
+        
+        if (-not (Get-DbaConfigValue -FullName 'PSRemoting.Sessions.Enable' -Fallback $true)) {
+            $currentsession | Remove-PSSession
+        }
     }
 }
