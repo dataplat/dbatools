@@ -194,6 +194,11 @@
             The pagefile status
             </summary>
         </member>
+        <member name="F:Sqlcollaborative.Dbatools.Computer.PageFileSetting.SystemManaged">
+            <summary>
+            Whether the pagefile is system managed
+            </summary>
+        </member>
         <member name="F:Sqlcollaborative.Dbatools.Computer.PageFileSetting.LastModified">
             <summary>
             When were the settings last changed
