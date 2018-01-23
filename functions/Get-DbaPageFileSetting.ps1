@@ -63,9 +63,9 @@ function Get-DbaPageFileSetting {
             try {
                 $compSys = Get-DbaCmObject @splatDbaCmObject -Query "SELECT * FROM win32_computersystem"
                 if (-not $CompSys.automaticmanagedpagefile) {
-                    $PF = Get-DbaCmObject @splatDbaCmObject -Query "SELECT * FROM win32_pagefile" # deprecated !
-                    $PFU = Get-DbaCmObject @splatDbaCmObject -Query "SELECT * FROM win32_pagefileUsage"
-                    $PFS = Get-DbaCmObject @splatDbaCmObject -Query "SELECT * FROM win32_pagefileSetting"
+                    $pagefiles = Get-DbaCmObject @splatDbaCmObject -Query "SELECT * FROM win32_pagefile"
+                    $pagefileUsages = Get-DbaCmObject @splatDbaCmObject -Query "SELECT * FROM win32_pagefileUsage"
+                    $pagefileSettings = Get-DbaCmObject @splatDbaCmObject -Query "SELECT * FROM win32_pagefileSetting"
                 }
             }
             catch {
@@ -73,35 +73,42 @@ function Get-DbaPageFileSetting {
             }
             
             if (-not $CompSys.automaticmanagedpagefile) {
-                # pagefile is not automatic managed, so return settings
-                New-Object Sqlcollaborative.Dbatools.Computer.PageFileSetting -Property @{
-                    ComputerName         = $computer.ComputerName
-                    AutoPageFile         = $CompSys.automaticmanagedpagefile
-                    FileName             = $PF.name # deprecated !
-                    Status               = $PF.status # deprecated !
-                    LastModified         = $PF.LastModified
-                    LastAccessed         = $PF.LastAccessed
-                    AllocatedBaseSize    = $PFU.AllocatedBaseSize # in MB, between Initial and Maximum Size
-                    InitialSize          = $PFS.InitialSize # in MB
-                    MaximumSize          = $PFS.MaximumSize # in MB
-                    PeakUsage            = $PFU.peakusage # in MB
-                    CurrentUsage         = $PFU.currentusage # in MB
+                foreach ($file in $pagefiles) {
+                    $settings = $pagefileSettings | Where-Object Name -EQ $file.Name
+                    $usage = $pagefileUsages | Where-Object Name -EQ $file.Name
+                    
+                    # pagefile is not automatic managed, so return settings
+                    New-Object Sqlcollaborative.Dbatools.Computer.PageFileSetting -Property @{
+                        ComputerName          = $computer.ComputerName
+                        AutoPageFile          = $CompSys.automaticmanagedpagefile
+                        FileName              = $file.name
+                        Status                = $file.status
+                        SystemManaged         = ($settings.InitialSize -eq 0) -and ($settings.MaximumSize -eq 0)
+                        LastModified          = $file.LastModified
+                        LastAccessed          = $file.LastAccessed
+                        AllocatedBaseSize     = $usage.AllocatedBaseSize # in MB, between Initial and Maximum Size
+                        InitialSize           = $settings.InitialSize # in MB
+                        MaximumSize           = $settings.MaximumSize # in MB
+                        PeakUsage             = $usage.peakusage # in MB
+                        CurrentUsage          = $usage.currentusage # in MB
+                    }
                 }
             }
             else {
                 # pagefile is automatic managed, so there are no settings
                 New-Object Sqlcollaborative.Dbatools.Computer.PageFileSetting -Property @{
-                    ComputerName         = $computer
-                    AutoPageFile         = $CompSys.automaticmanagedpagefile
-                    FileName             = $null
-                    Status               = $null
-                    LastModified         = $null
-                    LastAccessed         = $null
-                    AllocatedBaseSize    = $null
-                    InitialSize          = $null
-                    MaximumSize          = $null
-                    PeakUsage            = $null
-                    CurrentUsage         = $null
+                    ComputerName          = $computer
+                    AutoPageFile          = $CompSys.automaticmanagedpagefile
+                    FileName              = $null
+                    Status                = $null
+                    SystemManaged         = $null
+                    LastModified          = $null
+                    LastAccessed          = $null
+                    AllocatedBaseSize     = $null
+                    InitialSize           = $null
+                    MaximumSize           = $null
+                    PeakUsage             = $null
+                    CurrentUsage          = $null
                 }
             }
         }
