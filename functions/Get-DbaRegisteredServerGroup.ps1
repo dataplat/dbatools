@@ -48,7 +48,7 @@ function Get-DbaRegisteredServerGroup {
             Gets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential 
+            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential
 
             Gets the top level groups from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
 
@@ -83,8 +83,8 @@ function Get-DbaRegisteredServerGroup {
                 $Stopat
             )
             $results = @()
-            
-                foreach ($el in $CmsGrp) {                
+
+                foreach ($el in $CmsGrp) {
                 if ($null -eq $Base -or [string]::IsNullOrWhiteSpace($Base) ) {
                     $partial = $el.name
                 }
@@ -111,8 +111,8 @@ function Get-DbaRegisteredServerGroup {
         }
 
         $Groups = @()
-        foreach ($instance in $SqlInstance) {            
-            
+        foreach ($instance in $SqlInstance) {
+
             try {
                 $cmsStore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
             }
@@ -121,7 +121,7 @@ function Get-DbaRegisteredServerGroup {
             }
 
             if ($group) {
-                foreach ($currentGroup in $group) {          
+                foreach ($currentGroup in $group) {
                     $cms = Find-CmsGroup -CmsGrp $cmsStore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
                     if ($null -eq $cms) {
                         Write-Message -Level Output -Message "No groups found matching '$($currentGroup)' on instance '$instance'."
@@ -143,8 +143,5 @@ function Get-DbaRegisteredServerGroup {
 
             return $Groups
         }
-    }
-    end {
-        
     }
 }
