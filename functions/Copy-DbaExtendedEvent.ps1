@@ -139,7 +139,7 @@ function Copy-DbaExtendedEvent {
                 DateTime          = [DbaDateTime](Get-Date)
             }
 
-            if ($destStore.Sessions[$sessionName] -ne $null) {
+            if ($null -ne $destStore.Sessions[$sessionName]) {
                 if ($force -eq $false) {
                     $copyXeSessionStatus.Status = "Skipped"
                     $copyXeSessionStatus.Notes = "Already exists"

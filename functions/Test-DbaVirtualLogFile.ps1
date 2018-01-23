@@ -120,8 +120,8 @@ function Test-DbaVirtualLogFile {
                         Database          = $db.name
                         Total             = $data.Count
                         TotalCount        = $data.Count
-                        Inactive          = if ($inactive -and $inactive.Count -eq $null) {1} else {$inactive.Count}
-                        Active            = if ($active -and $active.Count -eq $null) {1} else {$active.Count}
+                        Inactive          = if ($inactive -and $null -eq $inactive.Count) {1} else {$inactive.Count}
+                        Active            = if ($active -and $null -eq $active.Count) {1} else {$active.Count}
                         LogFileName       = $logFile.LogicalName -join ","
                         LogFileGrowth     = $logFile.Growth -join ","
                         LogFileGrowthType = $logFile.GrowthType -join ","

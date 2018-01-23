@@ -164,7 +164,7 @@ function Copy-DbaSqlPolicyManagement {
                 DateTime          = [DbaDateTime](Get-Date)
             }
 
-            if ($destStore.Conditions[$conditionName] -ne $null) {
+            if ($null -ne $destStore.Conditions[$conditionName]) {
                 if ($force -eq $false) {
                     Write-Message -Level Verbose -Message "condition '$conditionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
@@ -234,7 +234,7 @@ function Copy-DbaSqlPolicyManagement {
                 DateTime          = [DbaDateTime](Get-Date)
             }
 
-            if ($destStore.Policies[$policyName] -ne $null) {
+            if ($null -ne $destStore.Policies[$policyName]) {
                 if ($force -eq $false) {
                     Write-Message -Level Verbose -Message "Policy '$policyName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 

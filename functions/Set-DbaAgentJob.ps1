@@ -178,27 +178,27 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
     begin {
         # Check of the event log level is of type string and set the integer value
-        if (($EventLogLevel -notin 0, 1, 2, 3) -and ($EventLogLevel -ne $null)) {
+        if (($EventLogLevel -notin 0, 1, 2, 3) -and ($null -ne $EventLogLevel)) {
             $EventLogLevel = switch ($EventLogLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 
         # Check of the email level is of type string and set the integer value
-        if (($EmailLevel -notin 0, 1, 2, 3) -and ($EmailLevel -ne $null)) {
+        if (($EmailLevel -notin 0, 1, 2, 3) -and ($null -ne $EmailLevel)) {
             $EmailLevel = switch ($EmailLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 
         # Check of the net send level is of type string and set the integer value
-        if (($NetsendLevel -notin 0, 1, 2, 3) -and ($NetsendLevel -ne $null)) {
+        if (($NetsendLevel -notin 0, 1, 2, 3) -and ($null -ne $NetsendLevel)) {
             $NetsendLevel = switch ($NetsendLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 
         # Check of the page level is of type string and set the integer value
-        if (($PageLevel -notin 0, 1, 2, 3) -and ($PageLevel -ne $null)) {
+        if (($PageLevel -notin 0, 1, 2, 3) -and ($null -ne $PageLevel)) {
             $PageLevel = switch ($PageLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 
         # Check of the delete level is of type string and set the integer value
-        if (($DeleteLevel -notin 0, 1, 2, 3) -and ($DeleteLevel -ne $null)) {
+        if (($DeleteLevel -notin 0, 1, 2, 3) -and ($null -ne $DeleteLevel)) {
             $DeleteLevel = switch ($DeleteLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
 

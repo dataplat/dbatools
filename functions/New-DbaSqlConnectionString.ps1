@@ -231,7 +231,7 @@ Creates a connection string with ReadOnly ApplicantionIntent.
                     if ($connstring -ne $server.ConnectionContext.ConnectionString) {
                         $server.ConnectionContext.ConnectionString = $connstring
                     }
-                    if ($Credential.username -ne $null) {
+                    if ($null -ne $Credential.username) {
                         $username = ($Credential.username).TrimStart("\")
 
                         if ($username -like "*\*") {

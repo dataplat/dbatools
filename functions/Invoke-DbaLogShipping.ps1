@@ -652,11 +652,11 @@ The script will show a message that the copy destination has not been supplied a
         $SourceServerName, $SourceInstanceName = $SourceSqlInstance.Split("\")
         $DestinationServerName, $DestinationInstanceName = $DestinationSqlInstance.Split("\")
 
-        if ($SourceInstanceName -eq $null) {
+        if ($null -eq $SourceInstanceName) {
             $SourceInstanceName = "MSSQLSERVER"
         }
 
-        if ($DestinationInstanceName -eq $null) {
+        if ($null -eq $DestinationInstanceName) {
             $DestinationInstanceName = "MSSQLSERVER"
         }
 
@@ -1356,7 +1356,7 @@ The script will show a message that the copy destination has not been supplied a
                     $LastBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -Databases $($db.Name) -LastFull -Credential $SourceSqlCredential
 
                     # Check if there was a last backup
-                    if ($LastBackup -ne $null) {
+                    if ($null -ne $LastBackup) {
                         # Test the path to the backup
                         Write-Message -Message "Testing last backup path $(($LastBackup[-1]).Path[-1])" -Level Verbose
                         if ((Test-DbaSqlPath -Path ($LastBackup[-1]).Path[-1] -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
@@ -1472,7 +1472,7 @@ The script will show a message that the copy destination has not been supplied a
             }
 
             # Check the primary monitor server
-            if ($Force -and (-not$PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $PrimaryMonitorServer -eq $null)) {
+            if ($Force -and (-not$PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $null -eq $PrimaryMonitorServer)) {
                 Write-Message -Message "Setting monitor server for primary server to $SourceSqlInstance." -Level Output
                 $PrimaryMonitorServer = $SourceSqlInstance
             }
@@ -1496,7 +1496,7 @@ The script will show a message that the copy destination has not been supplied a
             }
 
             # Check the secondary monitor server
-            if ($Force -and (-not $SecondaryMonitorServer -or [string]$SecondaryMonitorServer -eq '' -or $SecondaryMonitorServer -eq $null)) {
+            if ($Force -and (-not $SecondaryMonitorServer -or [string]$SecondaryMonitorServer -eq '' -or $null -eq $SecondaryMonitorServer)) {
                 Write-Message -Message "Setting secondary monitor server for $DestinationSqlInstance to $SourceSqlInstance." -Level Verbose
                 $SecondaryMonitorServer = $SourceSqlInstance
             }
