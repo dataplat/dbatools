@@ -279,7 +279,7 @@ function Connect-DbaInstance {
                 }
 
                 try {
-                    if ($Credential.username -ne $null) {
+                    if ($null -ne $Credential.username) {
                         $username = ($Credential.username).TrimStart("\")
 
                         if ($username -like "*\*") {

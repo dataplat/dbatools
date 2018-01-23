@@ -115,7 +115,7 @@ function Set-DbaMaxMemory {
                 if ($UseRecommended) {
                     Write-Message -Level Verbose -Message "Change $server SQL Server Max Memory from $($currentServer.SqlMaxMB) to $($currentServer.RecommendedMB) MB"
 
-                    if ($currentServer.RecommendedMB -eq 0 -or $currentServer.RecommendedMB -eq $null) {
+                    if ($currentServer.RecommendedMB -eq 0 -or $null -eq $currentServer.RecommendedMB) {
                         $maxMem = (Test-DbaMaxMemory -SqlInstance $server).RecommendedMB
                         Write-Message -Level VeryVerbose -Message "Max memory recommended: $maxMem"
                         $server.Configuration.MaxServerMemory.ConfigValue = $maxMem

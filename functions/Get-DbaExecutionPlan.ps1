@@ -142,12 +142,12 @@ Gets super detailed information for execution plans on only for AdventureWorks20
                     $wherearray += " DB_NAME(deqp.dbid) in ('$dblist') "
                 }
 
-                if ($SinceCreation -ne $null) {
+                if ($null -ne $SinceCreation) {
                     Write-Message -Level Verbose -Message "Adding creation time"
                     $wherearray += " creation_time >= '$SinceCreation' "
                 }
 
-                if ($SinceLastExecution -ne $null) {
+                if ($null -ne $SinceLastExecution) {
                     Write-Message -Level Verbose -Message "Adding last exectuion time"
                     $wherearray += " last_execution_time >= '$SinceLastExecution' "
                 }
