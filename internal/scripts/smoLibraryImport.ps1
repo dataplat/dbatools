@@ -215,8 +215,10 @@ if ($script:serialImport) {
 }
 else {
     $script:smoRunspace = [System.Management.Automation.PowerShell]::Create()
-    try { $script:smoRunspace.Runspace.Name = "dbatools-import-smo" }
-    catch { }
+    if ($script:smoRunspace.Runspace.Name) {
+        try { $script:smoRunspace.Runspace.Name = "dbatools-import-smo" }
+        catch { }
+    }
     $script:smoRunspace.AddScript($scriptBlock).AddArgument($script:PSModuleRoot).AddArgument("$script:DllRoot\smo").AddArgument((-not $script:strictSecurityMode))
     $script:smoRunspace.BeginInvoke()
 }
