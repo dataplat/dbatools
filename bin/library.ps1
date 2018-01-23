@@ -68,7 +68,7 @@ if ($ImportLibrary) {
                 $start = Get-Date
                 try {
                     Write-Verbose -Message "Found library, trying to copy & import"
-                    Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop
+                    if ($libraryBase -ne $script:DllRoot) { Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
                     Add-Type -Path "$script:DllRoot\dbatools.dll" -ErrorAction Stop
                 }
                 catch {
