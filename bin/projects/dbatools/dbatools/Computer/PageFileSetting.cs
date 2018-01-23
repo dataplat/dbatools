@@ -33,6 +33,11 @@ namespace Sqlcollaborative.Dbatools.Computer
         public string Status;
 
         /// <summary>
+        /// Whether the pagefile is system managed
+        /// </summary>
+        public Nullable<Boolean> SystemManaged;
+
+        /// <summary>
         /// When were the settings last changed
         /// </summary>
         public Nullable<DateTime> LastModified;
