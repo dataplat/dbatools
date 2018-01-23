@@ -123,25 +123,25 @@ function Get-DbaStartupParameter {
                         $minimalstart = $noeventlogs = $instancestart = $disablemonitoring = $false
                         $increasedextents = $commandprompt = $singleuser = $false
 
-                        if ($commandpromptparm -ne $null) {
+                        if ($null -ne $commandpromptparm) {
                             $commandprompt = $true
                         }
-                        if ($minimalstartparm -ne $null) {
+                        if ($null -ne $minimalstartparm) {
                             $minimalstart = $true
                         }
-                        if ($memorytoreserve -eq $null) {
+                        if ($null -eq $memorytoreserve) {
                             $memorytoreserve = 0
                         }
-                        if ($noeventlogsparm -ne $null) {
+                        if ($null -ne $noeventlogsparm) {
                             $noeventlogs = $true
                         }
-                        if ($instancestartparm -ne $null) {
+                        if ($null -ne $instancestartparm) {
                             $instancestart = $true
                         }
-                        if ($disablemonitoringparm -ne $null) {
+                        if ($null -ne $disablemonitoringparm) {
                             $disablemonitoring = $true
                         }
-                        if ($increasedextentsparm -ne $null) {
+                        if ($null -ne $increasedextentsparm) {
                             $increasedextents = $true
                         }
 

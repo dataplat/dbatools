@@ -228,7 +228,7 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                         }
                         elseif (-not $result.IsPrimary) {
                             # Check the restore
-                            if ($result.TimeSinceLastRestore -eq $null) {
+                            if ($null -eq $result.TimeSinceLastRestore) {
                                 $statusDetails += "The restore has never been executed."
                             }
                             elseif ($result.TimeSinceLastRestore -ge $result.RestoreThresshold) {

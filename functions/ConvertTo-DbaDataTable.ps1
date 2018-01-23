@@ -288,7 +288,7 @@ function ConvertTo-DbaDataTable {
     
     process {
         #region Handle null objects
-        if ($InputObject -eq $null) {
+        if ($null -eq $InputObject) {
             if (-not $IgnoreNull) {
                 $datarow = $datatable.NewRow()
                 $datatable.Rows.Add($datarow)
@@ -301,7 +301,7 @@ function ConvertTo-DbaDataTable {
         
         foreach ($object in $InputObject) {
             #region Handle null objects
-            if ($object -eq $null) {
+            if ($null -eq $object) {
                 if (-not $IgnoreNull) {
                     $datarow = $datatable.NewRow()
                     $datatable.Rows.Add($datarow)

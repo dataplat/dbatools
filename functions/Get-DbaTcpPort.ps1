@@ -174,7 +174,7 @@ function Get-DbaTcpPort {
                 $cleanedUp
             }
 
-            if ($Detailed -eq $false -or ($Detailed -eq $true -and $someIps -eq $null)) {
+            if ($Detailed -eq $false -or ($Detailed -eq $true -and $null -eq $someIps)) {
                 try {
                     $server = Connect-SqlInstance -SqlInstance "TCP:$instance" -SqlCredential $SqlCredential -MinimumVersion 9
                 }

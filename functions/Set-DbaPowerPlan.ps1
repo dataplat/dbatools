@@ -85,7 +85,7 @@ function Set-DbaPowerPlan {
                 return
             }
 
-            if ($currentplan -eq $null) {
+            if ($null -eq $currentplan) {
                 # the try/catch above isn't working, so make it silent and handle it here.
                 Write-Warning "Cannot get Power Plan for $server."
                 return
