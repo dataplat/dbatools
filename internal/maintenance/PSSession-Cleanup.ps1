@@ -10,5 +10,5 @@ Register-DbaMaintenanceTask -Name "pssession_cleanup" -ScriptBlock $scriptBlock 
 # Cleans up local references in the current runspace. All actual termination logic is handled by the task above
 $script:pssession_cleanup_timer = New-Object System.Timers.TImer
 $script:pssession_cleanup_timer.Interval = 60000
-$null = Register-ObjectEvent -InputObject $script:pssession_cleanup_timer -EventName elapsed -SourceIdentifier Timer -Action { Get-PSSession | Where-Object State -Like Closed | Remove-PSSession }
+$null = Register-ObjectEvent -InputObject $script:pssession_cleanup_timer -EventName elapsed -SourceIdentifier dbatools_Timer -Action { Get-PSSession | Where-Object State -Like Closed | Remove-PSSession } -ErrorAction Ignore
 $script:pssession_cleanup_timer.Start()

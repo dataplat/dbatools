@@ -201,8 +201,10 @@ if ($script:serialImport) {
 }
 else {
     $script:dbatoolsConfigRunspace = [System.Management.Automation.PowerShell]::Create()
-    try { $script:dbatoolsConfigRunspace.Runspace.Name = "dbatools-import-config" }
-    catch { }
+    if ($script:dbatoolsConfigRunspace.Runspace.Name) {
+        try { $script:dbatoolsConfigRunspace.Runspace.Name = "dbatools-import-config" }
+        catch { }
+    }
     $script:dbatoolsConfigRunspace.AddScript($scriptBlock).AddArgument($global:dbatools_config)
     $script:dbatoolsConfigRunspace.BeginInvoke()
 }
