@@ -43,7 +43,7 @@ function Get-DbaDistributor {
         [switch][Alias('Silent')]$EnableException
     )
     begin {
-        if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.RMO") -eq $null) {
+        if ($null -eq [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.RMO")) {
             Stop-Function -Message "Replication management objects not available. Please install SQL Server Management Studio."
         }
     }

@@ -183,12 +183,12 @@ Exports all execution plans for databases db1 and db2 on sqlserver2014a since Ju
                     $wherearray += " DB_NAME(deqp.dbid) in ('$dblist') "
                 }
 
-                if ($SinceCreation -ne $null) {
+                if ($null -ne $SinceCreation) {
                     Write-Verbose "Adding creation time"
                     $wherearray += " creation_time >= '$SinceCreation' "
                 }
 
-                if ($SinceLastExecution -ne $null) {
+                if ($null -ne $SinceLastExecution) {
                     Write-Verbose "Adding last execution time"
                     $wherearray += " last_execution_time >= '$SinceLastExecution' "
                 }

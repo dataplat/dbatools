@@ -136,7 +136,7 @@ function Test-DbaServerName {
                 }
             }
 
-            if ($rs -ne $null -or $rs.Count -gt 0) {
+            if ($null -ne $rs -or $rs.Count -gt 0) {
                 if ($rs.State -eq 'Running') {
                     $rstext = "$ssrsService must be stopped and updated."
                 }

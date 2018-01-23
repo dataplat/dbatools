@@ -121,7 +121,7 @@ function Set-DbaMaxDop {
         if ((Test-Bound -Not -Parameter Collection)) {
             $collection = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
         }
-        elseif ($collection.SqlInstance -eq $null) {
+        elseif ($null -eq $collection.SqlInstance) {
             $collection = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
         }
 

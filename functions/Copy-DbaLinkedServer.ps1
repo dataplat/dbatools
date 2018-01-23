@@ -313,7 +313,7 @@ function Copy-DbaLinkedServer {
                     }
                 }
 
-                if ($destServer.LinkedServers[$linkedServerName] -ne $null) {
+                if ($null -ne $destServer.LinkedServers[$linkedServerName]) {
                     if (!$force) {
                         $copyLinkedServer.Status = "Skipped"
                         $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -395,7 +395,7 @@ function Copy-DbaLinkedServer {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        if ($SourceSqlCredential.username -ne $null) {
+        if ($null -ne $SourceSqlCredential.username) {
             Write-Message -Level Verbose -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
         }
 

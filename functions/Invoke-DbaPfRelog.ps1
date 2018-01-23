@@ -255,7 +255,7 @@
             }
             $item = Get-ChildItem -Path $file -ErrorAction SilentlyContinue
 
-            if ($item -eq $null) {
+            if ($null -eq $item) {
                 Stop-Function -Message "$file does not exist" -Target $file -Continue
                 return
             }

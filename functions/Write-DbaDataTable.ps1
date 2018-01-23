@@ -283,7 +283,7 @@ function Write-DbaDataTable {
             $sqlDataTypes = @();
             $columns = $DataTable.Columns
             
-            if ($columns -eq $null) {
+            if ($null -eq $columns) {
                 $columns = $DataTable.Table.Columns
             }
             
@@ -297,7 +297,7 @@ function Write-DbaDataTable {
                     $columnValue = $DataTable.$sqlColumnName
                 }
                 
-                if ($columnValue -eq $null) {
+                if ($null -eq $columnValue) {
                     $columnValue = $DataTable.$sqlColumnName
                 }
                 
@@ -365,7 +365,7 @@ function Write-DbaDataTable {
         #region Resolve Full Qualified Table Name
         $dotCount = ([regex]::Matches($Table, "\.")).count
 
-        if ($dotCount -lt 2 -and $Database -eq $null) {
+        if ($dotCount -lt 2 -and $null -eq $Database) {
             Stop-Function -Message "You must specify a database or fully qualified table name."
             return
         }
@@ -432,7 +432,7 @@ function Write-DbaDataTable {
         #endregion Connect to server and get database
 
         #region Prepare database and bulk operations
-        if ($databaseObject -eq $null) {
+        if ($null -eq $databaseObject) {
             Stop-Function -Message "$databaseName does not exist." -Target $SqlInstance
             return
         }
@@ -555,7 +555,7 @@ function Write-DbaDataTable {
     process {
         if (Test-FunctionInterrupt) { return }
         
-        if ($InputObject -ne $null) { $inputType = $InputObject.GetType() }
+        if ($null -ne $InputObject) { $inputType = $InputObject.GetType() }
         else { $inputType = $null }
         
         if ($inputType -eq [System.Data.DataSet]) {

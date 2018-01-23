@@ -417,10 +417,10 @@ function Invoke-Sqlcmd2 {
             $cmd = New-Object system.Data.SqlClient.SqlCommand($Query, $conn)
             $cmd.CommandTimeout = $QueryTimeout
 
-            if ($SqlParameters -ne $null) {
+            if ($null -ne $SqlParameters) {
                 $SqlParameters.GetEnumerator() |
                     ForEach-Object {
-                    if ($_.Value -ne $null) {
+                    if ($null -ne $_.Value) {
                         $cmd.Parameters.AddWithValue($_.Key, $_.Value)
                     }
                     else {

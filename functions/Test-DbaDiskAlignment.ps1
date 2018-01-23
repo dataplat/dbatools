@@ -188,7 +188,7 @@ function Test-DbaDiskAlignment {
                         foreach ($SqlInstance in $SqlInstances) {
                             Write-Message -Level Verbose -Message "Connecting to SQL instance ($SqlInstance)." -FunctionName $FunctionName
                             try {
-                                if ($SqlCredential -ne $null) {
+                                if ($null -ne $SqlCredential) {
                                     $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
                                 }
                                 else {
@@ -336,7 +336,7 @@ function Test-DbaDiskAlignment {
                 Stop-Function -Message "Failed to process $($Computer): $($_.Exception.Message)" -Continue -InnerErrorRecord $_ -Target $Computer
             }
 
-            if ($data.Server -eq $null) {
+            if ($null -eq $data.Server) {
                 Stop-Function -Message "CIM query to $Computer failed." -Continue -Target $computer
             }
 

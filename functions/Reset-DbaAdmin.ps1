@@ -197,7 +197,7 @@ function Reset-DbaAdmin {
                 Write-Message -Level Verbose -Message "Resolving NetBIOS name."
                 try {
                     $hostname = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddr).PSComputerName
-                    if ($hostname -eq $null) {
+                    if ($null -eq $hostname) {
                         $hostname = (nbtstat -A $ipaddr | Where-Object { $_ -match '\<00\>  UNIQUE' } | ForEach-Object { $_.SubString(4, 14) }).Trim()
                     }
                 }
@@ -287,7 +287,7 @@ function Reset-DbaAdmin {
                 return
             }
 
-            if ($checkcluster -ne $null) {
+            if ($null -ne $checkcluster) {
                 $clusterResource = Get-DbaCmObject -ClassName "MSCluster_Resource" -Namespace "root\mscluster" -ComputerName $hostname |
                     Where-Object { $_.Name.StartsWith("SQL Server") -and $_.OwnerGroup -eq "SQL Server ($instance)" }
             }
