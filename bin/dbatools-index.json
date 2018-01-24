@@ -1834,6 +1834,19 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a\r\n\r\nGets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -IncludeSelf\r\n\r\nGets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique \r\n-ExpandProperty ServerName\r\n\r\nReturns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting\r\n\r\nGets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\\Development\r\n\r\nReturns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaRegisteredServerGroup",
+        "Description":  "Returns an array of Server Groups found in the CMS.",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Author":  "Tony Wilhelm (@tonywsql)",
+        "Synopsis":  "Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).",
+        "Name":  "Get-DbaRegisteredServerGroup",
+        "Links":  "https://dbatools.io/Get-DbaRegisteredServerGroup",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sqlserver2014a\r\n\r\nGets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential\r\n\r\nGets the top level groups from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting\r\n\r\nGets the HR and Accounting groups from the CMS on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\\Development\r\n\r\nReturns the sub-group Development of the HR group from the CMS on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaRegisteredServersStore",
         "Description":  "Returns a SQL Server Registered Server Store object - useful for working with Central Management Store",
         "Tags":  [
