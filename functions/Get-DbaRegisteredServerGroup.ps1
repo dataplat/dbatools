@@ -68,10 +68,9 @@ function Get-DbaRegisteredServerGroup {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Groups")]
         [object[]]$Group,
         [object[]]$ExcludeGroup,
-        [switch][Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
     begin {
         function Find-CmsGroup {
@@ -110,7 +109,7 @@ function Get-DbaRegisteredServerGroup {
             return
         }
 
-        $Groups = @()
+        $groups = @()
         foreach ($instance in $SqlInstance) {
 
             try {
@@ -127,7 +126,7 @@ function Get-DbaRegisteredServerGroup {
                         Write-Message -Level Output -Message "No groups found matching '$($currentGroup)' on instance '$instance'."
                         continue
                     }
-                    $Groups += $cms
+                    $groups += $cms
                 }
             }
             else {
@@ -135,13 +134,13 @@ function Get-DbaRegisteredServerGroup {
             }
 
             if (Test-Bound -ParameterName ExcludeGroup) {
-                $Groups = $Groups | Where-Object Name -notin $ExcludeGroup
+                $groups = $groups | Where-Object Name -notin $ExcludeGroup
             }
 
             # Close the connection, otherwise using it with the ServersStore will keep it open
             $cmsStore.ServerConnection.Disconnect()
-
-            return $Groups
+            
+            $groups | Select-DefaultView -ExcludeProperty IsLocal, IsSystemServerGroup, IsDropped, Urn, Properties, Metadata, DuplicateFound, PropertyMetadataChanged, PropertyChanged
         }
     }
 }
