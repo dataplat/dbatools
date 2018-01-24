@@ -120,7 +120,7 @@ function Get-DbaDatabaseFile {
 			df.filename as PhysicalName,
 			'Existing' as State,
 			df.maxsize as MaxSize,
-			df.growth as Growth,
+			case CONVERT(INT,df.status & 0x100000) / 1048576 when 1 then df.growth when 0 then df.growth*8 End as Growth,
 			fileproperty(df.name, 'spaceused') as UsedSpace,
 			df.size as Size,
 			case CONVERT(INT,df.status & 0x20000000) / 536870912 when 1 then 'True' else 'False' End as IsOffline,
