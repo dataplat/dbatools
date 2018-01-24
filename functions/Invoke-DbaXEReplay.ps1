@@ -35,17 +35,17 @@ function Invoke-DbaXeReplay {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .EXAMPLE
-            Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaSqlCmd -SqlInstance sql2017 -Database tempdb
+            Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaSqlQuery -SqlInstance sql2017 -Database tempdb
 
             Runs all batch_text for sql_batch_completed against tempdb on sql2017.
 
         .EXAMPLE
-            Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaSqlCmd -SqlInstance sql2017, sql2016 -Database tempdb, db1
+            Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaSqlQuery -SqlInstance sql2017, sql2016 -Database tempdb, db1
 
             Runs all batch_text for sql_batch_completed against tempdb and db1 on servers sql2017 and sql2016.
 
         .EXAMPLE
-            Watch-DbaXESession -SqlInstance sql2017 -Session 'Profile New App' | Invoke-DbaSqlCmd -SqlInstance sql2017, sql2016 -Database tempdb, db1
+            Watch-DbaXESession -SqlInstance sql2017 -Session 'Profile New App' | Invoke-DbaSqlQuery -SqlInstance sql2017, sql2016 -Database tempdb, db1
 
             Runs all batch_text for sql_batch_completed against tempdb and db1 on servers sql2017 and sql2016.
     #>
