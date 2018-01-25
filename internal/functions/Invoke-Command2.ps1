@@ -51,16 +51,16 @@
         if (-not ($currentsession = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionGet($runspaceid, $ComputerName.ComputerName) | Where-Object State -Match "Opened|Disconnected")) {
             $timeout = New-PSSessionOption -IdleTimeout (New-TimeSpan -Minutes 10).TotalMilliSeconds
             if ($Credential) {
-                $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout -Credential $Credential)
+                $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout -Credential $Credential -ErrorAction Stop)
             }
             else {
-                $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout)
+                $InvokeCommandSplat["Session"] = (New-PSSession -ComputerName $ComputerName.ComputerName -Name $sessionname -SessionOption $timeout -ErrorAction Stop)
             }
             $currentsession = $InvokeCommandSplat["Session"]
         }
         else {
             if ($currentsession.State -eq "Disconnected") {
-                $null = $currentsession | Connect-PSSession
+                $null = $currentsession | Connect-PSSession -ErrorAction Stop
             }
             $InvokeCommandSplat["Session"] = $currentsession
             
