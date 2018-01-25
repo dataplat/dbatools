@@ -1,5 +1,5 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Invoke-DbaSqlCmd {
+function Invoke-DbaSqlQuery {
     <#
         .SYNOPSIS
             A command to run explicit T-SQL commands or files.
@@ -26,7 +26,7 @@ function Invoke-DbaSqlCmd {
 
         .PARAMETER File
             Specifies the path to one or several files to be used as the query input to Invoke-Sqlcmd2. The file can contain Transact-SQL statements, XQuery statements, sqlcmd commands and scripting variables.
-    
+
         .PARAMETER SqlObject
             Specify on or multiple SQL objects. Those will be converted to script and their scripts run on the target system(s).
 
@@ -46,18 +46,29 @@ function Invoke-DbaSqlCmd {
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+        .NOTES
+            Tags: Database, Query
+            Author: Fred Winmann (@FredWeinmann)
+
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
+        .LINK
+            https://dbatools.io/Invoke-DbaSqlQuery
+
         .EXAMPLE
-            Invoke-DbaSqlCmd -SqlInstance server\instance -Query 'SELECT foo FROM bar'
+            Invoke-DbaSqlQuery -SqlInstance server\instance -Query 'SELECT foo FROM bar'
 
             Runs the sql query 'SELECT foo FROM bar' against the instance 'server\instance'
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaSqlCmd -Query 'SELECT foo FROM bar'
+            Get-DbaRegisteredServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaSqlQuery -Query 'SELECT foo FROM bar'
 
             Runs the sql query 'SELECT foo FROM bar' against all instances in the group [GROUPNAME] on the CMS [SERVERNAME]
 
         .EXAMPLE
-            "server1", "server1\nordwind", "server2" | Invoke-DbaSqlCmd -File "C:\scripts\sql\rebuild.sql"
+            "server1", "server1\nordwind", "server2" | Invoke-DbaSqlQuery -File "C:\scripts\sql\rebuild.sql"
 
             Runs the sql commands stored in rebuild.sql against the instances "server1", "server1\nordwind" and "server2"
     #>
@@ -77,11 +88,11 @@ function Invoke-DbaSqlCmd {
         [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Query")]
         [string]
         $Query,
-        
+
         [Parameter(Mandatory = $true, ParameterSetName = "File")]
         [object[]]
         $File,
-        
+
         [Parameter(Mandatory = $true, ParameterSetName = "SMO")]
         [Microsoft.SqlServer.Management.Smo.SqlSmoObject[]]
         $SqlObject,
@@ -117,25 +128,25 @@ function Invoke-DbaSqlCmd {
         if (Test-Bound -ParameterName "Query") {
             $splatInvokeSqlCmd2["Query"] = $Query
         }
-        
+
         if (Test-Bound -ParameterName "File") {
             $files = @()
             $temporaryFiles = @()
             $temporaryFilesCount = 0
             $temporaryFilesPrefix = (97 .. 122 | Get-Random -Count 10 | ForEach-Object { [char]$_ }) -join ''
-            
+
             foreach ($item in $File) {
                 if ($null -eq $item) { continue }
-                
+
                 $type = $item.GetType().FullName
-                
+
                 switch ($type) {
                     "System.IO.DirectoryInfo" {
                         if (-not $item.Exists) {
                             Stop-Function -Message "Directory not found!" -Category ObjectNotFound
                             return
                         }
-                        
+
                         $item.GetFiles() | Where-Object Extension -EQ ".sql" | ForEach-Object { $files += $_.FullName }
                     }
                     "System.IO.FileInfo" {
@@ -143,12 +154,12 @@ function Invoke-DbaSqlCmd {
                             Stop-Function -Message "Directory not found!" -Category ObjectNotFound
                             return
                         }
-                        
+
                         $files += $item.FullName
                     }
                     "System.String" {
                         $uri = [uri]$item
-                        
+
                         switch -regex ($uri.Scheme) {
                             "http" {
                                 $tempfile = "$env:TEMP\$temporaryFilesPrefix-$temporaryFilesCount.sql"
@@ -171,7 +182,7 @@ function Invoke-DbaSqlCmd {
                                     Stop-Function -Message "Failed to resolve path: $item" -ErrorRecord $_
                                     return
                                 }
-                                
+
                                 foreach ($path in $paths) {
                                     if (-not $path.PSIsContainer) {
                                         if (([uri]$path.FullName).Scheme -ne 'file') {
@@ -191,20 +202,20 @@ function Invoke-DbaSqlCmd {
                 }
             }
         }
-        
+
         if (Test-Bound -ParameterName "SqlObject") {
             $files = @()
             $temporaryFiles = @()
             $temporaryFilesCount = 0
             $temporaryFilesPrefix = (97 .. 122 | Get-Random -Count 10 | ForEach-Object { [char]$_ }) -join ''
-            
+
             foreach ($object in $SqlObject) {
                 try { $code = Export-DbaScript -InputObject $object -Passthru -EnableException }
                 catch {
                     Stop-Function -Message "Failed to generate script for object $object" -ErrorRecord $_
                     return
                 }
-                
+
                 try {
                     $newfile = "$env:TEMP\$temporaryFilesPrefix-$temporaryFilesCount.sql"
                     Set-Content -Value $code -Path $newfile -Force -ErrorAction Stop -Encoding UTF8
@@ -219,10 +230,10 @@ function Invoke-DbaSqlCmd {
             }
         }
     }
-    
+
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level VeryVerbose -Message "Connecting to $instance." -Target $instance
@@ -250,15 +261,16 @@ function Invoke-DbaSqlCmd {
             }
         }
     }
-    
+
     end {
         # Execute end even when interrupting, as only used for cleanup
-        
+
         if ($temporaryFiles) {
             # Clean up temporary files that were downloaded
             foreach ($item in $temporaryFiles) {
                 Remove-Item -Path $item -ErrorAction Ignore
             }
         }
+        Test-DbaDeprecation -DeprecatedOn '1.0.0' -Alias Invoke-DbaSqlCmd
     }
 }

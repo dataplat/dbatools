@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     It "supports pipable instances" {
-        $results = $script:instance1, $script:instance2 | Invoke-DbaSqlcmd -Database tempdb -Query "Select 'hello' as TestColumn"
+        $results = $script:instance1, $script:instance2 | Invoke-DbaSqlQuery -Database tempdb -Query "Select 'hello' as TestColumn"
         foreach ($result in $results) {
             $result.TestColumn -eq 'hello'
         }
