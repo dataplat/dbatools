@@ -398,7 +398,7 @@
         'Publish-DbaDacpac',
         'Export-DbaDacpac',
         'Copy-DbaTableData',
-        'Invoke-DbaSqlCmd',
+        'Invoke-DbaSqlQuery',
         'Remove-DbaLogin',
         'Get-DbaFileStream',
         'Set-DbaFileStream',
@@ -546,7 +546,8 @@
     'Restore-DbaDatabaseCertificate',
     'Find-DbaDatabaseGrowthEvent',
     'Get-DbaTraceFile',
-    'Out-DbaDataTable'
+    'Out-DbaDataTable',
+    'Invoke-DbaSqlCmd'
 
     # List of all modules packaged with this module
     ModuleList              = @()

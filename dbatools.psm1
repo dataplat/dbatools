@@ -528,6 +528,10 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"  = "Out-DbaDataTable"
         "Definition" = "ConvertTo-DbaDataTable"
+    },
+    @{
+        "AliasName"   = "Invoke-DbaSqlCmd"
+        "Definition"  = "Invoke-DbaSqlQuery"
     }
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
