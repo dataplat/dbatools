@@ -61,21 +61,20 @@ function Get-DbaComputerSystem {
             try {
                 Write-Message -Level Verbose -Message "Attempting to connect to $computer"
                 $server = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential
-                
+
                 $computerResolved = $server.FullComputerName
-                
+
                 if (!$computerResolved) {
-                    Write-Message -Level Warning -Message "Unable to resolve hostname of $computer. Skipping."
-                    continue
+                    Stop-Function -Message "Unable to resolve hostname of $computer. Skipping." -Continue
                 }
-                
+
                 if (Test-Bound "Credential") {
                     $computerSystem = Get-DbaCmObject -ClassName Win32_ComputerSystem -ComputerName $computerResolved -Credential $Credential
                 }
                 else {
                     $computerSystem = Get-DbaCmObject -ClassName Win32_ComputerSystem -ComputerName $computerResolved
                 }
-                
+
                 $adminPasswordStatus =
                 switch ($computerSystem.AdminPasswordStatus) {
                     0 { "Disabled" }
@@ -84,7 +83,7 @@ function Get-DbaComputerSystem {
                     3 { "Unknown" }
                     default { "Unknown" }
                 }
-                
+
                 $domainRole =
                 switch ($computerSystem.DomainRole) {
                     0 { "Standalone Workstation" }
@@ -94,15 +93,15 @@ function Get-DbaComputerSystem {
                     4 { "Backup Domain Controller" }
                     5 { "Primary Domain Controller" }
                 }
-                
+
                 $isHyperThreading = $false
                 if ($computerSystem.NumberOfLogicalProcessors -gt $computerSystem.NumberofProcessors) {
                     $isHyperThreading = $true
                 }
-                
+
                 if ($IncludeAws) {
                     $isAws = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { ((Invoke-WebRequest -TimeoutSec 15 -Uri 'http://169.254.169.254').StatusCode) -eq 200 } -Raw
-                    
+
                     if ($isAws) {
                         $scriptBlock = {
                             [PSCustomObject]@{
