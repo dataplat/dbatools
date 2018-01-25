@@ -20,7 +20,7 @@ function Invoke-Sqlcmd2 {
         .PARAMETER Query
             Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon.
 
-            Do not specify the sqlcmd GO separator. Escape any double quotation marks included in the string.
+            Do not specify the sqlcmd GO separator (or, use the ParseGo parameter). Escape any double quotation marks included in the string.
 
             Consider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as "MyTable".
 
@@ -59,6 +59,21 @@ function Invoke-Sqlcmd2 {
 
         .PARAMETER AppendServerInstance
             If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
+
+        .PARAMETER ParseGo
+            If this switch is enabled, "GO" statements will be handled automatically.
+            Every "GO" will effectively run in a separate query, like if you issued multiple Invoke-SqlCmd2 commands.
+            "GO"s will be recognized if they are on a single line, as this covers
+            the 95% of the cases "GO" parsing is needed
+            Note:
+                Queries will always target that database, e.g. if you have this Query:
+                    USE DATABASE [dbname]
+                    GO
+                    SELECT * from sys.tables
+                and you call it via
+                    Invoke-SqlCmd2 -ServerInstance instance -Database msdb -Query ...
+                you'll get back tables from msdb, not dbname.
+
 
         .PARAMETER SQLConnection
             Specifies an existing SQLConnection object to use in connecting to SQL Server. If the connection is closed, an attempt will be made to open it.
@@ -206,7 +221,7 @@ function Invoke-Sqlcmd2 {
             Mandatory = $true,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
-        [ValidateScript( { Test-Path $_ })]
+        [ValidateScript( { Test-Path -LiteralPath $_ })]
         [string]$InputFile,
         [Parameter(ParameterSetName = 'Ins-Que',
             Position = 3,
@@ -259,14 +274,17 @@ function Invoke-Sqlcmd2 {
         [Parameter(Position = 9,
             Mandatory = $false)]
         [switch]$AppendServerInstance,
+        [Parameter(Position = 10,
+            Mandatory = $false)]
+        [switch]$ParseGO,
         [Parameter(ParameterSetName = 'Con-Que',
-            Position = 10,
+            Position = 11,
             Mandatory = $false,
             ValueFromPipeline = $false,
             ValueFromPipelineByPropertyName = $false,
             ValueFromRemainingArguments = $false)]
         [Parameter(ParameterSetName = 'Con-Fil',
-            Position = 10,
+            Position = 11,
             Mandatory = $false,
             ValueFromPipeline = $false,
             ValueFromPipelineByPropertyName = $false,
@@ -278,7 +296,7 @@ function Invoke-Sqlcmd2 {
 
     begin {
         if ($InputFile) {
-            $filePath = $(Resolve-Path $InputFile).ProviderPath
+            $filePath = $(Resolve-Path -LiteralPath $InputFile).ProviderPath
             $Query = [System.IO.File]::ReadAllText("$filePath")
         }
 
@@ -356,6 +374,7 @@ function Invoke-Sqlcmd2 {
                 throw "SQLConnection is not open"
             }
         }
+        $GoSplitterRegex = [regex]'(?smi)^[\s]*GO[\s]*$'
 
     }
     process {
@@ -413,124 +432,134 @@ function Invoke-Sqlcmd2 {
                 $handler = [System.Data.SqlClient.SqlInfoMessageEventHandler] { Write-Verbose "$($_)" }
                 $conn.add_InfoMessage($handler)
             }
-
-            $cmd = New-Object system.Data.SqlClient.SqlCommand($Query, $conn)
-            $cmd.CommandTimeout = $QueryTimeout
-
-            if ($null -ne $SqlParameters) {
-                $SqlParameters.GetEnumerator() |
-                    ForEach-Object {
-                    if ($null -ne $_.Value) {
-                        $cmd.Parameters.AddWithValue($_.Key, $_.Value)
-                    }
-                    else {
-                        $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
-                    }
-                } > $null
+            if ($ParseGO) {
+                Write-Verbose "Stripping GOs from source"
+                $Pieces = $GoSplitterRegex.Split($Query)
             }
-
-            $ds = New-Object system.Data.DataSet
-            $da = New-Object system.Data.SqlClient.SqlDataAdapter($cmd)
-
-            try {
-                [void]$da.fill($ds)
+            else {
+                $Pieces = , $Query
             }
-            catch [System.Data.SqlClient.SqlException] {
-                # For SQL exception
+            # Only execute non-empty statements
+            $Pieces = $Pieces | Where-Object { $_.Trim().Length -gt 0 }
+            foreach ($piece in $Pieces) {
+                $cmd = New-Object system.Data.SqlClient.SqlCommand($piece, $conn)
+                $cmd.CommandTimeout = $QueryTimeout
 
-                $Err = $_
-
-                Write-Verbose "Capture SQL Error"
-
-                if ($PSBoundParameters.Verbose) {
-                    Write-Verbose "SQL Error:  $Err"
-                } #Shiyang, add the verbose output of exception
-
-                switch ($ErrorActionPreference.tostring()) {
-                    { 'SilentlyContinue', 'Ignore' -contains $_ } {
-
-                    }
-                    'Stop' {
-                        throw $Err
-                    }
-                    'Continue' {
-                        throw $Err
-                    }
-                    Default {
-                        Throw $Err
-                    }
-                }
-            }
-            catch {
-                # For other exception
-                Write-Verbose "Capture Other Error"
-
-                $Err = $_
-
-                if ($PSBoundParameters.Verbose) {
-                    Write-Verbose "Other Error:  $Err"
+                if ($null -ne $SqlParameters) {
+                    $SqlParameters.GetEnumerator() |
+                        ForEach-Object {
+                        if ($null -ne $_.Value) {
+                            $cmd.Parameters.AddWithValue($_.Key, $_.Value)
+                        }
+                        else {
+                            $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
+                        }
+                    } > $null
                 }
 
-                switch ($ErrorActionPreference.tostring()) {
-                    { 'SilentlyContinue', 'Ignore' -contains $_ } {
+                $ds = New-Object system.Data.DataSet
+                $da = New-Object system.Data.SqlClient.SqlDataAdapter($cmd)
 
-                    }
-                    'Stop' {
-                        throw $Err
-                    }
-                    'Continue' {
-                        throw $Err
-                    }
-                    Default {
-                        throw $Err
-                    }
+                try {
+                    [void]$da.fill($ds)
                 }
-            }
-            finally {
-                #Close the connection
-                if (-not $PSBoundParameters.ContainsKey('SQLConnection')) {
-                    $conn.Close()
-                }
-            }
+                catch [System.Data.SqlClient.SqlException] {
+                    # For SQL exception
 
-            if ($AppendServerInstance) {
-                #Basics from Chad Miller
-                $Column = New-Object Data.DataColumn
-                $Column.ColumnName = "ServerInstance"
+                    $Err = $_
 
-                if ($ds.Tables.Count -ne 0) {
-                    $ds.Tables[0].Columns.Add($Column)
-                    Foreach ($row in $ds.Tables[0]) {
-                        $row.ServerInstance = $SQLInstance
-                    }
-                }
-            }
+                    Write-Verbose "Capture SQL Error"
 
-            switch ($As) {
-                'DataSet' {
-                    $ds
-                }
-                'DataTable' {
-                    $ds.Tables
-                }
-                'DataRow' {
-                    if ($ds.Tables.Count -ne 0) {
-                        $ds.Tables[0]
-                    }
-                }
-                'PSObject' {
-                    if ($ds.Tables.Count -ne 0) {
-                        #Scrub DBNulls - Provides convenient results you can use comparisons with
-                        #Introduces overhead (e.g. ~2000 rows w/ ~80 columns went from .15 Seconds to .65 Seconds - depending on your data could be much more!)
-                        foreach ($row in $ds.Tables[0].Rows) {
+                    if ($PSBoundParameters.Verbose) {
+                        Write-Verbose "SQL Error:  $Err"
+                    } #Shiyang, add the verbose output of exception
 
-                            [DBNullScrubber]::DataRowToPSObject($row)
+                    switch ($ErrorActionPreference.tostring()) {
+                        { 'SilentlyContinue', 'Ignore' -contains $_ } {
+
+                        }
+                        'Stop' {
+                            throw $Err
+                        }
+                        'Continue' {
+                            throw $Err
+                        }
+                        Default {
+                            Throw $Err
                         }
                     }
                 }
-                'SingleValue' {
+                catch {
+                    # For other exception
+                    Write-Verbose "Capture Other Error"
+
+                    $Err = $_
+
+                    if ($PSBoundParameters.Verbose) {
+                        Write-Verbose "Other Error:  $Err"
+                    }
+
+                    switch ($ErrorActionPreference.tostring()) {
+                        { 'SilentlyContinue', 'Ignore' -contains $_ } {
+
+                        }
+                        'Stop' {
+                            throw $Err
+                        }
+                        'Continue' {
+                            throw $Err
+                        }
+                        Default {
+                            throw $Err
+                        }
+                    }
+                }
+                finally {
+                    #Close the connection
+                    if (-not $PSBoundParameters.ContainsKey('SQLConnection')) {
+                        $conn.Close()
+                    }
+                }
+
+                if ($AppendServerInstance) {
+                    #Basics from Chad Miller
+                    $Column = New-Object Data.DataColumn
+                    $Column.ColumnName = "ServerInstance"
+
                     if ($ds.Tables.Count -ne 0) {
-                        $ds.Tables[0] | Select-Object -ExpandProperty $ds.Tables[0].Columns[0].ColumnName
+                        $ds.Tables[0].Columns.Add($Column)
+                        Foreach ($row in $ds.Tables[0]) {
+                            $row.ServerInstance = $SQLInstance
+                        }
+                    }
+                }
+
+                switch ($As) {
+                    'DataSet' {
+                        $ds
+                    }
+                    'DataTable' {
+                        $ds.Tables
+                    }
+                    'DataRow' {
+                        if ($ds.Tables.Count -ne 0) {
+                            $ds.Tables[0]
+                        }
+                    }
+                    'PSObject' {
+                        if ($ds.Tables.Count -ne 0) {
+                            #Scrub DBNulls - Provides convenient results you can use comparisons with
+                            #Introduces overhead (e.g. ~2000 rows w/ ~80 columns went from .15 Seconds to .65 Seconds - depending on your data could be much more!)
+                            foreach ($row in $ds.Tables[0].Rows) {
+
+                                [DBNullScrubber]::DataRowToPSObject($row)
+                            }
+                        }
+                    }
+                    'SingleValue' {
+                        if ($ds.Tables.Count -ne 0) {
+                            $ds.Tables[0] | Select-Object -ExpandProperty $ds.Tables[0].Columns[0].ColumnName
+                        }
                     }
                 }
             }
