@@ -292,7 +292,7 @@ function Get-DbaBackupHistory {
                 if ($LastLog) {
                     $first = 'L'; $second = 'L'
                 }
-                $databases = $databases | Select-Object -Unique
+                $databases = $databases | Select-Object -Unique -Property Name
                 foreach ($db in $databases) {
                     Write-Message -Level Verbose -Message "Processing $($db.name)" -Target $db
                     $wherecopyonly = $null
