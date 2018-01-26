@@ -91,10 +91,10 @@ function Remove-DbaAgentJob {
         [switch]$KeepHistory,
         [Parameter(Mandatory = $false)]
         [switch]$KeepUnusedSchedule,
-        [DbaMode]
-        $Mode = (Get-DbaConfigValue -Name 'message.mode.default' -Fallback "Strict"),
+        [DbaMode]$Mode = (Get-DbaConfigValue -Name 'message.mode.default' -Fallback "Strict"),
         [Parameter(Mandatory = $false)]
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
@@ -125,7 +125,7 @@ function Remove-DbaAgentJob {
                         try {
                             $currentJob = $Server.JobServer.Jobs[$j]
                             # Delete the history
-                            if (-not $KeepHistory) {
+                            if (Test-Bound -ParameterName KeepHistory -Not) {
                                 Write-Message  -Level SomewhatVerbose -Message "Purging job history"
                                 $currentJob.PurgeHistory()
                             }

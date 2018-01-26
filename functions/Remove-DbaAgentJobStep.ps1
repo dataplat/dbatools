@@ -80,8 +80,7 @@ function Remove-DbaAgentJobStep {
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$StepName,
-        [DbaMode]
-        $Mode = (Get-DbaConfigValue -Name 'message.mode.default' -Fallback "Strict"),
+        [DbaMode]$Mode = (Get-DbaConfigValue -Name 'message.mode.default' -Fallback "Strict"),
         [Alias('Silent')]
         [switch]$EnableException
     )

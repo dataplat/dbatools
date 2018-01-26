@@ -54,21 +54,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should not have deleted schedule: dbatoolsci_daily" {
             (Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_weekly) | Should Not BeNullOrEmpty
         }
-        Context "Command removes job but not history" {
-            BeforeAll {
-                $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history
-                $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history -StepId 1 -StepName dbatoolsci_step1 -Subsystem TransactSql -Command 'select 1'
-                $null = Start-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history
-            }
-        
-            $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history -KeepHistory
-            It "Should have deleted job: dbatoolsci_testjob_history" {
-                (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history) | Should BeNullOrEmpty
-            }
-            It "Should not have deleted history: dbatoolsci_testjob_history" {
-                (Get-DbaAgentJobHistory -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history) | Should Not BeNullOrEmpty
-            }
+    }
+    Context "Command removes job but not history" {
+        BeforeAll {
+            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history
+            $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history -StepId 1 -StepName dbatoolsci_step1 -Subsystem TransactSql -Command 'select 1'
+            $null = Start-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history
+        }
+    
+        $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history -KeepHistory
+        It "Should have deleted job: dbatoolsci_testjob_history" {
+            (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history) | Should BeNullOrEmpty
+        }
+        It "Should not have deleted history: dbatoolsci_testjob_history" {
+            (Get-DbaAgentJobHistory -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history) | Should Not BeNullOrEmpty
         }
     }
 }
- 
