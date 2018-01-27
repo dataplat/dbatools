@@ -124,23 +124,19 @@ function Remove-DbaAgentJob {
                     if ($PSCmdlet.ShouldProcess($instance, "Removing the job on $currentJob")) {
                         try {
                             $currentJob = $Server.JobServer.Jobs[$j]
-                            # Delete the history
-                            if (Test-Bound -ParameterName KeepHistory -Not) {
-                                Write-Message  -Level SomewhatVerbose -Message "Purging job history"
-                                $currentJob.PurgeHistory()
+                            $dropHistory = 1
+                            $dropSchedule = 1
+                            if (Test-Bound -ParameterName KeepHistory) {
+                                Write-Message -Level SomewhatVerbose -Message "Job history will be kept"
+                                $dropHistory = 0
                             }
-
-                            Write-Message -Level SomewhatVerbose -Message "Removing the job"
-                            if ($KeepUnusedSchedule) {
-                                # Drop the job keeping the unused schedules
-                                Write-Message -Level SomewhatVerbose -Message "Removing job keeping unused schedules"
-                                $currentJob.Drop($true)
+                            if (Test-Bound -ParameterName KeepUnusedSchedule) {
+                                Write-Message -Level SomewhatVerbose -Message "Unused job schedules will be kept"
+                                $dropSchedule = 0
                             }
-                            else {
-                                # Drop the job removing the unused schedules
-                                Write-Message -Level SomewhatVerbose -Message "Removing job removing unused schedules"
-                                $currentJob.Drop($false)
-                            }
+                            Write-Message -Level SomewhatVerbose -Message "Removing job"
+                            $dropJobQuery = ("EXEC dbo.sp_delete_job @job_name = '{0}', @delete_history = {1}, @delete_unused_schedule = {2}" -f $currentJob.Name, $dropHistory, $dropSchedule)
+                            $server.Databases['msdb'].ExecuteNonQuery($dropJobQuery)
                         }
                         catch {
                             Stop-Function -Message  "Something went wrong removing the job" -Target $instance -ErrorRecord $_ -Continue
