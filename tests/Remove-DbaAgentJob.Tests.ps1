@@ -24,7 +24,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job dbatoolsci_testjob -StepId 1 -StepName dbatoolsci_step1 -Subsystem TransactSql -Command 'select 1'
             $null = Start-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob
         }
-        AfterAll {
+        AfterAll {  
             if (Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_daily) { Remove-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_daily }
         }
         $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob
@@ -51,13 +51,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should have deleted job: dbatoolsci_testjob_schedule" {
             (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_schedule) | Should BeNullOrEmpty
         }
-        It "Should not have deleted schedule: dbatoolsci_daily" {
+        It "Should not have deleted schedule: dbatoolsci_weekly" {
             (Get-DbaAgentSchedule -SqlInstance $script:instance2 -Schedule dbatoolsci_weekly) | Should Not BeNullOrEmpty
         }
     }
     Context "Command removes job but not history" {
         BeforeAll {
-            $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history
+            $job = New-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history
             $null = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history -StepId 1 -StepName dbatoolsci_step1 -Subsystem TransactSql -Command 'select 1'
             $null = Start-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history
         }
@@ -67,7 +67,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             (Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history) | Should BeNullOrEmpty
         }
         It "Should not have deleted history: dbatoolsci_testjob_history" {
-            (Get-DbaAgentJobHistory -SqlInstance $script:instance2 -Job dbatoolsci_testjob_history) | Should Not BeNullOrEmpty
+            (Invoke-SqlCmd2 -ServerInstance $script:instance2 -Database msdb -Query "select 1 from sysjobhistory where job_id = '$($job.jobid)'") | Should Not BeNullOrEmpty
+        }
+
+        AfterAll {
+            Invoke-SqlCmd2 -ServerInstance $script:instance2 -Database msdb -Query "delete from sysjobhistory where job_id = '$($job.jobid)'"            
         }
     }
 }
