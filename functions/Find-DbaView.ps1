@@ -1,4 +1,4 @@
-function Find-DbaView {
+﻿function Find-DbaView {
     <#
 .SYNOPSIS
 Returns all views that contain a specific case-insensitive string or regex pattern.
