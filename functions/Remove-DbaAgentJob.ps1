@@ -28,7 +28,7 @@ function Remove-DbaAgentJob {
             How strict does the command take lesser issues?
             Strict: Interrupt if the job specified doesn't exist.
             Lazy:   Silently skip over jobs that don't exist.
-        
+
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -53,12 +53,12 @@ function Remove-DbaAgentJob {
 
         .EXAMPLE
             Remove-DbaAgentJob -SqlInstance sql1 -Job Job1
-        
+
             Removes the job from the instance with the name Job1
 
         .EXAMPLE
             Remove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepHistory
-            
+
             Removes the job but keeps the history
 
         .EXAMPLE
@@ -68,12 +68,12 @@ function Remove-DbaAgentJob {
 
         .EXAMPLE
             Remove-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1
-        
+
             Removes the job from multiple servers
 
         .EXAMPLE
             sql1, sql2, sql3 | Remove-DbaAgentJob -Job Job1
-        
+
             Removes the job from multiple servers using pipe line
 
     #>
@@ -121,7 +121,7 @@ function Remove-DbaAgentJob {
                     }
                 }
                 else {
-                    if ($PSCmdlet.ShouldProcess($instance, "Removing the job on $currentJob")) {
+                    if ($PSCmdlet.ShouldProcess($instance, "Removing the job $j")) {
                         try {
                             $currentJob = $Server.JobServer.Jobs[$j]
                             $dropHistory = 1
