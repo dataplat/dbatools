@@ -1,7 +1,7 @@
 function Read-DbaTraceFile {
     <#
         .SYNOPSIS
-        Reads a trace file from specied SQL Server Database
+        Reads a trace file from specified SQL Server Database
 
         .DESCRIPTION
         Using the fn_trace_gettable function, a trace file is read and returned as a PowerShell object
@@ -12,7 +12,7 @@ function Read-DbaTraceFile {
         A SQL Server instance to connect to
 
         .PARAMETER SqlCredential
-        A credential to use to conect to the SQL instance rather than using Windows Authentication
+        A credential to use to connect to the SQL instance rather than using Windows Authentication
 
         .PARAMETER Path
         Path to the trace file. This path is relative to the SQL Server instance.

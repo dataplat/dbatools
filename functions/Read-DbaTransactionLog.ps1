@@ -1,14 +1,14 @@
 function Read-DbaTransactionLog {
     <#
 .SYNOPSIS
-Reads the live Transaction log from specied SQL Server Database
+Reads the live Transaction log from specified SQL Server Database
 
 .DESCRIPTION
 Using the fn_dblog function, the live transaction log is read and returned as a PowerShell object
 
 This function returns the whole of the log. The information is presented in the format that the logging subsystem uses.
 
-A soft limit of 0.5GB of log as been implemented. This is based on testing. This limit can be overidden
+A soft limit of 0.5GB of log as been implemented. This is based on testing. This limit can be overridden
 at the users request, but please be aware that this may have an impact on your target databases and on the
 system running this function
 
@@ -16,7 +16,7 @@ system running this function
 A SQL Server instance to connect to
 
 .PARAMETER SqlCredential
-A credeial to use to conect to the SQL Instance rather than using Windows Authentication
+A credential to use to connect to the SQL Instance rather than using Windows Authentication
 
 .PARAMETER Database
 Database to read the transaction log of

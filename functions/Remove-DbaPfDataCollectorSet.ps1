@@ -7,23 +7,25 @@
             Removes a Performance Monitor Data Collector Set. When removing data collector sets from the local instance, Run As Admin is required.
 
         .PARAMETER ComputerName
-            The target computer.
+            The target computer. Defaults to localhost.
 
         .PARAMETER Credential
-            Allows you to login to $ComputerName using alternative credentials.
+            Allows you to login to $ComputerName using alternative credentials. To use:
+
+            $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
         .PARAMETER CollectorSet
-            The Collector Set name
+            The name of the Collector Set to remove.
     
         .PARAMETER InputObject
-            Enables piped results from Get-DbaPfDataCollectorSet
+            Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
 
         .PARAMETER WhatIf
-        Shows what would happen if the command were to run. No actions are actually performed.
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
         .PARAMETER Confirm
-        Prompts you for confirmation before executing any changing operations within the command.
-        
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+             
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -46,22 +48,22 @@
         .EXAMPLE
             Remove-DbaPfDataCollectorSet -ComputerName sql2017 -Confirm:$false
     
-            Attempts to remove all ready Collectors on localhost and does not prompt to confirm
+            Attempts to remove all ready Collectors on localhost and does not prompt to confirm.
     
         .EXAMPLE
             Remove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
     
-            Prompts for confirmation then removes the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials
+            Prompts for confirmation then removes the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
     
         .EXAMPLE
             Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Remove-DbaPfDataCollectorSet
     
-            Removes 'System Correlation' Collector
+            Removes the 'System Correlation' Collector.
     
         .EXAMPLE
             Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Stop-DbaPfDataCollectorSet | Remove-DbaPfDataCollectorSet
     
-            Stops and removes 'System Correlation' Collector
+            Stops and removes the 'System Correlation' Collector.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
@@ -82,7 +84,7 @@
                 $null = $collectorset.Delete()
             }
             else {
-                Write-Warning "Data Collector Set $setname does not exist on $env:COMPUTERNAME"
+                Write-Warning "Data Collector Set $setname does not exist on $env:COMPUTERNAME."
             }
         }
     }
@@ -95,7 +97,7 @@
         
         if ($InputObject) {
             if (-not $InputObject.DataCollectorSetObject) {
-                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet"
+                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet."
                 return
             }
         }
@@ -108,24 +110,24 @@
             
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
             
-            Write-Message -Level Verbose -Message "$setname on $ComputerName is $status"
+            Write-Message -Level Verbose -Message "$setname on $ComputerName is $status."
             
             if ($status -eq "Running") {
                 Stop-Function -Message "$setname on $computer is running. Use Stop-DbaPfDataCollectorSet to stop first." -Continue
             }
             
             if ($Pscmdlet.ShouldProcess("$computer", "Removing collector set $setname")) {
-                Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
+                Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
                 try {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname -ErrorAction Stop
                     [pscustomobject]@{
-                        ComputerName                                           = $computer
-                        Name                                                   = $setname
-                        Status                                                 = "Removed"
+                        ComputerName = $computer
+                        Name         = $setname
+                        Status       = "Removed"
                     }
                 }
                 catch {
-                    Stop-Function -Message "Failure Removing $setname on $computer" -ErrorRecord $_ -Target $computer -Continue
+                    Stop-Function -Message "Failure Removing $setname on $computer." -ErrorRecord $_ -Target $computer -Continue
                 }
             }
         }
