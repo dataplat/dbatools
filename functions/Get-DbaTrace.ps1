@@ -1,7 +1,7 @@
 function Get-DbaTrace {
     <#
         .SYNOPSIS
-        Gets a list of trace(s) from specied SQL Server Instance
+        Gets a list of trace(s) from specified SQL Server Instance
 
         .DESCRIPTION
         This function returns a list of Traces on a SQL Server Instance and identify the default Trace File
@@ -10,7 +10,7 @@ function Get-DbaTrace {
         A SQL Server instance to connect to
 
         .PARAMETER SqlCredential
-        A credeial to use to conect to the SQL Instance rather than using Windows Authentication
+        A credential to use to connect to the SQL Instance rather than using Windows Authentication
 
         .PARAMETER Id
         The id(s) of the Trace
