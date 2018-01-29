@@ -10,7 +10,7 @@
         A SQL Server instance to connect to
 
         .PARAMETER SqlCredential
-        A credeial to use to conect to the SQL Instance rather than using Windows Authentication
+        A credential to use to connect to the SQL Instance rather than using Windows Authentication
 
         .PARAMETER Id
         A list of trace ids
