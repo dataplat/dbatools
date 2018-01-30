@@ -114,7 +114,7 @@ function Copy-DbaTableData {
             Copies all the data from sql1 to sql2, using the database dbatools_from.
 
         .EXAMPLE
-            Copy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DatabaseDest dbatools_dest -Table test_table
+            Copy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table test_table
 
             Copies all the data from sql1 to sql2, using the database dbatools_from as source and dbatools_dest as destination
 
