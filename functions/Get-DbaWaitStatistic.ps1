@@ -69,6 +69,12 @@
             Shows detailed notes, if available, from Paul's post
 
         .EXAMPLE
+            $output = Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 100 -IncludeIgnorable | Select * | ConvertTo-DbaDataTable
+             
+            Collects all Wait Statistics (including ignorable waits) on server sql2008 into a Data Table.
+
+
+        .EXAMPLE
             $output = Get-DbaWaitStatistic -SqlInstance sql2008
             $output
             foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }
@@ -837,7 +843,7 @@
                     ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
                 FROM sys.dm_os_wait_stats
                 WHERE [waiting_tasks_count] > 0
-                AND [wait_type] NOT IN ($IgnorableList)
+                AND Cast([wait_type] as VARCHAR(60)) NOT IN ($IgnorableList)
                 )
                 SELECT
                     MAX ([W1].[wait_type]) AS [WaitType],
