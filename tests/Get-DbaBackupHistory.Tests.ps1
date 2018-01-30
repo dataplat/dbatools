@@ -46,6 +46,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
+    Context "LastFull should work with multiple databases" {
+        $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -Database $dbname, master -lastfull
+        It "Should return 2 records" {
+            $results.count | Should Be 2
+        }
+    }
+
     Context "Testing IncludeCopyOnly with LastFull" {
         $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -LastFull -Database $dbname
         $resultsCo = Get-DbaBackupHistory -SqlInstance $script:instance1 -LastFull -IncludeCopyOnly -Database $dbname

@@ -1,7 +1,7 @@
 function Get-DbaSuspectPage {
     <#
         .SYNOPSIS
-        Returns data that is stored in SQL for Suspect Pages on the specied SQL Server Instance
+        Returns data that is stored in SQL for Suspect Pages on the specified SQL Server Instance
 
         .DESCRIPTION
         This function returns any records that were stored due to suspect pages in databases on a SQL Server Instance.
@@ -10,7 +10,7 @@ function Get-DbaSuspectPage {
         A SQL Server instance to connect to
 
         .PARAMETER SqlCredential
-        A credential to use to conect to the SQL Instance rather than using Windows Authentication
+        A credential to use to connect to the SQL Instance rather than using Windows Authentication
 
         .PARAMETER Database
         The database to return. If unspecified, all records will be returned.

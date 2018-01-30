@@ -5,10 +5,10 @@ function Invoke-DbaAdvancedRestore {
         For 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk
 
     .DESCRIPTION
-        This is the final piece in the Restore-DbaDatabase Stack. Uusally a BackupHistory object will arrive here from Restore-DbaDatabse via the following pipeline:
+        This is the final piece in the Restore-DbaDatabase Stack. Usually a BackupHistory object will arrive here from Restore-DbaDatabse via the following pipeline:
         Get-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore
 
-        We have exposed these functions publically to allow advanced users to perform operations that we don't support, or won't add as they would make things too complex for the majority of our users
+        We have exposed these functions publicly to allow advanced users to perform operations that we don't support, or won't add as they would make things too complex for the majority of our users
 
         For example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via Format-DbaBackupInformation
 
@@ -87,7 +87,7 @@ function Invoke-DbaAdvancedRestore {
         $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly
         $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
 
-        First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore. By  reusing the BackupHistory object there is no need to rescan all the backup files again
+        First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore. By reusing the BackupHistory object there is no need to rescan all the backup files again
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
@@ -124,10 +124,10 @@ function Invoke-DbaAdvancedRestore {
             return
         }
 
-        If ($null -ne $PageRestore) {
+        if ($null -ne $PageRestore) {
             Write-Message -Message "Doing Page Recovery" -Level Verbose
             $tmpPages = @()
-            ForEach ($Page in $PageRestore) {
+            foreach ($Page in $PageRestore) {
                 $tmppages += "$($Page.FileId):$($Page.PageID)"
             }
             $NoRecovery = $True
@@ -137,7 +137,7 @@ function Invoke-DbaAdvancedRestore {
         $InternalHistory = @()
     }
     process {
-        ForEach ($bh in $BackupHistory) {
+        foreach ($bh in $BackupHistory) {
             $InternalHistory += $bh
         }
     }
@@ -165,7 +165,7 @@ function Invoke-DbaAdvancedRestore {
                 }
             }
             Write-Message -Message "WithReplace  = $WithReplace" -Level Debug
-            $backups = $InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property Type, FirstLsn
+            $backups = @($InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
             foreach ($backup in $backups) {
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
@@ -232,7 +232,7 @@ function Invoke-DbaAdvancedRestore {
                         $Device.devicetype = "File"
                     }
                     $Restore.FileNumber = $backup.Position
-                    $Restore.Devices.Add($device)
+                    $Restore.Devices.Add($Device)
                 }
                 Write-Message -Level Verbose -Message "Performing restore action"
                 $ConfirmMessage = "`n Restore Database $Database on $SqlInstance `n from files: $RestoreFileNames `n with these file moves: `n $LogicalFileMovesString `n $ConfirmPointInTime `n"
@@ -248,18 +248,18 @@ function Invoke-DbaAdvancedRestore {
                                 $script = $script.TrimEnd() + ' WITH KEEP_CDC'
                             }
                             if ($true -ne $OutputScriptOnly) {
-                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
-                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             }
                         }
                         elseif ($null -ne $Pages -and $Action -eq 'Database') {
                             $script = $Restore.Script($server)
                             $script = $script -replace "] FROM", "] PAGE='$pages' FROM"
                             if ($true -ne $OutputScriptOnly) {
-                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
-                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             }
                         }
                         elseif ($OutputScriptOnly) {
@@ -267,9 +267,9 @@ function Invoke-DbaAdvancedRestore {
                         }
                         elseif ($VerifyOnly) {
                             Write-Message -Message "VerifyOnly restore" -Level Verbose
-                            Write-Progress -id 2 -activity "Verifying $Database backup file on $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-                            $Verify = $Restore.sqlverify($server)
-                            Write-Progress -id 2 -activity "Verifying $Database backup file on $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                            Write-Progress -id 2 -activity "Verifying $Database backup file on $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                            $Verify = $Restore.SqlVerify($server)
+                            Write-Progress -id 2 -activity "Verifying $Database backup file on $sqlinstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             if ($verify -eq $true) {
                                 Write-Message -Message "VerifyOnly restore Succeeded" -Level Verbose
                                 return "Verify successful"
@@ -280,10 +280,20 @@ function Invoke-DbaAdvancedRestore {
                             }
                         }
                         else {
-                            Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                            $outerProgress = $BackupCnt/$Backups.Count*100
+                            if ($BackupCnt -eq 1) {
+                                Write-Progress -id 2 -ParentId 1 -Activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0
+                            }
+                            Write-Progress -id 3 -ParentId 2 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete 0
                             $script = $Restore.Script($Server)
-                            $Restore.sqlrestore($Server)
-                            Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                            $percentcomplete = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
+                                Write-Progress -id 3 -ParentId 2 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                            }
+                            $Restore.add_PercentComplete($percentcomplete)
+                            $Restore.PercentCompleteNotification = 1
+                            $Restore.SqlRestore($Server)
+                            Write-Progress -id 3 -ParentId 2 -Activity "Restore $($backup.FullName -Join ',')" -Completed
+                            Write-Progress -id 2 -ParentId 1 -Activity "Restoring $Database to $sqlinstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete $outerProgress -status ([System.String]::Format("Progress: {0:N2} %", $outerProgress))
                         }
                     }
                     catch {
@@ -321,15 +331,15 @@ function Invoke-DbaAdvancedRestore {
                         else {
                             $script
                         }
-                        while ($Restore.Devices.count -gt 0) {
-                            $device = $Restore.devices[0]
-                            $null = $Restore.devices.remove($Device)
+                        if ($Restore.Devices.Count -gt 0) {
+                            $Restore.Devices.Clear()
                         }
                         Write-Message -Level Verbose -Message "Succeeded, Closing Server connection"
                         $server.ConnectionContext.Disconnect()
                     }
                 }
                 Write-Progress -id 1 -Activity "Restoring" -Completed
+                Write-Progress -id 2 -Activity "Restoring" -Completed
                 $BackupCnt++
             }
             if ($server.ConnectionContext.exists) {
