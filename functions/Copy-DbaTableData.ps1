@@ -275,7 +275,7 @@ function Copy-DbaTableData {
             }
 
             try {
-                $desttable = Get-DbaTable -SqlInstance $destServer -Table $DestinationTable -Database $Database -EnableException -Verbose:$false | Select-Object -First 1
+                $desttable = Get-DbaTable -SqlInstance $destServer -Table $DestinationTable -Database $DestinationDatabase -EnableException -Verbose:$false | Select-Object -First 1
             }
             catch {
                 Stop-Function -Message "Unable to determine destination table: $DestinationTable"
