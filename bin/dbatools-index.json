@@ -2104,7 +2104,7 @@
                      "DBCC"
                  ],
         "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
-        "Synopsis":  "Returns data that is stored in SQL for Suspect Pages on the specied SQL Server Instance",
+        "Synopsis":  "Returns data that is stored in SQL for Suspect Pages on the specified SQL Server Instance",
         "Name":  "Get-DbaSuspectPage",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSuspectPage -SqlInstance sql2016\r\n\r\nRetrieve any records stored for Suspect Pages on the sql2016 SQL Server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSuspectPage -SqlInstance sql2016 -Database Test\r\n\r\nRetrieve any records stored for Suspect Pages on the sql2016 SQL Server and the Test database only.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
@@ -2172,7 +2172,7 @@
                      "Trace"
                  ],
         "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
-        "Synopsis":  "Gets a list of trace(s) from specied SQL Server Instance",
+        "Synopsis":  "Gets a list of trace(s) from specified SQL Server Instance",
         "Name":  "Get-DbaTrace",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2016\r\n\r\nLists all the tracefiles on the sql2016 SQL Server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2016 -Default\r\n\r\nLists the default trace information on the sql2016 SQL Server.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
@@ -2245,7 +2245,7 @@
         "Synopsis":  "Displays wait statistics",
         "Name":  "Get-DbaWaitStatistic",
         "Links":  "https://dbatools.io/Get-DbaWaitStatistic",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008, sqlserver2012\r\n\r\nCheck wait statistics for servers sql2008 and sqlserver2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008 -Threshold 98 -IncludeIgnorable\r\n\r\nCheck wait statistics on server sql2008 for thresholds above 98% and include wait stats that are most often, but not \r\nalways, ignorable\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008 | Select *\r\n\r\nShows detailed notes, if available, from Paul\u0027s post\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$output = Get-DbaWaitStatistic -SqlInstance sql2008\r\n\r\n$output\r\nforeach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }\r\n\r\nDisplays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008, sqlserver2012\r\n\r\nCheck wait statistics for servers sql2008 and sqlserver2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008 -Threshold 98 -IncludeIgnorable\r\n\r\nCheck wait statistics on server sql2008 for thresholds above 98% and include wait stats that are most often, but not \r\nalways, ignorable\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008 | Select *\r\n\r\nShows detailed notes, if available, from Paul\u0027s post\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$output = Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 100 -IncludeIgnorable | Select * | \r\nConvertTo-DbaDataTable\r\n\r\nCollects all Wait Statistics (including ignorable waits) on server sql2008 into a Data Table.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$output = Get-DbaWaitStatistic -SqlInstance sql2008\r\n\r\n$output\r\nforeach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }\r\n\r\nDisplays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaWindowsLog",
@@ -2383,11 +2383,11 @@
     },
     {
         "CommandName":  "Invoke-DbaAdvancedRestore",
-        "Description":  "This is the final piece in the Restore-DbaDatabase Stack. Uusally a BackupHistory object will arrive here from Restore-DbaDatabse via the following pipeline:\nGet-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore\n\nWe have exposed these functions publically to allow advanced users to perform operations that we don\u0027t support, or won\u0027t add as they would make things too complex for the majority of our users\n\nFor example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via Format-DbaBackupInformation\n\nWe would recommend ALWAYS pushing your input through Test-DbaBackupInformation just to make sure that it makes sense to us.",
+        "Description":  "This is the final piece in the Restore-DbaDatabase Stack. Usually a BackupHistory object will arrive here from Restore-DbaDatabse via the following pipeline:\nGet-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore\n\nWe have exposed these functions publicly to allow advanced users to perform operations that we don\u0027t support, or won\u0027t add as they would make things too complex for the majority of our users\n\nFor example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via Format-DbaBackupInformation\n\nWe would recommend ALWAYS pushing your input through Test-DbaBackupInformation just to make sure that it makes sense to us.",
         "Synopsis":  "Allows the restore of modified BackupHistory Objects\nFor 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk",
         "Name":  "Invoke-DbaAdvancedRestore",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance\r\n\r\nWill restore all the backups in the BackupHistory object according to the transformations it contains\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly\r\n\r\n$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance\r\n\r\nFirst generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the \r\nfull restore. By  reusing the BackupHistory object there is no need to rescan all the backup files again\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance\r\n\r\nWill restore all the backups in the BackupHistory object according to the transformations it contains\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly\r\n\r\n$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance\r\n\r\nFirst generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the \r\nfull restore. By reusing the BackupHistory object there is no need to rescan all the backup files again\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Invoke-DbaBalanceDataFiles",
@@ -2693,6 +2693,19 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDbCertificate -SqlInstance Server1\r\n\r\nYou will be prompted to securely enter your password, then a certificate will be created in the master database on \r\nserver1 if it does not exist.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDbCertificate -SqlInstance Server1 -Database db1 -Confirm:$false\r\n\r\nSuppresses all prompts to install but prompts to securely enter your password and creates a certificate in the \u0027db1\u0027 \r\ndatabase\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "New-DbaDbUser",
+        "Description":  "Created a new user for a specified database with provided specifications.",
+        "Tags":  [
+                     "Database",
+                     "User"
+                 ],
+        "Author":  "Frank Henninger (@osiris687)",
+        "Synopsis":  "Creates a new user for the specified database.",
+        "Name":  "New-DbaDbUser",
+        "Links":  "https://dbatools.io/New-DbaDbUser",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login user1\r\n\r\nCreates a new sql user with login named user1 in the specified database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Username user1\r\n\r\nCreates a new sql user without login named user1 in the specified database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login Login1 -Username user1\r\n\r\nCreates a new sql user named user1 mapped to Login1 in the specified database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseUser -SqlInstance sqlserver1 -Database DB1 | New-DbaDbUser -SqlInstance sqlserver2 -Database DB1\r\n\r\nCopies users from sqlserver1.DB1 to sqlserver2.DB1. Does not copy permissions!\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "New-DbaLogin",
         "Description":  "Creates a new SQL Server login with provided specifications",
         "Tags":  "Login",
@@ -2860,20 +2873,20 @@
                      "Security",
                      "Trace"
                  ],
-        "Synopsis":  "Reads a trace file from specied SQL Server Database",
+        "Synopsis":  "Reads a trace file from specified SQL Server Database",
         "Name":  "Read-DbaTraceFile",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\\traces\\big.trc\r\n\r\nReads the tracefile C:\\traces\\big.trc, stored on the sql2016 sql server. Filters only results that have master or \r\ntempdb as the DatabaseName.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\\traces\\big.trc -TextData \u0027EXEC \r\nSP_PROCOPTION\u0027\r\n\r\nReads the tracefile C:\\traces\\big.trc, stored on the sql2016 sql server.\r\nFilters only results that have master or tempdb as the DatabaseName and that have \u0027EXEC SP_PROCOPTION\u0027 somewhere in the \r\ntext.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nRead-DbaTraceFile -SqlInstance sql2016 -Path C:\\traces\\big.trc -Where \"LinkedServerName = \u0027myls\u0027 and StartTime \r\n\u003e\u00275/30/2017 4:27:52 PM\u0027\"\r\n\r\nReads the tracefile C:\\traces\\big.trc, stored on the sql2016 sql server.\r\nFilters only results where LinkServerName = myls and StartTime is greater than \u00275/30/2017 4:27:52 PM\u0027.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Read-DbaTransactionLog",
-        "Description":  "Using the fn_dblog function, the live transaction log is read and returned as a PowerShell object\n\nThis function returns the whole of the log. The information is presented in the format that the logging subsystem uses.\n\nA soft limit of 0.5GB of log as been implemented. This is based on testing. This limit can be overidden\nat the users request, but please be aware that this may have an impact on your target databases and on the\nsystem running this function",
+        "Description":  "Using the fn_dblog function, the live transaction log is read and returned as a PowerShell object\n\nThis function returns the whole of the log. The information is presented in the format that the logging subsystem uses.\n\nA soft limit of 0.5GB of log as been implemented. This is based on testing. This limit can be overridden\nat the users request, but please be aware that this may have an impact on your target databases and on the\nsystem running this function",
         "Tags":  [
                      "Databases",
                      "Logs"
                  ],
         "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
-        "Synopsis":  "Reads the live Transaction log from specied SQL Server Database",
+        "Synopsis":  "Reads the live Transaction log from specified SQL Server Database",
         "Name":  "Read-DbaTransactionLog",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase\r\n\r\nWill read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell \r\nobject $Log\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase -IgnoreLimit\r\n\r\nWill read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell \r\nobject $Log, ignoring the recommnedation of not returning more that 0.5GB of log\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
@@ -3099,12 +3112,12 @@
     },
     {
         "CommandName":  "Remove-DbaPfDataCollectorCounter",
-        "Description":  "Removes a Performance Data Collector Counter",
+        "Description":  "Removes a Performance Data Collector Counter.",
         "Tags":  "PerfMon",
-        "Synopsis":  "Removes a Performance Data Collector Counter",
+        "Synopsis":  "Removes a Performance Data Collector Counter.",
         "Name":  "Remove-DbaPfDataCollectorCounter",
         "Links":  "https://dbatools.io/Remove-DbaPfDataCollectorCounter",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaPfDataCollectorCounter -ComputerName sql2017 -CollectorSet \u0027System Correlation\u0027 -Collector \r\nDataCollector01  -Counter \u0027\\LogicalDisk(*)\\Avg. Disk Queue Length\u0027\r\n\r\nPrompts for confirmation then removes the \u0027\\LogicalDisk(*)\\Avg. Disk Queue Length\u0027 counter within the DataCollector01 \r\ncollector within the System Correlation collector set on sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorCounter | Out-GridView -PassThru | Remove-DbaPfDataCollectorCounter -Confirm:$false\r\n\r\nAllows you to select which counters you\u0027d like on localhost and does not prompt for confirmation\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaPfDataCollectorCounter -ComputerName sql2017 -CollectorSet \u0027System Correlation\u0027 -Collector \r\nDataCollector01  -Counter \u0027\\LogicalDisk(*)\\Avg. Disk Queue Length\u0027\r\n\r\nPrompts for confirmation then removes the \u0027\\LogicalDisk(*)\\Avg. Disk Queue Length\u0027 counter within the DataCollector01 \r\ncollector within the System Correlation collector set on sql2017.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorCounter | Out-GridView -PassThru | Remove-DbaPfDataCollectorCounter -Confirm:$false\r\n\r\nAllows you to select which counters you\u0027d like on localhost and does not prompt for confirmation.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-DbaPfDataCollectorSet",
@@ -3113,7 +3126,7 @@
         "Synopsis":  "Removes a Performance Monitor Data Collector Set",
         "Name":  "Remove-DbaPfDataCollectorSet",
         "Links":  "https://dbatools.io/Remove-DbaPfDataCollectorSet",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaPfDataCollectorSet\r\n\r\nPrompts for confirmation then removes all ready Collectors on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaPfDataCollectorSet -ComputerName sql2017 -Confirm:$false\r\n\r\nAttempts to remove all ready Collectors on localhost and does not prompt to confirm\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet \u0027System \r\nCorrelation\u0027\r\n\r\nPrompts for confirmation then removes the \u0027System Correlation\u0027 Collector on sql2017 and sql2016 using alternative \r\ncredentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Remove-DbaPfDataCollectorSet\r\n\r\nRemoves \u0027System Correlation\u0027 Collector\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Stop-DbaPfDataCollectorSet | \r\nRemove-DbaPfDataCollectorSet\r\n\r\nStops and removes \u0027System Correlation\u0027 Collector\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaPfDataCollectorSet\r\n\r\nPrompts for confirmation then removes all ready Collectors on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaPfDataCollectorSet -ComputerName sql2017 -Confirm:$false\r\n\r\nAttempts to remove all ready Collectors on localhost and does not prompt to confirm.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet \u0027System \r\nCorrelation\u0027\r\n\r\nPrompts for confirmation then removes the \u0027System Correlation\u0027 Collector on sql2017 and sql2016 using alternative \r\ncredentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Remove-DbaPfDataCollectorSet\r\n\r\nRemoves the \u0027System Correlation\u0027 Collector.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Stop-DbaPfDataCollectorSet | \r\nRemove-DbaPfDataCollectorSet\r\n\r\nStops and removes the \u0027System Correlation\u0027 Collector.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-DbaSpn",
@@ -3609,12 +3622,12 @@
     },
     {
         "CommandName":  "Start-DbaPfDataCollectorSet",
-        "Description":  "Starts Performance Monitor Data Collector Set",
+        "Description":  "Starts Performance Monitor Data Collector Set.",
         "Tags":  "PerfMon",
-        "Synopsis":  "Starts Performance Monitor Data Collector Set",
+        "Synopsis":  "Starts Performance Monitor Data Collector Set.",
         "Name":  "Start-DbaPfDataCollectorSet",
         "Links":  "https://dbatools.io/Start-DbaPfDataCollectorSet",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPfDataCollectorSet\r\n\r\nAttempts to start all ready Collectors on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPfDataCollectorSet -ComputerName sql2017\r\n\r\nAttempts to start all ready Collectors on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet \u0027System \r\nCorrelation\u0027\r\n\r\nStarts the \u0027System Correlation\u0027 Collector on sql2017 and sql2016 using alternative credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Start-DbaPfDataCollectorSet\r\n\r\nStarts \u0027System Correlation\u0027 Collector\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPfDataCollectorSet\r\n\r\nAttempts to start all ready Collectors on localhost.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPfDataCollectorSet -ComputerName sql2017\r\n\r\nAttempts to start all ready Collectors on localhost.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet \u0027System \r\nCorrelation\u0027\r\n\r\nStarts the \u0027System Correlation\u0027 Collector on sql2017 and sql2016 using alternative credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Start-DbaPfDataCollectorSet\r\n\r\nStarts the \u0027System Correlation\u0027 Collector.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Start-DbaSqlService",
@@ -3633,7 +3646,7 @@
                      "Security",
                      "Trace"
                  ],
-        "Synopsis":  "Start a list of trace(s) from specied SQL Server Instance",
+        "Synopsis":  "Start a list of trace(s) from specified SQL Server Instance",
         "Name":  "Start-DbaTrace",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaTrace -SqlInstance sql2008\r\n\r\nStarts all traces on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaTrace -SqlInstance sql2008 -Id 1\r\n\r\nStarts all trace with ID 1 on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Start-DbaTrace\r\n\r\nStarts selected traces on sql2008\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
@@ -3670,12 +3683,12 @@
     },
     {
         "CommandName":  "Stop-DbaPfDataCollectorSet",
-        "Description":  "Starts Performance Monitor Data Collector Set",
+        "Description":  "Starts Performance Monitor Data Collector Set.",
         "Tags":  "PerfMon",
-        "Synopsis":  "Starts Performance Monitor Data Collector Set",
+        "Synopsis":  "Starts Performance Monitor Data Collector Set.",
         "Name":  "Stop-DbaPfDataCollectorSet",
         "Links":  "https://dbatools.io/Stop-DbaPfDataCollectorSet",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaPfDataCollectorSet\r\n\r\nAttempts to start all ready Collectors on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaPfDataCollectorSet -ComputerName sql2017\r\n\r\nAttempts to start all ready Collectors on localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet \u0027System \r\nCorrelation\u0027\r\n\r\nStarts the \u0027System Correlation\u0027 Collector on sql2017 and sql2016 using alternative credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Stop-DbaPfDataCollectorSet\r\n\r\nStarts \u0027System Correlation\u0027 Collector\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaPfDataCollectorSet\r\n\r\nAttempts to stop all ready Collectors on localhost.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaPfDataCollectorSet -ComputerName sql2017\r\n\r\nAttempts to stop all ready Collectors on localhost.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet \u0027System \r\nCorrelation\u0027\r\n\r\nStops the \u0027System Correlation\u0027 Collector on sql2017 and sql2016 using alternative credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Stop-DbaPfDataCollectorSet\r\n\r\nStops the \u0027System Correlation\u0027 Collector.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Stop-DbaProcess",
@@ -3703,7 +3716,7 @@
                      "Security",
                      "Trace"
                  ],
-        "Synopsis":  "Stop a list of trace(s) from specied SQL Server Instance",
+        "Synopsis":  "Stop a list of trace(s) from specified SQL Server Instance",
         "Name":  "Stop-DbaTrace",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaTrace -SqlInstance sql2008\r\n\r\nStops all traces on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaTrace -SqlInstance sql2008 -Id 1\r\n\r\nStops all trace with ID 1 on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Stop-DbaTrace\r\n\r\nStops selected traces on sql2008\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
