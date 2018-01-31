@@ -1,25 +1,27 @@
 ﻿function Stop-DbaPfDataCollectorSet {
     <#
         .SYNOPSIS
-            Starts Performance Monitor Data Collector Set
+            Starts Performance Monitor Data Collector Set.
 
         .DESCRIPTION
-            Starts Performance Monitor Data Collector Set
+            Starts Performance Monitor Data Collector Set.
 
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.
 
         .PARAMETER Credential
-            Allows you to login to $ComputerName using alternative credentials.
+            Allows you to login to $ComputerName using alternative credentials. To use:
+
+            $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
         .PARAMETER CollectorSet
-            The Collector Set name
+            The name of the Collector Set to stop.
     
         .PARAMETER NoWait
-            Stop the collector and immediately return the results
+            If this switch is enabled, the collector is stopped and the results are returned immediately.
     
         .PARAMETER InputObject
-            Enables piped results from Get-DbaPfDataCollectorSet
+            Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -38,22 +40,22 @@
         .EXAMPLE
             Stop-DbaPfDataCollectorSet
     
-            Attempts to start all ready Collectors on localhost
+            Attempts to stop all ready Collectors on localhost.
 
         .EXAMPLE
             Stop-DbaPfDataCollectorSet -ComputerName sql2017
     
-            Attempts to start all ready Collectors on localhost
+            Attempts to stop all ready Collectors on localhost.
     
         .EXAMPLE
             Stop-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
     
-            Starts the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials
+            Stops the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
     
         .EXAMPLE
             Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Stop-DbaPfDataCollectorSet
     
-            Starts 'System Correlation' Collector
+            Stops the 'System Correlation' Collector.
     #>
     [CmdletBinding()]
     param (
@@ -86,7 +88,7 @@
         
         if ($InputObject) {
             if (-not $InputObject.DataCollectorSetObject) {
-                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet"
+                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet."
                 return
             }
         }
@@ -97,16 +99,16 @@
             $computer = $set.ComputerName
             $status = $set.State
             
-            Write-Message -Level Verbose -Message "$setname on $ComputerName is $status"
+            Write-Message -Level Verbose -Message "$setname on $ComputerName is $status."
             if ($status -ne "Running") {
-                Stop-Function -Message "$setname on $computer is already stopped" -Continue
+                Stop-Function -Message "$setname on $computer is already stopped." -Continue
             }
-            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
+            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
             }
             catch {
-                Stop-Function -Message "Failure stopping $setname on $computer" -ErrorRecord $_ -Target $computer -Continue
+                Stop-Function -Message "Failure stopping $setname on $computer." -ErrorRecord $_ -Target $computer -Continue
             }
             
             Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $setname
