@@ -69,6 +69,12 @@
             Shows detailed notes, if available, from Paul's post
 
         .EXAMPLE
+            $output = Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 100 -IncludeIgnorable | Select * | ConvertTo-DbaDataTable
+             
+            Collects all Wait Statistics (including ignorable waits) on server sql2008 into a Data Table.
+
+
+        .EXAMPLE
             $output = Get-DbaWaitStatistic -SqlInstance sql2008
             $output
             foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }
@@ -795,38 +801,72 @@
         'XE_BUFFERMGR_ALLPROCESSED_EVENT', 'XE_DISPATCHER_JOIN',
         'XE_DISPATCHER_WAIT', 'XE_LIVE_TARGET_TVF', 'XE_TIMER_EVENT'
 
-        $sql = "WITH [Waits] AS
-            (SELECT
-                [wait_type],
-                [wait_time_ms] / 1000.0 AS [WaitS],
-                ([wait_time_ms] - [signal_wait_time_ms]) / 1000.0 AS [ResourceS],
-                [signal_wait_time_ms] / 1000.0 AS [SignalS],
-                [waiting_tasks_count] AS [WaitCount],
-                100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() AS [Percentage],
-                ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
-            FROM sys.dm_os_wait_stats
-            WHERE [waiting_tasks_count] > 0
-            )
-            SELECT
-                MAX ([W1].[wait_type]) AS [WaitType],
-                CAST (MAX ([W1].[WaitS]) AS DECIMAL (16,2)) AS [WaitSeconds],
-                CAST (MAX ([W1].[ResourceS]) AS DECIMAL (16,2)) AS [ResourceSeconds],
-                CAST (MAX ([W1].[SignalS]) AS DECIMAL (16,2)) AS [SignalSeconds],
-                MAX ([W1].[WaitCount]) AS [WaitCount],
-                CAST (MAX ([W1].[Percentage]) AS DECIMAL (5,2)) AS [Percentage],
-                CAST ((MAX ([W1].[WaitS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgWaitSeconds],
-                CAST ((MAX ([W1].[ResourceS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgResSeconds],
-                CAST ((MAX ([W1].[SignalS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgSigSeconds],
-                CAST ('https://www.sqlskills.com/help/waits/' + MAX ([W1].[wait_type]) as XML) AS [URL]
-            FROM [Waits] AS [W1]
-            INNER JOIN [Waits] AS [W2]
-                ON [W2].[RowNum] <= [W1].[RowNum]
-            GROUP BY [W1].[RowNum] HAVING SUM ([W2].[Percentage]) - MAX([W1].[Percentage]) < $Threshold"
+        if ($IncludeIgnorable) {
+            $sql = "WITH [Waits] AS
+                (SELECT
+                    [wait_type],
+                    [wait_time_ms] / 1000.0 AS [WaitS],
+                    ([wait_time_ms] - [signal_wait_time_ms]) / 1000.0 AS [ResourceS],
+                    [signal_wait_time_ms] / 1000.0 AS [SignalS],
+                    [waiting_tasks_count] AS [WaitCount],
+                    100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() AS [Percentage],
+                    ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
+                FROM sys.dm_os_wait_stats
+                WHERE [waiting_tasks_count] > 0
+                )
+                SELECT
+                    MAX ([W1].[wait_type]) AS [WaitType],
+                    CAST (MAX ([W1].[WaitS]) AS DECIMAL (16,2)) AS [WaitSeconds],
+                    CAST (MAX ([W1].[ResourceS]) AS DECIMAL (16,2)) AS [ResourceSeconds],
+                    CAST (MAX ([W1].[SignalS]) AS DECIMAL (16,2)) AS [SignalSeconds],
+                    MAX ([W1].[WaitCount]) AS [WaitCount],
+                    CAST (MAX ([W1].[Percentage]) AS DECIMAL (5,2)) AS [Percentage],
+                    CAST ((MAX ([W1].[WaitS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgWaitSeconds],
+                    CAST ((MAX ([W1].[ResourceS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgResSeconds],
+                    CAST ((MAX ([W1].[SignalS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgSigSeconds],
+                    CAST ('https://www.sqlskills.com/help/waits/' + MAX ([W1].[wait_type]) as XML) AS [URL]
+                FROM [Waits] AS [W1]
+                INNER JOIN [Waits] AS [W2]
+                    ON [W2].[RowNum] <= [W1].[RowNum]
+                GROUP BY [W1].[RowNum] HAVING SUM ([W2].[Percentage]) - MAX([W1].[Percentage]) < $Threshold"
+            }
+            else {
+            $IgnorableList = "'$($ignorable -join "','")'"
+            $sql = "WITH [Waits] AS
+                (SELECT
+                    [wait_type],
+                    [wait_time_ms] / 1000.0 AS [WaitS],
+                    ([wait_time_ms] - [signal_wait_time_ms]) / 1000.0 AS [ResourceS],
+                    [signal_wait_time_ms] / 1000.0 AS [SignalS],
+                    [waiting_tasks_count] AS [WaitCount],
+                    100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() AS [Percentage],
+                    ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
+                FROM sys.dm_os_wait_stats
+                WHERE [waiting_tasks_count] > 0
+                AND Cast([wait_type] as VARCHAR(60)) NOT IN ($IgnorableList)
+                )
+                SELECT
+                    MAX ([W1].[wait_type]) AS [WaitType],
+                    CAST (MAX ([W1].[WaitS]) AS DECIMAL (16,2)) AS [WaitSeconds],
+                    CAST (MAX ([W1].[ResourceS]) AS DECIMAL (16,2)) AS [ResourceSeconds],
+                    CAST (MAX ([W1].[SignalS]) AS DECIMAL (16,2)) AS [SignalSeconds],
+                    MAX ([W1].[WaitCount]) AS [WaitCount],
+                    CAST (MAX ([W1].[Percentage]) AS DECIMAL (5,2)) AS [Percentage],
+                    CAST ((MAX ([W1].[WaitS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgWaitSeconds],
+                    CAST ((MAX ([W1].[ResourceS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgResSeconds],
+                    CAST ((MAX ([W1].[SignalS]) / MAX ([W1].[WaitCount])) AS DECIMAL (16,4)) AS [AvgSigSeconds],
+                    CAST ('https://www.sqlskills.com/help/waits/' + MAX ([W1].[wait_type]) as XML) AS [URL]
+                FROM [Waits] AS [W1]
+                INNER JOIN [Waits] AS [W2]
+                    ON [W2].[RowNum] <= [W1].[RowNum]
+                GROUP BY [W1].[RowNum] HAVING SUM ([W2].[Percentage]) - MAX([W1].[Percentage]) < $Threshold"
+
+            }
         Write-Message -Level Debug -Message $sql
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
@@ -834,7 +874,7 @@
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            Write-Message -Level Verbose -Message "Connected to $instance"
             if ($IncludeIgnorable) {
                 $excludeColumns = 'Notes'
             }
