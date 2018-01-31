@@ -4,10 +4,10 @@ Function Measure-DbaDiskSpaceRequirement {
             Calculate the space needed to copy and possibly replace a database from one SQL server to another.
 
         .DESCRIPTION
-            Returns a file list from source and destination where source file may overwrite destination. Complex scenarios where a new file may exist is taken 
+            Returns a file list from source and destination where source file may overwrite destination. Complex scenarios where a new file may exist is taken
             into account. This procedure will accept an object in pipeline as long as it as provide these required properties: Source, SourceDatabase, Destination.
             Using this method will provide a way to prepare before a complex migration with lots of databases from different sources and destinations.
-            
+
         .PARAMETER Source
             The source SQL Server instance.
 
@@ -22,7 +22,7 @@ Function Measure-DbaDiskSpaceRequirement {
 
         .PARAMETER SourceDatabase
             The database to copy. It MUST exist.
-        
+
         .PARAMETER Destination
             The destination SQL Server instance.
 
@@ -67,7 +67,7 @@ Function Measure-DbaDiskSpaceRequirement {
             INSTANCE2    D:\                   -448
 
         .EXAMPLE
-            @([PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB1'}, 
+            @([PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB1'},
               [PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB2'}
             ) | Measure-DbaDiskSpaceRequirement -Consolidate -NbItems 2
 
@@ -84,7 +84,7 @@ Function Measure-DbaDiskSpaceRequirement {
 
             Using a SQL table. We are DBA after all!
     #>
-    
+
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory,ValueFromPipelineByPropertyName)]
@@ -137,7 +137,7 @@ Function Measure-DbaDiskSpaceRequirement {
         }
         $DF1 = @($DB1.FileGroups.Files | Select-Object Name, Filename, Size, @{n='Type';e={'Data'}})
         $DF1 += @($DB1.LogFiles        | Select-Object Name, Filename, Size, @{n='Type';e={'Log'}})
-        
+
         #if(!$DestinationDatabase) {throw "DestinationDatabase [$DestinationDatabase] "}
 
         if($DB2 = Get-DbaDatabase -SqlInstance $Destination -Database $DestinationDatabase -SqlCredential $DestinationSqlCredential) {
@@ -207,7 +207,7 @@ Function Measure-DbaDiskSpaceRequirement {
                 @([PSCustomObject]@{
                     ComputerName = $_.Group.ComputerName[0]
                     MountPoint = if($_.Group.MountPoint[0]) {$_.Group.MountPoint[0]} else {0}
-                    RequiredSpaceKB = $Required 
+                    RequiredSpaceKB = $Required
                     Capacity = $MP.Capacity
                     FreeSpace = $MP.Free
                     FutureFree = $MP.Free - $Required
@@ -306,4 +306,3 @@ Function Get-MountPointFromDefaultPath {
         }
     }
 }
-
