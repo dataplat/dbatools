@@ -1,7 +1,7 @@
 ﻿function Get-DbaPfAvailableCounter {
     <#
         .SYNOPSIS
-            Gathers list of all available counters on local or remote machines
+            Gathers list of all available counters on local or remote machines.
 
         .DESCRIPTION
             Gathers list of all available counters on local or remote machines. Note, if you pass a credential object, it will be included in the output for easy reuse in your next piped command.

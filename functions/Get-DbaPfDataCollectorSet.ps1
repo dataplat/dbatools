@@ -1,10 +1,10 @@
 ﻿function Get-DbaPfDataCollectorSet {
     <#
         .SYNOPSIS
-            Gets Performance Monitor Data Collector Set
+            Gets Performance Monitor Data Collector Set.
 
         .DESCRIPTION
-            Gets Performance Monitor Data Collector Set
+            Gets Performance Monitor Data Collector Set.
 
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.
@@ -15,7 +15,7 @@
             $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
         .PARAMETER CollectorSet
-            The Collector set name
+            The Collector set name.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -47,7 +47,7 @@
 
             Gets the 'System Correlation' CollectorSet on sql2017 using alternative credentials.
 
-            .EXAMPLE
+        .EXAMPLE
             Get-DbaPfDataCollectorSet | Select *
 
             Displays extra columns and also exposes the original COM object in DataCollectorSetObject.
