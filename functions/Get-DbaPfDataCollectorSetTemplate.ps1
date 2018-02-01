@@ -1,16 +1,16 @@
 ﻿function Get-DbaPfDataCollectorSetTemplate {
     <#
         .SYNOPSIS
-            Parses Perf Monitor templates. Defaults to parsing templates in the dbatools template repository (\bin\perfmontemplates\)
+            Parses Perf Monitor templates. Defaults to parsing templates in the dbatools template repository (\bin\perfmontemplates\).
 
         .DESCRIPTION
-            Parses Perf Monitor XML templates. Defaults to parsing templates in the dbatools template repository (\bin\perfmontemplates\)
+            Parses Perf Monitor XML templates. Defaults to parsing templates in the dbatools template repository (\bin\perfmontemplates\).
 
         .PARAMETER Path
             The path to the template directory. Defaults to the dbatools template repository (\bin\perfmontemplates\).
         
         .PARAMETER Pattern
-            Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaPfDataCollectorSetTemplate
+            Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaPfDataCollectorSetTemplate.
 
         .PARAMETER Template
             Specifies one or more of the templates provided by dbatools. Press tab to cycle through the list to the options.

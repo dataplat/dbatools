@@ -1,10 +1,10 @@
 ﻿function Get-DbaPfDataCollectorCounter {
     <#
         .SYNOPSIS
-            Gets Performance Counters
+            Gets Performance Counters.
 
         .DESCRIPTION
-            Gets Performance Counters
+            Gets Performance Counters.
 
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.
@@ -15,16 +15,16 @@
             $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
         .PARAMETER CollectorSet
-            The Collector Set name
+            The Collector Set name.
   
         .PARAMETER Collector
-            The Collector name
+            The Collector name.
    
         .PARAMETER Counter
             The Counter name to capture. This must be in the form of '\Processor(_Total)\% Processor Time'.
     
         .PARAMETER InputObject
-            Accepts the output of Get-DbaPfDataCollectorSet
+            Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -49,7 +49,7 @@
         .EXAMPLE
             Get-DbaPfDataCollectorCounter -ComputerName sql2017
     
-             Gets all counters for all Collector Sets on  on sql2017
+            Gets all counters for all Collector Sets on  on sql2017.
     
         .EXAMPLE
             Get-DbaPfDataCollectorCounter -ComputerName sql2017 -Counter '\Processor(_Total)\% Processor Time'
