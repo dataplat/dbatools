@@ -82,7 +82,7 @@ function Get-DbaDatabaseFile {
             mf.physical_name as PhysicalName,
             df.state_desc as State,
             df.max_size as MaxSize,
-            df.growth as Growth,
+            case mf.is_percent_growth when 1 then df.growth else df.Growth*8 end as Growth,
             fileproperty(df.name, 'spaceused') as UsedSpace,
             df.size as Size,
             vfs.size_on_disk_bytes as size_on_disk_bytes,
@@ -120,7 +120,7 @@ function Get-DbaDatabaseFile {
             df.filename as PhysicalName,
             'Existing' as State,
             df.maxsize as MaxSize,
-            df.growth as Growth,
+            case CONVERT(INT,df.status & 0x100000) / 1048576 when 1 then df.growth when 0 then df.growth*8 End as Growth,
             fileproperty(df.name, 'spaceused') as UsedSpace,
             df.size as Size,
             case CONVERT(INT,df.status & 0x20000000) / 536870912 when 1 then 'True' else 'False' End as IsOffline,
@@ -157,7 +157,7 @@ function Get-DbaDatabaseFile {
                 }
                 Write-Message -Level Verbose -Message "Querying database $db"
 
-                $version = Test-DbaDatabaseCompatibility -SqlInstance $server -Database $db.Name | select DatabaseCompatibility
+                $version = Test-DbaDatabaseCompatibility -SqlInstance $server -Database $db.Name | Select-Object DatabaseCompatibility
                 $version = + ($version.DatabaseCompatibility.ToString().replace("Version", "")) / 10
 
                 if ($version -ge 11) {
@@ -169,6 +169,8 @@ function Get-DbaDatabaseFile {
                 else {
                     $query = $sql2000
                 }
+                
+                Write-Message -Level Debug -Message "SQL Statement: $query"
 
                 $results = $server.Query($query, $db.name)
 

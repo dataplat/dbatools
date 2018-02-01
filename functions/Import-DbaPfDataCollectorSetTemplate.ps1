@@ -1,123 +1,125 @@
 ﻿function Import-DbaPfDataCollectorSetTemplate {
- <#
-    .SYNOPSIS
-    Imports a new Performance Monitor Data Collector Set Template either from our repo or a file you specify
+    <#
+        .SYNOPSIS
+            Imports a new Performance Monitor Data Collector Set Template either from the dbatools repository or a file you specify.
 
-    .DESCRIPTION
-    Imports a new Performance Monitor Data Collector Set Template either from our repo or a file you specify.
-    When importing data collector sets from the local instance, Run As Admin is required.
+        .DESCRIPTION
+            Imports a new Performance Monitor Data Collector Set Template either from the dbatools repository or a file you specify.
+            When importing data collector sets from the local instance, Run As Admin is required.
 
-    Note: The included counters will be added for all SQL instances on the machine by default.
-    For specific instances in addition to the default, use -Instance.
+            Note: The included counters will be added for all SQL instances on the machine by default.
+            For specific instances in addition to the default, use -Instance.
 
-    See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371952 for more information
+            See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371952 for more information
 
-    .PARAMETER ComputerName
-    The target server.
+        .PARAMETER ComputerName
+            The target computer. Defaults to localhost.
 
-    .PARAMETER Credential
-    Credential object used to connect to the server as a different user.
+        .PARAMETER Credential
+            Allows you to login to servers using alternative credentials. To use:
 
-    .PARAMETER Path
-    The path to the xml file or files
+            $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
-    .PARAMETER Template
-    From one or more of the templates we curated for you (tab through -Template to see options)
+        .PARAMETER Path
+            The path to the xml file or files.
 
-    .PARAMETER RootPath
-    Sets the base path where the subdirectories are created.
+        .PARAMETER Template
+            From one or more of the templates from the dbatools repository. Press Tab to cycle through the available options.
 
-    .PARAMETER DisplayName
-    Sets the display name of the data collector set.
+        .PARAMETER RootPath
+            Sets the base path where the subdirectories are created.
 
-    .PARAMETER SchedulesEnabled
-    Sets a value that indicates whether the schedules are enabled.
+        .PARAMETER DisplayName
+            Sets the display name of the data collector set.
 
-    .PARAMETER Segment
-    Sets a value that indicates whether PLA creates new logs if the maximum size or segment duration is reached before the data collector set is stopped.
+        .PARAMETER SchedulesEnabled
+            If this switch is enabled, sets a value that indicates whether the schedules are enabled.
 
-    .PARAMETER SegmentMaxDuration
-    Sets the duration that the data collector set can run before it begins writing to new log files.
+        .PARAMETER Segment
+            Sets a value that indicates whether PLA creates new logs if the maximum size or segment duration is reached before the data collector set is stopped.
 
-    .PARAMETER SegmentMaxSize
-    Sets the maximum size of any log file in the data collector set.
+        .PARAMETER SegmentMaxDuration
+            Sets the duration that the data collector set can run before it begins writing to new log files.
 
-    .PARAMETER Subdirectory
-    sets a base subdirectory of the root path where the next instance of the data collector set will write its logs.
+        .PARAMETER SegmentMaxSize
+            Sets the maximum size of any log file in the data collector set.
 
-    .PARAMETER SubdirectoryFormat
-    Sets flags that describe how to decorate the subdirectory name. PLA appends the decoration to the folder name. For example, if you specify plaMonthDayHour, PLA appends the current month, day, and hour values to the folder name. If the folder name is MyFile, the result could be MyFile110816.
+        .PARAMETER Subdirectory
+            Sets a base subdirectory of the root path where the next instance of the data collector set will write its logs.
 
-    .PARAMETER SubdirectoryFormatPattern
-    Sets a format pattern to use when decorating the folder name. Default is 'yyyyMMdd\-NNNNNN'.
+        .PARAMETER SubdirectoryFormat
+            Sets flags that describe how to decorate the subdirectory name. PLA appends the decoration to the folder name. For example, if you specify plaMonthDayHour, PLA appends the current month, day, and hour values to the folder name. If the folder name is MyFile, the result could be MyFile110816.
 
-    .PARAMETER Task
-    Sets the name of a Task Scheduler job to start each time the data collector set stops, including between segments.
+        .PARAMETER SubdirectoryFormatPattern
+            Sets a format pattern to use when decorating the folder name. Default is 'yyyyMMdd\-NNNNNN'.
 
-    .PARAMETER TaskRunAsSelf
-    Sets a value that determines whether the task runs as the data collector set user or as the user specified in the task.
+        .PARAMETER Task
+            Sets the name of a Task Scheduler job to start each time the data collector set stops, including between segments.
 
-    .PARAMETER TaskArguments
-    Sets the command-line arguments to pass to the Task Scheduler job specified in the IDataCollectorSet::Task property.
-    See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371992 for more information.
+        .PARAMETER TaskRunAsSelf
+            If this switch is enabled, sets a value that determines whether the task runs as the data collector set user or as the user specified in the task.
 
-    .PARAMETER TaskUserTextArguments
-    Sets the command-line arguments that are substituted for the {usertext} substitution variable in the IDataCollectorSet::TaskArguments property.
-    See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371993 for more inforamation.
+        .PARAMETER TaskArguments
+            Sets the command-line arguments to pass to the Task Scheduler job specified in the IDataCollectorSet::Task property.
+            See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371992 for more information.
 
-    .PARAMETER StopOnCompletion
-    Sets a value that determines whether the data collector set stops when all the data collectors in the set are in a completed state.
+        .PARAMETER TaskUserTextArguments
+            Sets the command-line arguments that are substituted for the {usertext} substitution variable in the IDataCollectorSet::TaskArguments property.
+            See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371993 for more information.
 
-    .PARAMETER Instance
-    By default, the template will be applied to all instances. If you want to set specific ones in addition to the default, supply just the instance name.
+        .PARAMETER StopOnCompletion
+            If this switch is enabled, sets a value that determines whether the data collector set stops when all the data collectors in the set are in a completed state.
 
-    .PARAMETER WhatIf
-    Shows what would happen if the command were to run the command. No modifications are actually performed.
+        .PARAMETER Instance
+            By default, the template will be applied to all instances. If you want to set specific ones in addition to the default, supply just the instance name.
 
-    .PARAMETER Confirm
-    Prompts you for confirmation before executing any changing operations within the command.
+        .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-    .NOTES
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .LINK
-    https://dbatools.io/Import-DbaPfDataCollectorSetTemplate
+        .NOTES
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-    .EXAMPLE
-    Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query'
+        .LINK
+            https://dbatools.io/Import-DbaPfDataCollectorSetTemplate
 
-    Creates a new data collector set named 'Long Running Query' from our repo to the SQL Server sql2017
+        .EXAMPLE
+            Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query'
 
-    .EXAMPLE
-    Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -DisplayName 'New Long running query' -Confirm
+            Creates a new data collector set named 'Long Running Query' from the dbatools repository on the SQL Server sql2017
 
-    Creates a new data collector set named "New Long Running Query" using the 'Long Running Query' template. Forces a confirmation if the template exists.
+        .EXAMPLE
+            Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -DisplayName 'New Long running query' -Confirm
 
-    .EXAMPLE
-    Get-DbaPfDataCollectorSet -SqlInstance sql2017 -Session db_ola_health | Remove-Dbadata collector set
-    Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template db_ola_health | Start-Dbadata collector set
+            Creates a new data collector set named "New Long Running Query" using the 'Long Running Query' template. Forces a confirmation if the template exists.
 
-    Imports a session if it exists then recreates it using a template
+        .EXAMPLE
+            Get-DbaPfDataCollectorSet -SqlInstance sql2017 -Session db_ola_health | Remove-Dbadata collector set
+            Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template db_ola_health | Start-Dbadata collector set
 
-    .EXAMPLE
-    Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017
+            Imports a session if it exists, then recreates it using a template.
 
-    Allows you to select a Session template then import to an instance named sql2017
+        .EXAMPLE
+            Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017
 
-    .EXAMPLE
-    Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -Instance SHAREPOINT
+            Allows you to select a Session template then import to an instance named sql2017.
 
-    Creates a new data collector set named 'Long Running Query' from our repo to the SQL Server sql2017 for both the default and the SHAREPOINT instance.
+        .EXAMPLE
+            Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -Instance SHAREPOINT
 
-    If you'd like to remove counters for the default instance, use Remove-DbaPfDataCollectorCounter.
-#>
+            Creates a new data collector set named 'Long Running Query' from the dbatools repository on the SQL Server sql2017 for both the default and the SHAREPOINT instance.
+
+            If you'd like to remove counters for the default instance, use Remove-DbaPfDataCollectorCounter.
+    #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(ValueFromPipeline)]
@@ -286,8 +288,9 @@
                     }
 
                     if ($newcollection.Count) {
-                        Write-Message -Level Verbose -Message "Adding $($newcollection.Count) additional counters"
-                        $null = Add-DbaPfDataCollectorCounter -InputObject $datacollector -Counter $newcollection
+                        if ($Pscmdlet.ShouldProcess($computer, "Adding $($newcollection.Count) additional counters")) {
+                            $null = Add-DbaPfDataCollectorCounter -InputObject $datacollector -Counter $newcollection
+                        }
                     }
 
                     Remove-Item $tempfile -ErrorAction SilentlyContinue

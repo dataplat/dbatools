@@ -1,10 +1,10 @@
 ﻿function Stop-DbaPfDataCollectorSet {
     <#
         .SYNOPSIS
-            Starts Performance Monitor Data Collector Set.
+            Stops Performance Monitor Data Collector Set.
 
         .DESCRIPTION
-            Starts Performance Monitor Data Collector Set.
+            Stops Performance Monitor Data Collector Set.
 
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.
