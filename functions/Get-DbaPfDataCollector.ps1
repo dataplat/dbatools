@@ -21,7 +21,7 @@
             The Collector name.
     
         .PARAMETER InputObject
-            Accepts the output of Get-DbaPfDataCollectorSet
+            Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -41,7 +41,7 @@
         .EXAMPLE
             Get-DbaPfDataCollector
     
-            Gets all Collectors on localhost
+            Gets all Collectors on localhost.
 
         .EXAMPLE
             Get-DbaPfDataCollector -ComputerName sql2017
@@ -94,7 +94,9 @@
         foreach ($set in $InputObject) {
             $collectorxml = ([xml]$set.Xml).DataCollectorSet.PerformanceCounterDataCollector
             foreach ($col in $collectorxml) {
-                if ($Collector -and $Collector -notcontains $col.Name) { continue }
+                if ($Collector -and $Collector -notcontains $col.Name) {
+                    continue
+                }
                 
                 $outputlocation = $col.LatestOutputLocation
                 if ($outputlocation) {
