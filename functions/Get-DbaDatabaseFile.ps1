@@ -82,7 +82,7 @@ function Get-DbaDatabaseFile {
             mf.physical_name as PhysicalName,
             df.state_desc as State,
             df.max_size as MaxSize,
-            case mf.is_percent_growth when 1 then df.growth else df.Growth*8 end as Growth,,
+            case mf.is_percent_growth when 1 then df.growth else df.Growth*8 end as Growth,
             fileproperty(df.name, 'spaceused') as UsedSpace,
             df.size as Size,
             vfs.size_on_disk_bytes as size_on_disk_bytes,
@@ -169,6 +169,8 @@ function Get-DbaDatabaseFile {
                 else {
                     $query = $sql2000
                 }
+                
+                Write-Message -Level Debug -Message "SQL Statement: $query"
 
                 $results = $server.Query($query, $db.name)
 
