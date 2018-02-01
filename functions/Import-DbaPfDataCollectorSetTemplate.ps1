@@ -21,10 +21,10 @@
             $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
         .PARAMETER Path
-            The path to the xml file or files
+            The path to the xml file or files.
 
         .PARAMETER Template
-            From one or more of the templates we curated for you (tab through -Template to see options)
+            From one or more of the templates from the dbatools repository. Press Tab to cycle through the available options.
 
         .PARAMETER RootPath
             Sets the base path where the subdirectories are created.
@@ -33,7 +33,7 @@
             Sets the display name of the data collector set.
 
         .PARAMETER SchedulesEnabled
-            Sets a value that indicates whether the schedules are enabled.
+            If this switch is enabled, sets a value that indicates whether the schedules are enabled.
 
         .PARAMETER Segment
             Sets a value that indicates whether PLA creates new logs if the maximum size or segment duration is reached before the data collector set is stopped.
@@ -45,7 +45,7 @@
             Sets the maximum size of any log file in the data collector set.
 
         .PARAMETER Subdirectory
-            sets a base subdirectory of the root path where the next instance of the data collector set will write its logs.
+            Sets a base subdirectory of the root path where the next instance of the data collector set will write its logs.
 
         .PARAMETER SubdirectoryFormat
             Sets flags that describe how to decorate the subdirectory name. PLA appends the decoration to the folder name. For example, if you specify plaMonthDayHour, PLA appends the current month, day, and hour values to the folder name. If the folder name is MyFile, the result could be MyFile110816.
@@ -57,7 +57,7 @@
             Sets the name of a Task Scheduler job to start each time the data collector set stops, including between segments.
 
         .PARAMETER TaskRunAsSelf
-            Sets a value that determines whether the task runs as the data collector set user or as the user specified in the task.
+            If this switch is enabled, sets a value that determines whether the task runs as the data collector set user or as the user specified in the task.
 
         .PARAMETER TaskArguments
             Sets the command-line arguments to pass to the Task Scheduler job specified in the IDataCollectorSet::Task property.
@@ -65,19 +65,19 @@
 
         .PARAMETER TaskUserTextArguments
             Sets the command-line arguments that are substituted for the {usertext} substitution variable in the IDataCollectorSet::TaskArguments property.
-            See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371993 for more inforamation.
+            See https://msdn.microsoft.com/en-us/library/windows/desktop/aa371993 for more information.
 
         .PARAMETER StopOnCompletion
-            Sets a value that determines whether the data collector set stops when all the data collectors in the set are in a completed state.
+            If this switch is enabled, sets a value that determines whether the data collector set stops when all the data collectors in the set are in a completed state.
 
         .PARAMETER Instance
             By default, the template will be applied to all instances. If you want to set specific ones in addition to the default, supply just the instance name.
 
         .PARAMETER WhatIf
-            Shows what would happen if the command were to run the command. No modifications are actually performed.
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
         .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -95,7 +95,7 @@
         .EXAMPLE
             Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query'
 
-            Creates a new data collector set named 'Long Running Query' from our repo to the SQL Server sql2017
+            Creates a new data collector set named 'Long Running Query' from the dbatools repository on the SQL Server sql2017
 
         .EXAMPLE
             Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -DisplayName 'New Long running query' -Confirm
@@ -106,17 +106,17 @@
             Get-DbaPfDataCollectorSet -SqlInstance sql2017 -Session db_ola_health | Remove-Dbadata collector set
             Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template db_ola_health | Start-Dbadata collector set
 
-            Imports a session if it exists then recreates it using a template
+            Imports a session if it exists, then recreates it using a template.
 
         .EXAMPLE
             Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017
 
-            Allows you to select a Session template then import to an instance named sql2017
+            Allows you to select a Session template then import to an instance named sql2017.
 
         .EXAMPLE
             Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -Instance SHAREPOINT
 
-            Creates a new data collector set named 'Long Running Query' from our repo to the SQL Server sql2017 for both the default and the SHAREPOINT instance.
+            Creates a new data collector set named 'Long Running Query' from the dbatools repository on the SQL Server sql2017 for both the default and the SHAREPOINT instance.
 
             If you'd like to remove counters for the default instance, use Remove-DbaPfDataCollectorCounter.
     #>
@@ -288,8 +288,9 @@
                     }
 
                     if ($newcollection.Count) {
-                        Write-Message -Level Verbose -Message "Adding $($newcollection.Count) additional counters"
-                        $null = Add-DbaPfDataCollectorCounter -InputObject $datacollector -Counter $newcollection
+                        if ($Pscmdlet.ShouldProcess($computer, "Adding $($newcollection.Count) additional counters")) {
+                            $null = Add-DbaPfDataCollectorCounter -InputObject $datacollector -Counter $newcollection
+                        }
                     }
 
                     Remove-Item $tempfile -ErrorAction SilentlyContinue
