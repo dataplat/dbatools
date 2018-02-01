@@ -290,7 +290,7 @@
                     if ($newcollection.Count) {
                         if ($Pscmdlet.ShouldProcess($computer, "Adding $($newcollection.Count) additional counters")) {
                             $null = Add-DbaPfDataCollectorCounter -InputObject $datacollector -Counter $newcollection
-                        }    
+                        }
                     }
 
                     Remove-Item $tempfile -ErrorAction SilentlyContinue
