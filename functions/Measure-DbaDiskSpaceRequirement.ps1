@@ -4,10 +4,10 @@ Function Measure-DbaDiskSpaceRequirement {
             Calculate the space needed to copy and possibly replace a database from one SQL server to another.
 
         .DESCRIPTION
-            Returns a file list from source and destination where source file may overwrite destination. Complex scenarios where a new file may exist is taken 
+            Returns a file list from source and destination where source file may overwrite destination. Complex scenarios where a new file may exist is taken
             into account. This procedure will accept an object in pipeline as long as it as provide these required properties: Source, SourceDatabase, Destination.
             Using this method will provide a way to prepare before a complex migration with lots of databases from different sources and destinations.
-            
+
         .PARAMETER Source
             The source SQL Server instance.
 
@@ -22,7 +22,7 @@ Function Measure-DbaDiskSpaceRequirement {
 
         .PARAMETER SourceDatabase
             The database to copy. It MUST exist.
-        
+
         .PARAMETER Destination
             The destination SQL Server instance.
 
@@ -64,7 +64,7 @@ Function Measure-DbaDiskSpaceRequirement {
             INSTANCE2    D:\                   -448
 
         .EXAMPLE
-            @([PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB1'}, 
+            @([PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB1'},
               [PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB2'}
             ) | Measure-DbaDiskSpaceRequirement -Consolidate
 
@@ -200,9 +200,15 @@ Function Measure-DbaDiskSpaceRequirement {
         if(!$DB1) {
             Stop-Function -Message "Database [$SourceDatabase] MUST exist on Source Instance $Source." -ErrorRecord $_
         }
+<<<<<<< HEAD
         $DataFiles1 = @($DB1.FileGroups.Files | Select-Object Name, Filename, Size, @{n='Type';e={'Data'}})
         $DataFiles1 += @($DB1.LogFiles        | Select-Object Name, Filename, Size, @{n='Type';e={'Log'}})
         
+=======
+        $DF1 = @($DB1.FileGroups.Files | Select-Object Name, Filename, Size, @{n='Type';e={'Data'}})
+        $DF1 += @($DB1.LogFiles        | Select-Object Name, Filename, Size, @{n='Type';e={'Log'}})
+
+>>>>>>> 2a270a12ba1034904387e0ad53530eb79ee904b3
         #if(!$DestinationDatabase) {throw "DestinationDatabase [$DestinationDatabase] "}
 
         if($DB2 = Get-DbaDatabase -SqlInstance $Destination -Database $DestinationDatabase -SqlCredential $DestinationSqlCredential) {
@@ -272,10 +278,17 @@ Function Measure-DbaDiskSpaceRequirement {
                 @([PSCustomObject]@{
                     ComputerName = $_.Group.ComputerName[0]
                     MountPoint = if($_.Group.MountPoint[0]) {$_.Group.MountPoint[0]} else {0}
+<<<<<<< HEAD
                     RequiredSpaceKB = $Required 
                     Capacity = $MountPoint.Capacity
                     FreeSpace = $MountPoint.Free
                     FutureFree = $MountPoint.Free - $Required
+=======
+                    RequiredSpaceKB = $Required
+                    Capacity = $MP.Capacity
+                    FreeSpace = $MP.Free
+                    FutureFree = $MP.Free - $Required
+>>>>>>> 2a270a12ba1034904387e0ad53530eb79ee904b3
                 })
             }
         } else {
@@ -286,5 +299,57 @@ Function Measure-DbaDiskSpaceRequirement {
 
 
 
+<<<<<<< HEAD
 
 
+=======
+Function Get-MountPointFromDefaultPath {
+    # Extract MountPoint from DefaultPath. Usefull when database or file does not exist on destination.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory)]
+        [ValidateSet('Log','Data')]
+        $DefaultPathType,
+        [Parameter(Mandatory)]
+        $SqlInstance,
+        [PSCredential]$SqlCredential,
+        $ComputerName, # Could probably use the computer defined in SqlInstance but info was already available from the caller
+        [PSCredential]$Credential
+    )
+    if(!$CacheDP[$SqlInstance]) {
+        try {
+            $CacheDP.Add($SqlInstance, (Get-DbaDefaultPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -EnableException))
+            Write-Verbose "CacheDP[$SqlInstance] is in cache"
+        } catch {
+            Write-Warning "Can't connect to $SqlInstance"
+            $CacheDP.Add($SqlInstance, '?')
+            return '?'
+        }
+    }
+    if($CacheDP[$SqlInstance] -eq '?') {
+        return '?'
+    }
+    if(!$ComputerName) {
+        $ComputerName = $CacheDP[$SqlInstance].ComputerName
+    }
+    if(!$CacheMP[$ComputerName]) {
+        try {
+            $CacheMP.Add($ComputerName, (Get-DbaDiskSpace -ComputerName $ComputerName -Credential $Credential))
+        } catch {
+            Write-Warning "Can't connect to $ComputerName."
+            $CacheMP.Add($ComputerName,'?')
+            return '?'
+        }
+    }
+    if($DefaultPathType -eq 'Log') {
+        $Path = $CacheDP[$SqlInstance].Log
+    } else {
+        $Path = $CacheDP[$SqlInstance].Data
+    }
+    foreach($M in $CacheMP[$ComputerName]) {
+        if($Path -like "$($M.Name)*") {
+            return $M.Name
+        }
+    }
+}
+>>>>>>> 2a270a12ba1034904387e0ad53530eb79ee904b3
