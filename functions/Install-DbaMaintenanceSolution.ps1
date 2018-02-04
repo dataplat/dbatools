@@ -3,45 +3,49 @@ function Install-DbaMaintenanceSolution {
         .SYNOPSIS
             Download and Install SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)
         .DESCRIPTION
-            This script will download and install the latest version of SQL Server Maintenance Solution created by Ola Hallengren
+            This script will download and install the latest version of SQL Server Maintenance Solution created by Ola Hallengren.
 
         .PARAMETER SqlInstance
-            The target SQL Server instance
+            SQL Server name or SMO object representing the SQL Server to connect to.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
             $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
             To connect as a different Windows user, run PowerShell as that user.
 
         .PARAMETER Database
-            The database where Ola Hallengren's solution will be installed. Defaults to master
+            The database where Ola Hallengren's solution will be installed. Defaults to master.
 
         .PARAMETER BackupLocation
             Location of the backup root directory. If this is not supplied, the default backup directory will be used.
 
         .PARAMETER CleanupTime
-            Time in hours, after which backup files are deleted
+            Time in hours, after which backup files are deleted.
 
         .PARAMETER OutputFileDirectory
-            Specify the output file directory
+            Specify the output file directory.
 
         .PARAMETER ReplaceExisting
-            If the objects are already present in the chosen database, we drop and recreate them
+            If this switch is enabled, any objects created by the maintenance solution which already exist on the target instance will be dropped and recreated.
 
         .PARAMETER LogToTable
-            Log commands to a table
+            If this switch is enabled, maintenance solution commands will be logged to a table.
 
         .PARAMETER Solution
-            You can choose to install the complete solution (All) or only one of:  Backup / IntegrityCheck / IndexOptimize
+            Specifies whether the complete solution or only a portion of it is installed. Valid values are All, Backup, IntegrityCheck and IndexOptimize.
 
         .PARAMETER InstallJobs
-            Create SQL Agent Jobs
+            If this switch is enabled, the SQL Agent Jobs will be installed.
 
         .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
         .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -61,17 +65,17 @@ function Install-DbaMaintenanceSolution {
         .EXAMPLE
             Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72
 
-            Installs Ola Hallengren's Solution objects on RES14224 in the DBA database.
-            Backups will default to the default Backup Directory.
-            If the Maintenance Solution already exists, the script will be halted.
+            Installs Ola Hallengren's Solution objects on RES14224 in the DBA database. Backups will default to the default Backup Directory.
 
         .EXAMPLE
             Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -ReplaceExisting -CleanupTime 72 -LogToTable -Solution "Backup" -BackupLocation "Z:\SQLBackup" -InstallJobs
 
+            Installs the backup portion of Ola Hallengren's Maintenance on RES14224 in the DBA database and creates the SQL Agent Jobs. If the objects have previously been installed, they will be replaced. Backups will be written to Z:\SQLBackup and commands logged to a table. Backup files older than 72 hours will be deleted when the Jobs run.
+
         .EXAMPLE
             Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72
 
-            This will create the Ola Hallengren's Solution objects. Existing objects are not affected in any way.
+            Installs Ola Hallengren's Maintenance on RES14224 in the DBA database. Backups will be written to Z:\SQLBackup and files older than 72 hours will be deleted when the Jobs run. Existing objects are not affected in any way.
 
         .EXAMPLE
             Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting
@@ -140,12 +144,12 @@ function Install-DbaMaintenanceSolution {
                 $BackupLocation = (Get-DbaDefaultPath -SqlInstance $server).Backup
             }
 
-            Write-Message -Level Output -Message "Ola Hallengren's solution will be installed on database: $Database"
+            Write-Message -Level Output -Message "Ola Hallengren's solution will be installed on database: $Database."
 
             $db = $server.Databases[$Database]
 
             if ($InstallJobs -and $Solution -ne 'All') {
-                Stop-Function -Message "To create SQL Agent jobs you need to use '-Solution All' and '-InstallJobs Create'"
+                Stop-Function -Message "To create SQL Agent jobs you need to use '-Solution All' and '-InstallJobs Create'."
                 return
             }
 
@@ -154,7 +158,7 @@ function Install-DbaMaintenanceSolution {
             }
 
             if ($CleanupTime -ne 0 -and $InstallJobs -eq $false) {
-                Write-Message -Level Output -Message "CleanupTime $CleanupTime value will be ignored because you chose not to create SQL Agent Jobs"
+                Write-Message -Level Output -Message "CleanupTime $CleanupTime value will be ignored because you chose not to create SQL Agent Jobs."
             }
 
             if ($CleanupTime -eq 0 -and $InstallJobs -eq $true) {
@@ -282,12 +286,12 @@ function Install-DbaMaintenanceSolution {
                                 DROP PROCEDURE [dbo].[IndexOptimize];
                             ")
 
-                Write-Message -Level Output -Message "Dropping objects created by Ola's Maintenance Solution"
+                Write-Message -Level Output -Message "Dropping objects created by Ola's Maintenance Solution."
                 $null = $db.Query($CleanupQuery)
 
                 # Remove Ola's Jobs
                 if ($InstallJobs -and $ReplaceExisting) {
-                    Write-Message -Level Output -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution"
+                    Write-Message -Level Output -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution."
                     $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
                     if ($jobs) {
                         $jobs | ForEach-Object { Remove-DbaAgentJob -SqlInstance $instance -Job $_.name }
@@ -296,12 +300,12 @@ function Install-DbaMaintenanceSolution {
             }
 
             try {
-                Write-Message -Level Output -Message "Installing on server $SqlInstance, database $Database"
+                Write-Message -Level Output -Message "Installing on server $SqlInstance, database $Database."
 
                 foreach ($file in $listOfFiles) {
                     $shortFileName = Split-Path $file -Leaf
                     if ($required.Contains($shortFileName)) {
-                        Write-Message -Level Output -Message "Installing $file"
+                        Write-Message -Level Output -Message "Installing $file."
                         $sql = [IO.File]::ReadAllText($file)
                         try {
                             foreach ($query in ($sql -Split "\nGO\b")) {
@@ -309,13 +313,13 @@ function Install-DbaMaintenanceSolution {
                             }
                         }
                         catch {
-                            Stop-Function -Message "Could not execute $file in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
+                            Stop-Function -Message "Could not execute $file in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
                         }
                     }
                 }
             }
             catch {
-                Stop-Function -Message "Could not execute $file in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
+                Stop-Function -Message "Could not execute $file in $Database on $instance." -ErrorRecord $_ -Target $db -Continue
             }
         }
 
@@ -330,6 +334,6 @@ function Install-DbaMaintenanceSolution {
         catch {
         }
 
-        Write-Message -Level Output -Message "Installation complete"
+        Write-Message -Level Output -Message "Installation complete."
     }
 }
