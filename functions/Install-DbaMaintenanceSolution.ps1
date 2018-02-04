@@ -157,6 +157,10 @@ function Install-DbaMaintenanceSolution {
                 Write-Message -Level Output -Message "CleanupTime $CleanupTime value will be ignored because you chose not to create SQL Agent Jobs"
             }
 
+            if ($CleanupTime -eq 0 -and $InstallJobs -eq $true) {
+                Write-Message -level Warning -Message "You chose to create SQL Agent Jobs but CleanupTime was not specified. Backup files will not be deleted automatically by the jobs!"
+            }
+
             # Required
             $required = @('CommandExecute.sql')
 
