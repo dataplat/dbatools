@@ -57,10 +57,11 @@ function Get-DbaBackupInformation {
         This switch tells the function that the folder is the root of a Ola Hallengren backup folder
 
     .PARAMETER IgnoreLogBackup
-        This switch only works with MaintenanceSoltion, as we can then now that all file in LOG are to be ignored.
+        This switch only works with the MaintenanceSolution switch. With an Ola Hallengren style backup we can be sure that the LOG folder contains only log backups and skip it.
+        For all other scenarios we need to read the file headers to be sure.
 
     .PARAMETER Import
-        When specified along with a path the command will import a previously exported
+        When specified along with a path the command will import a previously exported BackupHistory object from an xml file.
 
     .PARAMETER EnableException
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
