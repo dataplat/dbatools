@@ -162,7 +162,7 @@ function Install-DbaMaintenanceSolution {
             }
 
             if ($CleanupTime -eq 0 -and $InstallJobs -eq $true -and @("All","Backup") -contains $Solution) {
-                Write-Message -level Warning -Message "You chose to install the Backup portion of the maintenance solution and create SQL Agent Jobs, but CleanupTime was not specified. Backup files will not be deleted automatically by the jobs!"
+                Write-Message -Level Warning -Message "You chose to install the Backup portion of the maintenance solution and create SQL Agent Jobs, but CleanupTime was not specified. Backup files will not be deleted automatically by the jobs!"
             }
 
             # Required
