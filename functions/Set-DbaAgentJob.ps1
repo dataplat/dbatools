@@ -82,7 +82,7 @@ The text value van either be lowercase, uppercase or something in between as lon
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 
-.PARAMETER InputObjeect
+.PARAMETER InputObject
 Enables piping job objects
     
 .PARAMETER WhatIf
