@@ -123,7 +123,7 @@ function Install-DbaMaintenanceSolution {
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
+                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooled
             }
             catch {
@@ -161,8 +161,8 @@ function Install-DbaMaintenanceSolution {
                 Write-Message -Level Output -Message "CleanupTime $CleanupTime value will be ignored because you chose not to create SQL Agent Jobs."
             }
 
-            if ($CleanupTime -eq 0 -and $InstallJobs -eq $true) {
-                Write-Message -level Warning -Message "You chose to create SQL Agent Jobs but CleanupTime was not specified. Backup files will not be deleted automatically by the jobs!"
+            if ($CleanupTime -eq 0 -and $InstallJobs -eq $true -and @("All","Backup") -contains $Solution) {
+                Write-Message -level Warning -Message "You chose to install the Backup portion of the maintenance solution and create SQL Agent Jobs, but CleanupTime was not specified. Backup files will not be deleted automatically by the jobs!"
             }
 
             # Required
