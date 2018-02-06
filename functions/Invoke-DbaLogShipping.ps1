@@ -293,6 +293,7 @@ The number of minutes allowed to elapse between restore operations before an ale
 The default value = 0
 
 .PARAMETER SecondaryDatabasePrefix
+The secondary database can be renamed to include a prefix.
 
 .PARAMETER SecondaryDatabaseSuffix
 The secondary database can be renamed to include a suffix.
