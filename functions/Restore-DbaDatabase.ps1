@@ -15,6 +15,12 @@ function Restore-DbaDatabase {
         Various means can be used to pass in a list of files to be considered. The default is to non recursively scan the folder
         passed in.
 
+    .PARAMETER SqlInstance
+        The SQL Server instance to restore to.
+
+    .PARAMETER SqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+
     .PARAMETER Path
         Path to SQL Server backup files.
 
@@ -23,12 +29,6 @@ function Restore-DbaDatabase {
 
         Or it can consist of FileInfo objects, such as the output of Get-ChildItem or Get-Item. This allows you to work with
         your own filestructures as needed
-
-    .PARAMETER SqlInstance
-        The SQL Server instance to restore to.
-
-    .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
     .PARAMETER DatabaseName
         Name to restore the database under.
@@ -295,13 +295,13 @@ function Restore-DbaDatabase {
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Restore")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "Restore")]
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "RestorePage")]
-        [object[]]$Path,
         [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "Restore")]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "RestorePage")]
+        [object[]]$Path,
         [parameter(ValueFromPipeline = $true)]
         [Alias("Name")]
         [object[]]$DatabaseName,
