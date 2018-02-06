@@ -292,6 +292,9 @@ Example: '140000' for 02:00:00 PM.
 The number of minutes allowed to elapse between restore operations before an alert is generated.
 The default value = 0
 
+.PARAMETER SecondaryDatabasePrefix
+The secondary database can be renamed to include a prefix.
+
 .PARAMETER SecondaryDatabaseSuffix
 The secondary database can be renamed to include a suffix.
 
@@ -592,6 +595,9 @@ The script will show a message that the copy destination has not been supplied a
         [int]$RestoreThreshold,
 
         [parameter(Mandatory = $false)]
+        [string]$SecondaryDatabasePrefix,
+
+        [parameter(Mandatory = $false)]
         [string]$SecondaryDatabaseSuffix,
 
         [Parameter(Mandatory = $false)]
@@ -652,11 +658,11 @@ The script will show a message that the copy destination has not been supplied a
         $SourceServerName, $SourceInstanceName = $SourceSqlInstance.Split("\")
         $DestinationServerName, $DestinationInstanceName = $DestinationSqlInstance.Split("\")
 
-        if ($null -eq $SourceInstanceName) {
+        if ($SourceInstanceName -eq $null) {
             $SourceInstanceName = "MSSQLSERVER"
         }
 
-        if ($null -eq $DestinationInstanceName) {
+        if ($DestinationInstanceName -eq $null) {
             $DestinationInstanceName = "MSSQLSERVER"
         }
 
@@ -677,8 +683,8 @@ The script will show a message that the copy destination has not been supplied a
         $RegexUnc = '^\\(?:\\[^<>:`"/\\|?*]+)+$'
 
         # Check the instance names and the database settings
-        if (($SourceSqlInstance -eq $DestinationSqlInstance) -and (-not $SecondaryDatabaseSuffix)) {
-            Stop-Function -Message "If the destination is same as source please enter a suffix with paramater SecondaryDatabaseSuffix." -Target $SourceSqlInstance
+        if (($SourceSqlInstance -eq $DestinationSqlInstance) -and (-not $SecondaryDatabasePrefix -or $SecondaryDatabaseSuffix)) {
+            Stop-Function -Message "The destination database is the same as the source`nPlease enter a prefix or suffix using -SecondaryDatabasePrefix or -SecondaryDatabaseSuffix." -Target $SourceSqlInstance
             return
         }
 
@@ -940,12 +946,12 @@ The script will show a message that the copy destination has not been supplied a
             $RestoreScheduleFrequencyRecurrenceFactor = 0
             Write-Message -Message "Restore frequency recurrence factor set to $RestoreScheduleFrequencyRecurrenceFactor" -Level Verbose
         }
-        if (-not $SecondaryDatabaseSuffix -and ($SourceServer.Name -eq $DestinationServer.Name) -and ($SourceServer.InstanceName -eq $DestinationServer.InstanceName)) {
+        if (-not ($SecondaryDatabasePrefix -or $SecondaryDatabaseSuffix) -and ($SourceServer.Name -eq $DestinationServer.Name) -and ($SourceServer.InstanceName -eq $DestinationServer.InstanceName)) {
             if ($Force) {
-                $SecondaryDatabaseSuffix = "LS"
+                $SecondaryDatabaseSuffix = "_LS"
             }
             else {
-                Stop-Function -Message "Destination database is the same as source database.`nPlease check the secondary server, databse suffix or use -Force to set the secondary databse using a suffix." -Target $SourceSqlInstance
+                Stop-Function -Message "Destination database is the same as source database.`nPlease check the secondary server, database prefix or suffix or use -Force to set the secondary databse using a suffix." -Target $SourceSqlInstance
                 return
             }
         }
@@ -1148,12 +1154,17 @@ The script will show a message that the copy destination has not been supplied a
                 Stop-Function -Message  "Database $db is not in FULL recovery mode" -Target $SourceSqlInstance -Continue
             }
 
+            # Set the intital destination database
+            $SecondaryDatabase = $db.Name
+
+            # Set the database prefix
+            if ($SecondaryDatabasePrefix) {
+                $SecondaryDatabase = "$SecondaryDatabasePrefix$($db.Name)"
+            }
+
             # Set the database suffix
             if ($SecondaryDatabaseSuffix) {
-                $SecondaryDatabase = "$($($db.Name))_$($SecondaryDatabaseSuffix)"
-            }
-            else {
-                $SecondaryDatabase = $($db.Name)
+                $SecondaryDatabase += $SecondaryDatabaseSuffix
             }
 
             # Check is the database is already initialized an check if the database exists on the secondary instance
@@ -1356,7 +1367,7 @@ The script will show a message that the copy destination has not been supplied a
                     $LastBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -Databases $($db.Name) -LastFull -Credential $SourceSqlCredential
 
                     # Check if there was a last backup
-                    if ($null -ne $LastBackup) {
+                    if ($LastBackup -ne $null) {
                         # Test the path to the backup
                         Write-Message -Message "Testing last backup path $(($LastBackup[-1]).Path[-1])" -Level Verbose
                         if ((Test-DbaSqlPath -Path ($LastBackup[-1]).Path[-1] -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
@@ -1472,7 +1483,7 @@ The script will show a message that the copy destination has not been supplied a
             }
 
             # Check the primary monitor server
-            if ($Force -and (-not$PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $null -eq $PrimaryMonitorServer)) {
+            if ($Force -and (-not$PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $PrimaryMonitorServer -eq $null)) {
                 Write-Message -Message "Setting monitor server for primary server to $SourceSqlInstance." -Level Output
                 $PrimaryMonitorServer = $SourceSqlInstance
             }
@@ -1496,7 +1507,7 @@ The script will show a message that the copy destination has not been supplied a
             }
 
             # Check the secondary monitor server
-            if ($Force -and (-not $SecondaryMonitorServer -or [string]$SecondaryMonitorServer -eq '' -or $null -eq $SecondaryMonitorServer)) {
+            if ($Force -and (-not $SecondaryMonitorServer -or [string]$SecondaryMonitorServer -eq '' -or $SecondaryMonitorServer -eq $null)) {
                 Write-Message -Message "Setting secondary monitor server for $DestinationSqlInstance to $SourceSqlInstance." -Level Verbose
                 $SecondaryMonitorServer = $SourceSqlInstance
             }
@@ -1524,7 +1535,8 @@ The script will show a message that the copy destination has not been supplied a
                                 Restore-DbaDatabase -SqlServer $DestinationSqlInstance `
                                     -SqlCredential $DestinationSqlCredential `
                                     -Path $BackupPath `
-                                    -DestinationFilePrefix $SecondaryDatabaseSuffix `
+                                    -DestinationFilePrefix $SecondaryDatabasePrefix `
+                                    -DestinationFileSuffix $SecondaryDatabaseSuffix `
                                     -DestinationDataDirectory $DatabaseRestoreDataFolder `
                                     -DestinationLogDirectory $DatabaseRestoreLogFolder `
                                     -DatabaseName $SecondaryDatabase `
@@ -1536,7 +1548,8 @@ The script will show a message that the copy destination has not been supplied a
                                 Restore-DbaDatabase -SqlServer $DestinationSqlInstance `
                                     -SqlCredential $DestinationSqlCredential `
                                     -Path $BackupPath `
-                                    -DestinationFilePrefix $SecondaryDatabaseSuffix `
+                                    -DestinationFilePrefix $SecondaryDatabasePrefix `
+                                    -DestinationFileSuffix $SecondaryDatabaseSuffix `
                                     -DestinationDataDirectory $DatabaseRestoreDataFolder `
                                     -DestinationLogDirectory $DatabaseRestoreLogFolder `
                                     -DatabaseName $SecondaryDatabase `
@@ -1555,7 +1568,8 @@ The script will show a message that the copy destination has not been supplied a
                                 Restore-DbaDatabase -ServerInstance $DestinationSqlInstance `
                                     -SqlCredential $DestinationSqlCredential `
                                     -Path $BackupPath `
-                                    -DestinationFilePrefix $SecondaryDatabaseSuffix `
+                                    -DestinationFilePrefix $SecondaryDatabasePrefix `
+                                    -DestinationFileSuffix $SecondaryDatabaseSuffix `
                                     -DestinationDataDirectory $DatabaseRestoreDataFolder `
                                     -DestinationLogDirectory $DatabaseRestoreLogFolder `
                                     -DatabaseName $SecondaryDatabase `
@@ -1565,7 +1579,8 @@ The script will show a message that the copy destination has not been supplied a
                             else {
                                 Restore-DbaDatabase -ServerInstance $DestinationSqlInstance `
                                     -Path $BackupPath `
-                                    -DestinationFilePrefix $SecondaryDatabaseSuffix `
+                                    -DestinationFilePrefix $SecondaryDatabasePrefix `
+                                    -DestinationFileSuffix $SecondaryDatabaseSuffix `
                                     -DestinationDataDirectory $DatabaseRestoreDataFolder `
                                     -DestinationLogDirectory $DatabaseRestoreLogFolder `
                                     -DatabaseName $SecondaryDatabase `
