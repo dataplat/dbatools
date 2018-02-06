@@ -254,7 +254,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
         foreach ($instance in $sqlinstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -311,15 +311,21 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
                 $sqlcommand.Connection = $sqlconnection
 
                 foreach ($param in $passedparams) {
+                    Write-Message -Level Verbose -Message "Check parameter '$param'"
+
                     $sqlparam = $paramdictionary[$param]
-                    $value = $localparams[$param]
-
-                    switch ($value) {
-                        $true { $value = 1 }
-                        $false { $value = 0 }
+                    
+                    if ($sqlparam) {
+                    
+                        $value = $localparams[$param]
+   
+                        switch ($value) {
+                            $true { $value = 1 }
+                            $false { $value = 0 }
+                        }
+                        Write-Message -Level Verbose -Message "Adding parameter '$sqlparam' with value '$value'"
+                        [Void]$sqlcommand.Parameters.AddWithValue($sqlparam, $value)
                     }
-
-                    [Void]$sqlcommand.Parameters.AddWithValue($sqlparam, $value)
                 }
 
                 $datatable = New-Object system.Data.DataSet
