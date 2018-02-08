@@ -514,8 +514,9 @@ function Get-DbaBackupHistory {
                     if ($CompressedBackupSize -eq [System.DBNull]::Value) {
                         $CompressedBackupSize = $null
                         $ratio = 1
-                    } else {
-                        $ratio = [Math]::Round(($historyObject.TotalSize.Byte)/($historyObject.CompressedBackupSize.Byte),2)
+                    }
+                    else {
+                        $ratio = [Math]::Round(($group.Group[0].TotalSize) / ($CompressedBackupSize), 2)
                     }
                     $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
                     $historyObject.ComputerName = $server.NetName
