@@ -8,7 +8,7 @@ function Test-DbaJobOwner {
 
             By default, the function checks against 'sa' for ownership, but the user can pass a specific login if they use something else.
 
-            Only SQL Agent Jobs that do not match this ownership will be displayed, but if the -Detailed switch is set all SQL Agent Jobs will be returned.
+            Only SQL Agent Jobs that do not match this ownership will be displayed, but if the -All switch is set all SQL Agent Jobs will be returned.
 
             Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
 
@@ -33,8 +33,11 @@ function Test-DbaJobOwner {
         .PARAMETER Login
             Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
+        .PARAMETER All
+            Specifies if the results should include all SQL Agent Jobs regardless of if the owners match. If the Job parameter is specified then this will not return any further results.
+
         .PARAMETER Detailed
-            If this switch is enabled, a list of all jobs and whether or not their owner matches Login is returned.
+            Output all properties, will be deprecated in 1.0.0 release.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -55,12 +58,17 @@ function Test-DbaJobOwner {
         .EXAMPLE
             Test-DbaJobOwner -SqlInstance localhost
 
-            Returns all databases where the owner does not match 'sa'.
+            Returns all SQL Agent Jobs where the owner does not match 'sa'.
+
+        .EXAMPLE
+            Test-DbaJobOwner -SqlInstance localhost -All
+
+            Returns all SQL Agent Jobs
 
         .EXAMPLE
             Test-DbaJobOwner -SqlInstance localhost -Login DOMAIN\account
 
-            Returns all databases where the owner does not match DOMAIN\account. Note
+            Returns all SQL Agent Jobs where the owner does not match DOMAIN\account. Note
             that Login must be a valid security principal that exists on the target server.
     #>
     [CmdletBinding()]
@@ -75,11 +83,13 @@ function Test-DbaJobOwner {
         [object[]]$ExcludeJob,
         [Alias("TargetLogin")]
         [string]$Login,
-        [switch]$Detailed,
+        [Alias("Detailed")]
+        [switch]$All,
         [switch][Alias('Silent')]$EnableException
     )
 
     begin {
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
         #connect to the instance and set return array empty
         $return = @()
     }
@@ -145,14 +155,13 @@ function Test-DbaJobOwner {
     }
     end {
         #return results
-        if ($Detailed) {
-            Write-Message -Level Verbose -Message "Returning detailed results."
-            return $return
-        }
-        else {
-            Write-Message -Level Verbose -Message "Returning default results."
-            return ($return | Where-Object { $_.OwnerMatch -eq $false })
-        }
+         if($All){
+            Select-DefaultView -InputObject $return -Property Server,Job,CurrentOwner,TargetOwner,OwnerMatch 
+         }
+         else{
+            Select-DefaultView -InputObject $return -Property Server,Job,CurrentOwner,TargetOwner,OwnerMatch | Where-Object {$_.OwnerMatch -eq $False}
+         }
+
     }
 
 }
