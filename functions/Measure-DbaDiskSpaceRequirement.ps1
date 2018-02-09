@@ -36,6 +36,7 @@ Function Measure-DbaDiskSpaceRequirement {
             Windows credentials to connect via CIM/WMI/PowerShell remoting for MountPoint definition.
 
         .NOTES
+            Author: Pollus Brodeur (@pollusb)
             Tags: Migration
 
             Website: https://dbatools.io
@@ -68,7 +69,6 @@ Function Measure-DbaDiskSpaceRequirement {
 
             Using a SQL table. We are DBA after all!
     #>
-
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory,ValueFromPipelineByPropertyName)]
@@ -77,7 +77,7 @@ Function Measure-DbaDiskSpaceRequirement {
         [string]$SourceDatabase,
         [PSCredential]$SourceSqlCredential,
         [Parameter(Mandatory,ValueFromPipelineByPropertyName)]
-        [DbaInstanceParameter]$Destination, 
+        [DbaInstanceParameter]$Destination,
         [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName)]
         [string]$DestinationDatabase,
         [PSCredential]$DestinationSqlCredential,
@@ -176,12 +176,12 @@ Function Measure-DbaDiskSpaceRequirement {
         if(!$DB1) {
             Stop-Function -Message "Database [$SourceDatabase] MUST exist on Source Instance $Source." -ErrorRecord $_ -EnableException:$false
         }
-        $DataFiles1 = @($DB1.FileGroups.Files | Select-Object Name, Filename, Size, @{n='Type';e={'Data'}})
-        $DataFiles1 += @($DB1.LogFiles        | Select-Object Name, Filename, Size, @{n='Type';e={'Log'}})
+        $DataFiles1 = @($DB1.FileGroups.Files | Select-Object Name, FileName, Size, @{n='Type';e={'Data'}})
+        $DataFiles1 += @($DB1.LogFiles        | Select-Object Name, FileName, Size, @{n='Type';e={'Log'}})
 
         if($DB2 = Get-DbaDatabase -SqlInstance $Destination -Database $DestinationDatabase -SqlCredential $DestinationSqlCredential) {
-            $DataFiles2 = @($DB2.FileGroups.Files | Select-Object Name, Filename, Size, @{n='Type';e={'Data'}})
-            $DataFiles2 += @($DB2.LogFiles        | Select-Object Name, Filename, Size, @{n='Type';e={'Log'}})
+            $DataFiles2 = @($DB2.FileGroups.Files | Select-Object Name, FileName, Size, @{n='Type';e={'Data'}})
+            $DataFiles2 += @($DB2.LogFiles        | Select-Object Name, FileName, Size, @{n='Type';e={'Log'}})
             $ComputerName = $DB2.ComputerName
         } else {
             Write-Message -Level Verbose -Message "Database [$DestinationDatabase] does not exist on Destination Instance $Destination." -EnableException:$false
@@ -198,6 +198,8 @@ Function Measure-DbaDiskSpaceRequirement {
                         DatabaseName2 = $DB2.Name
                         Name1 = $File1.Name
                         Name2 = $File2.Name
+                        FilePath1 = $File1.FileName
+                        FilePath2 = $File2.FileName
                         SizeKB1 = $File1.Size
                         SizeKB2 = $File2.Size * -1
                         DiffKB = $File1.Size - $File2.Size
@@ -215,6 +217,8 @@ Function Measure-DbaDiskSpaceRequirement {
                     DatabaseName2 = $DestinationDatabase
                     Name1 = $File1.Name
                     Name2 = $NullText
+                    FilePath1 = $File1.FileName
+                    FilePath2 = $NullText
                     SizeKB1 = $File1.Size
                     SizeKB2 = 0
                     DiffKB = $File1.Size
@@ -233,6 +237,8 @@ Function Measure-DbaDiskSpaceRequirement {
                     DatabaseName2 = $DB2.Name
                     Name1 = $NullText
                     Name2 = $File3.Name
+                    FilePath1 = $NullText
+                    FilePath2 = $File2.FileName
                     SizeKB1 = 0
                     SizeKB2 = $File3.Size * -1
                     DiffKB = $File3.Size * -1
