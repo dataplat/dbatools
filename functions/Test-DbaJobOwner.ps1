@@ -155,16 +155,17 @@ function Test-DbaJobOwner {
                 #add each custom object to the return array
                 $return += New-Object PSObject -Property $row
             }
+            if($All -or $Job){
+                $results = $return
+            }
+            else{
+                $results = $return | Where-Object {$_.OwnerMatch -eq $False}
+            }
         }
     }
     end {
         #return results
-         if($All -or $Job){
-            Select-DefaultView -InputObject $return -Property Server,Job,CurrentOwner,TargetOwner,OwnerMatch 
-         }
-         else{
-            Select-DefaultView -InputObject $return -Property Server,Job,CurrentOwner,TargetOwner,OwnerMatch | Where-Object {$_.OwnerMatch -eq $False}
-         }
+            Select-DefaultView -InputObject $results -Property Server,Job,CurrentOwner,TargetOwner,OwnerMatch 
 
     }
 
