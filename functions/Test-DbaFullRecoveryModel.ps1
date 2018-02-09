@@ -27,7 +27,7 @@ function Test-DbaFullRecoveryModel {
             Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
         .PARAMETER Detailed
-            If this switch is enabled, an additional "Notes" column is returned in the results.
+            Output all properties, will be deprecated in 1.0.0 release.
 
         .NOTES
             Tags: DisasterRecovery, Backup
@@ -69,6 +69,7 @@ function Test-DbaFullRecoveryModel {
     )
 
     begin {
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
         $collection = New-Object System.Collections.ArrayList
     }
 
@@ -141,12 +142,7 @@ function Test-DbaFullRecoveryModel {
     }
 
     end {
-        if ($Detailed) {
-            return $collection
-        }
-        else {
-            return ($collection | Select-Object * -ExcludeProperty notes)
-        }
+        Select-DefaultView -InputObject $collection -ExcludeProperty Notes 
     }
 }
 
