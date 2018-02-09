@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 22, 2018
+-- Last Modified: February 7, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -281,8 +281,9 @@ FROM sys.databases AS d WITH (NOLOCK)
 LEFT OUTER JOIN msdb.dbo.backupset AS bs WITH (NOLOCK)
 ON bs.[database_name] = d.[name] 
 AND bs.backup_finish_date > GETDATE()- 30
-GROUP BY ISNULL(d.[name], bs.[database_name]), d.recovery_model_desc, d.log_reuse_wait_desc 
-ORDER BY d.recovery_model_desc OPTION (RECOMPILE);
+WHERE d.name <> N'tempdb'
+GROUP BY ISNULL(d.[name], bs.[database_name]), d.recovery_model_desc, d.log_reuse_wait_desc, d.[name] 
+ORDER BY d.recovery_model_desc, d.[name] OPTION (RECOMPILE);
 ------
 
 -- This helps you spot runaway transaction logs and other issues with your backup schedule
