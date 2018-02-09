@@ -2,6 +2,8 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
+##FIXME : add regr tests for 3207 
+
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     BeforeAll {
