@@ -61,9 +61,9 @@ function Test-DbaJobOwner {
             Returns all SQL Agent Jobs where the owner does not match 'sa'.
 
         .EXAMPLE
-            Test-DbaJobOwner -SqlInstance localhost -All
+            Test-DbaJobOwner -SqlInstance localhost -ExcludeJob 'syspolicy_purge_history' -All
 
-            Returns all SQL Agent Jobs
+            Returns all SQL Agent Jobs except for the syspolicy_purge_history job
 
         .EXAMPLE
             Test-DbaJobOwner -SqlInstance localhost -Login DOMAIN\account
@@ -115,6 +115,10 @@ function Test-DbaJobOwner {
                 return
             }
 
+            #Sets the Default Login to sa if the Login Paramater is not set.
+            if(!($PSBoundParameters.ContainsKey('Login'))){
+                $Login = "sa"
+            }
             #sql2000 id property is empty -force target login to 'sa' login
             if ($Login -and ( ($server.VersionMajor -lt 9) -and ([string]::IsNullOrEmpty($Login)) )) {
                 $Login = "sa"
@@ -131,7 +135,7 @@ function Test-DbaJobOwner {
                 $jobCollection = $server.JobServer.Jobs | Where-Object { $Job -contains $_.Name }
             }
             elseif ($ExcludeJob) {
-                $jobCollection = $jobCollection | Where-Object { $ExcludeJob -notcontains $_.Name }
+                $jobCollection = $server.JobServer.Jobs | Where-Object { $ExcludeJob -notcontains $_.Name }
             }
             else {
                 $jobCollection = $server.JobServer.Jobs
@@ -155,7 +159,7 @@ function Test-DbaJobOwner {
     }
     end {
         #return results
-         if($All){
+         if($All -or $Job){
             Select-DefaultView -InputObject $return -Property Server,Job,CurrentOwner,TargetOwner,OwnerMatch 
          }
          else{
