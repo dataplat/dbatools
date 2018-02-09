@@ -165,8 +165,7 @@ function Test-DbaJobOwner {
     }
     end {
         #return results
-            Select-DefaultView -InputObject $results -Property Server,Job,CurrentOwner,TargetOwner,OwnerMatch 
-
+            Select-DefaultView -InputObject $results -Property Server,Job,CurrentOwner,TargetOwner,OwnerMatch
     }
 
 }
