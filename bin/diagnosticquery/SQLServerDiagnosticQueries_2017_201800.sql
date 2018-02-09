@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: January 31, 2018
+-- Last Modified: February 7, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -265,8 +265,8 @@ LEFT OUTER JOIN msdb.dbo.backupset AS bs WITH (NOLOCK)
 ON bs.[database_name] = d.[name] 
 AND bs.backup_finish_date > GETDATE()- 30
 WHERE d.name <> N'tempdb'
-GROUP BY ISNULL(d.[name], bs.[database_name]), d.recovery_model_desc, d.log_reuse_wait_desc 
-ORDER BY d.recovery_model_desc OPTION (RECOMPILE);
+GROUP BY ISNULL(d.[name], bs.[database_name]), d.recovery_model_desc, d.log_reuse_wait_desc, d.[name] 
+ORDER BY d.recovery_model_desc, d.[name] OPTION (RECOMPILE);
 ------
 
 -- This helps you spot runaway transaction logs and other issues with your backup schedule
@@ -349,8 +349,8 @@ WHERE node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
 
 -- Gives you some useful information about the composition and relative load on your NUMA nodes
 -- You want to see an equal number of schedulers on each NUMA node
--- Watch out if SQL Server 2016 Standard Edition has been installed on a machine with more than 24 physical cores
--- Watch out if you have a VM with more than 4 NUMA nodes with SQL Server Standard Edition, since there is a four-socket license limit
+-- Watch out if SQL Server 2017 Standard Edition has been installed on a machine with more than 24 physical cores
+-- Watch out if you have a physical machine or VM with more than 4 NUMA nodes with SQL Server Standard Edition, since there is a four-socket license limit
 
 -- Balancing Your Available SQL Server Core Licenses Evenly Across NUMA Nodes
 -- https://www.sqlskills.com/blogs/glenn/balancing-your-available-sql-server-core-licenses-evenly-across-numa-nodes/
