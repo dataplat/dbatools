@@ -52,4 +52,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.count -gt 3 | Should Be $true
         }
     }
+    
+    Context "Get last history for one split database" {
+        It "supports multi-file backups" {
+            $null = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -FileCount 4
+            Get-DbaLastBackup -SqlInstance $script:instance2 -Database $dbname | Should Not Throw
+            $results = Get-DbaLastBackup -SqlInstance $script:instance2 -Database $dbname
+            $results.LastFullBackup.GetType().Name | Should be "DbaDateTime"
+        }
+    }
 }
