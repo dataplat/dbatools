@@ -510,6 +510,14 @@ function Get-DbaBackupHistory {
                 Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
                 $FileListResults = $server.Query($fileAllSql)
                 foreach ($group in $GroupedResults) {
+                    $CompressedBackupSize = $group.Group[0].CompressedBackupSize
+                    if ($CompressedBackupSize -eq [System.DBNull]::Value) {
+                        $CompressedBackupSize = $null
+                        $ratio = 1
+                    }
+                    else {
+                        $ratio = [Math]::Round(($group.Group[0].TotalSize) / ($CompressedBackupSize), 2)
+                    }
                     $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
                     $historyObject.ComputerName = $server.NetName
                     $historyObject.InstanceName = $server.ServiceName
@@ -521,8 +529,8 @@ function Get-DbaBackupHistory {
                     $historyObject.Duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
                     $historyObject.Path = $group.Group.Path
                     $historyObject.TotalSize = $group.Group[0].TotalSize
-                    $historyObject.CompressedBackupSize = $group.Group[0].CompressedBackupSize
-                    $HistoryObject.CompressionRatio = [Math]::Round(($historyObject.TotalSize.Byte)/($historyObject.CompressedBackupSize.Byte),2)
+                    $historyObject.CompressedBackupSize = $CompressedBackupSize
+                    $HistoryObject.CompressionRatio = $ratio
                     $historyObject.Type = $group.Group[0].Type
                     $historyObject.BackupSetId = $group.Group[0].BackupSetId
                     $historyObject.DeviceType = $group.Group[0].DeviceType
