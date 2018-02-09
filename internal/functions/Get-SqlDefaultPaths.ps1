@@ -25,7 +25,7 @@ function Get-SqlDefaultPaths {
         }
     }
     catch {
-        Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
+        Write-Message -Lvel Warning -Message "Cannot connect to $SqlInstance"
         break
     }
     switch ($filetype) { "mdf" { $filetype = "data" } "ldf" { $filetype = "log" } }
