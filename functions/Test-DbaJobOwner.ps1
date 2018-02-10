@@ -8,7 +8,7 @@ function Test-DbaJobOwner {
 
             By default, the function checks against 'sa' for ownership, but the user can pass a specific login if they use something else.
 
-            Only SQL Agent Jobs that do not match this ownership will be displayed, but if the -All switch is set all SQL Agent Jobs will be returned.
+            Only SQL Agent Jobs that do not match this ownership will be displayed.
 
             Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
 
@@ -32,9 +32,6 @@ function Test-DbaJobOwner {
 
         .PARAMETER Login
             Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
-
-        .PARAMETER All
-            Specifies if the results should include all SQL Agent Jobs regardless of if the owners match. If the Job parameter is specified then this will not return any further results.
 
         .PARAMETER Detailed
             Output all properties, will be deprecated in 1.0.0 release.
@@ -61,9 +58,9 @@ function Test-DbaJobOwner {
             Returns all SQL Agent Jobs where the owner does not match 'sa'.
 
         .EXAMPLE
-            Test-DbaJobOwner -SqlInstance localhost -ExcludeJob 'syspolicy_purge_history' -All
+            Test-DbaJobOwner -SqlInstance localhost -ExcludeJob 'syspolicy_purge_history'
 
-            Returns all SQL Agent Jobs except for the syspolicy_purge_history job
+            Returns SQL Agent Jobs except for the syspolicy_purge_history job
 
         .EXAMPLE
             Test-DbaJobOwner -SqlInstance localhost -Login DOMAIN\account
@@ -83,8 +80,7 @@ function Test-DbaJobOwner {
         [object[]]$ExcludeJob,
         [Alias("TargetLogin")]
         [string]$Login,
-        [Alias("Detailed")]
-        [switch]$All,
+        [switch]$Detailed,
         [switch][Alias('Silent')]$EnableException
     )
 
@@ -155,7 +151,7 @@ function Test-DbaJobOwner {
                 #add each custom object to the return array
                 $return += New-Object PSObject -Property $row
             }
-            if($All -or $Job){
+            if($Job){
                 $results = $return
             }
             else{
