@@ -29,6 +29,11 @@ function Test-DbaFullRecoveryModel {
         .PARAMETER Detailed
             Output all properties, will be deprecated in 1.0.0 release.
 
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.            
+
         .NOTES
             Tags: DisasterRecovery, Backup
             Author: Claudio Silva (@ClaudioESSilva)
@@ -65,7 +70,8 @@ function Test-DbaFullRecoveryModel {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [PSCredential]$SqlCredential,
-        [switch]$Detailed
+        [switch]$Detailed,
+        [switch][Alias('Silent')]$EnableException        
     )
 
     begin {
@@ -145,4 +151,3 @@ function Test-DbaFullRecoveryModel {
         Select-DefaultView -InputObject $collection -ExcludeProperty Notes 
     }
 }
-
