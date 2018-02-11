@@ -32,7 +32,7 @@ function Test-DbaFullRecoveryModel {
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.            
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
             Tags: DisasterRecovery, Backup
@@ -63,7 +63,7 @@ function Test-DbaFullRecoveryModel {
         .EXAMPLE
             Test-DbaFullRecoveryModel -SqlInstance localhost | Select-Object -Property *
 
-            Shows all of the properties for the databases that have Full Recovery Model  
+            Shows all of the properties for the databases that have Full Recovery Model
     #>
     [CmdletBinding()]
     [OutputType("System.Collections.ArrayList")]
@@ -76,7 +76,7 @@ function Test-DbaFullRecoveryModel {
         [object[]]$ExcludeDatabase,
         [PSCredential]$SqlCredential,
         [switch]$Detailed,
-        [switch][Alias('Silent')]$EnableException        
+        [switch][Alias('Silent')]$EnableException
     )
 
     begin {
@@ -153,6 +153,6 @@ function Test-DbaFullRecoveryModel {
     }
 
     end {
-        Return $collection | Select-DefaultView -InputObject $collection -ExcludeProperty Notes 
+        Return $collection | Select-DefaultView -InputObject $collection -ExcludeProperty Notes
     }
 }
