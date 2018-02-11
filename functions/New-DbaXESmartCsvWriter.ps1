@@ -4,13 +4,13 @@ function New-DbaXESmartCsvWriter {
             This Response type is used to write Extended Events to a CSV file.
 
         .DESCRIPTION
-            This Response type is used to write Extended Events to a CSV file. 
+            This Response type is used to write Extended Events to a CSV file.
 
         .PARAMETER OutputFile
             Specifies the path to the output CSV file.
 
         .PARAMETER OverWrite
-            Specifies whether any existiting file should be overwritten or not. 
+            Specifies whether any existiting file should be overwritten or not.
 
         .PARAMETER OutputColumn
             Specifies the list of columns to output from the events. XESmartTarget will capture in memory and write to the target table only the columns (fields or targets) that are present in this list.
@@ -45,8 +45,8 @@ function New-DbaXESmartCsvWriter {
         .EXAMPLE
             $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count"
             $response = New-DbaXESmartCsvWriter -OutputFile c:\temp\workload.csv -OutputColumn $columns -OverWrite -Event "sql_batch_completed"
-            Start-DbaXESmartTarget -SqlInstance localhost\sql2017 -Session "Profiler Standard" -Responder $response 
-            
+            Start-DbaXESmartTarget -SqlInstance localhost\sql2017 -Session "Profiler Standard" -Responder $response
+
             Writes Extended Events to the file "C:\temp\workload.csv".
     #>
     [CmdletBinding()]
