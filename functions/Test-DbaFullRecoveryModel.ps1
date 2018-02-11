@@ -59,6 +59,11 @@ function Test-DbaFullRecoveryModel {
             Test-DbaFullRecoveryModel -SqlInstance sql2008 | Sort-Object Server, ActualRecoveryModel -Descending
 
             Shows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model. The Sort-Object will cause the databases in 'pseudo-simple' mode to show first.
+        
+        .EXAMPLE
+            Test-DbaFullRecoveryModel -SqlInstance localhost | Select-Object -Property *
+
+            Shows all of the properties for the databases that have Full Recovery Model  
     #>
     [CmdletBinding()]
     [OutputType("System.Collections.ArrayList")]
