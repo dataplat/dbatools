@@ -33,7 +33,7 @@ function Stop-DbaXESession {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Xevent
+            Tags: ExtendedEvent, XE, Xevent
             Author: Doug Meyers
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
