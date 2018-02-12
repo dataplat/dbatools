@@ -27,7 +27,12 @@ function Test-DbaFullRecoveryModel {
             Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
         .PARAMETER Detailed
-            If this switch is enabled, an additional "Notes" column is returned in the results.
+            Output all properties, will be deprecated in 1.0.0 release.
+
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
             Tags: DisasterRecovery, Backup
@@ -54,6 +59,11 @@ function Test-DbaFullRecoveryModel {
             Test-DbaFullRecoveryModel -SqlInstance sql2008 | Sort-Object Server, ActualRecoveryModel -Descending
 
             Shows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model. The Sort-Object will cause the databases in 'pseudo-simple' mode to show first.
+        
+        .EXAMPLE
+            Test-DbaFullRecoveryModel -SqlInstance localhost | Select-Object -Property *
+
+            Shows all of the properties for the databases that have Full Recovery Model
     #>
     [CmdletBinding()]
     [OutputType("System.Collections.ArrayList")]
@@ -65,10 +75,12 @@ function Test-DbaFullRecoveryModel {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [PSCredential]$SqlCredential,
-        [switch]$Detailed
+        [switch]$Detailed,
+        [switch][Alias('Silent')]$EnableException
     )
 
     begin {
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
         $collection = New-Object System.Collections.ArrayList
     }
 
@@ -141,12 +153,6 @@ function Test-DbaFullRecoveryModel {
     }
 
     end {
-        if ($Detailed) {
-            return $collection
-        }
-        else {
-            return ($collection | Select-Object * -ExcludeProperty notes)
-        }
+        Return $collection | Select-DefaultView -InputObject $collection -ExcludeProperty Notes
     }
 }
-
