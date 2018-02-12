@@ -9,7 +9,7 @@ function New-DbaXESmartCsvWriter {
         .PARAMETER OutputFile
             Specifies the path to the output CSV file.
 
-        .PARAMETER OverWrite
+        .PARAMETER Overwrite
             Specifies whether any existiting file should be overwritten or not.
 
         .PARAMETER OutputColumn
@@ -33,6 +33,7 @@ function New-DbaXESmartCsvWriter {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: ExtendedEvent, XE, Xevent
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -59,13 +60,12 @@ function New-DbaXESmartCsvWriter {
         [string]$Filter,
         [switch]$EnableException
     )
+
     begin {
         try {
-            Write-Host "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll"
             Add-Type -Path "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
         }
         catch {
-            Write-Host "$script:PSModuleRoot\bin\XESmartTarget\XESmartTarget.Core.dll"
             Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
             return
         }
@@ -77,13 +77,13 @@ function New-DbaXESmartCsvWriter {
             $writer = New-Object -TypeName XESmartTarget.Core.Responses.CsvAppenderResponse
             $writer.OutputFile = $OutputFile
             $writer.OverWrite = $Overwrite
-            if (Test-Bound -ParameterName "Event"){
+            if (Test-Bound -ParameterName "Event") {
                 $writer.Events = $Event
             }
-            if (Test-Bound -ParameterName "OutputColumn"){
+            if (Test-Bound -ParameterName "OutputColumn") {
                 $writer.OutputColumns = $OutputColumn
             }
-            if (Test-Bound -ParameterName "Filter"){
+            if (Test-Bound -ParameterName "Filter") {
                 $writer.Filter = $Filter
             }
             $writer
