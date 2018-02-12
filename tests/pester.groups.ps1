@@ -15,7 +15,6 @@ $TestsRunGroups = @{
     )
     # do not run on appveyor
     "appveyor_disabled" = @(
-        'Get-DbaDatabaseState',
         'Dismount-DbaDatabase'
     )
 
