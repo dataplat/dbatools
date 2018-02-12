@@ -4,12 +4,11 @@ function Measure-DbaDiskSpaceRequirement {
             Calculate the space needed to copy and possibly replace a database from one SQL server to another.
 
         .DESCRIPTION
-            Returns a file list from source and destination where source file may overwrite destination. Complex scenarios where a new file may exist is taken
-            into account. This procedure will accept an object in pipeline as long as it as provide these required properties: Source, SourceDatabase, Destination.
-            Using this method will provide a way to prepare before a complex migration with lots of databases from different sources and destinations.
+            Returns a file list from source and destination where source file may overwrite destination. Complex scenarios where a new file may exist is taken into account.
+            This command will accept an hash object in pipeline with the following keys: Source, SourceDatabase, Destination. Using this command will provide a way to prepare before a complex migration with multiple databases from different sources and destinations.
 
         .PARAMETER Source
-            The source SQL Server instance.
+            Source SQL Server.
 
         .PARAMETER SourceSqlCredential
             Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -24,16 +23,23 @@ function Measure-DbaDiskSpaceRequirement {
             The database to copy. It MUST exist.
 
         .PARAMETER Destination
-            The destination SQL Server instance.
+            Destination SQL Server instance.
 
         .PARAMETER DestinationSqlCredential
-            Same as SourceSqlCredential.
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+            $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
+
+            Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+            To connect as a different Windows user, run PowerShell as that user.
 
         .PARAMETER DestinationDatabase
-            The database name at destination. May or may not be present. Unspecified name will assume database name be the same as source.
+            The database name at destination.
+            May or may not be present, if unspecified it will default to the database name provided in SourceDatabase.
 
         .PARAMETER Credential
-            Windows credentials to connect via CIM/WMI/PowerShell remoting for MountPoint definition.
+            The credentials to use to connect via CIM/WMI/PowerShell remoting.
 
         .NOTES
            Tags: Database, DiskSpace, Migration
