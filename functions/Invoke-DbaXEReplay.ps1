@@ -34,6 +34,12 @@ function Invoke-DbaXeReplay {
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+        .NOTES
+            Tags: ExtendedEvent, XE, Xevent
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    
         .EXAMPLE
             Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaSqlQuery -SqlInstance sql2017 -Database tempdb
 
