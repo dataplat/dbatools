@@ -1,4 +1,4 @@
-Function Measure-DbaDiskSpaceRequirement {
+function Measure-DbaDiskSpaceRequirement {
     <#
         .SYNOPSIS
             Calculate the space needed to copy and possibly replace a database from one SQL server to another.
@@ -36,8 +36,8 @@ Function Measure-DbaDiskSpaceRequirement {
             Windows credentials to connect via CIM/WMI/PowerShell remoting for MountPoint definition.
 
         .NOTES
-            Author: Pollus Brodeur (@pollusb)
-            Tags: Migration
+           Tags: Database, DiskSpace, Migration
+           Author: Pollus Brodeur (@pollusb)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -71,14 +71,14 @@ Function Measure-DbaDiskSpaceRequirement {
     #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName=$true)]
         [DbaInstanceParameter]$Source,
-        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [string]$SourceDatabase,
         [PSCredential]$SourceSqlCredential,
-        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [DbaInstanceParameter]$Destination,
-        [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory=$false, ValueFromPipelineByPropertyName)]
         [string]$DestinationDatabase,
         [PSCredential]$DestinationSqlCredential,
         [PSCredential]$Credential
@@ -98,20 +98,22 @@ Function Measure-DbaDiskSpaceRequirement {
                 $ComputerName,
                 [PSCredential]$Credential
             )
-            if(!$CacheMP[$ComputerName]) {
+            if (!$CacheMP[$ComputerName]) {
                 try {
                     $CacheMP.Add($ComputerName, (Get-DbaDiskSpace -ComputerName $ComputerName -Credential $Credential -EnableException))
                     Write-Message -Level Verbose -Message "CacheMP[$ComputerName] is in cache" -EnableException:$false
-                } catch {
-                    $CacheMP.Add($ComputerName, '?') # This way, I won't be asking again for this computer.
+                }
+                catch {
+                    # This way, I won't be asking again for this computer.
+                    $CacheMP.Add($ComputerName, '?')
                     Stop-Function -Message "Can't connect to $ComputerName. CacheMP[$ComputerName] = ?" -Continue
                 }
             }
-            if($CacheMP[$ComputerName] -eq '?') {
+            if ($CacheMP[$ComputerName] -eq '?') {
                 return '?'
             }
-            foreach($M in ($CacheMP[$ComputerName] | Sort-Object -Property Name -Descending)) {
-                if($Path -like "$($M.Name)*") {
+            foreach ($M in ($CacheMP[$ComputerName] | Sort-Object -Property Name -Descending)) {
+                if ($Path -like "$($M.Name)*") {
                     return $M.Name
                 }
             }
@@ -121,130 +123,138 @@ Function Measure-DbaDiskSpaceRequirement {
             [CmdletBinding()]
             Param(
                 [Parameter(Mandatory)]
-                [ValidateSet('Log','Data')]
+                [ValidateSet('Log', 'Data')]
                 $DefaultPathType,
                 [Parameter(Mandatory)]
                 $SqlInstance,
                 [PSCredential]$SqlCredential,
-                $ComputerName, # Could probably use the computer defined in SqlInstance but info was already available from the caller
+                # Could probably use the computer defined in SqlInstance but info was already available from the caller
+                $ComputerName,
                 [PSCredential]$Credential
             )
-            if(!$CacheDP[$SqlInstance]) {
+            if (!$CacheDP[$SqlInstance]) {
                 try {
                     $CacheDP.Add($SqlInstance, (Get-DbaDefaultPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -EnableException))
                     Write-Message -Level Verbose -Message "CacheDP[$SqlInstance] is in cache" -EnableException:$false
-                } catch {
+                }
+                catch {
                     Stop-Function -Message "Can't connect to $SqlInstance" -Continue -EnableException:$false
                     $CacheDP.Add($SqlInstance, '?')
                     return '?'
                 }
             }
-            if($CacheDP[$SqlInstance] -eq '?') {
+            if ($CacheDP[$SqlInstance] -eq '?') {
                 return '?'
             }
-            if(!$ComputerName) {
+            if (!$ComputerName) {
                 $ComputerName = $CacheDP[$SqlInstance].ComputerName
             }
-            if(!$CacheMP[$ComputerName]) {
+            if (!$CacheMP[$ComputerName]) {
                 try {
                     $CacheMP.Add($ComputerName, (Get-DbaDiskSpace -ComputerName $ComputerName -Credential $Credential))
-                } catch {
+                }
+                catch {
                     Stop-Function -Message "Can't connect to $ComputerName." -Continue -EnableException:$false
-                    $CacheMP.Add($ComputerName,'?')
+                    $CacheMP.Add($ComputerName, '?')
                     return '?'
                 }
             }
-            if($DefaultPathType -eq 'Log') {
+            if ($DefaultPathType -eq 'Log') {
                 $Path = $CacheDP[$SqlInstance].Log
-            } else {
+            }
+            else {
                 $Path = $CacheDP[$SqlInstance].Data
             }
-            foreach($M in ($CacheMP[$ComputerName] | Sort-Object -Property Name -Descending)) {
-                if($Path -like "$($M.Name)*") {
+            foreach ($M in ($CacheMP[$ComputerName] | Sort-Object -Property Name -Descending)) {
+                if ($Path -like "$($M.Name)*") {
                     return $M.Name
                 }
             }
         }
     }
     process {
-        if(!$DestinationDatabase) {
+        if (!$DestinationDatabase) {
             $DestinationDatabase = $SourceDatabase
         }
         Write-Message -Level Verbose -Message "$Source.[$SourceDatabase] -> $Destination.[$DestinationDatabase]" -EnableException:$false
 
         $DB1 = Get-DbaDatabase -SqlInstance $Source -Database $SourceDatabase -SqlCredential $SourceSqlCredential
-        if(!$DB1) {
+        if (!$DB1) {
             Stop-Function -Message "Database [$SourceDatabase] MUST exist on Source Instance $Source." -ErrorRecord $_ -EnableException:$false
         }
-        $DataFiles1 = @($DB1.FileGroups.Files | Select-Object Name, FileName, Size, @{n='Type';e={'Data'}})
-        $DataFiles1 += @($DB1.LogFiles        | Select-Object Name, FileName, Size, @{n='Type';e={'Log'}})
+        $DataFiles1 = @($DB1.FileGroups.Files | Select-Object Name, FileName, Size, @{n='Type'; e= {'Data'}})
+        $DataFiles1 += @($DB1.LogFiles        | Select-Object Name, FileName, Size, @{n='Type'; e= {'Log'}})
 
-        if($DB2 = Get-DbaDatabase -SqlInstance $Destination -Database $DestinationDatabase -SqlCredential $DestinationSqlCredential) {
-            $DataFiles2 = @($DB2.FileGroups.Files | Select-Object Name, FileName, Size, @{n='Type';e={'Data'}})
-            $DataFiles2 += @($DB2.LogFiles        | Select-Object Name, FileName, Size, @{n='Type';e={'Log'}})
+        if ($DB2 = Get-DbaDatabase -SqlInstance $Destination -Database $DestinationDatabase -SqlCredential $DestinationSqlCredential) {
+            $DataFiles2 = @($DB2.FileGroups.Files | Select-Object Name, FileName, Size, @{n='Type'; e= {'Data'}})
+            $DataFiles2 += @($DB2.LogFiles        | Select-Object Name, FileName, Size, @{n='Type'; e= {'Log'}})
             $ComputerName = $DB2.ComputerName
-        } else {
+        }
+        else {
             Write-Message -Level Verbose -Message "Database [$DestinationDatabase] does not exist on Destination Instance $Destination." -EnableException:$false
             $ComputerName = (Connect-DbaInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential).NetName
         }
 
-        foreach($File1 in $DataFiles1) {
-            foreach($File2 in $DataFiles2) {
-                if($found = ($File1.Name -eq $File2.Name)) { # Files found on both sides
+        foreach ($File1 in $DataFiles1) {
+            foreach ($File2 in $DataFiles2) {
+                if ($found = ($File1.Name -eq $File2.Name)) {
+                    # Files found on both sides
                     $Detail += @([PSCustomObject]@{
-                        Source = $Source
-                        Destination = $Destination
-                        DatabaseName1 = $DB1.Name
-                        DatabaseName2 = $DB2.Name
-                        Name1 = $File1.Name
-                        Name2 = $File2.Name
-                        FilePath1 = $File1.FileName
-                        FilePath2 = $File2.FileName
-                        SizeKB1 = $File1.Size
-                        SizeKB2 = $File2.Size * -1
-                        DiffKB = $File1.Size - $File2.Size
-                        ComputerName = $ComputerName
-                        MountPoint = Get-MountPointFromPath -Path $File2.Filename -ComputerName $ComputerName -Credential $Credential
-                    })
+                            Source        = $Source
+                            Destination   = $Destination
+                            DatabaseName1 = $DB1.Name
+                            DatabaseName2 = $DB2.Name
+                            Name1         = $File1.Name
+                            Name2         = $File2.Name
+                            FilePath1     = $File1.FileName
+                            FilePath2     = $File2.FileName
+                            SizeKB1       = $File1.Size
+                            SizeKB2       = $File2.Size * -1
+                            DiffKB        = $File1.Size - $File2.Size
+                            ComputerName  = $ComputerName
+                            MountPoint    = Get-MountPointFromPath -Path $File2.Filename -ComputerName $ComputerName -Credential $Credential
+                        })
                     break
                 }
             }
-            if(!$found) { # Files on source but not on destination
+            if (!$found) {
+                # Files on source but not on destination
                 $Detail += @([PSCustomObject]@{
-                    Source = $Source
-                    Destination = $Destination
-                    DatabaseName1 = $DB1.Name
-                    DatabaseName2 = $DestinationDatabase
-                    Name1 = $File1.Name
-                    Name2 = $NullText
-                    FilePath1 = $File1.FileName
-                    FilePath2 = $NullText
-                    SizeKB1 = $File1.Size
-                    SizeKB2 = 0
-                    DiffKB = $File1.Size
-                    ComputerName = $ComputerName
-                    MountPoint = Get-MountPointFromDefaultPath -DefaultPathType $File1.Type -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-                })
+                        Source        = $Source
+                        Destination   = $Destination
+                        DatabaseName1 = $DB1.Name
+                        DatabaseName2 = $DestinationDatabase
+                        Name1         = $File1.Name
+                        Name2         = $NullText
+                        FilePath1     = $File1.FileName
+                        FilePath2     = $NullText
+                        SizeKB1       = $File1.Size
+                        SizeKB2       = 0
+                        DiffKB        = $File1.Size
+                        ComputerName  = $ComputerName
+                        MountPoint    = Get-MountPointFromDefaultPath -DefaultPathType $File1.Type -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+                    })
             }
         }
-        if($DB2) { # Files on destination but not on source (strange scenario but possible)
+        if ($DB2) {
+            # Files on destination but not on source (strange scenario but possible)
             $DataFiles3 = Compare-Object -ReferenceObject $DataFiles2 -DifferenceObject $DataFiles1 -Property Name -PassThru
-            foreach($File3 in $DataFiles3) {
+            foreach ($File3 in $DataFiles3) {
                 $Detail += @([PSCustomObject]@{
-                    Source = $Source
-                    Destination = $Destination
-                    DatabaseName1 = $SourceDatabase
-                    DatabaseName2 = $DB2.Name
-                    Name1 = $NullText
-                    Name2 = $File3.Name
-                    FilePath1 = $NullText
-                    FilePath2 = $File2.FileName
-                    SizeKB1 = 0
-                    SizeKB2 = $File3.Size * -1
-                    DiffKB = $File3.Size * -1
-                    ComputerName = $ComputerName
-                    MountPoint = Get-MountPointFromPath -Path $File3.Filename -ComputerName $ComputerName -Credential $Credential
-                })
+                        Source        = $Source
+                        Destination   = $Destination
+                        DatabaseName1 = $SourceDatabase
+                        DatabaseName2 = $DB2.Name
+                        Name1         = $NullText
+                        Name2         = $File3.Name
+                        FilePath1     = $NullText
+                        FilePath2     = $File2.FileName
+                        SizeKB1       = 0
+                        SizeKB2       = $File3.Size * -1
+                        DiffKB        = $File3.Size * -1
+                        ComputerName  = $ComputerName
+                        MountPoint    = Get-MountPointFromPath -Path $File3.Filename -ComputerName $ComputerName -Credential $Credential
+                    })
             }
         }
         $DestinationDatabase = ''
