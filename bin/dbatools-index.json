@@ -2260,7 +2260,11 @@
     {
         "CommandName":  "Get-DbaXEObject",
         "Description":  "This function returns a list of Traces on the specified SQL Server instance(s) and identifies the default Trace File",
-        "Tags":  "ExtendedEvent",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "Gets a list of trace(s) from specified SQL Server instance(s).",
         "Name":  "Get-DbaXEObject",
         "Links":  null,
@@ -2269,7 +2273,11 @@
     {
         "CommandName":  "Get-DbaXESession",
         "Description":  "Retrieves a list of Extended Events Sessions present on the specified SQL Server instance(s).",
-        "Tags":  "Memory",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Author":  "Klaas Vandenberghe ( @PowerDBAKlaas )",
         "Synopsis":  "Gets a list of Extended Events Sessions from the specified SQL Server instance(s).",
         "Name":  "Get-DbaXESession",
@@ -2279,7 +2287,11 @@
     {
         "CommandName":  "Get-DbaXESessionTarget",
         "Description":  "Retrieves a list of Extended Events Session Targets from the specified SQL Server instance(s).",
-        "Tags":  "Xevent",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "Get a list of Extended Events Session Targets from the specified SQL Server instance(s).",
         "Name":  "Get-DbaXESessionTarget",
         "Links":  "https://dbatools.io/Get-DbaXESessionTarget",
@@ -2288,6 +2300,11 @@
     {
         "CommandName":  "Get-DbaXESessionTemplate",
         "Description":  "Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\\bin\\xetemplates\\).\n\nThe default repository contains templates from:\n        Microsoft\u0027s Templates that come with SSMS\n        Jes Borland\u0027s \"Everyday Extended Events\" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)\n        Christian Gräfe\u0027s XE Repo: https://github.com/chrgraefe/sqlscripts/blob/master/XE-Events/\n        Erin Stellato\u0027s Blog: https://www.sqlskills.com/blogs/erin/\n\nSome profile templates converted using:\n        sp_SQLskills_ConvertTraceToExtendedEvents.sql\n        Jonathan M. Kehayias, SQLskills.com\n        http://sqlskills.com/blogs/jonathan",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\\bin\\xetemplates\\).",
         "Name":  "Get-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Get-DbaXESessionTemplate",
@@ -2296,6 +2313,11 @@
     {
         "CommandName":  "Get-DbaXESmartTarget",
         "Description":  "Gets an XESmartTarget PowerShell Job created by Start-DbaXESmartTarget.",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "Gets an XESmartTarget PowerShell Job created by Start-DbaXESmartTarget.",
         "Name":  "Get-DbaXESmartTarget",
         "Links":  "https://dbatools.io/Get-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -2304,6 +2326,11 @@
     {
         "CommandName":  "Get-DbaXEStore",
         "Description":  "Get a Extended Events store",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "Get a Extended Events store",
         "Name":  "Get-DbaXEStore",
         "Links":  "https://dbatools.io/Get-DbaXEStore",
@@ -2338,6 +2365,11 @@
     {
         "CommandName":  "Import-DbaXESessionTemplate",
         "Description":  "Imports a new XESession XML Template either from the dbatools repository or a file you specify.",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "Imports a new XESession XML Template",
         "Name":  "Import-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Import-DbaXESessionTemplate",
@@ -2812,14 +2844,37 @@
     {
         "CommandName":  "New-DbaXESession",
         "Description":  "Creates a new XESession object - for the dogged (very manual, Import-DbaXESession is recommended). See the following for more info:\n\nhttps://docs.microsoft.com/en-us/sql/relational-databases/extended-events/use-the-powershell-provider-for-extended-events",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "Creates a new XESession object - for the dogged.",
         "Name":  "New-DbaXESession",
         "Links":  "https://dbatools.io/New-DbaXESession",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$session = New-DbaXESession -SqlInstance sql2017 -Name XeSession_Test\r\n\r\n$event = $session.AddEvent(\"sqlserver.file_written\")\r\n$event.AddAction(\"package0.callstack\")\r\n$session.Create()\r\n\r\nReturns a new XE Session object from sql2017 then adds an event, an action then creates it.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "New-DbaXESmartCsvWriter",
+        "Description":  "This Response type is used to write Extended Events to a CSV file.",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
+        "Synopsis":  "This Response type is used to write Extended Events to a CSV file.",
+        "Name":  "New-DbaXESmartCsvWriter",
+        "Links":  "https://dbatools.io/New-DbaXESmartCsvWriter\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$columns = \"cpu_time\", \"duration\", \"physical_reads\", \"logical_reads\", \"writes\", \"row_count\"\r\n\r\n$response = New-DbaXESmartCsvWriter -OutputFile c:\\temp\\workload.csv -OutputColumn $columns -OverWrite -Event \r\n\"sql_batch_completed\"\r\nStart-DbaXESmartTarget -SqlInstance localhost\\sql2017 -Session \"Profiler Standard\" -Responder $response\r\n\r\nWrites Extended Events to the file \"C:\\temp\\workload.csv\".\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "New-DbaXESmartEmail",
         "Description":  "This Response type can be used to send an email each time an event is captured.",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "This Response type can be used to send an email each time an event is captured.",
         "Name":  "New-DbaXESmartEmail",
         "Links":  "https://dbatools.io/New-DbaXESmartEmail\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -2828,6 +2883,11 @@
     {
         "CommandName":  "New-DbaXESmartQueryExec",
         "Description":  "This Response type executes a T-SQL command against a target database whenever an event is recorded.",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "This Response type executes a T-SQL command against a target database whenever an event is recorded.",
         "Name":  "New-DbaXESmartQueryExec",
         "Links":  "https://dbatools.io/New-DbaXESmartQueryExec\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -2836,6 +2896,11 @@
     {
         "CommandName":  "New-DbaXESmartReplay",
         "Description":  "This Response type can be used to replay execution related events to a target SQL Server instance. The events that you can replay are of the type sql_batch_completed and rpc_completed: all other events are ignored.",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "This Response type can be used to replay execution related events to a target SQL Server instance.",
         "Name":  "New-DbaXESmartReplay",
         "Links":  "https://dbatools.io/New-DbaXESmartReplay\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -2844,6 +2909,11 @@
     {
         "CommandName":  "New-DbaXESmartTableWriter",
         "Description":  "This Response type is used to write Extended Events to a database table. The events are temporarily stored in memory before being written to the database at regular intervals.\n\nThe target table can be created manually upfront or you can let the TableAppenderResponse create a target table based on the fields and actions available in the events captured.\n\nThe columns of the target table and the fields/actions of the events are mapped by name (case-sensitive).",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "This Response type is used to write Extended Events to a database table.",
         "Name":  "New-DbaXESmartTableWriter",
         "Links":  "https://dbatools.io/New-DbaXESmartTableWriter\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -2904,7 +2974,11 @@
     {
         "CommandName":  "Read-DbaXEFile",
         "Description":  "Read XEvents from a xel or xem file.",
-        "Tags":  "Xevent",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "Read XEvents from a xel or xem file.",
         "Name":  "Read-DbaXEFile",
         "Links":  "https://dbatools.io/Read-DbaXEFile",
@@ -3163,7 +3237,11 @@
     {
         "CommandName":  "Remove-DbaXESession",
         "Description":  "This script removes Extended Events sessions on a SQL Server instance.",
-        "Tags":  "Xevent",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "Removes Extended Events sessions.",
         "Name":  "Remove-DbaXESession",
         "Links":  "https://dbatools.io/Remove-DbaXESession",
@@ -3172,6 +3250,11 @@
     {
         "CommandName":  "Remove-DbaXESmartTarget",
         "Description":  "Removes an XESmartTarget PowerShell Job.",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "Removes an XESmartTarget PowerShell Job.",
         "Name":  "Remove-DbaXESmartTarget",
         "Links":  "https://dbatools.io/Remove-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -3664,7 +3747,11 @@
     {
         "CommandName":  "Start-DbaXESession",
         "Description":  "This script starts Extended Events sessions on a SQL Server instance.",
-        "Tags":  "Xevent",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Author":  "Doug Meyers",
         "Synopsis":  "Starts Extended Events sessions.",
         "Name":  "Start-DbaXESession",
@@ -3674,6 +3761,11 @@
     {
         "CommandName":  "Start-DbaXESmartTarget",
         "Description":  "XESmartTarget offers the ability to set up complex actions in response to Extended Events captured in sessions, without writing a single line of code.\n\nSee more at https://github.com/spaghettidba/XESmartTarget/wiki",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "XESmartTarget runs as a client application for an Extended Events session running on a SQL Server instance.",
         "Name":  "Start-DbaXESmartTarget",
         "Links":  "https://dbatools.io/Start-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -3734,7 +3826,11 @@
     {
         "CommandName":  "Stop-DbaXESession",
         "Description":  "This script stops Extended Events sessions on a SQL Server instance.",
-        "Tags":  "Xevent",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Author":  "Doug Meyers",
         "Synopsis":  "Stops Extended Events sessions.",
         "Name":  "Stop-DbaXESession",
@@ -3744,6 +3840,11 @@
     {
         "CommandName":  "Stop-DbaXESmartTarget",
         "Description":  "Stops an XESmartTarget PowerShell Job. Useful if you want to run a target, but not right now.",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "Stops an XESmartTarget PowerShell Job. Useful if you want to run a target, but not right now.",
         "Name":  "Stop-DbaXESmartTarget",
         "Links":  "https://dbatools.io/Stop-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -3885,7 +3986,7 @@
         "Synopsis":  "Find if database is really in the Full recovery model or not.",
         "Name":  "Test-DbaFullRecoveryModel",
         "Links":  "https://dbatools.io/Test-DbaFullRecoveryModel",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaFullRecoveryModel -SqlInstance sql2005\r\n\r\nShows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL \r\nrecovery model.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaFullRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne \"FULL\"}\r\n\r\nOnly shows the databases that are in \u0027pseudo-simple\u0027 mode.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaFullRecoveryModel -SqlInstance sql2008 | Sort-Object Server, ActualRecoveryModel -Descending\r\n\r\nShows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL \r\nrecovery model. The Sort-Object will cause the databases in \u0027pseudo-simple\u0027 mode to show first.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaFullRecoveryModel -SqlInstance sql2005\r\n\r\nShows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL \r\nrecovery model.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaFullRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne \"FULL\"}\r\n\r\nOnly shows the databases that are in \u0027pseudo-simple\u0027 mode.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaFullRecoveryModel -SqlInstance sql2008 | Sort-Object Server, ActualRecoveryModel -Descending\r\n\r\nShows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL \r\nrecovery model. The Sort-Object will cause the databases in \u0027pseudo-simple\u0027 mode to show first.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaFullRecoveryModel -SqlInstance localhost | Select-Object -Property *\r\n\r\nShows all of the properties for the databases that have Full Recovery Model\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaIdentityUsage",
@@ -3899,7 +4000,7 @@
     },
     {
         "CommandName":  "Test-DbaJobOwner",
-        "Description":  "This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not.\n\nBy default, the function checks against \u0027sa\u0027 for ownership, but the user can pass a specific login if they use something else.\n\nOnly SQL Agent Jobs that do not match this ownership will be displayed, but if the -Detailed switch is set all SQL Agent Jobs will be returned.\n\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account",
+        "Description":  "This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not.\n\nBy default, the function checks against \u0027sa\u0027 for ownership, but the user can pass a specific login if they use something else.\n\nOnly SQL Agent Jobs that do not match this ownership will be displayed.\n\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account",
         "Tags":  [
                      "Agent",
                      "Job",
@@ -3909,7 +4010,7 @@
         "Synopsis":  "Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.",
         "Name":  "Test-DbaJobOwner",
         "Links":  "https://dbatools.io/Test-DbaJobOwner",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaJobOwner -SqlInstance localhost\r\n\r\nReturns all databases where the owner does not match \u0027sa\u0027.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaJobOwner -SqlInstance localhost -Login DOMAIN\\account\r\n\r\nReturns all databases where the owner does not match DOMAIN\\account. Note\r\nthat Login must be a valid security principal that exists on the target server.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaJobOwner -SqlInstance localhost\r\n\r\nReturns all SQL Agent Jobs where the owner does not match \u0027sa\u0027.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaJobOwner -SqlInstance localhost -ExcludeJob \u0027syspolicy_purge_history\u0027\r\n\r\nReturns SQL Agent Jobs except for the syspolicy_purge_history job\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaJobOwner -SqlInstance localhost -Login DOMAIN\\account\r\n\r\nReturns all SQL Agent Jobs where the owner does not match DOMAIN\\account. Note\r\nthat Login must be a valid security principal that exists on the target server.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaLastBackup",
@@ -4156,7 +4257,11 @@
     {
         "CommandName":  "Watch-DbaXESession",
         "Description":  "Watch live XEvent Data as it happens. This command runs until you stop the session, kill the PowerShell session, or Ctrl-C.\n\nThanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html",
-        "Tags":  "Xevent",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
         "Synopsis":  "Watch live XEvent Data as it happens",
         "Name":  "Watch-DbaXESession",
         "Links":  "https://dbatools.io/Watch-DbaXESession",
