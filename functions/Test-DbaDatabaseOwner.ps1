@@ -6,7 +6,7 @@ function Test-DbaDatabaseOwner {
         .DESCRIPTION
             This function will check all databases on an instance against a SQL login to validate if that
             login owns those databases or not. By default, the function will check against 'sa' for
-            ownership, but the user can pass a specific login if they use something else. 
+            ownership, but the user can pass a specific login if they use something else.
 
             Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
 
