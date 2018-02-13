@@ -6,8 +6,6 @@ function Test-DbaDiskAlignment {
         .DESCRIPTION
             Returns $true or $false by default for one server. Returns Server name and IsBestPractice for more than one server.
 
-            Specify -Detailed for additional information which returns some additional optional "best practice" columns, which may show false even though you pass the alignment test. This is because your offset is not one of the "expected" values that Windows uses, but your disk is still physically aligned.
-
             Please refer to your storage vendor best practices before following any advice below.
 
             By default issues with disk alignment should be resolved by a new installation of Windows Server 2008, Windows Vista, or later operating systems, but verifying disk alignment continues to be recommended as a best practice.
@@ -22,7 +20,7 @@ function Test-DbaDiskAlignment {
             The server(s) to check disk configuration on.
 
         .PARAMETER Detailed
-            If this switch is enabled, additional disk details will be displayed.
+            Output all properties, will be deprecated in 1.0.0 release.
 
         .PARAMETER Credential
             Specifies an alternate Windows account to use when enumerating drives on the server. May require Administrator privileges. To use:
@@ -98,7 +96,7 @@ function Test-DbaDiskAlignment {
         [switch][Alias('Silent')]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0.0" -Parameter 'Detailed'
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter 'Detailed'
 
         $sessionoption = New-CimSessionOption -Protocol DCom
 
@@ -293,7 +291,6 @@ function Test-DbaDiskAlignment {
             Write-Message -Level VeryVerbose -Message "Processing: $computer."
 
             $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
-            $ipaddr = $computer.IpAddress
             $Computer = $computer.ComputerName
 
             if (!$Computer) {
