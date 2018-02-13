@@ -1,44 +1,51 @@
 function Export-DbaXECsv {
     <#
         .SYNOPSIS
-            Exports Extended Events to a CSV file.
+            Exports Extended Events to a CSV file
 
         .DESCRIPTION
-            Exports Extended Events to a CSV file.
+            Exports Extended Events to a CSV file
 
         .PARAMETER Path
-            Specifies the path to the input XEL file.
-
-        .PARAMETER OutpuPath
-            Specifies the path to the output CSV file.
+            Specifies the InputObject to the output CSV file
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+        .PARAMETER InputObject
+            Allows Piping
+
         .NOTES
+            Author: Gianluca Sartori (@spaghettidba)
+            Tags: ExtendedEvent, XE, Xevent
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            SmartTarget: by Gianluca Sartori (@spaghettidba)
 
         .LINK
             https://dbatools.io/Export-DbaXECsv
 
         .EXAMPLE
-            Read-DbaXEFile -Path C:\temp\events.xel | Export-DbaXECsv -Path c:\temp\events.csv
-            
-            Writes Extended Events data to the file "C:\temp\events.csv".
+            Get-ChildItem -Path C:\temp\sample.xel | Export-DbaXECsv -Path c:\temp\sample.csv
+
+            Writes Extended Events data to the file "C:\temp\events.csv"
+
+         .EXAMPLE
+            Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Export-DbaXECsv -Path c:\temp\events.csv
+
+            Writes Extended Events data to the file "C:\temp\events.csv"
     #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('FullName')]
-        [object[]]$Path,
+        [object[]]$InputObject,
         [parameter(Mandatory)]
-        [object[]]$OutputPath,
-        [switch][Alias('Silent')]
-        $EnableException
+        [string]$Path,
+        [switch]$EnableException
     )
     begin {
         try {
@@ -48,36 +55,94 @@ function Export-DbaXECsv {
             Stop-Function -Message "Could not load XESmartTarget.Core.dll" -ErrorRecord $_ -Target "XESmartTarget"
             return
         }
-    }
-    process {
 
-        foreach ($file in $path) {
+        function Get-FileFromXE ($InputObject) {
+            if ($InputObject.TargetFile) {
+                if ($InputObject.TargetFile.Length -eq 0) {
+                    Stop-Function -Message "This session does not have an associated Target File."
+                    return
+                }
 
-            if(-not (Test-Path $OutputPath)){
-                if([String]::IsNullOrEmpty([IO.Path]::GetExtension($OutputPath))) {
-                    New-Item $OutputPath -ItemType directory | Out-Null
-                    $outDir = $OutputPath
-                    $outFile = [IO.Path]::GetFileNameWithoutExtension($file) + ".csv"
+                $instance = [dbainstance]$InputObject.ComputerName
+
+                if ($instance.IsLocalHost) {
+                    $xelpath = $InputObject.TargetFile
                 }
                 else {
-                    $outDir = [IO.Path]::GetDirectoryName($OutputPath)
-                    $outFile = [IO.Path]::GetFileName($OutputPath)
+                    $xelpath = $InputObject.RemoteTargetFile
+                }
+
+                if ($xelpath -notmatch ".xel") {
+                    $xelpath = "$xelpath*.xel"
+                }
+
+                try {
+                    Get-ChildItem -Path $xelpath -ErrorAction Stop
+                }
+                catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_
+                }
+            }
+        }
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+
+        $getfiles = Get-FileFromXE $InputObject
+
+        if ($getfiles) {
+            $InputObject += $getfiles
+        }
+
+        foreach ($file in $InputObject) {
+            if ($file -is [System.String]) {
+                $currentfile = $file
+            }
+            elseif ($file -is [System.IO.FileInfo]) {
+                $currentfile = $file.FullName
+            }
+            elseif ($file -is [Microsoft.SqlServer.Management.XEvent.Session]) {
+                # it was taken care of above
+                continue
+            }
+            else {
+                Stop-Function -Message "Unsupported file type."
+                return
+            }
+
+            $accessible = Test-Path -Path $currentfile
+            $whoami = whoami
+
+            if (-not $accessible) {
+                if ($file.Status -eq "Stopped") { continue }
+                Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
+            }
+
+            if (-not (Test-Path $Path)) {
+                if ([String]::IsNullOrEmpty([IO.Path]::GetExtension($Path))) {
+                    New-Item $Path -ItemType directory | Out-Null
+                    $outDir = $Path
+                    $outFile = [IO.Path]::GetFileNameWithoutExtension($currentfile) + ".csv"
+                }
+                else {
+                    $outDir = [IO.Path]::GetDirectoryName($Path)
+                    $outFile = [IO.Path]::GetFileName($Path)
                 }
             }
             else {
-                if((Get-Item $OutputPath) -is [System.IO.DirectoryInfo]){
-                    $outDir = $OutputPath
-                    $outFile = [IO.Path]::GetFileNameWithoutExtension($file) + ".csv"
+                if ((Get-Item $Path) -is [System.IO.DirectoryInfo]) {
+                    $outDir = $Path
+                    $outFile = [IO.Path]::GetFileNameWithoutExtension($currentfile) + ".csv"
                 }
                 else {
-                    $outDir = [IO.Path]::GetDirectoryName($OutputPath)
-                    $outFile = [IO.Path]::GetFileName($OutputPath)
+                    $outDir = [IO.Path]::GetDirectoryName($Path)
+                    $outFile = [IO.Path]::GetFileName($Path)
                 }
             }
 
             $adapter = New-Object XESmartTarget.Core.Utils.XELFileCSVAdapter
-            $adapter.InputFile = $file
-            $adapter.OutputFile = Join-Path $outDir $outFile
+            $adapter.InputFile = $currentfile
+            $adapter.OutputFile = (Join-Path $outDir $outFile)
 
             try {
                 $adapter.Convert()
