@@ -671,6 +671,20 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-users.sql\r\n\r\nExports SQL for the users in server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-users.sql\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a $scred -FilePath C:\\temp\\users.sql -Append\r\n\r\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\\temp\\users.sql, and appends to the \r\nfile if it exists. If not, the file will be created.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -FilePath C:\\temp\\users.sql\r\n\r\nExports ONLY users User1 and User2 fron sqlsever2014a to the file  C:\\temp\\users.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -User User1 -FilePath C:\\temp\\users.sql -DestinationVersion \r\nSQLServer2016\r\n\r\nExports user User1 fron sqlsever2008 to the file C:\\temp\\users.sql with sintax to run on SQL Server 2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\\temp\\users.sql\r\n\r\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e$options = New-DbaScriptingOption\r\n\r\n$options.ScriptDrops = $false\r\n$options.WithDependencies = $true\r\n\r\nExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\\temp\\users.sql -ScriptingOptionsObject $options\r\n\r\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file.\r\nIt will not script drops but will script dependencies.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\\temp\\users.sql -ExcludeGoBatchSeparator\r\n\r\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file without the \u0027GO\u0027 \r\nbatch separator.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Export-DbaXECsv",
+        "Description":  "Exports Extended Events to a CSV file",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
+        "Author":  "Gianluca Sartori (@spaghettidba)",
+        "Synopsis":  "Exports Extended Events to a CSV file",
+        "Name":  "Export-DbaXECsv",
+        "Links":  "https://dbatools.io/Export-DbaXECsv",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-ChildItem -Path C:\\temp\\sample.xel | Export-DbaXECsv -Path c:\\temp\\sample.csv\r\n\r\nWrites Extended Events data to the file \"C:\\temp\\events.csv\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2014 -Session deadlocks | Export-DbaXECsv -Path c:\\temp\\events.csv\r\n\r\nWrites Extended Events data to the file \"C:\\temp\\events.csv\"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Export-DbaXESessionTemplate",
         "Description":  "Exports an XESession XML Template either from the dbatools repository or a file you specify. Exports to \"$home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates\" by default",
         "Synopsis":  "Exports an XESession XML Template.",
