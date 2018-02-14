@@ -19,7 +19,7 @@ function Measure-DbaDiskSpaceRequirement {
 
             To connect as a different Windows user, run PowerShell as that user.
 
-        .PARAMETER SourceDatabase
+        .PARAMETER Database
             The database to copy. It MUST exist.
 
         .PARAMETER Destination
@@ -63,8 +63,8 @@ function Measure-DbaDiskSpaceRequirement {
             Calculate space needed for a simple migration with one database with the same name at destination.
 
         .EXAMPLE
-            @([PSCustomObject]@{Source='SQL1';Destination='SQL2';SourceDatabase='DB1'},
-              [PSCustomObject]@{Source='SQL1';Destination='SQL2';SourceDatabase='DB2'}
+            @([PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB1'},
+              [PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB2'}
             ) | Measure-DbaDiskSpaceRequirement
 
             Using a PSCustomObject with 2 databases to migrate on SQL2
@@ -75,7 +75,7 @@ function Measure-DbaDiskSpaceRequirement {
             Using a CSV file. You will need to use this header line "Source<tab>Destination<tab>SourceDatabase<tab>DestinationDatabase"
 
         .EXAMPLE
-            Invoke-DbaSqlCmd -SqlInstance DBA -Database Migrations -Query 'select Source, Destination, SourceDatabase from dbo.Migrations' `
+            Invoke-DbaSqlCmd -SqlInstance DBA -Database Migrations -Query 'select Source, Destination, Database from dbo.Migrations' `
                 | Measure-DbaDiskSpaceRequirement
 
             Using a SQL table. We are DBA after all!
@@ -85,7 +85,7 @@ function Measure-DbaDiskSpaceRequirement {
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [DbaInstanceParameter]$Source,
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
-        [string]$SourceDatabase,
+        [string]$Database,
         [PSCredential]$SourceSqlCredential,
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [DbaInstanceParameter]$Destination,
@@ -202,13 +202,13 @@ function Measure-DbaDiskSpaceRequirement {
         }
 
         if (Test-Bound 'DestinationDatabase' -not) {
-            $DestinationDatabase = $SourceDatabase
+            $DestinationDatabase = $Database
         }
-        Write-Message -Level Verbose -Message "$Source.[$SourceDatabase] -> $Destination.[$DestinationDatabase]"
+        Write-Message -Level Verbose -Message "$Source.[$Database] -> $Destination.[$DestinationDatabase]"
 
-        $sourceDb = Get-DbaDatabase -SqlInstance $sourceServer -Database $SourceDatabase -SqlCredential $SourceSqlCredential
-        if (Test-Bound 'sourceDb' -not) {
-            Stop-Function -Message "Database [$SourceDatabase] MUST exist on Source Instance $Source." -ErrorRecord $_
+        $sourceDb = Get-DbaDatabase -SqlInstance $sourceServer -Database $Database -SqlCredential $SourceSqlCredential
+        if (Test-Bound 'Database' -not) {
+            Stop-Function -Message "Database [$Database] MUST exist on Source Instance $Source." -ErrorRecord $_
         }
         $sourceFiles = @($sourceDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n='Type'; e= {'Data'}})
         $sourceFiles += @($sourceDb.LogFiles        | Select-Object Name, FileName, Size, @{n='Type'; e= {'Log'}})
@@ -281,7 +281,7 @@ function Measure-DbaDiskSpaceRequirement {
                         DestinationComputerName = $destServer.NetName
                         DestinationInstance     = $destServer.ServiceName
                         DestinationSqlInstance  = $destServer.DomainInstanceName
-                        SourceDatabaseName      = $SourceDatabase
+                        SourceDatabaseName      = $Database
                         DestinationDatabaseName = $destDb.Name
                         SourceLogicalName       = $null
                         DestinationLogicalName  = $destFileNotSource.Name
