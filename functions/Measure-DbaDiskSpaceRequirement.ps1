@@ -227,7 +227,7 @@ function Measure-DbaDiskSpaceRequirement {
             foreach ($destFile in $destFiles) {
                 if ($found = ($sourceFile.Name -eq $destFile.Name)) {
                     # Files found on both sides
-                    $details += @([PSCustomObject]@{
+                    [PSCustomObject]@{
                             SourceComputerName      = $sourceServer.NetName
                             SourceInstance          = $sourceServer.ServiceName
                             SourceSqlInstance       = $sourceServer.DomainInstanceName
@@ -240,17 +240,17 @@ function Measure-DbaDiskSpaceRequirement {
                             DestinationLogicalName  = $destFile.Name
                             SourceFileName          = $sourceFile.FileName
                             DestinationFileName     = $destFile.FileName
-                            SourceFileSizeKB        = $sourceFile.Size
-                            DestinationFileSizeKB   = $destFile.Size * -1
-                            DiffKB                  = $sourceFile.Size - $destFile.Size
+                            SourceFileSize          = [DbaSize]($sourceFile.Size * 1000)
+                            DestinationFileSize     = [DbaSize]($destFile.Size * 1000) * -1
+                            DifferenceSize          = [DbaSize]( ($sourceFile.Size * 1000) - ($destFile.Size * 1000) )
                             MountPoint              = Get-MountPointFromPath -Path $destFile.Filename -ComputerName $computerName -Credential $Credential
-                        })
+                        } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationComputerName, DestinationInstance
                     break
                 }
             }
             if (!$found) {
                 # Files on source but not on destination
-                $details += @([PSCustomObject]@{
+                [PSCustomObject]@{
                         SourceComputerName      = $sourceServer.NetName
                         SourceInstance          = $sourceServer.ServiceName
                         SourceSqlInstance       = $sourceServer.DomainInstanceName
@@ -263,18 +263,18 @@ function Measure-DbaDiskSpaceRequirement {
                         DestinationLogicalName  = $null
                         SourceFileName          = $sourceFile.FileName
                         DestinationFileName     = $null
-                        SourceFileSizeKB        = $sourceFile.Size
-                        DestinationFileSizeKB   = 0
-                        DiffKB                  = $sourceFile.Size
+                        SourceFileSize          = [DbaSize]($sourceFile.Size * 1000)
+                        DestinationFileSize     = [DbaSize]0
+                        DifferenceSize          = [DbaSize]($sourceFile.Size * 1000)
                         MountPoint              = Get-MountPointFromDefaultPath -DefaultPathType $sourceFile.Type -SqlInstance $destServer -SqlCredential $DestinationSqlCredential
-                    })
+                    } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationComputerName, DestinationInstance
             }
         }
         if ($destDb) {
             # Files on destination but not on source (strange scenario but possible)
             $destFilesNotSource = Compare-Object -ReferenceObject $destFiles -DifferenceObject $sourceFiles -Property Name -PassThru
             foreach ($destFileNotSource in $destFilesNotSource) {
-                $details += @([PSCustomObject]@{
+                [PSCustomObject]@{
                         SourceComputerName      = $sourceServer.NetName
                         SourceInstance          = $sourceServer.ServiceName
                         SourceSqlInstance       = $sourceServer.DomainInstanceName
@@ -287,18 +287,13 @@ function Measure-DbaDiskSpaceRequirement {
                         DestinationLogicalName  = $destFileNotSource.Name
                         SourceFileName          = $null
                         DestinationFileName     = $destFile.FileName
-                        SourceFileSizeKB        = 0
-                        DestinationFileSizeKB   = $destFileNotSource.Size * -1
-                        DiffKB                  = $destFileNotSource.Size * -1
+                        SourceFileSize          = [DbaSize]0
+                        DestinationFileSize     = [DbaSize]($destFileNotSource.Size * 1000) * -1
+                        DifferenceSize          = [DbaSize]($destFileNotSource.Size * 1000) * -1
                         MountPoint              = Get-MountPointFromPath -Path $destFileNotSource.Filename -ComputerName $computerName -Credential $Credential
-                    })
+                    } | Select-DefaultView  -ExcludeProperty SourceComputerName, SourceInstance, DestinationComputerName, DestinationInstance
             }
         }
-        $DestinationDatabase = ''
-    }
-    end {
-        if (Test-FunctionInterrupt) { return }
-
-        $details | Select-DefaultView -Property DatabaseName1, DatabaseName2, Name1, Name2, SizeKB1, SizeKB2, DiffKB, ComputerName, MountPoint
+        $DestinationDatabase = $null
     }
 }
