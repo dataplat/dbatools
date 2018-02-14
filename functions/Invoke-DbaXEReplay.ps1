@@ -8,7 +8,7 @@ function Invoke-DbaXeReplay {
             This command replays events from Read-DbaXEFile. It is simplistic in its approach.
     
             - Writes all queries to a temp sql file
-            - Execues temp file with sqlcmd
+            - Executes temp file using sqlcmd so that batches are executed properly
             - Deletes temp file
 
         .PARAMETER SqlInstance
