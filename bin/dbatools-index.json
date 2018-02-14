@@ -2568,6 +2568,19 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a\r\n\r\nExecute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the master database. Logs into \r\nthe SQL Server with Windows credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -SqlCredential $credential -Database dbatools\r\n\r\nExecute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the dbatools database. Logs into \r\nthe SQL Server with SQL Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetAverageTime\r\n\r\nSimilar to running sp_WhoIsActive @get_avg_time\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetOuterCommand -FindBlockLeaders\r\n\r\nSimilar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Invoke-DbaXeReplay",
+        "Description":  "This command replays events from Read-DbaXEFile. It is simplistic in its approach.\n\n- Writes all queries to a temp sql file\n- Executes temp file using sqlcmd so that batches are executed properly\n- Deletes temp file",
+        "Tags":  [
+                     "ExtendedEvent",
+                     "XE",
+                     "Xevent"
+                 ],
+        "Synopsis":  "This command replays events from Read-DbaXEFile on one or more target servers",
+        "Name":  "Invoke-DbaXeReplay",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017\r\n\r\nRuns all batch_text for sql_batch_completed against tempdb on sql2017.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017 -Database planning -Event \r\nsql_batch_completed\r\n\r\nSets the *initial* database to planning then runs only sql_batch_completed against sql2017.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017, sql2016\r\n\r\nRuns all batch_text for sql_batch_completed against tempdb on sql2017 and sql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Invoke-Sqlcmd2",
         "Description":  "Runs a T-SQL script. Invoke-Sqlcmd2 runs the whole script and only captures the first selected result set, such as the output of PRINT statements when -verbose parameter is specified.\nParameterized queries are supported.\n\nHelp details below borrowed from Invoke-Sqlcmd",
         "Synopsis":  "Runs a T-SQL script.",
