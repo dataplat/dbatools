@@ -71,7 +71,8 @@ function Test-DbaDatabaseOwner {
         [object[]]$ExcludeDatabase,
         [string]$TargetLogin ,
         [Switch]$Detailed,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [Switch]$EnableException
     )
 
     begin {
@@ -87,10 +88,6 @@ function Test-DbaDatabaseOwner {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            #Sets the default login to sa if -TargetLogin is not present
-            if(!($PSBoundParameters.ContainsKey('TargetLogin'))){
-                $TargetLogin = "sa"
-            }
             # dynamic sa name for orgs who have changed their sa name
             if (Test-Bound -ParameterName TargetLogin -Not) {
                 $TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
