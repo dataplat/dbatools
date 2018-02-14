@@ -41,6 +41,11 @@ function Measure-DbaDiskSpaceRequirement {
         .PARAMETER Credential
             The credentials to use to connect via CIM/WMI/PowerShell remoting.
 
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
         .NOTES
            Tags: Database, DiskSpace, Migration
            Author: Pollus Brodeur (@pollusb)
@@ -87,11 +92,11 @@ function Measure-DbaDiskSpaceRequirement {
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [string]$DestinationDatabase,
         [PSCredential]$DestinationSqlCredential,
-        [PSCredential]$Credential
+        [PSCredential]$Credential,
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
-        $nullText = '#NULL'
-
         $local:cacheMP = @{}
         $local:cacheDP = @{}
 
@@ -255,9 +260,9 @@ function Measure-DbaDiskSpaceRequirement {
                         SourceDatabase          = $sourceDb.Name
                         DestinationDatabase     = $DestinationDatabase
                         SourceLogicalName       = $sourceFile.Name
-                        DestinationLogicalName  = $NullText
+                        DestinationLogicalName  = $null
                         SourceFileName          = $sourceFile.FileName
-                        DestinationFileName     = $NullText
+                        DestinationFileName     = $null
                         SourceFileSizeKB        = $sourceFile.Size
                         DestinationFileSizeKB   = 0
                         DiffKB                  = $sourceFile.Size
@@ -270,22 +275,22 @@ function Measure-DbaDiskSpaceRequirement {
             $destFilesNotSource = Compare-Object -ReferenceObject $destFiles -DifferenceObject $sourceFiles -Property Name -PassThru
             foreach ($destFileNotSource in $destFilesNotSource) {
                 $details += @([PSCustomObject]@{
-                    SourceComputerName      = $sourceServer.NetName
-                    SourceInstance          = $sourceServer.ServiceName
-                    SourceSqlInstance       = $sourceServer.DomainInstanceName
-                    DestinationComputerName = $destServer.NetName
-                    DestinationInstance     = $destServer.ServiceName
-                    DestinationSqlInstance  = $destServer.DomainInstanceName
-                    SourceDatabaseName = $SourceDatabase
+                        SourceComputerName      = $sourceServer.NetName
+                        SourceInstance          = $sourceServer.ServiceName
+                        SourceSqlInstance       = $sourceServer.DomainInstanceName
+                        DestinationComputerName = $destServer.NetName
+                        DestinationInstance     = $destServer.ServiceName
+                        DestinationSqlInstance  = $destServer.DomainInstanceName
+                        SourceDatabaseName      = $SourceDatabase
                         DestinationDatabaseName = $destDb.Name
-                        SourceLogicalName         = $NullText
-                        DestinationLogicalName         = $destFileNotSource.Name
-                        SourceFileName     = $NullText
+                        SourceLogicalName       = $null
+                        DestinationLogicalName  = $destFileNotSource.Name
+                        SourceFileName          = $null
                         DestinationFileName     = $destFile.FileName
-                        SourceFileSizeKB       = 0
-                        DestinationFileSizeKB       = $destFileNotSource.Size * -1
-                        DiffKB        = $destFileNotSource.Size * -1
-                        MountPoint    = Get-MountPointFromPath -Path $destFileNotSource.Filename -ComputerName $computerName -Credential $Credential
+                        SourceFileSizeKB        = 0
+                        DestinationFileSizeKB   = $destFileNotSource.Size * -1
+                        DiffKB                  = $destFileNotSource.Size * -1
+                        MountPoint              = Get-MountPointFromPath -Path $destFileNotSource.Filename -ComputerName $computerName -Credential $Credential
                     })
             }
         }
