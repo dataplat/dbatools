@@ -1,3 +1,4 @@
+#ValidationTags#Messaging#
 function Export-DbaAvailabilityGroup {
     <#
         .SYNOPSIS
@@ -97,73 +98,75 @@ function Export-DbaAvailabilityGroup {
             }
             else {
                 # Get all of the Availability Groups and filter if required
-                $allags = $server.AvailabilityGroups
+                $ags = $server.AvailabilityGroups
             }
 
-            if ($AvailabilityGroups) {
-                Write-Verbose 'Filtering AvailabilityGroups'
-                $allags = $allags | Where-Object { $_.name -in $AvailabilityGroups }
+            if (Test-Bound 'AvailabilityGroup') {
+                $ags = $ags | Where-Object Name -In $AvailabilityGroup
+            }
+            if (Test-Bound 'ExcludeAvailabilityGroup') {
+                $ags = $ags | Where-Object Name -NotIn $ExcludeAvailabilityGroup
             }
 
-            if ($allags.count -gt 0) {
+            if ($ags.count -gt 0 -or $ags.Length -gt 0) {
 
                 # Set and create the OutputLocation if it doesn't exist
-                $sqlinst = $SqlInstance.Replace('\', '$')
-                $OutputLocation = "$FilePath\$sqlinst"
+                $sqlinst = $instance.Replace('\', '$')
+                $outputLocation = "$FilePath\$sqlinst"
 
-                if (!(Test-Path $OutputLocation -PathType Container)) {
-                    New-Item -Path $OutputLocation -ItemType Directory -Force | Out-Null
+                if (!(Test-Path $outputLocation -PathType Container)) {
+                    $null = New-Item -Path $outputLocation -ItemType Directory -Force
                 }
 
                 # Script each Availability Group
-                foreach ($ag in $allags) {
-                    $agname = $ag.Name
+                foreach ($ag in $ags) {
+                    $agName = $ag.Name
 
                     # Set the outfile name
                     if ($AppendDateToOutputFilename.IsPresent) {
                         $formatteddate = (Get-Date -Format 'yyyyMMdd_hhmm')
-                        $outfile = "$OutputLocation\${AGname}_${formatteddate}.sql"
+                        $outFile = "$outputLocation\${AGname}_${formatteddate}.sql"
                     }
                     else {
-                        $outfile = "$OutputLocation\$agname.sql"
+                        $outFile = "$outputLocation\$agName.sql"
                     }
 
                     # Check NoClobber and script out the AG
-                    if ($NoClobber.IsPresent -and (Test-Path -Path $outfile -PathType Leaf)) {
-                        Write-Warning "OutputFile $outfile already exists. Skipping due to -NoClobber parameter"
+                    if ($NoClobber.IsPresent -and (Test-Path -Path $outFile -PathType Leaf)) {
+                        Write-Message -Level Warning -Message "OutputFile $outFile already exists. Skipping due to -NoClobber parameter"
                     }
                     else {
-                        Write-output "Scripting Availability Group [$agname] on $SqlInstance to $outfile"
+                        Write-Message -Level Verbose -Message "Scripting Availability Group [$agName] on $instance to $outFile"
 
                         # Create comment block header for AG script
-                        "/*" | Out-File -FilePath $outfile -Encoding ASCII -Force
-                        " * Created by dbatools 'Export-DbaAvailabilityGroup' cmdlet on '$(Get-Date)'" | Out-File -FilePath $outfile -Encoding ASCII -Append
-                        " * See https://dbatools.io/Export-DbaAvailabilityGroup for more help" | Out-File -FilePath $outfile -Encoding ASCII -Append
+                        "/*" | Out-File -FilePath $outFile -Encoding ASCII -Force
+                        " * Created by dbatools 'Export-DbaAvailabilityGroup' cmdlet on '$(Get-Date)'" | Out-File -FilePath $outFile -Encoding ASCII -Append
+                        " * See https://dbatools.io/Export-DbaAvailabilityGroup for more help" | Out-File -FilePath $outFile -Encoding ASCII -Append
 
                         # Output AG and listener names
-                        " *" | Out-File -FilePath $outfile -Encoding ASCII -Append
-                        " * Availability Group Name: $($ag.name)" | Out-File -FilePath $outfile -Encoding ASCII -Append
-                        $ag.AvailabilityGroupListeners | ForEach-Object { " * Listener Name: $($_.name)" } | Out-File -FilePath $outfile -Encoding ASCII -Append
+                        " *" | Out-File -FilePath $outFile -Encoding ASCII -Append
+                        " * Availability Group Name: $($ag.name)" | Out-File -FilePath $outFile -Encoding ASCII -Append
+                        $ag.AvailabilityGroupListeners | ForEach-Object { " * Listener Name: $($_.name)" } | Out-File -FilePath $outFile -Encoding ASCII -Append
 
                         # Output all replicas
-                        " *" | Out-File -FilePath $outfile -Encoding ASCII -Append
-                        $ag.AvailabilityReplicas | ForEach-Object { " * Replica: $($_.name)" } | Out-File -FilePath $outfile -Encoding ASCII -Append
+                        " *" | Out-File -FilePath $outFile -Encoding ASCII -Append
+                        $ag.AvailabilityReplicas | ForEach-Object { " * Replica: $($_.name)" } | Out-File -FilePath $outFile -Encoding ASCII -Append
 
                         # Output all databases
-                        " *" | Out-File -FilePath $outfile -Encoding ASCII -Append
-                        $ag.AvailabilityDatabases | ForEach-Object { " * Database: $($_.name)" } | Out-File -FilePath $outfile -Encoding ASCII -Append
+                        " *" | Out-File -FilePath $outFile -Encoding ASCII -Append
+                        $ag.AvailabilityDatabases | ForEach-Object { " * Database: $($_.name)" } | Out-File -FilePath $outFile -Encoding ASCII -Append
 
-                        # $ag | Select-Object -Property * | Out-File -FilePath $outfile -Encoding ASCII -Append
+                        # $ag | Select-Object -Property * | Out-File -FilePath $outFile -Encoding ASCII -Append
 
-                        "*/" | Out-File -FilePath $outfile -Encoding ASCII -Append
+                        "*/" | Out-File -FilePath $outFile -Encoding ASCII -Append
 
                         # Script the AG
-                        $ag.Script() | Out-File -FilePath $outfile -Encoding ASCII -Append
+                        $ag.Script() | Out-File -FilePath $outFile -Encoding ASCII -Append
                     }
                 }
             }
             else {
-                Write-Output "No Availability Groups detected on $SqlInstance"
+                Write-Message -Level Output -Message "No Availability Groups detected on $instance"
             }
         }
     }
