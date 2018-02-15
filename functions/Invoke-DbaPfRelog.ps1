@@ -244,7 +244,12 @@
     # Gotta collect all the paths first then process them otherwise there may be duplicates
     end {
         $allpaths = $allpaths | Where-Object { $_ -match '.blg' } | Select-Object -Unique
-
+        
+        if (-not $allpaths) {
+            Stop-Function -Message "Could not find matching .blg files" -Target $file -Continue
+            return
+        }
+        
         $scriptblock = {
             if ($args) {
                 $file = $args
@@ -260,7 +265,7 @@
             }
 
             if (-not $script:destinationset -and $file -match "C\:\\.*Admin.*") {
-                Test-ElevationRequirement -ComputerName $env:COMPUTERNAME -Continue
+                $null = Test-ElevationRequirement -ComputerName $env:COMPUTERNAME -Continue
             }
 
             if ($script:destinationset -eq $false -and -not $Append) {
