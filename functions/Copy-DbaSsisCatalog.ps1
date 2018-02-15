@@ -1,3 +1,4 @@
+#ValidationTags#Messaging#
 function Copy-DbaSsisCatalog {
     <#
         .SYNOPSIS
@@ -56,6 +57,11 @@ function Copy-DbaSsisCatalog {
         .PARAMETER Confirm
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
         .NOTES
             Tags: Migration, SSIS
             Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
@@ -102,9 +108,11 @@ function Copy-DbaSsisCatalog {
         [String]$Environment,
         [System.Security.SecureString]$CreateCatalogPassword,
         [Switch]$EnableSqlClr,
-        [Switch]$Force
+        [Switch]$Force,
+        [Alias('Silent')]
+        [switch]$EnableException
     )
-
+    <# Developer note: The throw calls must stay in this command #>
     begin {
         function Get-RemoteIntegrationService {
             param (
@@ -115,10 +123,10 @@ function Copy-DbaSsisCatalog {
                 $running = $false
                 foreach ($service in $result) {
                     if (!$service.State -eq "Running") {
-                        Write-Warning "Service $($service.DisplayName) was found on the destination, but is currently not running."
+                        Write-Message -Level Warning -Message "Service $($service.DisplayName) was found on the destination, but is currently not running."
                     }
                     else {
-                        Write-Verbose "Service $($service.DisplayName) was found running on the destination."
+                        Write-Message -Level Verbose -Message "Service $($service.DisplayName) was found running on the destination."
                         $running = $true
                     }
                 }
@@ -142,7 +150,7 @@ function Copy-DbaSsisCatalog {
                 $sqlConn.Open()
             }
             try {
-                Write-Output "Deploying project $Project from folder $Folder."
+                Write-Message -Level Verbose -Message "Deploying project $Project from folder $Folder."
                 $cmd = New-Object System.Data.SqlClient.SqlCommand
                 $cmd.CommandType = "StoredProcedure"
                 $cmd.connection = $sqlConn
@@ -154,16 +162,15 @@ function Copy-DbaSsisCatalog {
                     $destFolder = $destinationFolders | Where-Object { $_.Name -eq $Folder }
                     $deployedProject = $destFolder.DeployProject($Project, $results)
                     if ($deployedProject.Status -ne "Success") {
-                        Write-Error "An error occurred deploying project $Project."
+                        Stop-Function -Message "An error occurred deploying project $Project." -Target $Project -Continue
                     }
                 }
                 else {
-                    Write-Error "Failed deploying $Project from folder $Folder."
-                    continue
+                    Stop-Function -Message "Failed deploying $Project from folder $Folder." -Target $Project -Continue
                 }
             }
             catch {
-                Write-Exception $_
+                Stop-Function -Message "Failed to deploy project." -Target $Project -ErrorRecord $_
             }
             finally {
                 if ($sqlConn.State -eq "Open") {
@@ -171,7 +178,6 @@ function Copy-DbaSsisCatalog {
                 }
             }
         }
-
         function New-CatalogFolder {
             param (
                 [String]$Folder,
@@ -192,13 +198,12 @@ function Copy-DbaSsisCatalog {
                 $destinationCatalog.Alter()
                 $destinationCatalog.Refresh()
             }
-            Write-Output "Creating folder $Folder."
+            Write-Message -Level Verbose -Message "Creating folder $Folder."
             $destFolder = New-Object "$ISNamespace.CatalogFolder" ($destinationCatalog, $Folder, $Description)
             $destFolder.Create()
             $destFolder.Alter()
             $destFolder.Refresh()
         }
-
         function New-FolderEnvironment {
             param (
                 [String]$Folder,
@@ -222,19 +227,18 @@ function Copy-DbaSsisCatalog {
                 }
                 $targetEnv.Variables.Add($var.Name, $var.Type, $finalValue, $var.Sensitive, $var.Description)
             }
-            Write-Output "Creating environment $Environment."
+            Write-Message -Level Verbose -Message "Creating environment $Environment."
             $targetEnv.Create()
             $targetEnv.Alter()
             $targetEnv.Refresh()
         }
-
         function New-SSISDBCatalog {
             param (
                 [System.Security.SecureString]$Password
             )
 
             if (!$Password) {
-                Write-Output "SSISDB Catalog requires a password."
+                Write-Message -Level Verbose -Message "SSISDB Catalog requires a password."
                 $pass1 = Read-Host "Enter a password" -AsSecureString
                 $plainTextPass1 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass1))
                 $pass2 = Read-Host "Re-enter password" -AsSecureString
@@ -259,32 +263,29 @@ function Copy-DbaSsisCatalog {
         $destinationConnection = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
         if ($sourceConnection.versionMajor -lt 11 -or $destinationConnection.versionMajor -lt 11) {
-            throw "SSISDB catalog is only available on Sql Server 2012 and above, exiting..."
+            Stop-Function -Message "SSISDB catalog is only available on Sql Server 2012 and above, exiting..."
         }
 
         try {
             Get-RemoteIntegrationService -Computer $Destination
         }
         catch {
-            Write-Exception $_
-            throw "An error occurred when checking the destination for Integration Services. Is Integration Services installed?"
+            Stop-Function -Message "An error occurred when checking the destination for Integration Services. Is Integration Services installed?" -Target $Destination -ErrorRecord $_
         }
 
         try {
-            Write-Verbose "Connecting to $Source integration services."
+            Write-Message -Level Verbose -Message "Connecting to $Source integration services."
             $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceConnection
         }
         catch {
-            Write-Exception $_
-            throw "There was an error connecting to the source integration services."
+            Stop-Function -Message "There was an error connecting to the source integration services." -Target $sourceConnection -ErrorRecord $_
         }
         try {
             Write-Verbose "Connecting to $Destination integration services."
             $destinationSSIS = New-Object "$ISNamespace.IntegrationServices" $destinationConnection
         }
         catch {
-            Write-Exception $_
-            throw "There was an error connecting to the destination integration services."
+            Stop-Function -Message "There was an error connecting to the destination integration services." -Target $destinationCon -ErrorRecord $_
         }
 
         $sourceCatalog = $sourceSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
@@ -301,7 +302,7 @@ function Copy-DbaSsisCatalog {
         if (!$destinationCatalog) {
             if (!$destinationConnection.Configuration.IsSqlClrEnabled.ConfigValue) {
                 if ($Pscmdlet.ShouldProcess($Destination, "Enabling SQL CLR configuration option.")) {
-                    If (!$EnableSqlClr) {
+                    if (!$EnableSqlClr) {
                         $message = "The destination does not have SQL CLR configuration option enabled (required by SSISDB), would you like to enable it?"
                         $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Enable SQL CLR on $Destination."
                         $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Exit."
@@ -316,7 +317,7 @@ function Copy-DbaSsisCatalog {
                             }
                         }
                     }
-                    Write-Verbose "Enabling SQL CLR configuration option at the destination."
+                    Write-Message -Level Verbose -Message "Enabling SQL CLR configuration option at the destination."
                     if ($destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue -eq $false) {
                         $destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue = $true
                         $changeback = $true
@@ -331,7 +332,7 @@ function Copy-DbaSsisCatalog {
                 }
             }
             else {
-                Write-Verbose "SQL CLR configuration option is already enabled at the destination."
+                Write-Message -Level Verbose -Message "SQL CLR configuration option is already enabled at the destination."
             }
             if ($Pscmdlet.ShouldProcess($Destination, "Create destination SSISDB Catalog")) {
                 if (!$CreateCatalogPassword) {
@@ -366,7 +367,7 @@ function Copy-DbaSsisCatalog {
                 $srcFolder = $sourceFolders | Where-Object { $_.Name -eq $folder }
                 if ($destinationFolders.Name -contains $folder) {
                     if (!$force) {
-                        Write-Warning "Integration services catalog folder $folder exists at destination. Use -Force to drop and recreate."
+                        Write-Message -Level Warning -Message "Integration services catalog folder $folder exists at destination. Use -Force to drop and recreate."
                     }
                     else {
                         if ($Pscmdlet.ShouldProcess($Destination, "Dropping folder $folder and recreating")) {
@@ -374,7 +375,7 @@ function Copy-DbaSsisCatalog {
                                 New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
                             }
                             catch {
-                                Write-Exception $_
+                                Stop-Function -Message "Issue dropping folder" -Target $folder -ErrorRecord $_
                             }
 
                         }
@@ -386,7 +387,7 @@ function Copy-DbaSsisCatalog {
                             New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description
                         }
                         catch {
-                            Write-Exception $_
+                            Stop-Function -Message "Issue creating folder" -Target $folder -ErrorRecord $_
                         }
                     }
                 }
@@ -403,13 +404,13 @@ function Copy-DbaSsisCatalog {
                             New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description
                         }
                         catch {
-                            Write-Exception $_
+                            Stop-Function -Message "Issue creating folder" -Target $srcFolder -ErrorRecord $_ -Continue
                         }
                     }
                 }
                 else {
                     if (!$force) {
-                        Write-Warning "Integration services catalog folder $($srcFolder.Name) exists at destination. Use -Force to drop and recreate."
+                        Write-Message -Level Warning -Message "Integration services catalog folder $($srcFolder.Name) exists at destination. Use -Force to drop and recreate."
                         continue
                     }
                     else {
@@ -418,7 +419,7 @@ function Copy-DbaSsisCatalog {
                                 New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
                             }
                             catch {
-                                Write-Exception $_
+                                Stop-Function -Message "Issue dropping folder" -Target $srcFolder -ErrorRecord $_
                             }
                         }
                     }
@@ -455,7 +456,7 @@ function Copy-DbaSsisCatalog {
                             Invoke-ProjectDeployment -Folder $f.Name -Project $project
                         }
                         catch {
-                            Write-Exception $_
+                            Stop-Function -Message "Issue deploying project" -Target $project -ErrorRecord $_
                         }
                     }
                 }
@@ -469,7 +470,7 @@ function Copy-DbaSsisCatalog {
                             Invoke-ProjectDeployment -Project $proj.Name -Folder $curFolder.Name
                         }
                         catch {
-                            Write-Exception $_
+                            Stop-Function -Message "Issue deploying project" -Target $proj -ErrorRecord $_
                         }
                     }
                 }
@@ -489,13 +490,13 @@ function Copy-DbaSsisCatalog {
                                 New-FolderEnvironment -Folder $f.Name -Environment $environment
                             }
                             catch {
-                                Write-Exception $_
+                                Stop-Function -Message "Issue deploying environment" -Target $environment -ErrorRecord $_
                             }
                         }
                     }
                     else {
                         if (!$force) {
-                            Write-Warning "Integration services catalog environment $environment exists in folder $($f.Name) at destination. Use -Force to drop and recreate."
+                            Write-Message -Level Warning -Message "Integration services catalog environment $environment exists in folder $($f.Name) at destination. Use -Force to drop and recreate."
                         }
                         else {
                             If ($Pscmdlet.ShouldProcess($Destination, "Dropping existing environment $environment and deploying environment $environment from folder $($f.Name)")) {
@@ -503,7 +504,7 @@ function Copy-DbaSsisCatalog {
                                     New-FolderEnvironment -Folder $f.Name -Environment $environment -Force
                                 }
                                 catch {
-                                    Write-Exception $_
+                                    Stop-Function -Message "Issue dropping existing environment" -Target $environment -ErrorRecord $_
                                 }
                             }
                         }
@@ -520,13 +521,13 @@ function Copy-DbaSsisCatalog {
                                 New-FolderEnvironment -Environment $env.Name -Folder $curFolder.Name
                             }
                             catch {
-                                Write-Exception $_
+                                Stop-Function -Message "Issue deploying environment" -Target $env -ErrorRecord $_
                             }
                         }
                     }
                     else {
                         if (!$force) {
-                            Write-Warning "Integration services catalog environment $($env.Name) exists in folder $($curFolder.Name) at destination. Use -Force to drop and recreate."
+                            Write-Message -Level Warning -Message "Integration services catalog environment $($env.Name) exists in folder $($curFolder.Name) at destination. Use -Force to drop and recreate."
                             continue
                         }
                         else {
@@ -535,7 +536,7 @@ function Copy-DbaSsisCatalog {
                                     New-FolderEnvironment -Environment $env.Name -Folder $curFolder.Name -Force
                                 }
                                 catch {
-                                    Write-Exception $_
+                                    Stop-Function -Message "Issue deploying environment" -Target $env -ErrorRecord $_
                                 }
                             }
                         }
