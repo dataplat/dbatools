@@ -14,7 +14,10 @@ function Export-DbaAvailabilityGroup {
             The directory name where the output files will be written. A sub directory with the format 'ServerName$InstanceName' will be created. A T-SQL scripts named 'AGName.sql' will be created under this subdirectory for each scripted Availability Group.
 
         .PARAMETER AvailabilityGroup
-            Specify which Availability Group(s) to export - this list is auto-populated from the server. If unspecified, all logins will be processed.
+            The Availability Group(s) to export - this list is auto-populated from the server. If unspecified, all logins will be processed.
+
+        .PARAMETER ExcludeAvailabilityGroup
+            The Availability Group(s) to exclude - this list is auto-populated from the server.
 
         .PARAMETER NoClobber
             Do not overwrite existing export files.
