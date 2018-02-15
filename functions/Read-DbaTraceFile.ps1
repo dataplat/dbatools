@@ -145,13 +145,20 @@ function Read-DbaTraceFile {
         Reads the tracefile C:\traces\big.trc, stored on the sql2016 sql server.
         Filters only results where LinkServerName = myls and StartTime is greater than '5/30/2017 4:27:52 PM'.
 
+        .EXAMPLE
+        Get-DbaTrace -SqlInstance sql2014 | Read-DbaTraceFile
+
+        Reads every trace file on sql2014
+
 #>
     [CmdletBinding()]
     Param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Position = 0, Mandatory, ValueFromPipelineByPropertyName)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
+        [parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$SqlCredential,
+        [parameter(ValueFromPipelineByPropertyName)]
         [string[]]$Path,
         [string[]]$Database,
         [string[]]$Login,
