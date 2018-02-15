@@ -184,7 +184,7 @@ function Invoke-DbaBalanceDataFiles {
                     # Get the free space for each drive
                     $result = $Server.Query("xp_fixeddrives")
                     $MbFreeColName = $result[0].psobject.Properties.Name[1]
-                    $diskFreeSpace = $result | Select-Object Drive, @{ Name = 'FreeMB'; Expression = { $_.$MBfreeColumn } }
+                    $diskFreeSpace = $result | Select-Object Drive, @{ Name = 'FreeMB'; Expression = { $_.$MbFreeColName } }
 
                     # Loop through each of the drives to see if the size of files on that
                     # particular disk do not exceed the free space of that disk
