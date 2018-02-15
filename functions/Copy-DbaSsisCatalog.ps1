@@ -278,7 +278,7 @@ function Copy-DbaSsisCatalog {
             Stop-Function -Message "There was an error connecting to the source integration services." -Target $sourceConnection -ErrorRecord $_
         }
         try {
-            Write-Verbose "Connecting to $Destination integration services."
+            Write-Message -Level Verbose -Message "Connecting to $Destination integration services."
             $destinationSSIS = New-Object "$ISNamespace.IntegrationServices" $destinationConnection
         }
         catch {
