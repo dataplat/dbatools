@@ -130,9 +130,6 @@ function Copy-DbaSsisCatalog {
                         $running = $true
                     }
                 }
-                if (!$running) {
-                    throw "No Integration Services service was found running on the destination."
-                }
             }
             else {
                 throw "No Integration Services service was found on the destination, please ensure the feature is installed and running."
