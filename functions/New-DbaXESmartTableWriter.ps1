@@ -36,14 +36,14 @@
         .PARAMETER UploadIntervalSeconds
             Specifies the number of seconds XESmartTarget will keep the events in memory before dumping them to the target table. The default is 10 seconds.
 
-        .PARAMETER OutputColumns
+        .PARAMETER OutputColumn
             Specifies the list of columns to output from the events. XESmartTarget will capture in memory and write to the target table only the columns (fields or targets) that are present in this list.
 
             Fields and actions are matched in a case-sensitive manner.
 
             Expression columns are supported. Specify a column with ColumnName AS Expression to add an expression column (Example: Total AS Reads + Writes)
 
-        .PARAMETER Events
+        .PARAMETER Event
             Specifies a list of events to be processed (with others being ignored. By default, all events are processed.
 
         .PARAMETER Filter
