@@ -86,7 +86,7 @@
         [string]$Table,
         [switch]$AutoCreateTargetTable,
         [int]$UploadIntervalSeconds = 10,
-        [string[]]$Events,
+        [string[]]$Event,
         [string[]]$OutputColumns,
         [string]$Filter,
         [switch]$EnableException
@@ -119,9 +119,15 @@
                 $writer.TableName = $Table
                 $writer.AutoCreateTargetTable = $AutoCreateTargetTable
                 $writer.UploadIntervalSeconds = $UploadIntervalSeconds
-                $writer.Events = $Events
-                $writer.OutputColumns = $OutputColumns
-                $writer.Filter = $Filter
+                if (Test-Bound -ParameterName "Event") {
+                    $writer.Events = $Event
+                }
+                if (Test-Bound -ParameterName "OutputColumn") {
+                    $writer.OutputColumns = $OutputColumn
+                }
+                if (Test-Bound -ParameterName "Filter") {
+                    $writer.Filter = $Filter
+                }
                 $writer
             }
             catch {
