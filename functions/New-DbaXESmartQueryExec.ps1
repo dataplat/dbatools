@@ -26,6 +26,9 @@
 
             Placeholders are in the form {PropertyName}, where PropertyName is one of the fields or actions available in the Event object.
 
+        .PARAMETER Event
+            One or more specific events that you'd like to respond to 
+            
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
