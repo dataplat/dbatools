@@ -122,7 +122,7 @@ function Get-DbaTrace {
                     DroppedEventCount        = $row.dropped_event_count
                     Parent                   = $server
                     SqlCredential            = $SqlCredential
-                } | Select-DefaultView -ExcludeProperty Parent, RemoteFile, RemoStatus, SqlCredential
+                } | Select-DefaultView -ExcludeProperty Parent, RemotePath, RemoStatus, SqlCredential
             }
         }
     }
