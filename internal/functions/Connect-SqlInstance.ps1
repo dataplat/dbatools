@@ -18,11 +18,14 @@ function Connect-SqlInstance {
             Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
         .PARAMETER ParameterConnection
-            Whether this call is for dynamic parameters only.
+            This call is for dynamic parameters only and is no longer used, actually.
 
+        .PARAMETER AzureUnsupported
+            Throw if Azure is detected but not supported
+    
         .PARAMETER RegularUser
             The connection doesn't require SA privileges.
-            By default, the assumption is that SA is required.
+            By default, the assumption is that SA is no longer required.
 
         .PARAMETER MinimumVersion
            The minimum version that the calling command will support
@@ -41,6 +44,7 @@ function Connect-SqlInstance {
         [switch]$ParameterConnection,
         [switch]$RegularUser = $true,
         [int]$MinimumVersion,
+        [switch]$AzureUnsupported,
         [switch]$NonPooled
     )
 
@@ -218,7 +222,12 @@ function Connect-SqlInstance {
             throw "SQL Server version $MinimumVersion required - $server not supported."
         }
     }
-
+    
+    
+    if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
+        throw "SQL Azure DB not supported :("
+    }
+    
     if (-not $RegularUser) {
         if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin") {
             throw "Not a sysadmin on $ConvertedSqlInstance. Quitting."

@@ -62,7 +62,7 @@ function Get-DbaDetachedDatabaseInfo {
             $servername = $server.name
             $serviceaccount = $server.ServiceAccount
 
-            $exists = Test-DbaSqlPath $server $Path
+            $exists = Test-DbaSqlPath -SqlInstance $server -Path $Path
 
             if ($exists -eq $false) {
                 throw "$servername cannot access the file $path. Does the file exist and does the service account ($serviceaccount) have access to the path?"

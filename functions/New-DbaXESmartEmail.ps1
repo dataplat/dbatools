@@ -43,7 +43,7 @@
         .PARAMETER PlainText
             If this switch is enabled, the email will be sent in plain text. By default, HTML formatting is used.
 
-        .PARAMETER Events
+        .PARAMETER Event
             Each Response can be limited to processing specific events, while ignoring all the other ones. When this attribute is omitted, all events are processed.
 
         .PARAMETER Filter
@@ -98,7 +98,7 @@
         [string]$Attachment,
         [string]$AttachmentFileName,
         [string]$PlainText,
-        [string[]]$Events,
+        [string[]]$Event,
         [string]$Filter,
         [switch]$EnableException
     )
@@ -126,8 +126,12 @@
             $email.Attachment = $Attachment
             $email.AttachmentFileName = $AttachmentFileName
             $email.HTMLFormat = ($PlainText -eq $false)
-            $email.Events = $Events
-            $email.Filter = $Filter
+            if (Test-Bound -ParameterName "Event") {
+                $email.Events = $Event
+            }
+            if (Test-Bound -ParameterName "Filter") {
+                $email.Filter = $Filter
+            }
 
             if ($Credential) {
                 $email.UserName = $Credential.UserName
