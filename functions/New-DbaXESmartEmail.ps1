@@ -43,7 +43,7 @@
         .PARAMETER PlainText
             If this switch is enabled, the email will be sent in plain text. By default, HTML formatting is used.
 
-        .PARAMETER Events
+        .PARAMETER Event
             Each Response can be limited to processing specific events, while ignoring all the other ones. When this attribute is omitted, all events are processed.
 
         .PARAMETER Filter
