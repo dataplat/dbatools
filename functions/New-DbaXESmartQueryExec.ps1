@@ -55,7 +55,9 @@
         [PSCredential]$SqlCredential,
         [string]$Database,
         [string]$Query,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [string[]]$Event,
+        [string]$Filter
     )
     begin {
         try {
@@ -88,6 +90,13 @@
             if ($SqlCredential) {
                 $execute.UserName = $SqlCredential.UserName
                 $execute.Password = $SqlCredential.GetNetworkCredential().Password
+            }
+
+            if (Test-Bound -ParameterName "Event") {
+                $execute.Events = $Event
+            }
+            if (Test-Bound -ParameterName "Filter") {
+                $execute.Filter = $Filter
             }
 
             $execute

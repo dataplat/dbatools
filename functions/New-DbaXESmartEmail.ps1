@@ -98,7 +98,7 @@
         [string]$Attachment,
         [string]$AttachmentFileName,
         [string]$PlainText,
-        [string[]]$Events,
+        [string[]]$Event,
         [string]$Filter,
         [switch]$EnableException
     )
@@ -126,8 +126,12 @@
             $email.Attachment = $Attachment
             $email.AttachmentFileName = $AttachmentFileName
             $email.HTMLFormat = ($PlainText -eq $false)
-            $email.Events = $Events
-            $email.Filter = $Filter
+            if (Test-Bound -ParameterName "Event") {
+                $email.Events = $Event
+            }
+            if (Test-Bound -ParameterName "Filter") {
+                $email.Filter = $Filter
+            }
 
             if ($Credential) {
                 $email.UserName = $Credential.UserName
