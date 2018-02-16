@@ -26,6 +26,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.Count -gt 0 | Should Be $true
         }
 
+        It "results includes ignorable column" {
+            $results[0].PSObject.Properties.Name.Contains('Ignorable') | Should Be $true
+        }
+
         foreach ($result in $results) {
             It "returns a hyperlink" {
                 $result.URL -match 'sqlskills.com' | Should Be $true
