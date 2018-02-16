@@ -279,14 +279,14 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
                 Write-Message -Level Warning -Message "Database $db is a system one, skipping"
                 Continue
             }
-            $stateCache = @{}
+            $dbStatuses = @{}
             $server = $db.Parent
-            if ($server -notin $stateCache.Keys) {
-                $stateCache[$server] = Get-DbaDatabaseState -SqlInstance $server
+            if ($server -notin $dbStatuses.Keys) {
+                $dbStatuses[$server] = Get-DbaDatabaseState -SqlInstance $server
             }
 
             # normalizing properties returned by SMO to something more "fixed"
-            $db_status = Get-DbState -DatabaseName $db.Name -dbStatuses $stateCache[$server]
+            $db_status = Get-DbState -DatabaseName $db.Name -dbStatuses $dbStatuses[$server]
 
 
             $warn = @()
