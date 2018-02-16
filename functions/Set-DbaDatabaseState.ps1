@@ -197,16 +197,10 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
             'EmergencyMode' = 'EMERGENCY'
         }
 
-        function Get-DbState($db) {
-            $base = [PSCustomObject]@{
-                'Access' = $null
-                'Status' = $null
-                'RW'     = $null
-            }
-            $base.RW = $ReadOnlyHash[$db.ReadOnly]
-            $base.Access = $UserAccessHash[$db.UserAccess.toString()]
+        function Get-DbState($databaseName, $dbStatuses) {
+            $base = $dbStatuses | Where-Object DatabaseName -ceq $databaseName
             foreach ($status in $StatusHash.Keys) {
-                if ($db.Status -match $status) {
+                if ($base.Status -match $status) {
                     $base.Status = $StatusHash[$status]
                     break
                 }
@@ -285,9 +279,14 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
                 Write-Message -Level Warning -Message "Database $db is a system one, skipping"
                 Continue
             }
+            $dbStatuses = @{}
             $server = $db.Parent
+            if ($server -notin $dbStatuses.Keys) {
+                $dbStatuses[$server] = Get-DbaDatabaseState -SqlInstance $server
+            }
+
             # normalizing properties returned by SMO to something more "fixed"
-            $db_status = Get-DbState $db
+            $db_status = Get-DbState -DatabaseName $db.Name -dbStatuses $dbStatuses[$server]
 
 
             $warn = @()
@@ -512,7 +511,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
                     $newstate = $db_status
                 }
                 else {
-                    $newstate = Get-DbState $db
+                    $newstate = Get-DbState -databaseName $db.Name -dbStatuses $stateCache[$server]
                 }
 
                 [PSCustomObject]@{

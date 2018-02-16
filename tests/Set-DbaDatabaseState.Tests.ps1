@@ -1,7 +1,7 @@
 ﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-<#
+
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Parameters validation" {
         BeforeAll {
@@ -18,17 +18,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Is nice by default" {
             { Set-DbaDatabaseState -SqlInstance $script:instance2 *> $null } | Should Not Throw "You must specify"
         }
-        It "Errors out when multiple 'access' params are passed with Silent" {
+        It "Errors out when multiple 'access' params are passed with EnableException" {
             { Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -SingleUser -RestrictedUser -EnableException } | Should Throw "You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser"
             { Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -MultiUser -RestrictedUser -EnableException } | Should Throw "You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser"
         }
-        It "Errors out when multiple 'access' params are passed without Silent" {
+        It "Errors out when multiple 'access' params are passed without EnableException" {
             { Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -SingleUser -RestrictedUser *> $null } | Should Not Throw
             { Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -MultiUser -RestrictedUser *> $null } | Should Not Throw
             $result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -SingleUser -RestrictedUser *> $null
             $result | Should Be $null
         }
-        It "Errors out when multiple 'status' params are passed with Silent" {
+        It "Errors out when multiple 'status' params are passed with EnableException" {
             { Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Offline -Online -EnableException } | Should Throw "You can only specify one of: -Online,-Offline,-Emergency,-Detached"
             { Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Emergency -Online -EnableException } | Should Throw "You can only specify one of: -Online,-Offline,-Emergency,-Detached"
         }
@@ -38,10 +38,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Offline -Online *> $null
             $result | Should Be $null
         }
-        It "Errors out when multiple 'rw' params are passed with Silent" {
+        It "Errors out when multiple 'rw' params are passed with EnableException" {
             { Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -ReadOnly -ReadWrite -EnableException } | Should Throw "You can only specify one of: -ReadOnly,-ReadWrite"
         }
-        It "Errors out when multiple 'rw' params are passed without Silent" {
+        It "Errors out when multiple 'rw' params are passed without EnableException" {
             { Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -ReadOnly -ReadWrite *> $null } | Should Not Throw
             $result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -ReadOnly -ReadWrite *> $null
             $result | Should Be $null
@@ -68,7 +68,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server.Query("CREATE DATABASE $db7")
             $server.Query("CREATE DATABASE $db8")
             $setupright = $true
-            $needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
+            $needed_ = $server.Query("select name from sys.databases")
+            $needed = $needed_ | Where-Object name -in $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
             if ($needed.Count -ne 8) {
                 $setupright = $false
                 it "has failed setup" {
@@ -93,7 +94,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $results.Count | Should be 2
             }
             It "Honors the ExcludeDatabase parameter" {
-                $alldbs = (Get-DbaDatabase -SqlInstance $script:instance2 | Where-Object Name -notin @($db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8)).Name
+                $alldbs_ = $server.Query("select name from sys.databases")
+                $alldbs = ($alldbs_ | Where-Object Name -notin @($db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8)).name
                 $results = Set-DbaDatabaseState -SqlInstance $script:instance2 -ExcludeDatabase $alldbs -Online -Force
                 $comparison = Compare-Object -ReferenceObject ($results.DatabaseName) -DifferenceObject (@($db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8))
                 $comparison.Count | Should Be 0
@@ -106,12 +108,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $result.Status | Should Be "ONLINE"
             }
 
-            if (-not $env:appveyor) {
-                It "Sets a database as offline" {
-                    $result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db2 -Offline -Force
-                    $result.DatabaseName | Should Be $db2
-                    $result.Status | Should Be "OFFLINE"
-                }
+            It "Sets a database as offline" {
+                $result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db2 -Offline -Force
+                $result.DatabaseName | Should Be $db2
+                $result.Status | Should Be "OFFLINE"
             }
 
             It "Sets a database as emergency" {
@@ -119,19 +119,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $result.DatabaseName | Should Be $db3
                 $result.Status | Should Be "EMERGENCY"
             }
-            if (-not $env:appveyor) {
-                It "Sets a database as single_user" {
-                    $result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db4 -SingleUser -Force
-                    $result.DatabaseName | Should Be $db4
-                    $result.Access | Should Be "SINGLE_USER"
-                }
-                It "Sets a database as multi_user" {
-                    $null = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db6 -RestrictedUser -Force
-                    $result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db6 -MultiUser -Force
-                    $result.DatabaseName | Should Be $db6
-                    $result.Access | Should Be "MULTI_USER"
-                }
+            
+            It "Sets a database as single_user" {
+                $result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db4 -SingleUser -Force
+                $result.DatabaseName | Should Be $db4
+                $result.Access | Should Be "SINGLE_USER"
             }
+            It "Sets a database as multi_user" {
+                $null = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db6 -RestrictedUser -Force
+                $result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db6 -MultiUser -Force
+                $result.DatabaseName | Should Be $db6
+                $result.Access | Should Be "MULTI_USER"
+            }
+            
             It "Sets a database as restricted_user" {
                 $result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db5 -RestrictedUser -Force
                 $result.DatabaseName | Should Be $db5
@@ -173,4 +173,3 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
-#>
