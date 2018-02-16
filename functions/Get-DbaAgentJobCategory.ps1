@@ -52,7 +52,6 @@ function Get-DbaAgentJobCategory {
             Get-DbaAgentJobCategory -SqlInstance sstad-pc -CategoryType MultiServerJob
 
             Return all the job categories that have a type MultiServerJob.
-
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
@@ -66,8 +65,8 @@ function Get-DbaAgentJobCategory {
         [ValidateSet("LocalJob", "MultiServerJob", "None")]
         [string]$CategoryType,
         [switch]$Force,
-        [switch][Alias('Silent')]
-        $EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {
