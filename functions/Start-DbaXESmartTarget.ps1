@@ -157,7 +157,13 @@
                     }
                     catch {
                         $message = $_.Exception.InnerException.InnerException | Out-String
-                        Stop-Function -Message $message -Target "XESmartTarget" -Continue
+                        
+                        if ($message) {
+                            Stop-Function -Message $message -Target "XESmartTarget" -Continue
+                        }
+                        else {
+                            Stop-Function -Message "Failure" -Target "XESmartTarget" -ErrorRecord $_ -Continue
+                        }
                     }
                 }
             }
