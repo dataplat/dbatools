@@ -89,34 +89,39 @@ function Get-DbaTrace {
             }
             
             foreach ($row in $results) {
-                $remotefile = Join-AdminUnc -servername $server.NetName -filepath $row.path
+                if ($row.Path.ToString().Length -gt 0) {
+                    $remotefile = Join-AdminUnc -servername $server.NetName -filepath $row.path
+                }
+                else {
+                    $remotefile = $null
+                }
                 
                 [PSCustomObject]@{
-                    ComputerName            = $server.NetName
-                    InstanceName            = $server.ServiceName
-                    SqlInstance             = $server.DomainInstanceName
-                    Id                      = $row.id
-                    Status                  = $row.status
-                    IsRunning               = ($row.status -eq 1)
-                    Path                    = $row.path
-                    RemotePath              = $remotefile
-                    MaxSize                 = $row.max_size
-                    StopTime                = $row.stop_time
-                    MaxFiles                = $row.max_files
-                    IsRowset                = $row.is_rowset
-                    IsRollover              = $row.is_rollover
-                    IsShutdown              = $row.is_shutdown
-                    IsDefault               = $row.is_default
-                    BufferCount             = $row.buffer_count
-                    BufferSize              = $row.buffer_size
-                    FilePosition            = $row.file_position
-                    ReaderSpid              = $row.reader_spid
-                    StartTime               = $row.start_time
-                    LastEventTime           = $row.last_event_time
-                    EventCount              = $row.event_count
-                    DroppedEventCount       = $row.dropped_event_count
-                    Parent                  = $server
-                    SqlCredential           = $SqlCredential
+                    ComputerName             = $server.NetName
+                    InstanceName             = $server.ServiceName
+                    SqlInstance              = $server.DomainInstanceName
+                    Id                       = $row.id
+                    Status                   = $row.status
+                    IsRunning                = ($row.status -eq 1)
+                    Path                     = $row.path
+                    RemotePath               = $remotefile
+                    MaxSize                  = $row.max_size
+                    StopTime                 = $row.stop_time
+                    MaxFiles                 = $row.max_files
+                    IsRowset                 = $row.is_rowset
+                    IsRollover               = $row.is_rollover
+                    IsShutdown               = $row.is_shutdown
+                    IsDefault                = $row.is_default
+                    BufferCount              = $row.buffer_count
+                    BufferSize               = $row.buffer_size
+                    FilePosition             = $row.file_position
+                    ReaderSpid               = $row.reader_spid
+                    StartTime                = $row.start_time
+                    LastEventTime            = $row.last_event_time
+                    EventCount               = $row.event_count
+                    DroppedEventCount        = $row.dropped_event_count
+                    Parent                   = $server
+                    SqlCredential            = $SqlCredential
                 } | Select-DefaultView -ExcludeProperty Parent, RemoteFile, RemoStatus, SqlCredential
             }
         }
