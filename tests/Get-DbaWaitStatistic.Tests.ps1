@@ -18,8 +18,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Command returns proper info when using parameter IncludeIgnorable" {
-        $results = Get-DbaWaitStatistic -SqlInstance $script:instance2 -Threshold 100 -IncludeIgnorable | Where-Object { 
-                $_.WaitType -eq 'SLEEP_TASK' 
+        $server = Connect-DbaSqlServer -SqlServer $script:instance2
+        $server.Databases['master'].ExecuteNonQuery("WAITFOR DELAY '00:00:05'")
+
+        $results = Get-DbaWaitStatistic -SqlInstance $script:instance2 -Threshold 0 -IncludeIgnorable | Where-Object { 
+                $_.WaitType -eq 'WAITFOR' 
             }
 
         It "returns results" {
