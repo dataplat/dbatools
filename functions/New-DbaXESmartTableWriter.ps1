@@ -87,7 +87,7 @@
         [switch]$AutoCreateTargetTable,
         [int]$UploadIntervalSeconds = 10,
         [string[]]$Event,
-        [string[]]$OutputColumns,
+        [string[]]$OutputColumn,
         [string]$Filter,
         [switch]$EnableException
     )
