@@ -77,7 +77,8 @@
         [object[]]$Job,
         [object[]]$ExcludeJob,
         [switch]$NoDisabledJobs,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {
