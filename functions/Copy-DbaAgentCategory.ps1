@@ -1,3 +1,4 @@
+#ValidationTags#Messaging#
 function Copy-DbaAgentCategory {
     <#
         .SYNOPSIS
@@ -105,12 +106,12 @@ function Copy-DbaAgentCategory {
         [ValidateSet('Job', 'Alert', 'Operator')]
         [string[]]$CategoryType,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
-
-        Function Copy-JobCategory {
+        function Copy-JobCategory {
             <#
                 .SYNOPSIS
                     Copy-JobCategory migrates job categories from one SQL Server to another.
@@ -121,7 +122,7 @@ function Copy-DbaAgentCategory {
                     If the associated credential for the category does not exist on the destination, it will be skipped. If the job category already exists on the destination, it will be skipped unless -Force is used.
             #>
             param (
-                [string[]]$JobCategories
+                [string[]]$jobCategories
             )
 
             process {
@@ -142,7 +143,7 @@ function Copy-DbaAgentCategory {
                         DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
 
-                    if ($JobCategories.Count -gt 0 -and $JobCategories -notcontains $categoryName) {
+                    if ($jobCategories.Count -gt 0 -and $jobCategories -notcontains $categoryName) {
                         continue
                     }
 
@@ -155,7 +156,7 @@ function Copy-DbaAgentCategory {
                             continue
                         }
                         else {
-                            if ($Pscmdlet.ShouldProcess($destination, "Dropping job category $categoryName and recreating")) {
+                            if ($Pscmdlet.ShouldProcess($destination, "Dropping job category $categoryName")) {
                                 try {
                                     Write-Message -Level Verbose -Message "Dropping Job category $categoryName"
                                     $destServer.JobServer.JobCategories[$categoryName].Drop()
@@ -173,7 +174,7 @@ function Copy-DbaAgentCategory {
                         try {
                             Write-Message -Level Verbose -Message "Copying Job category $categoryName"
                             $sql = $jobCategory.Script() | Out-String
-                            Write-Message -Level Debug -Message $sql
+                            Write-Message -Level Debug -Message "SQL Statement: $sql"
                             $destServer.Query($sql)
 
                             $copyJobCategoryStatus.Status = "Successful"
@@ -201,7 +202,7 @@ function Copy-DbaAgentCategory {
             #>
             [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
             param (
-                [string[]]$OperatorCategories
+                [string[]]$operatorCategories
             )
             process {
                 $serverOperatorCategories = $sourceServer.JobServer.OperatorCategories | Where-Object ID -ge 100
@@ -327,7 +328,7 @@ function Copy-DbaAgentCategory {
                                     $destServer.JobServer.AlertCategories[$categoryName].Drop()
                                     Write-Message -Level Verbose -Message "Copying Alert category $categoryName"
                                     $sql = $alertcategory.Script() | Out-String
-                                    Write-Verbose $sql
+                                    Write-Message -Level Debug -Message "SQL Statement: $sql"
                                     $destServer.Query($sql)
                                 }
                                 catch {
