@@ -73,9 +73,9 @@ function Get-DbaAgentJobCategory {
     process {
 
         foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Connecting to $instance."
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -120,6 +120,5 @@ function Get-DbaAgentJobCategory {
         if (Test-FunctionInterrupt) { return }
         Write-Message -Message "Finished retrieving job category." -Level Verbose
     }
-
 
 }
