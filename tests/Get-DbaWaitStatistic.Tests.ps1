@@ -21,8 +21,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server = Connect-DbaSqlServer -SqlServer $script:instance2
         $server.Databases['master'].ExecuteNonQuery("WAITFOR DELAY '00:00:05'")
 
-        $results = Get-DbaWaitStatistic -SqlInstance $script:instance2 -Threshold 0 -IncludeIgnorable | Where-Object { 
-                $_.WaitType -eq 'WAITFOR' 
+        $results = Get-DbaWaitStatistic -SqlInstance $script:instance2 -Threshold 0 -IncludeIgnorable | Where-Object {
+                $_.WaitType -eq 'WAITFOR'
             }
 
         It "returns results" {
@@ -44,5 +44,5 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should warn cannot connect to MadeUpServer" {
             { Get-DbaAgentJob -SqlInstance MadeUpServer -EnableException } | Should Throw "Can't connect to MadeUpServer"
         }
-    }    
+    }
 }
