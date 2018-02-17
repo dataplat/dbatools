@@ -23,11 +23,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
 
         It "returns results" {
-            $results.Count -gt 0 | Should Be $true
+            $results | Should -Not -BeNullOrEmpty
         }
 
         It "results includes ignorable column" {
-            $results[0].PSObject.Properties.Name.Contains('Ignorable') | Should Be $true
+            $results.PSObject.Properties.Name.Contains('Ignorable') | Should Be $true
         }
 
         foreach ($result in $results) {
