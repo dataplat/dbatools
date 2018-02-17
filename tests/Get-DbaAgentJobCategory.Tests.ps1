@@ -12,7 +12,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
         It "Should only contain $paramCount parameters" {
-            write-host $params.count
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
     }
