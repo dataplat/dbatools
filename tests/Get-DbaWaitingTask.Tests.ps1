@@ -81,8 +81,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         Get-Job -Name $job | Remove-Job -Force -ErrorAction SilentlyContinue
     }
-    else {
-        $cmdName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-        Write-Host "$cmdName - Test process could not be generated" -ForegroundColor Cyan
-    }
 }
