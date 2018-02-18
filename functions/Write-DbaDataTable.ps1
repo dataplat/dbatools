@@ -373,12 +373,10 @@ function Write-DbaDataTable {
         if (Test-Bound -ParameterName Database) {
             $databaseName = "$Database"
         }
-        if (Test-Bound -ParameterName Schema) {
-            $schemaName = $Schema
-        }
         
         $tableName = $Table
-        
+        $schemaName = $Schema
+
         if ($dotCount -eq 1) {
             $schemaName = $Table.Split(".")[0]
             $tableName = $Table.Split(".")[1]
