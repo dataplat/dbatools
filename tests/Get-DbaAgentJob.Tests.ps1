@@ -30,6 +30,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should get 2 dbatoolsci jobs" {
             $results.count | Should Be 2
         }
+        $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob
+        It "Should get a specific job" {
+            $results.name | Should Be "dbatoolsci_testjob"
+        }
+        
     }
     Context "Command gets no disabled jobs" {
         BeforeAll {
