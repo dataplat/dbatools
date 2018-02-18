@@ -186,8 +186,35 @@
         }
         else {
             $date = (Get-Date -UFormat "%H%M%S") #"%m%d%Y%H%M%S"
-            Start-Job -Name "XESmartTarget-$session-$date" -ArgumentList $PSBoundParameters -ScriptBlock {
-                Start-DbaXESmartTarget -SqlInstance $args.SqlInstance.InputObject -SqlCredential $args.SqlCredential -Database $args.Database -Session $args.Session -NotAsJob -FailOnProcessingError
+            Start-Job -Name "XESmartTarget-$session-$date" -ArgumentList $PSBoundParameters, $script:PSModuleRoot -ScriptBlock {
+                param (
+                    $Parameters,
+                    $ModulePath
+                )
+                Import-Module "$ModulePath\dbatools.psd1"
+                Add-Type -Path "$ModulePath\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
+                $params = @{
+                    SqlInstance    = $Parameters.SqlInstance.InputObject
+                    Database       = $Parameters.Database
+                    Session        = $Parameters.Session
+                    Responder      = @()
+                }
+                if ($Parameters.SqlCredential) {
+                    $params["SqlCredential"] = $Parameters.SqlCredential
+                }
+                foreach ($responder in $Parameters.Responder) {
+                    $typename = $responder.PSObject.TypeNames[0] -replace "^Deserialized\.", ""
+                    $newResponder = New-Object -TypeName $typename
+                    foreach ($property in $responder.PSObject.Properties) {
+                        if ($property.Value) {
+                            $name = $property.Name
+                            $newResponder.$name = $property.Value
+                        }
+                    }
+                    $params["Responder"] += $newResponder
+                }
+                
+                Start-DbaXESmartTarget @params -NotAsJob -FailOnProcessingError
             } | Select-Object -Property ID, Name, State
         }
     }
