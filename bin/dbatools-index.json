@@ -609,7 +609,10 @@
     {
         "CommandName":  "Export-DbaExecutionPlan",
         "Description":  "Exports execution plans to disk. Can pipe from Export-DbaExecutionPlan\n\nThanks to\n    https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/\n    and\n    http://www.scarydba.com/2017/02/13/export-plans-cache-sqlplan-file/\nfor the idea and query.",
-        "Tags":  "Performance",
+        "Tags":  [
+                     "Performance",
+                     "ExecutionPlan"
+                 ],
         "Synopsis":  "Exports execution plans to disk.",
         "Name":  "Export-DbaExecutionPlan",
         "Links":  "https://dbatools.io/Export-DbaExecutionPlan",
@@ -2569,7 +2572,7 @@
     },
     {
         "CommandName":  "Invoke-DbaXeReplay",
-        "Description":  "This command replays events from Read-DbaXEFile. It is simplistic in its approach.\n\n- Writes all queries to a temp sql file\n- Executes temp file using sqlcmd so that batches are executed properly\n- Deletes temp file",
+        "Description":  "This command replays events from Read-DbaXEFile. It is simplistic in its approach.\n\n- Writes all queries to a temp sql file\n- Executes temp file using . $sqlcmd so that batches are executed properly\n- Deletes temp file",
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
@@ -2606,13 +2609,17 @@
     },
     {
         "CommandName":  "Measure-DbaDiskSpaceRequirement",
-        "Description":  "Returns a file list from source and destination where source file may overwrite destination. Complex scenarios where a new file may exist is taken\ninto account. This procedure will accept an object in pipeline as long as it as provide these required properties: Source, SourceDatabase, Destination.\nUsing this method will provide a way to prepare before a complex migration with lots of databases from different sources and destinations.",
-        "Tags":  "Migration",
+        "Description":  "Returns a file list from source and destination where source file may overwrite destination. Complex scenarios where a new file may exist is taken into account.\nThis command will accept an hash object in pipeline with the following keys: Source, SourceDatabase, Destination. Using this command will provide a way to prepare before a complex migration with multiple databases from different sources and destinations.",
+        "Tags":  [
+                     "Database",
+                     "DiskSpace",
+                     "Migration"
+                 ],
         "Author":  "Pollus Brodeur (@pollusb)",
         "Synopsis":  "Calculate the space needed to copy and possibly replace a database from one SQL server to another.",
         "Name":  "Measure-DbaDiskSpaceRequirement",
         "Links":  "https://dbatools.io/Measure-DbaDiskSpaceRequirement",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eMeasure-DbaDiskSpaceRequirement -Source INSTANCE1 -SourceDatabase DB1 -Destination INSTANCE2\r\n\r\nCalculate space needed for a simple migration with one database with the same name at destination.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e@([PSCustomObject]@{Source=\u0027SQL1\u0027;Destination=\u0027SQL2\u0027;SourceDatabase=\u0027DB1\u0027},\r\n\r\n[PSCustomObject]@{Source=\u0027SQL1\u0027;Destination=\u0027SQL2\u0027;SourceDatabase=\u0027DB2\u0027}\r\n) | Measure-DbaDiskSpaceRequirement\r\n\r\nUsing a PSCustomObject with 2 databases to migrate on SQL2\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eImport-Csv -Path .\\migration.csv -Delimiter \"`t\" | Measure-DbaDiskSpaceRequirement | Format-Table -AutoSize\r\n\r\nUsing a CSV file. You will need to use this header line \r\n\"Source\u003ctab\u003eDestination\u003ctab\u003eSourceDatabase\u003ctab\u003eDestinationDatabase\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaSqlCmd -SqlInstance DBA -Database Migrations -Query \u0027select Source, Destination, SourceDatabase from \r\ndbo.Migrations\u0027 `\r\n\r\n| Measure-DbaDiskSpaceRequirement\r\n\r\nUsing a SQL table. We are DBA after all!\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eMeasure-DbaDiskSpaceRequirement -Source INSTANCE1 -Database DB1 -Destination INSTANCE2\r\n\r\nCalculate space needed for a simple migration with one database with the same name at destination.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e@([PSCustomObject]@{Source=\u0027SQL1\u0027;Destination=\u0027SQL2\u0027;Database=\u0027DB1\u0027},\r\n\r\n[PSCustomObject]@{Source=\u0027SQL1\u0027;Destination=\u0027SQL2\u0027;Database=\u0027DB2\u0027}\r\n) | Measure-DbaDiskSpaceRequirement\r\n\r\nUsing a PSCustomObject with 2 databases to migrate on SQL2\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eImport-Csv -Path .\\migration.csv -Delimiter \"`t\" | Measure-DbaDiskSpaceRequirement | Format-Table -AutoSize\r\n\r\nUsing a CSV file. You will need to use this header line \"Source\u003ctab\u003eDestination\u003ctab\u003eDatabase\u003ctab\u003eDestinationDatabase\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaSqlCmd -SqlInstance DBA -Database Migrations -Query \u0027select Source, Destination, Database from \r\ndbo.Migrations\u0027 `\r\n\r\n| Measure-DbaDiskSpaceRequirement\r\n\r\nUsing a SQL table. We are DBA after all!\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Mount-DbaDatabase",
@@ -2983,7 +2990,7 @@
         "Synopsis":  "Reads a trace file from specified SQL Server Database",
         "Name":  "Read-DbaTraceFile",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\\traces\\big.trc\r\n\r\nReads the tracefile C:\\traces\\big.trc, stored on the sql2016 sql server. Filters only results that have master or \r\ntempdb as the DatabaseName.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\\traces\\big.trc -TextData \u0027EXEC \r\nSP_PROCOPTION\u0027\r\n\r\nReads the tracefile C:\\traces\\big.trc, stored on the sql2016 sql server.\r\nFilters only results that have master or tempdb as the DatabaseName and that have \u0027EXEC SP_PROCOPTION\u0027 somewhere in the \r\ntext.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nRead-DbaTraceFile -SqlInstance sql2016 -Path C:\\traces\\big.trc -Where \"LinkedServerName = \u0027myls\u0027 and StartTime \r\n\u003e\u00275/30/2017 4:27:52 PM\u0027\"\r\n\r\nReads the tracefile C:\\traces\\big.trc, stored on the sql2016 sql server.\r\nFilters only results where LinkServerName = myls and StartTime is greater than \u00275/30/2017 4:27:52 PM\u0027.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\\traces\\big.trc\r\n\r\nReads the tracefile C:\\traces\\big.trc, stored on the sql2016 sql server. Filters only results that have master or \r\ntempdb as the DatabaseName.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\\traces\\big.trc -TextData \u0027EXEC \r\nSP_PROCOPTION\u0027\r\n\r\nReads the tracefile C:\\traces\\big.trc, stored on the sql2016 sql server.\r\nFilters only results that have master or tempdb as the DatabaseName and that have \u0027EXEC SP_PROCOPTION\u0027 somewhere in the \r\ntext.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nRead-DbaTraceFile -SqlInstance sql2016 -Path C:\\traces\\big.trc -Where \"LinkedServerName = \u0027myls\u0027 and StartTime \r\n\u003e\u00275/30/2017 4:27:52 PM\u0027\"\r\n\r\nReads the tracefile C:\\traces\\big.trc, stored on the sql2016 sql server.\r\nFilters only results where LinkServerName = myls and StartTime is greater than \u00275/30/2017 4:27:52 PM\u0027.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2014 | Read-DbaTraceFile\r\n\r\nReads every trace file on sql2014\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Read-DbaTransactionLog",
@@ -3958,7 +3965,7 @@
     },
     {
         "CommandName":  "Test-DbaDatabaseOwner",
-        "Description":  "This function will check all databases on an instance against a SQL login to validate if that\nlogin owns those databases or not. By default, the function will check against \u0027sa\u0027 for\nownership, but the user can pass a specific login if they use something else. Only databases\nthat do not match this ownership will be displayed, but if the -Detailed switch is set all\ndatabases will be shown.\n\nBest Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx",
+        "Description":  "This function will check all databases on an instance against a SQL login to validate if that\nlogin owns those databases or not. By default, the function will check against \u0027sa\u0027 for\nownership, but the user can pass a specific login if they use something else.\n\nBest Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx",
         "Tags":  "",
         "Author":  "Michael Fal (@Mike_Fal), http://mikefal.net",
         "Synopsis":  "Checks database owners against a login to validate which databases do not match that owner.",

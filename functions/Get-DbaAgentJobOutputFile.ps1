@@ -9,7 +9,7 @@ function Get-DbaAgentJobOutputFile {
             provided dynamically. It will not return anything if there is no Output File
 
         .PARAMETER SqlInstance
-            The SQL Server that you're connecting to. Or an array of SQL Servers
+            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
         .PARAMETER SQLCredential
             Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by
@@ -99,7 +99,8 @@ function Get-DbaAgentJobOutputFile {
         [PSCredential]$SqlCredential,
         [object[]]$Job,
         [object[]]$ExcludeJob,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {
