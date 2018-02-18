@@ -51,7 +51,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Data is balanced among data files" {
 
-        $results = Invoke-DbaBalanceDataFiles -SqlInstance $server -Database $dbname -RebuildOffline
+        $results = Invoke-DbaBalanceDataFiles -SqlInstance $server -Database $dbname -RebuildOffline -Force
 
         It "Result returns success" {
             $results.Success | Should -Be $true
