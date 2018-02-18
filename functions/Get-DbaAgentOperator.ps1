@@ -7,8 +7,7 @@ function Get-DbaAgentOperator {
             This function returns SQL Agent operators.
 
         .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to.
-            This can be a collection and receive pipeline input.
+            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
         .PARAMETER SqlCredential
             PSCredential object to connect as. If not specified, current Windows login will be used.
@@ -64,13 +63,14 @@ function Get-DbaAgentOperator {
         $SqlCredential,
         [object[]]$Operator,
         [object[]]$ExcludeOperator,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
