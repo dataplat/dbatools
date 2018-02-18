@@ -14,4 +14,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.Name -eq 'system_health' | Should Be $true
         }
     }
+
+    Context "Command stops when can't connect" {
+        It "Should warn cannot connect to MadeUpServer" {
+            { Get-DbaXESession -SqlInstance MadeUpServer -EnableException } | Should Throw "Can't connect to MadeUpServer"
+        }
+    }
 }
