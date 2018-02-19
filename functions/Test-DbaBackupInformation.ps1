@@ -165,12 +165,7 @@ function Test-DbaBackupInformation {
                     }
 
                     $ExistingFS = Get-DbaFileStreamFolder -SqlInstance $SqlInstance
-                    #$ExistingFS = ((Get-DbaDatabase -SqlInstance $RestoreInstance).FileGroups | ?{$_.FileGroupType -eq 'FileStreamDataFileGroup'}).Files.FileName
                     foreach ($FileStreamFolder in ($DbHistory | Select-Object -ExpandProperty filelist | Where-Object {$_.FileType -eq 's'} | Select-Object PhysicalName -unique).PhysicalName) {
-                        if ((Get-ChildItem $FileStreamFolder -ErrorAction SilentlyContinue).count -gt 0) {
-                            Write-Message -Level Warning -Message "Folder $FileStreamFolder already exists and contains data. Cannot use to restore $Database on $SqlInstance"
-                            $VerificationErrors++
-                        }
                         if ($null -ne $ExistingFS) {
                             if ($null -ne ($ExistingFs | Where-Object {$_.Database -eq $Database}) -and $Withreplace -ne $True) {
                                 Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data on $SqlInstance and WithReplace not specified, cannot restore"
