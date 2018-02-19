@@ -30,6 +30,9 @@
 *
 ******************************************************************************/
 
+-- Slight modifications and performance optimizations 
+-- by Gianluca Sartori and Chrissy LeMaire
+
 DECLARE @TraceID INT = --TRACEID--
 DECLARE @SessionName NVARCHAR(128) = '--SESSIONNAME--'
 DECLARE @PrintOutput BIT = 1
@@ -67,38 +70,41 @@ JOIN sys.trace_columns AS tc
 JOIN sys.trace_xe_event_map AS txem
        ON te.trace_event_id = txem.trace_event_id
 LEFT JOIN (
-              SELECT 
-                     p.name AS event_package_name,
-                     o.name AS event_name,
-                     oc.name AS column_name
-              FROM sys.dm_xe_packages AS p
-              JOIN sys.dm_xe_objects AS o 
-                      ON p.guid = o.package_guid
-              JOIN sys.dm_xe_object_columns AS oc 
-                      ON o.name = oc.object_name 
-                     AND o.package_guid = oc.object_package_guid
-              WHERE (p.capabilities IS NULL OR p.capabilities & 1 = 0)
-                AND (o.capabilities IS NULL OR o.capabilities & 1 = 0)
-                AND o.object_type = 'event'
-                AND oc.column_type = 'data') as tab
+          SELECT  p.name AS event_package_name,
+                  o.name AS event_name,
+                  oc.name AS column_name
+          FROM sys.dm_xe_objects AS o
+          INNER JOIN sys.dm_xe_object_columns AS oc 
+              ON o.name = oc.object_name 	
+              AND o.package_guid = oc.object_package_guid
+          CROSS APPLY (
+              SELECT name
+              FROM sys.dm_xe_packages
+              WHERE guid = o.package_guid
+                  AND (capabilities IS NULL OR capabilities & 1 = 0)
+          ) AS p
+          WHERE (o.capabilities IS NULL OR o.capabilities & 1 = 0)
+              AND o.object_type = 'event'
+              AND oc.column_type = 'data'
+       ) as tab
        ON tab.event_package_name COLLATE SQL_Latin1_General_CP1_CI_AS = txem.package_name COLLATE SQL_Latin1_General_CP1_CI_AS
               AND tab.event_name COLLATE SQL_Latin1_General_CP1_CI_AS = txem.xe_event_name COLLATE SQL_Latin1_General_CP1_CI_AS
               AND CASE
-                           WHEN tc.name = 'ObjectID' THEN 'object_id'
-                           WHEN tc.name = 'Type' THEN 'object_type'
-                           --WHEN tc.name = 'NestLevel' THEN 'nest_level'
-                           WHEN tc.name = 'ObjectName' THEN 'object_name'
-                           WHEN tc.name = 'DatabaseID' THEN 'database_id'
-                           WHEN tc.name = 'DatabaseName' THEN 'database_name'
-                           WHEN tc.name = 'IndexID' THEN 'index_id'
-                           WHEN tc.name = 'Reads' THEN 'logical_reads'
-                           WHEN tc.name = 'CPU' THEN 'cpu_time'
-                           WHEN tc.name = 'RowCounts' THEN 'row_count'
-                           --WHEN tc.name = 'Severity' THEN 'error_severity'
-                           --WHEN tc.name = 'Type' THEN 'object_type'
-                           WHEN tc.name = 'Error' THEN 'error_number'
-                           ELSE tc.name
-                     END = tab.column_name
+                        WHEN tc.name = 'ObjectID' THEN 'object_id'
+                        WHEN tc.name = 'Type' THEN 'object_type'
+                        --WHEN tc.name = 'NestLevel' THEN 'nest_level'
+                        WHEN tc.name = 'ObjectName' THEN 'object_name'
+                        WHEN tc.name = 'DatabaseID' THEN 'database_id'
+                        WHEN tc.name = 'DatabaseName' THEN 'database_name'
+                        WHEN tc.name = 'IndexID' THEN 'index_id'
+                        WHEN tc.name = 'Reads' THEN 'logical_reads'
+                        WHEN tc.name = 'CPU' THEN 'cpu_time'
+                        WHEN tc.name = 'RowCounts' THEN 'row_count'
+                        --WHEN tc.name = 'Severity' THEN 'error_severity'
+                        --WHEN tc.name = 'Type' THEN 'object_type'
+                        WHEN tc.name = 'Error' THEN 'error_number'
+                        ELSE tc.name
+                  END = tab.column_name
 LEFT JOIN sys.trace_xe_action_map AS txam
        ON tc.trace_column_id = txam.trace_column_id
 WHERE cat.name NOT IN ('User configurable')
