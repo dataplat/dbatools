@@ -30,6 +30,11 @@ function Find-DbaCommand {
         .PARAMETER WhatIf
             Displays what would happen if the command is run
 
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
         .NOTES
             Tags: Find,Help,Command
             Author: Simone Bizzotto
@@ -83,7 +88,9 @@ function Find-DbaCommand {
         [String]$Author,
         [String]$MinimumVersion,
         [String]$MaximumVersion,
-        [switch]$Rebuild
+        [switch]$Rebuild,
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $tagsRex = ([regex]'(?m)^[\s]{0,15}Tags:(.*)$')
@@ -160,10 +167,10 @@ function Find-DbaCommand {
         $Pattern = $Pattern.TrimEnd("s")
         $idxFile = "$moduleDirectory\bin\dbatools-index.json"
         if (!(Test-Path $idxFile) -or $Rebuild) {
-            Write-Verbose "Rebuilding index into $idxFile"
+            Write-Message -Level Verbose -Message "Rebuilding index into $idxFile"
             $swRebuild = [system.diagnostics.stopwatch]::StartNew()
             Get-DbaIndex
-            Write-Verbose "Rebuild done in $($swRebuild.ElapsedMilliseconds)ms"
+            Write-Message -Level Verbose -Message "Rebuild done in $($swRebuild.ElapsedMilliseconds)ms"
         }
         $consolidated = Get-Content -Raw $idxFile | ConvertFrom-Json
         $result = $consolidated
