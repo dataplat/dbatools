@@ -30,6 +30,9 @@
 *
 ******************************************************************************/
 
+-- Slight modifications and performance optimizations 
+-- by Gianluca Sartori and Chrissy LeMaire
+
 DECLARE @TraceID INT = --TRACEID--
 DECLARE @SessionName NVARCHAR(128) = '--SESSIONNAME--'
 DECLARE @PrintOutput BIT = 1
