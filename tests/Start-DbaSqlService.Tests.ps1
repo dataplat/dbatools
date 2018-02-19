@@ -47,5 +47,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $service.Status | Should Be 'Successful'
             }
         }
+
+        It "errors when passing an invalid InstanceName" {
+            { Start-DbaSqlService -ComputerName $script:instance2 -Type 'Agent' -InstanceName 'ThisIsInvalid' -EnableException } | Should Throw 'No SQL Server services found with current parameters.'
+        }
     }
 }
