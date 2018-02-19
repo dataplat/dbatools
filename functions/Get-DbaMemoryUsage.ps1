@@ -58,7 +58,7 @@ function Get-DbaMemoryUsage {
     param (
         [parameter(ValueFromPipeline)]
         [Alias("Host", "cn", "Server")]
-        [dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
+        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch]$Simple,
         [Alias('Silent')]
