@@ -1,3 +1,4 @@
+#ValidationTags#Messaging#
 function Find-DbaCommand {
     <#
         .SYNOPSIS
