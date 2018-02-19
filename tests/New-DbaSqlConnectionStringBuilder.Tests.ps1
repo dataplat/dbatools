@@ -78,6 +78,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = New-DbaSqlConnectionStringBuilder -IntegratedSecurity $True
         It "Should have a `"Integrated Security Setting`" value of `"True`"" {
             $results.IntegratedSecurity | Should Be $True
-        }        
+        }
     }
 }
