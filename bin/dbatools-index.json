@@ -739,7 +739,7 @@
     {
         "CommandName":  "Find-DbaDatabase",
         "Description":  "Allows you to search SQL Server instances for database that have either the same name, owner or service broker guid.\n\nThere a several reasons for the service broker guid not matching on a restored database primarily using alter database new broker. or turn off broker to return a guid of 0000-0000-0000-0000.",
-        "Tags":  "DisasterRecovery",
+        "Tags":  "Database",
         "Author":  "Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/",
         "Synopsis":  "Find database/s on multiple servers that match criteria you input",
         "Name":  "Find-DbaDatabase",
@@ -841,6 +841,7 @@
     {
         "CommandName":  "Find-DbaUserObject",
         "Description":  "Looks at the below list of objects to see if they are either owned by a user or a specific user (using the parameter -Pattern)\n    Database Owner\n    Agent Job Owner\n    Used in Credential\n    USed in Proxy\n    SQL Agent Steps using a Proxy\n    Endpoints\n    Server Roles\n    Database Schemas\n    Database Roles\n    Database Assembles\n    Database Synonyms",
+        "Tags":  "Object",
         "Author":  "Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/",
         "Synopsis":  "Searches SQL Server to find user-owned objects (ie. not dbo or sa) or for any object owned by a specific user specified by the Pattern parameter.",
         "Name":  "Find-DbaUserObject",
@@ -1064,6 +1065,7 @@
     {
         "CommandName":  "Get-DbaBackupDevice",
         "Description":  "The Get-DbaBackupDevice command gets SQL Backup Device information for each instance(s) of SQL Server.",
+        "Tags":  "Backup",
         "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
         "Synopsis":  "Gets SQL Backup Device information for each instance(s) of SQL Server.",
         "Name":  "Get-DbaBackupDevice",
@@ -1190,6 +1192,7 @@
     {
         "CommandName":  "Get-DbaCredential",
         "Description":  "The Get-DbaCredential command gets SQL Credential information for each instance(s) of SQL Server.",
+        "Tags":  "Credential",
         "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
         "Synopsis":  "Gets SQL Credential information for each instance(s) of SQL Server.",
         "Name":  "Get-DbaCredential",
