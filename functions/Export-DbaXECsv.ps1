@@ -146,6 +146,7 @@ function Export-DbaXECsv {
 
             try {
                 $adapter.Convert()
+                Get-ChildItem -Path $adapter.OutputFile
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target "XESmartTarget" -Continue
