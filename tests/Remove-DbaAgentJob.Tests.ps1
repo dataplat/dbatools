@@ -73,9 +73,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $server.Query("delete from sysjobhistory where job_id = '$jobId'", "msdb")
         }
     }
-    Context "Command stops when can't connect" {
-        It "Should warn cannot connect to MadeUpServer" {
-            { Remove-DbaAgentJob -SqlInstance MadeUpServer -Job Job1 -EnableException } | Should Throw "Can't connect to MadeUpServer"
-        }
-    }
 }
