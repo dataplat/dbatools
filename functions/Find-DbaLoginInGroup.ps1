@@ -63,7 +63,7 @@ function Find-DbaLoginInGroup {
             Add-Type -AssemblyName System.DirectoryServices.AccountManagement
         }
         catch {
-            Stop-Functino -Message "Failed to load Assembly needed"
+            Stop-Function -Message "Failed to load Assembly needed" -ErrorRecord $_
         }
 
         function Get-AllLogins {
