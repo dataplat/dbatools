@@ -1,3 +1,4 @@
+#ValidationTags#Messaging#
 function Get-DbaAgentJob {
     <#
         .SYNOPSIS
@@ -72,8 +73,7 @@ function Get-DbaAgentJob {
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [object[]]$Job,
         [object[]]$ExcludeJob,
         [switch]$NoDisabledJobs,
@@ -83,7 +83,8 @@ function Get-DbaAgentJob {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Verbose "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
