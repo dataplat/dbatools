@@ -14,6 +14,6 @@
 
   <rules>
     <logger name="*" minlevel="Info" writeTo="logfile" />
-    <logger name="*" minlevel="Info" writeTo="console" />
+    <!-- <logger name="*" minlevel="Info" writeTo="console" /> -->
   </rules>
 </nlog>
