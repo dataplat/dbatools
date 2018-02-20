@@ -38,10 +38,4 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.count | Should BeGreaterThan 1
         }
     }
-
-    Context "Command stops when can't connect" {
-        It "Should warn cannot connect to MadeUpServer" {
-            { Get-DbaAgentJob -SqlInstance MadeUpServer -EnableException } | Should Throw "Can't connect to MadeUpServer"
-        }
-    }
 }
