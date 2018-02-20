@@ -28,7 +28,7 @@ function Install-DbaMaintenanceSolution {
             Specify the output file directory where the Maintenance Solution will write to.
 
         .PARAMETER ReplaceExisting
-            If this switch is enabled, objects already present in the target database will be dropped and recreated. 
+            If this switch is enabled, objects already present in the target database will be dropped and recreated.
 
         .PARAMETER LogToTable
             If this switch is enabled, the Maintenance Solution will be configured to log commands to a table.
