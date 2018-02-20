@@ -75,7 +75,6 @@
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
         [string]$Database,
         [string[]]$Event = "sql_batch_completed",
         [string]$Filter,
