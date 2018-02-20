@@ -35,7 +35,7 @@ function Get-DbaDependency {
             Setting this switch will cause the function to also retrieve the creation script of the dependency.
 
         .EXAMPLE
-            $table = (Get-DbaDatabase -SqlInstance sql2012 Northwind).tables | Where Name -eq Customers
+            $table = (Get-DbaDatabase -SqlInstance sql2012 -Database Northwind).tables | Where Name -eq Customers
             $table | Get-DbaDependency
 
             Returns everything that depends on the "Customers" table
