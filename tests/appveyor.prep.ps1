@@ -5,7 +5,7 @@ Write-Host -Object "appveyor.prep: Install codecov" -ForegroundColor DarkGreen
 choco install codecov | Out-Null
 
 Write-Host -Object "appveyor.prep: Install PSScriptAnalyzer" -ForegroundColor DarkGreen
-Install-PackageProvider Nuget –Force -Verbose | Out-Null
+Install-PackageProvider Nuget –Force | Out-Null
 Install-Module -Name PSScriptAnalyzer | Out-Null
 
 
