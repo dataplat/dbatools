@@ -1,17 +1,8 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $Path = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ModulePath = (get-item $Path ).parent.FullName
+$ModulePath = (Get-Item $Path).Parent.FullName
 $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
 #$ManifestPath = "$ModulePath\$ModuleName.psd1"
-
-Describe 'dbatools module test' -Tag 'Compliance' {
-    Context 'Doing something awesome' {
-        It 'It should have tests' {
-            $true | Should be $true
-        }
-    }
-}
-
 
 Describe "$ModuleName Aliases" -tag Build , Aliases {
     ## Get the Aliases that should be set from the psm1 file
@@ -47,6 +38,19 @@ Describe "$ModuleName indentation" -Tag 'Compliance' {
         if ($TrailingSpaces.Count -gt 0) {
             It "$f has no trailing spaces (line(s) $($TrailingSpaces.LineNumber -join ','))" {
                 $TrailingSpaces.Count | Should Be 0
+            }
+        }
+    }
+}
+
+Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
+    $ScriptAnalyzerErrors = @()
+    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModuleBase\functions" -Severity Error
+    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModuleBase\internal\functions" -Severity Error
+    if ($ScriptAnalyzerErrors.Count -gt 0) {
+        foreach($err in $ScriptAnalyzerErrors) {
+            It "$($err.scriptName) has Error(s) : $($err.RuleName)" {
+                $err.Message | Should Be $null
             }
         }
     }
