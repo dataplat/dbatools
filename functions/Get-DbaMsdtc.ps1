@@ -48,7 +48,7 @@ function Get-DbaMsdtc {
     param (
         [Parameter(ValueFromPipeline = $true)]
         [Alias('cn', 'host', 'Server')]
-        [DbaInstanceParaameter[]]$ComputerName = $env:COMPUTERNAME
+        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME
     )
 
     begin {
