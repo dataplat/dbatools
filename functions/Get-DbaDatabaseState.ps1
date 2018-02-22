@@ -7,7 +7,7 @@ Gets various options for databases, hereby called "states"
 .DESCRIPTION
 Gets some common "states" on databases:
  - "RW" options : READ_ONLY or READ_WRITE
- - "Status" options : ONLINE, OFFLINE, EMERGENCY
+ - "Status" options : ONLINE, OFFLINE, EMERGENCY, RESTORING
  - "Access" options : SINGLE_USER, RESTRICTED_USER, MULTI_USER
 
 Returns an object with SqlInstance, Database, RW, Status, Access
@@ -76,38 +76,15 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
     )
 
     begin {
-        $UserAccessHash = @{
-            'Single'     = 'SINGLE_USER'
-            'Restricted' = 'RESTRICTED_USER'
-            'Multiple'   = 'MULTI_USER'
-        }
-        $ReadOnlyHash = @{
-            $true  = 'READ_ONLY'
-            $false = 'READ_WRITE'
-        }
-        $StatusHash = @{
-            'Offline'       = 'OFFLINE'
-            'Normal'        = 'ONLINE'
-            'EmergencyMode' = 'EMERGENCY'
-            'Restoring'     = 'RESTORING'
-        }
 
-        function Get-DbState($db) {
-            $base = [PSCustomObject]@{
-                'Access' = ''
-                'Status' = ''
-                'RW'     = ''
-            }
-            $base.RW = $ReadOnlyHash[$db.ReadOnly]
-            $base.Access = $UserAccessHash[$db.UserAccess.toString()]
-            foreach ($status in $StatusHash.Keys) {
-                if ($db.Status -match $status) {
-                    $base.Status = $StatusHash[$status]
-                    break
-                }
-            }
-            return $base
-        }
+        $DbStatesQuery = @'
+SELECT
+Name   = name,
+Access = user_access_desc,
+Status = state_desc,
+RW     = CASE WHEN is_read_only = 0 THEN 'READ_WRITE' ELSE 'READ_ONLY' END
+FROM sys.databases
+'@
 
     }
     process {
@@ -119,7 +96,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $all_dbs = $server.Databases | Where-Object IsAccessible
+            $all_dbs = $server.Databases
             $dbs = $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
 
             if ($Database) {
@@ -128,8 +105,19 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
             if ($ExcludeDatabase) {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
+
+            $dbStates = $server.Query($DbStatesQuery)
+            # "normal" hashtable doesn't account for case sensitivity
+            $dbStatesHash = New-Object -TypeName System.Collections.Hashtable
+            foreach ($db in $dbStates) {
+                $dbStatesHash.Add($db.Name, [pscustomobject]@{
+                        Access = $db.Access
+                        Status = $db.Status
+                        RW     = $db.RW
+                    })
+            }
             foreach ($db in $dbs) {
-                $db_status = Get-DbState $db
+                $db_status = $dbStatesHash[$db.Name]
 
                 [PSCustomObject]@{
                     SqlInstance  = $server.Name
