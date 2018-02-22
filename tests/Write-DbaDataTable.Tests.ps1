@@ -2,8 +2,6 @@ $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-$instance2 = '.'
-
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
