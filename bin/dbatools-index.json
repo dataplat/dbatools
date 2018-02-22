@@ -1202,6 +1202,7 @@
     {
         "CommandName":  "Get-DbaCustomError",
         "Description":  "The Get-DbaCustomError command gets SQL Custom Error Message information for each instance(s) of SQL Server.",
+        "Tags":  "CustomError",
         "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
         "Synopsis":  "Gets SQL Custom Error Message information for each instance(s) of SQL Server.",
         "Name":  "Get-DbaCustomError",
@@ -1221,6 +1222,10 @@
     {
         "CommandName":  "Get-DbaDatabaseAssembly",
         "Description":  "The Get-DbaDatabaseAssembly command gets SQL Database Assembly information for each instance(s) of SQL Server.",
+        "Tags":  [
+                     "Assembly",
+                     "Database"
+                 ],
         "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
         "Synopsis":  "Gets SQL Database Assembly information for each instance(s) of SQL Server.",
         "Name":  "Get-DbaDatabaseAssembly",
@@ -1299,7 +1304,7 @@
     },
     {
         "CommandName":  "Get-DbaDatabaseState",
-        "Description":  "Gets some common \"states\" on databases:\n - \"RW\" options : READ_ONLY or READ_WRITE\n - \"Status\" options : ONLINE, OFFLINE, EMERGENCY\n - \"Access\" options : SINGLE_USER, RESTRICTED_USER, MULTI_USER\n\nReturns an object with SqlInstance, Database, RW, Status, Access",
+        "Description":  "Gets some common \"states\" on databases:\n - \"RW\" options : READ_ONLY or READ_WRITE\n - \"Status\" options : ONLINE, OFFLINE, EMERGENCY, RESTORING\n - \"Access\" options : SINGLE_USER, RESTRICTED_USER, MULTI_USER\n\nReturns an object with SqlInstance, Database, RW, Status, Access",
         "Tags":  "Databases",
         "Author":  "niphlod",
         "Synopsis":  "Gets various options for databases, hereby called \"states\"",
@@ -1498,6 +1503,7 @@
     {
         "CommandName":  "Get-DbaEndpoint",
         "Description":  "The Get-DbaEndpoint command gets SQL Endpoint(s) information for each instance(s) of SQL Server.",
+        "Tags":  "Endpoint",
         "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
         "Synopsis":  "Gets SQL Endpoint(s) information for each instance(s) of SQL Server.",
         "Name":  "Get-DbaEndpoint",
@@ -1554,6 +1560,11 @@
     {
         "CommandName":  "Get-DbaJobCategory",
         "Description":  "The Get-DbaJobCategory returns connected SMO object for SQL Agent Job Category information for each instance(s) of SQL Server.",
+        "Tags":  [
+                     "Agent",
+                     "Job",
+                     "Category"
+                 ],
         "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
         "Synopsis":  "Gets SQL Agent Job Category information for each instance(s) of SQL Server.",
         "Name":  "Get-DbaJobCategory",
@@ -1658,14 +1669,14 @@
         "CommandName":  "Get-DbaMsdtc",
         "Description":  "Returns a custom object with Computer name, state of the MSDTC Service, security settings of MSDTC and CID\u0027s\n\nRequires: Windows administrator access on Servers",
         "Tags":  [
-                     "WSMan",
-                     "CIM"
+                     "Msdtc",
+                     "dtc"
                  ],
         "Author":  "Klaas Vandenberghe ( powerdbaklaas )",
         "Synopsis":  "Displays information about the Distributed Transaction Coordinator (MSDTC) on a server",
         "Name":  "Get-DbaMsdtc",
         "Links":  "https://dbatools.io/Get-DbaMsdtc",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMsdtc -ComputerName srv0042\r\n\r\nGet DTC status for the server srv0042\r\n\r\nComputerName                 : srv0042\r\nDTCServiceName               : Distributed Transaction Coordinator\r\nDTCServiceState              : Running\r\nDTCServiceStatus             : OK\r\nDTCServiceStartMode          : Manual\r\nDTCServiceAccount            : NT AUTHORITY\\NetworkService\r\nDTCCID_MSDTC                 : b2aefacb-85d1-46b8-8047-7bb88e08d38a\r\nDTCCID_MSDTCUIS              : 205bd32c-b022-4d0c-aa3e-2e5dc65c6d35\r\nDTCCID_MSDTCTIPGW            : 3e743aa0-ead6-4569-ba7b-fe1aaea0a1eb\r\nDTCCID_MSDTCXATM             : 667fc4b8-c2f5-4c3f-ad75-728b113f36c5\r\nnetworkDTCAccess             : 0\r\nnetworkDTCAccessAdmin        : 0\r\nnetworkDTCAccessClients      : 0\r\nnetworkDTCAccessInbound      : 0\r\nnetworkDTCAccessOutBound     : 0\r\nnetworkDTCAccessTip          : 0\r\nnetworkDTCAccessTransactions : 0\r\nXATransactions               : 0\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$Computers = (Get-Content D:\\configfiles\\SQL\\MySQLInstances.txt | % {$_.split(\u0027\\\u0027)[0]})\r\n\r\n$Computers | Get-DbaMsdtc\r\n\r\nGet DTC status for all the computers in a .txt file\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMsdtc -Computername $Computers | where { $_.dtcservicestate -ne \u0027running\u0027 }\r\n\r\nGet DTC status for all the computers where the MSDTC Service is not running\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMsdtc -ComputerName srv0042 | Out-Gridview\r\n\r\nGet DTC status for the computer srv0042 and show in a grid view\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMsdtc -ComputerName srv0042\r\n\r\nGet DTC status for the server srv0042\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$Computers = (Get-Content D:\\configfiles\\SQL\\MySQLInstances.txt | % {$_.split(\u0027\\\u0027)[0]})\r\n\r\n$Computers | Get-DbaMsdtc\r\n\r\nGet DTC status for all the computers in a .txt file\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMsdtc -Computername $Computers | where { $_.dtcservicestate -ne \u0027running\u0027 }\r\n\r\nGet DTC status for all the computers where the MSDTC Service is not running\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMsdtc -ComputerName srv0042 | Out-Gridview\r\n\r\nGet DTC status for the computer srv0042 and show in a grid view\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaNetworkActivity",
