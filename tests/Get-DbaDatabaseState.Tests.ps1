@@ -6,7 +6,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Reading db statuses" {
         BeforeAll {
-            $script:instance2 = $env:COMPUTERNAME
             $server = Connect-DbaInstance -SqlInstance $script:instance2
             $db1 = "dbatoolsci_dbstate_online"
             $db2 = "dbatoolsci_dbstate_offline"
@@ -26,7 +25,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server.Query("CREATE DATABASE $db7; ALTER DATABASE $db7 SET READ_WRITE WITH ROLLBACK IMMEDIATE")
             $server.Query("CREATE DATABASE $db8; ALTER DATABASE $db8 SET READ_ONLY WITH ROLLBACK IMMEDIATE")
             $setupright = $true
-            $needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
+            $needed_ = $server.Query("select name from sys.databases")
+            $needed = $needed_ | Where-Object name -in $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
             if ($needed.Count -ne 8) {
                 $setupright = $false
                 It "has failed setup" {
@@ -39,6 +39,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
         }
         if ($setupright) {
+            # just to have a correct report on how much time BeforeAll takes
+            It "Waits for BeforeAll to finish" {
+                $true | Should Be $true
+            }
             It "Honors the Database parameter" {
                 $result = Get-DbaDatabaseState -SqlInstance $script:instance2 -Database $db2
                 $result.DatabaseName | Should be $db2
@@ -46,7 +50,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $results.Count | Should be 2
             }
             It "Honors the ExcludeDatabase parameter" {
-                $alldbs = (Get-DbaDatabase -SqlInstance $script:instance2 | Where-Object Name -notin @($db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8)).Name
+                $alldbs_ = $server.Query("select name from sys.databases")
+                $alldbs = ($alldbs_ | Where-Object Name -notin @($db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8)).name
                 $results = Get-DbaDatabaseState -SqlInstance $script:instance2 -ExcludeDatabase $alldbs
                 $comparison = Compare-Object -ReferenceObject ($results.DatabaseName) -DifferenceObject (@($db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8))
                 $comparison.Count | Should Be 0
