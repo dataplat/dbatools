@@ -18,9 +18,9 @@ function Invoke-DbaSqlQuery {
         The database to select before running the query. This list is auto-populated from the server.
 
         .PARAMETER Query
-            Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon.
+            Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon or a GO
 
-            Do not specify the sqlcmd GO separator. Escape any double quotation marks included in the string.
+            Escape any double quotation marks included in the string.
 
             Consider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as "MyTable".
 
@@ -74,7 +74,7 @@ function Invoke-DbaSqlQuery {
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]
         $SqlInstance,
@@ -109,7 +109,14 @@ function Invoke-DbaSqlQuery {
 
         [Alias('Silent')]
         [switch]
-        $EnableException
+        $EnableException,
+
+        [parameter(ValueFromPipeline = $true)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
+
+        [parameter(ValueFromPipeline = $true)]
+        [object[]]$DatabaseCollectionLoose
+
     )
 
     begin {
@@ -117,8 +124,8 @@ function Invoke-DbaSqlQuery {
 
         $splatInvokeSqlCmd2 = @{
             As = $As
+            ParseGo = $true
         }
-
         if (Test-Bound -ParameterName "SqlParameters") {
             $splatInvokeSqlCmd2["SqlParameters"] = $SqlParameters
         }
@@ -233,7 +240,43 @@ function Invoke-DbaSqlQuery {
 
     process {
         if (Test-FunctionInterrupt) { return }
+        foreach($el in $DatabaseCollectionLoose) {
+            if ($el.SQLInstance -and $el.Database) {
+                $DatabaseCollection = $el.Database
+            }
+        }
+        if ((Test-Bound -ParameterName "Database") -and ((Test-Bound -ParameterName "DatabaseCollection") -or $DatabaseCollection)) {
+            Stop-Function -Category InvalidArgument -Message "You can't use -Database with piped databases"
+            return
+        }
+        if ((Test-Bound -ParameterName "SqlInstance") -and (Test-Bound -ParameterName "DatabaseCollection")) {
+            Stop-Function -Category InvalidArgument -Message "You can't use -SqlInstance with piped databases"
+            return
+        }
 
+        foreach($db in $DatabaseCollection) {
+            if (!$db.IsAccessible) {
+                Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
+                continue
+            }
+            $server = $db.Parent
+            $conncontext = $server.ConnectionContext
+            if ($conncontext.DatabaseName -ne $db.Name) {
+                $conncontext = $server.ConnectionContext.Copy()
+                $conncontext.DatabaseName = $db.Name
+            }
+            try {
+                if ($File -or $SqlObject) {
+                    foreach ($item in $files) {
+                        Invoke-Sqlcmd2 -SQLConnection $conncontext.SqlConnectionObject @splatInvokeSqlCmd2 -InputFile $item
+                    }
+                }
+                else { Invoke-Sqlcmd2 -SQLConnection $conncontext.SqlConnectionObject @splatInvokeSqlCmd2 }
+            }
+            catch {
+                Stop-Function -Message "[$db] Failed during execution" -ErrorRecord $_ -Target $server -Continue
+            }
+        }
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level VeryVerbose -Message "Connecting to $instance." -Target $instance
