@@ -64,8 +64,7 @@ function Get-DbaClusterNode {
 
     begin {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -RegularUser
-        $computername = $server.ComputerNamePhysicalNetBIOS
+        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 10
     }
 
     process {
@@ -73,14 +72,14 @@ function Get-DbaClusterNode {
             Stop-Function -Message "Not a clusterd instance." -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
         }
 
+        # If the -ActiveNode switch is selected only the primary node is returned.
         if ($ActiveNode) {
             try{
-                if($server.VersionMajor -ge 11) {
                     $sql = "SELECT * FROM sys.dm_os_cluster_nodes where is_current_owner = 1"
-                    $datatable = $server.ConnectionContext.ExecuteWithResults($sql).Tables
-                }
+                    $datatable = $server.query($sql)
+
                         [PSCustomObject]@{
-                            ComputerName      = if($server.VersionMajor -ge 11){$datatable.nodename} else {$computername}
+                            ComputerName      = $datatable.nodename
                             InstanceName      = $server.ServiceName
                             SqlInstance       = $server.DomainInstanceName
                             Status            = $datatable.Status
@@ -92,14 +91,15 @@ function Get-DbaClusterNode {
                 Stop-Function -Message "Unable to query sys.dm_os_cluster_nodes on $server." -ErrorRecord $_ -Target $SqlInstance -Continue
             }
         }
+        #Default Execution of this function
         else {
             try{
                 $sql = "SELECT * FROM sys.dm_os_cluster_nodes"
-                $datatable = $server.ConnectionContext.ExecuteWithResults($sql).tables.rows
+                $datatable = $server.query($sql).rows
 
                 foreach($data in $datatable){
                     [PSCustomObject]@{
-                        ComputerName      = if($server.VersionMajor -ge 11){$data.nodename} else {$computername}
+                        ComputerName      = $data.nodename
                         InstanceName      = $server.ServiceName
                         SqlInstance       = $server.DomainInstanceName
                         Status            = $data.Status
