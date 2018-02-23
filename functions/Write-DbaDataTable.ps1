@@ -150,14 +150,30 @@ function Write-DbaDataTable {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
-        [Parameter(Position = 0, Mandatory = $true)][Alias("ServerInstance", "SqlServer")][ValidateNotNull()][DbaInstanceParameter]$SqlInstance,
-        [Parameter(Position = 1)][ValidateNotNull()][Alias("Credential")][PSCredential]$SqlCredential,
-        [Parameter(Position = 2)][object]$Database,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][Alias("DataTable")][ValidateNotNull()][object]$InputObject,
-        [Parameter(Position = 3, Mandatory = $true)][ValidateNotNullOrEmpty()][string]$Table,
-        [Parameter(Position = 4)][ValidateNotNullOrEmpty()][string]$Schema = 'dbo',
-        [ValidateNotNull()][int]$BatchSize = 50000,
-        [ValidateNotNull()][int]$NotifyAfter = 5000,
+        [Parameter(Position = 0, Mandatory = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [ValidateNotNull()]
+        [DbaInstanceParameter]$SqlInstance,
+        [Parameter(Position = 1)]
+        [ValidateNotNull()]
+        [Alias("Credential")]
+        [PSCredential]$SqlCredential,
+        [Parameter(Position = 2)]
+        [object]$Database,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("DataTable")]
+        [ValidateNotNull()]
+        [object]$InputObject,
+        [Parameter(Position = 3, Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Table,
+        [Parameter(Position = 4)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Schema = 'dbo',
+        [ValidateNotNull()]
+        [int]$BatchSize = 50000,
+        [ValidateNotNull()]
+        [int]$NotifyAfter = 5000,
         [switch]$AutoCreateTable,
         [switch]$NoTableLock,
         [switch]$CheckConstraints,
@@ -165,7 +181,8 @@ function Write-DbaDataTable {
         [switch]$KeepIdentity,
         [switch]$KeepNulls,
         [switch]$Truncate,
-        [ValidateNotNull()][int]$bulkCopyTimeOut = 5000,
+        [ValidateNotNull()]
+        [int]$bulkCopyTimeOut = 5000,
         [switch]$RegularUser,
         [switch][Alias('Silent')]$EnableException,
         [switch]$UseDynamicStringLength
