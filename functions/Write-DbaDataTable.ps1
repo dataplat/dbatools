@@ -150,30 +150,14 @@ function Write-DbaDataTable {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
-        [Parameter(Position = 0, Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [ValidateNotNull()]
-        [DbaInstanceParameter]$SqlInstance,
-        [Parameter(Position = 1)]
-        [ValidateNotNull()]
-        [Alias("Credential")]
-        [PSCredential]$SqlCredential,
-        [Parameter(Position = 2)]
-        [object]$Database,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("DataTable")]
-        [ValidateNotNull()]
-        [object]$InputObject,
-        [Parameter(Position = 3, Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Table,
-        [Parameter(Position = 4)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Schema = 'dbo',
-        [ValidateNotNull()]
-        [int]$BatchSize = 50000,
-        [ValidateNotNull()]
-        [int]$NotifyAfter = 5000,
+        [Parameter(Position = 0, Mandatory = $true)][Alias("ServerInstance", "SqlServer")][ValidateNotNull()][DbaInstanceParameter]$SqlInstance,
+        [Parameter(Position = 1)][ValidateNotNull()][Alias("Credential")][PSCredential]$SqlCredential,
+        [Parameter(Position = 2)][object]$Database,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][Alias("DataTable")][ValidateNotNull()][object]$InputObject,
+        [Parameter(Position = 3, Mandatory = $true)][ValidateNotNullOrEmpty()][string]$Table,
+        [Parameter(Position = 4)][ValidateNotNullOrEmpty()][string]$Schema = 'dbo',
+        [ValidateNotNull()][int]$BatchSize = 50000,
+        [ValidateNotNull()][int]$NotifyAfter = 5000,
         [switch]$AutoCreateTable,
         [switch]$NoTableLock,
         [switch]$CheckConstraints,
@@ -181,8 +165,7 @@ function Write-DbaDataTable {
         [switch]$KeepIdentity,
         [switch]$KeepNulls,
         [switch]$Truncate,
-        [ValidateNotNull()]
-        [int]$bulkCopyTimeOut = 5000,
+        [ValidateNotNull()][int]$bulkCopyTimeOut = 5000,
         [switch]$RegularUser,
         [switch][Alias('Silent')]$EnableException,
         [switch]$UseDynamicStringLength
@@ -214,7 +197,7 @@ function Write-DbaDataTable {
                 Needs not be specified. The bulk copy object used to perform the copy operation.
         #>
             [CmdletBinding()]
-            Param (
+            param (
                 $DataTable,
                 [DbaInstance]$SqlInstance = $SqlInstance,
                 [string]$Fqtn = $fqtn,
@@ -270,7 +253,7 @@ function Write-DbaDataTable {
                 Automatically inherits from parent.
         #>
             [CmdletBinding()]
-            Param (
+            param (
                 $DataTable,
                 $PStoSQLTypes = $PStoSQLTypes,
                 $SqlInstance = $SqlInstance,
@@ -312,7 +295,7 @@ function Write-DbaDataTable {
             #>
                 if ($PStoSQLTypes.Keys -contains $column.DataType) {
                     $sqlDataType = $PStoSQLTypes[$($column.DataType.toString())]
-                    if($UseDynamicStringLength -and $column.MaxLength -gt 0 -and ($column.DataType -in ("String", "System.String"))) {
+                    if ($UseDynamicStringLength -and $column.MaxLength -gt 0 -and ($column.DataType -in ("String", "System.String"))) {
                         $sqlDataType = $sqlDataType.Replace("(MAX)", "($($column.MaxLength))")
                     }
                 }
@@ -342,10 +325,10 @@ function Write-DbaDataTable {
         
         #region Prepare type for bulk copy
         if (-not $Truncate) { $ConfirmPreference = "None" }
-
+        
         # Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
         # http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
-
+        
         $source = 'namespace System.Data.SqlClient {
             using Reflection;
 
@@ -361,13 +344,13 @@ function Write-DbaDataTable {
                 }
             }
         }'
-
+        
         Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction SilentlyContinue
         #endregion Prepare type for bulk copy
         
         #region Resolve Full Qualified Table Name
         $dotCount = ([regex]::Matches($Table, "\.")).count
-
+        
         if ($dotCount -lt 2 -and $null -eq $Database) {
             Stop-Function -Message "You must specify a database or fully qualified table name."
             return
@@ -376,31 +359,29 @@ function Write-DbaDataTable {
         if (Test-Bound -ParameterName Database) {
             $databaseName = "$Database"
         }
-        if (Test-Bound -ParameterName Schema) {
-            $schemaName = $Schema
-        }
         
         $tableName = $Table
+        $schemaName = $Schema
         
         if ($dotCount -eq 1) {
             $schemaName = $Table.Split(".")[0]
             $tableName = $Table.Split(".")[1]
         }
-
+        
         if ($dotCount -eq 2) {
             $databaseName = $Table.Split(".")[0]
             $schemaName = $Table.Split(".")[1]
             $tableName = $Table.Split(".")[2]
         }
-
+        
         if ($databaseName -match "\[.*\]") {
             $databaseName = ($databaseName -replace '\[', '') -replace '\]', ''
         }
-
+        
         if ($schemaName -match "\[.*\]") {
             $schemaName = ($schemaName -replace '\[', '') -replace '\]', ''
         }
-
+        
         if ($tableName -match "\[.*\]") {
             $tableName = ($tableName -replace '\[', '') -replace '\]', ''
         }
@@ -408,7 +389,7 @@ function Write-DbaDataTable {
         $fqtn = "[$databaseName].[$schemaName].[$tableName]"
         Write-Message -Level SomewhatVerbose -Message "FQTN processed: $fqtn"
         #endregion Resolve Full Qualified Table Name
-
+        
         #region Connect to server and get database
         Write-Message -Message "Attempting to connect to $SqlInstance." -Level Verbose -Target $SqlInstance
         try {
@@ -418,7 +399,7 @@ function Write-DbaDataTable {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
         }
-
+        
         if ($server.ServerType -eq 'SqlAzureDatabase') {
             <#
                 For some reasons SMO wants an initial pull when talking to Azure Sql DB
@@ -433,16 +414,16 @@ function Write-DbaDataTable {
         }
         $databaseObject = $server.Databases[$databaseName]
         #endregion Connect to server and get database
-
+        
         #region Prepare database and bulk operations
         if ($null -eq $databaseObject) {
-            Stop-Function -Message "Database $databaseName does not exist." -Target $SqlInstance
+            Stop-Function -Message "$databaseName does not exist." -Target $SqlInstance
             return
         }
         
         $databaseObject.Tables.Refresh()
         if ($schemaName -notin $databaseObject.Schemas.Name) {
-            Stop-Function -Message "Schema $schemaName does not exist."
+            Stop-Function -Message "Schema does not exist."
             return
         }
         
@@ -455,7 +436,7 @@ function Write-DbaDataTable {
         
         $bulkCopyOptions = 0
         $options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
-
+        
         foreach ($option in $options) {
             $optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
             if ($option -eq "TableLock" -and (!$NoTableLock)) {
@@ -465,7 +446,7 @@ function Write-DbaDataTable {
                 $bulkCopyOptions += $([Data.SqlClient.SqlBulkCopyOptions]::$option).value__
             }
         }
-
+        
         if ($Truncate -eq $true) {
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Truncating $fqtn")) {
                 try {
@@ -477,61 +458,61 @@ function Write-DbaDataTable {
                 }
             }
         }
-
+        
         $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$databaseName", $bulkCopyOptions)
         $bulkCopy.DestinationTableName = $fqtn
         $bulkCopy.BatchSize = $BatchSize
         $bulkCopy.NotifyAfter = $NotifyAfter
         $bulkCopy.BulkCopyTimeOut = $BulkCopyTimeOut
-
+        
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         # Add RowCount output
-        $bulkCopy.Add_SqlRowsCopied( {
+        $bulkCopy.Add_SqlRowsCopied({
                 $script:totalRows = $args[1].RowsCopied
                 $percent = [int](($script:totalRows / $rowCount) * 100)
                 $timeTaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
                 Write-Progress -id 1 -activity "Inserting $rowCount rows." -PercentComplete $percent -Status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalRows, $percent, $timeTaken))
             })
-
+        
         $PStoSQLTypes = @{
             #PS datatype      = SQL data type
-            'System.Int32'    = 'int';
-            'System.UInt32'   = 'bigint';
-            'System.Int16'    = 'smallint';
-            'System.UInt16'   = 'int';
-            'System.Int64'    = 'bigint';
-            'System.UInt64'   = 'decimal(20,0)';
-            'System.Decimal'  = 'decimal(20,5)';
-            'System.Single'   = 'bigint';
-            'System.Double'   = 'float';
-            'System.Byte'     = 'tinyint';
-            'System.SByte'    = 'smallint';
-            'System.TimeSpan' = 'nvarchar(30)';
-            'System.String'   = 'nvarchar(MAX)';
-            'System.Char'     = 'nvarchar(1)'
-            'System.DateTime' = 'datetime2';
-            'System.Boolean'  = 'bit';
-            'System.Guid'     = 'uniqueidentifier';
-            'Int32'           = 'int';
-            'UInt32'          = 'bigint';
-            'Int16'           = 'smallint';
-            'UInt16'          = 'int';
-            'Int64'           = 'bigint';
-            'UInt64'          = 'decimal(20,0)';
-            'Decimal'         = 'decimal(20,5)';
-            'Single'          = 'bigint';
-            'Double'          = 'float';
-            'Byte'            = 'tinyint';
-            'SByte'           = 'smallint';
-            'TimeSpan'        = 'nvarchar(30)';
-            'String'          = 'nvarchar(MAX)';
-            'Char'            = 'nvarchar(1)'
-            'DateTime'        = 'datetime2';
-            'Boolean'         = 'bit';
-            'Bool'            = 'bit';
-            'Guid'            = 'uniqueidentifier';
-            'int'             = 'int';
-            'long'            = 'bigint';
+            'System.Int32'     = 'int';
+            'System.UInt32'    = 'bigint';
+            'System.Int16'     = 'smallint';
+            'System.UInt16'    = 'int';
+            'System.Int64'     = 'bigint';
+            'System.UInt64'    = 'decimal(20,0)';
+            'System.Decimal'   = 'decimal(20,5)';
+            'System.Single'    = 'bigint';
+            'System.Double'    = 'float';
+            'System.Byte'      = 'tinyint';
+            'System.SByte'     = 'smallint';
+            'System.TimeSpan'  = 'nvarchar(30)';
+            'System.String'    = 'nvarchar(MAX)';
+            'System.Char'      = 'nvarchar(1)'
+            'System.DateTime'  = 'datetime2';
+            'System.Boolean'   = 'bit';
+            'System.Guid'      = 'uniqueidentifier';
+            'Int32'            = 'int';
+            'UInt32'           = 'bigint';
+            'Int16'            = 'smallint';
+            'UInt16'           = 'int';
+            'Int64'            = 'bigint';
+            'UInt64'           = 'decimal(20,0)';
+            'Decimal'          = 'decimal(20,5)';
+            'Single'           = 'bigint';
+            'Double'           = 'float';
+            'Byte'             = 'tinyint';
+            'SByte'            = 'smallint';
+            'TimeSpan'         = 'nvarchar(30)';
+            'String'           = 'nvarchar(MAX)';
+            'Char'             = 'nvarchar(1)'
+            'DateTime'         = 'datetime2';
+            'Boolean'          = 'bit';
+            'Bool'             = 'bit';
+            'Guid'             = 'uniqueidentifier';
+            'int'              = 'int';
+            'long'             = 'bigint';
         }
         
         $validTypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]])
@@ -541,10 +522,10 @@ function Write-DbaDataTable {
         try {
             $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('ConvertTo-DbaDataTable', [System.Management.Automation.CommandTypes]::Function)
             $splatCDDT = @{
-                TimeSpanType  = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.timespantype' -Fallback 'TotalMilliseconds')
+                TimeSpanType   = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.timespantype' -Fallback 'TotalMilliseconds')
                 SizeType       = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.sizetype' -Fallback 'Int64')
                 IgnoreNull     = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.ignorenull' -Fallback $false)
-                Raw = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.raw' -Fallback $false)
+                Raw            = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.raw' -Fallback $false)
             }
             $scriptCmd = { & $wrappedCmd @splatCDDT }
             $steppablePipeline = $scriptCmd.GetSteppablePipeline()
@@ -621,8 +602,8 @@ function Write-DbaDataTable {
         }
     }
     end {
-		#region ConvertTo-DbaDataTable wrapper
-		if ($null -ne $steppablePipeline) {
+        #region ConvertTo-DbaDataTable wrapper
+        if ($null -ne $steppablePipeline) {
             $dataTable = $steppablePipeline.End()
             
             if (-not $tableExists) {
