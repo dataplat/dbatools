@@ -43,7 +43,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server = Connect-DbaInstance -SqlInstance $script:instance1 @params
 
             foreach ($param in $params.GetEnumerator()) {
-                if ($param.Key -eq 'Database') { 
+                if ($param.Key -eq 'Database') {
                     $propName = 'DatabaseName'
                 } else {
                     $propName = $param.Key
