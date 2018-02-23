@@ -176,7 +176,7 @@ function Export-DbaLogin {
             $scriptVersion = $versions[$destinationVersion]
         }
 
-        if ($NoDatabases -eq $false) {
+        if ($NoDatabases -eq $false -or $Database) {
             # if we got a database or a list of databases passed
             # and we need to enumerate mappings, login.enumdatabasemappings() takes forever
             # the cool thing though is that database.enumloginmappings() is fast. A lot.
@@ -368,11 +368,12 @@ function Export-DbaLogin {
             }
 
             if ($NoDatabases -eq $false) {
-                if ($userName -notin $DbMapping.LoginName) {
-                    Write-Message -Level VeryVerbose -Message "Skipping as $userName is not mapped to an user of the databases."
-                    continue
-                }
                 $dbs = $sourceLogin.EnumDatabaseMappings()
+
+                if ($Database) {
+                    $dbs = $dbs | Where-Object { $_.DBName -in $Database }
+                }
+
                 # Adding database mappings and securables
                 foreach ($db in $dbs) {
                     $dbName = $db.dbname
