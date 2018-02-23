@@ -189,6 +189,9 @@ function Write-DbaDataTable {
     )
     
     begin {
+        # Null variable to make sure upper-scope variables don't interfere later
+        $steppablePipeline = $null
+        
         #region Utility Functions
         function Invoke-BulkCopy {
         <#
@@ -373,10 +376,12 @@ function Write-DbaDataTable {
         if (Test-Bound -ParameterName Database) {
             $databaseName = "$Database"
         }
+        if (Test-Bound -ParameterName Schema) {
+            $schemaName = $Schema
+        }
         
         $tableName = $Table
-        $schemaName = $Schema
-
+        
         if ($dotCount -eq 1) {
             $schemaName = $Table.Split(".")[0]
             $tableName = $Table.Split(".")[1]
@@ -431,13 +436,13 @@ function Write-DbaDataTable {
 
         #region Prepare database and bulk operations
         if ($null -eq $databaseObject) {
-            Stop-Function -Message "$databaseName does not exist." -Target $SqlInstance
+            Stop-Function -Message "Database $databaseName does not exist." -Target $SqlInstance
             return
         }
         
         $databaseObject.Tables.Refresh()
         if ($schemaName -notin $databaseObject.Schemas.Name) {
-            Stop-Function -Message "Schema does not exist."
+            Stop-Function -Message "Schema $schemaName does not exist."
             return
         }
         
@@ -616,23 +621,25 @@ function Write-DbaDataTable {
         }
     }
     end {
-        #region ConvertTo-DbaDataTable wrapper
-        $dataTable = $steppablePipeline.End()
-        
-        if (-not $tableExists) {
-            try {
-                New-Table -DataTable $dataTable[0] -EnableException
-                $tableExists = $true
+		#region ConvertTo-DbaDataTable wrapper
+		if ($null -ne $steppablePipeline) {
+            $dataTable = $steppablePipeline.End()
+            
+            if (-not $tableExists) {
+                try {
+                    New-Table -DataTable $dataTable[0] -EnableException
+                    $tableExists = $true
+                }
+                catch {
+                    Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance
+                    return
+                }
             }
+            
+            try { Invoke-BulkCopy -DataTable $dataTable[0] }
             catch {
-                Stop-Function -Message "Failed to create table $fqtn" -ErrorRecord $_ -Target $SqlInstance
-                return
+                Stop-Function -Message "Failed to bulk import to $fqtn" -ErrorRecord $_ -Target $SqlInstance
             }
-        }
-        
-        try { Invoke-BulkCopy -DataTable $dataTable[0] }
-        catch {
-            Stop-Function -Message "Failed to bulk import to $fqtn" -ErrorRecord $_ -Target $SqlInstance
         }
         #endregion ConvertTo-DbaDataTable wrapper
         
