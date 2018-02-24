@@ -40,6 +40,9 @@ function Copy-DbaLogin {
         .PARAMETER ExcludeLogin
             The login(s) to exclude. Options for this list are auto-populated from the server.
 
+        .PARAMETER ExcludeSystemLogin
+            If this switch is enabled, NT SERVICE accounts will be skipped.
+
         .PARAMETER SyncOnly
             If this switch is enabled, only SQL Server login permissions, roles, etc. will be synced. Logins and users will not be added or dropped.  If a matching Login does not exist on the destination, the Login will be skipped.
             Credential removal is not currently supported for this parameter.
@@ -137,6 +140,7 @@ function Copy-DbaLogin {
         $DestinationSqlCredential,
         [object[]]$Login,
         [object[]]$ExcludeLogin,
+        [switch]$ExcludeSystemLogin,
         [switch]$SyncOnly,
         [parameter(ParameterSetName = "Live")]
         [switch]$SyncSaName,
@@ -209,6 +213,15 @@ function Copy-DbaLogin {
                         continue
                     }
                     else {
+                        if ($ExcludeSystemLogin) {
+                            Write-Message -Level Verbose -Message "$userName was skipped because ExcludeSystemLogin was specified."
+
+                            $copyLoginStatus.Status = "Skipped"
+                            $copyLoginStatus.Notes = "System login"
+                            $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            continue
+                        }
+
                         if ($Pscmdlet.ShouldProcess("console", "Stating local login $userName since the source and destination server reside on the same machine.")) {
                             Write-Message -Level Verbose -Message "Copying local login $userName since the source and destination server reside on the same machine."
                         }
