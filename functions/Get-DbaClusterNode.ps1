@@ -21,7 +21,7 @@ function Get-DbaClusterNode {
             To connect as a different Windows user, run PowerShell as that user.
 
         .PARAMETER ActiveNode
-            If this parameter is selected the cmdlet will only return the Active Node
+            If this parameter is selected the cmdlet will only return the Active Node in the cluster.
 
         .PARAMETER Detailed
             Output all properties, will be deprecated in 1.0.0 release.
@@ -95,7 +95,7 @@ function Get-DbaClusterNode {
         else {
             try{
                 $sql = "SELECT * FROM sys.dm_os_cluster_nodes"
-                $datatable = $server.query($sql).rows
+                $datatable = $server.query($sql)
 
                 foreach($data in $datatable){
                     [PSCustomObject]@{
