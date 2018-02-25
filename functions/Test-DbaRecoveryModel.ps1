@@ -141,7 +141,7 @@ function Test-DbaRecoveryModel {
                 $results = $server.Query($sql)
 
                 if (-not $results) {
-                    Write-Message -Level Verbose -Message "Server '$instance' does not have any databases in FULL recovery model."
+                    Write-Message -Level Verbose -Message "Server '$instance' does not have any databases in the $RecoveryModel recovery model."
                 }
 
                 foreach ($row in $results) {
