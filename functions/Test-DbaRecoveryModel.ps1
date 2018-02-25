@@ -80,13 +80,24 @@ function Test-DbaRecoveryModel {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [PSCredential]$SqlCredential,
-        [object[]]$RecoveryModel,
+        [validateSet("Full","Simple","Bulk_Logged")]
+        [object]$RecoveryModel,
         [switch]$Detailed,
         [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
+
+        if(Test-Bound -ParameterName RecoveryModel -Not){
+            $RecoveryModel = "Full"
+        }
+
+        switch($RecoveryModel){
+            "Full"          {$recoveryCode = 1}
+            "Bulk_Logged"   {$recoveryCode = 2}
+            "Simple"        {$recoveryCode = 3}
+        }
 
         $sqlRecoveryModel = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
                 ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
@@ -101,7 +112,7 @@ function Test-DbaRecoveryModel {
                   FROM sys.databases AS D
                     INNER JOIN sys.database_recovery_status AS drs
                        ON D.database_id = drs.database_id
-                  WHERE d.recovery_model = 1"
+                  WHERE d.recovery_model = $recoveryCode"
 
         if ($Database) {
             $dblist = $Database -join "','"
@@ -127,16 +138,20 @@ function Test-DbaRecoveryModel {
             }
 
             try {
-                $recoverymodel = $server.Query($sql)
+                $results = $server.Query($sql)
 
-                if (-not $recoverymodel) {
+                if (-not $results) {
                     Write-Message -Level Verbose -Message "Server '$instance' does not have any databases in FULL recovery model."
                 }
 
-                foreach ($row in $recoverymodel) {
-                    if (!([bool]$row.IsReallyInFullRecoveryModel)) {
+                foreach ($row in $results) {
+                    if (!([bool]$row.IsReallyInFullRecoveryModel) -and $RecoveryModel -eq 'Full') {
                         $notes = "Database is still in SIMPLE recovery model until a full database backup is taken."
                         $ActualRecoveryModel = "pseudo-SIMPLE"
+                    }
+                    elseif(!([bool]$row.IsReallyInFullRecoveryModel) -and $RecoveryModel -ne 'Full'){
+                        $notes = "Database is currently using the $($RecoveryModel.ToString().ToUpper())"
+                        $ActualRecoveryModel = "$($RecoveryModel.ToString().ToUpper())"
                     }
                     else {
                         $notes = $null
