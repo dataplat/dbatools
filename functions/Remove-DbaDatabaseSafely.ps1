@@ -610,8 +610,7 @@ function Remove-DbaDatabaseSafely {
             if ($Pscmdlet.ShouldProcess($destination, "Dropping Database $dbname on $sourceserver")) {
                 ## Drop the database
                 try {
-                    # Remove-SqlDatabase is a function in SharedFunctions.ps1 that tries 3 different ways to drop a database
-                    Remove-SqlDatabase -SqlInstance $sourceserver -DbName $dbname
+                    $null = Remove-DbaDatabase -SqlInstance $sourceserver -Database $dbname -Confirm:$false
                     Write-Message -Level Verbose -Message "Dropped $dbname Database on $source prior to running the Agent Job"
                 }
                 catch {
@@ -675,7 +674,7 @@ function Remove-DbaDatabaseSafely {
             if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination")) {
                 ## Drop the database
                 try {
-                    $null = Remove-SqlDatabase -SqlInstance $sourceserver -DbName $dbname
+                    $null = Remove-DbaDatabase -SqlInstance $sourceserver -Database $dbname -Confirm:$false
                     Write-Message -Level Verbose -Message "Dropped $dbname database on $destination."
                 }
                 catch {
