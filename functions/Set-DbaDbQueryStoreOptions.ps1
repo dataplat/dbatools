@@ -139,7 +139,7 @@ function Set-DbaDbQueryStoreOptions {
             }
 
             # We have to exclude all the system databases since they cannot have the Query Store feature enabled
-            $dbs = Get-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -ExcludeDatabase $ExcludeDatabase -Database $Database | Where-Object IsAccessible
+            $dbs = Get-DbaDatabase -SqlInstance $server -ExcludeDatabase $ExcludeDatabase -Database $Database | Where-Object IsAccessible
 
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.name) on $instance"
