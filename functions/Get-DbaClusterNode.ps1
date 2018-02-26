@@ -64,6 +64,7 @@ function Get-DbaClusterNode {
 
     begin {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Get-DbaClusterActiveNode
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 10
     }
 
