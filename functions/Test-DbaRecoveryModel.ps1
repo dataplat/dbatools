@@ -88,6 +88,7 @@ function Test-DbaRecoveryModel {
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Test-DbaFullRecoveryModel
 
         if(Test-Bound -ParameterName RecoveryModel -Not){
             $RecoveryModel = "Full"
