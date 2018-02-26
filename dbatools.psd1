@@ -125,7 +125,7 @@
         'Set-DbaPowerPlan',
         'Test-DbaDiskAlignment',
         'Get-DbaDatabaseSpace',
-        'Get-DbaClusterActiveNode',
+        'Get-DbaClusterNode',
         'Test-DbaDatabaseOwner',
         'Set-DbaDatabaseOwner',
         'Test-DbaJobOwner',
@@ -552,7 +552,8 @@
     'Find-DbaDatabaseGrowthEvent',
     'Get-DbaTraceFile',
     'Out-DbaDataTable',
-    'Invoke-DbaSqlCmd'
+    'Invoke-DbaSqlCmd',
+    'Get-DbaClusterActiveNode'
     
     # List of all modules packaged with this module
     ModuleList               = @()
