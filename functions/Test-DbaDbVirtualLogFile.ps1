@@ -1,4 +1,5 @@
-function Test-DbaVirtualLogFile {
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
+function Test-DbaDbVirtualLogFile {
     <#
         .SYNOPSIS
             Returns calculations on the database virtual log files for database on a SQL instance.
@@ -48,25 +49,25 @@ function Test-DbaVirtualLogFile {
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
         .LINK
-            https://dbatools.io/Test-DbaVirtualLogFile
+            https://dbatools.io/Test-DbaDbVirtualLogFile
 
         .EXAMPLE
-            Test-DbaVirtualLogFile -SqlInstance sqlcluster
+            Test-DbaDbVirtualLogFile -SqlInstance sqlcluster
 
             Returns all user database virtual log file counts for the sqlcluster instance.
 
         .EXAMPLE
-            Test-DbaVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}
+            Test-DbaDbVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}
 
             Returns user databases that have 50 or more VLFs.
 
         .EXAMPLE
-            @('sqlserver','sqlcluster') | Test-DbaVirtualLogFile
+            @('sqlserver','sqlcluster') | Test-DbaDbVirtualLogFile
 
             Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
 
         .EXAMPLE
-            Test-DbaVirtualLogFile -SqlInstance sqlcluster -Database db1, db2
+            Test-DbaDbVirtualLogFile -SqlInstance sqlcluster -Database db1, db2
 
             Returns VLF counts for the db1 and db2 databases on sqlcluster.
     #>
@@ -110,8 +111,8 @@ function Test-DbaVirtualLogFile {
                     $data = Get-DbaDbVirtualLogFile -SqlInstance $server -Database $db.Name
                     $logFile = Get-DbaDatabaseFile -SqlInstance $server -Database $db.Name | Where-Object Type -eq 1
 
-                    $active = $data | Where-Object Status -EQ 2
-                    $inactive = $data | Where-Object Status -EQ 0
+                    $active = $data | Where-Object Status -eq 2
+                    $inactive = $data | Where-Object Status -eq 0
 
                     [PSCustomObject]@{
                         ComputerName      = $server.NetName
@@ -132,5 +133,8 @@ function Test-DbaVirtualLogFile {
                 }
             }
         }
-    }
+	}
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaVirtualLogFile
+	}
 }
