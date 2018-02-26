@@ -1,3 +1,4 @@
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDbVirtualLogFile {
     <#
         .SYNOPSIS
@@ -53,10 +54,10 @@ function Get-DbaDbVirtualLogFile {
         .EXAMPLE
             Get-DbaDbVirtualLogFile -SqlInstance sqlcluster
 
-            Returns all user database virtual log file counts for the sqlcluster instance.
+            Returns all user database virtual log file details for the sqlcluster instance.
 
         .EXAMPLE
-            Get-DbaDbVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}
+            Get-DbaDbVirtualLogFile -SqlInstance sqlserver | Group-Object -Property Database | Where-Object Count -gt 50
 
             Returns user databases that have 50 or more VLFs.
 
