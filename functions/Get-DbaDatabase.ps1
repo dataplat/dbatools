@@ -265,8 +265,10 @@ function Get-DbaDatabase {
                 $true { @($true) }
                 default { @($true, $false, $null) }
             }
-
-            $backed_info = $server.Query("SELECT *, SUSER_NAME(owner_sid) AS [Owner] FROM sys.databases")
+            function Invoke-QueryRawDatabases {
+                $server.Query("SELECT *, SUSER_NAME(owner_sid) AS [Owner] FROM sys.databases")
+            }
+            $backed_info = Invoke-QueryRawDatabases
             $backed_info = $backed_info | Where-Object {
                 ($_.name -in $Database -or !$Database) -and
                 ($_.name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
@@ -278,7 +280,6 @@ function Get-DbaDatabase {
             foreach($dt in $backed_info) {
                 $inputObject += $server.Databases[$dt.name]
             }
-
             $inputobject = $inputObject |
                 Where-Object {
                 ($_.Name -in $Database -or !$Database) -and
@@ -291,7 +292,6 @@ function Get-DbaDatabase {
                 $_.RecoveryModel -in $RecoveryModel -and
                 $_.EncryptionEnabled -in $Encrypt
             }
-
             if ($NoFullBackup -or $NoFullBackupSince) {
                 $dabs = (Get-DbaBackupHistory -SqlInstance $server -LastFull )
                 if ($null -ne $NoFullBackupSince) {
