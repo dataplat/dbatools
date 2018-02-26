@@ -30,7 +30,7 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
         $simpleRecovery = "dbatoolsci_RecoveryModelSimple"
         $psudoSimpleRecovery = "dbatoolsci_RecoveryModelPsudoSimple"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        
+
         Stop-DbaProcess -SqlInstance $script:instance2 -Database model
         $server.Query("CREATE DATABASE $fullRecovery")
         Stop-DbaProcess -SqlInstance $script:instance2 -Database model
@@ -47,12 +47,12 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
 
     }
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $fullRecovery, $bulkLoggedRecovery, $simpleRecovery, $psudoSimpleRecovery 
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $fullRecovery, $bulkLoggedRecovery, $simpleRecovery, $psudoSimpleRecovery
     }
 
     Context "Default Execution" {
-        $results = Test-DbaRecoveryModel -SqlInstance $script:instance2 
-        
+        $results = Test-DbaRecoveryModel -SqlInstance $script:instance2 -Database $fullRecovery,$psudoSimpleRecovery,'Model'
+
        It "Should return $fullRecovery, $psudoSimpleRecovery, and Model" {
             $results.Database | should -BeIn ($fullRecovery,$psudoSimpleRecovery,'Model')
        }
@@ -60,7 +60,7 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
     }
 
     Context "Full Recovery" {
-        $results = Test-DbaRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Full -ExcludeDatabase 'Model'
+        $results = Test-DbaRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Full -Database $fullRecovery,$psudoSimpleRecovery -ExcludeDatabase 'Model'
 
         It "Should return $fullRecovery and $psudoSimpleRecovery" {
             $results.Database | should -BeIn ($fullRecovery,$psudoSimpleRecovery)
@@ -94,7 +94,7 @@ Describe "$CommandName Intigration Tests" -Tag  "IntegrationTests" {
 
     }
 
-    Context "Error Check" { 
+    Context "Error Check" {
 
         It "Should Throw Error for Incorrect Recovery Model" {
             {Test-DbaRecoveryModel -SqlInstance $script:instance2 -RecoveryModel Awesome -EnableException -Database 'dontexist' } | should -Throw
