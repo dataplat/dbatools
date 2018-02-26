@@ -1,3 +1,4 @@
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDatabase {
     <#
         .SYNOPSIS
@@ -64,6 +65,9 @@ function Get-DbaDatabase {
 
         .PARAMETER IncludeLastUsed
             If this switch is enabled, the last used read & write times for each database will be returned. This data is retrieved from sys.dm_db_index_usage_stats which is reset when SQL Server is restarted.
+
+        .PARAMETER OnlyAccessible
+           If this switch is enabled, only accessible databases are returned (huge speedup in SMO enumeration)
 
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -171,7 +175,8 @@ function Get-DbaDatabase {
         [switch]$NoLogBackup,
         [datetime]$NoLogBackupSince,
         [switch][Alias('Silent')]$EnableException,
-        [switch]$IncludeLastUsed
+        [switch]$IncludeLastUsed,
+        [switch]$OnlyAccessible
     )
 
     begin {
@@ -246,8 +251,14 @@ function Get-DbaDatabase {
                 $DBType = @($false, $true)
             }
 
+            $AccessibleFilter = switch ($OnlyAccessible) {
+                $true { @($true) }
+                default { @($true, $false) }
+            }
+
             $Readonly = switch ($Access) {
-                'Readonly' { @($true) } 'ReadWrite' { @($false) }
+                'Readonly' { @($true) }
+                'ReadWrite' { @($false) }
                 default { @($true, $false) }
             }
             $Encrypt = switch (Test-Bound $Encrypted) {
@@ -255,12 +266,26 @@ function Get-DbaDatabase {
                 default { @($true, $false, $null) }
             }
 
-            $inputobject = $server.Databases |
+            $backed_info = $server.Query("SELECT *, SUSER_NAME(owner_sid) AS [Owner] FROM sys.databases")
+            $backed_info = $backed_info | Where-Object {
+                ($_.name -in $Database -or !$Database) -and
+                ($_.name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+                ($_.Owner -in $Owner -or !$Owner) -and
+                ($_.state -ne 6 -or !$OnlyAccessible)
+            }
+
+            $inputObject = @()
+            foreach($dt in $backed_info) {
+                $inputObject += $server.Databases[$dt.name]
+            }
+
+            $inputobject = $inputObject |
                 Where-Object {
                 ($_.Name -in $Database -or !$Database) -and
                 ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
                 ($_.Owner -in $Owner -or !$Owner) -and
                 $_.ReadOnly -in $Readonly -and
+                $_.IsAccessible -in $AccessibleFilter -and
                 $_.IsSystemObject -in $DBType -and
                 ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and
                 $_.RecoveryModel -in $RecoveryModel -and
@@ -323,7 +348,7 @@ function Get-DbaDatabase {
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -value $lastusedinfo.last_read
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastWrite -value $lastusedinfo.last_write
                     Select-DefaultView -InputObject $db -Property $defaults
-                    try { $server.Databases.Refresh() } catch {}
+                    #try { $server.Databases.Refresh() } catch {}
                 }
             }
             catch {
