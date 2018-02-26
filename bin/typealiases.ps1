@@ -17,6 +17,8 @@ $TypeAliasTable = @{
     DbaMode                  = "Sqlcollaborative.Dbatools.General.ExecutionMode"
     DbaCredential            = "Sqlcollaborative.Dbatools.Parameter.DbaCredentialparameter"
     DbaCredentialParameter   = "Sqlcollaborative.Dbatools.Parameter.DbaCredentialparameter"
+	DbaDatabaseSmo           = "SqlCollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter"
+	DbaDatabaseSmoParameter  = "SqlCollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter"
 }
 
 # Add all type aliases
