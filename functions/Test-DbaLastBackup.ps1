@@ -444,7 +444,7 @@ function Test-DbaLastBackup {
 
                                     ## Drop the database
                                     try {
-                                        $removeresult = Remove-SqlDatabase -SqlInstance $destserver -DbName $dbname
+                                        $removeresult = Remove-DbaDatabase -SqlInstance $destserver -Database $dbname -Confirm:$false
                                         Write-Message -Level Verbose -Message "Dropped $dbname Database on $destination."
                                     }
                                     catch {

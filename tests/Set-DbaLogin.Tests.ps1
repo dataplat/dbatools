@@ -60,6 +60,18 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
             $result.DenyLogin | Should -Be $false
         }
 
+        It "Enforces password policy on login" {
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -PasswordPolicyEnforced
+
+            $result.PasswordPolicyEnforced | Should Be $true
+        }
+
+        It "Disables enforcing password policy on login" {
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -PasswordPolicyEnforced:$false
+
+            $result.PasswordPolicyEnforced | Should Be $false
+        }
+
         It "Add roles to login" {
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -AddRole serveradmin, processadmin
 

@@ -45,6 +45,9 @@ function Set-DbaLogin {
     .PARAMETER GrantLogin
     Grant access to SQL Server
 
+    .PARAMETER PasswordPolicyEnforced
+    Should the password policy be enforced.
+
     .PARAMETER AddRole
     Add one or more server roles to the login
     The following roles can be used "bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin".
@@ -108,6 +111,16 @@ function Set-DbaLogin {
     Grant the login to connect to the instance
 
     .EXAMPLE
+    Set-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced
+
+    Enforces the password policy on a login
+
+    .EXAMPLE
+    Set-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced:$false
+
+    Disables enforcement of the password policy on a login
+
+    .EXAMPLE
     Set-DbaLogin -SqlInstance sql1 -Login test -AddRole serveradmin
 
     Add the server role "serveradmin" to the login
@@ -136,6 +149,7 @@ function Set-DbaLogin {
         [switch]$Enable,
         [switch]$DenyLogin,
         [switch]$GrantLogin,
+        [switch]$PasswordPolicyEnforced,
         [ValidateSet("bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin")]
         [string[]]$AddRole,
         [ValidateSet("bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin")]
@@ -276,6 +290,15 @@ function Set-DbaLogin {
                     }
                 }
 
+                # Enforce password policy
+                if (Test-Bound PasswordPolicyEnforced) {
+                    if ($l.PasswordPolicyEnforced -eq $PasswordPolicyEnforced) {
+                        Write-Message -Message ("Login $l password policy is already set to " + $l.PasswordPolicyEnforced) -Level Verbose
+                    } else {
+                        $l.PasswordPolicyEnforced = $PasswordPolicyEnforced
+                    }
+                }
+
                 # Add server roles to login
                 if ($AddRole) {
                     # Loop through each of the roles
@@ -321,17 +344,18 @@ function Set-DbaLogin {
 
                 # Return the results
                 [PSCustomObject]@{
-                    ComputerName       = $server.NetName
-                    InstanceName       = $server.ServiceName
-                    SqlInstance        = $server.DomainInstanceName
-                    LoginName          = $l.Name
-                    DenyLogin          = $l.DenyWindowsLogin
-                    IsDisabled         = $l.IsDisabled
-                    IsLocked           = $l.IsLocked
-                    MustChangePassword = $l.MustChangePassword
-                    PasswordChanged    = $passwordChanged
-                    ServerRole         = $roles.Role -join ","
-                    Notes              = $notes
+                    ComputerName           = $server.NetName
+                    InstanceName           = $server.ServiceName
+                    SqlInstance            = $server.DomainInstanceName
+                    LoginName              = $l.Name
+                    DenyLogin              = $l.DenyWindowsLogin
+                    IsDisabled             = $l.IsDisabled
+                    IsLocked               = $l.IsLocked
+                    PasswordPolicyEnforced = $l.PasswordPolicyEnforced
+                    MustChangePassword     = $l.MustChangePassword
+                    PasswordChanged        = $passwordChanged
+                    ServerRole             = $roles.Role -join ","
+                    Notes                  = $notes
                 } | Select-DefaultView -ExcludeProperty Login
 
             } # end for each login
