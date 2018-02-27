@@ -1,6 +1,3 @@
-<#
-    The below statement stays in for every test you build.
-#>
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
@@ -19,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         #>
         $paramCount = 6
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaVirtualLogFile).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Test-DbaDbVirtualLogFile).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystemDbs', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -45,13 +42,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     AfterAll {
-        if (-not $appveyor) {
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
-        }
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
     }
 
     Context "Command actually works" {
-        $results = Test-DbaVirtualLogFile -SqlInstance $script:instance2 -Database $db1
+        $results = Test-DbaDbVirtualLogFile -SqlInstance $script:instance2 -Database $db1
 
         It "Should have correct properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Total,TotalCount,Inactive,Active,LogFileName,LogFileGrowth,LogFileGrowthType'.Split(',')

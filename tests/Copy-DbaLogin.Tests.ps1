@@ -58,4 +58,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.Notes | Should be "Already exists"
         }
     }
+
+    Context "ExcludeSystemLogin Parameter" {
+        $results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -ExcludeSystemLogin
+        It "Should say skipped" {
+            $results.Status.Contains('Skipped') | Should Be $true
+            $results.Notes.Contains('System login') | Should Be $true
+        }
+    }
 }
