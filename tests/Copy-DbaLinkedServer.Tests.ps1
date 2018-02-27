@@ -18,12 +18,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
 
-        $dropsql = "EXEC master.dbo.sp_dropserver @server=N'dbatools-localhost', @droplogins='droplogins';
-            EXEC master.dbo.sp_dropserver @server=N'dbatools-localhost2', @droplogins='droplogins'"
-
         $createsql = "EXEC master.dbo.sp_addlinkedserver @server = N'dbatools-localhost', @srvproduct=N'SQL Server';
         EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatools-localhost',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool';
-        EXEC master.dbo.sp_addlinkedserver @server = N'dbatools-localhost2', @srvproduct=N'SQL Server';
+        EXEC master.dbo.sp_addlinkedserver @server = N'dbatools-localhost2', @srvproduct=N'', @provider=N'SQLNCLI10';
         EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatools-localhost2',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool';"
 
         try {
@@ -38,9 +35,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     AfterAll {
+        $dropsql = "EXEC master.dbo.sp_dropserver @server=N'dbatools-localhost', @droplogins='droplogins';
+        EXEC master.dbo.sp_dropserver @server=N'dbatools-localhost2', @droplogins='droplogins'"
+
         try {
             $server1.Query($dropsql)
-            $dropsql = "EXEC master.dbo.sp_dropserver @server=N'dbatools-localhost', @droplogins='droplogins'"
             $server2.Query($dropsql)
         }
         catch {}
@@ -48,11 +47,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     if ($bail) { return }
 
-    Context "Copy Credential with the same properties" {
+    Context "Copy linked server with the same properties" {
         It "copies successfully" {
             $result = Copy-DbaLinkedServer -Source $server1 -Destination $server2 -LinkedServer dbatools-localhost -WarningAction SilentlyContinue
-            $result.Name | Should Be "dbatools-localhost"
-            $result.Status | Should Be "Successful"
+            $result | Select-Object -ExpandProperty Name -Unique | Should Be "dbatools-localhost"
+            $result | Select-Object -ExpandProperty Status -Unique | Should Be "Successful"
         }
 
         It "retains the same properties" {
@@ -64,7 +63,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $LinkedServer1.LinkedServer | Should Be $LinkedServer2.LinkedServer
         }
 
-        $results = Copy-DbaLinkedServer -Source $server1 -Destination $server2 -LinkedServer dbatools-localhost -WarningAction SilentlyContinue
-        $results.Status | Should Be "Skipped"
+        It "skips existing linked servers" {
+            $results = Copy-DbaLinkedServer -Source $server1 -Destination $server2 -LinkedServer dbatools-localhost -WarningAction SilentlyContinue
+            $results.Status | Should Be "Skipped"
+        }
+
+        It "upgrades SQLNCLI provider based on what is registered" {
+            $result = Copy-DbaLinkedServer -Source $server1 -Destination $server2 -LinkedServer dbatools-localhost2 -UpgradeSqlClient
+            $server1.LinkedServers.Script() -match 'SQLNCLI10' | Should -Not -BeNullOrEmpty
+            $server2.LinkedServers.Script() -match 'SQLNCLI11' | Should -Not -BeNullOrEmpty
+        }
     }
 }
