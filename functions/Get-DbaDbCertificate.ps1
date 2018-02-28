@@ -30,7 +30,7 @@ Get specific certificate
 Tags: Certificate
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
 Get-DbaDbCertificate -SqlInstance sql2016

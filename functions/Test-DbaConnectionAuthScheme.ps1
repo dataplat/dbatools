@@ -40,7 +40,7 @@ function Test-DbaConnectionAuthScheme {
             Tags: SPN, Kerberos
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Test-DbaConnectionAuthScheme
