@@ -84,34 +84,37 @@ function Set-DbaBackupPath {
                 Stop-Function -Message "Not a sysadmin on $server. Skipping." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
             }
 
-            # create directory if it doesn't exist
-            $results = Invoke-Command -ComputerName $server.NetName -ScriptBlock {
+            $createDirectoryBlock = {
                 param ($ServiceAccount, $Path)
 
-                if (-not (Test-Path -Path $Path)) {
-                    # create it
-                    try {
-                        $null = New-Item -Path $Path -ItemType 'Directory'
-                    }
-                    catch {
-                        return $false
-                    }
+                $pathExists = Test-Path -Path $Path
 
-                    # assign permissions to service account
-                    try {
-                        # TODO: if running under system account and using a network path and domain joined grant access to computer account instead
-                        $acl = Get-Acl -Path $Path
-                        $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($ServiceAccount, 'FullControl', 'Allow')
-                        $acl.SetAccessRule($rule)
-                        Set-Acl -Path $Path -AclObject $acl
-                    }
-                    catch {
-                        return $false
-                    }
+                if (-not ($pathExists)) {
+                    $null = New-Item -Path $Path -ItemType 'Directory'
+
+                    $acl = Get-Acl -Path $Path
+                    $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($ServiceAccount, 'FullControl', 'Allow')
+                    $acl.SetAccessRule($rule)
+                    Set-Acl -Path $Path -AclObject $acl
                 }
-            } -ArgumentList $server.ServiceAccount, $Path
-            if (-not $results) {
-                Write-Message -Level Warning -Message "Could not create or set permissions on path"
+            }
+            $createDirectoryParams = @{
+                ScriptBlock = $createDirectoryBlock
+                ArgumentList = $server.ServiceAccount, $Path
+            }
+
+            $isUnc = ([System.Uri]$Path).IsUnc
+            if (-not $isUnc) {
+                Write-Message -Level 'Verbose' -Message 'Local path found, setting from remote session'
+
+                $createDirectoryParams['ComputerName'] = $server.NetName
+            }
+
+            try {
+                $null = Invoke-Command -ErrorAction 'Stop' @createDirectoryParams
+            }
+            catch {
+                Stop-Function -Message 'Failure' -Category 'SecurityError' -Message 'Could not validate, create, or set permissions for path' -Continue
             }
 
             $oldBackupPath = $server.BackupDirectory

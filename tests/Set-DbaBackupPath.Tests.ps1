@@ -91,6 +91,10 @@ $global:instance1 = $script:instance1
 
         Mock -ModuleName dbatools Test-ShouldProcess { $true }
 
+        It "Errors if the path is on an invalid drive" {
+            { Set-DbaBackupPath -SqlInstance $global:instance1 -Path 'X:\Backups' -EnableException } | Should Throw
+        }
+
         It "Errors if it can't actually be applied" {
             Mock -ModuleName dbatools Test-SqlSa -Verifiable { $true }
 
