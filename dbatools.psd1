@@ -581,7 +581,7 @@
             ProjectUri      = "https://dbatools.io"
             
             # The web address of this module's license. Points to a page that's embeddable and linkable.
-            LicenseUri      = "http://www.gnu.org/licenses/gpl-3.0.en.html"
+            LicenseUri      = "https://opensource.org/licenses/MIT"
             
             # Release notes for this particular version of the module
             ReleaseNotes    = "https://dbatools.io/releases"
