@@ -11,7 +11,7 @@
     RootModule                = 'dbatools.psm1'
     
     # Version number of this module.
-    ModuleVersion             = '0.9.211'
+    ModuleVersion             = '0.9.300'
     
     # ID used to uniquely identify this module
     GUID                      = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -581,7 +581,7 @@
             ProjectUri      = "https://dbatools.io"
             
             # The web address of this module's license. Points to a page that's embeddable and linkable.
-            LicenseUri      = "http://www.gnu.org/licenses/gpl-3.0.en.html"
+            LicenseUri      = "https://opensource.org/licenses/MIT"
             
             # Release notes for this particular version of the module
             ReleaseNotes    = "https://dbatools.io/releases"
@@ -598,8 +598,8 @@
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUsrj5gU9tUVSVzXb2uRgDRli8
-# fS6ggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU4ZOngGDky7pkBzHB9XsbddBo
+# Fz+ggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -730,22 +730,22 @@
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUhK918dClU96gt/VnxhWhz6AIIgkwDQYJKoZIhvcNAQEBBQAE
-# ggEAigdDOXIYsGtiOZmvc2sTNkmJGMDCX8jKuU/vwr6UQiH+++UQ/Vo5oSnZ0D+l
-# idzfGsTuJknGkSgnGpThHmwsRWXsx9pnJQKC/dQD9qlBbYD/UF7zjrZs9pq8lnzv
-# wCkt/05RMqZxLngXOJUQ4fAmHz+mg+ixaq8rAvA+9JMxvpWdK7kIPAgtkjF8enLx
-# mAXxQuHyK02vUBe8+7PNSHORlfeGFt1m6WhueBxLF4Q3XpRcC+HwQLhXPwBYGIrJ
-# uUupZpEtPNyS0s5iUFJXgee8f8iRr2stIz+SI5LQyI6eBrutSxpedbzv56KJScxQ
-# eJtOhLFuyb7pNJuKg4eXejVOqKGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUqd6jAroO9Rxqz+GZKivw+hFqqc0wDQYJKoZIhvcNAQEBBQAE
+# ggEAYIeIOQB6Gq8xzJ/01t7wVitmzQjdpNrLXd0W0J2pzGrHn0i9u7jLbhjIW422
+# KWbi/5UXfxS+bDNLbpPWD7Uz4RNT2cBPlmelr6jaIAh9bs+JfArT6fRL1raO45oY
+# WoSGcsRiP6RqOXrvbHHBbrI5+0aUYBNtyGAYm3m/dPdNmCoh8Kj99YaO7LQVFOYA
+# LxOftHaQnueNTtEhRG4Q+bRLvhyvfVJ3a9+28fmk4YkmNIgj6bszENFUhPAwQUrT
+# WmrxtzKB0wqMthNGvrpTMK283P3PAFhokBCjdPSv6xskEUL+FjYxW4h1rpMrDF7C
+# qrZ3nSBY4gyTTBt2b7la2NnFfKGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwMjI3MTI0OTM4WjAj
-# BgkqhkiG9w0BCQQxFgQU9xDWRwxeiF6vmZY+66obxtugYpcwDQYJKoZIhvcNAQEB
-# BQAEggEAELqltSHJLhJGO2yYSPmdK76zx7i/HZvQImINk5h0hsngNYKTsf9vddEA
-# MLnJAWNip78as6kmkyGEAvkuDhQsvcuKHTHnAPEQfPGsKJ57muly9IcboKZCchgA
-# QekJrWZn3WWFmX/ZG8Stgk6DbLAYEl2xoAQ1PwiPktTlmD3ukZq4lfdX3YHRr7z9
-# mXKiNL18vwQVkaZ+kwOPJLWD6uDYeqVZzQHuWS0s5aaAikAg9PlONcBWuF/dhWB5
-# iNrxNakmo39jYmVvs+lOQG6RZR8tYPm+k4w8cFvU9jmIS1J6t0MvkF5O+KkJceGn
-# shyAF8SF18UX2LEiF3DZZLUs/hfnkg==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwMjI4MDEzMTE1WjAj
+# BgkqhkiG9w0BCQQxFgQUrB+P1CzMSEtqqkJZBRf+BdKofi0wDQYJKoZIhvcNAQEB
+# BQAEggEAhuaKGscOY8L9qApY8oLhSlE28+IBPkFRCHLic8c5crE2ZhTwKd12a0a6
+# S0GmCvlKzufuCxT0sQOuvcyxd3+bm8Lxpc1nYu0FCT1GIWjV50oAABQikR8jCh8Y
+# EW3PhhwwLSpJ84zhgtHNWf7YiFtIkD5UYk5h0yUlfPSCxo7IYncCZPGjVkGGNYl8
+# MraH1iWOy1taDO/m1Os55yEvo0SK+wSRlb21bUAJMpK8Nc/9iGQc19Qe2qRWQu5M
+# jQR6dVovJJOqU5dVyeJ6kJ1lml4yWT6RbGUWUGJ2CfHXbf0I+GhepWB6YWlAjH8/
+# JqMpLp5FcKrK1YYH95i38LWaHzsF9A==
 # SIG # End signature block

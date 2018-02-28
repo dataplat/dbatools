@@ -32,7 +32,7 @@ function Get-DbaMemoryUsage {
 
             dbatools PowerShell module (https://dbatools.io)
             Copyright (C) 2016 Chrissy LeMaire
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
             SSIS Counters: https://msdn.microsoft.com/en-us/library/ms137622.aspx
 
