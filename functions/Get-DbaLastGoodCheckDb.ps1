@@ -135,7 +135,7 @@ function Get-DbaLastGoodCheckDb {
                 }
 
                 $daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
-                $daysSinceDbCreated = (New-TimeSpan -Start $db.createDate -End (Get-Date)).Days
+                $daysSinceDbCreated = (New-TimeSpan -Start $db.createDate -End (Get-Date)).TotalDays
 
                 if ($daysSinceCheckDb -lt 7) {
                     $Status = 'Ok'
