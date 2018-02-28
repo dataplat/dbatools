@@ -4,19 +4,15 @@ function Set-DbaBackupPath {
             Sets SQL Server default backup directory to a new value then displays information this setting.
 
         .DESCRIPTION
-            Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings.
+            Sets SQL Server default backup directory then displays information relating to the configuration setting.
 
-            Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this uses a formula to
-            determine the default optimum RAM to use, then sets the SQL max value to that number.
-
-            Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may
-            be going on in your specific environment.
+            If the path does not exist it will try to create it and grant the instance service account access.
 
         .PARAMETER SqlInstance
             Allows you to specify a comma separated list of servers to query.
 
         .PARAMETER Path
-            Specifies the path
+            Specifies the new backup directory
 
         .PARAMETER SqlCredential
             Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -61,22 +57,17 @@ function Set-DbaBackupPath {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     param (
-        [Parameter(Position = 0)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer", "SqlServers", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Parameter(Position = 1)]
+        [Parameter(Mandatory = $true)]
         [string]$Path,
         [Alias('Silent')]
         [switch]$EnableException
     )
-    begin {
-        if ((Test-Bound -Not -Parameter SqlInstance) -and (Test-Bound -Not -Parameter Collection)) {
-            Stop-Function -Category InvalidArgument -Message "You must specify a server list source using -SqlInstance or you can pipe results"
-            return
-        }
-    }
+
     process {
         if (Test-FunctionInterrupt) { return }
 
@@ -89,12 +80,39 @@ function Set-DbaBackupPath {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if (!(Test-SqlSa -SqlInstance $server)) {
+            if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
                 Stop-Function -Message "Not a sysadmin on $server. Skipping." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
             }
 
-            # TODO: Validate path
-            # TODO: Grant read/write access to instance account
+            # create directory if it doesn't exist
+            $results = Invoke-Command -ComputerName $server.NetName -ScriptBlock {
+                param ($ServiceAccount, $Path)
+
+                if (-not (Test-Path -Path $Path)) {
+                    # create it
+                    try {
+                        $null = New-Item -Path $Path -ItemType 'Directory'
+                    }
+                    catch {
+                        return $false
+                    }
+
+                    # assign permissions to service account
+                    try {
+                        # TODO: if running under system account and using a network path and domain joined grant access to computer account instead
+                        $acl = Get-Acl -Path $Path
+                        $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($ServiceAccount, 'FullControl', 'Allow')
+                        $acl.SetAccessRule($rule)
+                        Set-Acl -Path $Path -AclObject $acl
+                    }
+                    catch {
+                        return $false
+                    }
+                }
+            } -ArgumentList $server.ServiceAccount, $Path
+            if (-not $results) {
+                Write-Message -Level Warning -Message "Could not create or set permissions on path"
+            }
 
             $oldBackupPath = $server.BackupDirectory
 
@@ -102,7 +120,7 @@ function Set-DbaBackupPath {
                 Write-Message -Level Verbose -Message "Change $server backup path from $($server.BackupDirectory) to $Path"
                 $server.BackupDirectory = $Path
 
-                if ($PSCmdlet.ShouldProcess($server, "Change backup path from $oldBackupPath to $($server.BackupDirectory)")) {
+                if (Test-ShouldProcess -Context $PSCmdlet -Target $server -Action "Change backup path from $oldBackupPath to $($server.BackupDirectory)") {
                     try {
                         $server.Alter()
                         $newBackupPath = $server.BackupDirectory
@@ -122,7 +140,7 @@ function Set-DbaBackupPath {
                 SqlInstance   = $server.DomainInstanceName
                 OldBackupPath = $oldBackupPath
                 BackupPath    = $newBackupPath
-            } | Select-DefaultView
+            } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, OldBackupPath, BackupPath
         }
     }
 }
