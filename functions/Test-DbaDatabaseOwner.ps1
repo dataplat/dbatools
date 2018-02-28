@@ -94,8 +94,8 @@ function Test-DbaDatabaseOwner {
             }
 
             #Validate login
-            if (($server.Logins.Name) -notmatch $TargetLogin) {
-                Stop-Function -Message "$TargetLogin is not a valid login on $instance. Moving on." -Target $instance -Continue
+            if (($server.Logins.Name) -notmatch [Regex]::Escape($TargetLogin)) {
+                Write-Message -Level Verbose -Message "$TargetLogin is not a login on $instance" -Target $instance
             }
         }
         #use online/available dbs
