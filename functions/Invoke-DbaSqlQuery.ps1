@@ -41,6 +41,9 @@ function Invoke-DbaSqlQuery {
         .PARAMETER AppendServerInstance
             If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
 
+        .PARAMETER DatabaseCollection
+            A collection of databases (such as returned by Get-DbaDatabase)
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -71,7 +74,7 @@ function Invoke-DbaSqlQuery {
             "server1", "server1\nordwind", "server2" | Invoke-DbaSqlQuery -File "C:\scripts\sql\rebuild.sql"
 
             Runs the sql commands stored in rebuild.sql against the instances "server1", "server1\nordwind" and "server2"
-        
+
         .EXAMPLE
             Get-DbaDatabase -SqlInstance "server1", "server1\nordwind", "server2" | Invoke-DbaSqlQuery -File "C:\scripts\sql\rebuild.sql"
 
@@ -112,12 +115,12 @@ function Invoke-DbaSqlQuery {
         [switch]
         $AppendServerInstance,
 
+        [parameter(ValueFromPipeline = $true)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
+
         [Alias('Silent')]
         [switch]
-        $EnableException,
-
-        [parameter(ValueFromPipeline = $true)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection
+        $EnableException
 
     )
 
