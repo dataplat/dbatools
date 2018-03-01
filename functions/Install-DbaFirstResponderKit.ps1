@@ -82,7 +82,7 @@ function Install-DbaFirstResponderKit {
     )
 
     begin {
-        $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
+        $url = "https://codeload.github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
 
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$temp\SQL-Server-First-Responder-Kit-$Branch.zip"
