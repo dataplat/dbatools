@@ -72,12 +72,12 @@ function Find-DbaDuplicateIndex {
             https://dbatools.io/Find-DbaDuplicateIndex
 
         .EXAMPLE
-            Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql
+            Find-DbaDuplicateIndex -SqlInstance sql2005 | Out-File -FilePath C:\temp\sql2005-DuplicateIndexes.sql
 
             Generates SQL statements to drop the selected duplicate indexes in server "sql2005" and writes them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
 
         .EXAMPLE
-            Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql -Append
+            Find-DbaDuplicateIndex -SqlInstance sql2005 | Out-File -FilePath C:\temp\sql2005-DuplicateIndexes.sql -Append
 
             Generates SQL statements to drop the selected duplicate indexes and writes/appends them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
 
