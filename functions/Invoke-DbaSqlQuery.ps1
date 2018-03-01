@@ -71,6 +71,11 @@ function Invoke-DbaSqlQuery {
             "server1", "server1\nordwind", "server2" | Invoke-DbaSqlQuery -File "C:\scripts\sql\rebuild.sql"
 
             Runs the sql commands stored in rebuild.sql against the instances "server1", "server1\nordwind" and "server2"
+        
+        .EXAMPLE
+            Get-DbaDatabase -SqlInstance "server1", "server1\nordwind", "server2" | Invoke-DbaSqlQuery -File "C:\scripts\sql\rebuild.sql"
+
+            Runs the sql commands stored in rebuild.sql against all accessible databases of the instances "server1", "server1\nordwind" and "server2"
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     Param (
@@ -112,10 +117,7 @@ function Invoke-DbaSqlQuery {
         $EnableException,
 
         [parameter(ValueFromPipeline = $true)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
-
-        [parameter(ValueFromPipeline = $true)]
-        [object[]]$DatabaseCollectionLoose
+        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection
 
     )
 
@@ -240,16 +242,11 @@ function Invoke-DbaSqlQuery {
 
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach($el in $DatabaseCollectionLoose) {
-            if ($el.SQLInstance -and $el.Database) {
-                $DatabaseCollection = $el.Database
-            }
-        }
-        if ((Test-Bound -ParameterName "Database") -and ((Test-Bound -ParameterName "DatabaseCollection") -or $DatabaseCollection)) {
+        if (Test-Bound -ParameterName "Database", "DatabaseCollection" -And) {
             Stop-Function -Category InvalidArgument -Message "You can't use -Database with piped databases"
             return
         }
-        if ((Test-Bound -ParameterName "SqlInstance") -and (Test-Bound -ParameterName "DatabaseCollection")) {
+        if (Test-Bound -ParameterName "SqlInstance", "DatabaseCollection" -And) {
             Stop-Function -Category InvalidArgument -Message "You can't use -SqlInstance with piped databases"
             return
         }
