@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
         It "Should throw on an invalid SQL Connection" {
             Mock -ModuleName 'dbatools' Connect-SqlInstance { throw }
-            { Test-DbaServerName -SqlInstance 'MadeUpServer' -EnableException } | Should Throw 
+            { Test-DbaServerName -SqlInstance 'MadeUpServer' -EnableException } | Should Throw
         }
     }
 }
@@ -36,4 +36,3 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 }
-
