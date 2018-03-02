@@ -1,12 +1,10 @@
-function Test-DbaRecoveryModel {
+function Test-DbaFullRecoveryModel {
     <#
         .SYNOPSIS
-            Find if database is really a specific recovery model or not.
+            Find if database is really in the Full recovery model or not.
 
         .DESCRIPTION
-            When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain.
-
-            However, you may also desire to validate if a database is SIMPLE or BULK LOGGED on an instance.
+            When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain. This state is also known as 'pseudo-Simple'.
 
             Inspired by Paul Randal's post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)
 
@@ -28,9 +26,6 @@ function Test-DbaRecoveryModel {
         .PARAMETER ExcludeDatabase
             Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-        .PARAMETER RecoveryModel
-            Specifies the type of recovery model you wish to test. By default it will test for FULL Recovery Model.
-
         .PARAMETER Detailed
             Output all properties, will be deprecated in 1.0.0 release.
 
@@ -45,28 +40,28 @@ function Test-DbaRecoveryModel {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Test-DbaRecoveryModel
+            https://dbatools.io/Test-DbaFullRecoveryModel
 
         .EXAMPLE
-            Test-DbaRecoveryModel -SqlInstance sql2005
+            Test-DbaFullRecoveryModel -SqlInstance sql2005
 
             Shows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model.
 
         .EXAMPLE
-            Test-DbaRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne "FULL"}
+            Test-DbaFullRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne "FULL"}
 
-            Only shows the databases that are functionally in 'simple' mode.
-
-        .EXAMPLE
-            Test-DbaRecoveryModel -SqlInstance sql2008 -RecoveryModel Bulk_Logged | Sort-Object Server  -Descending
-
-            Shows all databases where the configured recovery model is BULK_LOGGED and sort them by server name descending
+            Only shows the databases that are in 'pseudo-simple' mode.
 
         .EXAMPLE
-            Test-DbaRecoveryModel -SqlInstance localhost | Select-Object -Property *
+            Test-DbaFullRecoveryModel -SqlInstance sql2008 | Sort-Object Server, ActualRecoveryModel -Descending
+
+            Shows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model. The Sort-Object will cause the databases in 'pseudo-simple' mode to show first.
+
+        .EXAMPLE
+            Test-DbaFullRecoveryModel -SqlInstance localhost | Select-Object -Property *
 
             Shows all of the properties for the databases that have Full Recovery Model
     #>
@@ -80,25 +75,12 @@ function Test-DbaRecoveryModel {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [PSCredential]$SqlCredential,
-        [validateSet("Full","Simple","Bulk_Logged")]
-        [object]$RecoveryModel,
         [switch]$Detailed,
-        [Alias('Silent')]
-        [switch]$EnableException
+        [switch][Alias('Silent')]
+        $EnableException
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Test-DbaFullRecoveryModel
-
-        if(Test-Bound -ParameterName RecoveryModel -Not){
-            $RecoveryModel = "Full"
-        }
-
-        switch($RecoveryModel){
-            "Full"          {$recoveryCode = 1}
-            "Bulk_Logged"   {$recoveryCode = 2}
-            "Simple"        {$recoveryCode = 3}
-        }
 
         $sqlRecoveryModel = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
                 ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
@@ -113,7 +95,7 @@ function Test-DbaRecoveryModel {
                   FROM sys.databases AS D
                     INNER JOIN sys.database_recovery_status AS drs
                        ON D.database_id = drs.database_id
-                  WHERE d.recovery_model = $recoveryCode"
+                  WHERE d.recovery_model = 1"
 
         if ($Database) {
             $dblist = $Database -join "','"
@@ -139,18 +121,20 @@ function Test-DbaRecoveryModel {
             }
 
             try {
-                $results = $server.Query($sql)
+                $recoverymodel = $server.Query($sql)
 
-                if (-not $results) {
-                    Write-Message -Level Verbose -Message "Server '$instance' does not have any databases in the $RecoveryModel recovery model."
+                if (-not $recoverymodel) {
+                    Write-Message -Level Verbose -Message "Server '$instance' does not have any databases in FULL recovery model."
                 }
 
-                foreach ($row in $results) {
-                    if (!([bool]$row.IsReallyInFullRecoveryModel) -and $RecoveryModel -eq 'Full') {
-                        $ActualRecoveryModel = "SIMPLE"
+                foreach ($row in $recoverymodel) {
+                    if (!([bool]$row.IsReallyInFullRecoveryModel)) {
+                        $notes = "Database is still in SIMPLE recovery model until a full database backup is taken."
+                        $ActualRecoveryModel = "pseudo-SIMPLE"
                     }
-                    else{
-                        $ActualRecoveryModel = "$($RecoveryModel.ToString().ToUpper())"
+                    else {
+                        $notes = $null
+                        $ActualRecoveryModel = "FULL"
                     }
 
                     [PSCustomObject]@{
@@ -160,7 +144,8 @@ function Test-DbaRecoveryModel {
                         Database       = $row.Database
                         ConfiguredRecoveryModel = $row.RecoveryModelDesc
                         ActualRecoveryModel = $ActualRecoveryModel
-                    } | Select-DefaultView -Property *
+                        Notes          = $notes
+                    } | Select-DefaultView -ExcludeProperty Notes
                 }
             }
             catch {
