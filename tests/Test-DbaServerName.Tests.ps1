@@ -14,13 +14,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         it "Should only contain $paramCount parameters" {
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
+        It "Should throw on an invalid SQL Connection" {
+            Mock -ModuleName 'dbatools' Connect-SqlInstance { throw }
+            { Test-DbaServerName -SqlInstance 'MadeUpServer' -EnableException } | Should Throw 
+        }
     }
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    $server = Connect-DbaInstance -SqlInstance $script:instance2 
+    $server = Connect-DbaInstance -SqlInstance $script:instance2
     Context "Command tests servername" {
-        $results = Test-DbaServerName -SqlInstance $script:instance2 
+        $results = Test-DbaServerName -SqlInstance $script:instance2
         It "Should return the correct server" {
             $results.ComputerName | Should Be $server.NetName
         }
@@ -29,6 +33,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should return the correct server\instance" {
             $results.SqlInstance | Should Be $server.DomainInstanceName
-        }        
-    }    
+        }
+    }
 }
+
