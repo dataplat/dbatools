@@ -18,10 +18,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    $server = Connect-DbaInstance -SqlInstance $script:instance2 
     Context "Command tests servername" {
-        $results = Test-DbaServerName -SqlInstance $script:instance2
-        It "Should return the correct server name" {
-            $results.SqlInstance | Should Be $script:instance2
+        $results = Test-DbaServerName -SqlInstance $script:instance2 
+        It "Should return the correct server" {
+            $results.ComputerName | Should Be $server.NetName
         }
+        It "Should return the correct instance" {
+            $results.InstanceName | Should Be $server.ServiceName
+        }
+        It "Should return the correct server\instance" {
+            $results.SqlInstance | Should Be $server.DomainInstanceName
+        }        
     }    
 }
