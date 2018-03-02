@@ -160,7 +160,7 @@ function Test-DbaRecoveryModel {
                         Database       = $row.Database
                         ConfiguredRecoveryModel = $row.RecoveryModelDesc
                         ActualRecoveryModel = $ActualRecoveryModel
-                    } | Select-DefaultView -Property *
+                    } | Select-DefaultView -Property ComputerName,InstanceName,SqlInstance,Database,ConfiguredRecoveryModel,ActualRecoveryModel
                 }
             }
             catch {
