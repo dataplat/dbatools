@@ -15,7 +15,7 @@ function Test-DbaDatabaseOwner {
             Author: Michael Fal (@Mike_Fal), http://mikefal.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .PARAMETER SqlInstance
             Specifies the SQL Server instance(s) to scan.
@@ -94,8 +94,8 @@ function Test-DbaDatabaseOwner {
             }
 
             #Validate login
-            if (($server.Logins.Name) -notmatch $TargetLogin) {
-                Stop-Function -Message "$TargetLogin is not a valid login on $instance. Moving on." -Target $instance -Continue
+            if (($server.Logins.Name) -notmatch [Regex]::Escape($TargetLogin)) {
+                Write-Message -Level Verbose -Message "$TargetLogin is not a login on $instance" -Target $instance
             }
         }
         #use online/available dbs

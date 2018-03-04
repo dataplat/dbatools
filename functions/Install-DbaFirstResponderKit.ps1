@@ -38,7 +38,7 @@ function Install-DbaFirstResponderKit {
             Author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Install-DbaFirstResponderKit
@@ -82,7 +82,7 @@ function Install-DbaFirstResponderKit {
     )
 
     begin {
-        $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
+        $url = "https://codeload.github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
 
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$temp\SQL-Server-First-Responder-Kit-$Branch.zip"
