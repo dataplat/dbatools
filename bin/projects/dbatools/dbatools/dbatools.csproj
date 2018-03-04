@@ -92,6 +92,8 @@
     <Compile Include="Maintenance\MaintenancePriority.cs" />
     <Compile Include="Maintenance\MaintenanceTask.cs" />
     <Compile Include="Parameter\DbaCredentialParameter.cs" />
+    <Compile Include="Parameter\DbaDatabaseParameter.cs" />
+    <Compile Include="Parameter\DbaDatabaseSmoParameter.cs" />
     <Compile Include="Runspace\DbaRunspaceState.cs" />
     <Compile Include="Runspace\RunspaceContainer.cs" />
     <Compile Include="Runspace\RunspaceHost.cs" />

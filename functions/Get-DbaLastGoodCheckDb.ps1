@@ -49,7 +49,7 @@ function Get-DbaLastGoodCheckDb {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             DBCC CHECKDB:
@@ -135,7 +135,7 @@ function Get-DbaLastGoodCheckDb {
                 }
 
                 $daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
-                $daysSinceDbCreated = (New-TimeSpan -Start $db.createDate -End (Get-Date)).Days
+                $daysSinceDbCreated = (New-TimeSpan -Start $db.createDate -End (Get-Date)).TotalDays
 
                 if ($daysSinceCheckDb -lt 7) {
                     $Status = 'Ok'
