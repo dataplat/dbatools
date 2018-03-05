@@ -20,17 +20,17 @@ function Invoke-SteppablePipeline
     
         Processes the object returned by Get-ChildItem in the pipeline defined
 #>
-	[CmdletBinding()]
-	param (
-		[Parameter(ValueFromPipeline = $true)]
-		$InputObject,
-		
-		[Parameter(Mandatory = $true)]
-		$Pipeline
-	)
-	
-	process
-	{
-		$Pipeline.Process($InputObject)
-	}
+    [CmdletBinding()]
+    param (
+        [Parameter(ValueFromPipeline = $true)]
+        $InputObject,
+        
+        [Parameter(Mandatory = $true)]
+        $Pipeline
+    )
+    
+    process
+    {
+        $Pipeline.Process($InputObject)
+    }
 }

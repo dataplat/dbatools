@@ -114,11 +114,11 @@ function Find-DbaInstance {
     
     .PARAMETER DomainController
         The domain controller to contact for SPN lookups / searches.
-		Uses the credentials from the '-Credential' parameter if specified.
+        Uses the credentials from the '-Credential' parameter if specified.
     
     .PARAMETER TCPPort
         The ports to scan in the TCP Port Scan method.
-		Defaults to 1433.
+        Defaults to 1433.
     
     .PARAMETER MinimumConfidence
         This command tries to discover instances, which isn't always a sure thing.
@@ -175,7 +175,7 @@ function Find-DbaInstance {
         Outside resources used and modified:
         - https://gallery.technet.microsoft.com/scriptcenter/List-the-IP-addresses-in-a-60c5bb6b
 #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true, ParameterSetName = 'Computer', ValueFromPipeline = $true)]
         [DbaInstance[]]$ComputerName,
@@ -557,7 +557,7 @@ function Find-DbaInstance {
             .EXAMPLE
                 PS C:\> Get-SQLInstanceBrowserUDP -ComputerName 'sql2017'
             
-                Contacts the browsing service on sql2017 and requests its 
+                Contacts the browsing service on sql2017 and requests its instance information.
             
             .NOTES
                 Original Author: Eric Gruber
@@ -704,7 +704,7 @@ function Find-DbaInstance {
             .NOTES
                 Author: BarryCWT
                 Reference: https://gallery.technet.microsoft.com/scriptcenter/List-the-IP-addresses-in-a-60c5bb6b
-        #>            
+        #>
             
             param
             (
