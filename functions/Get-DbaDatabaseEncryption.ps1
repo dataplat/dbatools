@@ -112,7 +112,7 @@ function Get-DbaDatabaseEncryption {
                         InstanceName             = $server.ServiceName
                         SqlInstance              = $server.DomainInstanceName
                         Database                 = $db.Name
-                        Encryption               = "EncryptionEnabled (tde)"
+                        Encryption               = "EncryptionEnabled (TDE)"
                         Name                     = $null
                         LastBackup               = $null
                         PrivateKeyEncryptionType = $null
@@ -120,6 +120,7 @@ function Get-DbaDatabaseEncryption {
                         KeyLength                = $null
                         Owner                    = $null
                         Object                   = $null
+                        ExpirationDate           = $null
                     }
 
                 }
@@ -138,6 +139,7 @@ function Get-DbaDatabaseEncryption {
                         KeyLength                = $null
                         Owner                    = $cert.Owner
                         Object                   = $cert
+                        ExpirationDate           = $cert.ExpirationDate
                     }
 
                 }
@@ -148,7 +150,7 @@ function Get-DbaDatabaseEncryption {
                         InstanceName             = $server.ServiceName
                         SqlInstance              = $server.DomainInstanceName
                         Database                 = $db.Name
-                        Encryption               = "Asymentric key"
+                        Encryption               = "Asymmetric key"
                         Name                     = $ak.Name
                         LastBackup               = $null
                         PrivateKeyEncryptionType = $ak.PrivateKeyEncryptionType
@@ -156,6 +158,7 @@ function Get-DbaDatabaseEncryption {
                         KeyLength                = $ak.KeyLength
                         Owner                    = $ak.Owner
                         Object                   = $ak
+                        ExpirationDate           = $null
                     }
 
                 }
@@ -172,10 +175,10 @@ function Get-DbaDatabaseEncryption {
                         KeyLength                = $sk.KeyLength
                         Owner                    = $sk.Owner
                         Object                   = $sk
+                        ExpirationDate           = $null
                     }
                 }
             }
         }
     }
 }
-
