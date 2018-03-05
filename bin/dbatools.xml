@@ -2111,6 +2111,76 @@
             <param name="Format">Irrelevant</param>
             <returns></returns>
         </member>
+        <member name="T:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter">
+            <summary>
+            Parameter class that accepts anything pointing at a database
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter.InputObject">
+            <summary>
+            The original object passed to the parameter
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter.Database">
+            <summary>
+            The SMO Database Object
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter.Name">
+            <summary>
+            The name of the database
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter.#ctor(System.String)">
+            <summary>
+            Accepts the name of a database and converts it to a DbaDatabaseParameter
+            </summary>
+            <param name="Name"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter.#ctor(System.Object)">
+            <summary>
+            Accepts anything and tries to convert it to a live SMO Database object
+            </summary>
+            <param name="Item">The item to convert</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter.ToString">
+            <summary>
+            Overrides the regular tostring to show something pleasant and useful
+            </summary>
+            <returns>The name of the database</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter">
+            <summary>
+            Parameter class that only accepts live SMO Databases
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter.InputObject">
+            <summary>
+            The original object passed to the parameter
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter.Database">
+            <summary>
+            The SMO Database Object
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter.Name">
+            <summary>
+            The name of the database
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter.#ctor(System.Object)">
+            <summary>
+            Accepts anything and tries to convert it to a live SMO Database object
+            </summary>
+            <param name="Item">The item to convert</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter.ToString">
+            <summary>
+            Overrides the regular tostring to show something pleasant and useful
+            </summary>
+            <returns>The name of the database</returns>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter">
             <summary>
             Input converter for Computer Management Information
