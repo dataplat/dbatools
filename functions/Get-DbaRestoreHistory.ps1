@@ -34,6 +34,11 @@ function Get-DbaRestoreHistory {
 
         .PARAMETER Last
             If this switch is enabled, the last restore action performed on each database is returned.
+        
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
             Tags: DisasterRecovery, Backup, Restore, Databases
@@ -83,7 +88,9 @@ function Get-DbaRestoreHistory {
         [object[]]$ExcludeDatabase,
         [datetime]$Since,
         [switch]$Force,
-        [switch]$Last
+        [switch]$Last,
+        [switch][Alias('Silent')]
+        $EnableException
     )
 
     begin {
@@ -97,13 +104,7 @@ function Get-DbaRestoreHistory {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-
-                if ($server.VersionMajor -lt 9) {
-                    Write-Warning "SQL Server 2000 not supported."
-                    continue
-                }
-
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
                 $computername = $server.NetName
                 $instancename = $server.ServiceName
                 $servername = $server.DomainInstanceName
@@ -186,7 +187,7 @@ function Get-DbaRestoreHistory {
 
                 $sql = "$select $from $where"
 
-                Write-Debug $sql
+                Write-Message -Level Debug -Message $sql
 
                 $results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 
@@ -201,9 +202,7 @@ function Get-DbaRestoreHistory {
                 $results | Select-DefaultView -Exclude first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, RowError, RowState, Table, ItemArray, HasErrors
             }
             catch {
-                Write-Warning $_
-                Write-Exception $_
-                continue
+                Stop-Function -Message "Failure" -Target $SqlInstance -Error $_ -Exception $_.Exception.InnerException -Continue
             }
         }
     }

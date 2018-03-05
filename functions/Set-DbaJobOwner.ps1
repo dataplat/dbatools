@@ -139,7 +139,6 @@ function Set-DbaJobOwner {
                         $j.Alter()
                     }
                     catch {
-                        # write-exception writes the full exception to file
                         Stop-Function -Message "Issue setting job owner on $jobName." -Target $jobName -InnerErrorRecord $_ -Category InvalidOperation
                     }
                 }

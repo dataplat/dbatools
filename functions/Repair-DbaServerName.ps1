@@ -29,6 +29,12 @@ function Repair-DbaServerName {
 
         .PARAMETER Force
             If this switch is enabled, most confirmation prompts will be skipped.
+        
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -69,7 +75,9 @@ function Repair-DbaServerName {
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [switch]$AutoFix,
-        [switch]$Force
+        [switch]$Force,
+        [switch][Alias('Silent')]
+        $EnableException
     )
 
     begin {
@@ -80,29 +88,24 @@ function Repair-DbaServerName {
 
     process {
         foreach ($servername in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Connecting to $servername"
             try {
-                $server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential -MinimumVersion 9
             }
             catch {
-                Write-Warning "Can't connect to $servername. Moving on."
-                Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $servername -Continue
             }
 
             if ($server.isClustered) {
 
-                Write-Warning "$servername is a cluster. Microsoft does not support renaming clusters."
+                Write-Message -Level Warning -Message "$servername is a cluster. Microsoft does not support renaming clusters."
                 Continue
             }
 
-            if ($server.VersionMajor -eq 8) {
-                Write-Warning "SQL Server 2000 not supported. Skipping $servername."
-                Continue
-            }
 
             # Check to see if we can easily proceed
-            Write-Verbose "Executing Test-DbaServerName to see if the server is in a state to be renamed. "
 
-            $nametest = Test-DbaServerName $servername -NoWarning | Select-Object *
+            $nametest = Test-DbaServerName $servername -EnableException | Select-Object *
             $serverinstancename = $nametest.ServerInstanceName
             $SqlInstancename = $nametest.SqlServerName
 
@@ -111,13 +114,12 @@ function Repair-DbaServerName {
             }
 
             if ($nametest.updatable -eq $false) {
-                Write-Output "Test-DbaServerName reports that the rename cannot proceed with a rename in this $servername's current state."
+                Write-Message -Level Output -Message "Test-DbaServerName reports that the rename cannot proceed with a rename in this $servername's current state."
 
                 $nametest
 
                 foreach ($nametesterror in $nametest.Blockers) {
                     if ($nametesterror -like '*replication*') {
-                        $replication = $true
 
                         if ($AutoFix -eq $false) {
                             throw "Cannot proceed because some databases are involved in replication. You can run exec sp_dropdistributor @no_checks = 1 but that may be pretty dangerous. Alternatively, you can run -AutoFix to automatically fix this issue. AutoFix will also break all database mirrors."
@@ -135,16 +137,15 @@ function Repair-DbaServerName {
                                     throw "Cannot continue"
                                 }
                                 else {
-                                    Write-Output "`nPerforming sp_dropdistributor @no_checks = 1."
+                                    Write-Message -Level Output -Message "`nPerforming sp_dropdistributor @no_checks = 1."
                                     $sql = "sp_dropdistributor @no_checks = 1"
-                                    Write-Debug $sql
+                                    Write-Message -Level Debug -Message $sql
                                     try {
                                         $null = $server.Query($sql)
-                                        Write-Output "Successfully executed $sql.`n"
                                     }
                                     catch {
-                                        Write-Exception $_
-                                        throw $_
+                                        Stop-Function -Message "Failure" -Target $server -Error $_ -Exception $_.Exception.InnerException
+                                        return
                                     }
                                 }
                             }
@@ -164,24 +165,25 @@ function Repair-DbaServerName {
                                 $result = $host.ui.PromptForChoice($title, $message, $options, 1)
 
                                 if ($result -eq 1) {
-                                    Write-Output "Okay, moving on."
+                                    Write-Message -Level Output -Message "Okay, moving on."
                                 }
                                 else {
-                                    Write-Output "Removing Mirroring"
+                                    Write-Message -Level Verbose -Message "Removing Mirroring"
 
                                     foreach ($database in $server.Databases) {
                                         if ($database.IsMirroringEnabled) {
                                             $dbname = $database.name
 
                                             try {
-                                                Write-Output "Breaking mirror for $dbname."
+                                                Write-Message -Level Verbose -Message "Breaking mirror for $dbname."
                                                 $database.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
                                                 $database.Alter()
                                                 $database.Refresh()
                                             }
                                             catch {
-                                                Write-Exception $_
-                                                throw "Could not break mirror for $dbname. Skipping."
+                                                Stop-Function -Message "Failure" -Target $server -Error $_ -Exception $_.Exception.InnerException
+                                                return
+                                                #throw "Could not break mirror for $dbname. Skipping."
                                             }
                                         }
                                     }
@@ -203,7 +205,7 @@ function Repair-DbaServerName {
                 $allsqlservices = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "SQL*$instance*" -and $_.Status -eq "Running" }
             }
             catch {
-                Write-Warning "Can't contact $servername using Get-Service. This means the script will not be able to automatically restart SQL services."
+                Write-Message -Level Warning -Message "Can't contact $servername using Get-Service. This means the script will not be able to automatically restart SQL services."
             }
 
             if ($nametest.Warnings.length -gt 0) {
@@ -212,62 +214,60 @@ function Repair-DbaServerName {
                 if ($reportingservice.Status -eq "Running") {
                     if ($Pscmdlet.ShouldProcess($server.name, "Reporting Services is running for this instance. Would you like to automatically stop this service?")) {
                         $reportingservice | Stop-Service
-                        Write-Warning "You must reconfigure Reporting Services using Reporting Services Configuration Manager or PowerShell once the server has been successfully renamed."
+                        Write-Message -Level Warning -Message "You must reconfigure Reporting Services using Reporting Services Configuration Manager or PowerShell once the server has been successfully renamed."
                     }
                 }
             }
 
             if ($Pscmdlet.ShouldProcess($server.name, "Performing sp_dropserver to remove the old server name, $SqlInstancename, then sp_addserver to add $serverinstancename")) {
                 $sql = "sp_dropserver '$SqlInstancename'"
-                Write-Debug $sql
+                Write-Message -Level Debug -Message $sql
                 try {
                     $null = $server.Query($sql)
-                    Write-Output "`nSuccessfully executed $sql."
                 }
                 catch {
-                    Write-Exception $_
-                    throw $_
+                    Stop-Function -Message "Failure" -Target $server -Error $_ -Exception $_.Exception.InnerException
+                    return
                 }
 
                 $sql = "sp_addserver '$serverinstancename', local"
-                Write-Debug $sql
+                Write-Message -Level Debug -Message $sql
 
                 try {
                     $null = $server.Query($sql)
-                    Write-Output "Successfully executed $sql."
                 }
                 catch {
-                    Write-Exception $_
-                    throw $_
+                    Stop-Function -Message "Failure" -Target $server -Error $_ -Exception $_.Exception.InnerException
+                    return
                 }
                 $renamed = $true
             }
 
             if ($null -eq $allsqlservices) {
-                Write-Warning "Could not contact $($server.ComputerNamePhysicalNetBIOS) using Get-Service. You must manually restart the SQL Server instance."
+                Write-Message -Level Warning -Message "Could not contact $($server.ComputerNamePhysicalNetBIOS) using Get-Service. You must manually restart the SQL Server instance."
                 $needsrestart = $true
             }
             else {
                 if ($Pscmdlet.ShouldProcess($server.ComputerNamePhysicalNetBIOS, "Rename complete! The SQL Service must be restarted to commit the changes. Would you like to restart the $instancename instance now?")) {
                     try {
-                        Write-Output "`nStopping SQL Services for the $instancename instance"
+                        Write-Message -Level Verbose -Message "Stopping SQL Services for the $instancename instance"
                         $allsqlservices | Stop-Service -Force -WarningAction SilentlyContinue # because it reports the wrong name
-                        Write-Output "Starting SQL Services for the $instancename instance."
+                        Write-Message -Level Verbose -Message "Starting SQL Services for the $instancename instance."
                         $allsqlservices | Where-Object { $_.DisplayName -notlike "*reporting*" } | Start-Service -WarningAction SilentlyContinue # because it reports the wrong name
                     }
                     catch {
-                        Write-Exception $_
+                        Stop-Function -Message "Failure" -Target $server -Error $_ -Exception $_.Exception.InnerException
                         throw "Could not restart at least one SQL Service."
                     }
                 }
             }
 
             if ($renamed -eq $true) {
-                Write-Output "`n$servername successfully renamed from $SqlInstancename to $serverinstancename."
+                Write-Message -Level Output -Message "$servername successfully renamed from $SqlInstancename to $serverinstancename."
             }
 
             if ($needsrestart -eq $true) {
-                Write-Output "SQL Service restart for $serverinstancename still required."
+                Write-Message -Level Output -Message "SQL Service restart for $serverinstancename still required."
             }
         }
     }
