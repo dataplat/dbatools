@@ -66,5 +66,8 @@
         }
     }
 
+    $properties = @{QueryNr = $querynr; QueryName = $queryname; DBSpecific = $DBSpecific; Description = $queryDescription; Text = $scriptpart}
+    $newscript = New-Object -TypeName PSObject -Property $properties
+    $ParsedScript += $newscript
     $ParsedScript
 }
