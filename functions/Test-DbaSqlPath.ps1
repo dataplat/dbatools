@@ -27,8 +27,6 @@ function Test-DbaSqlPath {
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .OUTPUTS
-            System.Boolean
 
         .NOTES
             Tags: Path, ServiceAccount
@@ -57,56 +55,59 @@ function Test-DbaSqlPath {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstance]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
         [string[]]$Path,
         [switch][Alias('Silent')]$EnableException
     )
-    begin {
-        try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
-        }
-    }
     process {
-        if (Test-FunctionInterrupt) { return }
-
-        $counter = [pscustomobject] @{ Value = 0 }
-        $groupSize = 100
-        $groups = $Path | Group-Object -Property { [math]::Floor($counter.Value++ / $groupSize) }
-        foreach ($g in $groups) {
-            $PathsBatch = $g.Group
-            $query = @()
-            foreach ($p in $PathsBatch) {
-                $query += "EXEC master.dbo.xp_fileexist '$p'"
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level VeryVerbose -Message "Connecting to $instance." -Target $instance
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
-            $sql = $query -join ';'
-            $batchresult = $server.ConnectionContext.ExecuteWithResults($sql)
-            if ($Path.Count -eq 1) {
-                if ($batchresult.Tables.rows[0] -eq $true -or $batchresult.Tables.rows[1] -eq $true) {
-                    return $true
+            catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
+            }
+            $counter = [pscustomobject] @{ Value = 0 }
+            $groupSize = 100
+            $groups = $Path | Group-Object -Property { [math]::Floor($counter.Value++ / $groupSize) }
+            foreach ($g in $groups) {
+                $PathsBatch = $g.Group
+                $query = @()
+                foreach ($p in $PathsBatch) {
+                    $query += "EXEC master.dbo.xp_fileexist '$p'"
+                }
+                $sql = $query -join ';'
+                $batchresult = $server.ConnectionContext.ExecuteWithResults($sql)
+                if ($Path.Count -eq 1 -and $SqlInstance.Count -eq 1) {
+                    if ($batchresult.Tables.rows[0] -eq $true -or $batchresult.Tables.rows[1] -eq $true) {
+                        return $true
+                    }
+                    else {
+                        return $false
+                    }
                 }
                 else {
-                    return $false
-                }
-            }
-            else {
-                $i = 0
-                foreach ($r in $batchresult.tables.rows) {
-                    $DoesPass = $r[0] -eq $true -or $r[1] -eq $true
-                    [pscustomobject]@{
-                        FilePath   = $PathsBatch[$i]
-                        FileExists = $DoesPass
+                    $i = 0
+                    foreach ($r in $batchresult.tables.rows) {
+                        $DoesPass = $r[0] -eq $true -or $r[1] -eq $true
+                        [pscustomobject]@{
+                            SqlInstance  = $server.Name
+                            InstanceName = $server.ServiceName
+                            ComputerName = $server.NetName
+                            FilePath   = $PathsBatch[$i]
+                            FileExists = $DoesPass
+                        }
+                        $i += 1
                     }
-                    $i += 1
                 }
             }
         }
+
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlPath
