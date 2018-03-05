@@ -495,6 +495,16 @@ namespace Sqlcollaborative.Dbatools.Parameter
         }
 
         /// <summary>
+        /// Accept and understand discovery reports.
+        /// </summary>
+        /// <param name="Report">The report to interpret</param>
+        public DbaInstanceParameter(Discovery.DbaInstanceReport Report)
+            : this(Report.FullSmoName)
+        {
+            
+        }
+
+        /// <summary>
         /// Creates a DBA Instance parameter from any object
         /// </summary>
         /// <param name="Input">Object to parse</param>
