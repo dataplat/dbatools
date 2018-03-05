@@ -61,7 +61,7 @@ Suppresses all prompts to install but prompts to securely enter your password an
 .EXAMPLE
 New-DbaCredential -SqlInstance Server1 -Name AzureBackupBlobStore -CredentialIdentity '<Azure Storage Account Name>' -Password (ConvertTo-SecureString '<Azure Storage Account Access Key>' -AsPlainText -Force)
 
-Create credential on SQL Server 2012 CU2, SQL Server 2014 for use with BACKUP TO URL. 
+Create credential on SQL Server 2012 CU2, SQL Server 2014 for use with BACKUP TO URL.
 CredentialIdentity needs to be supplied with the Azure Storage Account Name.
 Password needs to be one of the Access Keys for the account.
 
