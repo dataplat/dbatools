@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: February 21, 2018
+-- Last Modified: March 1, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -50,7 +50,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 ------
 
 -- SQL Server 2017 Builds																		
--- Build			Description			Release Date								
+-- Build			Description			Release Date	URL to KB Article								
 -- 14.0.1.246		CTP 1.0				11/30/2016
 -- 14.0.100.187		CTP 1.1				12/16/2016
 -- 14.0.200.24		CTP 1.2				1/19/2017
@@ -61,10 +61,10 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.800.90		RC1					7/17/2017
 -- 14.0.900.75		RC2					8/2/2017
 -- 14.0.1000.169	RTM					10/2/2017
--- 14.0.3006.16		CU1					10/24/2017
--- 14.0.3008.27		CU2					11/28/2017
--- 14.0.3015.40		CU3					 1/4/2018
--- 14.0.3022.16		CU4					2/20/2018
+-- 14.0.3006.16		CU1					10/24/2017		https://support.microsoft.com/en-us/help/4038634
+-- 14.0.3008.27		CU2					11/28/2017		https://support.microsoft.com/en-us/help/4052574
+-- 14.0.3015.40		CU3					1/4/2018		https://support.microsoft.com/en-us/help/4052987
+-- 14.0.3022.28		CU4					2/20/2018		https://support.microsoft.com/en-us/help/4056498/cumulative-update-4-for-sql-server-2017 
 		
 															
 
@@ -213,7 +213,7 @@ EXEC sys.xp_readerrorlog 0, 1, N'Database Instant File Initialization';
 
 -- Lets you determine whether Instant File Initialization (IFI) is enabled for the instance
 -- This should be enabled in the vast majority of cases
--- SQL Server 2016 lets you enable this during the SQL server installation process
+-- SQL Server 2016 and newer lets you enable this during the SQL server installation process
 
 -- Database Instant File Initialization
 -- https://docs.microsoft.com/en-us/sql/relational-databases/databases/database-instant-file-initialization
@@ -350,11 +350,15 @@ WHERE node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
 
 -- Gives you some useful information about the composition and relative load on your NUMA nodes
 -- You want to see an equal number of schedulers on each NUMA node
--- Watch out if SQL Server 2017 Standard Edition has been installed on a machine with more than 24 physical cores
--- Watch out if you have a physical machine or VM with more than 4 NUMA nodes with SQL Server Standard Edition, since there is a four-socket license limit
+-- Watch out if SQL Server 2017 Standard Edition has been installed 
+-- on a physical or virtual machine with more than four sockets or more than 24 physical cores
+
+
+-- sys.dm_os_nodes (Transact-SQL)
+-- http://bit.ly/2pn5Mw8
 
 -- Balancing Your Available SQL Server Core Licenses Evenly Across NUMA Nodes
--- https://www.sqlskills.com/blogs/glenn/balancing-your-available-sql-server-core-licenses-evenly-across-numa-nodes/
+-- http://bit.ly/2vfC4Rq
 
 
 
@@ -377,6 +381,10 @@ FROM sys.dm_os_sys_memory WITH (NOLOCK) OPTION (RECOMPILE);
 -- Available physical memory is low
 -- Available physical memory is running low
 -- Physical memory state is transitioning
+
+-- sys.dm_os_sys_memory (Transact-SQL)
+-- http://bit.ly/2pcV0xq
+
 
 
 -- You can skip the next two queries if you know you don't have a clustered instance
@@ -430,31 +438,35 @@ ORDER BY ag.name, ar.replica_server_name, adc.[database_name] OPTION (RECOMPILE)
 
 
 -- Hardware information from SQL Server 2017  (Query 18) (Hardware Info)
-SELECT cpu_count AS [Logical CPU Count], scheduler_count, (socket_count * cores_per_socket) AS [Physical CPU Count], 
-socket_count AS [Socket Count], cores_per_socket, numa_node_count,
-physical_memory_kb/1024 AS [Physical Memory (MB)], committed_kb/1024 AS [Committed Memory (MB)],
-committed_target_kb/1024 AS [Committed Target Memory (MB)],
-max_workers_count AS [Max Workers Count], affinity_type_desc AS [Affinity Type], 
-sqlserver_start_time AS [SQL Server Start Time], virtual_machine_type_desc AS [Virtual Machine Type], 
-softnuma_configuration_desc AS [Soft NUMA Configuration], sql_memory_model_desc, 
-process_physical_affinity -- New in SQL Server 2017
+SELECT cpu_count AS [Logical CPU Count], scheduler_count, 
+       (socket_count * cores_per_socket) AS [Physical Core Count], 
+       socket_count AS [Socket Count], cores_per_socket, numa_node_count,
+       physical_memory_kb/1024 AS [Physical Memory (MB)], 
+       max_workers_count AS [Max Workers Count], 
+	   affinity_type_desc AS [Affinity Type], 
+       sqlserver_start_time AS [SQL Server Start Time], 
+	   virtual_machine_type_desc AS [Virtual Machine Type], 
+       softnuma_configuration_desc AS [Soft NUMA Configuration], 
+	   sql_memory_model_desc, process_physical_affinity -- New in SQL Server 2017
 FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
 -- Gives you some good basic hardware information about your database server
--- Cannot distinguish between HT and multi-core
 -- Note: virtual_machine_type_desc of HYPERVISOR does not automatically mean you are running SQL Server inside of a VM
 -- It merely indicates that you have a hypervisor running on your host
 
--- Soft NUMA configuration is a new column for SQL Server 2016
+-- sys.dm_os_sys_info (Transact-SQL)
+-- http://bit.ly/2pczOYs
+
+-- Soft NUMA configuration was a new column for SQL Server 2016
 -- OFF = Soft-NUMA feature is OFF
 -- ON = SQL Server automatically determines the NUMA node sizes for Soft-NUMA
 -- MANUAL = Manually configured soft-NUMA
 
 -- Configure SQL Server to Use Soft-NUMA (SQL Server)
--- https://msdn.microsoft.com/en-us/library/ms345357(v=sql.130).aspx
+-- http://bit.ly/2HTpKJt
 
--- sql_memory_model_desc values (New in SQL Server 2016 SP1)
+-- sql_memory_model_desc values (Added in SQL Server 2016 SP1)
 -- CONVENTIONAL
 -- LOCK_PAGES
 -- LARGE_PAGES
@@ -490,7 +502,7 @@ EXEC sys.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'HARDWARE\DESCRIPTION\Syste
 -- http://www.cpuid.com/softwares/cpu-z.html
 
 -- You can learn more about processor selection for SQL Server by following this link
--- https://www.sqlskills.com/blogs/glenn/processor-selection-for-sql-server/
+-- http://bit.ly/2F3aVlP
 
 
 
@@ -504,10 +516,10 @@ FROM sys.dm_os_buffer_pool_extension_configuration WITH (NOLOCK) OPTION (RECOMPI
 -- It is a more interesting feature for Standard Edition
 
 -- Buffer Pool Extension to SSDs in SQL Server 2014
--- http://blogs.technet.com/b/dataplatforminsider/archive/2013/07/25/buffer-pool-extension-to-ssds-in-sql-server-2014.aspx
+-- http://bit.ly/1bm08m8
 
 -- Buffer Pool Extension
--- https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/buffer-pool-extension
+-- http://bit.ly/2oBuieO
 
 
 
@@ -591,9 +603,9 @@ ORDER BY DB_NAME([database_id]), [file_id] OPTION (RECOMPILE);
 -- Is percent growth enabled for any files (which is bad)?
 
 
--- Drive information for all fixed drives visible the operating system (Query 28) (Fixed Drives)
+-- Drive information for all fixed drives visible to the operating system (Query 28) (Fixed Drives)
 SELECT fixed_drive_path, drive_type_desc, 
-CONVERT(DECIMAL(18,2),free_space_in_bytes/1073741824.0) AS [Available Space (GB)]
+CONVERT(DECIMAL(18,2), free_space_in_bytes/1073741824.0) AS [Available Space (GB)]
 FROM sys.dm_os_enumerate_fixed_drives WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
@@ -602,10 +614,12 @@ FROM sys.dm_os_enumerate_fixed_drives WITH (NOLOCK) OPTION (RECOMPILE);
 
 
 -- Volume info for all LUNS that have database files on the current instance (Query 29) (Volume Info)
-SELECT DISTINCT vs.volume_mount_point, vs.file_system_type, 
-vs.logical_volume_name, CONVERT(DECIMAL(18,2),vs.total_bytes/1073741824.0) AS [Total Size (GB)],
+SELECT DISTINCT vs.volume_mount_point, vs.file_system_type, vs.logical_volume_name, 
+CONVERT(DECIMAL(18,2), vs.total_bytes/1073741824.0) AS [Total Size (GB)],
 CONVERT(DECIMAL(18,2), vs.available_bytes/1073741824.0) AS [Available Size (GB)],  
-CONVERT(DECIMAL(18,2), vs.available_bytes * 1. / vs.total_bytes * 100.) AS [Space Free %]
+CONVERT(DECIMAL(18,2), vs.available_bytes * 1. / vs.total_bytes * 100.) AS [Space Free %],
+vs.supports_compression, vs.is_compressed, 
+vs.supports_sparse_files, vs.supports_alternate_streams
 FROM sys.master_files AS f WITH (NOLOCK)
 CROSS APPLY sys.dm_os_volume_stats(f.database_id, f.[file_id]) AS vs 
 ORDER BY vs.volume_mount_point OPTION (RECOMPILE);
@@ -613,6 +627,9 @@ ORDER BY vs.volume_mount_point OPTION (RECOMPILE);
 
 -- Shows you the total and free space on the LUNs where you have database files
 -- Being low on free space can negatively affect performance
+
+-- sys.dm_os_volume_stats (Transact-SQL)
+-- http://bit.ly/2oBPNNr
 
 
 

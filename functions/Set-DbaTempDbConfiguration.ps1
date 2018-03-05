@@ -266,7 +266,6 @@ function Set-DbaTempDbConfiguration {
                     Write-Message -Level Output -Message "tempdb reconfigured. You must restart the SQL Service for settings to take effect."
                 }
                 catch {
-                    # write-exception writes the full exception to file
                     Stop-Function -Message "Unable to reconfigure tempdb. Exception: $_" -Target $sql -InnerErrorRecord $_
                     return
                 }

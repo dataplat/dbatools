@@ -59,7 +59,7 @@ function Test-DbaFullRecoveryModel {
             Test-DbaFullRecoveryModel -SqlInstance sql2008 | Sort-Object Server, ActualRecoveryModel -Descending
 
             Shows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model. The Sort-Object will cause the databases in 'pseudo-simple' mode to show first.
-        
+
         .EXAMPLE
             Test-DbaFullRecoveryModel -SqlInstance localhost | Select-Object -Property *
 
@@ -81,7 +81,7 @@ function Test-DbaFullRecoveryModel {
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-        
+
         $sqlRecoveryModel = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
                 ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
                 SERVERPROPERTY('ServerName') AS SqlInstance
@@ -96,7 +96,7 @@ function Test-DbaFullRecoveryModel {
                     INNER JOIN sys.database_recovery_status AS drs
                        ON D.database_id = drs.database_id
                   WHERE d.recovery_model = 1"
-        
+
         if ($Database) {
             $dblist = $Database -join "','"
             $databasefilter += "AND d.[name] in ('$dblist')"
@@ -105,9 +105,9 @@ function Test-DbaFullRecoveryModel {
             $dblist = $ExcludeDatabase -join "','"
             $databasefilter += "AND d.[name] NOT IN ('$dblist')"
         }
-        
+
         $sql = "$sqlRecoveryModel $databasefilter"
-        
+
         Write-Message -Level Debug -Message $sql
     }
     process {
@@ -119,14 +119,14 @@ function Test-DbaFullRecoveryModel {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             try {
                 $recoverymodel = $server.Query($sql)
-                
+
                 if (-not $recoverymodel) {
                     Write-Message -Level Verbose -Message "Server '$instance' does not have any databases in FULL recovery model."
                 }
-                
+
                 foreach ($row in $recoverymodel) {
                     if (!([bool]$row.IsReallyInFullRecoveryModel)) {
                         $notes = "Database is still in SIMPLE recovery model until a full database backup is taken."
@@ -136,7 +136,7 @@ function Test-DbaFullRecoveryModel {
                         $notes = $null
                         $ActualRecoveryModel = "FULL"
                     }
-                    
+
                     [PSCustomObject]@{
                         ComputerName   = $row.ComputerName
                         InstanceName   = $row.InstanceName
