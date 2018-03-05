@@ -1,146 +1,5 @@
-﻿#region Dummy Code that needs proper implementation
-#TODO: Code Enumeration in C#
-enum DbaInstanceAvailability
-{
-    Available
-    Unknown
-    Unavailable
-}
-
-#TODO: Code Enumeration in C#
-enum DbaInstanceConfidenceLevel
-{
-    None = 0
-    Low = 1
-    Medium = 2
-    High = 4
-}
-
-#TODO: Code Enumeration in C#, make it Flags capable
-enum DbaInstanceDiscoveryType
-{
-    IPRange = 1
-    Domain = 2
-    DataSourceEnumeration = 4
-    All = 7
-}
-
-#TODO: Code Enumeration in C#, make it Flags capable
-enum DbaInstanceScanType
-{
-    TCPPort = 1
-    SqlConnect = 2
-    SqlService = 4
-    DNSResolve = 8
-    SPN = 16
-    Browser = 32
-    Ping = 64
-    All = 127
-    Default = 125
-}
-
-#TODO: Code class in C#
-class DbaInstanceConnectionData
-{
-    [string]$Name
-    [string]$NetName
-    [string]$Edition
-    [string]$HostDistribution
-    [bool]$IsClustered
-    [System.Version]$Version
-}
-
-#TODO: Code class in C#
-class DbaInstanceReport
-{
-    [string]$MachineName
-    [string]$ComputerName
-    [string]$InstanceName
-    [string]$FullName
-    [string]$FullSmoName
-    [int]$Port
-    [bool]$TcpConnected
-    [bool]$SqlConnected
-    
-    [object]$DnsResolution
-    [bool]$Ping
-    [DbaBrowserReply]$BrowseReply
-    [object[]]$Services
-    [object[]]$SystemServices
-    [string[]]$SPNs
-    [DbaPortReport[]]$PortsScanned
-    
-    [DbaInstanceAvailability]$Availability
-    [DbaInstanceConfidenceLevel]$Confidence
-    [DbaInstanceScanType]$ScanTypes
-}
-
-#TODO: Code class in C#
-class DbaBrowserReply
-{
-    [string]$MachineName
-    [string]$ComputerName
-    [string]$SqlInstance
-    [string]$InstanceName
-    [int]$TCPPort
-    [string]$Version
-    [bool]$IsClustered
-}
-
-#TODO: Code class in C#
-class DbaPortReport
-{
-    [string]$ComputerName
-    [int]$Port
-    [bool]$IsOpen
-    
-    DbaPortReport()
-    {
-        
-    }
-    
-    DbaPortReport([string]$ComputerName, [int]$Port, [bool]$IsOpen)
-    {
-        $this.ComputerName = $ComputerName
-        $this.Port = $Port
-        $this.IsOpen = $IsOpen
-    }
-}
-
-#TODO: Add to internal functions
-function Invoke-SteppablePipeline {
-<#
-    .SYNOPSIS
-        Allows using steppable pipelines on the pipeline.
-    
-    .DESCRIPTION
-        Allows using steppable pipelines on the pipeline.
-        
-    .PARAMETER InputObject
-        The object(s) to process
-        Should only receive input from the pipeline!
-    
-    .PARAMETER Pipeline
-        The pipeline to execute
-    
-    .EXAMPLE
-        PS C:\> Get-ChildItem | Invoke-SteppablePipeline -Pipeline $steppablePipeline
-    
-        Processes the object returned by Get-ChildItem in the pipeline defined
-#>
-    [CmdletBinding()]
-    param (
-        [Parameter(ValueFromPipeline = $true)]$InputObject,
-        [Parameter(Mandatory = $true)]$Pipeline
-    )
-    
-    process {
-        $Pipeline.Process($InputObject)
-    }
-}
-#endregion Dummy Code that needs proper implementation
-
-function Find-DbaSqlInstance {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Find-DbaInstance {
 <#
     .SYNOPSIS
         Search for SQL Server Instances.
@@ -258,7 +117,7 @@ function Find-DbaSqlInstance {
 		Uses the credentials from the '-Credential' parameter if specified.
     
     .PARAMETER TCPPort
-        The ports to scanin the TCP Port Scan method.
+        The ports to scan in the TCP Port Scan method.
 		Defaults to 1433.
     
     .PARAMETER MinimumConfidence
@@ -277,7 +136,7 @@ function Find-DbaSqlInstance {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
     
     .EXAMPLE
-        PS C:\> Find-DbaSqlInstance -DiscoveryType All
+        PS C:\> Find-DbaInstance -DiscoveryType All
         
         Performs a network search for SQL Instances, using all discovery protocols:
         - Active directory search for Service Principal Names
@@ -285,12 +144,12 @@ function Find-DbaSqlInstance {
         - All IPAddresses in the current computer's subnets of all connected network interfaces
     
     .EXAMPLE
-        PS C:\> Find-DbaSqlInstance -DiscoveryType Domain
+        PS C:\> Find-DbaInstance -DiscoveryType Domain
         
         Performs a network search for SQL Instances by looking up the Service Principal Names of computers in active directory.
     
     .EXAMPLE
-        PS C:\> Get-ADComputer -Filter "*" | Find-DbaSqlInstance
+        PS C:\> Get-ADComputer -Filter "*" | Find-DbaInstance
         
         Scans all computers in the domain for SQL Instances, using a deep probe:
         - Tries resolving the name in DNS
@@ -303,7 +162,7 @@ function Find-DbaSqlInstance {
         - Tries looking up the Service Principal Names for each instance
     
     .EXAMPLE
-        PS C:\> Get-Content .\servers.txt | Find-DbaSqlInstance -SqlCredential $cred -ScanType Browser,SqlConnect
+        PS C:\> Get-Content .\servers.txt | Find-DbaInstance -SqlCredential $cred -ScanType Browser,SqlConnect
         
         Reads all servers from the servers.txt file (one server per line),
         then scans each of them for instances using the browser service
@@ -318,16 +177,20 @@ function Find-DbaSqlInstance {
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [Parameter(Mandatory = $true, ParameterSetName = 'Computer', ValueFromPipeline = $true)][DbaInstance[]]$ComputerName,
-        [Parameter(Mandatory = $true, ParameterSetName = 'Discover')][DbaInstanceDiscoveryType]$DiscoveryType,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Computer', ValueFromPipeline = $true)]
+        [DbaInstance[]]$ComputerName,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Discover')]
+        [Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]$DiscoveryType,
         [System.Management.Automation.PSCredential]$Credential,
         [System.Management.Automation.PSCredential]$SqlCredential,
-        [DbaInstanceScanType]$ScanType = "Default",
-        [Parameter(ParameterSetName = 'Discover')][string[]]$IpAddress,
+        [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]$ScanType = "Default",
+        [Parameter(ParameterSetName = 'Discover')]
+        [string[]]$IpAddress,
         [string]$DomainController,
         [int[]]$TCPPort = 1433,
-        [DbaInstanceConfidenceLevel]$MinimumConfidence = 'Low',
-        [Alias('Silent')][switch]$EnableException
+        [Sqlcollaborative.Dbatools.Discovery.DbaInstanceConfidenceLevel]$MinimumConfidence = 'Low',
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     
     begin {
@@ -352,10 +215,10 @@ function Find-DbaSqlInstance {
                 [Parameter(ValueFromPipeline = $true)][DbaInstance[]]$Target,
                 [PSCredential]$Credential,
                 [PSCredential]$SqlCredential,
-                [DbaInstanceScanType]$ScanType,
+                [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]$ScanType,
                 [string]$DomainController,
                 [int[]]$TCPPort = 1433,
-                [DbaInstanceConfidenceLevel]$MinimumConfidence,
+                [Sqlcollaborative.Dbatools.Discovery.DbaInstanceConfidenceLevel]$MinimumConfidence,
                 [switch]$EnableException
             )
             
@@ -371,7 +234,7 @@ function Find-DbaSqlInstance {
                     else {
                         $null = $computersScanned.Add($computer.ComputerName)
                     }
-                    Write-Message -Level Verbose -Message "Processing: $($computer)" -Target $computer -EnableException $EnableException -FunctionName Find-DbaSqlInstance
+                    Write-Message -Level Verbose -Message "Processing: $($computer)" -Target $computer -EnableException $EnableException -FunctionName Find-DbaInstance
                     
                     #region Null variables to prevent scope lookup on conditional existence
                     $resolution = $null
@@ -385,30 +248,31 @@ function Find-DbaSqlInstance {
                     #endregion Null variables to prevent scope lookup on conditional existence
                     
                     #region Gather data
-                    if ($ScanType -band [DbaInstanceScanType]::DNSResolve) {
+                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::DNSResolve) {
                         try { $resolution = [System.Net.Dns]::GetHostEntry($computer.ComputerName) }
                         catch { }
                     }
                     
-                    if ($ScanType -band [DbaInstanceScanType]::Ping) {
+                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::Ping) {
                         $ping = New-Object System.Net.NetworkInformation.Ping
                         try { $pingReply = $ping.Send($computer.ComputerName) }
                         catch { }
                     }
                     
-                    if ($ScanType -band [DbaInstanceScanType]::SPN) {
+                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SPN) {
                         $computerByName = $computer.ComputerName
                         if ($resolution.HostName) { $computerByName = $resolution.HostName }
                         if ($computerByName -notmatch "$([dbargx]::IPv4)|$([dbargx]::IPv6)") {
-                            $sPNs = Get-DomainSPN -DomainController $DomainController -Credential $Credential -ComputerName $computerByName -GetSPN
+                            try { $sPNs = Get-DomainSPN -DomainController $DomainController -Credential $Credential -ComputerName $computerByName -GetSPN }
+                            catch { }
                         }
                     }
                     
-                    if ($ScanType -band [DbaInstanceScanType]::TCPPort) {
+                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::TCPPort) {
                         $ports = $TCPPort | Test-TcpPort -ComputerName $computer
                     }
                     
-                    if ($ScanType -band [DbaInstanceScanType]::Browser) {
+                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::Browser) {
                         try {
                             $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $ComputerName -EnableException
                         }
@@ -417,9 +281,9 @@ function Find-DbaSqlInstance {
                         }
                     }
                     
-                    if ($ScanType -band [DbaInstanceScanType]::SqlService) {
+                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SqlService) {
                         if ($Credential) { $services = Get-DbaSqlService -ComputerName $ComputerName -Credential $Credential -EnableException -ErrorAction Ignore -WarningAction SilentlyCOntinue }
-                        else { $services = Get-DbaSqlService -ComputerName $ComputerName -ErrorAction Ignore  -WarningAction SilentlyContinue }
+                        else { $services = Get-DbaSqlService -ComputerName $ComputerName -ErrorAction Ignore -WarningAction SilentlyContinue }
                     }
                     #endregion Gather data
                     
@@ -451,18 +315,19 @@ function Find-DbaSqlInstance {
                     #region Case: Nothing found
                     if ((-not $instanceNames) -and (-not $portsDetected)) {
                         if ($resolution -or ($pingReply.Status -like "Success")) {
-                            if ($MinimumConfidence -eq [DbaInstanceConfidenceLevel]::None) {
-                                New-Object DbaInstanceReport -Property @{
-                                    MachineName = $computer.ComputerName
-                                    ComputerName = $computer.ComputerName
+                            if ($MinimumConfidence -eq [Sqlcollaborative.Dbatools.Discovery.DbaInstanceConfidenceLevel]::None) {
+                                New-Object Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport -Property @{
+                                    MachineName   = $computer.ComputerName
+                                    ComputerName  = $computer.ComputerName
+                                    Ping          = $pingReply.Status -like 'Success'
                                 }
                             }
                             else {
-                                Write-Message -Level Verbose -Message "Computer $computer could be contacted, but no trace of an SQL Instance was found. Skipping..." -Target $computer -EnableException $EnableException -FunctionName Find-DbaSqlInstance
+                                Write-Message -Level Verbose -Message "Computer $computer could be contacted, but no trace of an SQL Instance was found. Skipping..." -Target $computer -EnableException $EnableException -FunctionName Find-DbaInstance
                             }
                         }
                         else {
-                            Write-Message -Level Verbose -Message "Computer $computer could not be contacted, skipping." -Target $computer -EnableException $EnableException -FunctionName Find-DbaSqlInstance
+                            Write-Message -Level Verbose -Message "Computer $computer could not be contacted, skipping." -Target $computer -EnableException $EnableException -FunctionName Find-DbaInstance
                         }
                         
                         continue
@@ -473,24 +338,24 @@ function Find-DbaSqlInstance {
                     
                     #region Case: Named instance found
                     foreach ($instance in $instanceNames) {
-                        $object = New-Object DbaInstanceReport
-						$object.MachineName    = $computer.ComputerName
-						$object.ComputerName   = $computer.ComputerName
-						$object.InstanceName   = $instance
-						$object.DnsResolution  = $resolution
-						$object.Ping           = $pingReply
-						$object.ScanTypes      = $ScanType
-						$object.Services       = $services | Where-Object InstanceName -EQ $instance
-						$object.SystemServices = $services | Where-Object { -not $_.InstanceName }
-						$object.SPNs           = $sPNs
+                        $object = New-Object Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport
+                        $object.MachineName = $computer.ComputerName
+                        $object.ComputerName = $computer.ComputerName
+                        $object.InstanceName = $instance
+                        $object.DnsResolution = $resolution
+                        $object.Ping = $pingReply.Status -like 'Success'
+                        $object.ScanTypes = $ScanType
+                        $object.Services = $services | Where-Object InstanceName -EQ $instance
+                        $object.SystemServices = $services | Where-Object { -not $_.InstanceName }
+                        $object.SPNs = $sPNs
                         
-						if ($result = $browseResult | Where-Object InstanceName -EQ $instance) {
-							$object.BrowseReply = $result
-						}
-						if ($ports) {
-							$object.PortsScanned = $ports
-						}
-						
+                        if ($result = $browseResult | Where-Object InstanceName -EQ $instance) {
+                            $object.BrowseReply = $result
+                        }
+                        if ($ports) {
+                            $object.PortsScanned = $ports
+                        }
+                        
                         if ($object.BrowseReply) {
                             $object.Confidence = 'Medium'
                             if ($object.BrowseReply.TCPPort) {
@@ -520,21 +385,21 @@ function Find-DbaSqlInstance {
                     foreach ($port in $portsDetected) {
                         if ($masterList.Port -contains $port) { continue }
                         
-                        $object = New-Object DbaInstanceReport
-						$object.MachineName     = $computer.ComputerName
-						$object.ComputerName    = $computer.ComputerName
-						$object.Port            = $port
-						$object.DnsResolution   = $resolution
-						$object.Ping            = $pingReply
-						$object.ScanTypes       = $ScanType
-						$object.SystemServices  = $services | Where-Object { -not $_.InstanceName }
-						$object.SPNs            = $sPNs
-						$object.Confidence      = 'Low'
-						if ($ports) {
-							$object.PortsScanned = $ports
-						}
+                        $object = New-Object Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport
+                        $object.MachineName = $computer.ComputerName
+                        $object.ComputerName = $computer.ComputerName
+                        $object.Port = $port
+                        $object.DnsResolution = $resolution
+                        $object.Ping = $pingReply.Status -like 'Success'
+                        $object.ScanTypes = $ScanType
+                        $object.SystemServices = $services | Where-Object { -not $_.InstanceName }
+                        $object.SPNs = $sPNs
+                        $object.Confidence = 'Low'
+                        if ($ports) {
+                            $object.PortsScanned = $ports
+                        }
                         
-                        if (($ports.Port -contains $port) -and ($sPNs | Where-Object { $_ -like "*:$port" } )) {
+                        if (($ports.Port -contains $port) -and ($sPNs | Where-Object { $_ -like "*:$port" })) {
                             $object.Confidence = 'Medium'
                         }
                         
@@ -546,36 +411,27 @@ function Find-DbaSqlInstance {
                     }
                     #endregion Case: Port number found
                     
-                    #TODO: Remove on production code, will be automatically processed in C#
-                    foreach ($dataSet in $masterList) {
-                        $smoName = $dataSet.ComputerName
-                        if ($dataSet.InstanceName) { $smoName += "\$($dataSet.InstanceName)" }
-                        elseif ($dataSet.Port -and ($dataSet.Port -ne 1433)) { $smoName += "\$($dataSet.Port)" }
-                        
-                        $dataSet.FullSmoName = $smoName
-                    }
-                    
-                    if ($ScanType -band [DbaInstanceScanType]::SqlConnect) {
-						$instanceHash = @{}
-						$toDelete = @()
+                    if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SqlConnect) {
+                        $instanceHash = @{ }
+                        $toDelete = @()
                         foreach ($dataSet in $masterList) {
                             try {
                                 $server = Connect-SqlInstance -SqlInstance $dataSet.FullSmoName -SqlCredential $SqlCredential
                                 $dataSet.SqlConnected = $true
                                 $dataSet.Confidence = 'High'
-								
-								# Remove duplicates
-								if ($instanceHash.ContainsKey($server.DomainInstanceName)) {
-									$toDelete += $dataSet
-								}
-								else {
-									$instanceHash[$server.DomainInstanceName] = $dataSet
-									
-									try {
-										$dataSet.MachineName = $server.ComputerNamePhysicalNetBIOS
-									}
-									catch { }
-								}
+                                
+                                # Remove duplicates
+                                if ($instanceHash.ContainsKey($server.DomainInstanceName)) {
+                                    $toDelete += $dataSet
+                                }
+                                else {
+                                    $instanceHash[$server.DomainInstanceName] = $dataSet
+                                    
+                                    try {
+                                        $dataSet.MachineName = $server.ComputerNamePhysicalNetBIOS
+                                    }
+                                    catch { }
+                                }
                             }
                             catch {
                                 # Error class definitions
@@ -597,13 +453,13 @@ function Find-DbaSqlInstance {
                                 #endregion Other connection errors
                             }
                         }
-						
-						foreach ($item in $toDelete) {
-							$masterList.Remove($item)
-						}
+                        
+                        foreach ($item in $toDelete) {
+                            $masterList.Remove($item)
+                        }
                     }
-					
-					$masterList
+                    
+                    $masterList
                 }
             }
         }
@@ -736,13 +592,13 @@ function Find-DbaSqlInstance {
                         
                         #region Parse Output
                         $Response | Select-String "(ServerName;(\w+);InstanceName;(\w+);IsClustered;(\w+);Version;(\d+\.\d+\.\d+\.\d+);(tcp;(\d+)){0,1})" -AllMatches | Select-Object -ExpandProperty Matches | ForEach-Object {
-                            $obj = New-Object DbaBrowserReply -Property @{
-                                MachineName     = $computer.ComputerName
-                                ComputerName    = $_.Groups[2].Value
-                                SqlInstance     = "$($_.Groups[2].Value)\$($_.Groups[3].Value)"
-                                InstanceName    = $_.Groups[3].Value
-                                Version         = $_.Groups[5].Value
-                                IsClustered     = "Yes" -eq $_.Groups[4].Value
+                            $obj = New-Object Sqlcollaborative.Dbatools.Discovery.DbaBrowserReply -Property @{
+                                MachineName       = $computer.ComputerName
+                                ComputerName      = $_.Groups[2].Value
+                                SqlInstance       = "$($_.Groups[2].Value)\$($_.Groups[3].Value)"
+                                InstanceName      = $_.Groups[3].Value
+                                Version           = $_.Groups[5].Value
+                                IsClustered       = "Yes" -eq $_.Groups[4].Value
                             }
                             if ($_.Groups[7].Success) {
                                 $obj.TCPPort = $_.Groups[7].Value
@@ -800,14 +656,14 @@ function Find-DbaSqlInstance {
                         $client.Connect($ComputerName.ComputerName, $item)
                         if ($client.Connected) {
                             $client.Close()
-                            New-Object -TypeName DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $true
+                            New-Object -TypeName Sqlcollaborative.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $true
                         }
                         else {
-                            New-Object -TypeName DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $false
+                            New-Object -TypeName Sqlcollaborative.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $false
                         }
                     }
                     catch {
-                        New-Object -TypeName DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $false
+                        New-Object -TypeName Sqlcollaborative.Dbatools.Discovery.DbaPortReport -ArgumentList $ComputerName.ComputerName, $item, $false
                     }
                 }
             }
@@ -992,10 +848,10 @@ function Find-DbaSqlInstance {
         
         #region Build parameter Splat for scan
         $paramTestSqlInstance = @{
-            ScanType          = $ScanType
-            TCPPort           = $TCPPort
-            EnableException   = $EnableException
-            MinimumConfidence = $MinimumConfidence
+            ScanType            = $ScanType
+            TCPPort             = $TCPPort
+            EnableException     = $EnableException
+            MinimumConfidence   = $MinimumConfidence
         }
         
         # Only specify when passed by user to avoid credential prompts on PS3/4
@@ -1028,7 +884,7 @@ function Find-DbaSqlInstance {
             }
             'Discover' {
                 #region Discovery: DataSource Enumeration
-                if ($DiscoveryType -band ([DbaInstanceDiscoveryType]::DataSourceEnumeration)) {
+                if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::DataSourceEnumeration)) {
                     try {
                         # Discover instances
                         foreach ($instance in ([System.Data.Sql.SqlDataSourceEnumerator]::Instance.GetDataSources())) {
@@ -1047,7 +903,7 @@ function Find-DbaSqlInstance {
                 #endregion Discovery: DataSource Enumeration
                 
                 #region Discovery: SPN Search
-                if ($DiscoveryType -band ([DbaInstanceDiscoveryType]::Domain)) {
+                if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::Domain)) {
                     try {
                         Get-DomainSPN -DomainController $DomainController -Credential $Credential -ErrorAction Stop | Invoke-SteppablePipeline -Pipeline $steppablePipeline
                     }
@@ -1058,7 +914,7 @@ function Find-DbaSqlInstance {
                 #endregion Discovery: SPN Search
                 
                 #region Discovery: IP Range
-                if ($DiscoveryType -band ([DbaInstanceDiscoveryType]::IPRange)) {
+                if ($DiscoveryType -band ([Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]::IPRange)) {
                     if ($IpAddress) {
                         foreach ($address in $IpAddress) {
                             Resolve-IPRange -IpAddress $address | Invoke-SteppablePipeline -Pipeline $steppablePipeline

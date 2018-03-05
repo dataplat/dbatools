@@ -456,7 +456,8 @@
         'Measure-DbaDiskSpaceRequirement',
         'New-DbaXESmartCsvWriter',
         'Export-DbaXECsv',
-        'Invoke-DbaXeReplay'
+        'Invoke-DbaXeReplay',
+        'Find-DbaInstance'
     )
     
     # Cmdlets to export from this module
