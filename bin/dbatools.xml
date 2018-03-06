@@ -1877,7 +1877,7 @@
             The full server instance name
             </summary>
         </member>
-        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.FullSmoName">
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.SqlInstance">
             <summary>
             The full name usable to connect via SMO
             </summary>
@@ -1885,6 +1885,11 @@
         <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.Port">
             <summary>
             The port number the server listens on
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.Timestamp">
+            <summary>
+            When the scan was concluded
             </summary>
         </member>
         <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.TcpConnected">
