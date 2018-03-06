@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaInstance {
 <#
     .SYNOPSIS
@@ -377,6 +377,8 @@ function Find-DbaInstance {
                             }
                         }
                         
+                        $object.Timestamp = Get-Date
+                        
                         $masterList += $object
                     }
                     #endregion Case: Named instance found
@@ -397,6 +399,10 @@ function Find-DbaInstance {
                         $object.Confidence = 'Low'
                         if ($ports) {
                             $object.PortsScanned = $ports
+                            
+                            if (($ports | Where-Object IsOpen).Port -eq 1433) {
+                                $object.Confidence = 'Medium'
+                            }
                         }
                         
                         if (($ports.Port -contains $port) -and ($sPNs | Where-Object { $_ -like "*:$port" })) {
@@ -406,6 +412,7 @@ function Find-DbaInstance {
                         $object.PortsScanned | Where-Object Port -EQ $object.Port | ForEach-Object {
                             $object.TcpConnected = $_.IsOpen
                         }
+                        $object.Timestamp = Get-Date
                         
                         $masterList += $object
                     }

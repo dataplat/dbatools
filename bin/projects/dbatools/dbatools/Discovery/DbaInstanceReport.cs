@@ -43,7 +43,7 @@ namespace Sqlcollaborative.Dbatools.Discovery
         /// <summary>
         /// The full name usable to connect via SMO
         /// </summary>
-        public string FullSmoName
+        public string SqlInstance
         {
             get
             {
@@ -61,6 +61,11 @@ namespace Sqlcollaborative.Dbatools.Discovery
         /// The port number the server listens on
         /// </summary>
         public int Port { get; set; }
+
+        /// <summary>
+        /// When the scan was concluded
+        /// </summary>
+        public DateTime Timestamp;
 
         /// <summary>
         /// Was a TCP connect successful?

@@ -499,7 +499,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         /// </summary>
         /// <param name="Report">The report to interpret</param>
         public DbaInstanceParameter(Discovery.DbaInstanceReport Report)
-            : this(Report.FullSmoName)
+            : this(Report.SqlInstance)
         {
             
         }
