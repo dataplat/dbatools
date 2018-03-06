@@ -509,6 +509,10 @@ function Get-DbaBackupHistory {
                                FROM msdb..backupfile WHERE $BackupSetIds_Where"
                 Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
                 $FileListResults = $server.Query($fileAllSql)
+                $FileListHash = @{}
+                foreach($fl in $FileListResults) {
+                    $FileListHash[$fl.backup_set_id] = $fl
+                }
                 foreach ($group in $GroupedResults) {
                     $CompressedBackupSize = $group.Group[0].CompressedBackupSize
                     if ($CompressedBackupSize -eq [System.DBNull]::Value) {
@@ -530,13 +534,13 @@ function Get-DbaBackupHistory {
                     $historyObject.Path = $group.Group.Path
                     $historyObject.TotalSize = $group.Group[0].TotalSize
                     $historyObject.CompressedBackupSize = $CompressedBackupSize
-                    $HistoryObject.CompressionRatio = $ratio
+                    $historyObject.CompressionRatio = $ratio
                     $historyObject.Type = $group.Group[0].Type
                     $historyObject.BackupSetId = $group.Group[0].BackupSetId
                     $historyObject.DeviceType = $group.Group[0].DeviceType
                     $historyObject.Software = $group.Group[0].Software
                     $historyObject.FullName = $group.Group.Path
-                    $historyObject.FileList = $FileListResults | Where-Object backup_set_id -eq $Group.group[0].BackupSetID | Select-Object FileType, LogicalName, PhysicalName
+                    $historyObject.FileList = $FileListHash[$Group.group[0].BackupSetID] | Select-Object FileType, LogicalName, PhysicalName
                     $historyObject.Position = $group.Group[0].Position
                     $historyObject.FirstLsn = $group.Group[0].First_LSN
                     $historyObject.DatabaseBackupLsn = $group.Group[0].database_backup_lsn
@@ -544,7 +548,7 @@ function Get-DbaBackupHistory {
                     $historyObject.LastLsn = $group.Group[0].Last_Lsn
                     $historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
                     $historyObject.IsCopyOnly = ($group.Group[0].is_copy_only -eq 1)
-                    $HistoryObject.LastRecoveryForkGuid = $group.Group[0].last_recovery_fork_guid
+                    $historyObject.LastRecoveryForkGuid = $group.Group[0].last_recovery_fork_guid
                     $groupResults += $historyObject
                 }
                 $groupResults | Sort-Object -Property LastLsn, Type
