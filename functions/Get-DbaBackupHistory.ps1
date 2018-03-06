@@ -511,7 +511,10 @@ function Get-DbaBackupHistory {
                 $FileListResults = $server.Query($fileAllSql)
                 $FileListHash = @{}
                 foreach($fl in $FileListResults) {
-                    $FileListHash[$fl.backup_set_id] = $fl
+                    if (-not($FileListHash.ContainsKey($fl.backup_set_id))) {
+                        $FileListHash[$fl.backup_set_id] = @()
+                    }
+                    $FileListHash[$fl.backup_set_id] += $fl
                 }
                 foreach ($group in $GroupedResults) {
                     $CompressedBackupSize = $group.Group[0].CompressedBackupSize
