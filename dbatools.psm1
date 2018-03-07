@@ -543,6 +543,10 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"     = "Test-DbaVirtualLogFile"
         "Definition"    = "Test-DbaDbVirtualLogFile"
+    },
+    @{
+        "AliasName"      = "Test-DbaFullRecoveryModel"
+        "Definition"     = "Test-DbaRecoveryModel"
     }
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
