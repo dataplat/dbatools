@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDatabaseFile {
     <#
     .SYNOPSIS
@@ -59,7 +60,6 @@ function Get-DbaDatabaseFile {
         [object[]]$ExcludeDatabase,
         [object[]]$DatabaseCollection,
         [switch][Alias('Silent')]$EnableException
-
     )
 
     process {
@@ -96,7 +96,7 @@ function Get-DbaDatabaseFile {
             vfs.num_of_reads as NumberOfDiskReads,
             vfs.num_of_bytes_read as BytesReadFromDisk,
             vfs.num_of_bytes_written as BytesWrittenToDisk,
-             fg.data_space_id as FileGroupDataSpaceId,
+            fg.data_space_id as FileGroupDataSpaceId,
             fg.Type as FileGroupType,
             fg.type_desc as FileGroupTypeDescription,
             case fg.is_default When 1 then 'True' when 0 then 'False' end as FileGroupDefault,
@@ -137,8 +137,6 @@ function Get-DbaDatabaseFile {
             from sysfiles df
             left outer join  sysfilegroups fg on df.groupid=fg.groupid"
 
-            Write-Message -Level Verbose -Message "Databases provided"
-
             if ($Database) {
                 $DatabaseCollection = $server.Databases | Where-Object Name -in $database
             }
@@ -161,18 +159,18 @@ function Get-DbaDatabaseFile {
                 $version = + ($version.DatabaseCompatibility.ToString().replace("Version", "")) / 10
 
                 if ($version -ge 11) {
-                    $query = ($sql, $sql2008, $sqlfrom, $sql2008from) -join "`n"
+                    $query = ($sql, $sql2008, $sqlfrom, $sql2008from) -Join "`n"
                 }
                 elseif ($version -ge 9) {
-                    $query = ($sql, $sqlfrom) -join "`n"
+                    $query = ($sql, $sqlfrom) -Join "`n"
                 }
                 else {
                     $query = $sql2000
                 }
-                
+
                 Write-Message -Level Debug -Message "SQL Statement: $query"
 
-                $results = $server.Query($query, $db.name)
+                $results = $server.Query($query, $db.Name)
 
                 foreach ($result in $results) {
                     $size = [dbasize]($result.Size * 8192)
@@ -195,8 +193,8 @@ function Get-DbaDatabaseFile {
                         $VolumeFreeSpace = [dbasize]$result.VolumeFreeSpace
                     }
                     else {
-                        $disks = $server.Query("xp_fixeddrives", $db.name)
-                        $MbFreeColName = ($disks | select -first 1).psobject.Properties.Name[1]
+                        $disks = $server.Query("xp_fixeddrives", $db.Name)
+                        $MbFreeColName = $disks[0].psobject.Properties.Name[1]
                         $free = $disks | Where-Object { $_.drive -eq $result.PhysicalName.Substring(0, 1) } | Select-Object $MbFreeColName -ExpandProperty $MbFreeColName
                         $VolumeFreeSpace = [dbasize]($free * 1024 * 1024)
                     }
