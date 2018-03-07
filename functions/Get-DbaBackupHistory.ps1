@@ -217,12 +217,14 @@ function Get-DbaBackupHistory {
             }
 
             if ($server.VersionMajor -ge 10) {
+                $compressedFlag = $false
                 # 2008 introduced compressed_backup_size
                 $BackupCols = "
                 backupset.backup_size AS TotalSize,
                 backupset.compressed_backup_size as CompressedBackupSize"
             }
             else {
+                $compressedFlag = $false
                 $BackupCols = "
                 backupset.backup_size AS TotalSize,
                 NULL as CompressedBackupSize"
@@ -231,7 +233,7 @@ function Get-DbaBackupHistory {
 
             $databases = @()
             if ($null -ne $Database) {
-                ForEach ($db in $Database) {
+                foreach ($db in $Database) {
                     $databases += [PScustomObject]@{name = $db}
                 }
             }
@@ -523,13 +525,24 @@ function Get-DbaBackupHistory {
                 }
                 foreach ($group in $GroupedResults) {
                     $commonFields = $group.Group[0]
-                    $CompressedBackupSize = $commonFields.CompressedBackupSize
-                    if ($CompressedBackupSize -eq [System.DBNull]::Value) {
-                        $CompressedBackupSize = $null
-                        $ratio = 1
+                    $groupLength = $group.Group.Count
+                    if ($groupLength -eq 1) {
+                        $Start_ = $commonFields.Start
+                        $End_ = $commonFields.End
+                        $Duration_ = $commonFields.Duration
                     }
                     else {
+                        $Start_ = ($group.Group.Start | Measure-Object -Minimum).Minimum
+                        $End_ = ($group.Group.End | Measure-Object -Maximum).Maximum
+                        $Duration_ = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
+                    }
+                    $CompressedBackupSize = $commonFields.CompressedBackupSize
+                    if ($compressedFlag -eq $true) {
                         $ratio = [Math]::Round(($commonFields.TotalSize) / ($CompressedBackupSize), 2)
+                    }
+                    else {
+                        $CompressedBackupSize = $null
+                        $ratio = 1
                     }
                     $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
                     $historyObject.ComputerName = $server.NetName
@@ -537,9 +550,9 @@ function Get-DbaBackupHistory {
                     $historyObject.SqlInstance = $server.DomainInstanceName
                     $historyObject.Database = $commonFields.Database
                     $historyObject.UserName = $commonFields.UserName
-                    $historyObject.Start = ($group.Group.Start | Measure-Object -Minimum).Minimum
-                    $historyObject.End = ($group.Group.End | Measure-Object -Maximum).Maximum
-                    $historyObject.Duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
+                    $historyObject.Start = $Start_
+                    $historyObject.End = $End_
+                    $historyObject.Duration = $Duration_
                     $historyObject.Path = $group.Group.Path
                     $historyObject.TotalSize = $commonFields.TotalSize
                     $historyObject.CompressedBackupSize = $CompressedBackupSize
