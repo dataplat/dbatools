@@ -146,7 +146,7 @@
         'Get-DbaProcess',
         'Get-DbaRunningJob',
         'Set-DbaMaxDop',
-        'Test-DbaFullRecoveryModel',
+        'Test-DbaRecoveryModel',
         'Test-DbaMaxDop',
         'Remove-DbaBackup',
         'Get-DbaPermission',
@@ -554,7 +554,8 @@
     'Out-DbaDataTable',
     'Invoke-DbaSqlCmd',
     'Get-DbaClusterActiveNode',
-    'Test-DbaVirtualLogFile'
+    'Test-DbaVirtualLogFile',
+    'Test-DbaFullRecoveryModel'
     
     # List of all modules packaged with this module
     ModuleList                = @()
