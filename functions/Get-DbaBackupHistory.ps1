@@ -527,14 +527,14 @@ function Get-DbaBackupHistory {
                     $commonFields = $group.Group[0]
                     $groupLength = $group.Group.Count
                     if ($groupLength -eq 1) {
-                        $Start_ = $commonFields.Start
-                        $End_ = $commonFields.End
-                        $Duration_ = $commonFields.Duration
+                        $Start = $commonFields.Start
+                        $End = $commonFields.End
+                        $Duration = $commonFields.Duration
                     }
                     else {
-                        $Start_ = ($group.Group.Start | Measure-Object -Minimum).Minimum
-                        $End_ = ($group.Group.End | Measure-Object -Maximum).Maximum
-                        $Duration_ = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
+                        $Start = ($group.Group.Start | Measure-Object -Minimum).Minimum
+                        $End = ($group.Group.End | Measure-Object -Maximum).Maximum
+                        $Duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
                     }
                     $CompressedBackupSize = $commonFields.CompressedBackupSize
                     if ($compressedFlag -eq $true) {
@@ -550,9 +550,9 @@ function Get-DbaBackupHistory {
                     $historyObject.SqlInstance = $server.DomainInstanceName
                     $historyObject.Database = $commonFields.Database
                     $historyObject.UserName = $commonFields.UserName
-                    $historyObject.Start = $Start_
-                    $historyObject.End = $End_
-                    $historyObject.Duration = $Duration_
+                    $historyObject.Start = $Start
+                    $historyObject.End = $End
+                    $historyObject.Duration = $Duration
                     $historyObject.Path = $group.Group.Path
                     $historyObject.TotalSize = $commonFields.TotalSize
                     $historyObject.CompressedBackupSize = $CompressedBackupSize
