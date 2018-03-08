@@ -217,12 +217,14 @@ function Get-DbaBackupHistory {
             }
 
             if ($server.VersionMajor -ge 10) {
+                $compressedFlag = $false
                 # 2008 introduced compressed_backup_size
                 $BackupCols = "
                 backupset.backup_size AS TotalSize,
                 backupset.compressed_backup_size as CompressedBackupSize"
             }
             else {
+                $compressedFlag = $false
                 $BackupCols = "
                 backupset.backup_size AS TotalSize,
                 NULL as CompressedBackupSize"
@@ -231,7 +233,7 @@ function Get-DbaBackupHistory {
 
             $databases = @()
             if ($null -ne $Database) {
-                ForEach ($db in $Database) {
+                foreach ($db in $Database) {
                     $databases += [PScustomObject]@{name = $db}
                 }
             }
@@ -503,48 +505,72 @@ function Get-DbaBackupHistory {
                 Write-Message -Level SomewhatVerbose -Message "$($GroupedResults.Count) result-groups found."
                 $groupResults = @()
                 $BackupSetIds = $GroupedResults.Name
-                $BackupSetIds_List = $BackupSetIds -Join "','"
-                $BackupSetIds_Where = "backup_set_id IN ('$BackupSetIds_List')"
-                $fileAllSql = "SELECT backup_set_id, file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
-                               FROM msdb..backupfile WHERE $BackupSetIds_Where"
-                Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
-                $FileListResults = $server.Query($fileAllSql)
+                $BackupSetIds_List = $BackupSetIds -Join ","
+                if ($GroupedResults.Count -gt 0) {
+                    $BackupSetIds_Where = "backup_set_id IN ($BackupSetIds_List)"
+                    $fileAllSql = "SELECT backup_set_id, file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
+                                   FROM msdb..backupfile WHERE $BackupSetIds_Where"
+                    Write-Message -Level Debug -Message "FileSQL: $fileAllSql"
+                    $FileListResults = $server.Query($fileAllSql)
+                }
+                else {
+                    $FileListResults = @()
+                }
+                $FileListHash = @{}
+                foreach ($fl in $FileListResults) {
+                    if (-not($FileListHash.ContainsKey($fl.backup_set_id))) {
+                        $FileListHash[$fl.backup_set_id] = @()
+                    }
+                    $FileListHash[$fl.backup_set_id] += $fl
+                }
                 foreach ($group in $GroupedResults) {
-                    $CompressedBackupSize = $group.Group[0].CompressedBackupSize
-                    if ($CompressedBackupSize -eq [System.DBNull]::Value) {
-                        $CompressedBackupSize = $null
-                        $ratio = 1
+                    $commonFields = $group.Group[0]
+                    $groupLength = $group.Group.Count
+                    if ($groupLength -eq 1) {
+                        $Start = $commonFields.Start
+                        $End = $commonFields.End
+                        $Duration = $commonFields.Duration
                     }
                     else {
-                        $ratio = [Math]::Round(($group.Group[0].TotalSize) / ($CompressedBackupSize), 2)
+                        $Start = ($group.Group.Start | Measure-Object -Minimum).Minimum
+                        $End = ($group.Group.End | Measure-Object -Maximum).Maximum
+                        $Duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
+                    }
+                    $CompressedBackupSize = $commonFields.CompressedBackupSize
+                    if ($compressedFlag -eq $true) {
+                        $ratio = [Math]::Round(($commonFields.TotalSize) / ($CompressedBackupSize), 2)
+                    }
+                    else {
+                        $CompressedBackupSize = $null
+                        $ratio = 1
                     }
                     $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
                     $historyObject.ComputerName = $server.NetName
                     $historyObject.InstanceName = $server.ServiceName
                     $historyObject.SqlInstance = $server.DomainInstanceName
-                    $historyObject.Database = $group.Group[0].Database
-                    $historyObject.UserName = $group.Group[0].UserName
-                    $historyObject.Start = ($group.Group.Start | Measure-Object -Minimum).Minimum
-                    $historyObject.End = ($group.Group.End | Measure-Object -Maximum).Maximum
-                    $historyObject.Duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
+                    $historyObject.Database = $commonFields.Database
+                    $historyObject.UserName = $commonFields.UserName
+                    $historyObject.Start = $Start
+                    $historyObject.End = $End
+                    $historyObject.Duration = $Duration
                     $historyObject.Path = $group.Group.Path
-                    $historyObject.TotalSize = $group.Group[0].TotalSize
+                    $historyObject.TotalSize = $commonFields.TotalSize
                     $historyObject.CompressedBackupSize = $CompressedBackupSize
-                    $HistoryObject.CompressionRatio = $ratio
-                    $historyObject.Type = $group.Group[0].Type
-                    $historyObject.BackupSetId = $group.Group[0].BackupSetId
-                    $historyObject.DeviceType = $group.Group[0].DeviceType
-                    $historyObject.Software = $group.Group[0].Software
+                    $historyObject.CompressionRatio = $ratio
+                    $historyObject.Type = $commonFields.Type
+                    $historyObject.BackupSetId = $commonFields.BackupSetId
+                    $historyObject.DeviceType = $commonFields.DeviceType
+                    $historyObject.Software = $commonFields.Software
                     $historyObject.FullName = $group.Group.Path
-                    $historyObject.FileList = $FileListResults | Where-Object backup_set_id -eq $Group.group[0].BackupSetID | Select-Object FileType, LogicalName, PhysicalName
-                    $historyObject.Position = $group.Group[0].Position
-                    $historyObject.FirstLsn = $group.Group[0].First_LSN
-                    $historyObject.DatabaseBackupLsn = $group.Group[0].database_backup_lsn
-                    $historyObject.CheckpointLsn = $group.Group[0].checkpoint_lsn
-                    $historyObject.LastLsn = $group.Group[0].Last_Lsn
-                    $historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
-                    $historyObject.IsCopyOnly = ($group.Group[0].is_copy_only -eq 1)
-                    $HistoryObject.LastRecoveryForkGuid = $group.Group[0].last_recovery_fork_guid
+                    $historyObject.FileList = $FileListHash[$commonFields.BackupSetID] | Select-Object FileType, LogicalName, PhysicalName
+                    $historyObject.Position = $commonFields.Position
+                    $historyObject.FirstLsn = $commonFields.First_LSN
+                    $historyObject.DatabaseBackupLsn = $commonFields.database_backup_lsn
+                    $historyObject.CheckpointLsn = $commonFields.checkpoint_lsn
+                    $historyObject.LastLsn = $commonFields.Last_Lsn
+                    $historyObject.SoftwareVersionMajor = $commonFields.Software_Major_Version
+                    $historyObject.IsCopyOnly = ($commonFields.is_copy_only -eq 1)
+                    $historyObject.LastRecoveryForkGuid = $commonFields.last_recovery_fork_guid
                     $groupResults += $historyObject
                 }
                 $groupResults | Sort-Object -Property LastLsn, Type
