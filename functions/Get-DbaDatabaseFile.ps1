@@ -59,7 +59,8 @@ function Get-DbaDatabaseFile {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [object[]]$DatabaseCollection,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {
