@@ -29,7 +29,8 @@ function Update-SqlPermissions {
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [object]$DestLogin,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     $destination = $DestServer.DomainInstanceName

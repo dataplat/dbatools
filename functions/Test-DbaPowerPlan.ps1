@@ -55,7 +55,8 @@ function Test-DbaPowerPlan {
         [PSCredential]$Credential,
         [string]$CustomPowerPlan,
         [switch]$Detailed,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

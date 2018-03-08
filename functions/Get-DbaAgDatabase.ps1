@@ -63,7 +63,8 @@ function Get-DbaAgDatabase {
         [parameter(ValueFromPipeline = $true)]
         [object[]]$AvailabilityGroup,
         [object[]]$Database,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

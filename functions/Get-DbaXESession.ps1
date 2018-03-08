@@ -60,7 +60,8 @@ function Get-DbaXESession {
         [PSCredential]$SqlCredential,
         [Alias("Sessions")]
         [object[]]$Session,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

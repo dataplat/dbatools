@@ -71,7 +71,8 @@ function Test-DbaConnectionAuthScheme {
         [switch]$Kerberos,
         [switch]$Ntlm,
         [switch]$Detailed,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

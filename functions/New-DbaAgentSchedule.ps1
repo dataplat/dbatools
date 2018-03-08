@@ -150,7 +150,8 @@ function New-DbaAgentSchedule {
         [string]$StartTime,
         [string]$EndTime,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

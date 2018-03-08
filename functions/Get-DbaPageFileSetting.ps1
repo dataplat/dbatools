@@ -49,7 +49,8 @@ function Get-DbaPageFileSetting {
         [Alias("cn", "host", "ServerInstance", "Server", "SqlServer")]
         [DbaInstance]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         foreach ($computer in $ComputerName) {

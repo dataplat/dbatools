@@ -48,7 +48,8 @@ function Get-DbaOrphanUser {
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {

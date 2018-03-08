@@ -91,7 +91,8 @@ function Get-DbaProcess {
         [string[]]$Hostname,
         [string[]]$Program,
         [switch]$NoSystemSpid,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

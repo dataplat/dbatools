@@ -179,7 +179,8 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
         [Parameter(Mandatory = $false)]
         [string]$ProxyName,
         [Parameter(Mandatory = $false)]
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
         [Parameter(Mandatory = $false)]
         [switch]$Force
     )

@@ -86,7 +86,8 @@ Displays what would happen trying to set all missing SPNs for sql2016
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
         [switch]$NoDelegation,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

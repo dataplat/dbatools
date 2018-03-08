@@ -92,7 +92,8 @@ function Test-DbaLogShippingStatus {
         [switch]$Simple,
         [switch]$Primary,
         [switch]$Secondary,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

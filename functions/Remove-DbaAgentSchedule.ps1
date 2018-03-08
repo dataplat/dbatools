@@ -88,8 +88,8 @@ Remove the schedules using a pipeline
         [object[]]$Schedule,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "schedules")]
         [Microsoft.SqlServer.Management.Smo.Agent.ScheduleBase[]]$ScheduleCollection,
-        [switch][Alias('Silent')]$EnableException,
-
+        [Alias('Silent')]
+        [switch]$EnableException,
         [switch]$Force
     )
 

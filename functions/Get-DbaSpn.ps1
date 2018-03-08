@@ -56,7 +56,8 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
         [string[]]$AccountName,
         [Parameter(Mandatory = $false)]
         [PSCredential]$Credential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         Function Process-Account ($AccountName) {

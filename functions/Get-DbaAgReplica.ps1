@@ -59,7 +59,8 @@ function Get-DbaAgReplica {
         [parameter(ValueFromPipeline = $true)]
         [object[]]$AvailabilityGroup,
         [object[]]$Replica,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

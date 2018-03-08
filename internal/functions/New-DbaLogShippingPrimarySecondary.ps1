@@ -81,7 +81,8 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
         [System.Management.Automation.PSCredential]
         $SecondarySqlCredential,
 
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     # Try connecting to the instance

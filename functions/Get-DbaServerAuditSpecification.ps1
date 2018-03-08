@@ -42,7 +42,8 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

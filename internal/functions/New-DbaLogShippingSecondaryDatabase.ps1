@@ -144,7 +144,8 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 
         [switch]$ThresholdAlertEnabled,
 
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
 
         [switch]$Force
     )

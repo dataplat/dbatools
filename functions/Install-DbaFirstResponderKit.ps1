@@ -78,7 +78,8 @@ function Install-DbaFirstResponderKit {
         [PSCredential]$SqlCredential,
         [string]$Branch = "master",
         [object]$Database = "master",
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

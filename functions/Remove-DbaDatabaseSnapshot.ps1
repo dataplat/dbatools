@@ -95,7 +95,8 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
         [object]$PipelineSnapshot,
         [switch]$AllSnapshots,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

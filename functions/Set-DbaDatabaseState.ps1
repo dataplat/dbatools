@@ -138,7 +138,8 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
         [switch]$RestrictedUser,
         [switch]$MultiUser,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
         [parameter(Mandatory = $true, ValueFromPipeline, ParameterSetName = "Database")]
         [PsCustomObject[]]$DatabaseCollection
     )

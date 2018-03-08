@@ -74,7 +74,8 @@ Suppresses all prompts to install but prompts to securely enter your password an
         [datetime]$ExpirationDate = $StartDate.AddYears(5),
         [switch]$ActiveForServiceBrokerDialog,
         [Security.SecureString]$Password,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias New-DbaDatabaseCertificate

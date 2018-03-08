@@ -77,7 +77,8 @@ function Test-DbaDiskAllocation {
         [switch]$NoSqlCheck,
         [object]$SqlCredential,
         [switch]$Detailed,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
