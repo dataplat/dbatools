@@ -60,7 +60,8 @@ Gets the Partition Functions for the databases on Sql1 and Sql2/sqlexpress
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

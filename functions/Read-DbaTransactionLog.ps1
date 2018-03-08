@@ -57,7 +57,8 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
         [parameter(Mandatory = $true)]
         [object]$Database,
         [Switch]$IgnoreLimit,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     try {

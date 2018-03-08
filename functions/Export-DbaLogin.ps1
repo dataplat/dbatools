@@ -118,7 +118,8 @@ function Export-DbaLogin {
         [switch]$Append,
         [switch]$NoDatabases,
         [switch]$NoJobs,
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
         [switch]$ExcludeGoBatchSeparator,
         [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
         [string]$DestinationVersion

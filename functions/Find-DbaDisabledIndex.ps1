@@ -85,7 +85,8 @@
         [object[]]$ExcludeDatabase,
         [switch]$NoClobber,
         [switch]$Append,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

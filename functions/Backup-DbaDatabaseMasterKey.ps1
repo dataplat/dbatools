@@ -70,7 +70,8 @@ Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas
         [object[]]$ExcludeDatabase,
         [Security.SecureString]$Password,
         [string]$Path,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

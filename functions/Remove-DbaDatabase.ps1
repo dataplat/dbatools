@@ -86,7 +86,8 @@ Removes all the user databases from server\instance without any confirmation
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
         [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
         [switch]$IncludeSystemDb,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

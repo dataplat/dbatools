@@ -87,7 +87,8 @@ Password needs to be passed the Shared Access Token (SAS Key).
         [string]$MappedClassType = "None",
         [string]$ProviderName,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

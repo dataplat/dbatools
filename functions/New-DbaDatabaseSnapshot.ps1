@@ -100,7 +100,8 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
         [string]$NameSuffix,
         [string]$Path,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

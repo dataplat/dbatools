@@ -46,7 +46,8 @@ You will be prompted to securely enter your Service Key Password twice, then a m
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Security.SecureString]$Password,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

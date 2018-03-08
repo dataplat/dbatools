@@ -65,7 +65,8 @@ function Test-DbaSpn {
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         # spare the cmdlet to search for the same account over and over

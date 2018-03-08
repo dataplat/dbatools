@@ -69,7 +69,8 @@ Gets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemUdf,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

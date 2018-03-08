@@ -79,7 +79,8 @@ function Copy-DbaAgentSharedSchedule {
         [PSCredential]
         $DestinationSqlCredential,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

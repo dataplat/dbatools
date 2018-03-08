@@ -57,7 +57,8 @@ Gets the cert1 certificate within the db1 database
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [object[]]$Certificate,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseCertificate

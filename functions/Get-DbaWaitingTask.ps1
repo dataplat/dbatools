@@ -60,7 +60,8 @@ function Get-DbaWaitingTask {
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [object[]]$Spid,
         [switch]$IncludeSystemSpid,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

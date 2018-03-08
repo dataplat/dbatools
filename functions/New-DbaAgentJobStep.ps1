@@ -177,7 +177,8 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
         [string]$ProxyName,
         [Parameter(Mandatory = $false)]
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

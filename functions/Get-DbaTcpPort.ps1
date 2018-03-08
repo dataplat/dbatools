@@ -71,7 +71,8 @@ function Get-DbaTcpPort {
         [switch]$Detailed,
         [Alias("Ipv4")]
         [switch]$ExcludeIpv6,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

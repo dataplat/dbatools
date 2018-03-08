@@ -101,7 +101,8 @@ function Remove-DbaDbUser {
         [parameter(ParameterSetName = 'Object')]
         [switch]$Force,
 
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

@@ -63,7 +63,8 @@ function Test-DbaTempDbConfiguration {
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$Detailed,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed

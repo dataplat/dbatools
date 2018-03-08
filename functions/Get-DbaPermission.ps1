@@ -85,7 +85,8 @@ function Get-DbaPermission {
         [object[]]$ExcludeDatabase,
         [switch]$IncludeServerLevel,
         [switch]$NoSystemObjects,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         if ($NoSystemObjects) {

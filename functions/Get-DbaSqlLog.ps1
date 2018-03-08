@@ -93,7 +93,8 @@ function Get-DbaSqlLog {
         [string]$Text,
         [datetime]$After,
         [datetime]$Before,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {

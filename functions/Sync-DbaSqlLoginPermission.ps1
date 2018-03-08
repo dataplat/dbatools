@@ -87,7 +87,8 @@ function Sync-DbaSqlLoginPermission {
         $DestinationSqlCredential,
         [object[]]$Login,
         [object[]]$ExcludeLogin,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         function Sync-Only {

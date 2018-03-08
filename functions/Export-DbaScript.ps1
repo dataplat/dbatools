@@ -98,7 +98,8 @@ function Export-DbaScript {
         [switch]$Passthru,
         [switch]$NoClobber,
         [switch]$Append,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

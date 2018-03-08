@@ -98,7 +98,8 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
         [switch]$ExcludeViews,
         [switch]$IncludeSystemDatabases,
         [int]$MatchPercentThreshold,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

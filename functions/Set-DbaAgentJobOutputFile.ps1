@@ -76,7 +76,8 @@ function Set-DbaAgentJobOutputFile {
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
         [string]$OutputFile,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     foreach ($instance in $sqlinstance) {

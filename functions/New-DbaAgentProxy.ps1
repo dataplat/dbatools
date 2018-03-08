@@ -114,7 +114,8 @@ function New-DbaAgentProxy {
         [string[]]$MsdbRole,
         [switch]$Disabled,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

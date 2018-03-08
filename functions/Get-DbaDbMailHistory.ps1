@@ -60,7 +60,8 @@ function Get-DbaDbMailHistory {
         [DateTime]$Since,
         [ValidateSet('Unsent', 'Sent', 'Failed', 'Retrying')]
         [string]$Status,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {

@@ -96,7 +96,8 @@ function Copy-DbaCentralManagementServer {
         [object[]]$CMSGroup,
         [switch]$SwitchServerName,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         function Invoke-ParseServerGroup {
