@@ -95,7 +95,8 @@ function Remove-DbaBackup {
         [switch]$CheckArchiveBit = $false ,
         [parameter(Mandatory = $false)]
         [switch]$RemoveEmptyBackupFolder = $false,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         # Ensure BackupFileExtension does not begin with a .

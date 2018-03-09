@@ -73,7 +73,8 @@ function Find-DbaBackup {
         [string]$RetentionPeriod ,
         [parameter(Mandatory = $false)]
         [switch]$CheckArchiveBit = $false ,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

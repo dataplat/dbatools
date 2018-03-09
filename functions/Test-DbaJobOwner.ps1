@@ -81,7 +81,8 @@ function Test-DbaJobOwner {
         [Alias("TargetLogin")]
         [string]$Login,
         [switch]$Detailed,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

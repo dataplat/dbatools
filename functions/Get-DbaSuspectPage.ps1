@@ -46,7 +46,8 @@ function Get-DbaSuspectPage {
         [DbaInstanceParameter[]]$SqlInstance,
         [object]$Database,
         [PSCredential]$SqlCredential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

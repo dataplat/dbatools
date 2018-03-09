@@ -81,7 +81,8 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a, the other options a
         [string[]]$LogType = 'IndexOptimize',
         [datetime]$Since,
         [string]$Path,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         function process-block ($block) {

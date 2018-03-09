@@ -57,7 +57,8 @@ Suppresses all prompts to install but prompts to securely enter your password an
         [object[]]$Database = "master",
         [parameter(Mandatory)]
         [Security.SecureString]$Password = (Read-Host "Password" -AsSecureString),
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

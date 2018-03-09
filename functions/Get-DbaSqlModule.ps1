@@ -80,7 +80,8 @@ function Get-DbaSqlModule {
         [string[]]$Type,
         [switch]$NoSystemDb,
         [switch]$NoSystemObjects,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

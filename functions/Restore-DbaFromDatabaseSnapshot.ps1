@@ -78,7 +78,8 @@ function Restore-DbaFromDatabaseSnapshot {
         [object[]]$ExcludeDatabase,
         [object[]]$Snapshot,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

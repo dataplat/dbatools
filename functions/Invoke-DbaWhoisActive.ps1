@@ -241,7 +241,8 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
         [switch]$ReturnSchema,
         [string]$Schema,
         [switch]$Help,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

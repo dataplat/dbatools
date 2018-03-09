@@ -150,7 +150,8 @@ function Copy-DbaLogin {
         [hashtable]$LoginRenameHashtable,
         [switch]$KillActiveConnection,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

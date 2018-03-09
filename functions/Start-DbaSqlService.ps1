@@ -82,7 +82,8 @@ function Start-DbaSqlService {
         [object[]]$ServiceCollection,
         [int]$Timeout = 30,
         [PSCredential]$Credential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $processArray = @()

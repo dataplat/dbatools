@@ -38,7 +38,8 @@ If Path is not specified, the "My Documents" location will be used.
     [CmdletBinding()]
     param (
         [System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
-        [Switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     function Get-WebData {
         param ($uri)

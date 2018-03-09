@@ -83,7 +83,8 @@ function Set-DbaDbCompression {
         [int]$MaxRunTime,
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [int]$PercentCompression,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
