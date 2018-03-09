@@ -66,7 +66,8 @@ function Invoke-DbaCycleErrorLog {
         [PSCredential]$SqlCredential,
         [ValidateSet('instance', 'agent')]
         [string]$Type,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

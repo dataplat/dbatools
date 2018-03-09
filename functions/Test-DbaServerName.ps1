@@ -77,7 +77,8 @@ function Test-DbaServerName {
         [switch]$Detailed,
         [Alias("NoWarning")]
         [switch]$ExcludeSsrs,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

@@ -69,7 +69,8 @@ Gets the users for the databases on Sql1 and Sql2/sqlexpress
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemUser,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

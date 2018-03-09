@@ -193,7 +193,8 @@ After the work has been completed, we can push the original startup parameters b
         [object]$StartUpConfig,
         [switch]$Offline,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
 

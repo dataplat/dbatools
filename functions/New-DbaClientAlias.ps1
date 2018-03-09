@@ -60,7 +60,8 @@ function New-DbaClientAlias {
         [string]$Alias,
         [ValidateSet("TCPIP", "NamedPipes")]
         [string]$Protocol = "TCPIP",
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

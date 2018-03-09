@@ -127,7 +127,8 @@ function Export-DbaUser {
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject = $null,
         [switch]$ExcludeGoBatchSeparator
     )

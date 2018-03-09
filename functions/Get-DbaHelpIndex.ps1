@@ -120,7 +120,8 @@ function Get-DbaHelpIndex {
         [switch]$IncludeStats,
         [switch]$IncludeDataTypes,
         [switch]$Raw,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

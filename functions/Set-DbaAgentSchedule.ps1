@@ -165,7 +165,8 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         [Parameter(Mandatory = $false)]
         [string]$EndTime,
         [Parameter(Mandatory = $false)]
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
         [Parameter(Mandatory = $false)]
         [switch]$Force
     )

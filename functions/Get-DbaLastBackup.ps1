@@ -72,7 +72,8 @@ function Get-DbaLastBackup {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         function Get-DbaDateOrNull ($TimeSpan) {

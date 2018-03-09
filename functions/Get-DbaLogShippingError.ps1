@@ -98,7 +98,8 @@ function Get-DbaLogShippingError {
         [datetime]$DateTimeTo,
         [switch]$Primary,
         [switch]$Secondary,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

@@ -61,7 +61,8 @@ function Test-DbaSqlPath {
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
         [string[]]$Path,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {

@@ -90,7 +90,8 @@ function Copy-DbaServerTrigger {
         [object[]]$ServerTrigger,
         [object[]]$ExcludeServerTrigger,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

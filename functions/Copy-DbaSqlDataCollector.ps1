@@ -99,7 +99,8 @@ function Copy-DbaSqlDataCollector {
         [object[]]$ExcludeCollectionSet,
         [switch]$NoServerReconfig,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

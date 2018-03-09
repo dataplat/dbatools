@@ -62,7 +62,8 @@ function Get-JobList {
         [string[]]$JobFilter,
         [string[]]$StepFilter,
         [switch]$Not,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential

@@ -99,7 +99,8 @@ function Set-DbaMaxDop {
         [object]$Collection,
         [Alias("All")]
         [switch]$AllDatabases,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

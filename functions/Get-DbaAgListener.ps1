@@ -59,7 +59,8 @@ function Get-DbaAgListener {
         [parameter(ValueFromPipeline = $true)]
         [object[]]$AvailabilityGroup,
         [object[]]$Listener,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

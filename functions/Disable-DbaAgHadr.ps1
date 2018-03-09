@@ -56,7 +56,8 @@ function Disable-DbaAgHadr {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         $Enabled = 0

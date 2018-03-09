@@ -119,7 +119,8 @@ function Backup-DbaDbCertificate {
         [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
         [parameter(ValueFromPipeline, ParameterSetName = "collection")]
         [Microsoft.SqlServer.Management.Smo.Certificate[]]$CertificateCollection,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

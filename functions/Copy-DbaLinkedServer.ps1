@@ -89,7 +89,8 @@ function Copy-DbaLinkedServer {
         [object[]]$ExcludeLinkedServer,
         [switch]$UpgradeSqlClient,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName

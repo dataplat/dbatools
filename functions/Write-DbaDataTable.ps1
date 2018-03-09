@@ -184,7 +184,8 @@ function Write-DbaDataTable {
         [ValidateNotNull()]
         [int]$bulkCopyTimeOut = 5000,
         [switch]$RegularUser,
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
         [switch]$UseDynamicStringLength
     )
     

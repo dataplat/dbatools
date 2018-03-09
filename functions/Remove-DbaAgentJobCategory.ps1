@@ -70,7 +70,8 @@ Remove multiple job categories from the multiple instances.
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

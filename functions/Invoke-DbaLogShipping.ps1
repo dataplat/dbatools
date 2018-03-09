@@ -628,7 +628,8 @@ The script will show a message that the copy destination has not been supplied a
 
         [switch]$Force,
 
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

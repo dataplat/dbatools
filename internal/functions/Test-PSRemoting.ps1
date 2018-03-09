@@ -11,7 +11,8 @@ function Test-PSRemoting {
         [Parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [DbaInstance]$ComputerName,
         $Credential = [System.Management.Automation.PSCredential]::Empty,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

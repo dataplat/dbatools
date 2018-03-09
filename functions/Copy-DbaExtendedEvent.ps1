@@ -97,7 +97,8 @@ function Copy-DbaExtendedEvent {
         [object[]]$XeSession,
         [object[]]$ExcludeXeSession,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
 
