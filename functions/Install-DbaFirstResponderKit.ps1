@@ -76,6 +76,7 @@ function Install-DbaFirstResponderKit {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [ValidateSet('master','dev')]
         [string]$Branch = "master",
         [object]$Database = "master",
         [Alias('Silent')]
