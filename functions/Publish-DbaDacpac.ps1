@@ -131,7 +131,6 @@ function Publish-DbaDacpac {
             $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
         }
 
-        Write-Host $dacfxPath
         if ((Test-Path $dacfxPath) -eq $false) {
             Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
         }
