@@ -51,7 +51,7 @@ function Publish-DbaDacpac {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .PARAMETER DacFxPath
-            Path to the dac dll. If this is ommited, then the version of dac dll which is packaged with dbatools is used. 
+            Path to the dac dll. If this is ommited, then the version of dac dll which is packaged with dbatools is used.
 
         .NOTES
             Tags: Migration, Database, Dacpac
