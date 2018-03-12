@@ -75,7 +75,10 @@ function Publish-DbaDacpac {
 
             Creates a publish profile at C:\temp\sql2016-db2-publish.xml, exports the .dacpac to $home\Documents\sql2016-db2.dacpac
             then publishes it to the sql2017 server database db2
-
+        
+        .EXAMPLE
+        $loc = "C:\Users\bob\source\repos\Microsoft.Data.Tools.Msbuild\lib\net46\Microsoft.SqlServer.Dac.dll"
+        Publish-DbaDacpac -SqlInstance "local" -Database WideWorldImporters -Path C:\temp\WideWorldImporters.dacpac -PublishXml C:\temp\WideWorldImporters.publish.xml -DacFxPath $loc
   #>
     [CmdletBinding()]
     param (
@@ -127,6 +130,8 @@ function Publish-DbaDacpac {
         if (Test-Bound -Not -ParameterName 'DacfxPath'){
             $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
         }
+
+        Write-Host $dacfxPath
         if ((Test-Path $dacfxPath) -eq $false) {
             Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
         }
