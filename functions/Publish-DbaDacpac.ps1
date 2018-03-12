@@ -50,6 +50,9 @@ function Publish-DbaDacpac {
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+        .PARAMETER DacFxPath
+            Path to the dac dll. If this is ommited, then the version of dac dll which is packaged with dbatools is used. 
+
         .NOTES
             Tags: Migration, Database, Dacpac
             Author: Richie lee (@bzzzt_io)
@@ -92,7 +95,8 @@ function Publish-DbaDacpac {
         [Switch]$ScriptOnly,
         [string]$OutputPath = "$home\Documents",
         [switch]$IncludeSqlCmdVars,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [String]$DacFxPath
     )
 
     begin {
@@ -120,8 +124,9 @@ function Publish-DbaDacpac {
 
             return $instance.ToString().Replace('\', '-')
         }
-
-        $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
+        if (Test-Bound -Not -ParameterName 'DacfxPath'){
+            $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
+        }
         if ((Test-Path $dacfxPath) -eq $false) {
             Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
         }
