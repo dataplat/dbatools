@@ -136,17 +136,21 @@ function Find-DbaInstance {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
     
     .EXAMPLE
+        PS C:\> Find-DbaInstance -DiscoveryType Domain,DataSourceEnumeration
+        
+		Performs a network search for SQL Instances by:
+		- Looking up the Service Principal Names of computers in active directory
+		- Using the UDP broadcast based auto-discovery of SSMS
+		After that it will extensively scan all hosts thus discovered for instances.
+    
+    .EXAMPLE
         PS C:\> Find-DbaInstance -DiscoveryType All
         
         Performs a network search for SQL Instances, using all discovery protocols:
         - Active directory search for Service Principal Names
         - SQL Instance Enumeration (same as SSMS does)
         - All IPAddresses in the current computer's subnets of all connected network interfaces
-    
-    .EXAMPLE
-        PS C:\> Find-DbaInstance -DiscoveryType Domain
-        
-        Performs a network search for SQL Instances by looking up the Service Principal Names of computers in active directory.
+		Note: This scan will take a long time, due to including the IP Scan
     
     .EXAMPLE
         PS C:\> Get-ADComputer -Filter "*" | Find-DbaInstance
