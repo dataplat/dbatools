@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 1, 2018
+-- Last Modified: March 12, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -64,7 +64,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3006.16		CU1					10/24/2017		https://support.microsoft.com/en-us/help/4038634
 -- 14.0.3008.27		CU2					11/28/2017		https://support.microsoft.com/en-us/help/4052574
 -- 14.0.3015.40		CU3					1/4/2018		https://support.microsoft.com/en-us/help/4052987
--- 14.0.3022.28		CU4					2/20/2018		https://support.microsoft.com/en-us/help/4056498/cumulative-update-4-for-sql-server-2017 
+-- 14.0.3022.28		CU4					2/20/2018	    https://support.microsoft.com/en-us/help/4056498	
 		
 															
 
@@ -72,10 +72,10 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- https://support.microsoft.com/en-us/kb/321185
 
 -- SQL Server 2017 build versions
--- https://support.microsoft.com/en-us/help/4047329/sql-server-2017-build-versions
+-- http://bit.ly/2FLY88I
 
 -- Performance and Stability Fixes in SQL Server 2017 CU Builds
--- https://www.sqlskills.com/blogs/glenn/performance-and-stability-fixes-in-sql-server-2017-cu-builds/
+-- http://bit.ly/2GV3CNM
 
 -- Microsoft for the Modern Data Estate
 -- https://blogs.technet.microsoft.com/dataplatforminsider/2017/09/25/microsoft-for-the-modern-data-estate/
@@ -177,7 +177,8 @@ ORDER BY name OPTION (RECOMPILE);
 -- New configuration options for SQL Server 2017
 -- clr strict security is new in SQL Server 2017, and is enabled by default
 
-
+-- sys.configurations (Transact-SQL)
+-- http://bit.ly/2HsyDZI
 
 
 -- Returns a list of all global trace flags that are enabled (Query 5) (Global Trace Flags)
@@ -189,19 +190,19 @@ DBCC TRACESTATUS (-1);
 
 -- Common trace flags that should be enabled in most cases
 -- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
---           https://www.sqlskills.com/blogs/paul/fed-up-with-backup-success-messages-bloating-your-error-logs/
+--           http://bit.ly/2p6MTjS  
 
 -- TF 6534 - Enables use of native code to improve performance with spatial data
---           https://blogs.msdn.microsoft.com/bobsql/2016/06/03/sql-2016-it-just-runs-faster-native-spatial-implementations/
+--           http://bit.ly/2HrQUpU         
 
 -- The behavior of TF 1117, 1118 are enabled for tempdb in SQL Server 2016 by default
 -- SQL 2016 – It Just Runs Faster: -T1117 and -T1118 changes for TEMPDB and user databases
---           https://blogs.msdn.microsoft.com/psssql/2016/03/15/sql-2016-it-just-runs-faster-t1117-and-t1118-changes-for-tempdb-and-user-databases/
+-- http://bit.ly/2lbNWxK           
 
 -- The behavior of TF 2371 is enabled by default in SQL Server 2016 and newer (in compat level 130 and higher)
 
 -- DBCC TRACEON - Trace Flags (Transact-SQL)
--- https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-traceon-trace-flags-transact-sql
+-- http://bit.ly/2FuSvPg
 
 
 
@@ -254,6 +255,9 @@ FROM sys.dm_server_services WITH (NOLOCK) OPTION (RECOMPILE);
 -- Also shows whether you are running on a failover cluster instance, and what node you are running on
 -- Also shows whether IFI is enabled
 
+-- sys.dm_server_services (Transact-SQL)
+-- http://bit.ly/2oKa1Un
+
 
 -- Last backup information by database  (Query 9) (Last Backup By Database)
 SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc AS [Recovery Model], 
@@ -294,10 +298,10 @@ ORDER BY sj.name OPTION (RECOMPILE);
 -- Look for jobs that have a notify_level_email set to 0 (meaning no e-mail is ever sent)
 --
 -- MSDN sysjobs documentation
--- https://msdn.microsoft.com/en-us/library/ms189817.aspx
+-- http://bit.ly/2paDEOP 
 
 -- SQL Server Maintenance Solution
--- https://ola.hallengren.com/
+-- http://bit.ly/1pgchQu  
 
 
 -- Get SQL Server Agent Alert Information (Query 11) (SQL Server Agent Alerts)
@@ -307,8 +311,9 @@ FROM msdb.dbo.sysalerts WITH (NOLOCK)
 ORDER BY name OPTION (RECOMPILE);
 ------
 
--- Gives you some basic information about your SQL Server Agent Alerts (which are different from SQL Server Agent jobs)
--- Read more about Agent Alerts here: https://www.sqlskills.com/blogs/glenn/creating-sql-server-agent-alerts-for-critical-errors/
+-- Gives you some basic information about your SQL Server Agent Alerts 
+-- (which are different from SQL Server Agent jobs)
+-- Read more about Agent Alerts here: http://bit.ly/2Giz0Xf 
 
 
 
@@ -335,10 +340,10 @@ FROM sys.dm_os_host_info WITH (NOLOCK) OPTION (RECOMPILE);
 -- SQL Server 2017 requires Windows Server 2012 or newer
 
 -- Hardware and Software Requirements for Installing SQL Server
--- https://docs.microsoft.com/en-us/sql/sql-server/install/hardware-and-software-requirements-for-installing-sql-server
+-- http://bit.ly/2y3ka5L
 
--- Using SQL Server in Windows 8 and later versions of Windows operating system 
--- https://support.microsoft.com/en-us/kb/2681562
+-- Using SQL Server in Windows 8 and later versions of Windows operating system
+-- http://bit.ly/2F7Ax0P 
 
 
 -- SQL Server NUMA Node information  (Query 13) (SQL Server NUMA Info)
@@ -549,8 +554,7 @@ ORDER BY creation_time DESC OPTION (RECOMPILE);
 -- sys.dm_server_memory_dumps (Transact-SQL)
 -- http://bit.ly/2elwWll
 
--- SQL Server Diagnostics (Preview)
--- http://bit.ly/2sOfkFB
+
 
 
 -- Look at Suspect Pages table (Query 25) (Suspect Pages)
@@ -561,18 +565,19 @@ ORDER BY database_id OPTION (RECOMPILE);
 ------
 
 -- event_type value descriptions
--- 1 = 823 error caused by an operating system CRC error or 824 error other than a bad checksum or a torn page (for example, a bad page ID)
+-- 1 = 823 error caused by an operating system CRC error
+--     or 824 error other than a bad checksum or a torn page (for example, a bad page ID)
 -- 2 = Bad checksum
 -- 3 = Torn page
 -- 4 = Restored (The page was restored after it was marked bad)
 -- 5 = Repaired (DBCC repaired the page)
 -- 7 = Deallocated by DBCC
 
--- Manage the suspect_pages Table
--- https://docs.microsoft.com/en-us/sql/relational-databases/backup-restore/manage-the-suspect-pages-table-sql-server  
-
 -- Ideally, this query returns no results. The table is limited to 1000 rows.
 -- If you do get results here, you should do further investigation to determine the root cause
+
+-- Manage the suspect_pages Table
+-- http://bit.ly/2Fvr1c9
 
 
 -- Get number of data files in tempdb database (Query 26) (TempDB Data Files)
@@ -581,6 +586,7 @@ EXEC sys.xp_readerrorlog 0, 1, N'The tempdb database has';
 
 -- Get the number of data files in the tempdb database
 -- 4-8 data files that are all the same size is a good starting point
+-- This query will return no results if your error log has been recycled since the instance was last started
 
 
 -- File names and paths for all user and system databases on instance  (Query 27) (Database Filenames and Paths)
