@@ -79,7 +79,8 @@ Removes all set SPNs for sql2005 and the relative delegations
         [string]$ServiceAccount,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
         [PSCredential]$Credential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

@@ -18,9 +18,9 @@ function Invoke-DbaSqlQuery {
         The database to select before running the query. This list is auto-populated from the server.
 
         .PARAMETER Query
-            Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon.
+            Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon or a GO
 
-            Do not specify the sqlcmd GO separator. Escape any double quotation marks included in the string.
+            Escape any double quotation marks included in the string.
 
             Consider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as "MyTable".
 
@@ -40,6 +40,9 @@ function Invoke-DbaSqlQuery {
 
         .PARAMETER AppendServerInstance
             If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
+
+        .PARAMETER DatabaseCollection
+            A collection of databases (such as returned by Get-DbaDatabase)
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -71,10 +74,15 @@ function Invoke-DbaSqlQuery {
             "server1", "server1\nordwind", "server2" | Invoke-DbaSqlQuery -File "C:\scripts\sql\rebuild.sql"
 
             Runs the sql commands stored in rebuild.sql against the instances "server1", "server1\nordwind" and "server2"
+
+        .EXAMPLE
+            Get-DbaDatabase -SqlInstance "server1", "server1\nordwind", "server2" | Invoke-DbaSqlQuery -File "C:\scripts\sql\rebuild.sql"
+
+            Runs the sql commands stored in rebuild.sql against all accessible databases of the instances "server1", "server1\nordwind" and "server2"
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]
         $SqlInstance,
@@ -107,9 +115,13 @@ function Invoke-DbaSqlQuery {
         [switch]
         $AppendServerInstance,
 
+        [parameter(ValueFromPipeline = $true)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
+
         [Alias('Silent')]
         [switch]
         $EnableException
+
     )
 
     begin {
@@ -117,8 +129,8 @@ function Invoke-DbaSqlQuery {
 
         $splatInvokeSqlCmd2 = @{
             As = $As
+            ParseGo = $true
         }
-
         if (Test-Bound -ParameterName "SqlParameters") {
             $splatInvokeSqlCmd2["SqlParameters"] = $SqlParameters
         }
@@ -233,7 +245,38 @@ function Invoke-DbaSqlQuery {
 
     process {
         if (Test-FunctionInterrupt) { return }
+        if (Test-Bound -ParameterName "Database", "DatabaseCollection" -And) {
+            Stop-Function -Category InvalidArgument -Message "You can't use -Database with piped databases"
+            return
+        }
+        if (Test-Bound -ParameterName "SqlInstance", "DatabaseCollection" -And) {
+            Stop-Function -Category InvalidArgument -Message "You can't use -SqlInstance with piped databases"
+            return
+        }
 
+        foreach($db in $DatabaseCollection) {
+            if (!$db.IsAccessible) {
+                Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
+                continue
+            }
+            $server = $db.Parent
+            $conncontext = $server.ConnectionContext
+            if ($conncontext.DatabaseName -ne $db.Name) {
+                $conncontext = $server.ConnectionContext.Copy()
+                $conncontext.DatabaseName = $db.Name
+            }
+            try {
+                if ($File -or $SqlObject) {
+                    foreach ($item in $files) {
+                        Invoke-Sqlcmd2 -SQLConnection $conncontext.SqlConnectionObject @splatInvokeSqlCmd2 -InputFile $item
+                    }
+                }
+                else { Invoke-Sqlcmd2 -SQLConnection $conncontext.SqlConnectionObject @splatInvokeSqlCmd2 }
+            }
+            catch {
+                Stop-Function -Message "[$db] Failed during execution" -ErrorRecord $_ -Target $server -Continue
+            }
+        }
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level VeryVerbose -Message "Connecting to $instance." -Target $instance

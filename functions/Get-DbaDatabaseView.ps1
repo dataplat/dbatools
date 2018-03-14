@@ -69,7 +69,8 @@ Gets the views for the databases on Sql1 and Sql2/sqlexpress
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemView,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

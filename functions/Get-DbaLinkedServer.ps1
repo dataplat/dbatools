@@ -47,7 +47,8 @@ function Get-DbaLinkedServer {
         [PSCredential]$SqlCredential,
         [object[]]$LinkedServer,
         [object[]]$ExcludeLinkedServer,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     foreach ($Instance in $SqlInstance) {
         try {

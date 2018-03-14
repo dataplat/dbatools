@@ -141,7 +141,8 @@ function New-DbaLogShippingPrimaryDatabase {
 
         [switch]$ThresholdAlertEnabled,
 
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
 
         [switch]$Force
     )

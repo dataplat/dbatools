@@ -63,7 +63,8 @@ function Test-DbaTempDbConfiguration {
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$Detailed,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
@@ -98,25 +99,13 @@ function Test-DbaTempDbConfiguration {
                 $tfCheck = $server.Databases['tempdb'].Query($sql)
                 $notes = 'KB328551 describes how TF 1118 can benefit performance.'
 
-                if (($tfCheck.TraceFlag -join ',').Contains('1118')) {
-                    $value = [PSCustomObject]@{
-                        ComputerName   = $server.NetName
-                        InstanceName   = $server.ServiceName
-                        SqlInstance    = $server.DomainInstanceName
-                        Rule           = 'TF 1118 Enabled'
-                        Recommended    = $true
-                        CurrentSetting = $true
-                    }
-                }
-                else {
-                    $value = [PSCustomObject]@{
-                        ComputerName   = $server.NetName
-                        InstanceName   = $server.ServiceName
-                        SqlInstance    = $server.DomainInstanceName
-                        Rule           = 'TF 1118 Enabled'
-                        Recommended    = $true
-                        CurrentSetting = $false
-                    }
+                $value = [PSCustomObject]@{
+                    ComputerName   = $server.NetName
+                    InstanceName   = $server.ServiceName
+                    SqlInstance    = $server.DomainInstanceName
+                    Rule           = 'TF 1118 Enabled'
+                    Recommended    = $true
+                    CurrentSetting = ($tfCheck.TraceFlag -join ',').Contains('1118')
                 }
             }
 
@@ -138,17 +127,12 @@ function Test-DbaTempDbConfiguration {
             $logFiles = $tempdbFiles | Where-Object Type -eq 1
             Write-Message -Level Verbose -Message "TempDB file objects gathered"
 
-            $cores = $server.Processors
-            if ($cores -gt 8) {
-                $cores = 8
-            }
-
             $value = [PSCustomObject]@{
                 ComputerName   = $server.NetName
                 InstanceName   = $server.ServiceName
                 SqlInstance    = $server.DomainInstanceName
                 Rule           = 'File Count'
-                Recommended    = $cores
+                Recommended    = [Math]::Min(8, $server.Processors)
                 CurrentSetting = $dataFiles.Count
             }
 

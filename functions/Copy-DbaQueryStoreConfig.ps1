@@ -87,7 +87,8 @@ function Copy-DbaQueryStoreConfig {
         [object[]]$DestinationDatabase,
         [object[]]$Exclude,
         [switch]$AllDatabases,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     BEGIN {

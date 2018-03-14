@@ -60,7 +60,8 @@ Imports all the certificates in the specified path.
         [object[]]$Path,
         [object]$Database = "master",
         [Security.SecureString]$Password = (Read-Host "Password" -AsSecureString),
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

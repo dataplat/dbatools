@@ -113,7 +113,8 @@ function Set-DbaTempDbConfiguration {
         [string]$OutFile,
         [switch]$OutputScriptOnly,
         [switch]$DisableGrowth,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $sql = @()

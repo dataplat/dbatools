@@ -87,7 +87,8 @@ Returns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\sql1
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeFixedRole,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

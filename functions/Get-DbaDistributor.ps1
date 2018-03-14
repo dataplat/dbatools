@@ -40,7 +40,8 @@ function Get-DbaDistributor {
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(Position = 1)]
         [PSCredential]$SqlCredential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         if ($null -eq [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.RMO")) {

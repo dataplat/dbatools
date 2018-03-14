@@ -62,7 +62,8 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
         [object[]]$Certificate,
         [parameter(ValueFromPipeline, ParameterSetName = "collection")]
         [Microsoft.SqlServer.Management.Smo.Certificate[]]$CertificateCollection,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
 

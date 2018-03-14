@@ -92,7 +92,8 @@ function Copy-DbaEndpoint {
         [object[]]$Endpoint,
         [object[]]$ExcludeEndpoint,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

@@ -103,7 +103,8 @@ function Copy-DbaSqlPolicyManagement {
         [object[]]$Condition,
         [object[]]$ExcludeCondition,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

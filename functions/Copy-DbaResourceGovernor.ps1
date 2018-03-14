@@ -92,7 +92,8 @@ function Copy-DbaResourceGovernor {
         [object[]]$ResourcePool,
         [object[]]$ExcludeResourcePool,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

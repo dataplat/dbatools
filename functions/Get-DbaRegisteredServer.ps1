@@ -88,7 +88,8 @@ function Get-DbaRegisteredServer {
         [switch]$IncludeSelf,
         [switch]$ExcludeCmsServer,
         [switch]$ResolveNetworkName,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         function Find-CmsGroup {

@@ -98,7 +98,8 @@ function Copy-DbaCredential {
         [object[]]$CredentialIdentity,
         [object[]]$ExcludeCredentialIdentity,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

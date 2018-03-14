@@ -61,7 +61,8 @@ Creates the SSIS Catalog on server DEV01 with the specified password.
         [parameter(Mandatory = $true)]
         [Security.SecureString]$Password,
         [string]$SsisCatalog = "SSISDB",
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

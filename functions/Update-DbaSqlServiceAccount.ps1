@@ -94,7 +94,8 @@ function Update-DbaSqlServiceAccount {
         [securestring]$OldPassword = (New-Object System.Security.SecureString),
         [Alias("Password")]
         [securestring]$NewPassword = (New-Object System.Security.SecureString),
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $svcCollection = @()

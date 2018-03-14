@@ -105,7 +105,8 @@ function Remove-DbaOrphanUser {
         [parameter(Mandatory = $false, ValueFromPipeline = $true)]
         [object[]]$User,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {
