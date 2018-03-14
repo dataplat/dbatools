@@ -138,10 +138,10 @@ function Find-DbaInstance {
     .EXAMPLE
         PS C:\> Find-DbaInstance -DiscoveryType Domain,DataSourceEnumeration
         
-		Performs a network search for SQL Instances by:
-		- Looking up the Service Principal Names of computers in active directory
-		- Using the UDP broadcast based auto-discovery of SSMS
-		After that it will extensively scan all hosts thus discovered for instances.
+        Performs a network search for SQL Instances by:
+        - Looking up the Service Principal Names of computers in active directory
+        - Using the UDP broadcast based auto-discovery of SSMS
+        After that it will extensively scan all hosts thus discovered for instances.
     
     .EXAMPLE
         PS C:\> Find-DbaInstance -DiscoveryType All
@@ -150,7 +150,7 @@ function Find-DbaInstance {
         - Active directory search for Service Principal Names
         - SQL Instance Enumeration (same as SSMS does)
         - All IPAddresses in the current computer's subnets of all connected network interfaces
-		Note: This scan will take a long time, due to including the IP Scan
+        Note: This scan will take a long time, due to including the IP Scan
     
     .EXAMPLE
         PS C:\> Get-ADComputer -Filter "*" | Find-DbaInstance
