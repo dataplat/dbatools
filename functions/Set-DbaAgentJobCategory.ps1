@@ -68,7 +68,8 @@ Rename multiple jobs in one go on multiple servers.
         [string[]]$Category,
         [string[]]$NewName,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

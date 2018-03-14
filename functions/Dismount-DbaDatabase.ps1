@@ -83,7 +83,8 @@ function Dismount-DbaDatabase {
         [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
         [Switch]$UpdateStatistics,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {

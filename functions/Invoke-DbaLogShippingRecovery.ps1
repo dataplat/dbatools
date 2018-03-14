@@ -101,7 +101,8 @@ function Invoke-DbaLogShippingRecovery {
         [object[]]$Database,
         [PSCredential]$SqlCredential,
         [switch]$NoRecovery,
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
         [switch]$Force,
         [int]$Delay = 5
     )

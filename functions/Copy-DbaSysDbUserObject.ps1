@@ -68,7 +68,8 @@ function Copy-DbaSysDbUserObject {
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$Destination,
         [PSCredential]$DestinationSqlCredential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential

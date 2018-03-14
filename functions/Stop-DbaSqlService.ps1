@@ -94,7 +94,8 @@ function Stop-DbaSqlService {
         [int]$Timeout = 30,
         [PSCredential]$Credential,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $processArray = @()

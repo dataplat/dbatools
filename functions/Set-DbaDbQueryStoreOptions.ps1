@@ -111,7 +111,8 @@ function Set-DbaDbQueryStoreOptions {
         [ValidateSet('Auto', 'Off')]
         [string[]]$CleanupMode,
         [int64]$StaleQueryThreshold,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $ExcludeDatabase += 'master', 'tempdb'

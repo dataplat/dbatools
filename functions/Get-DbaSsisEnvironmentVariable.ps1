@@ -109,7 +109,8 @@ License: MIT https://opensource.org/licenses/MIT
         [object[]]$Folder,
         [parameter(Mandatory = $false)]
         [object[]]$FolderExclude,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

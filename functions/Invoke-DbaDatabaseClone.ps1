@@ -63,7 +63,8 @@ function Invoke-DbaDatabaseClone {
         [object]$Database,
         [string[]]$CloneDatabase,
         [switch]$UpdateStatistics,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

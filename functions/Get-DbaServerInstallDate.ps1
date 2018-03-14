@@ -72,7 +72,8 @@ Returns an object with SQL Instance install date as a string for every server li
         [PSCredential]
         $Credential,
         [Switch]$IncludeWindows,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

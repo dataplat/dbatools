@@ -72,7 +72,8 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

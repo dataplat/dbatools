@@ -91,7 +91,8 @@ function Copy-DbaSpConfigure {
         $DestinationSqlCredential,
         [object[]]$ConfigName,
         [object[]]$ExcludeConfigName,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

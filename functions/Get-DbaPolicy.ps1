@@ -63,7 +63,8 @@ function Get-DbaPolicy {
         [string[]]$Policy,
         [string[]]$Category,
         [switch]$IncludeSystemObject,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

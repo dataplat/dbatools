@@ -65,7 +65,8 @@ function Invoke-DbaDatabaseCorruption {
         [parameter(Mandatory)]
         [string]$Database,
         [string]$Table,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     # For later if we want to do bit flipping.
     # function Dbcc-ReadPage {

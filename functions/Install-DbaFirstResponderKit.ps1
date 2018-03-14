@@ -27,7 +27,7 @@ function Install-DbaFirstResponderKit {
             Specifies the database to instal the First Responder Kit stored procedures into
 
         .PARAMETER Branch
-            Specifies an alternate branch of the First Responder Kit to install.
+            Specifies an alternate branch of the First Responder Kit to install. (master or dev)
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -68,6 +68,11 @@ function Install-DbaFirstResponderKit {
             $servers | Install-DbaFirstResponderKit
 
             Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
+
+        .EXAMPLE
+            Install-DbaFirstResponderKit -SqlInstance sql2016 -Branch dev
+
+            Installs the dev branch version of the FRK in the master database on sql2016 instance.
     #>
 
     [CmdletBinding()]
@@ -76,13 +81,15 @@ function Install-DbaFirstResponderKit {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [ValidateSet('master', 'dev')]
         [string]$Branch = "master",
         [object]$Database = "master",
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
-        $url = "https://codeload.github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
+        $url = "https://codeload.github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/zip/$Branch"
 
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$temp\SQL-Server-First-Responder-Kit-$Branch.zip"

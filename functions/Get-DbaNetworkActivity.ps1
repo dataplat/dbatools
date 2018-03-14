@@ -52,7 +52,8 @@ function Get-DbaNetworkActivity {
         [Alias("cn", "host", "Server")]
         [string[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential] $Credential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     BEGIN {

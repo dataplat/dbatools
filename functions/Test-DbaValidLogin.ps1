@@ -77,7 +77,8 @@ function Test-DbaValidLogin {
         [string]$FilterBy = "None",
         [string[]]$IgnoreDomains,
         [switch]$Detailed,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

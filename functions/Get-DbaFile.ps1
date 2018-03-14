@@ -75,7 +75,8 @@ Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql201
         [string[]]$Path,
         [string[]]$FileType,
         [int]$Depth = 1,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $sql = ""
