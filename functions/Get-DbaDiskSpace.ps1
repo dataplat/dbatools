@@ -13,6 +13,9 @@ function Get-DbaDiskSpace {
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.
 
+        .PARAMETER Credential
+            Credential object used to connect to the computer as a different user.
+
         .PARAMETER Unit
             This parameter has been deprecated and will be removed in 1.0.0
             All properties previously generated through this command are present at the same time, but hidden by default.
@@ -21,11 +24,13 @@ function Get-DbaDiskSpace {
             If this switch is enabled, disks will be checked for SQL Server data and log files. Windows Authentication is always used for this.
 
         .PARAMETER SqlCredential
-            SqlCredential object to connect as. If not specified, current Windows login will be used.
-            Only relevant in combination with the -CheckForSql parameter.
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-        .PARAMETER Credential
-            The credentials to use to connect via CIM/WMI/PowerShell remoting
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+            To connect as a different Windows user, run PowerShell as that user.
 
         .PARAMETER ExcludeDrive
             Filter out drives - format is C:\
@@ -33,14 +38,14 @@ function Get-DbaDiskSpace {
         .PARAMETER Detailed
             Output all properties, will be deprecated in 1.0.0 release. Use Force Instead
 
-        .PARAMETER Force
-            Enabling this switch will cause the command to include ALL drives.
-            By default, only local disks and removable disks are shown, and hidden volumes are excluded.
-
         .PARAMETER CheckFragmentation
             If this switch is enabled, fragmentation of all filesystems will be checked.
 
             This will increase the runtime of the function by seconds or even minutes per volume.
+
+        .PARAMETER Force
+            Enabling this switch will cause the command to include ALL drives.
+            By default, only local disks and removable disks are shown, and hidden volumes are excluded.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -53,64 +58,8 @@ function Get-DbaDiskSpace {
         .PARAMETER Confirm
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042 | Format-Table -AutoSize
-
-            Get disk space for the server srv0042.
-
-            Server  Name Label  SizeInGB FreeInGB PercentFree BlockSize
-            ------  ---- -----  -------- -------- ----------- ---------
-            srv0042 C:\  System   126,45   114,12       90,25      4096
-            srv0042 E:\  Data1     97,62    96,33       98,67      4096
-            srv0042 F:\  DATA2      29,2     29,2         100     16384
-
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042 -Unit MB | Format-Table -AutoSize
-
-            Get disk space for the server srv0042 and displays in megabytes (MB).
-
-            Server  Name Label  SizeInMB  FreeInMB PercentFree BlockSize
-            ------  ---- -----  --------  -------- ----------- ---------
-            srv0042 C:\  System   129481 116856,11       90,25      4096
-            srv0042 E:\  Data1     99968  98637,56       98,67      4096
-            srv0042 F:\  DATA2     29901  29900,92         100     16384
-
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042, srv0007 -Unit TB | Format-Table -AutoSize
-
-            Get disk space from two servers and displays in terabytes (TB).
-
-            Server  Name Label  SizeInTB FreeInTB PercentFree BlockSize
-            ------  ---- -----  -------- -------- ----------- ---------
-            srv0042 C:\  System     0,12     0,11       90,25      4096
-            srv0042 E:\  Data1       0,1     0,09       98,67      4096
-            srv0042 F:\  DATA2      0,03     0,03         100     16384
-            srv0007 C:\  System     0,07     0,01       11,92      4096
-
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042 -Force | Format-Table -AutoSize
-
-            Get all disk and volume space information.
-
-            Server  Name                                              Label    SizeInGB FreeInGB PercentFree BlockSize IsSqlDisk FileSystem DriveType
-            ------  ----                                              -----    -------- -------- ----------- --------- --------- ---------- ---------
-            srv0042 C:\                                               System     126,45   114,12       90,25      4096     False NTFS       Local Disk
-            srv0042 E:\                                               Data1       97,62    96,33       98,67      4096     False ReFS       Local Disk
-            srv0042 F:\                                               DATA2        29,2     29,2         100     16384     False FAT32      Local Disk
-            srv0042 \\?\Volume{7a31be94-b842-42f5-af71-e0464a1a9803}\ Recovery     0,44     0,13       30,01      4096     False NTFS       Local Disk
-            srv0042 D:\                                                               0        0           0               False            Compact Disk
-
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042 -ExcludeDrive 'C:\'  | Format-Table -AutoSize
-            Get all disk and volume space information.
-
-            Server  Name                                              Label    SizeInGB FreeInGB PercentFree BlockSize IsSqlDisk FileSystem DriveType
-            ------  ----                                              -----    -------- -------- ----------- --------- --------- ---------- ---------
-            srv0042 E:\                                               Data1       97,62    96,33       98,67      4096     False ReFS       Local Disk
-            srv0042 F:\                                               DATA2        29,2     29,2         100     16384     False FAT32      Local Disk
-
         .NOTES
-            Tags: Storage
+            Tags: Storage, Disk
             Author: Chrissy LeMaire (clemaire@gmail.com) & Jakob Bindslet (jakob@bindslet.dk)
 
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -119,22 +68,47 @@ function Get-DbaDiskSpace {
 
         .LINK
             https://dbatools.io/Get-DbaDiskSpace
+
+        .EXAMPLE
+            Get-DbaDiskSpace -ComputerName srv0042
+
+            Get disk space for the server srv0042.
+
+        .EXAMPLE
+            Get-DbaDiskSpace -ComputerName srv0042 -Unit MB
+
+            Get disk space for the server srv0042 and displays in megabytes (MB).
+
+        .EXAMPLE
+            Get-DbaDiskSpace -ComputerName srv0042, srv0007 -Unit TB
+
+            Get disk space from two servers and displays in terabytes (TB).
+
+        .EXAMPLE
+            Get-DbaDiskSpace -ComputerName srv0042 -Force
+
+            Get all disk and volume space information.
+
+        .EXAMPLE
+            Get-DbaDiskSpace -ComputerName srv0042 -ExcludeDrive 'C:\'
+
+            Get all disk and volume space information.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(ValueFromPipeline = $true)]
         [Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
-        [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
-        [ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
-        [String]$Unit = 'GB',
-        [Switch]$CheckForSql,
-        [PSCredential]$SqlCredential,
+        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
+        [ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
+        [string]$Unit = 'GB',
+        [switch]$CheckForSql,
+        [PSCredential]$SqlCredential,
         [string[]]$ExcludeDrive,
         [Alias('Detailed', 'AllDrives')]
-        [Switch]$Force,
-        [Switch]$CheckFragmentation,
-        [Switch][Alias('Silent')]
+        [switch]$CheckFragmentation,
+        [switch]$Force,
+        [switch][Alias('Silent')]
         $EnableException
     )
 
@@ -144,7 +118,9 @@ function Get-DbaDiskSpace {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Unit
 
         $condition = " WHERE DriveType = 2 OR DriveType = 3"
-        if ($Force) { $condition = "" }
+        if (Test-Bound 'Force') {
+            $condition = ""
+        }
 
         # Keep track of what computer was already processed to avoid duplicates
         $processed = New-Object System.Collections.ArrayList
@@ -160,11 +136,17 @@ function Get-DbaDiskSpace {
                 continue
             }
 
-            try { $disks = Get-DbaCmObject -ComputerName $computer.ComputerName -Query "SELECT * FROM Win32_Volume$condition" -Credential $Credential -Namespace root\CIMv2 -ErrorAction Stop -WarningAction SilentlyContinue -EnableException }
-            catch { Stop-Function -Message "Failed to connect to $computer." -EnableException $EnableException -ErrorRecord $_ -Target $computer.ComputerName -Continue }
+            try {
+                $disks = Get-DbaCmObject -ComputerName $computer.ComputerName -Query "SELECT * FROM Win32_Volume$condition" -Credential $Credential -Namespace root\CIMv2 -ErrorAction Stop -WarningAction SilentlyContinue -EnableException
+            }
+            catch {
+                Stop-Function -Message "Failed to connect to $computer." -EnableException $EnableException -ErrorRecord $_ -Target $computer.ComputerName -Continue
+            }
 
             if ($CheckForSql) {
                 try {
+                    $sqlservices = Get-DbaSqlService -ComputerName $computer -Type Engine
+
                     $server = Connect-SqlInstance -SqlInstance $computer -SqlCredential $SqlCredential
                     $sqlSuccess = $true
                 }
@@ -175,7 +157,9 @@ function Get-DbaDiskSpace {
             }
 
             foreach ($disk in $disks) {
-                if ($disk.Name -in $ExcludeDrive) { continue }
+                if ($disk.Name -in $ExcludeDrive) {
+                    continue
+                }
                 if ($disk.Name.StartsWith('\\') -and (-not $Force)) {
                     Write-Message -Level Verbose -Message "Skipping disk: $($disk.Name)" -Target $computer.ComputerName
                     continue
@@ -195,8 +179,19 @@ function Get-DbaDiskSpace {
 
                 if ($CheckForSql -and $sqlSuccess) {
                     $countSqlDisks = -1
-                    try { $countSqlDisks = $server.Query("Select count(*) as Count from sys.master_files where physical_name like '$($disk.Name)%'").Count }
-                    catch { Write-Message -Level Warning -Message "Failed to query for master_files on $computer" -ErrorRecord $_ }
+                    if ($server.Version -lt 9) {
+                        $sql = "SELECT COUNT(*) FROM sysaltfiles WHERE LEFT(filename,1) = '$($disk.DriveLetter.TrimEnd(":"))'"
+                    }
+                    else {
+                        $sql = "SELECT COUNT(*) FROM sys.master_files WHERE LEFT(physical_name,1) = '$($disk.DriveLetter.TrimEnd(":"))'"
+                    }
+                    try {
+                        Write-Message -Level Debug -Message "SQL Statement: `n$sql"
+                        $countSqlDisks = $server.Query($sql).Count
+                    }
+                    catch {
+                        Write-Message -Level Warning -Message "Failed to query for SQL Server drive information on $computer" -ErrorRecord $_
+                    }
                     $info.IsSqlDisk = ($countSqlDisks -gt 0)
                 }
 
