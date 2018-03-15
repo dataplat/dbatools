@@ -124,6 +124,9 @@ function Get-DbaDiskSpace {
 
         # Keep track of what computer was already processed to avoid duplicates
         $processed = New-Object System.Collections.ArrayList
+
+        <# In order to support properly identifying if a disk/volume is involved with ANY instance on a given computer #>
+        $sqlDisks = New-Object System.Collections.ArrayList
     }
 
     process {
@@ -141,19 +144,6 @@ function Get-DbaDiskSpace {
             }
             catch {
                 Stop-Function -Message "Failed to connect to $computer." -EnableException $EnableException -ErrorRecord $_ -Target $computer.ComputerName -Continue
-            }
-
-            if ($CheckForSql) {
-                try {
-                    $sqlservices = Get-DbaSqlService -ComputerName $computer -Type Engine
-
-                    $server = Connect-SqlInstance -SqlInstance $computer -SqlCredential $SqlCredential
-                    $sqlSuccess = $true
-                }
-                catch {
-                    Write-Message -Level Warning -Message "Failed to connect to $computer, will not be reporting SQL Stats!" -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
-                    $sqlSuccess = $false
-                }
             }
 
             foreach ($disk in $disks) {
@@ -177,24 +167,48 @@ function Get-DbaDiskSpace {
                 $info.FileSystem = $disk.FileSystem
                 $info.Type = $disk.DriveType
 
-                if ($CheckForSql -and $sqlSuccess) {
-                    $countSqlDisks = -1
-                    if ($server.Version -lt 9) {
-                        $sql = "SELECT COUNT(*) FROM sysaltfiles WHERE LEFT(filename,1) = '$($disk.DriveLetter.TrimEnd(":"))'"
-                    }
-                    else {
-                        $sql = "SELECT COUNT(*) FROM sys.master_files WHERE LEFT(physical_name,1) = '$($disk.DriveLetter.TrimEnd(":"))'"
-                    }
+                if ($CheckForSql) {
+                    $driveLetter = $disk.DriveLetter.TrimEnd(":")
                     try {
-                        Write-Message -Level Debug -Message "SQL Statement: `n$sql"
-                        $countSqlDisks = $server.Query($sql).Count
+                        $sqlServices = Get-DbaSqlService -ComputerName $computer -Type Engine
                     }
                     catch {
-                        Write-Message -Level Warning -Message "Failed to query for SQL Server drive information on $computer" -ErrorRecord $_
+                        Write-Message -Level Warning -Message "Failed to connect to $computer to gather SQL Server instances, will not be reporting SQL Information!" -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
                     }
-                    $info.IsSqlDisk = ($countSqlDisks -gt 0)
-                }
 
+                    Write-Message -Level Verbose -Message "Instances found on $($computer): $($sqlServices.InstanceName.Count)"
+                    if ($sqlServices.InstanceName.Count -gt 0) {
+                        foreach ($sqlService in $sqlServices) {
+                            if ($sqlService.InstanceName -eq "MSSQLSERVER") {
+                                $instanceName = $sqlService.Computer
+                            }
+                            else {
+                                $instanceName = "$($sqlService.Computer)\$($sqlService.InstanceName)"
+                            }
+                            Write-Message -Level VeryVerbose -Message "Processing instance $($instanceName)"
+                            try {
+                                $server = Connect-SqlInstance -SqlInstance $instanceName -SqlCredential $SqlCredential
+                                if ($server.Version -lt 9) {
+                                    $sql = "SELECT DISTINCT LEFT(filename,1) AS SqlDisk FROM sysaltfiles"
+                                }
+                                else {
+                                    $sql = "SELECT DISTINCT LEFT(physical_name,1) AS SqlDisk FROM sys.master_files"
+                                }
+                                $results = $server.Query($sql)
+                                if ($results.SqlDisk.Count -gt 0) {
+                                    foreach ($sqlDisk in $results.SqlDisk) {
+                                        $null = $sqlDisks.Add($sqlDisk)
+                                    }
+                                }
+                            }
+                            catch {
+                                Write-Message -Level Warning -Message "Failed to connect to $instanceName on $computer! SQL information may not be accurate." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
+                            }
+                        }
+                    }
+                    $info.IsSqlDisk = ($driveLetter -in $sqlDisks)
+                    $info
+                }
                 $info
             }
         }
