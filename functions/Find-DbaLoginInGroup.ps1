@@ -85,7 +85,7 @@ function Find-DbaLoginInGroup {
                     $group = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($ads, $groupName);
                     $subgroups = @()
                     foreach ($member in $group.Members) {
-                        $memberDomain = $member.distinguishedname -Split "," | Where-Object { $_ -like "DC=*" } | Select-Object -first 1 | ForEach-Object { $_.ToUpper() -replace "DC=", '' }
+                        $memberDomain = $member.DistinguishedName -Split "," | Where-Object { $_ -like "DC=*" } | Select-Object -first 1 | ForEach-Object { $_.ToUpper() -replace "DC=", '' }
                         if ($member.StructuralObjectClass -eq "group") {
                             $fullName = $memberDomain + "\" + $member.SamAccountName
                             if ($fullName -in $discard) {
@@ -116,7 +116,7 @@ function Find-DbaLoginInGroup {
                 foreach ($gr in $subgroups) {
                     if ($gr -notin $discard) {
                         $discard += $gr
-                        Write-Message -Level Verbose -Message "Recursing Looking at $gr"
+                        Write-Message -Level Verbose -Message "Looking at $gr, recursively."
                         Get-AllLogins -ADGroup $gr -discard $discard -ParentADGroup $ParentADGroup
                     }
                 }
@@ -141,7 +141,7 @@ function Find-DbaLoginInGroup {
             $AdGroups = $server.Logins | Where-Object { $_.LoginType -eq "WindowsGroup" -and $_.Name -ne "BUILTIN\Administrators" -and $_.Name -notlike "*NT SERVICE*" }
 
             foreach ($AdGroup in $AdGroups) {
-                Write-Message -Level Verbose -Mesage "Looking at Group: $AdGroup"
+                Write-Message -Level Verbose -Message "Looking at Group: $AdGroup"
                 $ADGroupOut += Get-AllLogins $AdGroup.Name -ParentADGroup $AdGroup.Name
             }
 
@@ -151,7 +151,7 @@ function Find-DbaLoginInGroup {
             else {
                 $res = $ADGroupOut | Where-Object { $Login -contains $_.Login }
                 if ($res.Length -eq 0) {
-                    Write-Message -Level Warning -Messasge "No logins matching $($Login -join ',') found connecting to $server"
+                    Write-Message -Level Warning -Message "No logins matching $($Login -join ',') found connecting to $server"
                     continue
                 }
             }
