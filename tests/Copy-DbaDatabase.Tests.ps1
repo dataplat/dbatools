@@ -18,12 +18,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Detach Attach" {
-        It "Should be success" {
+        It "Should be success"  -Skip {
             $results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $detachattachdb -DetachAttach -Reattach -Force -WarningAction SilentlyContinue
             $results.Status | Should Be "Successful"
         }
 
-        It "should not be null" {
+        It "should not be null"  -Skip  {
             $db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $detachattachdb
             $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $detachattachdb
             $db1 | Should Not Be $null
@@ -33,14 +33,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $db2.Name | Should Be $detachattachdb
         }
 
-        It "Name, recovery model, and status should match" {
-            # This is crazy
-            (Connect-DbaInstance -SqlInstance $script:instance1).Databases[$detachattachdb].Name | Should Be (Connect-DbaInstance -SqlInstance $script:instance2).Databases[$detachattachdb].Name
-            (Connect-DbaInstance -SqlInstance $script:instance1).Databases[$detachattachdb].Tables.Count | Should Be (Connect-DbaInstance -SqlInstance $script:instance2).Databases[$detachattachdb].Tables.Count
-            (Connect-DbaInstance -SqlInstance $script:instance1).Databases[$detachattachdb].Status | Should Be (Connect-DbaInstance -SqlInstance $script:instance2).Databases[$detachattachdb].Status
+        It "Name, recovery model, and status should match"  -Skip {
+            $db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $backuprestoredb
+            $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $backuprestoredb
+            $db1 | Should Not BeNullOrEmpty
+            $db2 | Should Not BeNullOrEmpty
+
+            # Compare its valuable.
+            $db1.Name | Should Be $db2.Name
+            $db1.RecoveryModel | Should Be $db2.RecoveryModel
+            $db1.Status | Should be $db2.Status
+            $db1.Owner | Should be $db2.Owner
         }
 
-        It "Should say skipped" {
+        It "Should say skipped"  -Skip {
             $results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $detachattachdb -DetachAttach -Reattach
             $results.Status | Should be "Skipped"
             $results.Notes | Should be "Already exists"
