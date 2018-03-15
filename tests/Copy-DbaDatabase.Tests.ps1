@@ -10,8 +10,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $detachattachdb = "dbatoolsci_detachattach$random"
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1,$script:instance2 -Database $backuprestoredb, $detachattachdb
         $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $server.Query("CREATE DATABASE $backuprestoredb")
-        $server.Query("CREATE DATABASE $detachattachdb")
+        $server.Query("CREATE DATABASE $backuprestoredb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+        $server.Query("CREATE DATABASE $detachattachdb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
     }
     AfterAll {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1,$script:instance2 -Database $backuprestoredb, $detachattachdb
