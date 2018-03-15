@@ -564,7 +564,6 @@ function Copy-DbaDatabase {
                         Write-Message -Level Verbose -Message "Copying $from for $dbName."
                         Start-BitsTransfer -Source $from -Destination $remotefilename
                     }
-                    $fn = Split-Path $($dbdestination[$file].physical) -leaf
                 }
                 catch {
                     try {
@@ -899,11 +898,8 @@ function Copy-DbaDatabase {
         $started = Get-Date
         $script:TimeNow = (Get-Date -UFormat "%m%d%Y%H%M%S")
 
-        $allDbElapsed = [System.Diagnostics.Stopwatch]::StartNew()
-
         if ($AllDatabases -or $ExcludeDatabase.length -gt 0 -or $IncludeSupportDbs -or $Database.length -gt 0) {
             foreach ($currentdb in $databaseList) {
-                $dbElapsed = [System.Diagnostics.Stopwatch]::StartNew()
                 $dbName = $currentdb.Name
                 $dbOwner = $currentdb.Owner
 
@@ -1008,7 +1004,8 @@ function Copy-DbaDatabase {
                 elseif ($null -ne $destServer.Databases[$dbName] -and $force) {
                     if ($Pscmdlet.ShouldProcess($destination, "DROP DATABASE $dbName")) {
                         Write-Message -Level Verbose -Message "$dbName already exists. -Force was specified. Dropping $dbName on $destination."
-                        $dropResult = Remove-SqlDatabase $destServer $dbName
+                        $removeresult = Remove-DbaDatabase -SqlInstance $destserver -Database $dbname -Confirm:$false
+                        $dropResult = $removeresult.Status -eq 'Dropped'
 
                         if ($dropResult -eq $false) {
                             Write-Message -Level Verbose -Message "Database could not be dropped. Aborting routine for this database."
@@ -1053,9 +1050,7 @@ function Copy-DbaDatabase {
                     If ($Pscmdlet.ShouldProcess($destination, "Backup $dbName from $source and restoring.")) {
                         $copyDatabaseStatus.Type = "Database (BackupRestore)"
 
-                        $fileName = "$dbName-$timeNow.bak"
-                        $backupFile = Join-Path $NetworkShare $fileName
-                        $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -backupDirectory (Split-Path -Path $backupFile -parent) -FileCount $numberfiles -CopyOnly:$CopyOnly
+                        $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $NetworkShare -FileCount $numberfiles -CopyOnly:$CopyOnly
                         $backupResult = $BackupTmpResult.BackupComplete
                         if ($backupResult -eq $false) {
                             $serviceAccount = $sourceServer.ServiceAccount
@@ -1067,7 +1062,7 @@ function Copy-DbaDatabase {
                             continue
                         }
 
-                        Write-Message -Level Verbose -Message "Resuse = $ReuseSourceFolderStructure."
+                        Write-Message -Level Verbose -Message "Reuse = $ReuseSourceFolderStructure."
                         $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $dbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace
                         $restoreResult = $restoreResultTmp.RestoreComplete
 
