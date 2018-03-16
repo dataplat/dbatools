@@ -12,7 +12,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results = Test-DbaDiskSpeed -SqlInstance $script:instance1 -Database master
             $results.Count -eq 2
             foreach ($result in $results) {
-                $result.Reads -gt 0  
+                $result.Reads -gt 0
             }
         }
     }
