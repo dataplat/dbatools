@@ -181,10 +181,10 @@ function Get-DbaDiskSpace {
                     if ($sqlServices.InstanceName.Count -gt 0) {
                         foreach ($sqlService in $sqlServices) {
                             if ($sqlService.InstanceName -eq "MSSQLSERVER") {
-                                $instanceName = $sqlService.Computer
+                                $instanceName = $sqlService.ComputerName
                             }
                             else {
-                                $instanceName = "$($sqlService.Computer)\$($sqlService.InstanceName)"
+                                $instanceName = "$($sqlService.ComputerName)\$($sqlService.InstanceName)"
                             }
                             Write-Message -Level VeryVerbose -Message "Processing instance $($instanceName)"
                             try {
