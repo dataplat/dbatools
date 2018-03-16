@@ -199,7 +199,7 @@ function Get-DbaRestoreHistory {
                     }
                     $results = $tmpres
                 }
-                $results | Select-DefaultView -Exclude first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, RowError, RowState, Table, ItemArray, HasErrors
+                Select-DefaultView -InputObject $results -Exclude first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, RowError, RowState, Table, ItemArray, HasErrors
             }
             catch {
                 Stop-Function -Message "Failure" -Target $SqlInstance -Error $_ -Exception $_.Exception.InnerException -Continue
@@ -207,4 +207,3 @@ function Get-DbaRestoreHistory {
         }
     }
 }
-
