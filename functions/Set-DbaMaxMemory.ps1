@@ -108,7 +108,7 @@ function Set-DbaMaxMemory {
                 $currentServer.OldMaxValue = $currentServer.SqlMaxMB
             }
             catch {
-                Stop-Function -Mesage "Issue collecting memory information on $server" -Target $server -ErrorRecord $_ -InnerException $_.Exception -Continue
+                Stop-Function -Message "Issue collecting memory information on $server" -Target $server -ErrorRecord $_ -InnerException $_.Exception -Continue
             }
 
             try {
