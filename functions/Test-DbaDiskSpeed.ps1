@@ -6,16 +6,16 @@
     .DESCRIPTION
         Tests how disks are performing
 
-        This command uses a query from Rich Benner which was adapted from David Pless's article: 
+        This command uses a query from Rich Benner which was adapted from David Pless's article:
         https://blogs.msdn.microsoft.com/dpless/2010/12/01/leveraging-sys-dm_io_virtual_file_stats/
         https://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql
-    
+
     .PARAMETER SqlInstance
         Allows you to specify a comma separated list of servers to query.
 
     .PARAMETER SqlCredential
        Allows you to login to the SQL Server using alternative credentials.
-    
+
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
@@ -61,9 +61,9 @@
         [object[]]$ExcludeDatabase,
         [switch]$EnableException
     )
-    
+
     begin {
-        
+
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
         ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
         SERVERPROPERTY('ServerName') AS SqlInstance, db_name(a.database_id) AS [Database]
@@ -74,7 +74,7 @@
         , UPPER(SUBSTRING(b.physical_name, 1, 2)) AS [DiskLocation]
         , a.num_of_reads AS [Reads]
         , CASE WHEN a.num_of_reads < 1 THEN NULL ELSE CAST(a.io_stall_read_ms/(a.num_of_reads) AS INT) END AS [AverageReadStall]
-        , CASE 
+        , CASE
             WHEN CASE WHEN a.num_of_reads < 1 THEN NULL ELSE CAST(a.io_stall_read_ms/(a.num_of_reads) AS INT) END < 10 THEN 'Very Good'
             WHEN CASE WHEN a.num_of_reads < 1 THEN NULL ELSE CAST(a.io_stall_read_ms/(a.num_of_reads) AS INT) END < 20 THEN 'OK'
             WHEN CASE WHEN a.num_of_reads < 1 THEN NULL ELSE CAST(a.io_stall_read_ms/(a.num_of_reads) AS INT) END < 50 THEN 'Slow, Needs Attention'
@@ -82,17 +82,17 @@
             END AS [ReadPerformance]
         , a.num_of_writes AS [Writes]
         , CASE WHEN a.num_of_writes < 1 THEN NULL ELSE CAST(a.io_stall_write_ms/a.num_of_writes AS INT) END AS [AverageWriteStall]
-        , CASE 
+        , CASE
             WHEN CASE WHEN a.num_of_writes < 1 THEN NULL ELSE CAST(a.io_stall_write_ms/(a.num_of_writes) AS INT) END < 10 THEN 'Very Good'
             WHEN CASE WHEN a.num_of_writes < 1 THEN NULL ELSE CAST(a.io_stall_write_ms/(a.num_of_writes) AS INT) END < 20 THEN 'OK'
             WHEN CASE WHEN a.num_of_writes < 1 THEN NULL ELSE CAST(a.io_stall_write_ms/(a.num_of_writes) AS INT) END < 50 THEN 'Slow, Needs Attention'
             WHEN CASE WHEN a.num_of_writes < 1 THEN NULL ELSE CAST(a.io_stall_write_ms/(a.num_of_writes) AS INT) END >= 50 THEN 'Serious I/O Bottleneck'
             END AS [WritePerformance]
-        FROM sys.dm_io_virtual_file_stats (NULL, NULL) a 
-        JOIN sys.master_files b 
-            ON a.file_id = b.file_id 
+        FROM sys.dm_io_virtual_file_stats (NULL, NULL) a
+        JOIN sys.master_files b
+            ON a.file_id = b.file_id
             AND a.database_id = b.database_id"
-        
+
         if ($Database -or $ExcludeDatabase) {
             if ($database) {
                 $where = " where db_name(a.database_id) in ('$($Database -join "'")') "
@@ -102,14 +102,14 @@
             }
             $sql += $where
         }
-        
+
         $sql += " ORDER BY (a.num_of_reads + a.num_of_writes) DESC"
     }
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-            
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
