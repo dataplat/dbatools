@@ -4044,6 +4044,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDiskAllocation -ComputerName sqlserver2014a\r\n\r\nScans all disks on server sqlserver2014a for best practice allocation unit size.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDiskAllocation -ComputerName sqlserver2014 | Select-Output *\r\n\r\nScans all disks on server sqlserver2014a for allocation unit size and returns detailed results for each.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDiskAllocation -ComputerName sqlserver2014a -NoSqlCheck\r\n\r\nScans all disks not hosting SQL Server data or log files on server sqlserver2014a for best practice allocation unit \r\nsize.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Test-DbaDiskSpeed",
+        "Description":  "Tests how disks are performing\n\nThis command uses a query from Rich Benner which was adapted from David Pless\u0027s article:\nhttps://blogs.msdn.microsoft.com/dpless/2010/12/01/leveraging-sys-dm_io_virtual_file_stats/\nhttps://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql",
+        "Tags":  "Performance",
+        "Author":  "Chrissy LeMaire",
+        "Synopsis":  "Tests how disks are performing",
+        "Name":  "Test-DbaDiskSpeed",
+        "Links":  "https://dbatools.io/Get-DbaIdentityUsage",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaIdentityUsage -SqlInstance sql2008, sqlserver2012\r\n\r\nCheck identity seeds for servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB\r\n\r\nCheck identity seeds on server sql2008 for only the TestDB database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB -Threshold 20\r\n\r\nCheck identity seeds on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range \r\nor higher\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Test-DbaIdentityUsage",
         "Description":  "IDENTITY seeds have max values based off of their data type.  This module will locate identity columns and report the seed usage.",
         "Tags":  "Identity",
