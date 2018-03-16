@@ -16,10 +16,10 @@ Describe "$commandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "CheckForSql properly checks SQL Server instances on the computer" {
+    Context "CheckForSql returns IsSqlDisk property with a value (likely false)" {
         $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME -CheckForSql
-            It "There is a SQL Server drive in there somewhere" {
-                $true | Should BeIn $results.IsSqlDisk
+            It "SQL Server drive is not found in there somewhere" {
+                $false | Should BeIn $results.IsSqlDisk
             }
         }
 }
