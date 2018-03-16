@@ -71,7 +71,8 @@
         , b.name AS [FileName]
         , a.file_id AS [FileID]
         , CASE WHEN a.file_id = 2 THEN 'Log' ELSE 'Data' END AS [FileType]
-        , UPPER(SUBSTRING(b.physical_name, 1, 2)) AS [DiskLocation] 
+        , UPPER(SUBSTRING(b.physical_name, 1, 2)) AS [DiskLocation]
+        , a.num_of_reads AS [Reads]
         , CASE WHEN a.num_of_reads < 1 THEN NULL ELSE CAST(a.io_stall_read_ms/(a.num_of_reads) AS INT) END AS [AverageReadStall]
         , CASE 
             WHEN CASE WHEN a.num_of_reads < 1 THEN NULL ELSE CAST(a.io_stall_read_ms/(a.num_of_reads) AS INT) END < 10 THEN 'Very Good'
@@ -79,7 +80,7 @@
             WHEN CASE WHEN a.num_of_reads < 1 THEN NULL ELSE CAST(a.io_stall_read_ms/(a.num_of_reads) AS INT) END < 50 THEN 'Slow, Needs Attention'
             WHEN CASE WHEN a.num_of_reads < 1 THEN NULL ELSE CAST(a.io_stall_read_ms/(a.num_of_reads) AS INT) END >= 50 THEN 'Serious I/O Bottleneck'
             END AS [ReadPerformance]
-        , a.num_of_reads AS [Reads]
+        , a.num_of_writes AS [Writes]
         , CASE WHEN a.num_of_writes < 1 THEN NULL ELSE CAST(a.io_stall_write_ms/a.num_of_writes AS INT) END AS [AverageWriteStall]
         , CASE 
             WHEN CASE WHEN a.num_of_writes < 1 THEN NULL ELSE CAST(a.io_stall_write_ms/(a.num_of_writes) AS INT) END < 10 THEN 'Very Good'
@@ -87,7 +88,6 @@
             WHEN CASE WHEN a.num_of_writes < 1 THEN NULL ELSE CAST(a.io_stall_write_ms/(a.num_of_writes) AS INT) END < 50 THEN 'Slow, Needs Attention'
             WHEN CASE WHEN a.num_of_writes < 1 THEN NULL ELSE CAST(a.io_stall_write_ms/(a.num_of_writes) AS INT) END >= 50 THEN 'Serious I/O Bottleneck'
             END AS [WritePerformance]
-        , a.num_of_writes AS [Writes]
         FROM sys.dm_io_virtual_file_stats (NULL, NULL) a 
         JOIN sys.master_files b 
             ON a.file_id = b.file_id 
