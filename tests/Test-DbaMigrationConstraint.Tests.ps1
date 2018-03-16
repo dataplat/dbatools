@@ -1,9 +1,10 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-$script:instance2 = "sql2017"
+
 Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     BeforeAll {
+        Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess
         $db1 = "dbatoolsci_testMigrationConstraint"
         $db2 = "dbatoolsci_testMigrationConstraint_2"
         Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Query "CREATE DATABASE $db1"
