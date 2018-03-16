@@ -36,19 +36,15 @@
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaIdentityUsage
+        https://dbatools.io/Test-DbaDiskSpeed
 
     .EXAMPLE
-        Get-DbaIdentityUsage -SqlInstance sql2008, sqlserver2012
-        Check identity seeds for servers sql2008 and sqlserver2012.
+        Test-DbaDiskSpeed -SqlInstance sql2008, sqlserver2012
+        Tests how disks are performing on sql2008 and sqlserver2012.
 
     .EXAMPLE
-        Get-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB
-        Check identity seeds on server sql2008 for only the TestDB database
-
-    .EXAMPLE
-        Get-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB -Threshold 20
-        Check identity seeds on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range or higher
+        Test-DbaDiskSpeed -SqlInstance sql2008 -Database tempdb
+        Tests how disks storing files on tempdb on sql2008 are performing
     #>
     [CmdletBinding()]
     Param (
