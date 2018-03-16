@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 # Removed unit tests that were integration tests
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess
+        Get-DbaProcess -SqlInstance $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $db1 = "dbatoolsci_testMaxDop"
         $server.Query("CREATE DATABASE dbatoolsci_testMaxDop")
