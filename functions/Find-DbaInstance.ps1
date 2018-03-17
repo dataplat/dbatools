@@ -1,4 +1,4 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaInstance {
 <#
     .SYNOPSIS
@@ -198,6 +198,12 @@ function Find-DbaInstance {
     )
     
     begin {
+        # TCPPort = 1 | SqlService = 4 | SPN = 16 | Browser = 32
+        if (-not ($ScanType -band 53)) {
+            Stop-Function -Message "Invalid Scan Types specified: $ScanType | Specify at least one of the following types: Browser, SqlService, SPN, TCPPort, Default or All. Otherwise no detection will be possible!" -EnableException $EnableException -Category InvalidArgument
+            return
+        }
+        
         #region Utility Functions
         function Test-SqlInstance {
         <#
@@ -278,7 +284,7 @@ function Find-DbaInstance {
                     
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::Browser) {
                         try {
-                            $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $ComputerName -EnableException
+                            $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $computer -EnableException
                         }
                         catch {
                             $browseFailed = $true
@@ -286,8 +292,8 @@ function Find-DbaInstance {
                     }
                     
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SqlService) {
-                        if ($Credential) { $services = Get-DbaSqlService -ComputerName $ComputerName -Credential $Credential -EnableException -ErrorAction Ignore -WarningAction SilentlyCOntinue }
-                        else { $services = Get-DbaSqlService -ComputerName $ComputerName -ErrorAction Ignore -WarningAction SilentlyContinue }
+                        if ($Credential) { $services = Get-DbaSqlService -ComputerName $computer -Credential $Credential -EnableException -ErrorAction Ignore -WarningAction SilentlyCOntinue }
+                        else { $services = Get-DbaSqlService -ComputerName $computer -ErrorAction Ignore -WarningAction SilentlyContinue }
                     }
                     #endregion Gather data
                     
