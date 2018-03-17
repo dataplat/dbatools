@@ -238,6 +238,28 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <param name="a">The size to multiply</param>
         /// <param name="b">The size to multiply with</param>
         /// <returns>A multiplied size.</returns>
+        public static Size operator *(Size a, double b)
+        {
+            return new Size((long)(a.Byte * b));
+        }
+
+        /// <summary>
+        /// Divides one size by another.
+        /// </summary>
+        /// <param name="a">The size to divide</param>
+        /// <param name="b">The size to divide with</param>
+        /// <returns>Divided size (note: Cut off)</returns>
+        public static Size operator /(Size a, double b)
+        {
+            return new Size((long)((double)a.Byte / b));
+        }
+
+        /// <summary>
+        /// Multiplies two sizes with each other
+        /// </summary>
+        /// <param name="a">The size to multiply</param>
+        /// <param name="b">The size to multiply with</param>
+        /// <returns>A multiplied size.</returns>
         public static Size operator *(Size a, Size b)
         {
             return new Size(a.Byte * b.Byte);

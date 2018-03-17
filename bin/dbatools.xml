@@ -4713,6 +4713,22 @@
             <param name="b">The second size to substract</param>
             <returns>The difference between both sizes</returns>
         </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.Size.op_Multiply(Sqlcollaborative.Dbatools.Utility.Size,System.Double)">
+            <summary>
+            Multiplies two sizes with each other
+            </summary>
+            <param name="a">The size to multiply</param>
+            <param name="b">The size to multiply with</param>
+            <returns>A multiplied size.</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.Size.op_Division(Sqlcollaborative.Dbatools.Utility.Size,System.Double)">
+            <summary>
+            Divides one size by another.
+            </summary>
+            <param name="a">The size to divide</param>
+            <param name="b">The size to divide with</param>
+            <returns>Divided size (note: Cut off)</returns>
+        </member>
         <member name="M:Sqlcollaborative.Dbatools.Utility.Size.op_Multiply(Sqlcollaborative.Dbatools.Utility.Size,Sqlcollaborative.Dbatools.Utility.Size)">
             <summary>
             Multiplies two sizes with each other
