@@ -200,7 +200,7 @@ function Find-DbaInstance {
     begin {
         # TCPPort = 1 | SqlService = 4 | SPN = 16 | Browser = 32
         if (-not ($ScanType -band 53)) {
-            Stop-Function -Message "Invalid Scan Types specified: $ScanType | Specify at least one of the following types: Browser, SqlService, SPN, TCPPort, Default or All. Otherwise no detection will be possible!" -EnableException $EnableException -Category InvalidArgument
+            Stop-Function -Message "Invalid Scan Types specified: $ScanType | Specify at least one of the following types: Browser, SqlService, SPN, TCPPort, Default or All. Otherwise no detection will be possible." -EnableException $EnableException -Category InvalidArgument
             return
         }
         
