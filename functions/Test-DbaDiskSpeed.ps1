@@ -44,7 +44,7 @@
 
     .EXAMPLE
         Test-DbaDiskSpeed -SqlInstance sql2008 -Database tempdb
-        Tests how disks storing files on tempdb on sql2008 are performing
+        Tests how disks storing tempdb files on sql2008 are performing
     #>
     [CmdletBinding()]
     Param (

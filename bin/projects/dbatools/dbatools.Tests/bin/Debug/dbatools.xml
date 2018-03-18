@@ -3184,6 +3184,46 @@
             <param name="Name">THe name of the user to put in the prompt</param>
             <returns>The result object</returns>
         </member>
+        <member name="T:Sqlcollaborative.Dbatools.Utility.SizeStyle">
+            <summary>
+            How size objects should be displayed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Dynamic">
+            <summary>
+            The size object is styled dependend on the number stored within.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Plain">
+            <summary>
+            The size object is shown as a plain number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Byte">
+            <summary>
+            The size object is styled as a byte number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Kilobyte">
+            <summary>
+            The size object is styled as a kilobyte number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Megabyte">
+            <summary>
+            The size object is styled as a megabyte number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Gigabyte">
+            <summary>
+            The size object is styled as a Gigabyte number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Terabyte">
+            <summary>
+            The size object is styled as a Terabyte number
+            </summary>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Utility.DateTimeExtension">
             <summary>
             Extends DateTime
@@ -4608,6 +4648,11 @@
             Number if digits behind the dot.
             </summary>
         </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.Size.Style">
+            <summary>
+            How the size object should be displayed.
+            </summary>
+        </member>
         <member name="M:Sqlcollaborative.Dbatools.Utility.Size.ToString">
             <summary>
             Shows the default string representation of size
@@ -4667,6 +4712,38 @@
             <param name="a">The first size to substract</param>
             <param name="b">The second size to substract</param>
             <returns>The difference between both sizes</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.Size.op_Multiply(Sqlcollaborative.Dbatools.Utility.Size,System.Double)">
+            <summary>
+            Multiplies two sizes with each other
+            </summary>
+            <param name="a">The size to multiply</param>
+            <param name="b">The size to multiply with</param>
+            <returns>A multiplied size.</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.Size.op_Division(Sqlcollaborative.Dbatools.Utility.Size,System.Double)">
+            <summary>
+            Divides one size by another.
+            </summary>
+            <param name="a">The size to divide</param>
+            <param name="b">The size to divide with</param>
+            <returns>Divided size (note: Cut off)</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.Size.op_Multiply(Sqlcollaborative.Dbatools.Utility.Size,Sqlcollaborative.Dbatools.Utility.Size)">
+            <summary>
+            Multiplies two sizes with each other
+            </summary>
+            <param name="a">The size to multiply</param>
+            <param name="b">The size to multiply with</param>
+            <returns>A multiplied size.</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.Size.op_Division(Sqlcollaborative.Dbatools.Utility.Size,Sqlcollaborative.Dbatools.Utility.Size)">
+            <summary>
+            Divides one size by another.
+            </summary>
+            <param name="a">The size to divide</param>
+            <param name="b">The size to divide with</param>
+            <returns>Divided size (note: Cut off)</returns>
         </member>
         <member name="M:Sqlcollaborative.Dbatools.Utility.Size.op_Implicit(System.Int32)~Sqlcollaborative.Dbatools.Utility.Size">
             <summary>
@@ -4738,6 +4815,16 @@
         <member name="F:Sqlcollaborative.Dbatools.Utility.UtilityHost.FormatTime">
             <summary>
             Formating string for time-style datetime objects
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.UtilityHost.SizeDigits">
+            <summary>
+            The number of digits a size object shows by default
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.UtilityHost.SizeStyle">
+            <summary>
+            The way size objects are usually displayed
             </summary>
         </member>
         <member name="M:Sqlcollaborative.Dbatools.Utility.UtilityHost.IsLike(System.String,System.String,System.Boolean)">
