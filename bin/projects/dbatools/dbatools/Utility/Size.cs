@@ -60,17 +60,40 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <summary>
         /// Number if digits behind the dot.
         /// </summary>
-        public int Digits
+        public Nullable<int> Digits
         {
             get
             {
-                return _digits;
+                if (_digits == null)
+                    return UtilityHost.SizeDigits;
+                return (int)_digits;
             }
             set {
-                _digits = value < 0 ? 0 : value;
+                if (value == null)
+                    _digits = value;
+                else
+                    _digits = value < 0 ? 0 : value;
             }
         }
-        private int _digits = 2;
+        private Nullable<int> _digits = 2;
+
+        /// <summary>
+        /// How the size object should be displayed.
+        /// </summary>
+        public Nullable<SizeStyle> Style
+        {
+            get
+            {
+                if (_Style != null)
+                    return _Style;
+                return UtilityHost.SizeStyle;
+            }
+            set
+            {
+                _Style = value;
+            }
+        }
+        private Nullable<SizeStyle> _Style;
 
         /// <summary>
         /// Shows the default string representation of size
@@ -79,30 +102,45 @@ namespace Sqlcollaborative.Dbatools.Utility
         public override string ToString()
         {
             string format = "{0:N" + Digits + "} {1}";
-
-            if (Terabyte > 1)
+            switch (Style)
             {
-                return (String.Format(format, Terabyte, "TB"));
+                case SizeStyle.Plain:
+                    return Byte.ToString();
+                case SizeStyle.Byte:
+                    return (String.Format("{0} {1}", Byte, "B"));
+                case SizeStyle.Kilobyte:
+                    return (String.Format(format, Kilobyte, "KB"));
+                case SizeStyle.Megabyte:
+                    return (String.Format(format, Megabyte, "MB"));
+                case SizeStyle.Gigabyte:
+                    return (String.Format(format, Gigabyte, "GB"));
+                case SizeStyle.Terabyte:
+                    return (String.Format(format, Terabyte, "TB"));
+                default:
+                    if (Terabyte > 1)
+                    {
+                        return (String.Format(format, Terabyte, "TB"));
+                    }
+                    if (Gigabyte > 1)
+                    {
+                        return (String.Format(format, Gigabyte, "GB"));
+                    }
+                    if (Megabyte > 1)
+                    {
+                        return (String.Format(format, Megabyte, "MB"));
+                    }
+                    if (Kilobyte > 1)
+                    {
+                        return (String.Format(format, Kilobyte, "KB"));
+                    }
+                    if (Byte > -1)
+                    {
+                        return (String.Format("{0} {1}", Byte, "B"));
+                    }
+                    if (Byte == -1)
+                        return "Unlimited";
+                    return "";
             }
-            if (Gigabyte > 1)
-            {
-                return (String.Format(format, Gigabyte, "GB"));
-            }
-            if (Megabyte > 1)
-            {
-                return (String.Format(format, Megabyte, "MB"));
-            }
-            if (Kilobyte > 1)
-            {
-                return (String.Format(format, Kilobyte, "KB"));
-            }
-            if (Byte > -1)
-            {
-                return (String.Format("{0} {1}", Byte, "B"));
-            }
-            if (Byte == -1)
-                return "Unlimited";
-            return "";
         }
 
         /// <summary>
@@ -192,6 +230,50 @@ namespace Sqlcollaborative.Dbatools.Utility
         public static Size operator -(Size a, Size b)
         {
             return new Size(a.Byte - b.Byte);
+        }
+
+        /// <summary>
+        /// Multiplies two sizes with each other
+        /// </summary>
+        /// <param name="a">The size to multiply</param>
+        /// <param name="b">The size to multiply with</param>
+        /// <returns>A multiplied size.</returns>
+        public static Size operator *(Size a, double b)
+        {
+            return new Size((long)(a.Byte * b));
+        }
+
+        /// <summary>
+        /// Divides one size by another.
+        /// </summary>
+        /// <param name="a">The size to divide</param>
+        /// <param name="b">The size to divide with</param>
+        /// <returns>Divided size (note: Cut off)</returns>
+        public static Size operator /(Size a, double b)
+        {
+            return new Size((long)((double)a.Byte / b));
+        }
+
+        /// <summary>
+        /// Multiplies two sizes with each other
+        /// </summary>
+        /// <param name="a">The size to multiply</param>
+        /// <param name="b">The size to multiply with</param>
+        /// <returns>A multiplied size.</returns>
+        public static Size operator *(Size a, Size b)
+        {
+            return new Size(a.Byte * b.Byte);
+        }
+
+        /// <summary>
+        /// Divides one size by another.
+        /// </summary>
+        /// <param name="a">The size to divide</param>
+        /// <param name="b">The size to divide with</param>
+        /// <returns>Divided size (note: Cut off)</returns>
+        public static Size operator /(Size a, Size b)
+        {
+            return new Size((long)((double)a.Byte / (double)b.Byte));
         }
 
         /// <summary>
