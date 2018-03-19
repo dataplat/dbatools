@@ -32,7 +32,7 @@ function Get-DbaBackupHistory {
             If this switch is enabled, a large amount of information is returned, similar to what SQL Server itself returns.
 
         .PARAMETER Since
-            Specifies a Datetimeobject to use as the starting point for the search for backups.
+            Specifies a DateTime object to use as the starting point for the search for backups.
 
         .PARAMETER Last
             If this switch is enabled, the most recent full chain of full, diff and log backup sets is returned.
@@ -47,10 +47,10 @@ function Get-DbaBackupHistory {
             If this switch is enabled, the most recent log backup is returned.
 
         .PARAMETER DeviceType
-            Specifieds a filter for backupsets based on DeviceTypees. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device', in addition to custom integers for your own DeviceTypes.
+            Specifies a filter for backup sets based on DeviceTypes. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device', in addition to custom integers for your own DeviceTypes.
 
         .PARAMETER Raw
-            If this switch is enabled, one object per backup file is returned. Otherwise, mediasets (striped backups across multiple files) will be grouped into a single return object.
+            If this switch is enabled, one object per backup file is returned. Otherwise, media sets (striped backups across multiple files) will be grouped into a single return object.
 
         .PARAMETER Type
             Specifies one or more types of backups to return. Valid options are 'Full', 'Log', 'Differential', 'File', 'Differential File', 'Partial Full', and 'Partial Differential'. Otherwise, all types of backups will be returned unless one of the -Last* switches is enabled.
@@ -162,7 +162,7 @@ function Get-DbaBackupHistory {
     )
 
     begin {
-        Write-Message -Level System -Message "Active Parameterset: $($PSCmdlet.ParameterSetName)."
+        Write-Message -Level System -Message "Active Parameter set: $($PSCmdlet.ParameterSetName)."
         Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
 
@@ -234,7 +234,7 @@ function Get-DbaBackupHistory {
             $databases = @()
             if ($null -ne $Database) {
                 foreach ($db in $Database) {
-                    $databases += [PScustomObject]@{name = $db}
+                    $databases += [PSCustomObject]@{name = $db}
                 }
             }
             else {
@@ -492,7 +492,7 @@ function Get-DbaBackupHistory {
 
             Write-Message -Level Debug -Message $sql
             Write-Message -Level SomewhatVerbose -Message "Executing sql query."
-            $results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
+            $results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, RowState, Table, ItemArray, HasErrors
 
             if ($raw) {
                 Write-Message -Level SomewhatVerbose -Message "Processing as Raw Output."
@@ -501,7 +501,7 @@ function Get-DbaBackupHistory {
             }
             else {
                 Write-Message -Level SomewhatVerbose -Message "Processing as grouped output."
-                $GroupedResults = $results | Group-Object -Property backupsetid
+                $GroupedResults = $results | Group-Object -Property BackupsetId
                 Write-Message -Level SomewhatVerbose -Message "$($GroupedResults.Count) result-groups found."
                 $groupResults = @()
                 $BackupSetIds = $GroupedResults.Name
@@ -571,9 +571,9 @@ function Get-DbaBackupHistory {
                     $historyObject.SoftwareVersionMajor = $commonFields.Software_Major_Version
                     $historyObject.IsCopyOnly = ($commonFields.is_copy_only -eq 1)
                     $historyObject.LastRecoveryForkGuid = $commonFields.last_recovery_fork_guid
-                    $groupResults += $historyObject
+                    $historyObject
                 }
-                $groupResults | Sort-Object -Property LastLsn, Type
+                #$groupResults | Sort-Object -Property LastLsn, Type
             }
         }
     }
