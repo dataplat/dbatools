@@ -205,7 +205,7 @@ function Get-DbaBackupHistory {
 
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance." -Target $instance
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -527,12 +527,12 @@ function Get-DbaBackupHistory {
                         $end = ($group.Group.End | Measure-Object -Maximum).Maximum
                         $duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
                     }
-                    $CompressedBackupSize = $commonFields.CompressedBackupSize
+                    $compressedBackupSize = $commonFields.CompressedBackupSize
                     if ($compressedFlag -eq $true) {
-                        $ratio = [Math]::Round(($commonFields.TotalSize) / ($CompressedBackupSize), 2)
+                        $ratio = [Math]::Round(($commonFields.TotalSize) / ($compressedBackupSize), 2)
                     }
                     else {
-                        $CompressedBackupSize = $null
+                        $compressedBackupSize = $null
                         $ratio = 1
                     }
                     $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
@@ -546,7 +546,7 @@ function Get-DbaBackupHistory {
                     $historyObject.Duration = $duration
                     $historyObject.Path = $group.Group.Path
                     $historyObject.TotalSize = $commonFields.TotalSize
-                    $historyObject.CompressedBackupSize = $CompressedBackupSize
+                    $historyObject.CompressedBackupSize = $compressedBackupSize
                     $historyObject.CompressionRatio = $ratio
                     $historyObject.Type = $commonFields.Type
                     $historyObject.BackupSetId = $commonFields.BackupSetId
