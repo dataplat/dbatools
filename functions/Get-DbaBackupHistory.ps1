@@ -63,6 +63,15 @@ function Get-DbaBackupHistory {
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+        .NOTES
+            Tags: DisasterRecovery, Backup
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: MIT https://opensource.org/licenses/MIT
+
+        .LINK
+            https://dbatools.io/Get-DbaBackupHistory
+
         .EXAMPLE
             Get-DbaBackupHistory -SqlInstance SqlInstance2014a
 
@@ -118,18 +127,9 @@ function Get-DbaBackupHistory {
             Get-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force
 
             Returns detailed backup history for all databases on SqlInstance2014a and sql2016.
-
-        .NOTES
-            Tags: Storage, DisasterRecovery, Backup
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaBackupHistory
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
+    param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]
@@ -165,8 +165,7 @@ function Get-DbaBackupHistory {
         Write-Message -Level System -Message "Active Parameter set: $($PSCmdlet.ParameterSetName)."
         Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
-
-        $DeviceTypeMapping = @{
+        $deviceTypeMapping = @{
             'Disk'                  = 2
             'Permanent Disk Device' = 102
             'Tape'                  = 5
@@ -176,16 +175,16 @@ function Get-DbaBackupHistory {
             'Virtual Device'        = 7
             'URL'                   = 9
         }
-        $DeviceTypeFilter = @()
-        foreach ($DevType in $DeviceType) {
-            if ($DevType -in $DeviceTypeMapping.Keys) {
-                $DeviceTypeFilter += $DeviceTypeMapping[$DevType]
+        $deviceTypeFilter = @()
+        foreach ($devType in $DeviceType) {
+            if ($devType -in $deviceTypeMapping.Keys) {
+                $deviceTypeFilter += $deviceTypeMapping[$devType]
             }
             else {
-                $DeviceTypeFilter += $DevType
+                $deviceTypeFilter += $devType
             }
         }
-        $BackupTypeMapping = @{
+        $backupTypeMapping = @{
             'Log'                  = 'L'
             'Full'                 = 'D'
             'File'                 = 'F'
@@ -194,9 +193,9 @@ function Get-DbaBackupHistory {
             'Partial Full'         = 'P'
             'Partial Differential' = 'Q'
         }
-        $BackupTypeFilter = @()
-        foreach ($TypeFilter in $Type) {
-            $BackupTypeFilter += $BackupTypeMapping[$TypeFilter]
+        $backupTypeFilter = @()
+        foreach ($typeFilter in $Type) {
+            $backupTypeFilter += $backupTypeMapping[$typeFilter]
         }
 
     }
@@ -205,15 +204,11 @@ function Get-DbaBackupHistory {
         foreach ($instance in $SqlInstance) {
 
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance." -Target $instance
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                Write-Message -Level Verbose -Message "Connecting to $instance." -Target $instance
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential -MinimumVersion 9
             }
             catch {
-                Stop-Function -Message "Failed to process Instance $Instance." -InnerErrorRecord $_ -Target $instance -Continue
-            }
-
-            if ($server.VersionMajor -lt 9) {
-                Stop-Function -Message "SQL Server 2000 not supported." -Category LimitsExceeded -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($server.VersionMajor -ge 10) {
@@ -243,12 +238,12 @@ function Get-DbaBackupHistory {
             if ($ExcludeDatabase) {
                 $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
             }
-            foreach ($d in $DeviceTypeFilter) {
-                $DeviceTypeFilterRight = "IN ('" + ($DeviceTypeFilter -Join "','") + "')"
+            foreach ($d in $deviceTypeFilter) {
+                $deviceTypeFilterRight = "IN ('" + ($deviceTypeFilter -Join "','") + "')"
             }
 
-            foreach ($b in $BackupTypeFilter) {
-                $BackupTypeFilterRight = "IN ('" + ($BackupTypeFilter -Join "','") + "')"
+            foreach ($b in $backupTypeFilter) {
+                $backupTypeFilterRight = "IN ('" + ($backupTypeFilter -Join "','") + "')"
             }
 
             if ($last) {
@@ -301,8 +296,8 @@ function Get-DbaBackupHistory {
                     if ($true -ne $IncludeCopyOnly) {
                         $wherecopyonly = " AND is_copy_only='0' "
                     }
-                    if ($DeviceTypeFilter) {
-                        $DevTypeFilterWhere = "AND mediafamily.device_type $DeviceTypeFilterRight"
+                    if ($deviceTypeFilter) {
+                        $devTypeFilterWhere = "AND mediafamily.device_type $deviceTypeFilterRight"
                     }
                     $sql += "
                                 SELECT
@@ -383,7 +378,7 @@ function Get-DbaBackupHistory {
                                   ON backupset.media_set_id = mediaset.media_set_id
                                 WHERE backupset.database_name = '$($db.Name)' $wherecopyonly
                                 AND (type = '$first' OR type = '$second')
-                                $DevTypeFilterWhere
+                                $devTypeFilterWhere
                                 ) AS a
                                 WHERE a.BackupSetRank = 1
                                 ORDER BY a.Type;
@@ -448,7 +443,7 @@ function Get-DbaBackupHistory {
                 $from = " FROM msdb..backupmediafamily mediafamily
                              INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
                              INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
-                if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $DeviceTypeFilter -or $LastLsn -or $BackupTypeFilter) {
+                if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $deviceTypeFilter -or $LastLsn -or $backupTypeFilter) {
                     $where = " WHERE "
                 }
 
@@ -472,11 +467,11 @@ function Get-DbaBackupHistory {
                     $wherearray += "backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
                 }
 
-                if ($DeviceTypeFilter) {
-                    $wherearray += "mediafamily.device_type $DeviceTypeFilterRight"
+                if ($deviceTypeFilter) {
+                    $wherearray += "mediafamily.device_type $deviceTypeFilterRight"
                 }
-                if ($BackupTypeFilter) {
-                    $wherearray += "backupset.type $BackupTypeFilterRight"
+                if ($backupTypeFilter) {
+                    $wherearray += "backupset.type $backupTypeFilterRight"
                 }
 
                 if ($LastLsn) {
