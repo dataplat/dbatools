@@ -206,6 +206,9 @@ function Get-DbaUserLevelPermission {
                 $dbs = $dbs | Where-Object IsSystemObject -eq $false
             }
 
+            #reset $serverDT
+            $serverDT = $null
+
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 
