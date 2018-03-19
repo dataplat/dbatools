@@ -203,7 +203,7 @@ function Get-DbaDbExtentDiff {
                 }
             }
             catch {
-            }	 
+            }
 
             $db = $server.Databases[$Database]
             $runIt = "EXEC [tempdb].[dbo].[sp_SQLskillsDIFForFULL] N`'" + $Database + "`'"
@@ -223,7 +223,7 @@ function Get-DbaDbExtentDiff {
             }
             catch {
                 Stop-Function -Message "Could not execute $query in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
-            }	
+            }
 
             # Cleanup
             try {
