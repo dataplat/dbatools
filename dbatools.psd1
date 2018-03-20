@@ -447,7 +447,8 @@
         'Remove-DbaPfDataCollectorSet',
         'Add-DbaPfDataCollectorCounter',
         'Remove-DbaPfDataCollectorCounter',
-        'Get-DbaPfAvailableCounter'
+        'Get-DbaPfAvailableCounter',
+        'Get-DbaDbExtentDiff'
     )
 
     # Cmdlets to export from this module
