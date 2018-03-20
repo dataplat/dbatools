@@ -20,4 +20,3 @@ msbuild.log
 # Local constant file
 tests/constants.local.ps1
 
-dbatools.psd1
