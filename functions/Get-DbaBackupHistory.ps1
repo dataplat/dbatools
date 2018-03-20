@@ -217,7 +217,7 @@ function Get-DbaBackupHistory {
             }
 
             if ($server.VersionMajor -ge 10) {
-                $compressedFlag = $false
+                $compressedFlag = $true
                 # 2008 introduced compressed_backup_size
                 $BackupCols = "
                 backupset.backup_size AS TotalSize,
