@@ -16,7 +16,7 @@ function Get-DbaDbExtentDiff {
             To connect as a different Windows user, run PowerShell as that user.
 
         .PARAMETER Database
-            The database where the script will be installed. Defaults to master
+            The database for which you want to masure the changes
 
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
@@ -40,13 +40,12 @@ function Get-DbaDbExtentDiff {
             http://dbatools.io/Get-DbaDbExtentDiff
 
         .EXAMPLE
-            Install the objects in master and msdb database
-            Get-DbaDbExtentDiff -SqlInstance RES14224
+            Get the changes for the DBA database
+            Get-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA
 
         .EXAMPLE
-            Install the objects in [DBA] database
-            Get-DbaDbExtentDiff -SqlInstance RES14224 -Database DBA
-
+            Get the changes for the DB01 database on multiple servers
+            Get-DbaDbExtentDiff -SqlInstance $SQL2017N1, $SQL2017N2, $SQL2016 -Database DB01 -SqlCredential $Cred
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
@@ -55,7 +54,7 @@ function Get-DbaDbExtentDiff {
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object]$Database = "master",
-        [switch][Alias('Silent')]$EnableException
+        [switch]$EnableException
     )
 
     process {
@@ -203,7 +202,8 @@ function Get-DbaDbExtentDiff {
 
             if ($server.VersionMajor -ge 14 ) {
                 $queryToRun = $SQLskillsDIFForFULL2017
-            } else {
+            }
+            else {
                 $queryToRun = $SQLskillsDIFForFULL
             }
 
@@ -215,10 +215,11 @@ function Get-DbaDbExtentDiff {
                 $parsedQuery += $line + "`r`n"
             }
 
-               if (-not $server.Databases[$Database]) {
+            if (-not $server.Databases[$Database]) {
                 Stop-Function -Message "Database $Database does not exist on $server"
                 return
-            } else {
+            }
+            else {
                 $db = $server.Databases[$Database]
             }
 
@@ -242,7 +243,8 @@ function Get-DbaDbExtentDiff {
                     IF EXISTS (SELECT * FROM sys.objects WHERE NAME = N'SQLskillsConvertToExtents')
                         DROP FUNCTION [SQLskillsConvertToExtents];
                 "
-            } else {
+            }
+            else {
                 $runIt = $SQLskillsDIFForFULL2017
             }
 
