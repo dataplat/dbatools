@@ -68,6 +68,7 @@ function Get-DbaDbExtentDiff {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+
             $SQLskillsDIFForFULL = "
                 IF EXISTS (SELECT * FROM sys.objects WHERE NAME = N'SQLskillsConvertToExtents')
                 DROP FUNCTION [SQLskillsConvertToExtents];
@@ -189,36 +190,69 @@ function Get-DbaDbExtentDiff {
                 GO
             "
 
+            # Extents are a collection of eight physically contiguous pages and are used to efficiently manage the pages.
+            # All pages are stored in extents.
+            $SQLskillsDIFForFULL2017 = "
+                SELECT
+                total_page_count / 8 as [Total Extents],
+                modified_extent_page_count / 8 as [Changed Extents],
+                (100 * modified_extent_page_count)/total_page_count as [Percentage Changed]
+                FROM sys.dm_db_file_space_usage
+                GO
+            "
+
+            if ($server.VersionMajor -ge 14 ) {
+                $queryToRun = $SQLskillsDIFForFULL2017
+            } else {
+                $queryToRun = $SQLskillsDIFForFULL
+            }
+
             $parsedQuery = @()
-            foreach ($line in $SQLskillsDIFForFULL) {
+            foreach ($line in $queryToRun) {
                 $line = $line -replace '(^\s+|\s+$)', ''
+                $line = $line -replace "(?m)^\s+"
                 $line = $line -replace "`t", ''
                 $parsedQuery += $line + "`r`n"
             }
 
-            try {
-                Write-Message -Level Output -Message "Executing on server $SqlInstance, database $Database"
-                foreach ($query in ($parsedQuery -Split "\nGO\b")) {
-                    $null = Invoke-DbaSqlCmd -ServerInstance $instance -Query $query -Credential $SqlCredential -Database tempdb
-                }
-            }
-            catch {
+               if (-not $server.Databases[$Database]) {
+                Stop-Function -Message "Database $Database does not exist on $server"
+                return
+            } else {
+                $db = $server.Databases[$Database]
             }
 
-            $db = $server.Databases[$Database]
-            $runIt = "EXEC [tempdb].[dbo].[sp_SQLskillsDIFForFULL] N`'" + $Database + "`'"
-            $cleanIt = "
-                IF OBJECT_ID (N'sp_SQLskillsDIFForFULL') IS NOT NULL
-                    DROP PROCEDURE [sp_SQLskillsDIFForFULL];
-                IF EXISTS (SELECT * FROM sys.objects WHERE NAME = N'SQLskillsConvertToExtents')
-                    DROP FUNCTION [SQLskillsConvertToExtents];
-            "
+            # For SQL Server version lower than 2017 we need to create some objects
+            if ($server.VersionMajor -lt 14 ) {
+                try {
+                    foreach ($query in ($parsedQuery -Split "\nGO\b")) {
+                        $null = Invoke-DbaSqlCmd -ServerInstance $instance -Query $query -Credential $SqlCredential -Database tempdb
+                    }
+                }
+                catch {
+                    Stop-Function -Message "Could not execute $query in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
+                }
+            }
+
+            if ($server.VersionMajor -lt 14 ) {
+                $runIt = "EXEC [tempdb].[dbo].[sp_SQLskillsDIFForFULL] N`'" + $Database + "`'"
+                $cleanIt = "
+                    IF OBJECT_ID (N'sp_SQLskillsDIFForFULL') IS NOT NULL
+                        DROP PROCEDURE [sp_SQLskillsDIFForFULL];
+                    IF EXISTS (SELECT * FROM sys.objects WHERE NAME = N'SQLskillsConvertToExtents')
+                        DROP FUNCTION [SQLskillsConvertToExtents];
+                "
+            } else {
+                $runIt = $SQLskillsDIFForFULL2017
+            }
+
             try {
                 $result = $db.Query($runIt)
+                Add-Member -InputObject $result -Name FullName -MemberType NoteProperty -Value $instance.FullName
                 Add-Member -InputObject $result -Name ComputerName -MemberType NoteProperty -Value $instance.ComputerName
                 Add-Member -InputObject $result -Name InstanceName -MemberType NoteProperty -Value $instance.InstanceName
                 Add-Member -InputObject $result -Name Database -MemberType NoteProperty -Value $Database
-                $defaults = 'ComputerName', 'InstanceName', 'Database', 'Total Extents', 'Changed Extents', 'Percentage Changed'
+                $defaults = 'ComputerName', 'FullName', 'InstanceName', 'Database', 'Total Extents', 'Changed Extents', 'Percentage Changed'
                 Select-DefaultView -InputObject $result -Property $defaults
             }
             catch {
@@ -226,11 +260,13 @@ function Get-DbaDbExtentDiff {
             }
 
             # Cleanup
-            try {
-                $null = Invoke-DbaSqlCmd -ServerInstance $instance -Query $cleanIt -Credential $SqlCredential -Database tempdb
-            }
-            catch {
-                Stop-Function -Message "Could not execute $query in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
+            if ($server.VersionMajor -lt 14 ) {
+                try {
+                    $null = Invoke-DbaSqlCmd -ServerInstance $instance -Query $cleanIt -Credential $SqlCredential -Database tempdb
+                }
+                catch {
+                    Stop-Function -Message "Could not execute $query in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
+                }
             }
         }
     }
