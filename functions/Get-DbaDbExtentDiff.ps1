@@ -16,7 +16,10 @@ function Get-DbaDbExtentDiff {
             To connect as a different Windows user, run PowerShell as that user.
 
         .PARAMETER Database
-            The database for which you want to masure the changes
+            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+
+        .PARAMETER ExcludeDatabase
+            The database(s) to exclude - this list is auto-populated from the server
 
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
@@ -53,7 +56,8 @@ function Get-DbaDbExtentDiff {
         [Alias('ServerInstance', 'SqlServer')]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object]$Database = "master",
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
         [switch]$EnableException
     )
 
@@ -86,66 +90,86 @@ function Get-DbaDbExtentDiff {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $MasterFilesQuery = "
-                SELECT [file_id], [size], database_id, db_name(database_id) as dbname FROM master.sys.master_files
-                WHERE [type_desc] = N'ROWS'
-            "
-            # Exclude inaccessible dbs
-            if (-not $server.Databases[$Database]) {
-                Stop-Function -Message "Database $Database does not exist on $server"
+            $dbs = $server.Databases
+
+            if ($Database) {
+                $dbs = $dbs | Where-Object Name -In $Database
             }
 
-            $MasterFiles = $server.Query($MasterFilesQuery)
-            $MasterFiles = $MasterFiles | Where-Object dbname -in $Database
+            if ($ExcludeDatabase) {
+                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+            }
 
-            $MasterFilesGrouped = $MasterFiles | Group-Object -Property dbname
+            $sourcedbs = @()
+            foreach ($db in $dbs) {
 
-            if ($server.VersionMajor -ge 14 ) {
-                $DBCCPageQueryDMV = "
-                    SELECT
-                    total_page_count / 8 as [ExtentsTotal],
-                    modified_extent_page_count / 8 as [ExtentsChanged],
-                    (100 * modified_extent_page_count)/total_page_count as [ChangedPerc]
-                    FROM sys.dm_db_file_space_usage
-                "
-
-                foreach ($db in $MasterFilesGrouped) {
-                    foreach ($results in $db.Group) {
-                        $DBCCPageResults = $server.Databases[$($results.dbname)].Query($DBCCPageQueryDMV)
-                        [pscustomobject]@{
-                            ComputerName   = $server.NetName
-                            InstanceName   = $server.ServiceName
-                            SqlInstance    = $server.DomainInstanceName
-                            DatabaseName   = $db.Name
-                            ExtentsTotal   = $DBCCPageResults.ExtentsTotal
-                            ExtentsChanged = $DBCCPageResults.ExtentsChanged
-                            ChangedPerc    = $DBCCPageResults.ChangedPerc
-                        }
-                    }
+                if ($db.IsAccessible -ne $true) {
+                    Write-Message -Level Verbose -Message "$($db.name) is not accessible on $instance, skipping"
                 }
-            } else {
-                foreach ($db in $MasterFilesGrouped) {
-                    $sizeTotal = 0
-                    foreach ($results in $db.Group) {
-                        $extentID = 0
-                        $sizeTotal = $sizeTotal + $results.size / 8
-                        $dbExtents = @()
-                        while ($extentID -lt $results.size) {
-                            $pageID = $extentID + 6
-                            $DBCCPageQuery = "DBCC PAGE ('$($results.dbname)', $($results.file_id), $pageID, 3)  WITH TABLERESULTS, NO_INFOMSGS"
-                            $DBCCPageResults = $server.Query($DBCCPageQuery)
-                            $dbExtents += $DBCCPageResults | Where-Object { $_.VALUE -eq '    CHANGED' -And $_.ParentObject -like 'DIFF_MAP*'}
-                            $extentID = $extentID + 511232
-                        }
-                        $extents = Get-DbaExtents $dbExtents.Field
-                        [pscustomobject]@{
-                            ComputerName   = $server.NetName
-                            InstanceName   = $server.ServiceName
-                            SqlInstance    = $server.DomainInstanceName
-                            DatabaseName   = $db.Name
-                            ExtentsTotal   = $sizeTotal
-                            ExtentsChanged = $extents
-                            ChangedPerc    = [math]::Round(($extents / $sizeTotal * 100), 2)
+                else {
+                    $sourcedbs += $db
+                }
+            }
+
+            foreach ($db in $sourcedbs) {
+                if ($server.VersionMajor -ge 14 ) {
+                    $DBCCPageQueryDMV = "
+                        SELECT
+                        total_page_count / 8 as [ExtentsTotal],
+                        modified_extent_page_count / 8 as [ExtentsChanged],
+                        (100 * modified_extent_page_count)/total_page_count as [ChangedPerc]
+                        FROM sys.dm_db_file_space_usage
+                    "
+
+                    #foreach ($db in $MasterFilesGrouped) {
+                    #Write-Message -Level Output -Message ":: 2017 - Processing database $db"
+                    #foreach ($results in $db.Group) {
+                    #$DBCCPageResults = $server.Databases[$($results.dbname)].Query($DBCCPageQueryDMV)
+                    $DBCCPageResults = $server.Databases[$($db.Name)].Query($DBCCPageQueryDMV)
+                    [pscustomobject]@{
+                        ComputerName   = $server.NetName
+                        InstanceName   = $server.ServiceName
+                        SqlInstance    = $server.DomainInstanceName
+                        DatabaseName   = $db.Name
+                        ExtentsTotal   = $DBCCPageResults.ExtentsTotal
+                        ExtentsChanged = $DBCCPageResults.ExtentsChanged
+                        ChangedPerc    = $DBCCPageResults.ChangedPerc
+                    }
+                    #}
+                    #}
+                }
+                else {
+                    $MasterFilesQuery = "
+                        SELECT [file_id], [size], database_id, db_name(database_id) as dbname FROM master.sys.master_files
+                        WHERE [type_desc] = N'ROWS'
+                    "
+                    $MasterFiles = $server.Query($MasterFilesQuery)
+                    $MasterFiles = $MasterFiles | Where-Object dbname -in $db.Name
+                    $MasterFilesGrouped = $MasterFiles | Group-Object -Property dbname
+
+                    foreach ($db in $MasterFilesGrouped) {
+                        $sizeTotal = 0
+                        foreach ($results in $db.Group) {
+                            $extentID = 0
+                            $sizeTotal = $sizeTotal + $results.size / 8
+                            $dbExtents = @()
+                            while ($extentID -lt $results.size) {
+                                $pageID = $extentID + 6
+                                $DBCCPageQuery = "DBCC PAGE ('$($results.dbname)', $($results.file_id), $pageID, 3)  WITH TABLERESULTS, NO_INFOMSGS"
+                                $DBCCPageResults = $server.Query($DBCCPageQuery)
+                                $dbExtents += $DBCCPageResults | Where-Object { $_.VALUE -eq '    CHANGED' -And $_.ParentObject -like 'DIFF_MAP*'}
+                                $extentID = $extentID + 511232
+                            }
+                            $extents = Get-DbaExtents $dbExtents.Field
+                            [pscustomobject]@{
+                                ComputerName   = $server.NetName
+                                InstanceName   = $server.ServiceName
+                                SqlInstance    = $server.DomainInstanceName
+                                DatabaseName   = $db.Name
+                                ExtentsTotal   = $sizeTotal
+                                ExtentsChanged = $extents
+                                ChangedPerc    = [math]::Round(($extents / $sizeTotal * 100), 2)
+                            }
                         }
                     }
                 }
