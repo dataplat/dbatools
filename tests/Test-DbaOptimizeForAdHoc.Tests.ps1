@@ -19,9 +19,15 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
+        $results = Test-DbaOptimizeForAdHoc -SqlInstance $script:instance2
         It "Should return result for the server" {
-            $results = Test-DbaOptimizeForAdHoc -SqlInstance $script:instance2
             $results | Should Not Be Null
+        }
+        It "Should return 'CurrentOptimizeAdHoc' property as int" {
+            $results.CurrentOptimizeAdHoc | Should BeOfType System.Int32
+        }
+        It "Should return 'RecommendedOptimizeAdHoc' property as int" {
+            $results.RecommendedOptimizeAdHoc  | Should BeOfType System.Int32
         }
     }
 
