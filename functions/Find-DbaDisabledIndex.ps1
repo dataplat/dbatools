@@ -145,7 +145,7 @@
                                 }
                             }
                             else {
-                                Write-Message -Level Output -Message "No Disabled indexes found!"
+                                Write-Message -Level Verbose -Message "No Disabled indexes found!"
                             }
                         }
                     }
@@ -155,7 +155,7 @@
                 }
             }
             else {
-                Write-Message -Level Output -Message "There are no databases to analyse."
+                Write-Message -Level Verbose -Message "There are no databases to analyse."
             }
         }
     }
