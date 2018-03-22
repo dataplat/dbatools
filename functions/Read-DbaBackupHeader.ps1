@@ -15,7 +15,7 @@ function Read-DbaBackupHeader {
             Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
             $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-            
+
             To connect as a different Windows user, run PowerShell as that user.i
 
         .PARAMETER Path
@@ -143,73 +143,77 @@ function Read-DbaBackupHeader {
                 catch {
                     if ($deviceType -eq 'FILE') {
                         Stop-Function -Message "Problem found with $file." -Target $file -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException -Continue
-
                     }
                     else {
                         Stop-Function -Message "Unable to read $file, check credential $AzureCredential and network connectivity." -Target $file -ErrorRecord $_ -Excpetion $_.Exception.InnerException.InnerException -Continue
                     }
                 }
-
-                $null = $dataTable.Columns.Add("FileList", [object])
-
-                $mb = $dataTable.Columns.Add("BackupSizeMB", [int])
-                $mb.Expression = "BackupSize / 1024 / 1024"
-                $gb = $dataTable.Columns.Add("BackupSizeGB")
-                $gb.Expression = "BackupSizeMB / 1024"
-
-                if ($null -eq $dataTable.Columns['CompressedBackupSize']) {
-                    $formula = "0"
+                if ($dataTable.BackupName -eq "*** INCOMPLETE ***") {
+                    Write-Message -Level Warning -Message "$file appears to be from a new version of SQL Server than $SqlInstance, skipping"
                 }
                 else {
-                    $formula = "CompressedBackupSize / 1024 / 1024"
-                }
+                    $null = $dataTable.Columns.Add("FileList", [object])
 
-                $cmb = $dataTable.Columns.Add("CompressedBackupSizeMB", [int])
-                $cmb.Expression = $formula
-                $cgb = $dataTable.Columns.Add("CompressedBackupSizeGB")
-                $cgb.Expression = "CompressedBackupSizeMB / 1024"
+                    $mb = $dataTable.Columns.Add("BackupSizeMB", [int])
+                    $mb.Expression = "BackupSize / 1024 / 1024"
+                    $gb = $dataTable.Columns.Add("BackupSizeGB")
+                    $gb.Expression = "BackupSizeMB / 1024"
 
-                $null = $dataTable.Columns.Add("SqlVersion")
-
-                $null = $dataTable.Columns.Add("BackupPath")
-                $dbVersion = $dataTable.Rows[0].DatabaseVersion
-
-                $backupSlot = 1
-                foreach ($row in $dataTable) {
-                    $row.SqlVersion = (Convert-DbVersionToSqlVersion $dbVersion)
-                    $row.BackupPath = $file
-                    try {
-                        $restore.FileNumber = $backupSlot
-                        <# Select-Object does a quick and dirty conversion from datatable to PS object #>
-                        $allFiles = $restore.ReadFileList($server) | Select-Object *
+                    if ($null -eq $dataTable.Columns['CompressedBackupSize']) {
+                        $formula = "0"
                     }
-                    catch {
-                        $shortName = Split-Path $file -Leaf
-                        if (!(Test-DbaSqlPath -SqlInstance $server -Path $file)) {
-                            Stop-Function -Message "File $shortName does not exist or you do not have permission to access it. The SQL Server service account may not have access to the source directory." -Target $file -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException -Continue
-                        }
-                        else {
-                            Stop-Function -Message "File list for $shortName could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or timeouts with the SQL Server, or the SQL Server service account does not have access to the source directory." -Target $file -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException -Continue
-                        }
+                    else {
+                        $formula = "CompressedBackupSize / 1024 / 1024"
                     }
-                    $row.FileList = $allFiles
-                    $backupSlot++
+
+                    $cmb = $dataTable.Columns.Add("CompressedBackupSizeMB", [int])
+                    $cmb.Expression = $formula
+                    $cgb = $dataTable.Columns.Add("CompressedBackupSizeGB")
+                    $cgb.Expression = "CompressedBackupSizeMB / 1024"
+
+                    $null = $dataTable.Columns.Add("SqlVersion")
+
+                    $null = $dataTable.Columns.Add("BackupPath")
+                    $dbVersion = $dataTable.Rows[0].DatabaseVersion
+
+                    $backupSlot = 1
+                    foreach ($row in $dataTable) {
+                        $row.SqlVersion = (Convert-DbVersionToSqlVersion $dbVersion)
+                        $row.BackupPath = $file
+                        try {
+                            $restore.FileNumber = $backupSlot
+                            <# Select-Object does a quick and dirty conversion from datatable to PS object #>
+                            $allFiles = $restore.ReadFileList($server) | Select-Object *
+                        }
+                        catch {
+                            $shortName = Split-Path $file -Leaf
+                            if (!(Test-DbaSqlPath -SqlInstance $server -Path $file)) {
+                                Stop-Function -Message "File $shortName does not exist or you do not have permission to access it. The SQL Server service account may not have access to the source directory." -Target $file -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException -Continue
+                            }
+                            else {
+                                Stop-Function -Message "File list for $shortName could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or timeouts with the SQL Server, or the SQL Server service account does not have access to the source directory." -Target $file -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException -Continue
+                            }
+                        }
+                        $row.FileList = $allFiles
+                        $backupSlot++
+                    }
+
+                    if ($Simple) {
+                        $dataTable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
+                    }
+                    elseif ($FileList) {
+                        $dataTable.filelist
+                    }
+                    else {
+                        $dataTable
+                    }
                 }
             }
             else {
                 Write-Message -Level Warning -Message "File $shortName does not exist or access denied. The SQL Server service account may not have access to the source directory."
             }
-            if ($Simple) {
-                $dataTable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
-            }
-            elseif ($FileList) {
-                $dataTable.filelist
-            }
-            else {
-                $dataTable
-            }
-
             Remove-Variable dataTable -ErrorAction SilentlyContinue
+
         }
         $loopCnt++
     }

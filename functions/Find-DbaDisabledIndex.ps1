@@ -107,44 +107,46 @@
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
+            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential  -MinimumVersion 9
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential  -MinimumVersion 9
             }
             catch {
-                Write-Message -Level Warning -Message "Can't connect to $instance"
-                Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
-            if ($database) {
+
+            if ($Database) {
                 $databases = $server.Databases | Where-Object Name -in $database
             }
             else {
                 $databases = $server.Databases | Where-Object IsAccessible -eq $true
             }
-            
+
             if ($databases.Count -gt 0) {
                 foreach ($db in $databases.name) {
-                
+
                     if ($ExcludeDatabase -contains $db -or $null -eq $server.Databases[$db]) {
                         continue
                     }
-                
+
                     try {
-                        Write-Message -Level Output -Message "Getting indexes from database '$db'."
-                        Write-Message -Level Debug -Message "SQL Statement: $sql"
-                        $disabledIndex = $server.Databases[$db].ExecuteWithResults($sql)
-                    
-                        if ($disabledIndex.Tables[0].Rows.Count -gt 0) {
-                            $results = $disabledIndex.Tables[0];
-                            if ($results.Count -gt 0 -or !([string]::IsNullOrEmpty($results))) {
-                                foreach ($index in $results) {
-                                    $index
+                        if ($PSCmdlet.ShouldProcess($db, "Getting disabled indexes")) {
+                            Write-Message -Level Verbose -Message "Getting indexes from database '$db'."
+                            Write-Message -Level Debug -Message "SQL Statement: $sql"
+                            $disabledIndex = $server.Databases[$db].ExecuteWithResults($sql)
+
+                            if ($disabledIndex.Tables[0].Rows.Count -gt 0) {
+                                $results = $disabledIndex.Tables[0];
+                                if ($results.Count -gt 0 -or !([string]::IsNullOrEmpty($results))) {
+                                    foreach ($index in $results) {
+                                        $index
+                                    }
                                 }
                             }
-                        }
-                        else {
-                            Write-Message -Level Output -Message "No Disabled indexes found!"
+                            else {
+                                Write-Message -Level Verbose -Message "No Disabled indexes found!"
+                            }
                         }
                     }
                     catch {
@@ -153,7 +155,7 @@
                 }
             }
             else {
-                Write-Message -Level Output -Message "There are no databases to analyse."
+                Write-Message -Level Verbose -Message "There are no databases to analyse."
             }
         }
     }
