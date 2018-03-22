@@ -51,7 +51,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Fails gracefully" {
         It "Should throw on an invalid Connection" {
             Mock -ModuleName 'dbatools' Connect-SqlInstance { throw }
-            {Test-DbaDisabledIndex -ComputerName 'MadeUpServer' -EnableException } | Should Throw
+            {Find-DbaDisabledIndex -SqlInstance 'MadeUpServer' -EnableException} | Should Throw
         }
     }
 }
