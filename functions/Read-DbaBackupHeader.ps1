@@ -15,7 +15,7 @@ function Read-DbaBackupHeader {
             Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
             $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-            
+
             To connect as a different Windows user, run PowerShell as that user.i
 
         .PARAMETER Path
@@ -148,10 +148,10 @@ function Read-DbaBackupHeader {
                         Stop-Function -Message "Unable to read $file, check credential $AzureCredential and network connectivity." -Target $file -ErrorRecord $_ -Excpetion $_.Exception.InnerException.InnerException -Continue
                     }
                 }
-                if ($dataTable.BackupName -eq "*** INCOMPLETE ***") { 
+                if ($dataTable.BackupName -eq "*** INCOMPLETE ***") {
                     Write-Message -Level Warning -Message "$file appears to be from a new version of SQL Server than $SqlInstance, skipping"
                 }
-                else {    
+                else {
                     $null = $dataTable.Columns.Add("FileList", [object])
 
                     $mb = $dataTable.Columns.Add("BackupSizeMB", [int])
@@ -197,7 +197,7 @@ function Read-DbaBackupHeader {
                         $row.FileList = $allFiles
                         $backupSlot++
                     }
-                
+
                     if ($Simple) {
                         $dataTable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
                     }
@@ -213,7 +213,7 @@ function Read-DbaBackupHeader {
                 Write-Message -Level Warning -Message "File $shortName does not exist or access denied. The SQL Server service account may not have access to the source directory."
             }
             Remove-Variable dataTable -ErrorAction SilentlyContinue
- 
+
         }
         $loopCnt++
     }
