@@ -1008,7 +1008,7 @@ function Copy-DbaDatabase {
                 elseif ($null -ne $destServer.Databases[$dbName] -and $force) {
                     if ($Pscmdlet.ShouldProcess($destination, "DROP DATABASE $dbName")) {
                         Write-Message -Level Verbose -Message "$dbName already exists. -Force was specified. Dropping $dbName on $destination."
-                        $dropResult = Remove-SqlDatabase $destServer $dbName
+                        $dropResult = Remove-DbaDatabase -SqlInstance $destServer -Database $dbName -Confirm:$false
 
                         if ($dropResult -eq $false) {
                             Write-Message -Level Verbose -Message "Database could not be dropped. Aborting routine for this database."
