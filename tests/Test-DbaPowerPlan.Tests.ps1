@@ -20,11 +20,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         It "Should return result for the server" {
-            $results = Test-DbaPowerPlan -ComputerName $script:instance2
+            $results = Test-DbaPowerPlan -ComputerName $script:instance2 -WarningAction SilentlyContinue -WarningVariable warn
             $results | Should Not Be Null
         }
         It "Should state 'Balanced' plan does not meet best practice" {
-            $results = Test-DbaPowerPlan -ComputerName $script:instance2 -CustomPowerPlan 'Balanced'
+            $results = Test-DbaPowerPlan -ComputerName $script:instance2 -CustomPowerPlan 'Balanced' -WarningAction SilentlyContinue -WarningVariable warn
             $results.isBestPractice | Should Be $false
         }
     }
