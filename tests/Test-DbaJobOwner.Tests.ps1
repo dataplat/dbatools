@@ -4,13 +4,6 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        <#
-            The $paramCount is adjusted based on the parameters your command will have.
-
-            The $defaultParamCount is adjusted based on what type of command you are writing the test for:
-                - Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
-                - Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
-        #>
         $paramCount = 7
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Test-DbaJobOwner).Parameters.Keys
@@ -20,6 +13,42 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
         It "Should only contain $paramCount parameters" {
             $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    BeforeAll {
+        $saJob = ("dbatoolsci_sa_{0}" -f $(Get-Random))
+        $notSaJob = ("dbatoolsci_nonsa_{0}" -f $(Get-Random))
+        $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job $saJob -OwnerLogin 'sa'
+        $null = New-DbaAgentJob -SqlInstance $script:instance2 -Job $notSaJob -OwnerLogin 'NT AUTHORITY\SYSTEM'
+    }
+    AfterAll {
+        $null = Remove-DbaAgentJob -SqlInstance $script:instance2 -Job $saJob, $notSaJob
+    }
+
+    Context "Command actually works" {
+        $results = Test-DbaJobOwner -SqlInstance $script:instance2
+        It "Should return $notSaJob"{
+            $results | Where-Object {$_.Job -eq $notsajob} | Should Not Be Null
+        }
+    }
+
+    Context "Command works for specific jobs" {
+        $results = Test-DbaJobOwner -SqlInstance $script:instance2 -Job $saJob, $notSaJob
+        It "Should find $sajob owner matches default sa"{
+            $($results | Where-Object {$_.Job -eq $sajob}).OwnerMatch | Should Be $True
+        }
+        It "Should find $notSaJob owner doesn't match default sa"{
+            $($results | Where-Object {$_.Job -eq $notSaJob}).OwnerMatch | Should Be $False
+        }
+    }
+
+    Context "Exclusions work" {
+        $results = Test-DbaJobOwner -SqlInstance $script:instance2 -ExcludeJob $notSaJob
+        It "Should exclude $notsajob job"{
+            $results.job | Should Not Match $notSaJob
         }
     }
 }

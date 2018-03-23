@@ -12,6 +12,9 @@
     .PARAMETER Show
         Gets passed down to Pester's -Show parameter (useful if you want to reduce verbosity)
 
+    .PARAMETER PassThru
+        Gets passed down to Pester's -PassThru parameter (useful if you want to return an object to analyze)
+
     .PARAMETER TestIntegration
         dbatools's suite has unittests and integrationtests. This switch enables IntegrationTests, which need live instances
         see constants.ps1 for customizations
@@ -25,7 +28,6 @@
     .PARAMETER ScriptAnalyzer
         Enables checking the called function's code with Invoke-ScriptAnalyzer, with dbatools's profile
 
-
     .EXAMPLE
         .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCovearge -ScriptAnalyzer
 
@@ -38,6 +40,11 @@
         .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1
 
         Runs unittests stored in Find-DbaOrphanedFile.Tests.ps1
+
+    .EXAMPLE
+        .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1 -PassThru
+
+        Runs unittests stored in Find-DbaOrphanedFile.Tests.ps1 and returns an object that can be analyzed
 
     .EXAMPLE
         .\manual.pester.ps1 -Path orphan
@@ -74,6 +81,9 @@ param (
     [ValidateSet('None', 'Default', 'Passed', 'Failed', 'Pending', 'Skipped', 'Inconclusive', 'Describe', 'Context', 'Summary', 'Header', 'All', 'Fails')]
     [string]
     $Show = "All",
+
+    [switch]
+    $PassThru,
 
     [switch]
     $TestIntegration,
@@ -189,6 +199,7 @@ foreach ($f in $AllTestsWithinScenario) {
     $PesterSplat = @{
         'Script' = $f.FullName
         'Show'   = $show
+        'PassThru' = $passThru
     }
     #opt-in
     $HeadFunctionPath = $f.FullName
