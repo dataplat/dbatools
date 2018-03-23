@@ -4,36 +4,15 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        if ($env:appveyor) {
-            try {
-                $connstring = "Server=ADMIN:$script:instance2;Trusted_Connection=True"
-                $server = New-Object Microsoft.SqlServer.Management.Smo.Server $script:instance2
-                $server.ConnectionContext.ConnectionString = $connstring
-                $server.ConnectionContext.Connect()
-                $server.ConnectionContext.Disconnect()
-            }
-            catch {
-                $bail = $true
-                Write-Host "DAC not working this round, likely due to Appveyor resources"
-            }
-        }
-
         $createsql = "EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_localhost', @srvproduct=N'SQL Server';
         EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatoolsci_localhost',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool';
         EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_localhost2', @srvproduct=N'', @provider=N'SQLNCLI10';
         EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatoolsci_localhost2',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool';"
-
-        try {
-            $server1 = Connect-DbaInstance -SqlInstance $script:instance2
-            $server2 = Connect-DbaInstance -SqlInstance $script:instance3
-            $server1.Query($createsql)
-        }
-        catch {
-            $bail = $true
-            Write-Host "Couldn't setup Linked Servers, bailing"
-        }
+        
+        $server1 = Connect-DbaInstance -SqlInstance $script:instance2
+        $server2 = Connect-DbaInstance -SqlInstance $script:instance3
+        $server1.Query($createsql)
     }
-
     AfterAll {
         $dropsql = "EXEC master.dbo.sp_dropserver @server=N'dbatoolsci_localhost', @droplogins='droplogins';
         EXEC master.dbo.sp_dropserver @server=N'dbatoolsci_localhost2', @droplogins='droplogins'"
@@ -44,8 +23,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         catch {}
     }
-
-    if ($bail) { return }
 
     Context "Copy linked server with the same properties" {
         It "copies successfully" {
