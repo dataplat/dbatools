@@ -8,7 +8,8 @@ $TestsRunGroups = @{
     # run on scenario 2016_2017 - tests that need developer license
     "2016_2017"                = @(
         'Copy-DbaCredential',
-        'Copy-DbaAgentJob'
+        'Copy-DbaAgentJob',
+        'Copy-DbaLinkedServer'
     )
     #run on scenario 2016_service - SQL Server service tests that might disrupt other tests
     "2016_service"      = @(
