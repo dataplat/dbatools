@@ -8,24 +8,24 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $random = Get-Random
         $backuprestoredb = "dbatoolsci_backuprestore$random"
         $detachattachdb = "dbatoolsci_detachattach$random"
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1,$script:instance2 -Database $backuprestoredb, $detachattachdb
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2,$script:instance3 -Database $backuprestoredb, $detachattachdb
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server.Query("CREATE DATABASE $backuprestoredb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server.Query("CREATE DATABASE $detachattachdb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
     }
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1,$script:instance2 -Database $backuprestoredb, $detachattachdb
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2,$script:instance3 -Database $backuprestoredb, $detachattachdb
     }
 
     Context "Detach Attach" {
         It "Should be success"  -Skip {
-            $results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $detachattachdb -DetachAttach -Reattach -Force -WarningAction SilentlyContinue
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $detachattachdb -DetachAttach -Reattach -Force -WarningAction SilentlyContinue
             $results.Status | Should Be "Successful"
         }
 
         It "should not be null"  -Skip  {
-            $db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $detachattachdb
-            $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $detachattachdb
+            $db1 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $detachattachdb
+            $db2 = Get-DbaDatabase -SqlInstance $script:instance3 -Database $detachattachdb
             $db1 | Should Not Be $null
             $db2 | Should Not Be $null
 
@@ -34,8 +34,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Name, recovery model, and status should match"  -Skip {
-            $db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $backuprestoredb
-            $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $backuprestoredb
+            $db1 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $backuprestoredb
+            $db2 = Get-DbaDatabase -SqlInstance $script:instance3 -Database $backuprestoredb
             $db1 | Should Not BeNullOrEmpty
             $db2 | Should Not BeNullOrEmpty
 
@@ -47,7 +47,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should say skipped"  -Skip {
-            $results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $detachattachdb -DetachAttach -Reattach
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $detachattachdb -DetachAttach -Reattach
             $results.Status | Should be "Skipped"
             $results.Notes | Should be "Already exists"
         }
@@ -56,11 +56,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Backup restore" {
         It "copies a database and retain its name, recovery model, and status." {
 
-            $null = Set-DbaDatabaseOwner -SqlInstance $script:instance1 -Database $backuprestoredb -TargetLogin sa
-            $null = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
+            $null = Set-DbaDatabaseOwner -SqlInstance $script:instance2 -Database $backuprestoredb -TargetLogin sa
+            $null = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
 
-            $db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $backuprestoredb
-            $db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $backuprestoredb
+            $db1 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $backuprestoredb
+            $db2 = Get-DbaDatabase -SqlInstance $script:instance3 -Database $backuprestoredb
             $db1 | Should Not BeNullOrEmpty
             $db2 | Should Not BeNullOrEmpty
 
@@ -72,13 +72,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should say skipped" {
-            $result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
+            $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
             $result.Status | Should be "Skipped"
             $result.Notes | Should be "Already exists"
         }
         It "Should overwrite when forced to" {
             #regr test for #3358
-            $result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -Force
+            $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -Force
             $result.Status | Should be "Successful"
         }
     }
