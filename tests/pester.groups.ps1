@@ -9,7 +9,8 @@ $TestsRunGroups = @{
     "2016_2017"                = @(
         'Copy-DbaCredential',
         'Copy-DbaAgentJob',
-        'Copy-DbaLinkedServer'
+        'Copy-DbaLinkedServer',
+        'Copy-DbaAgentAlert'
     )
     #run on scenario 2016_service - SQL Server service tests that might disrupt other tests
     "2016_service"      = @(
