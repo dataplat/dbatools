@@ -106,7 +106,7 @@ function Copy-DbaAgentCategory {
         [ValidateSet('Job', 'Alert', 'Operator')]
         [string[]]$CategoryType,
         [string[]]$JobCategory,
-        [string[]]$AlertCategory,
+        [string[]]$AgentCategory,
         [string[]]$OperatorCategory,
         [switch]$Force,
         [Alias('Silent')]
