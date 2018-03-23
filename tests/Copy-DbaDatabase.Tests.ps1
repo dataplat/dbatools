@@ -18,6 +18,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $server.Query("CREATE DATABASE $backuprestoredb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server.Query("CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server.Query("CREATE DATABASE $backuprestoredb2; ALTER DATABASE $backuprestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+        $null = Set-DbaDatabaseOwner -SqlInstance $script:instance2 -Database $backuprestoredb, $detachattachdb -TargetLogin sa
     }
     AfterAll {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb, $backuprestoredb2
@@ -54,7 +55,6 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     
     Context "Backup restore" {
-        $null = Set-DbaDatabaseOwner -SqlInstance $script:instance2 -Database $backuprestoredb -TargetLogin sa
         Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
         
