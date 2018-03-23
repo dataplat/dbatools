@@ -16,5 +16,11 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results.Name -eq "dbatoolsci test category"
             $results.Status -eq "Successful"
         }
+
+        It "does not overwrite" {
+            $results = Copy-DbaAgentCategory -Source $script:instance2 -Destination $script:instance3 -JobCategory 'dbatoolsci test category'
+            $results.Name -eq "dbatoolsci test category"
+            $results.Status -eq "Skipped"
+        }
     }
 }
