@@ -20,11 +20,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         It "Should return result for the server" {
-            $results = Test-DbaPowerPlan -ComputerName $script:instance2 -WarningAction SilentlyContinue -WarningVariable warn
+            $results = Test-DbaPowerPlan -ComputerName $script:instance2
             $results | Should Not Be Null
         }
         It "Should state 'Balanced' plan does not meet best practice" {
-            $results = Test-DbaPowerPlan -ComputerName $script:instance2 -CustomPowerPlan 'Balanced' -WarningAction SilentlyContinue -WarningVariable warn
+            $results = Test-DbaPowerPlan -ComputerName $script:instance2 -CustomPowerPlan 'Balanced'
             $results.isBestPractice | Should Be $false
         }
     }
@@ -32,7 +32,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Fails gracefully" {
         It "Should throw on an invalid Connection" {
             Mock -ModuleName 'dbatools' Connect-SqlInstance { throw }
-            {Test-DbaPowerPlan -ComputerName 'MadeUpServer' -EnableException } | Should Throw
+            { Test-DbaPowerPlan -ComputerName 'MadeUpServer' -EnableException 3>$null } | Should Throw
         }
     }
 }
