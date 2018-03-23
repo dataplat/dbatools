@@ -204,7 +204,7 @@ function Find-DbaUnusedIndex {
             ($server.VersionMajor -eq 11 -and $server.BuildNumber -lt 6537) `
             -or ($server.VersionMajor -eq 12 -and $server.BuildNumber -lt 5000)
         ) {
-            Stop-Function -Message "This SQL version has a known issue. Rebuilding an index clears any existing row entry from sys.dm_db_index_usage_stats for that index.`r`nPlease refer to connect item: https://connect.microsoft.com/sqlserver/feedback/details/739566/rebuilding-an-index-clears-stats-from-sys-dm-db-index-usage-stats"
+            Stop-Function -Message "This SQL version has a known issue. Rebuilding an index clears any existing row entry from sys.dm_db_index_usage_stats for that index.`r`nPlease refer to connect item: https://support.microsoft.com/en-us/help/3160407/fix-sys-dm-db-index-usage-stats-missing-information-after-index-rebuil"
             return
         }
 
