@@ -4,7 +4,11 @@ $TestsRunGroups = @{
     # run on scenario 2008R2
     "2008R2"            = 'autodetect_$script:instance1'
     # run on scenario 2016
-    "2016"              = 'autodetect_$script:instance2'
+    "2016"               = 'autodetect_$script:instance2'
+    # run on scenario 2016_2017 - tests that need developer license
+    "2016_2017"                = @(
+        'Copy-DbaCredential'
+    )
     #run on scenario 2016_service - SQL Server service tests that might disrupt other tests
     "2016_service"      = @(
         'Start-DbaSqlService',
