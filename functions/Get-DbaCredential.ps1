@@ -14,12 +14,19 @@ function Get-DbaCredential {
         .PARAMETER SqlCredential
             SqlCredential object to connect as. If not specified, current Windows login will be used.
 
-        .PARAMETER CredentialIdentity
-            Auto-populated list of Credentials from Source. If no Credential is specified, all Credentials will be migrated.
-            Note: if spaces exist in the credential name, you will have to type "" or '' around it. I couldn't figure out a way around this.
+        .PARAMETER Name
+            Only include specific names
+            Note: if spaces exist in the credential name, you will have to type "" or '' around it.
 
-        .PARAMETER ExcludeCredentialIdentity
-            Auto-populated list of Credentials from Source to be excluded from the migration
+        .PARAMETER ExcludeName
+            Excluded credential names
+    
+        .PARAMETER Identity
+            Only include specific identities
+            Note: if spaces exist in the credential identity, you will have to type "" or '' around it.
+
+        .PARAMETER ExcludeIdentity
+            Excluded identities
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -43,9 +50,14 @@ function Get-DbaCredential {
             Returns all SQL Credentials on the local default SQL Server instance
 
         .EXAMPLE
-            Get-DbaCredential -SqlInstance localhost, sql2016
+            Get-DbaCredential -SqlInstance localhost, sql2016 -Name 'PowerShell Proxy'
 
-            Returns all SQL Credentials for the local and sql2016 SQL Server instances
+            Returns the SQL Credentials named 'PowerShell Proxy' for the local and sql2016 SQL Server instances
+    
+        .EXAMPLE
+            Get-DbaCredential -SqlInstance localhost, sql2016 -Identity ad\powershell
+
+            Returns the SQL Credentials for the account 'ad\powershell' on the local and sql2016 SQL Server instances
     #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
@@ -53,8 +65,12 @@ function Get-DbaCredential {
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$CredentialIdentity,
-        [object[]]$ExcludeCredentialIdentity,
+        [string[]]$Name,
+        [string[]]$ExcludeName,
+        [Alias('CredentialIdentity')]
+        [string[]]$Identity,
+        [Alias('ExcludeCredentialIdentity')]
+        [string[]]$ExcludeIdentity,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -70,15 +86,23 @@ function Get-DbaCredential {
             }
 
             $credential = $server.Credentials
-
-            if ($CredentialIdentity) {
-                $credential = $credential | Where-Object $CredentialIdentity -Contains Name
+            
+            if ($Name) {
+                $credential = $credential | Where-Object { $Name -contains $_.Name }
             }
-
-            if ($ExcludeCredentialIdentity) {
-                $credential = $credential | Where-Object $CredentialIdentity -NotContains Name
+            
+            if ($ExcludeName) {
+                $credential = $credential | Where-Object { $ExcludeName -notcontains $_.Name }
             }
-
+            
+            if ($Identity) {
+                $credential = $credential | Where-Object { $Identity -contains $_.Identity }
+            }
+            
+            if ($ExcludeIdentity) {
+                $credential = $credential | Where-Object { $ExcludeIdentity -notcontains $_.Identity }
+            }
+            
             foreach ($currentcredential in $credential) {
                 Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name ComputerName -value $currentcredential.Parent.NetName
                 Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name InstanceName -value $currentcredential.Parent.ServiceName
