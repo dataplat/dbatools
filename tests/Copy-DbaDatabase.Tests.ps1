@@ -8,17 +8,21 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $random = Get-Random
         $backuprestoredb = "dbatoolsci_backuprestore$random"
         $backuprestoredb2 = "dbatoolsci_backuprestoreother$random"
+        $backuprestoredb3 = "dbatoolsci_backuprestoreyetother$random"
         $detachattachdb = "dbatoolsci_detachattach$random"
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb
         $server = Connect-DbaInstance -SqlInstance $script:instance3
         $server.Query("CREATE DATABASE $backuprestoredb2; ALTER DATABASE $backuprestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+        $server.Query("CREATE DATABASE $backuprestoredb3; ALTER DATABASE $backuprestoredb3 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server.Query("CREATE DATABASE $backuprestoredb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server.Query("CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server.Query("CREATE DATABASE $backuprestoredb2; ALTER DATABASE $backuprestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+        $server.Query("CREATE DATABASE $backuprestoredb3; ALTER DATABASE $backuprestoredb3 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+        
     }
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb, $backuprestoredb2
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb, $backuprestoredb2, $backuprestoredb3
     }
     
     # appveyor doesnt support bits yet
@@ -73,7 +77,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $dbs[0].Owner -eq $dbs[1].Owner
         }
         
-        # nneds regr test once #3377 is fixed
+        # needs regr test once #3377 is fixed
         It  "Should say skipped" {
             $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb2 -BackupRestore -NetworkShare $NetworkPath
             $result.Status | Should be "Skipped"
