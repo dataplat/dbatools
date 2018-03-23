@@ -61,15 +61,17 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         
         It "retains its name, recovery model, and status." {
             $dbs = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb
-            
+            $dbs[0].Name -ne $null
             # Compare its variables
             $dbs[0].Name -eq $dbs[1].Name
             $dbs[0].RecoveryModel -eq $dbs[1].RecoveryModel
             $dbs[0].Status -eq $dbs[1].Status
-            #$dbs[0].Owner -eq $dbs[1].Owner
+            $dbs[0].Owner -eq $dbs[1].Owner
         }
         
-        Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        # to be removed when #3377 is solved
+        $sql = "exec msdb..sp_delete_database_backuphistory @database_name = '$backuprestoredb'"
+        $server.Query($sql)
         
         It "Should say skipped" {
             $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
@@ -77,7 +79,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $result.Notes | Should be "Already exists"
         }
         
-        Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        # to be removed when #3377 is solved
+        $sql = "exec msdb..sp_delete_database_backuphistory @database_name = '$backuprestoredb'"
+        $server.Query($sql)
         
         It "Should overwrite when forced to" {
             #regr test for #3358
