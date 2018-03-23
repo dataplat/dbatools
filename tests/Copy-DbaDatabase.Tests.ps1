@@ -7,14 +7,18 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $NetworkPath = "C:\temp"
         $random = Get-Random
         $backuprestoredb = "dbatoolsci_backuprestore$random"
+        $backuprestoredb2 = "dbatoolsci_backuprestoreother$random"
         $detachattachdb = "dbatoolsci_detachattach$random"
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb
+        $server = Connect-DbaInstance -SqlInstance $script:instance3
+        $server.Query("CREATE DATABASE $backuprestoredb2; ALTER DATABASE $backuprestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server.Query("CREATE DATABASE $backuprestoredb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server.Query("CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+        $server.Query("CREATE DATABASE $backuprestoredb2; ALTER DATABASE $backuprestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
     }
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb, $backuprestoredb2
     }
     
     # appveyor doesnt support bits yet
@@ -69,23 +73,16 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $dbs[0].Owner -eq $dbs[1].Owner
         }
         
-        # to be removed when #3377 is solved
-        $sql = "exec msdb..sp_delete_database_backuphistory @database_name = '$backuprestoredb'"
-        $server.Query($sql)
-        
-        It "Should say skipped" {
-            $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
+        # nneds regr test once #3377 is fixed
+        It  "Should say skipped" {
+            $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb2 -BackupRestore -NetworkShare $NetworkPath
             $result.Status | Should be "Skipped"
             $result.Notes | Should be "Already exists"
         }
         
-        # to be removed when #3377 is solved
-        $sql = "exec msdb..sp_delete_database_backuphistory @database_name = '$backuprestoredb'"
-        $server.Query($sql)
-        
         It "Should overwrite when forced to" {
             #regr test for #3358
-            $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -Force
+            $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb2 -BackupRestore -NetworkShare $NetworkPath -Force
             $result.Status | Should be "Successful"
         }
     }
