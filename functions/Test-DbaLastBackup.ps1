@@ -301,10 +301,10 @@ function Test-DbaLastBackup {
                                     $filename = Split-Path -Path $file.FullName -Leaf
                                     Write-Message -Level Verbose -Message "Processing $filename."
 
-                                    $sourcefile = Join-AdminUnc -servername $sourceserver.ComputerNamePhysicalNetBIOS -filepath $file.Path
+                                    $sourcefile = Join-AdminUnc -servername $instance.ComputerName -filepath $file.Path
 
-                                    if ($destserver.ComputerNamePhysicalNetBIOS -ne $env:COMPUTERNAME) {
-                                        $remotedestdirectory = Join-AdminUnc -servername $destserver.ComputerNamePhysicalNetBIOS -filepath $copyPath
+                                    if ($instance.IsLocalHost) {
+                                        $remotedestdirectory = Join-AdminUnc -servername $instance.ComputerName -filepath $copyPath
                                     }
                                     else {
                                         $remotedestdirectory = $copyPath
