@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $NetworkPath = "\\dc\sql"
+        $NetworkPath = "C:\temp"
         $random = Get-Random
         $backuprestoredb = "dbatoolsci_backuprestore$random"
         $backuprestoredb2 = "dbatoolsci_backuprestoreother$random"
