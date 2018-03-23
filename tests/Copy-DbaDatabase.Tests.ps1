@@ -4,14 +4,14 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $NetworkPath = "C:\temp"
+        $NetworkPath = "\\dc\sql"
         $random = Get-Random
         $backuprestoredb = "dbatoolsci_backuprestore$random"
         $detachattachdb = "dbatoolsci_detachattach$random"
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server.Query("CREATE DATABASE $backuprestoredb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
-        $server.Query("CREATE DATABASE $detachattachdb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+        $server.Query("CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
     }
     AfterAll {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb
@@ -25,19 +25,20 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
                 $results.Status | Should Be "Successful"
             }
             
+            $db1 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $detachattachdb
+            $db2 = Get-DbaDatabase -SqlInstance $script:instance3 -Database $detachattachdb
+            
             It "should not be null"  {
-                $db1 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $detachattachdb
-                $db2 = Get-DbaDatabase -SqlInstance $script:instance3 -Database $detachattachdb
                 $db1.Name | Should Be $detachattachdb
                 $db2.Name | Should Be $detachattachdb
             }
             
             It "Name, recovery model, and status should match" {
-                # Compare its valuable.
-                $db1.Name | Should Be $db2.Name
-                $db1.RecoveryModel | Should Be $db2.RecoveryModel
-                $db1.Status | Should be $db2.Status
-                $db1.Owner | Should be $db2.Owner
+                # Compare its variable
+                $db1.Name | Should -Be $db2.Name
+                $db1.RecoveryModel | Should -Be $db2.RecoveryModel
+                $db1.Status | Should -Be $db2.Status
+                $db1.Owner | Should -Be $db2.Owner
             }
             
             It "Should say skipped" {
@@ -49,27 +50,35 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     
     Context "Backup restore" {
-        It "copies a database and retain its name, recovery model, and status." {
-            
-            $null = Set-DbaDatabaseOwner -SqlInstance $script:instance2 -Database $backuprestoredb -TargetLogin sa
-            Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-            $null = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
-            $null = Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-            $db1 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $backuprestoredb
-            $db2 = Get-DbaDatabase -SqlInstance $script:instance3 -Database $backuprestoredb
+        $null = Set-DbaDatabaseOwner -SqlInstance $script:instance2 -Database $backuprestoredb -TargetLogin sa
+        Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
+        
+        It "copies a database successfully" {
+            $results.Name -eq $backuprestoredb
+            $results.Status -eq "Successful"
+        }
+        
+        It "retains its name, recovery model, and status." {
+            $dbs = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb
             
             # Compare its variables
-            $db1.Name | Should Be $db2.Name
-            $db1.RecoveryModel | Should Be $db2.RecoveryModel
-            $db1.Status | Should be $db2.Status
-            $db1.Owner | Should be $db2.Owner
+            $dbs[0].Name -eq $dbs[1].Name
+            $dbs[0].RecoveryModel -eq $dbs[1].RecoveryModel
+            $dbs[0].Status -eq $dbs[1].Status
+            #$dbs[0].Owner -eq $dbs[1].Owner
         }
+        
+        Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         
         It "Should say skipped" {
             $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
             $result.Status | Should be "Skipped"
             $result.Notes | Should be "Already exists"
         }
+        
+        Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        
         It "Should overwrite when forced to" {
             #regr test for #3358
             $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -Force
