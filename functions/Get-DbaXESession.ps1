@@ -120,7 +120,7 @@ function Get-DbaXESession {
                 try {
                     $xesessions.Refresh()
                 } catch {
-                    Stop-Function -Message "Couldn't refresh XESessions" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Couldn't refresh XESessions" -ErrorRecord $_ -Continue
                 }
             }
         }
