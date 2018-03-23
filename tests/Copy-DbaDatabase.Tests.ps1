@@ -52,8 +52,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         It "copies a database and retain its name, recovery model, and status." {
             
             $null = Set-DbaDatabaseOwner -SqlInstance $script:instance2 -Database $backuprestoredb -TargetLogin sa
+            Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
             $null = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
-            
+            $null = Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
             $db1 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $backuprestoredb
             $db2 = Get-DbaDatabase -SqlInstance $script:instance3 -Database $backuprestoredb
             
