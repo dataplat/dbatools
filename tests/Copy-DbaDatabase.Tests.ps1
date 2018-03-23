@@ -56,10 +56,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             
             $db1 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $backuprestoredb
             $db2 = Get-DbaDatabase -SqlInstance $script:instance3 -Database $backuprestoredb
-            $db1 | Should Not BeNullOrEmpty
-            $db2 | Should Not BeNullOrEmpty
             
-            # Compare its valuable.
+            # Compare its variables
             $db1.Name | Should Be $db2.Name
             $db1.RecoveryModel | Should Be $db2.RecoveryModel
             $db1.Status | Should be $db2.Status
