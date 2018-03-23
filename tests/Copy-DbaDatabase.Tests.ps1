@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $NetworkPath = "C:\temp"
+        $NetworkPath = "\\dc\sql"
         $random = Get-Random
         $backuprestoredb = "dbatoolsci_backuprestore$random"
         $backuprestoredb2 = "dbatoolsci_backuprestoreother$random"
@@ -56,7 +56,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     
     Context "Backup restore" {
         Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-        $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
+        $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath 3>$null
         
         It "copies a database successfully" {
             $results.Name -eq $backuprestoredb
@@ -75,7 +75,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         
         # needs regr test that uses $backuprestoredb once #3377 is fixed
         It  "Should say skipped" {
-            $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb2 -BackupRestore -NetworkShare $NetworkPath
+            $result = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb2 -BackupRestore -NetworkShare $NetworkPath 3>$null
             $result.Status | Should be "Skipped"
             $result.Notes | Should be "Already exists"
         }
