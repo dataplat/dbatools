@@ -105,6 +105,9 @@ function Copy-DbaAgentCategory {
         [Parameter(ParameterSetName = 'SpecificAlerts')]
         [ValidateSet('Job', 'Alert', 'Operator')]
         [string[]]$CategoryType,
+        [string[]]$JobCategory,
+        [string[]]$AgentCategory,
+        [string[]]$OperatorCategory,
         [switch]$Force,
         [Alias('Silent')]
         [switch]$EnableException
