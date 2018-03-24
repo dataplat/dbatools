@@ -20,7 +20,7 @@ A collection of Logins (such as returned by Get-DbaLogin), to be removed.
 
 .PARAMETER Force
 Kills any sessions associated with the login prior to drop
-    
+
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -78,9 +78,9 @@ removes mylogin on SQL Server server\instance
         [switch]$Force,
         [switch]$EnableException
     )
-
+    
     process {
-
+        
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -91,33 +91,33 @@ removes mylogin on SQL Server server\instance
             }
             $InputObject += $server.Logins | Where-Object { $_.Name -in $Login }
         }
-
+        
         foreach ($currentlogin in $InputObject) {
             try {
                 $server = $currentlogin.Parent
                 if ($Pscmdlet.ShouldProcess("$currentlogin on $server", "KillLogin")) {
                     if ($force) {
-                    $null = Stop-DbaProcess -SqlInstance $server -Login $currentlogin   
+                        $null = Stop-DbaProcess -SqlInstance $server -Login $currentlogin
                     }
                     
                     $currentlogin.Drop()
-
+                    
                     [pscustomobject]@{
-                        ComputerName = $server.NetName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        Login        = $currentlogin.name
-                        Status       = "Dropped"
+                        ComputerName  = $server.NetName
+                        InstanceName  = $server.ServiceName
+                        SqlInstance   = $server.DomainInstanceName
+                        Login         = $currentlogin.name
+                        Status        = "Dropped"
                     }
                 }
             }
             catch {
                 [pscustomobject]@{
-                    ComputerName = $server.NetName
-                    InstanceName = $server.ServiceName
-                    SqlInstance  = $server.DomainInstanceName
-                    Login        = $currentlogin.name
-                    Status       = $_
+                    ComputerName  = $server.NetName
+                    InstanceName  = $server.ServiceName
+                    SqlInstance   = $server.DomainInstanceName
+                    Login         = $currentlogin.name
+                    Status        = $_
                 }
                 Stop-Function -Message "Could not drop Login $currentlogin on $server" -ErrorRecord $_ -Target $currentlogin -Continue
             }
