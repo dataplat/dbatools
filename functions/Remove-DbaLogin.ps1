@@ -97,7 +97,7 @@ removes mylogin on SQL Server server\instance
                 $server = $currentlogin.Parent
                 if ($Pscmdlet.ShouldProcess("$currentlogin on $server", "KillLogin")) {
                     if ($force) {
-                    $null = Stop-DbaProcess -SqlInstance $server -Login $currentlogin    
+                    $null = Stop-DbaProcess -SqlInstance $server -Login $currentlogin   
                     }
                     
                     $currentlogin.Drop()
