@@ -15,9 +15,12 @@ Allows you to login to servers using alternative credentials.
 .PARAMETER Login
 The Login(s) to process - this list is auto-populated from the server. If unspecified, all Logins will be processed.
 
-.PARAMETER LoginCollection
+.PARAMETER InputObject
 A collection of Logins (such as returned by Get-DbaLogin), to be removed.
 
+.PARAMETER Force
+Kills any sessions associated with the login prior to drop
+    
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -62,16 +65,17 @@ removes mylogin on SQL Server server\instance
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
     Param (
-        [parameter( , Mandatory, ParameterSetName = "instance")]
+        [parameter(Mandatory, ParameterSetName = "instance")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(Mandatory = $false)]
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [parameter(Mandatory, ParameterSetName = "instance")]
-        [object[]]$Login,
+        [string[]]$Login,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Logins")]
-        [Microsoft.SqlServer.Management.Smo.Login[]]$LoginCollection,
+        [Microsoft.SqlServer.Management.Smo.Login[]]$InputObject,
+        [switch]$Force,
         [switch]$EnableException
     )
 
@@ -85,13 +89,17 @@ removes mylogin on SQL Server server\instance
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $Logincollection += $server.Logins | Where-Object { $_.Name -in $Login }
+            $InputObject += $server.Logins | Where-Object { $_.Name -in $Login }
         }
 
-        foreach ($currentlogin in $Logincollection) {
+        foreach ($currentlogin in $InputObject) {
             try {
                 $server = $currentlogin.Parent
                 if ($Pscmdlet.ShouldProcess("$currentlogin on $server", "KillLogin")) {
+                    if ($force) {
+                    $null = Stop-DbaProcess -SqlInstance $server -Login $currentlogin    
+                    }
+                    
                     $currentlogin.Drop()
 
                     [pscustomobject]@{
