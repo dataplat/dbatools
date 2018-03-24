@@ -78,7 +78,7 @@ function Get-DbaXESession {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-                        
+
             $SqlConn = $server.ConnectionContext.SqlConnectionObject
             $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
             $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
@@ -120,6 +120,7 @@ function Get-DbaXESession {
                 try {
                     $xesessions.Refresh()
                 } catch {
+                    Stop-Function -Message "Couldn't refresh XESessions" -ErrorRecord $_ -Continue
                 }
             }
         }
