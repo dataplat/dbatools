@@ -170,8 +170,8 @@ function Remove-DbaDatabaseSafely {
 
             $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
 
-            $sourcenb = $sourceserver.ComputerNamePhysicalNetBIOS
-            $destnb = $sourceserver.ComputerNamePhysicalNetBIOS
+            $sourcenb = $instance.ComputerName
+            $destnb = $instance.ComputerName
 
             if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcenb -ne $destnb) {
                 Stop-Function -Message "Backup folder must be a network share if the source and destination servers are not the same." -InnerErrorRecord $_ -Target $backupFolder
