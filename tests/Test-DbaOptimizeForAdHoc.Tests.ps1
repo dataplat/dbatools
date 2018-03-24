@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 5
+        $paramCount = 3
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaPowerPlan).Parameters.Keys
-        $knownParameters = 'ComputerName', 'Credential', 'CustomPowerPlan', 'Detailed', 'EnableException'
+        [object[]]$params = (Get-ChildItem function:\Test-DbaOptimizeForAdHoc).Parameters.Keys
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -19,20 +19,22 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
+        $results = Test-DbaOptimizeForAdHoc -SqlInstance $script:instance2
         It "Should return result for the server" {
-            $results = Test-DbaPowerPlan -ComputerName $script:instance2
             $results | Should Not Be Null
         }
-        It "Should state 'Balanced' plan does not meet best practice" {
-            $results = Test-DbaPowerPlan -ComputerName $script:instance2 -CustomPowerPlan 'Balanced'
-            $results.isBestPractice | Should Be $false
+        It "Should return 'CurrentOptimizeAdHoc' property as int" {
+            $results.CurrentOptimizeAdHoc | Should BeOfType System.Int32
+        }
+        It "Should return 'RecommendedOptimizeAdHoc' property as int" {
+            $results.RecommendedOptimizeAdHoc  | Should BeOfType System.Int32
         }
     }
 
     Context "Fails gracefully" {
         It "Should throw on an invalid Connection" {
             Mock -ModuleName 'dbatools' Connect-SqlInstance { throw }
-            { Test-DbaPowerPlan -ComputerName 'MadeUpServer' -EnableException 3>$null } | Should Throw
+            {Test-DbaOptimizeForAdHoc -ComputerName 'MadeUpServer' -EnableException } | Should Throw
         }
     }
 }
