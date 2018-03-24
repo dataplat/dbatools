@@ -194,7 +194,9 @@ function Get-DbaDatabaseFile {
                         $VolumeFreeSpace = [dbasize]$result.VolumeFreeSpace
                     }
                     else {
-                        $disks = $server.Query("xp_fixeddrives", $db.Name)
+                        # if the server has one drive xp_fixeddrives returns one row, but we still need $disks to be an array.
+                        # $disks = $server.Query("xp_fixeddrives", $db.Name)
+                        $disks = @($server.Query("xp_fixeddrives", $db.Name))
                         $MbFreeColName = $disks[0].psobject.Properties.Name[1]
                         $free = $disks | Where-Object { $_.drive -eq $result.PhysicalName.Substring(0, 1) } | Select-Object $MbFreeColName -ExpandProperty $MbFreeColName
                         $VolumeFreeSpace = [dbasize]($free * 1024 * 1024)
