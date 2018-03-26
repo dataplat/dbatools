@@ -424,6 +424,10 @@ function Find-DbaInstance {
                         }
                         $object.Timestamp = Get-Date
                         
+                        if ($masterList.SqlInstance -contains $object.SqlInstance) {
+                            continue
+                        }
+                        
                         $masterList += $object
                     }
                     #endregion Case: Port number found
