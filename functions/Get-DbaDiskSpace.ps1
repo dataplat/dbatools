@@ -174,7 +174,7 @@ function Get-DbaDiskSpace {
                         $sqlServices = Get-DbaSqlService -ComputerName $computer -Type Engine
                     }
                     catch {
-                        Write-Message -Level Warning -Message "Failed to connect to $computer to gather SQL Server instances, will not be reporting SQL Information!" -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
+                        Write-Message -Level Warning -Message "Failed to connect to $computer to gather SQL Server instances, will not be reporting SQL Information." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
                     }
 
                     Write-Message -Level Verbose -Message "Instances found on $($computer): $($sqlServices.InstanceName.Count)"
@@ -203,7 +203,7 @@ function Get-DbaDiskSpace {
                                 }
                             }
                             catch {
-                                Write-Message -Level Warning -Message "Failed to connect to $instanceName on $computer! SQL information may not be accurate." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
+                                Write-Message -Level Warning -Message "Failed to connect to $instanceName on $computer. SQL information may not be accurate or services have been stopped." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
                             }
                         }
                     }
