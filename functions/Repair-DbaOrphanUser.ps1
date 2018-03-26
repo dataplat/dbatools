@@ -189,7 +189,7 @@ function Repair-DbaOrphanUser {
                                     }
                                 }
                                 else {
-                                    if ($RemoveNotExisting -eq $true) {
+                                    if ($RemoveNotExisting) {
                                         #add user to collection
                                         $UsersToRemove += $User
                                     }
@@ -206,8 +206,8 @@ function Repair-DbaOrphanUser {
                             }
 
                             #With the collection complete invoke remove.
-                            if ($RemoveNotExisting -eq $true) {
-                                if ($Force -eq $true) {
+                            if ($RemoveNotExisting) {
+                                if ($Force) {
                                     if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
                                         Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser' with -Force."
                                         Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -User $UsersToRemove -Force
