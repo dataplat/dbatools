@@ -165,6 +165,69 @@ function Send-CodecovReport($CodecovReport) {
     Invoke-RestMethod -Uri $Request.Uri -Method Post -InFile $CodecovReport -ContentType 'multipart/form-data'
 }
 
+function Get-TestsForScenario {
+    param($Scenario, $AllTest)
+
+    # does this scenario run an 'autodetect' ?
+    if ($TestsRunGroups[$Scenario].StartsWith('autodetect_')[0]) {
+        # exclude any test specifically tied to a non-autodetect scenario
+        $TiedFunctions = ($TestsRunGroups.GetEnumerator() | Where-Object { $_.Value -notlike 'autodetect_*' }).Value
+        $RemainingTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TiedFunctions }
+        # and now scan for the instance string
+        $ScanFor = $TestsRunGroups[$Scenario].Replace('autodetect_', '')
+        #if ScanFor holds an array, search it in *and*
+        $ScanForAll = $ScanFor.Split(',')
+        # and exclude other instances in autodetect
+        $ExcludeScanForRaw = @() + ($TestsRunGroups.GetEnumerator() | Where-Object { ($_.Name -ne $Scenario) -and ($_.Value -like 'autodetect_*') }).Value.Replace('autodetect_', '')
+        $ScanTests = @()
+        foreach ($test in $RemainingTests) {
+            $testcontent = Get-Content $test -Raw
+            $IncludeFlag = 0
+            foreach ($piece in $ScanForAll) {
+                if ($testcontent -like "*$piece*") {
+                    $IncludeFlag += 1
+                }
+            }
+            if ($IncludeFlag -eq $ScanForAll.Length) {
+                #matched all pieces
+                $ExcludeAll = 0
+                foreach ($otherenv in $ExcludeScanForRaw) {
+                    $ExcludeFlag = 0
+                    $ExcludeScanForAll_ = $otherenv.split(',')
+                    #honor includes before excludes
+                    $ExcludeScanForAll = @()
+                    foreach ($piece in $ExcludeScanForAll_) {
+                        if ($piece -notin $ScanForAll) {
+                            $ExcludeScanForAll += $piece
+                        }
+                    }
+                    if ($ExcludeScanForAll.Length -eq 0) {
+                        $ExcludeAll = 0
+                        continue
+                    }
+                    foreach ($piece in $ExcludeScanForAll) {
+                        if ($testContent -like "*$piece*") {
+                            $ExcludeFlag += 1
+                        }
+                    }
+                    if ($ExcludeFlag -eq $ExcludeScanForAll.Length) {
+                        $ExcludeAll += 1
+                    }
+                }
+                if ($ExcludeAll -eq 0) {
+                    $ScanTests += $test
+                }
+            }
+        }
+        $AllScenarioTests = $ScanTests
+    }
+    else {
+        $AllScenarioTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -in $TestsRunGroups[$Scenario] }
+    }
+    return $AllScenarioTests
+}
+
+
 if (-not $Finalize) {
     # Invoke pester.groups.ps1 to know which tests to run
     . "$ModuleBase\tests\pester.groups.ps1"
@@ -195,59 +258,16 @@ if (-not $Finalize) {
     if ($env:SCENARIO) {
         # if so, do we have a group with tests to run ?
         if ($env:SCENARIO -in $TestsRunGroups.Keys) {
-            # does this scenario run an 'autodetect' ?
-            if ($TestsRunGroups[$env:SCENARIO].StartsWith('autodetect_')[0]) {
-                # exclude any test specifically tied to a non-autodetect scenario
-                $TiedFunctions = ($TestsRunGroups.GetEnumerator() | Where-Object { $_.Value -notlike 'autodetect_*' }).Value
-                $RemainingTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TiedFunctions }
-                # and now scan for the instance string
-                $ScanFor = $TestsRunGroups[$env:SCENARIO].Replace('autodetect_', '')
-                # and exclude other instances in autodetect
-                $ExcludeScanFor = @() + ($TestsRunGroups.GetEnumerator() | Where-Object { ($_.Name -ne $env:SCENARIO) -and ($_.Value -like 'autodetect_*') }).Value.Replace('autodetect_', '')
-                $ScanTests = @()
-                foreach ($test in $RemainingTests) {
-                    $testcontent = Get-Content $test -Raw
-                    if ($testcontent -like "*$ScanFor*") {
-                        $ExcludeFlag = $false
-                        foreach ($exclude in $ExcludeScanFor) {
-                            if ($testcontent -like "*$exclude*") {
-                                $ExcludeFlag = $true
-                                break
-                            }
-                        }
-                        if (-not($ExcludeFlag)) {
-                            $ScanTests += $test
-                        }
-                    }
-                }
-                $AllScenarioTests = $ScanTests
-            }
-            else {
-                $AllScenarioTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -in $TestsRunGroups[$env:SCENARIO] }
-            }
+            $AllScenarioTests = Get-TestsForScenario -scenario $env:SCENARIO -AllTest $AllTests
         }
         else {
-            $AllScenarioTests = $AllTests
-            # we have a scenario, but no specific group. Let's run any other test
-            # exclude any test specifically tied to a non-autodetect scenario
-            $TiedFunctions = ($TestsRunGroups.GetEnumerator() | Where-Object { $_.Value -notlike 'autodetect_*' }).Value
-            $RemainingTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TiedFunctions }
-            # scan for all tests containing ALL autodetect strings
-            $ScanFor = @() + ($TestsRunGroups.GetEnumerator() | Where-Object { $_.Value -like 'autodetect_*' }).Value.Replace('autodetect_', '')
-            $ScanTests = @()
-            foreach ($test in $RemainingTests) {
-                $FoundFlag = 0
-                $testcontent = Get-Content $test -Raw
-                foreach ($Scan in $ScanFor) {
-                    if ($testcontent -like "*$Scan*") {
-                        $FoundFlag += 1
-                    }
-                }
-                if ($FoundFlag -eq $ScanFor.Count -or $FoundFlag -eq 0) {
-                    $ScanTests += $test
-                }
+            $AllTestsToExclude = @()
+            $validScenarios = $TestsRunGroups.Keys | Where-Object { $_ -notin @('disabled', 'appveyor_disabled') }
+            foreach ($k in $validScenarios) {
+                $AllTestsToExclude += Get-TestsForScenario -scenario $k -AllTest $AllTests
             }
-            $AllScenarioTests = $ScanTests
+            $AllTests = $AllTests | Where-Object { $_ -notin $AllTestsToExclude }
+            $AllScenarioTests = $AllTests
         }
     }
     else {
