@@ -220,7 +220,7 @@ function Repair-DbaOrphanUser {
                                 }
                             }
                             }
-                        } # I match this line if ($UsersToWork.Count -gt 0) {
+                        }
                         else {
                             Write-Message -Level Verbose -Message "No orphan users found on database '$db'."
                         }
