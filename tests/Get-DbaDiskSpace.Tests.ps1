@@ -17,7 +17,7 @@ Describe "$commandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "CheckForSql returns IsSqlDisk property with a value (likely false)" {
-        $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME -CheckForSql
+        $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME -CheckForSql -WarningAction SilentlyContinue
             It "SQL Server drive is not found in there somewhere" {
                 $false | Should BeIn $results.IsSqlDisk
             }
