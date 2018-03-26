@@ -30,9 +30,9 @@ namespace Sqlcollaborative.Dbatools.Discovery
         {
             get
             {
-                if (!String.IsNullOrEmpty(InstanceName))
+                if (!String.IsNullOrEmpty(InstanceName) && !Utility.UtilityHost.IsLike(InstanceName, "MSSQLSERVER"))
                     return String.Format(@"{0}\{1}", ComputerName, InstanceName);
-                else if (Port == 1433)
+                else if ((Port == 1433) || (Utility.UtilityHost.IsLike(InstanceName, "MSSQLSERVER")))
                     return ComputerName;
                 else
                     return String.Format(@"{0}:{1}", ComputerName, Port);
@@ -47,9 +47,9 @@ namespace Sqlcollaborative.Dbatools.Discovery
         {
             get
             {
-                if (!String.IsNullOrEmpty(InstanceName))
+                if (!String.IsNullOrEmpty(InstanceName) && !Utility.UtilityHost.IsLike(InstanceName, "MSSQLSERVER"))
                     return String.Format(@"{0}\{1}", ComputerName, InstanceName);
-                else if (Port == 1433)
+                else if ((Port == 1433) || (Utility.UtilityHost.IsLike(InstanceName, "MSSQLSERVER")))
                     return ComputerName;
                 else
                     return String.Format(@"{0},{1}", ComputerName, Port);

@@ -6,16 +6,7 @@ $TestsRunGroups = @{
     # run on scenario 2016
     "2016"                      = 'autodetect_$script:instance2'
     # run on scenario 2016_2017 - tests that need developer license
-    "2016_2017"                 = @(
-        'Copy-DbaCredential',
-        'Copy-DbaAgentJob',
-        'Copy-DbaLinkedServer',
-        'Copy-DbaAgentAlert',
-        'Copy-DbaAgentCategory',
-        'Copy-DbaAgentOperator',
-        'Copy-DbaDatabase',
-        'Dismount-DbaDatabase'
-    )
+    "2016_2017"                 = 'autodetect_$script:instance2,$script:instance3'
     #run on scenario 2016_service - SQL Server service tests that might disrupt other tests
     "2016_service"              = @(
         'Start-DbaSqlService',
@@ -28,7 +19,6 @@ $TestsRunGroups = @{
     "appveyor_disabled"         = @(
         'Dismount-DbaDatabase'
     )
-    
     # do not run everywhere
     "disabled"                  = @()
 }
