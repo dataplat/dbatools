@@ -97,6 +97,7 @@ function Repair-DbaOrphanUser {
         [parameter(Mandatory = $false, ValueFromPipeline = $true)]
         [object[]]$Users,
         [switch]$RemoveNotExisting,
+        [switch]$Force,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -206,12 +207,20 @@ function Repair-DbaOrphanUser {
 
                             #With the collection complete invoke remove.
                             if ($RemoveNotExisting -eq $true) {
-                                if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
+                                if ($Force -eq $true) {
+                                    if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
+                                        Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser' with -Force."
+                                        Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -User $UsersToRemove -Force
+                                    }
+                                }
+                                Else {
+                                    If ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
                                     Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser'."
                                     Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -User $UsersToRemove
                                 }
                             }
-                        }
+                            }
+                        } # I match this line if ($UsersToWork.Count -gt 0) {
                         else {
                             Write-Message -Level Verbose -Message "No orphan users found on database '$db'."
                         }
