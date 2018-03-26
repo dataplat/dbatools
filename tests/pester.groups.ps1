@@ -14,7 +14,9 @@ $TestsRunGroups = @{
         'Copy-DbaAgentCategory',
         'Copy-DbaAgentOperator',
         'Copy-DbaDatabase',
-        'Dismount-DbaDatabase'
+        'Dismount-DbaDatabase',
+        'Copy-DbaDatabaseAssembly',
+        'Copy-DbaCustomError'
     )
     #run on scenario 2016_service - SQL Server service tests that might disrupt other tests
     "2016_service"              = @(
