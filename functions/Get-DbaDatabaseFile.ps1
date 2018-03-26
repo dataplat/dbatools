@@ -208,10 +208,11 @@ ON fd.Drive = LEFT(df.physical_name, 1);
 '@
                         $disks = $server.Query($query2, $db.Name)
                         # if the server has one drive xp_fixeddrives returns one row, but we still need $disks to be an array.
-                        $disks = @($server.Query("xp_fixeddrives", $db.Name))
-                        $MbFreeColName = $disks[0].psobject.Properties.Name[1]
-                        $free = $disks | Where-Object { $_.drive -eq $result.PhysicalName.Substring(0, 1) } | Select-Object $MbFreeColName -ExpandProperty $MbFreeColName
-                        $VolumeFreeSpace = [dbasize]($free * 1024 * 1024)
+                        $MbFreeColName = $disks[0].psobject.Properties.Name
+                        # get the free MB value for the drive in question
+                        $free = $disks | Where-Object { $_.drive -eq $result.PhysicalName.Substring(0, 1) } | Select-Object $MbFreeColName
+                        
+                        $VolumeFreeSpace = [dbasize](($free.MB_Free) * 1024 * 1024)
                     }
                     if ($result.GrowthType -eq "Percent") {
                         $nextgrowtheventadd = [dbasize]($result.size * ($result.Growth * 0.01) * 1024)
