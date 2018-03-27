@@ -29,12 +29,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should Be $null
         }
     }
-
-    Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    
     Context "Database is properly removed again after withreplace test" {
+        Get-DbaProcess $script:instance1 -Database singlerestore | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+        $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
+        Get-DbaProcess $script:instance1 -Database singlerestore | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
-            $results.Status | Should Be "Dropped"
+            $results.Status -eq "Dropped" -or $results.Status -eq $null
         }
     }
 
