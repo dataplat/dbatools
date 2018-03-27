@@ -66,4 +66,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.Notes.Contains('System login') | Should Be $true
         }
     }
+    
+    Context "Supports pipe" {
+        $results = Get-DbaLogin -SqlInstance $script:instance1 -Login tester | Copy-DbaLogin -Destination $script:instance2 -Force
+        It "migrates the one tester login" {
+            $results.Name | Should be "tester"
+            $results.Status | Should Be "Successful"
+        }
+    }
 }
