@@ -51,7 +51,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "Test VerifyOnly works with db in existance" {
+    Context "Test VerifyOnly works with db in existence" {
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1  -VerifyOnly
         It "Should have verified Successfully" {
             $results[0] | Should Be "Verify successful"
