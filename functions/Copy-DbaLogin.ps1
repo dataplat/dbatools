@@ -53,7 +53,7 @@ function Copy-DbaLogin {
         .PARAMETER OutFile
             Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This does not perform a copy, so no destination is required.
 
-        .PARAMETER PipeLogin
+        .PARAMETER InputObject
             Takes the parameters required from a Login object that has been piped into the command
 
         .PARAMETER LoginRenameHashtable
@@ -128,25 +128,25 @@ function Copy-DbaLogin {
 
             Copies OldUser and then renames it to newlogin.
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(ParameterSetName = "SqlInstance", Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]
         $SourceSqlCredential,
-        [parameter(ParameterSetName = "Destination", Mandatory = $true)]
+        [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$Destination,
-        [PSCredential]
-        $DestinationSqlCredential,
+        [PSCredential]$DestinationSqlCredential,
         [object[]]$Login,
         [object[]]$ExcludeLogin,
         [switch]$ExcludeSystemLogin,
         [switch]$SyncOnly,
         [parameter(ParameterSetName = "Live")]
         [switch]$SyncSaName,
-        [parameter(ParameterSetName = "File", Mandatory = $true)]
+        [parameter(ParameterSetName = "File", Mandatory)]
         [string]$OutFile,
-        [object]$PipeLogin,
+        [parameter(ParameterSetName = "InputObject", ValueFromPipeline)]
+        [object]$InputObject,
         [hashtable]$LoginRenameHashtable,
         [switch]$KillActiveConnection,
         [switch]$Force,
@@ -496,35 +496,36 @@ function Copy-DbaLogin {
                 }
             } #end for each $sourceLogin
         } #end function Copy-Login
-
-        Write-Message -Level Verbose -Message "Attempting to connect to SQL Servers."
-        $sourceServer = Connect-SqlInstance -RegularUser -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $source = $sourceServer.DomainInstanceName
-
+    }
+    
+    process {
+        
+        if (Test-Bound -ParameterName InputObject) {
+            $Source = $InputObject[0].Parent.Name
+            $Sourceserver = $InputObject[0].Parent
+            $Login = $InputObject.Name
+        }
+        else {
+            Write-Message -Level Verbose -Message "Attempting to connect to SQL Servers."
+            $sourceServer = Connect-SqlInstance -RegularUser -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            $source = $sourceServer.DomainInstanceName
+        }
+        
         if ($Destination) {
             $destServer = Connect-SqlInstance -RegularUser -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
             $Destination = $destServer.DomainInstanceName
-
+            
             $sourceVersionMajor = $sourceServer.VersionMajor
             $destVersionMajor = $destServer.VersionMajor
             if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
                 Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
-
+            
             if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
-                Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -InnerErrorRecord $_ -Target $sourceServer
+                Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
         }
-
-        return $serverParms
-    }
-
-    process {
-        if ($PipeLogin.Length -gt 0) {
-            $Source = $PipeLogin[0].Parent.Name
-            $Login = $PipeLogin.Name
-        }
-
+        
         if ($SyncOnly) {
             Sync-DbaSqlLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
             return
