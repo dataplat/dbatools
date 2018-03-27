@@ -162,15 +162,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $login1.Sid | Should Not be $login2.Sid
         }
     }
-    Context "Connect with a new login" {
-        It "Should login with newly created Sql Login, get instance name and kill the process" {
-            $cred = New-Object System.Management.Automation.PSCredential ("tester", $securePassword)
-            $s = Connect-SqlInstance -SqlInstance $script:instance1 -SqlCredential $cred
-            $s.Name | Should Be $script:instance1
-            Stop-DbaProcess -SqlInstance $script:instance1 -Login tester
+    
+    if ((Connect-DbaInstance -SqlInstance $script:instance1).LoginMode -eq "Mixed") {
+        Context "Connect with a new login" {
+            It "Should login with newly created Sql Login, get instance name and kill the process" {
+                $cred = New-Object System.Management.Automation.PSCredential ("tester", $securePassword)
+                $s = Connect-DbaInstance -SqlInstance $script:instance1 -Credential $cred
+                $s.Name | Should Be $script:instance1
+                Stop-DbaProcess -SqlInstance $script:instance1 -Login tester
+            }
         }
     }
-
+    
     Context "No overwrite" {
         $null = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -WarningAction SilentlyContinue -WarningVariable warning 3>&1
         It "Should not attempt overwrite" {
