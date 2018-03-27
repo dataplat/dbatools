@@ -32,6 +32,9 @@ function Repair-DbaOrphanUser {
         .PARAMETER Users
             Specifies the list of usernames to repair.
 
+        .PARAMETER Force
+        Forces alter schema to dbo owner so users can be dropped.
+
         .PARAMETER RemoveNotExisting
             If this switch is enabled, all users that do not have a matching login will be dropped from the database.
 
