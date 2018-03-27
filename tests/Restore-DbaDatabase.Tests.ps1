@@ -348,7 +348,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 1
-
+    
+    Get-DbaProcess $script:instance1 | Where-Object Program -match 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
     Context "Check Get-DbaBackupHistory pipes into Restore-DbaDatabase" {
         $history = Get-DbaBackupHistory -SqlInstance $script:instance1 -Database RestoreTimeClean -Last
         $results = $history | Restore-DbaDatabase -SqlInstance $script:instance1 -WithReplace -TrustDbBackupHistory
