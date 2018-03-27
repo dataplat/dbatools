@@ -315,9 +315,19 @@ function Find-DbaInstance {
                         if ($portResult.IsOpen) { $portsDetected += $portResult.Port }
                     }
                     foreach ($sPN in $sPNs) {
-                        [int]$portNumber = $sPN.Split(':')[1]
-                        if ($portNumber -and ($portsDetected -notcontains $portNumber)) {
-                            $portsDetected += $portNumber
+                        try { $inst = $sPN.Split(':')[1] }
+                        catch { continue }
+                        
+                        try {
+                            [int]$portNumber = $inst
+                            if ($portNumber -and ($portsDetected -notcontains $portNumber)) {
+                                $portsDetected += $portNumber
+                            }
+                        }
+                        catch {
+                            if ($inst -and ($instanceNames -notcontains $inst)) {
+                                $instanceNames += $inst
+                            }
                         }
                     }
                     #endregion Gather list of found instance indicators
