@@ -24,7 +24,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
         Remove-DbaLogin -SqlInstance $script:instance1 -Login $login -Confirm:$false
-        (Get-ChildItem $outputFile) | Remove-Item -ErrorAction SilentlyContinue
+        (Get-ChildItem $outputFile -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
     }
 
     Context "Check if output file was created" {
