@@ -71,7 +71,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Create new logins" {
         It "Should be created successfully - Hashed password" {
-            $results = New-DbaLogin -SqlInstance $server1 -Login tester -HashedPassword (Get-PasswordHash $securePassword $server1.VersionMajor)
+            $results = New-DbaLogin -SqlInstance $server1 -Login tester -HashedPassword (Get-PasswordHash $securePassword $server1.VersionMajor) -Force
             $results.Name | Should Be "tester"
             $results.DefaultDatabase | Should be 'master'
             $results.IsDisabled | Should be $false
@@ -162,21 +162,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $login1.Sid | Should Not be $login2.Sid
         }
     }
-    Context "Connect with a new login" {
-        It "Should login with newly created Sql Login, get instance name and kill the process" {
-            $cred = New-Object System.Management.Automation.PSCredential ("tester", $securePassword)
-            $s = Connect-SqlInstance -SqlInstance $script:instance1 -SqlCredential $cred
-            $s.Name | Should Be $script:instance1
-            $results = $server1.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$($cred.UserName)') EXEC sp_who '$($cred.UserName)'")
-            $results | Should Not BeNullOrEmpty
-            foreach ($spid in $results.spid) {
-                { Invoke-SqlCmd2 -ServerInstance $script:instance1 -Query "kill $spid" -ErrorAction Stop} | Should Not Throw
+    
+    if ((Connect-DbaInstance -SqlInstance $script:instance1).LoginMode -eq "Mixed") {
+        Context "Connect with a new login" {
+            It "Should login with newly created Sql Login, get instance name and kill the process" {
+                $cred = New-Object System.Management.Automation.PSCredential ("tester", $securePassword)
+                $s = Connect-DbaInstance -SqlInstance $script:instance1 -Credential $cred
+                $s.Name | Should Be $script:instance1
+                Stop-DbaProcess -SqlInstance $script:instance1 -Login tester
             }
         }
     }
-
+    
     Context "No overwrite" {
-        $null = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -WarningVariable warning 3>&1
+        $null = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -WarningAction SilentlyContinue -WarningVariable warning 3>&1
         It "Should not attempt overwrite" {
             $warning | Should Match "Login tester already exists"
         }
