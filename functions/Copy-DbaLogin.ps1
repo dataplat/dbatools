@@ -127,7 +127,13 @@ function Copy-DbaLogin {
             Copy-DbaLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
 
             Copies OldUser and then renames it to newlogin.
+    
+        .EXAMPLE
+            Get-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017
+
+            Displays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.
     #>
+    
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     Param (
         [parameter(ParameterSetName = "SqlInstance", Mandatory)]
