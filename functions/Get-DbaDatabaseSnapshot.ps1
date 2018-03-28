@@ -116,11 +116,11 @@ WHERE sn.state <> 6
                     ComputerName    = $server.NetName
                     InstanceName    = $server.ServiceName
                     SqlInstance     = $server.DomainInstanceName
-                    Database        = $db.name
+                    Database        = $db.Name
                     SnapshotOf      = $db.DatabaseSnapshotBaseName
                     SizeMB          = [Math]::Round($db.Size, 2) ##FIXME, should use the stats for sparse files
                     DatabaseCreated = [dbadatetime]$db.createDate
-                    SnapshotDb      = $db
+                    SnapshotDb      = $server.Databases[$db.Name]
                 }
 
                 Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, Database, SnapshotOf, SizeMB, DatabaseCreated
