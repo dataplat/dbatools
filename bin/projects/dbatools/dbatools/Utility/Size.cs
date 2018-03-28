@@ -60,22 +60,18 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <summary>
         /// Number if digits behind the dot.
         /// </summary>
-        public Nullable<int> Digits
+        public int? Digits
         {
             get
             {
-                if (_digits == null)
-                    return UtilityHost.SizeDigits;
-                return (int)_digits;
+                return _digits ?? UtilityHost.SizeDigits;
             }
-            set {
-                if (value == null)
-                    _digits = value;
-                else
-                    _digits = value < 0 ? 0 : value;
+            set
+            {
+                _digits = value == null ? null : (value.Value <= 0 ? 0 : value);
             }
         }
-        private Nullable<int> _digits = 2;
+        private int? _digits;
 
         /// <summary>
         /// How the size object should be displayed.
@@ -84,9 +80,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                if (_Style != null)
-                    return _Style;
-                return UtilityHost.SizeStyle;
+                return _Style ?? UtilityHost.SizeStyle;
             }
             set
             {
@@ -179,34 +173,23 @@ namespace Sqlcollaborative.Dbatools.Utility
             this.Byte = Byte;
         }
 
-        /// <summary>
-        /// Some more interface implementation. Used to sort the object
-        /// </summary>
-        /// <param name="obj">The object to compare to</param>
-        /// <returns>Something</returns>
+        /// <inheritdoc cref="IComparable{Size}.CompareTo"/>
+        /// <remarks>For sorting</remarks>
         public int CompareTo(Size obj)
         {
-            if (Byte == obj.Byte) { return 0; }
-            if (Byte < obj.Byte) { return -1; }
-
-            return 1;
+            return Byte.CompareTo(obj.Byte);
         }
 
-        /// <summary>
-        /// Some more interface implementation. Used to sort the object
-        /// </summary>
-        /// <param name="obj">The object to compare to</param>
-        /// <returns>Something</returns>
+        /// <inheritdoc cref="IComparable.CompareTo"/>
+        /// <remarks>For sorting</remarks>
+        /// <exception cref="ArgumentException">If you compare with something invalid.</exception>
         public int CompareTo(Object obj)
         {
-            try
+            if (obj is Size)
             {
-                if (Byte == ((Size)obj).Byte) { return 0; }
-                if (Byte < ((Size)obj).Byte) { return -1; }
-
-                return 1;
+                return CompareTo((Size) obj);
             }
-            catch { return 0; }
+            throw new ArgumentException(String.Format("Cannot compare a {0} to a {1}", typeof(Size).FullName, obj.GetType().FullName));
         }
 
         #region Operators
@@ -283,6 +266,15 @@ namespace Sqlcollaborative.Dbatools.Utility
         public static implicit operator Size(int a)
         {
             return new Size(a);
+        }
+
+        /// <summary>
+        /// Implicitly converts int to size
+        /// </summary>
+        /// <param name="a">The number to convert</param>
+        public static implicit operator Size(decimal a)
+        {
+            return new Size((int)a);
         }
 
         /// <summary>
