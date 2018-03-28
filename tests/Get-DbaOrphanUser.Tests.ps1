@@ -9,7 +9,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         Get-DbaDatabase -SqlInstance $script:instance1 -Database dbOrphanUsers | Remove-DbaDatabase -Confirm:$false
     }
-    Context "Command finds appveyor instances" {
+    Context "finds orphaned users in db" {
         $results = Get-DbaOrphanUser -SqlInstance $script:instance1
         It "finds the orphan user" {
             $results.DatabaseName -contains 'dbOrphanUsers' | Should -Be $true
