@@ -19,7 +19,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
         $results = Test-DbaSpn -ComputerName $env:COMPUTERNAME -WarningAction SilentlyContinue
         It "returns some results" {
-            $results.RequiredSPN -ne $null | Should -Be $true
+            $null -ne $results.RequiredSPN | Should -Be $true
         }
         foreach ($result in $results) {
             It "has the right properties" {
