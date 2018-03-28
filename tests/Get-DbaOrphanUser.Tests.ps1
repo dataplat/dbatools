@@ -12,8 +12,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "Command finds appveyor instances" {
         $results = Get-DbaOrphanUser -SqlInstance $script:instance1
         It "finds the orphan user" {
-            $results.DatabaseName -eq 'dbOrphanUsers'
-            $results.User -eq 'UserOrphan'
+            $results.DatabaseName -contains 'dbOrphanUsers' | Should -Be $true
+            $results.User -eq 'UserOrphan' | Should -Be $true
         }
     }
 }
