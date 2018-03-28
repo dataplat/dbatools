@@ -63,7 +63,7 @@ function Test-DbaDbCompression {
     .EXAMPLE
         Test-DbaCompression -SqlInstance ServerA -Database DBName | Out-GridView
         Returns results of all potential compression options for a single database
-        with the recommendation of either Page or Row into and nicely formated GridView
+        with the recommendation of either Page or Row into and nicely formatted GridView
 
     .EXAMPLE
         Test-DbaCompression -SqlInstance ServerA
@@ -83,7 +83,7 @@ function Test-DbaDbCompression {
         }
 
         This produces a full analysis of all your servers listed and is pushed to a csv for you to
-        analyize.
+        analyze.
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
