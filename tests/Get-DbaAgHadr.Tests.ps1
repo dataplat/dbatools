@@ -9,7 +9,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
         [object[]]$params = (Get-ChildItem function:\Get-DbaAgHadr).Parameters.Keys
         $knownParameters = 'SqlInstance', 'Credential', 'EnableException'
         It "Should contian our specifc parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
         It "Should only contain $paramCount parameters" {
             $params.Count - $defaultParamCount | Should Be $paramCount
@@ -23,6 +23,7 @@ Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
         It "returns the correct properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,IsHadrEnabled'.Split(',')
             ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
+            $results.IsHadrEnabled | Should -Not -Be $null
         }
     }
 }
