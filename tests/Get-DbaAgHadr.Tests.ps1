@@ -24,10 +24,5 @@ Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,IsHadrEnabled'.Split(',')
             ($results.PsObject.Properties.Name | Sort-Object) | Should -Be ($ExpectedProps | Sort-Object)
         }
-        foreach ($result in $results) {
-            It "returns a bool for IsHadrEnabled" {
-                $result.IsHadrEnabled -is [bool] | Should -Be $true
-            }
-        }
     }
 }
