@@ -46,20 +46,26 @@ function Get-DbaAgHadr {
         foreach ($instance in $SqlInstance) {
 
             try {
-                $computer = $instance.ComputerName
+                $computer = $computerName = $instance.ComputerName
                 $instanceName = $instance.InstanceName
-                $computerName = (Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential).FullComputerName
                 Write-Message -Level Verbose -Message "Attempting to connect to $computer"
                 $currentState = Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock { $wmi.Services[$args[0]] | Select-Object IsHadrEnabled } -ArgumentList $instanceName -Credential $Credential
             }
             catch {
                 Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+            
+            if ($null -eq $currentState.IsHadrEnabled) {
+                $isenabled = "Unsupported"
+            }
+            else {
+                $isenabled = $currentState.IsHadrEnabled
+            }
             [PSCustomObject]@{
-                ComputerName  = $computerName
+                ComputerName  = $computer
                 InstanceName  = $instanceName
                 SqlInstance   = $instance.FullName
-                IsHadrEnabled = $currentState.IsHadrEnabled
+                IsHadrEnabled = $isenabled
             }
         }
     }
