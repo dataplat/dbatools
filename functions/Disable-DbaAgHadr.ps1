@@ -88,7 +88,7 @@ function Disable-DbaAgHadr {
                 continue
             }
             
-            if ("Unsupported" -eq $isHadrEnabled) {
+            if ($isHadrEnabled -is [string]) {
                 Stop-Function -Message "Failure on $($instance.FullName) | The AlwaysOn Availability Groups feature requires the x86(non-WOW) or x64 Enterprise Edition of SQL Server 2012 (or later version) running on Windows Server 2008 (or later version) with WSFC hotfix KB 2494036 installed."
                 $noChange = $true
                 continue
