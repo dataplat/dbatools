@@ -111,10 +111,10 @@ function Export-DbaAvailabilityGroup {
                 $ags = $ags | Where-Object Name -NotIn $ExcludeAvailabilityGroup
             }
 
-            if ($ags.count -gt 0 -or $ags.Length -gt 0) {
+            if ($ags) {
 
                 # Set and create the OutputLocation if it doesn't exist
-                $sqlinst = $instance.Replace('\', '$')
+                $sqlinst = $instance.ToString().Replace('\', '$')
                 $outputLocation = "$FilePath\$sqlinst"
 
                 if (!(Test-Path $outputLocation -PathType Container)) {
@@ -165,6 +165,7 @@ function Export-DbaAvailabilityGroup {
 
                         # Script the AG
                         $ag.Script() | Out-File -FilePath $outFile -Encoding ASCII -Append
+                        Get-ChildItem $outFile
                     }
                 }
             }
