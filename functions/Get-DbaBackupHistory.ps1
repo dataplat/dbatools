@@ -286,6 +286,7 @@ function Get-DbaBackupHistory {
                     $first = 'L'; $second = 'L'
                 }
                 $databases = $databases | Select-Object -Unique -Property Name
+                $sql = ""
                 foreach ($db in $databases) {
                     Write-Message -Level Verbose -Message "Processing $($db.name)" -Target $db
                     $whereCopyOnly = $null
@@ -384,14 +385,16 @@ function Get-DbaBackupHistory {
                                 JOIN msdb..backupset AS backupset
                                   ON backupset.media_set_id = mediaset.media_set_id
                                 JOIN (
-                                    SELECT database_guid, database_name, backup_finish_date
+                                    SELECT DISTINCT database_guid, database_name, backup_finish_date
                                     FROM msdb..backupset
+                                    WHERE backupset.database_name = '$($db.Name)'
                                 ) dbguid
                                   ON dbguid.database_name = backupset.database_name
                                   AND dbguid.database_guid = backupset.database_guid
                                 JOIN (
                                     SELECT database_name, MAX(backup_finish_date) max_finish_date
-                                    FROM msdb..backupset bs
+                                    FROM msdb..backupset
+                                    WHERE backupset.database_name = '$($db.Name)'
                                     GROUP BY database_name
                                 ) dbguid_support
                                   ON dbguid_support.database_name = backupset.database_name
@@ -544,7 +547,7 @@ function Get-DbaBackupHistory {
                     if ($groupLength -eq 1) {
                         $start = $commonFields.Start
                         $end = $commonFields.End
-                        $duration = $commonFields.Duration
+                        $duration = New-TimeSpan -Seconds $commonFields.Duration
                     }
                     else {
                         $start = ($group.Group.Start | Measure-Object -Minimum).Minimum
