@@ -22,7 +22,7 @@ function Get-DbaAgListener {
         .PARAMETER Listener
             Specify the Listener name that you want to get information on.
 
-        .PARAMETER Listener
+        .PARAMETER InputObject
             Piped in Availability Group objects
    
         .PARAMETER EnableException
