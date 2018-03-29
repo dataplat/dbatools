@@ -45,16 +45,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Remove-Item -Path $outputFile
     }
 
-    It "Should throw exception when trying to connect to an invalid server" {
-        Mock -ModuleName 'dbatools' Connect-SqlInstance -ParameterFilter { [string]$SqlInstance -eq 'MadeUpServer' } -Verifiable {
-            throw 'Forced failure when connecting'
-        }
-
-        { Get-DbaSqlModule -SqlInstance 'MadeUpServer' -EnableException } | Should Throw 'Forced failure when connecting'
-
-        Assert-VerifiableMock
-    }
-
     It "Filters to specific databases" {
         $output = Export-DbaLogin -SqlInstance $script:instance1 -Database $dbname1 -EnableException
 

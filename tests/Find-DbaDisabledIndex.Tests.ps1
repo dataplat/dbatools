@@ -47,11 +47,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.DatabaseName -contains 'tempdb' | Should Be $false
         }
     }
-
-    Context "Fails gracefully" {
-        It "Should throw on an invalid Connection" {
-            Mock -ModuleName 'dbatools' Connect-SqlInstance { throw }
-            {Find-DbaDisabledIndex -SqlInstance 'MadeUpServer' -EnableException} | Should Throw
-        }
-    }
 }
