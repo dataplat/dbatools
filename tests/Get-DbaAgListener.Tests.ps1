@@ -24,7 +24,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 InModuleScope dbatools {
     Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         Mock Connect-SqlInstance {
-            Import-CliXml C:\github\appveyor-lab\agserver.xml
+            Import-CliXml $script:appveyorlabrepo\agserver.xml
         }
         Context "gets ag databases" {
             $results = Get-DbaAgListener -SqlInstance sql2016c
