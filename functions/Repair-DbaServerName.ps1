@@ -119,7 +119,7 @@ function Repair-DbaServerName {
 
                         if (-not $AutoFix) {
                             Stop-Function -Message "Cannot proceed because some databases are involved in replication. You can run exec sp_dropdistributor @no_checks = 1 but that may be pretty dangerous. Alternatively, you can run -AutoFix to automatically fix this issue. AutoFix will also break all database mirrors."
-                            return    
+                            return
                         }
                         else {
                             if ($Pscmdlet.ShouldProcess("console", "Prompt will appear for confirmation to break replication.")) {
