@@ -62,7 +62,7 @@ function Disable-DbaAgHadr {
     process {
         $Enabled = 0
         foreach ($instance in $SqlInstance) {
-            $computer = $instance.ComputerName
+            $computer = $computerFullName = $instance.ComputerName
             $instanceName = $instance.InstanceName
 
             $noChange = $false
@@ -74,28 +74,39 @@ function Disable-DbaAgHadr {
 
             try {
                 Write-Message -Level Verbose -Message "Checking current Hadr setting for $computer"
-                $computerFullName = (Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -EnableException).FullComputerName
-                $currentState = Get-DbaAgHadr -SqlInstance $instance
+                $currentState = Get-DbaAgHadr -SqlInstance $instance -Credential $Credential
             }
             catch {
                 Stop-Function -Message "Failure to pull current state of Hadr setting on $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
             $isHadrEnabled = $currentState.IsHadrEnabled
             Write-Message -Level InternalComment -Message "$instance Hadr current value: $isHadrEnabled"
 
-            if ($isHadrEnabled -eq $false -and $Enabled -eq 0) {
+            if (-not $isHadrEnabled) {
                 Write-Message -Level Warning -Message "Hadr is already disabled for instance: $($instance.FullName)"
                 $noChange = $true
                 continue
             }
-
-            $sqlwmi = new-object ('Microsoft.SqlServer.Management.Smo.WMI.ManagedComputer') $computerFullName
-            $sqlService = $sqlwmi.Services[$instanceName]
-
+            
+            if ("Unsupported" -eq $isHadrEnabled) {
+                Stop-Function -Message "Failure on $($instance.FullName) | The AlwaysOn Availability Groups feature requires the x86(non-WOW) or x64 Enterprise Edition of SQL Server 2012 (or later version) running on Windows Server 2008 (or later version) with WSFC hotfix KB 2494036 installed."
+                $noChange = $true
+                continue
+            }
+            
+            $scriptblock = {
+                $sqlService = $wmi.Services[$args[0]]
+                $sqlService.ChangeHadrServiceSetting(0)
+            }
+            
             if ($noChange -eq $false) {
                 if ($PSCmdlet.ShouldProcess($instance, "Changing Hadr from $isHadrEnabled to $Enabled for $instance")) {
-                    $sqlService.ChangeHadrServiceSetting($Enabled)
+                    try {
+                        Invoke-ManagedComputerCommand -ComputerName $computerFullName -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $instancename
+                    }
+                    catch {
+                        Stop-Function -ErrorRecord $_ -Message "Failure on $instance" -Target $instance
+                    }
                 }
                 if (Test-Bound 'Force') {
                     if ($PSCmdlet.ShouldProcess($instance, "Force provided, restarting Engine and Agent service for $instance on $computerFullName")) {
@@ -111,9 +122,9 @@ function Disable-DbaAgHadr {
                 $newState = Get-DbaAgHadr -SqlInstance $instance -Credential $Credential
 
                 [PSCustomObject]@{
-                    ComputerName = $computerFullName
-                    InstanceName = $instanceName
-                    SqlInstance  = $instance.FullSmoName
+                    ComputerName = $newState.ComputerName
+                    InstanceName = $newState.InstanceName
+                    SqlInstance  = $newState.SqlInstance
                     HadrPrevious = $currentState.IsHadrEnabled
                     HadrCurrent  = $newState.IsHadrEnabled
                 }
