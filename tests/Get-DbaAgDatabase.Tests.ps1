@@ -22,6 +22,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 InModuleScope dbatools {
+    . "$PSScriptRoot\constants.ps1"
     Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         Mock Connect-SqlInstance {
             Import-Clixml $script:appveyorlabrepo\agserver.xml
