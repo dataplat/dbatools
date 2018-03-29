@@ -21,21 +21,44 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     }
 }
 
-InModuleScope dbatools {
-    . "$PSScriptRoot\constants.ps1"
-    Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-        Mock Connect-SqlInstance {
-            Import-Clixml $script:appveyorlabrepo\agserver.xml
+Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $script:instance3
+        $computername = $server.NetName
+        $dbname = "dbatoolsci_agroupdb"
+        $server.Query("create database $dbname")
+        $backup = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
+        $server.Query("IF NOT EXISTS (select * from sys.symmetric_keys where name like '%DatabaseMasterKey%') CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<StrongPassword>'")
+        $server.Query("IF EXISTS ( SELECT * FROM sys.tcp_endpoints WHERE name = 'End_Mirroring') DROP ENDPOINT [endpoint_mirroring]")
+        $server.Query("CREATE CERTIFICATE dbatoolsci_AGCert WITH SUBJECT = 'AG Certificate'")
+        $server.Query("CREATE ENDPOINT dbatoolsci_AGEndpoint
+                            STATE = STARTED
+                            AS TCP (LISTENER_PORT = 5022,LISTENER_IP = ALL)
+                            FOR DATABASE_MIRRORING (AUTHENTICATION = CERTIFICATE dbatoolsci_AGCert,ROLE = ALL)")
+        $server.Query("CREATE AVAILABILITY GROUP [dbatoolsci_agroup]
+                            WITH (DB_FAILOVER = OFF, DTC_SUPPORT = NONE, CLUSTER_TYPE = NONE)
+                            FOR DATABASE [$dbname] REPLICA ON N'$script:instance3' 
+                            WITH (ENDPOINT_URL = N'TCP://$computername`:5022', FAILOVER_MODE = MANUAL, AVAILABILITY_MODE = SYNCHRONOUS_COMMIT)")
+    }
+    AfterAll {
+        Remove-Item -Path $backup.BackupPath -ErrorAction SilentlyContinue
+        $server.Query("DROP AVAILABILITY GROUP [dbatoolsci_agroup]")
+        Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+        $server.Query("DROP ENDPOINT [dbatoolsci_AGEndpoint]")
+        $server.Query("DROP CERTIFICATE dbatoolsci_AGCert")
+    }
+    
+    Context "gets ags" {
+        $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3
+        It "returns results with proper data" {
+            $results.AvailabilityGroup | Should -Contain 'dbatoolsci_agroup'
+            $results.AvailabilityDatabases.Name | Should -Contain $dbname
         }
-        Context "gets ags" {
-            $results = Get-DbaAvailabilityGroup -SqlInstance sql2016c
-            It "returns results with proper data" {
-                $results.AvailabilityGroup | Should -Be 'SharePoint'
-                $results.LocalReplicaRole | Should -Be 'Resolving'
-                $results.AutomatedBackupPreference | Should -Be 'Secondary'
-                $results.AvailabilityReplicas.Name -match 'sql2016a' | Should -Be $true
-                $results.AvailabilityDatabases.Name -match 'Service_d8a960b7fae44c65aea2daac947b2615' | Should -Be $true
-            }
+        $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup dbatoolsci_agroup
+        It "returns a single result" {
+            $results.AvailabilityGroup | Should -Be 'dbatoolsci_agroup'
+            $results.AvailabilityDatabases.Name | Should -Be $dbname
         }
     }
 }
