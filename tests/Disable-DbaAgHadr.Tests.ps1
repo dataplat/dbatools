@@ -13,10 +13,30 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
         [object[]]$params = (Get-ChildItem function:\Disable-DbaAgHadr).Parameters.Keys
         $knownParameters = 'SqlInstance', 'Credential', 'Force', 'EnableException'
         It "Should contian our specifc parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
         It "Should only contain $paramCount parameters" {
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
+    }
+}
+
+Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        $current = Get-DbaAgHadr -SqlInstance $script:instance3
+        if (-not $current.IsHadrEnabled) {
+            Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false
+        }
+    }
+    AfterAll {
+        if ($current.IsHadrEnabled) {
+            Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false
+        }
+    }
+    
+    $results = Disable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false
+    
+    It "enables hadr" {
+        $results.HadrCurrent | Should -Be $false
     }
 }
