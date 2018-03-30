@@ -52,7 +52,7 @@ function Update-DbaSqlServiceAccount {
     Tags:
     dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
     Copyright (C) 2017 Chrissy LeMaire
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
     $NewPassword = ConvertTo-SecureString 'Qwerty1234' -AsPlainText -Force
@@ -94,7 +94,8 @@ function Update-DbaSqlServiceAccount {
         [securestring]$OldPassword = (New-Object System.Security.SecureString),
         [Alias("Password")]
         [securestring]$NewPassword = (New-Object System.Security.SecureString),
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $svcCollection = @()

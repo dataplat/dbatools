@@ -2,13 +2,13 @@ $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $db1 = "dbatoolsci_testMigrationConstraint"
         $db2 = "dbatoolsci_testMigrationConstraint_2"
-        $server.Query("CREATE DATABASE $db1")
-        $server.Query("CREATE DATABASE $db2")
+        Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Query "CREATE DATABASE $db1"
+        Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Query "CREATE DATABASE $db2"
         $needed = Get-DbaDatabase -SqlInstance $script:instance1 -Database $db1, $db2
         $setupright = $true
         if ($needed.Count -ne 2) {
@@ -20,8 +20,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
     AfterAll {
         if (-not $appveyor) {
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db2
+            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1, $db2 -ErrorAction SilentlyContinue
         }
     }
     Context "Validate multiple databases" {

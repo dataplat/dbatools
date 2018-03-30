@@ -35,7 +35,7 @@ Author: Stuart Moore (@napalmgram), stuart-moore.com
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
 $Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase
@@ -57,7 +57,8 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
         [parameter(Mandatory = $true)]
         [object]$Database,
         [Switch]$IgnoreLimit,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     try {

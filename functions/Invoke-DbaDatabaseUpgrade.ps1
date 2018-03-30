@@ -60,7 +60,7 @@ function Invoke-DbaDatabaseUpgrade {
 
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        License: MIT https://opensource.org/licenses/MIT
 
 
     .LINK
@@ -107,7 +107,8 @@ function Invoke-DbaDatabaseUpgrade {
         [switch]$Force,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
 

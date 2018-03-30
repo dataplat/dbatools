@@ -11,8 +11,7 @@ function Get-DbaAgentJobHistory {
             https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.agent.jobhistoryfilter(v=sql.120).aspx
 
         .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
-            to be executed against multiple SQL Server instances.
+            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
         .PARAMETER SqlCredential
             SqlCredential object to connect as. If not specified, current Windows login will be used.
@@ -21,7 +20,7 @@ function Get-DbaAgentJobHistory {
             The name of the job from which the history is wanted. If unspecified, all jobs will be processed.
 
         .PARAMETER ExcludeJob
-        The job(s) to exclude - this list is auto-populated from the server
+            The job(s) to exclude - this list is auto-populated from the server
 
         .PARAMETER StartDate
             The DateTime starting from which the history is wanted. If unspecified, all available records will be processed.
@@ -51,7 +50,7 @@ function Get-DbaAgentJobHistory {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaAgentJobHistory
@@ -102,7 +101,6 @@ function Get-DbaAgentJobHistory {
             Get-DbaAgentJob -SqlInstance sql2016 | Where Name -match backup | Get-DbaAgentJobHistory
 
             Gets all jobs with the name that match the regex pattern "backup" and then gets the job history from those. You can also use -Like *backup* in this example.
-
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
@@ -119,7 +117,8 @@ function Get-DbaAgentJobHistory {
         [switch]$WithOutputFile,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Collection")]
         [Microsoft.SqlServer.Management.Smo.Agent.Job]$JobCollection,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

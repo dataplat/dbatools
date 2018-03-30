@@ -40,9 +40,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $(Get-DbaSqlInstanceProperty -SqlInstance $script:instance1, $script:instance2 | Select-Object -unique SqlInstance).count | Should Be 2
         }
     }
-    Context "Command stops when can't connect" {
-        It "Should warn cannot connect to MadeUpServer" {
-            { Get-DbaSqlInstanceProperty -SqlInstance MadeUpServer -EnableException } | Should Throw "Can't connect to MadeUpServer"
-        }
-    }
 }

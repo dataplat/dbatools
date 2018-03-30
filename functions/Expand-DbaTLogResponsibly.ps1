@@ -106,7 +106,7 @@ function Expand-DbaTLogResponsibly {
             Website: https://dbatools.io
             Copyright (C) 2016 Chrissy LeMaire
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Expand-DbaTLogResponsibly
@@ -251,7 +251,7 @@ function Expand-DbaTLogResponsibly {
                     $currentSizeMB = $currentSize / 1024
 
                     #Get the number of VLFs
-                    $initialVLFCount = Test-DbaVirtualLogFile -SqlInstance $server -Database $db
+                    $initialVLFCount = Test-DbaDbVirtualLogFile -SqlInstance $server -Database $db
 
                     Write-Message -Level Verbose -Message "$step - Log file current size: $([System.Math]::Round($($currentSize/1024.0), 2)) MB "
                     [long]$requiredSpace = ($TargetLogSizeKB - $currentSize)
@@ -487,7 +487,7 @@ function Expand-DbaTLogResponsibly {
                 }
 
                 #Get the number of VLFs
-                $currentVLFCount = Test-DbaVirtualLogFile -SqlInstance $server -Database $db
+                $currentVLFCount = Test-DbaDbVirtualLogFile -SqlInstance $server -Database $db
 
                 [pscustomobject]@{
                     ComputerName    = $server.NetName

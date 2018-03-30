@@ -79,7 +79,7 @@ Internal parameter for piped objects - this will likely go away once we move to 
 Author: niphlod
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .LINK
 https://dbatools.io/Set-DbaDatabaseState
@@ -138,7 +138,8 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
         [switch]$RestrictedUser,
         [switch]$MultiUser,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
         [parameter(Mandatory = $true, ValueFromPipeline, ParameterSetName = "Database")]
         [PsCustomObject[]]$DatabaseCollection
     )
@@ -197,16 +198,10 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
             'EmergencyMode' = 'EMERGENCY'
         }
 
-        function Get-DbState($db) {
-            $base = [PSCustomObject]@{
-                'Access' = $null
-                'Status' = $null
-                'RW'     = $null
-            }
-            $base.RW = $ReadOnlyHash[$db.ReadOnly]
-            $base.Access = $UserAccessHash[$db.UserAccess.toString()]
+        function Get-DbState($databaseName, $dbStatuses) {
+            $base = $dbStatuses | Where-Object DatabaseName -ceq $databaseName
             foreach ($status in $StatusHash.Keys) {
-                if ($db.Status -match $status) {
+                if ($base.Status -match $status) {
                     $base.Status = $StatusHash[$status]
                     break
                 }
@@ -285,9 +280,14 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
                 Write-Message -Level Warning -Message "Database $db is a system one, skipping"
                 Continue
             }
+            $dbStatuses = @{}
             $server = $db.Parent
+            if ($server -notin $dbStatuses.Keys) {
+                $dbStatuses[$server] = Get-DbaDatabaseState -SqlInstance $server
+            }
+
             # normalizing properties returned by SMO to something more "fixed"
-            $db_status = Get-DbState $db
+            $db_status = Get-DbState -DatabaseName $db.Name -dbStatuses $dbStatuses[$server]
 
 
             $warn = @()
@@ -512,7 +512,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
                     $newstate = $db_status
                 }
                 else {
-                    $newstate = Get-DbState $db
+                    $newstate = Get-DbState -databaseName $db.Name -dbStatuses $stateCache[$server]
                 }
 
                 [PSCustomObject]@{

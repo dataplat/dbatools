@@ -433,6 +433,49 @@
             </TableControl>
         </View>
 
+        <!-- Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport -->
+        <View>
+            <Name>Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport</Name>
+            <ViewSelectedBy>
+                <TypeName>Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize/>
+                <TableHeaders>
+                    <TableColumnHeader/>
+                    <TableColumnHeader/>
+                    <TableColumnHeader/>
+                    <TableColumnHeader/>
+                    <TableColumnHeader/>
+                    <TableColumnHeader/>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>ComputerName</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>InstanceName</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Port</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Availability</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Confidence</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>ScanTypes</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        
         <!-- Sqlcollaborative.Dbatools.Validation.LinkedServerResult -->
         <View>
             <Name>Sqlcollaborative.Dbatools.Validation.LinkedServerResult</Name>
@@ -510,8 +553,8 @@
 <!-- SIG # Begin signature block -->
 <!-- MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB -->
 <!-- gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR -->
-<!-- AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU/DZJiD4RCh5BY/ggjLI1wRkL -->
-<!-- pAWggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B -->
+<!-- AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUGMMG8fQVlwpkKUenah2nzZgJ -->
+<!-- nsqggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B -->
 <!-- AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD -->
 <!-- VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz -->
 <!-- c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx -->
@@ -642,22 +685,22 @@
 <!-- c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr -->
 <!-- DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx -->
 <!-- DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq -->
-<!-- hkiG9w0BCQQxFgQUrsdtKcH8bKegj/zXwJS/w8MrpJswDQYJKoZIhvcNAQEBBQAE -->
-<!-- ggEAirOaqF9OljSu0beoBpGjUjNQeklnXDZkpxgJJxGhm9XhNwSRW1jErHoKfOv2 -->
-<!-- iOJ+kW0U4y9Z7WzPcrrLaZOKI5S+sOWatFtgLdYTd8yImR4ca/fPCJbvDwiqfKTT -->
-<!-- DSTfHHhChYK9HUHvmYQc5FqGMd7Nn72Nxz0c+9COzu5ObeKrrHoqiPEWmx9xFOB2 -->
-<!-- gVXin5zWdzHtfP2/8W99sM6G506XISihFNOg7N38P8DmKiL11tTtv7a+PKDrEUxH -->
-<!-- Pm53xaI7t6LVsVB0kByMScOsDUaGW71xchEL4UT92nRxG+S+1pRiwJTijnub6NNz -->
-<!-- uWVc6TJ4lecHNVf0dYqmwkamHKGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB -->
+<!-- hkiG9w0BCQQxFgQUgI/qOfU+lQdvQsn1l/2TKV+Zs7kwDQYJKoZIhvcNAQEBBQAE -->
+<!-- ggEAM/WmMp7fekXqnk01zIzs6Kg+30d/O52ZOQgIaBMfuefGQnFR8MYP0eW5lEer -->
+<!-- tSk8VA3PKjvI6HKjXSD5/LxExlx0ekmaYR5zYdep+ldUCKKVgiAE9ZVXbn9e7ASy -->
+<!-- cLSRpab62xeLXbERepcRNAJq2tmYP33fYGgicRZWLk7EXH0JF+ez5cPokmy+Z2kW -->
+<!-- QU+bOVAmLG06jAG8FJVxqMthYcOrWW2mlHdDJ12kf7u1ZPLFPdO6LH2n1CrnjML3 -->
+<!-- fb8GQXQqQV/jjvPm+QDnel/lID2lvgdcZ5GkmRGetOTOAVpbYOxIzG8BtchCmCkN -->
+<!-- Dq8ZQTc8RazpurxsldDBfs5RoqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB -->
 <!-- ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV -->
 <!-- BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg -->
 <!-- SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN -->
-<!-- AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwMjA2MTEzNjIxWjAj -->
-<!-- BgkqhkiG9w0BCQQxFgQUGc5WIqIMEnlMWkCk13u9NEjUMhAwDQYJKoZIhvcNAQEB -->
-<!-- BQAEggEACLOik2X0ncIOnL1LiLgtPCU9+wVzDeovkP89VTd53JErG2SjDBs90dJ5 -->
-<!-- 7/otSNOo0zVV7A6XKEogpU63TupRe39BS5JUPDzA9L6h1/QbyIhI6km9/8m2lCwE -->
-<!-- mj4aHXlcjhCeqqYuxGwlQCEG+nuYEdlNEzHkPeg1U3daSRmUCVkvoQDlebi+cR9E -->
-<!-- u/gGidKiNoMe9bMnif6XAx9Kb45olyb7XOKhLc5V14CJwuRGwAs1rbHAbW52kjkv -->
-<!-- mcuxklKK4fz6cOg62ZIU6n1TNMoIN4IWKRqjagohosCQ6+lNBuZXCfNqNbAHTBaU -->
-<!-- u23hMlODSyldYp/z0dR2YLPDUd8sOA== -->
+<!-- AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwMzI4MTUzNTU1WjAj -->
+<!-- BgkqhkiG9w0BCQQxFgQUCn91v2sa0vc0Lg6LTHqsH7hUJvkwDQYJKoZIhvcNAQEB -->
+<!-- BQAEggEALGbCAAt14W9fT9tK3RywC4h46vug457dOcoUBkYOLEb+9+Q/ujQ+RSV1 -->
+<!-- xQZuBudwoJrw+si9jEKdtrRdqUxlSqGGqAFYnse5klKuXVMZAbKJoYr/6gMzspvI -->
+<!-- wWChqCrwAK/T9CydRWWc+x2fXc5jUO4nnDnizVu0EAlT/vElVgG4oPqjIsEmnrSL -->
+<!-- Wk4du9w003vhFvnxrfCFgY7yYuurEyCkcx5pxFjy3u4rytgKw5Z1TcsNTvfAM89W -->
+<!-- +dEqKDhdUYlE+xCLGD5j22BIwexp4lSa8uBr1bNdIoxkqHPavw65/JLuHWUlcDKW -->
+<!-- IPlYdU6/dRTGLjZSExHMK+PoWsOV4w== -->
 <!-- SIG # End signature block -->

@@ -46,7 +46,7 @@ function Restart-DbaSqlService {
 
     dbatools PowerShell module (https://dbatools.io)
     Copyright (C) 2017 Chrissy LeMaire
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    License: MIT https://opensource.org/licenses/MIT
 
     .LINK
     https://dbatools.io/Restart-DbaSqlService
@@ -90,7 +90,8 @@ function Restart-DbaSqlService {
         [int]$Timeout = 30,
         [PSCredential]$Credential,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $processArray = @()

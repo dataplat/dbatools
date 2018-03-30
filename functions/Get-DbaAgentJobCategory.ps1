@@ -1,88 +1,80 @@
 function Get-DbaAgentJobCategory {
     <#
-.SYNOPSIS
-Get-DbaAgentJobCategory retrieves the job categories.
+        .SYNOPSIS
+            Get-DbaAgentJobCategory retrieves the job categories.
 
-.DESCRIPTION
-Get-DbaAgentJobCategory makes it possible to retrieve the job categories.
+        .DESCRIPTION
+            Get-DbaAgentJobCategory makes it possible to retrieve the job categories.
 
-.PARAMETER SqlInstance
-SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        .PARAMETER SqlInstance
+             SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-To connect as a different Windows user, run PowerShell as that user.
+        .PARAMETER SqlCredential
+            SqlCredential object to connect as. If not specified, current Windows login will be used.
 
-.PARAMETER Category
-The name of the category to filter out. If no category is used all catgories will be returned.
+        .PARAMETER Category
+            The name of the category to filter out. If no category is used all catgories will be returned.
 
-.PARAMETER CategoryType
-The type of category. This can be "LocalJob", "MultiServerJob" or "None".
-If no category is used all catgories types will be returned.
+        .PARAMETER CategoryType
+            The type of category. This can be "LocalJob", "MultiServerJob" or "None".
+            If no category is used all catgories types will be returned.
 
-.PARAMETER Force
-The force parameter will ignore some errors in the parameters and assume defaults.
+        .PARAMETER Force
+            The force parameter will ignore some errors in the parameters and assume defaults.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+        .NOTES
+            Author: Sander Stad (@sqlstad, sqlstad.nl)
+            Tags: Agent, Job, Job Category
 
-.PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-.NOTES
-Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job, Job Category
+        .LINK
+            https://dbatools.io/Get-DbaAgentJobCategory
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .EXAMPLE
+            Get-DbaAgentJobCategory -SqlInstance sql1
 
-.LINK
-https://dbatools.io/Get-DbaAgentJobCategory
+            Return all the job categories.
 
-.EXAMPLE
-Get-DbaAgentJobCategory -SqlInstance sql1
+        .EXAMPLE
+            Get-DbaAgentJobCategory -SqlInstance sql1 -Category 'Log Shipping'
 
-Return all the job categories.
+            Return all the job categories that have the name 'Log Shipping'.
 
-.EXAMPLE
-Get-DbaAgentJobCategory -SqlInstance sql1 -Category 'Log Shipping'
+        .EXAMPLE
+            Get-DbaAgentJobCategory -SqlInstance sstad-pc -CategoryType MultiServerJob
 
-Return all the job categories that have the name 'Log Shipping'.
-
-.EXAMPLE
-Get-DbaAgentJobCategory -SqlInstance sstad-pc -CategoryType MultiServerJob
-
-Return all the job categories that have a type MultiServerJob.
-
-#>
+            Return all the job categories that have a type MultiServerJob.
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]$SqlInstance,
+        [DbaInstance[]]$SqlInstance,
+        [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
         [ValidateSet("LocalJob", "MultiServerJob", "None")]
         [string]$CategoryType,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {
 
         foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Connecting to $instance."
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -127,6 +119,5 @@ Return all the job categories that have a type MultiServerJob.
         if (Test-FunctionInterrupt) { return }
         Write-Message -Message "Finished retrieving job category." -Level Verbose
     }
-
 
 }

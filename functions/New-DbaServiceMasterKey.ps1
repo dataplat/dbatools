@@ -31,7 +31,7 @@ Tags: Certificate
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
 New-DbaServiceMasterKey -SqlInstance Server1
@@ -46,7 +46,8 @@ You will be prompted to securely enter your Service Key Password twice, then a m
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Security.SecureString]$Password,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

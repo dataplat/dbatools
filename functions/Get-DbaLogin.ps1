@@ -55,7 +55,7 @@ function Get-DbaLogin {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaLogin
@@ -131,12 +131,11 @@ function Get-DbaLogin {
             Using Get-DbaLogin on the pipeline to get all Disabled logins that have access on servers sql2016 or sql2014.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [object[]]$Login,
         [object[]]$IncludeFilter,
         [object[]]$ExcludeLogin,
@@ -147,13 +146,15 @@ function Get-DbaLogin {
         [switch]$HasAccess,
         [switch]$Locked,
         [switch]$Disabled,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {
-        foreach ($Instance in $sqlInstance) {
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
@@ -180,7 +181,7 @@ function Get-DbaLogin {
 
             if ($IncludeFilter) {
                 $serverLogins = $serverLogins | Where-Object {
-                    ForEach ($filter in $IncludeFilter) {
+                    foreach ($filter in $IncludeFilter) {
                         if ($_.Name -like $filter) {
                             return $true;
                         }
@@ -193,7 +194,7 @@ function Get-DbaLogin {
             }
 
             if ($ExcludeFilter) {
-                ForEach ($filter in $ExcludeFilter) {
+                foreach ($filter in $ExcludeFilter) {
                     $serverLogins = $serverLogins | Where-Object Name -NotLike $filter
                 }
             }
@@ -228,7 +229,7 @@ function Get-DbaLogin {
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
 
                 Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled
-            } #foreach serverlogin
-        } #foreach instance
-    } #process
-} #function
+            }
+        }
+    }
+}

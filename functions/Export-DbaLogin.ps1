@@ -64,7 +64,7 @@ function Export-DbaLogin {
             Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Export-DbaLogin
@@ -118,7 +118,8 @@ function Export-DbaLogin {
         [switch]$Append,
         [switch]$NoDatabases,
         [switch]$NoJobs,
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
         [switch]$ExcludeGoBatchSeparator,
         [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
         [string]$DestinationVersion
@@ -176,7 +177,7 @@ function Export-DbaLogin {
             $scriptVersion = $versions[$destinationVersion]
         }
 
-        if ($NoDatabases -eq $false) {
+        if ($NoDatabases -eq $false -or $Database) {
             # if we got a database or a list of databases passed
             # and we need to enumerate mappings, login.enumdatabasemappings() takes forever
             # the cool thing though is that database.enumloginmappings() is fast. A lot.
@@ -368,11 +369,12 @@ function Export-DbaLogin {
             }
 
             if ($NoDatabases -eq $false) {
-                if ($userName -notin $DbMapping.LoginName) {
-                    Write-Message -Level VeryVerbose -Message "Skipping as $userName is not mapped to an user of the databases."
-                    continue
-                }
                 $dbs = $sourceLogin.EnumDatabaseMappings()
+
+                if ($Database) {
+                    $dbs = $dbs | Where-Object { $_.DBName -in $Database }
+                }
+
                 # Adding database mappings and securables
                 foreach ($db in $dbs) {
                     $dbName = $db.dbname

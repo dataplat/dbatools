@@ -33,7 +33,7 @@ Author: Klaas Vandenberghe ( @powerdbaklaas )
 Author: Simone Bizzotto ( @niphlod )
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .LINK
 https://dbatools.io/Get-DbaMaintenanceSolutionLog
@@ -81,7 +81,8 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a, the other options a
         [string[]]$LogType = 'IndexOptimize',
         [datetime]$Since,
         [string]$Path,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         function process-block ($block) {

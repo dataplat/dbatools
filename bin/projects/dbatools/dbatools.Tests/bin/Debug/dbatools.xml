@@ -1761,6 +1761,311 @@
             This message is a warning, sure sign something went badly wrong
             </summary>
         </member>
+        <member name="T:Sqlcollaborative.Dbatools.Discovery.DbaBrowserReply">
+            <summary>
+            The reply the browser service gave
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaBrowserReply.MachineName">
+            <summary>
+            The machine name of the computer
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaBrowserReply.ComputerName">
+            <summary>
+            the computername of the computer
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaBrowserReply.SqlInstance">
+            <summary>
+            The instance running on the computer
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaBrowserReply.InstanceName">
+            <summary>
+            The name of the instance, running on the computer
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaBrowserReply.TCPPort">
+            <summary>
+            The port number the instance is running under
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaBrowserReply.Version">
+            <summary>
+            The version of the SQL Server
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaBrowserReply.IsClustered">
+            <summary>
+            Whether the instance is part of a cluster or no.
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Discovery.DbaBrowserReply.ToString">
+            <summary>
+            Override in order to make it look neater in PowerShell
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Discovery.DbaInstanceAvailability">
+            <summary>
+            Indiciator for whether an instance is known to be available or not
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceAvailability.Unknown">
+            <summary>
+            It is not known, whether the instance is available or not
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceAvailability.Available">
+            <summary>
+            The instance is known to be available
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceAvailability.Unavailable">
+            <summary>
+            The instance is known to be not available
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Discovery.DbaInstanceConfidenceLevel">
+            <summary>
+            How high is our confidence that this is a valid instance?
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceConfidenceLevel.None">
+            <summary>
+            No confidence at all. There is virtually no way for this to be an instance
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceConfidenceLevel.Low">
+            <summary>
+            We have a few indications, but couldn't follow them up
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceConfidenceLevel.Medium">
+            <summary>
+            We're fairly sure this is legit, but can't guarantee it
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceConfidenceLevel.High">
+            <summary>
+            This absolutely is an instance
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport">
+            <summary>
+            The report on a discovered instance
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.MachineName">
+            <summary>
+            The computername of the underlying machine. Usually equal to the computername, but may differ in case of clusters
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.ComputerName">
+            <summary>
+            The computername of the target
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.InstanceName">
+            <summary>
+            The name of the instance
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.FullName">
+            <summary>
+            The full server instance name
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.SqlInstance">
+            <summary>
+            The full name usable to connect via SMO
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.Port">
+            <summary>
+            The port number the server listens on
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.Timestamp">
+            <summary>
+            When the scan was concluded
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.TcpConnected">
+            <summary>
+            Was a TCP connect successful?
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.SqlConnected">
+            <summary>
+            Was a connection via SQL successful (even if we got access denied)
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.DnsResolution">
+            <summary>
+            The DNS Resolution object
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.Ping">
+            <summary>
+            The ping resolution object
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.BrowseReply">
+            <summary>
+            The reply received from the browse request
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.Services">
+            <summary>
+            The windows services for the instance
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.SystemServices">
+            <summary>
+            The SQL Server services that do not belong to that instance alone
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.SPNs">
+            <summary>
+            Service Principal Names found
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.PortsScanned">
+            <summary>
+            The ports that have been scanned
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.Availability">
+            <summary>
+            What we know about its availability
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.Confidence">
+            <summary>
+            How confident we are, that this is a real instance
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport.ScanTypes">
+            <summary>
+            What we used to scan the instance
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType">
+            <summary>
+            What discovery mechanisms to use
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType.IPRange">
+            <summary>
+            We shall sweep the network for instances, by targeting every IP within a range.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType.Domain">
+            <summary>
+            We shall search for SQL SPNs in active directory
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType.DataSourceEnumeration">
+            <summary>
+            We shall use the SSMS Data Sizrce Enumeration mechanism and hope for the best
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType.All">
+            <summary>
+            We shall use all tools in our control to find stuff
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType">
+            <summary>
+            The mechanisms we use to determine, whether a given host contains a legit instance
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType.TCPPort">
+            <summary>
+            Try connecting to specific ports
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType.SqlConnect">
+            <summary>
+            Try to connect to discovered instances (improves confidence)
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType.SqlService">
+            <summary>
+            Check the windows services on the target
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType.DNSResolve">
+            <summary>
+            Try resolving a computername in DNS
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType.SPN">
+            <summary>
+            Scan the SPNs for the targeted computer
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType.Browser">
+            <summary>
+            Try contacting the local browser service and demand answers
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType.Ping">
+            <summary>
+            See whether you can ping the host
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType.All">
+            <summary>
+            Do EVERYTHING
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType.Default">
+            <summary>
+            Do all the things we consider sane defaults
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Discovery.DbaPortReport">
+            <summary>
+            We tried to connect to a port, how did it go?
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaPortReport.ComputerName">
+            <summary>
+            The name of the computer connected to
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaPortReport.Port">
+            <summary>
+            The number of the port we tried to connect to.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Discovery.DbaPortReport.IsOpen">
+            <summary>
+            Whether the port was open
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Discovery.DbaPortReport.#ctor">
+            <summary>
+            Creates an empty report (serialization uses this)
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Discovery.DbaPortReport.#ctor(System.String,System.Int32,System.Boolean)">
+            <summary>
+            Creates a filled in report
+            </summary>
+            <param name="ComputerName">The name of the computer connected to</param>
+            <param name="Port">The port we tried to connect to</param>
+            <param name="IsOpen">Whether things worked out</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Discovery.DbaPortReport.ToString">
+            <summary>
+            Displays port connection reports in a user friendly manner
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Exceptions.BloodyHellGiveMeSomethingToWorkWithException">
             <summary>
             An exception that is thrown by parameter classes when given empty input
@@ -2111,6 +2416,76 @@
             <param name="Format">Irrelevant</param>
             <returns></returns>
         </member>
+        <member name="T:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter">
+            <summary>
+            Parameter class that accepts anything pointing at a database
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter.InputObject">
+            <summary>
+            The original object passed to the parameter
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter.Database">
+            <summary>
+            The SMO Database Object
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter.Name">
+            <summary>
+            The name of the database
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter.#ctor(System.String)">
+            <summary>
+            Accepts the name of a database and converts it to a DbaDatabaseParameter
+            </summary>
+            <param name="Name"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter.#ctor(System.Object)">
+            <summary>
+            Accepts anything and tries to convert it to a live SMO Database object
+            </summary>
+            <param name="Item">The item to convert</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseParameter.ToString">
+            <summary>
+            Overrides the regular tostring to show something pleasant and useful
+            </summary>
+            <returns>The name of the database</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter">
+            <summary>
+            Parameter class that only accepts live SMO Databases
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter.InputObject">
+            <summary>
+            The original object passed to the parameter
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter.Database">
+            <summary>
+            The SMO Database Object
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter.Name">
+            <summary>
+            The name of the database
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter.#ctor(System.Object)">
+            <summary>
+            Accepts anything and tries to convert it to a live SMO Database object
+            </summary>
+            <param name="Item">The item to convert</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter.ToString">
+            <summary>
+            Overrides the regular tostring to show something pleasant and useful
+            </summary>
+            <returns>The name of the database</returns>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter">
             <summary>
             Input converter for Computer Management Information
@@ -2316,6 +2691,12 @@
             Creates a DBA Instance Parameter from an established SQL Connection
             </summary>
             <param name="Connection">The connection to reuse</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter.#ctor(Sqlcollaborative.Dbatools.Discovery.DbaInstanceReport)">
+            <summary>
+            Accept and understand discovery reports.
+            </summary>
+            <param name="Report">The report to interpret</param>
         </member>
         <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter.#ctor(System.Object)">
             <summary>
@@ -2802,6 +3183,46 @@
             </summary>
             <param name="Name">THe name of the user to put in the prompt</param>
             <returns>The result object</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Utility.SizeStyle">
+            <summary>
+            How size objects should be displayed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Dynamic">
+            <summary>
+            The size object is styled dependend on the number stored within.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Plain">
+            <summary>
+            The size object is shown as a plain number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Byte">
+            <summary>
+            The size object is styled as a byte number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Kilobyte">
+            <summary>
+            The size object is styled as a kilobyte number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Megabyte">
+            <summary>
+            The size object is styled as a megabyte number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Gigabyte">
+            <summary>
+            The size object is styled as a Gigabyte number
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.SizeStyle.Terabyte">
+            <summary>
+            The size object is styled as a Terabyte number
+            </summary>
         </member>
         <member name="T:Sqlcollaborative.Dbatools.Utility.DateTimeExtension">
             <summary>
@@ -4227,6 +4648,11 @@
             Number if digits behind the dot.
             </summary>
         </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.Size.Style">
+            <summary>
+            How the size object should be displayed.
+            </summary>
+        </member>
         <member name="M:Sqlcollaborative.Dbatools.Utility.Size.ToString">
             <summary>
             Shows the default string representation of size
@@ -4286,6 +4712,38 @@
             <param name="a">The first size to substract</param>
             <param name="b">The second size to substract</param>
             <returns>The difference between both sizes</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.Size.op_Multiply(Sqlcollaborative.Dbatools.Utility.Size,System.Double)">
+            <summary>
+            Multiplies two sizes with each other
+            </summary>
+            <param name="a">The size to multiply</param>
+            <param name="b">The size to multiply with</param>
+            <returns>A multiplied size.</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.Size.op_Division(Sqlcollaborative.Dbatools.Utility.Size,System.Double)">
+            <summary>
+            Divides one size by another.
+            </summary>
+            <param name="a">The size to divide</param>
+            <param name="b">The size to divide with</param>
+            <returns>Divided size (note: Cut off)</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.Size.op_Multiply(Sqlcollaborative.Dbatools.Utility.Size,Sqlcollaborative.Dbatools.Utility.Size)">
+            <summary>
+            Multiplies two sizes with each other
+            </summary>
+            <param name="a">The size to multiply</param>
+            <param name="b">The size to multiply with</param>
+            <returns>A multiplied size.</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.Size.op_Division(Sqlcollaborative.Dbatools.Utility.Size,Sqlcollaborative.Dbatools.Utility.Size)">
+            <summary>
+            Divides one size by another.
+            </summary>
+            <param name="a">The size to divide</param>
+            <param name="b">The size to divide with</param>
+            <returns>Divided size (note: Cut off)</returns>
         </member>
         <member name="M:Sqlcollaborative.Dbatools.Utility.Size.op_Implicit(System.Int32)~Sqlcollaborative.Dbatools.Utility.Size">
             <summary>
@@ -4357,6 +4815,16 @@
         <member name="F:Sqlcollaborative.Dbatools.Utility.UtilityHost.FormatTime">
             <summary>
             Formating string for time-style datetime objects
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.UtilityHost.SizeDigits">
+            <summary>
+            The number of digits a size object shows by default
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Utility.UtilityHost.SizeStyle">
+            <summary>
+            The way size objects are usually displayed
             </summary>
         </member>
         <member name="M:Sqlcollaborative.Dbatools.Utility.UtilityHost.IsLike(System.String,System.String,System.Boolean)">

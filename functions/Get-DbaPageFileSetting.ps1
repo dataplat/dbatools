@@ -27,7 +27,7 @@ function Get-DbaPageFileSetting {
         
         dbatools PowerShell module (https://dbatools.io)
         Copyright (C) 2016 Chrissy LeMaire
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        License: MIT https://opensource.org/licenses/MIT
     
     .EXAMPLE
         Get-DbaPageFileSetting -ComputerName ServerA,ServerB
@@ -49,7 +49,8 @@ function Get-DbaPageFileSetting {
         [Alias("cn", "host", "ServerInstance", "Server", "SqlServer")]
         [DbaInstance]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         foreach ($computer in $ComputerName) {

@@ -125,7 +125,7 @@ function Connect-DbaInstance {
         dbatools PowerShell module (https://dbatools.io)
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Connect-DbaInstance
@@ -250,29 +250,29 @@ function Connect-DbaInstance {
 
                 $server.ConnectionContext.ApplicationName = $ClientName
 
-                if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
-                if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
-                if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
-                if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
-                if ($EncryptConnection) { $server.ConnectionContext.EncryptConnection = $true }
-                if ($IsActiveDirectoryUniversalAuth) { $server.ConnectionContext.IsActiveDirectoryUniversalAuth = $true }
-                if ($LockTimeout) { $server.ConnectionContext.LockTimeout = $LockTimeout }
-                if ($MaxPoolSize) { $server.ConnectionContext.MaxPoolSize = $MaxPoolSize }
-                if ($MinPoolSize) { $server.ConnectionContext.MinPoolSize = $MinPoolSize }
-                if ($MultipleActiveResultSets) { $server.ConnectionContext.MultipleActiveResultSets = $true }
-                if ($NetworkProtocol) { $server.ConnectionContext.NetworkProtocol = $NetworkProtocol }
-                if ($NonPooledConnection) { $server.ConnectionContext.NonPooledConnection = $true }
-                if ($PacketSize) { $server.ConnectionContext.PacketSize = $PacketSize }
-                if ($PooledConnectionLifetime) { $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime }
-                if ($StatementTimeout) { $server.ConnectionContext.StatementTimeout = $StatementTimeout }
-                if ($SqlExecutionModes) { $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes }
-                if ($TrustServerCertificate) { $server.ConnectionContext.TrustServerCertificate = $true }
-                if ($WorkstationId) { $server.ConnectionContext.WorkstationId = $WorkstationId }
+                if (Test-Bound -ParameterName 'AccessToken') { $server.ConnectionContext.AccessToken = $AccessToken }
+                if (Test-Bound -ParameterName 'BatchSeparator') { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
+                if (Test-Bound -ParameterName 'ConnectTimeout') { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
+                if (Test-Bound -ParameterName 'Database') { $server.ConnectionContext.DatabaseName = $Database }
+                if (Test-Bound -ParameterName 'EncryptConnection') { $server.ConnectionContext.EncryptConnection = $true }
+                if (Test-Bound -ParameterName 'IsActiveDirectoryUniversalAuth') { $server.ConnectionContext.IsActiveDirectoryUniversalAuth = $true }
+                if (Test-Bound -ParameterName 'LockTimeout') { $server.ConnectionContext.LockTimeout = $LockTimeout }
+                if (Test-Bound -ParameterName 'MaxPoolSize') { $server.ConnectionContext.MaxPoolSize = $MaxPoolSize }
+                if (Test-Bound -ParameterName 'MinPoolSize') { $server.ConnectionContext.MinPoolSize = $MinPoolSize }
+                if (Test-Bound -ParameterName 'MultipleActiveResultSets') { $server.ConnectionContext.MultipleActiveResultSets = $true }
+                if (Test-Bound -ParameterName 'NetworkProtocol') { $server.ConnectionContext.NetworkProtocol = $NetworkProtocol }
+                if (Test-Bound -ParameterName 'NonPooledConnection') { $server.ConnectionContext.NonPooledConnection = $true }
+                if (Test-Bound -ParameterName 'PacketSize') { $server.ConnectionContext.PacketSize = $PacketSize }
+                if (Test-Bound -ParameterName 'PooledConnectionLifetime') { $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime }
+                if (Test-Bound -ParameterName 'StatementTimeout') { $server.ConnectionContext.StatementTimeout = $StatementTimeout }
+                if (Test-Bound -ParameterName 'SqlExecutionModes') { $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes }
+                if (Test-Bound -ParameterName 'TrustServerCertificate') { $server.ConnectionContext.TrustServerCertificate = $true }
+                if (Test-Bound -ParameterName 'WorkstationId') { $server.ConnectionContext.WorkstationId = $WorkstationId }
 
                 $connstring = $server.ConnectionContext.ConnectionString
-                if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
-                if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
-                if ($ApplicationIntent) { $connstring = "$connstring;ApplicationIntent=$ApplicationIntent" }
+                if (Test-Bound -ParameterName 'MultiSubnetFailover') { $connstring = "$connstring;MultiSubnetFailover=True" }
+                if (Test-Bound -ParameterName 'FailoverPartner') { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
+                if (Test-Bound -ParameterName 'ApplicationIntent') { $connstring = "$connstring;ApplicationIntent=$ApplicationIntent" }
 
                 if ($connstring -ne $server.ConnectionContext.ConnectionString) {
                     $server.ConnectionContext.ConnectionString = $connstring
@@ -310,8 +310,6 @@ function Connect-DbaInstance {
                 }
 
             }
-
-
 
             if ($loadedSmoVersion -ge 11) {
                 if ($server.VersionMajor -eq 8) {

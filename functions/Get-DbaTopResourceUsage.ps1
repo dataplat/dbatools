@@ -43,7 +43,7 @@ function Get-DbaTopResourceUsage {
         Tags: Query, Performance
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaTopResourceUsage
@@ -81,7 +81,8 @@ function Get-DbaTopResourceUsage {
         [ValidateSet("All", "Duration", "Frequency", "IO", "CPU")]
         [string[]]$Type = "All",
         [int]$Limit = 20,
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
         [switch]$ExcludeSystem
     )
 

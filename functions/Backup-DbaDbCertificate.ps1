@@ -53,7 +53,7 @@ function Backup-DbaDbCertificate {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
             Backup-DbaDbCertificate -SqlInstance Server1
@@ -119,7 +119,8 @@ function Backup-DbaDbCertificate {
         [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
         [parameter(ValueFromPipeline, ParameterSetName = "collection")]
         [Microsoft.SqlServer.Management.Smo.Certificate[]]$CertificateCollection,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

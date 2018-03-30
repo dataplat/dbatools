@@ -43,7 +43,7 @@ function Set-DbaMaxMemory {
             Tags: MaxMemory, Memory
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Set-DbaMaxMemory
@@ -108,7 +108,7 @@ function Set-DbaMaxMemory {
                 $currentServer.OldMaxValue = $currentServer.SqlMaxMB
             }
             catch {
-                Stop-Function -Mesage "Issue collecting memory information on $server" -Target $server -ErrorRecord $_ -InnerException $_.Exception -Continue
+                Stop-Function -Message "Issue collecting memory information on $server" -Target $server -ErrorRecord $_ -InnerException $_.Exception -Continue
             }
 
             try {

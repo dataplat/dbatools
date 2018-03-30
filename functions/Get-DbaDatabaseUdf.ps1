@@ -32,7 +32,7 @@ Author: Klaas Vandenberghe ( @PowerDbaKlaas )
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
 Get-DbaDatabaseUdf -SqlInstance sql2016
@@ -69,7 +69,8 @@ Gets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemUdf,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

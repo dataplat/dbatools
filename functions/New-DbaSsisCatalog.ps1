@@ -34,7 +34,7 @@ Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 Tags:
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .LINK
 https://dbatools.io/New-DbaSsisCatalog
@@ -61,7 +61,8 @@ Creates the SSIS Catalog on server DEV01 with the specified password.
         [parameter(Mandatory = $true)]
         [Security.SecureString]$Password,
         [string]$SsisCatalog = "SSISDB",
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

@@ -39,7 +39,7 @@ function Invoke-DbaDatabaseClone {
         Tags: Statistics, Performance
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Invoke-DbaDatabaseClone
@@ -63,7 +63,8 @@ function Invoke-DbaDatabaseClone {
         [object]$Database,
         [string[]]$CloneDatabase,
         [switch]$UpdateStatistics,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

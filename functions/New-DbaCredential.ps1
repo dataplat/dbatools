@@ -15,7 +15,7 @@ Allows you to login to SQL Server using alternative credentials
 .PARAMETER Name
 The Credential name
 
-.PARAMETER CredentialIdentity
+.PARAMETER Identity
 The Credential Identity
 
 .PARAMETER Password
@@ -46,7 +46,7 @@ Tags: Certificate
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
 New-DbaCredential -SqlInstance Server1
@@ -58,6 +58,19 @@ New-DbaCredential -SqlInstance Server1 -Database db1 -Confirm:$false
 
 Suppresses all prompts to install but prompts to securely enter your password and creates a credential in the 'db1' database
 
+.EXAMPLE
+New-DbaCredential -SqlInstance Server1 -Name AzureBackupBlobStore -Identity '<Azure Storage Account Name>' -Password (ConvertTo-SecureString '<Azure Storage Account Access Key>' -AsPlainText -Force)
+
+Create credential on SQL Server 2012 CU2, SQL Server 2014 for use with BACKUP TO URL.
+CredentialIdentity needs to be supplied with the Azure Storage Account Name.
+Password needs to be one of the Access Keys for the account.
+
+.EXAMPLE
+New-DbaCredential -SqlInstance Server1 -Name 'https://<Azure Storage Account Name>.blob.core.windows.net/<Blob Store Container Name>' -Identity 'SHARED ACCESS SIGNATURE' -Password (ConvertTo-SecureString '<Shared Access Token>' -AsPlainText -Force)
+
+Create Credential on SQL Server 2016 or higher for use with BACKUP TO URL.
+Name has to be the full URL for the blob store container that will be the backup target.
+Password needs to be passed the Shared Access Token (SAS Key).
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true)] #, ConfirmImpact = "High"
@@ -66,15 +79,17 @@ Suppresses all prompts to install but prompts to securely enter your password an
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Name = $CredentialIdentity,
+        [object[]]$Name = $Identity,
         [parameter(Mandatory)]
-        [object[]]$CredentialIdentity,
+        [Alias("CredentialIdentity")]
+        [string[]]$Identity,
         [Security.SecureString]$Password,
         [ValidateSet('CryptographicProvider', 'None')]
         [string]$MappedClassType = "None",
         [string]$ProviderName,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
@@ -98,7 +113,7 @@ Suppresses all prompts to install but prompts to securely enter your password an
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            foreach ($cred in $CredentialIdentity) {
+            foreach ($cred in $Identity) {
                 $currentcred = $server.Credentials[$name]
 
                 if ($currentcred) {
@@ -117,7 +132,7 @@ Suppresses all prompts to install but prompts to securely enter your password an
                         $credential = New-Object Microsoft.SqlServer.Management.Smo.Credential -ArgumentList $server, $name
                         $credential.MappedClassType = $mappedclass
                         $credential.ProviderName = $ProviderName
-                        $credential.Create($CredentialIdentity, $Password)
+                        $credential.Create($Identity, $Password)
 
                         Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name ComputerName -value $server.NetName
                         Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name InstanceName -value $server.ServiceName

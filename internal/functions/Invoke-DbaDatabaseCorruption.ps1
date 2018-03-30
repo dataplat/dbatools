@@ -40,7 +40,7 @@ function Invoke-DbaDatabaseCorruption {
       Reference: https://www.sqlskills.com/blogs/paul/dbcc-writepage/
       Website: https://dbatools.io
       Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-      License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+      License: MIT https://opensource.org/licenses/MIT
 
       .LINK
       https://dbatools.io/Invoke-DbaDatabaseCorruption
@@ -65,7 +65,8 @@ function Invoke-DbaDatabaseCorruption {
         [parameter(Mandatory)]
         [string]$Database,
         [string]$Table,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     # For later if we want to do bit flipping.
     # function Dbcc-ReadPage {

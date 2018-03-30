@@ -27,11 +27,11 @@ function Get-DbaXESession {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Memory
+            Tags: ExtendedEvent, XE, Xevent
             Author: Klaas Vandenberghe ( @PowerDBAKlaas )
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaXESession
@@ -60,7 +60,8 @@ function Get-DbaXESession {
         [PSCredential]$SqlCredential,
         [Alias("Sessions")]
         [object[]]$Session,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
@@ -72,7 +73,7 @@ function Get-DbaXESession {
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance."
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11 -AzureUnsupported
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -119,6 +120,7 @@ function Get-DbaXESession {
                 try {
                     $xesessions.Refresh()
                 } catch {
+                    Stop-Function -Message "Couldn't refresh XESessions" -ErrorRecord $_ -Continue
                 }
             }
         }

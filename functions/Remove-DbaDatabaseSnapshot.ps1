@@ -1,86 +1,86 @@
 #ValidationTags#FlowControl#
 function Remove-DbaDatabaseSnapshot {
     <#
-.SYNOPSIS
-Removes database snapshots
+    .SYNOPSIS
+        Removes database snapshots
 
-.DESCRIPTION
-Removes (drops) database snapshots from the server
+    .DESCRIPTION
+        Removes (drops) database snapshots from the server
 
-.PARAMETER SqlInstance
-The SQL Server that you're connecting to
+    .PARAMETER SqlInstance
+        The SQL Server that you're connecting to
 
-.PARAMETER SqlCredential
-Credential object used to connect to the SQL Server as a different user
+    .PARAMETER SqlCredential
+        Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Database
-Removes snapshots for only this specific base db
+    .PARAMETER Database
+        Removes snapshots for only this specific base db
 
-.PARAMETER ExcludeDatabase
-Removes snapshots excluding this specific base dbs
+    .PARAMETER ExcludeDatabase
+        Removes snapshots excluding this specific base dbs
 
-.PARAMETER Snapshot
-Restores databases from snapshot with this name only
+    .PARAMETER Snapshot
+        Restores databases from snapshot with this name only
 
-.PARAMETER AllSnapshots
-Specifies that you want to remove all snapshots from the server
+    .PARAMETER AllSnapshots
+        Specifies that you want to remove all snapshots from the server
 
-.PARAMETER Force
-Will forcibly kill all running queries that prevent the drop process.
+    .PARAMETER Force
+        Will forcibly kill all running queries that prevent the drop process.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run
 
-.PARAMETER Confirm
-Prompts for confirmation of every step.
+    .PARAMETER Confirm
+        Prompts for confirmation of every step.
 
-.PARAMETER PipelineSnapshot
-Internal parameter
+    .PARAMETER PipelineSnapshot
+        Internal parameter
 
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Snapshot, Database
-Author: niphlod
+    .NOTES
+        Tags: Snapshot, Database
+        Author: niphlod
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Website: https://dbatools.io
+        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
- https://dbatools.io/Remove-DbaDatabaseSnapshot
+    .LINK
+         https://dbatools.io/Remove-DbaDatabaseSnapshot
 
-.EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a
+    .EXAMPLE
+        Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a
 
-Removes all database snapshots from sqlserver2014a
+        Removes all database snapshots from sqlserver2014a
 
-.EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, HR_snap_20161101
+    .EXAMPLE
+        Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, HR_snap_20161101
 
-Removes database snapshots named HR_snap_20161201 and HR_snap_20161101
+        Removes database snapshots named HR_snap_20161201 and HR_snap_20161101
 
-.EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
+    .EXAMPLE
+        Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 
-Removes all database snapshots having HR and Accounting as base dbs
+        Removes all database snapshots having HR and Accounting as base dbs
 
-.EXAMPLE
-Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot
+    .EXAMPLE
+        Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot
 
-Removes HR_snapshot and Accounting_snapshot
+        Removes HR_snapshot and Accounting_snapshot
 
-.EXAMPLE
-Get-DbaDatabaseSnapshot -SqlInstance sql2016 | Where SnapshotOf -like '*dumpsterfire*' | Remove-DbaDatabaseSnapshot
+    .EXAMPLE
+        Get-DbaDatabaseSnapshot -SqlInstance sql2016 | Where SnapshotOf -like '*dumpsterfire*' | Remove-DbaDatabaseSnapshot
 
-Removes all snapshots associated with databases that have dumpsterfire in the name
+        Removes all snapshots associated with databases that have dumpsterfire in the name
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Mandatory = $false, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -95,7 +95,8 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
         [object]$PipelineSnapshot,
         [switch]$AllSnapshots,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {
@@ -148,7 +149,15 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
             }
 
 
-            $dbs = $server.Databases
+            $alldbq = @"
+SELECT sn.name AS Name, dt.name AS DatabaseSnapshotBaseName, sn.create_date AS CreateDate,
+CASE WHEN sn.state = 6 THEN 0 ELSE 1 END AS IsAccessible,
+CASE WHEN sn.source_database_id IS NOT NULL THEN 1 ELSE 0 END AS IsDatabaseSnapshot
+FROM sys.databases sn
+LEFT JOIN sys.databases dt
+ON sn.source_database_id = dt.database_id
+"@
+            $dbs = $server.Query($alldbq)
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
             }
@@ -166,11 +175,12 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
             }
 
 
-            foreach ($db in $dbs) {
-                if ($db.IsAccessible -eq $false) {
-                    Write-Message -Level Warning -Message "Database $db is not accessible."
+            foreach ($dbraw in $dbs) {
+                if ($dbraw.IsAccessible -eq $false) {
+                    Write-Message -Level Warning -Message "Database $dbraw is not accessible."
                     continue
                 }
+                $db = $server.Databases[$($dbraw.Name)]
                 if ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db")) {
                     $basedb = $db.DatabaseSnapshotBaseName
                     try {

@@ -1,3 +1,4 @@
+#ValidationTags#Messaging#
 function Find-DbaLoginInGroup {
     <#
         .SYNOPSIS
@@ -12,7 +13,7 @@ function Find-DbaLoginInGroup {
 
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to. This can be a
@@ -23,6 +24,11 @@ function Find-DbaLoginInGroup {
 
         .PARAMETER Login
             Find all AD Groups used on the instance that an individual login is a member of.
+
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .LINK
             https://dbatools.io/Find-DbaLoginInGroup
@@ -44,20 +50,21 @@ function Find-DbaLoginInGroup {
 
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$Login
+        [string[]]$Login,
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         try {
             Add-Type -AssemblyName System.DirectoryServices.AccountManagement
         }
         catch {
-            Write-warning "Failed to load Assembly needed"
-            break
+            Stop-Function -Message "Failed to load Assembly needed" -ErrorRecord $_
         }
 
         function Get-AllLogins {
@@ -78,12 +85,12 @@ function Find-DbaLoginInGroup {
                     $group = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($ads, $groupName);
                     $subgroups = @()
                     foreach ($member in $group.Members) {
-                        $memberDomain = $member.distinguishedname -Split "," | Where-Object { $_ -like "DC=*" } | Select-Object -first 1 | ForEach-Object { $_.ToUpper() -replace "DC=", '' }
+                        $memberDomain = $member.DistinguishedName -Split "," | Where-Object { $_ -like "DC=*" } | Select-Object -first 1 | ForEach-Object { $_.ToUpper() -replace "DC=", '' }
                         if ($member.StructuralObjectClass -eq "group") {
                             $fullName = $memberDomain + "\" + $member.SamAccountName
                             if ($fullName -in $discard) {
-                                Write-Verbose "skipping $fullName, already enumerated"
-                                Continue
+                                Write-Message -Level Verbose -Message "skipping $fullName, already enumerated"
+                                continue
                             }
                             else {
                                 $subgroups += $fullName
@@ -103,13 +110,13 @@ function Find-DbaLoginInGroup {
                     }
                 }
                 catch {
-                    Write-Warning "Failed to connect to Group: $member."
+                    Stop-Function -Message "Failed to connect to Group: $member." -Target $member -ErrorRecord $_
                 }
                 $discard += $ADGroup
                 foreach ($gr in $subgroups) {
                     if ($gr -notin $discard) {
                         $discard += $gr
-                        Write-Verbose "Recursing Looking at $gr"
+                        Write-Message -Level Verbose -Message "Looking at $gr, recursively."
                         Get-AllLogins -ADGroup $gr -discard $discard -ParentADGroup $ParentADGroup
                     }
                 }
@@ -121,20 +128,20 @@ function Find-DbaLoginInGroup {
     }
 
     process {
-        foreach ($Instance in $SqlInstance) {
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+
             try {
-                Write-Verbose "Connecting to $Instance"
-                $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
-                Write-Warning "Failed to connect to: $Instance"
-                continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $AdGroups = $server.Logins | Where-Object { $_.LoginType -eq "WindowsGroup" -and $_.Name -ne "BUILTIN\Administrators" -and $_.Name -notlike "*NT SERVICE*" }
 
             foreach ($AdGroup in $AdGroups) {
-                Write-Verbose "Looking at Group: $AdGroup"
+                Write-Message -Level Verbose -Message "Looking at Group: $AdGroup"
                 $ADGroupOut += Get-AllLogins $AdGroup.Name -ParentADGroup $AdGroup.Name
             }
 
@@ -144,7 +151,7 @@ function Find-DbaLoginInGroup {
             else {
                 $res = $ADGroupOut | Where-Object { $Login -contains $_.Login }
                 if ($res.Length -eq 0) {
-                    Write-Warning "No logins matching $($Login -join ',') found connecting to $server"
+                    Write-Message -Level Warning -Message "No logins matching $($Login -join ',') found connecting to $server"
                     continue
                 }
             }

@@ -30,6 +30,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should get 2 dbatoolsci jobs" {
             $results.count | Should Be 2
         }
+        $results = Get-DbaAgentJob -SqlInstance $script:instance2 -Job dbatoolsci_testjob
+        It "Should get a specific job" {
+            $results.name | Should Be "dbatoolsci_testjob"
+        }
+        
     }
     Context "Command gets no disabled jobs" {
         BeforeAll {
@@ -55,11 +60,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Get-DbaAgentJob -SqlInstance $script:instance2 -ExcludeJob dbatoolsci_testjob  | Where-Object {$_.Name -match "dbatoolsci"}
         It "Should not return excluded job" {
             $results.name -contains "dbatoolsci_testjob" | Should Be $False
-        }
-    }
-    Context "Command stops when can't connect" {
-        It "Should warn cannot connect to MadeUpServer" {
-            { Get-DbaAgentJob -SqlInstance MadeUpServer -EnableException } | Should Throw "Can't connect to MadeUpServer"
         }
     }
 }

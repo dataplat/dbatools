@@ -32,6 +32,9 @@ function Repair-DbaOrphanUser {
         .PARAMETER Users
             Specifies the list of usernames to repair.
 
+        .PARAMETER Force
+        Forces alter schema to dbo owner so users can be dropped.
+
         .PARAMETER RemoveNotExisting
             If this switch is enabled, all users that do not have a matching login will be dropped from the database.
 
@@ -81,7 +84,7 @@ function Repair-DbaOrphanUser {
             Author: Claudio Silva (@ClaudioESSilva)
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Repair-DbaOrphanUser
@@ -97,7 +100,9 @@ function Repair-DbaOrphanUser {
         [parameter(Mandatory = $false, ValueFromPipeline = $true)]
         [object[]]$Users,
         [switch]$RemoveNotExisting,
-        [switch][Alias('Silent')]$EnableException
+        [switch]$Force,
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {
@@ -187,7 +192,7 @@ function Repair-DbaOrphanUser {
                                     }
                                 }
                                 else {
-                                    if ($RemoveNotExisting -eq $true) {
+                                    if ($RemoveNotExisting) {
                                         #add user to collection
                                         $UsersToRemove += $User
                                     }
@@ -204,11 +209,19 @@ function Repair-DbaOrphanUser {
                             }
 
                             #With the collection complete invoke remove.
-                            if ($RemoveNotExisting -eq $true) {
-                                if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
+                            if ($RemoveNotExisting) {
+                                if ($Force) {
+                                    if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
+                                        Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser' with -Force."
+                                        Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -User $UsersToRemove -Force
+                                    }
+                                }
+                                Else {
+                                    If ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
                                     Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser'."
                                     Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -User $UsersToRemove
                                 }
+                            }
                             }
                         }
                         else {

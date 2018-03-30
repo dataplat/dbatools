@@ -61,7 +61,7 @@ function Export-DbaUser {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Export-DbaUser
@@ -127,7 +127,8 @@ function Export-DbaUser {
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject = $null,
         [switch]$ExcludeGoBatchSeparator
     )

@@ -101,7 +101,7 @@ Tags: Agent, Job, Job Step
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .LINK
 https://dbatools.io/Set-DbaAgentJobStep
@@ -179,7 +179,8 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
         [Parameter(Mandatory = $false)]
         [string]$ProxyName,
         [Parameter(Mandatory = $false)]
-        [switch][Alias('Silent')]$EnableException,
+        [Alias('Silent')]
+        [switch]$EnableException,
         [Parameter(Mandatory = $false)]
         [switch]$Force
     )

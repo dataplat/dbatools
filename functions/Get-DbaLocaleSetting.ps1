@@ -24,7 +24,7 @@ function Get-DbaLocaleSetting {
       Tags: OS
       dbatools PowerShell module (https://dbatools.io)
       Copyright (C) 2016 Chrissy LeMaire
-      License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+      License: MIT https://opensource.org/licenses/MIT
 
       .LINK
       https://dbatools.io/Get-DbaLocaleSetting
@@ -51,7 +51,8 @@ function Get-DbaLocaleSetting {
         [Alias("cn", "host", "Server")]
         [string[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential] $Credential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     BEGIN {
