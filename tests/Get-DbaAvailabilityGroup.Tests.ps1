@@ -23,7 +23,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     $dbname = "dbatoolsci_agroupdb"
-    if (-not $env:appveyor) {
+    if ($env:COMPUTERNAME -ne 'APPVYR-WIN') {
         BeforeAll {
             # $script:instance2 - to make it appear in the proper place on appveyor
             Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
