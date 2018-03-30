@@ -11,7 +11,7 @@ function Get-DbaJobCategory {
             The SQL Server instance to connect to.
 
         .PARAMETER SqlCredential
-            SqlCredential object to connect as. If not specified, current Windows login will be used.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
