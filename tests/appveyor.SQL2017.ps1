@@ -14,8 +14,6 @@ Set-Service -Name SQLBrowser -StartupType Automatic -WarningAction SilentlyConti
 Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic -WarningAction SilentlyContinue
 Start-Service SQLBrowser -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
-Enable-DbaAgHadr -SqlInstance $sqlinstance -Confirm:$false
-
 Write-Host -Object "$indent Changing the port on $instance to $port" -ForegroundColor DarkGreen
 $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
 $uri = "ManagedComputer[@Name='$env:COMPUTERNAME']/ ServerInstance[@Name='$instance']/ServerProtocol[@Name='Tcp']"
@@ -26,7 +24,10 @@ foreach ($ipAddress in $Tcp.IPAddresses) {
 }
 $Tcp.Alter()
 Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
-Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue -Force
+#Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue -Force
+#Restart-Service "SQLAgent`$$instance" -WarningAction SilentlyContinue -Force
+
+$null = Enable-DbaAgHadr -SqlInstance $sqlinstance -Confirm:$false -Force
 Restart-Service "SQLAgent`$$instance" -WarningAction SilentlyContinue -Force
 
 do {
