@@ -16,10 +16,7 @@ $TestsRunGroups = @{
         'Update-DbaSqlServiceAccount'
     )
     # do not run on appveyor
-    "appveyor_disabled"         = @(
-        'Enable-DbaAgHadr',
-        'Disable-DbaAgHadr'
-    )
+    "appveyor_disabled"         = @()
     # do not run everywhere
     "disabled"                  = @()
 }
