@@ -41,7 +41,7 @@ function Invoke-DbaSqlQuery {
         .PARAMETER AppendServerInstance
             If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
 
-        .PARAMETER DatabaseCollection
+        .PARAMETER InputObject
             A collection of databases (such as returned by Get-DbaDatabase)
 
         .PARAMETER EnableException
@@ -116,7 +116,7 @@ function Invoke-DbaSqlQuery {
         $AppendServerInstance,
 
         [parameter(ValueFromPipeline = $true)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
 
         [Alias('Silent')]
         [switch]
@@ -245,16 +245,16 @@ function Invoke-DbaSqlQuery {
 
     process {
         if (Test-FunctionInterrupt) { return }
-        if (Test-Bound -ParameterName "Database", "DatabaseCollection" -And) {
+        if (Test-Bound -ParameterName "Database", "InputObject" -And) {
             Stop-Function -Category InvalidArgument -Message "You can't use -Database with piped databases"
             return
         }
-        if (Test-Bound -ParameterName "SqlInstance", "DatabaseCollection" -And) {
+        if (Test-Bound -ParameterName "SqlInstance", "InputObject" -And) {
             Stop-Function -Category InvalidArgument -Message "You can't use -SqlInstance with piped databases"
             return
         }
 
-        foreach($db in $DatabaseCollection) {
+        foreach($db in $InputObject) {
             if (!$db.IsAccessible) {
                 Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
                 continue

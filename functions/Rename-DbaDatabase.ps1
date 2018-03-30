@@ -116,8 +116,8 @@ function Rename-DbaDatabase {
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-    .PARAMETER DatabaseCollection
-        Internal parameter to be able to accept piped data
+    .PARAMETER InputObject
+        Accepts piped database objects
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -215,7 +215,7 @@ function Rename-DbaDatabase {
         [switch]$SetOffline,
         [switch]$Preview,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Pipe")]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -246,7 +246,7 @@ function Rename-DbaDatabase {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        if (!$Database -and !$AllDatabases -and !$DatabaseCollection -and !$ExcludeDatabase) {
+        if (!$Database -and !$AllDatabases -and !$InputObject -and !$ExcludeDatabase) {
             Stop-Function -Message "You must specify a -AllDatabases or -Database/ExcludeDatabase to continue"
             return
         }
@@ -255,10 +255,10 @@ function Rename-DbaDatabase {
             return
         }
         $dbs = @()
-        if ($DatabaseCollection) {
-            if ($DatabaseCollection.Name) {
+        if ($InputObject) {
+            if ($InputObject.Name) {
                 # comes from Get-DbaDatabase
-                $dbs += $DatabaseCollection
+                $dbs += $InputObject
             }
         }
         else {
