@@ -32,8 +32,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Get-DbaProcess -SqlInstance $script:instance1 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
     }
-
-    $results = Set-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -MaxRunTime 5 -PercentCompression 0
+    $InputObject = Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname
+    $results = Set-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname -MaxRunTime 5 -PercentCompression 0
     Context "Command handles heaps and clustered indexes" {
         @($results | Where-Object {$_.IndexId -le 1}).Foreach{
             It "Should process object $($PSItem.TableName)" {
@@ -48,14 +48,22 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
     }
-
     Context "Command excludes results for specified database" {
-        It "Shouldn't get any results for $db" {
-            @(Set-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -MaxRunTime 5 -PercentCompression 0)
+        $server.Databases[$dbname].Tables['syscols'].PhysicalPartitions[0].DataCompression = "NONE"
+        $server.Databases[$dbname].Tables['syscols'].Rebuild()
+        It "Shouldn't get any results for $dbname" {
+            $(Set-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname -ExcludeDatabase $dbname -MaxRunTime 5 -PercentCompression 0).Database | Should not Match $dbname
+        }
+    }
+    Context "Command can accept InputObject from Test-DbaDbCompression" {
+        $results = @(Set-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname -MaxRunTime 5 -PercentCompression 0 -InputObject $InputObject)
+        It "Should get results" {
+            $results | Should not be $null
+        }
+        $results.Foreach{
+            It "Should process object $($PSItem.TableName) from InputObject" {
                 $PSItem.AlreadyProcesssed | Should Be $True
             }
         }
-
-
-
+    }
 }
