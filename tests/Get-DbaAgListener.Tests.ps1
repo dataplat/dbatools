@@ -1,4 +1,4 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -25,21 +25,26 @@ InModuleScope dbatools {
     . "$PSScriptRoot\constants.ps1"
     Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         Mock Connect-SqlInstance {
-            Import-Clixml $script:appveyorlabrepo\agserver.xml
+            Import-CliXml $script:appveyorlabrepo\agserver.xml
         }
         Context "gets ag databases" {
-            $results = Get-DbaAgDatabase -SqlInstance sql2016c
+            $results = Get-DbaAgListener -SqlInstance sql2016c
             foreach ($result in $results) {
-                It "returns results with proper data" {
-                    $result.Replica | Should -Be 'SQL2016C'
-                    $result.SynchronizationState | Should -Be 'NotSynchronizing'
+                It "returns results with the right listener information" {
+                    $result.Name | Should -Be 'splistener'
+                    $result.PortNumber | Should -Be '20200'
                 }
             }
-            $results = Get-DbaAgDatabase -SqlInstance sql2016c -Database WSS_Content
-            It "returns results with proper data for one database" {
-                $results.Replica | Should -Be 'SQL2016C'
-                $results.SynchronizationState | Should -Be 'NotSynchronizing'
-                $results.DatabaseName | Should -Be 'WSS_Content'
+            $results = Get-DbaAgListener -SqlInstance sql2016c -Listener splistener
+            foreach ($result in $results) {
+                It "returns results with the right listener information for a single listener" {
+                    $result.Name | Should -Be 'splistener'
+                    $result.PortNumber | Should -Be '20200'
+                }
+            }
+            $results = Get-DbaAgListener -SqlInstance sql2016c -Listener doesntexist
+            It "does not return a non existent listener" {
+            $results | Should -Be $null
             }
         }
     }

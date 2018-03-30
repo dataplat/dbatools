@@ -25,12 +25,12 @@ foreach ($ipAddress in $Tcp.IPAddresses) {
 }
 $Tcp.Alter()
 Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
-Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue
+Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue -Force
 $server = Connect-DbaInstance -SqlInstance $sqlinstance
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 $server.Configuration.Alter()
 $null = Set-DbaStartupParameter -SqlInstance $sqlinstance -TraceFlagsOverride -TraceFlags 7806 -Confirm:$false -ErrorAction SilentlyContinue -EnableException
-Restart-Service "MSSQL`$SQL2008R2SP2" -WarningAction SilentlyContinue
+Restart-Service "MSSQL`$SQL2008R2SP2" -WarningAction SilentlyContinue -Force
 $server = Connect-DbaInstance -SqlInstance $sqlinstance
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 $server.Configuration.Alter()

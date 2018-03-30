@@ -1,25 +1,6 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-
-Describe "$commandname Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        $paramCount = 5
-        <#
-            Get commands, Default count = 11
-            Commands with SupportShouldProcess = 13
-        #>
-        $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaAvailabilityGroup).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'IsPrimary', 'EnableException'
-        it "Should contain our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
-        }
-        it "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
-        }
-    }
-}
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
@@ -62,16 +43,25 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
     }
     
-    Context "gets ags" {
-        $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3
-        It "returns results with proper data" {
-            $results.AvailabilityGroup | Should -Contain 'dbatoolsci_agroup'
-            $results.AvailabilityDatabases.Name | Should -Contain $dbname
+    Context "exports ags" {
+        $results = Export-DbaAvailabilityGroup -SqlInstance $script:instance3
+        It "returns file objects and one should be the name of the availability group" {
+            $results.BaseName | Should -Contain 'dbatoolsci_agroup'
         }
-        $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup dbatoolsci_agroup
+        It "the files it returns should contain the term 'CREATE AVAILABILITY GROUP'" {
+            $results | Select-String 'CREATE AVAILABILITY GROUP' | Should -Not -Be $null
+        }
+        $results | Remove-Item -ErrorAction SilentlyContinue
+        $results = Export-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup dbatoolsci_agroup -FilePath C:\temp
         It "returns a single result" {
-            $results.AvailabilityGroup | Should -Be 'dbatoolsci_agroup'
-            $results.AvailabilityDatabases.Name | Should -Be $dbname
+            $results.BaseName | Should -Be 'dbatoolsci_agroup'
         }
+        It "the file it returns should contain the term 'CREATE AVAILABILITY GROUP'" {
+            $results | Select-String 'CREATE AVAILABILITY GROUP' | Should -Not -Be $null
+        }
+        It "the file's path should match C:\temp" {
+            $results.FullName -match 'C:\\temp' | Should -Be $true
+        }
+        $results | Remove-Item -ErrorAction SilentlyContinue
     }
 }
