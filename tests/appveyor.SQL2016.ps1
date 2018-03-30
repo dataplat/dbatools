@@ -25,8 +25,8 @@ foreach ($ipAddress in $Tcp.IPAddresses) {
 }
 $Tcp.Alter()
 Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
-Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue
-Restart-Service "SQLAgent`$$instance" -WarningAction SilentlyContinue
+Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue -Force
+Restart-Service "SQLAgent`$$instance" -WarningAction SilentlyContinue -Force
 
 do {
     Start-Sleep 1
