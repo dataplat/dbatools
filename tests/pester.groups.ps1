@@ -15,7 +15,8 @@ $TestsRunGroups = @{
         'Get-DbaSqlService',
         'Update-DbaSqlServiceAccount',
         'Enable-DbaAgHadr',
-        'Disable-DbaAgHadr'
+        'Disable-DbaAgHadr',
+        'Reset-DbaAdmin'
     )
     # do not run on appveyor
     # a bug in SMO prevents availability group scripting :(
