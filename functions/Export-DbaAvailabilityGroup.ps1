@@ -164,8 +164,13 @@ function Export-DbaAvailabilityGroup {
                         "*/" | Out-File -FilePath $outFile -Encoding ASCII -Append
 
                         # Script the AG
-                        $ag.Script() | Out-File -FilePath $outFile -Encoding ASCII -Append
-                        Get-ChildItem $outFile
+                        try {
+                            $ag.Script() | Out-File -FilePath $outFile -Encoding ASCII -Append
+                            Get-ChildItem $outFile
+                        }
+                        catch {
+                            Stop-Function -ErrorRecord $_ -Message "Error scripting out the availability groups. This is likely due to a bug in SMO." -Continue
+                        }
                     }
                 }
             }
