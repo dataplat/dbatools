@@ -34,9 +34,10 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
     }
     
-    $results = Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -WarningAction SilentlyContinue
+    $results = Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -WarningAction SilentlyContinue -WarningVariable warn
     
-    It "enables hadr" {
-        $results.HadrCurrent | Should -Be $true
+    It "enables hadr and returns a warning to restart" {
+        $warn | Should -Not -Be $null
+        $results.IsHadrEnabled | Should -Be $true
     }
 }

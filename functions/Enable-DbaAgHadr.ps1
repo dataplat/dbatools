@@ -125,10 +125,10 @@ function Enable-DbaAgHadr {
                         $isenabled = $currentState.IsHadrEnabled
                     }
                     [PSCustomObject]@{
-                        ComputerName    = $computer
-                        InstanceName    = $instanceName
-                        SqlInstance     = $instance.FullName
-                        IsHadrEnabled   = $isenabled
+                        ComputerName     = $computer
+                        InstanceName     = $instanceName
+                        SqlInstance      = $instance.FullName
+                        IsHadrEnabled    = $isenabled
                     }
                 }
             }
@@ -195,15 +195,14 @@ function Enable-DbaAgHadr {
             $newState = GetDbaAgHadr -SqlInstance $instance -Credential $Credential
             
             if (Test-Bound -Not -ParameterName Force) {
-                Write-Message -Level Warning -Message "Successfully updated. You must restart the SQL Server for it to take effect."
+                Write-Message -Level Warning -Message "You must restart the SQL Server for it to take effect."
             }
             
             [PSCustomObject]@{
-                ComputerName   = $newState.ComputerName
-                InstanceName   = $newState.InstanceName
-                SqlInstance    = $newState.SqlInstance
-                HadrPrevious   = $currentState.IsHadrEnabled
-                HadrCurrent    = $newState.IsHadrEnabled
+                ComputerName    = $newState.ComputerName
+                InstanceName    = $newState.InstanceName
+                SqlInstance     = $newState.SqlInstance
+                IsHadrEnabled   = $true
             }
         }
     }
