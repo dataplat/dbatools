@@ -28,11 +28,7 @@ function Invoke-Sqlcmd2 {
             Specifies the full path to a file to be used as the query input to Invoke-Sqlcmd2. The file can contain Transact-SQL statements, XQuery statements, sqlcmd commands and scripting variables.
 
         .PARAMETER Credential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-            $cred = Get-Credential, this pass this $cred to the param.
-
-            Windows Authentication will be used if Credential is not specified. To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
             SECURITY NOTE: If you use the -Debug switch, the connectionstring including plain text password will be sent to the debug stream.
 

@@ -34,24 +34,16 @@ Destination SQL Server instance which contains the databases to be log shipped.
 You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
-To connect as a different Windows user, run PowerShell as that user.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER SourceCredential
-Allows you to login to servers using credentials for the paths like the backup path. To use:
-$scred = Get-Credential, then pass $scred object to the -SourceCredential parameter.
-To connect as a different Windows user, run PowerShell as that user.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -DestinationSqlCredential parameter.
-To connect as a different Windows user, run PowerShell as that user.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER DestinationCredential
-Allows you to login to servers using credentials for the paths like the copy and restore path. To use:
-$scred = Get-Credential, then pass $scred object to the -DestinationCredential parameter.
-To connect as a different Windows user, run PowerShell as that user.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER Database
 Database to set up log shipping for.
