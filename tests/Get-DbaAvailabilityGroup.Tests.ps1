@@ -35,4 +35,4 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results.AvailabilityDatabases.Name | Should -Be $dbname
         }
     }
-}
+} #$script:instance2 for appveyor

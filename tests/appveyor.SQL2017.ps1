@@ -54,7 +54,7 @@ else {
     $instancename = "$computername\$servicename"
 }
 
-Get-DbaProcess -SqlInstance $sqlinstance -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+$null = Get-DbaProcess -SqlInstance $sqlinstance -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
 $server = Connect-DbaInstance -SqlInstance $sqlinstance
 $dbname = "dbatoolsci_agroupdb"
 $server.Query("create database $dbname")
