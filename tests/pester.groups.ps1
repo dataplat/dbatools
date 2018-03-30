@@ -18,7 +18,10 @@ $TestsRunGroups = @{
         'Disable-DbaAgHadr'
     )
     # do not run on appveyor
-    "appveyor_disabled"         = @()
+    "appveyor_disabled"              = @(
+        'Export-DbaAvailabilityGroup',
+        'Get-DbaAvailabilityGroup'
+    )
     # do not run everywhere
     "disabled"                  = @()
 }
