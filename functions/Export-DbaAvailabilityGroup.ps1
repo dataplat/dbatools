@@ -23,11 +23,7 @@ function Export-DbaAvailabilityGroup {
             Do not overwrite existing export files.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER WhatIf
             Shows you what it'd output if you were to run the command
