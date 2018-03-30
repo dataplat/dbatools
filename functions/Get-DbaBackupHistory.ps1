@@ -286,6 +286,7 @@ function Get-DbaBackupHistory {
                     $first = 'L'; $second = 'L'
                 }
                 $databases = $databases | Select-Object -Unique -Property Name
+                $sql = ""
                 foreach ($db in $databases) {
                     Write-Message -Level Verbose -Message "Processing $($db.name)" -Target $db
                     $whereCopyOnly = $null
@@ -295,6 +296,17 @@ function Get-DbaBackupHistory {
                     if ($deviceTypeFilter) {
                         $devTypeFilterWhere = "AND mediafamily.device_type $deviceTypeFilterRight"
                     }
+                    # recap for future editors (as this has been discussed over and over):
+                    #   - original editors (from hereon referred as "we") rank over backupset.last_lsn desc, backupset.backup_finish_date desc for a good reason: DST
+                    #     all times are recorded with the timezone of the server
+                    #   - we thought about ranking over backupset.backup_set_id desc, backupset.last_lsn desc, backupset.backup_finish_date desc
+                    #     but there is no explicit documentation about "when" a row gets inserted into backupset. Theoretically it _could_
+                    #     happen that backup_set_id for the same database has not the same order of last_lsn.
+                    #   - given ultimately to restore something lsn IS the source of truth, we decided to trust that and only that
+                    #   - we know that sometimes it happens to drop a database without deleting the history. Assuming then to create a database with the same name,
+                    #     and given the lsn are composed in the first part by the VLF SeqID, it happens seldomly that for the same database_name backupset holds
+                    #     last_lsn out of order. To avoid this behaviour, we filter by database_guid choosing the guid that has MAX(backup_finish_date), as we know
+                    #     last_lsn cannot be out-of-order for the same database, and the same database cannot have different database_guid
                     $sql += "
                                 SELECT
                                     a.BackupSetRank,
@@ -311,16 +323,16 @@ function Get-DbaBackupHistory {
                                     a.MediaSetId,
                                     a.BackupSetID,
                                     a.Software,
-                                     a.position,
-                                     a.first_lsn,
-                                     a.database_backup_lsn,
-                                     a.checkpoint_lsn,
-                                     a.last_lsn,
+                                    a.position,
+                                    a.first_lsn,
+                                    a.database_backup_lsn,
+                                    a.checkpoint_lsn,
+                                    a.last_lsn,
                                     a.first_lsn as 'FirstLSN',
-                                     a.database_backup_lsn as 'DatabaseBackupLsn',
-                                     a.checkpoint_lsn as 'CheckpointLsn',
-                                     a.last_lsn as 'LastLsn',
-                                     a.software_major_version,
+                                    a.database_backup_lsn as 'DatabaseBackupLsn',
+                                    a.checkpoint_lsn as 'CheckpointLsn',
+                                    a.last_lsn as 'LastLsn',
+                                    a.software_major_version,
                                     a.DeviceType,
                                     a.is_copy_only,
                                     a.last_recovery_fork_guid
@@ -372,6 +384,21 @@ function Get-DbaBackupHistory {
                                   ON mediafamily.media_set_id = mediaset.media_set_id
                                 JOIN msdb..backupset AS backupset
                                   ON backupset.media_set_id = mediaset.media_set_id
+                                JOIN (
+                                    SELECT DISTINCT database_guid, database_name, backup_finish_date
+                                    FROM msdb..backupset
+                                    WHERE backupset.database_name = '$($db.Name)'
+                                ) dbguid
+                                  ON dbguid.database_name = backupset.database_name
+                                  AND dbguid.database_guid = backupset.database_guid
+                                JOIN (
+                                    SELECT database_name, MAX(backup_finish_date) max_finish_date
+                                    FROM msdb..backupset
+                                    WHERE backupset.database_name = '$($db.Name)'
+                                    GROUP BY database_name
+                                ) dbguid_support
+                                  ON dbguid_support.database_name = backupset.database_name
+                                  AND dbguid.backup_finish_date = dbguid_support.max_finish_date
                                 WHERE backupset.database_name = '$($db.Name)' $whereCopyOnly
                                 AND (type = '$first' OR type = '$second')
                                 $devTypeFilterWhere
@@ -520,7 +547,7 @@ function Get-DbaBackupHistory {
                     if ($groupLength -eq 1) {
                         $start = $commonFields.Start
                         $end = $commonFields.End
-                        $duration = $commonFields.Duration
+                        $duration = New-TimeSpan -Seconds $commonFields.Duration
                     }
                     else {
                         $start = ($group.Group.Start | Measure-Object -Minimum).Minimum
