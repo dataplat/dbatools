@@ -58,7 +58,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $server.Query("DROP CERTIFICATE dbatoolsci_AGCert")
         }
         catch {
-            # dont care  
+            # dont care
         }
     }
     
