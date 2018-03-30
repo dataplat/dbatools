@@ -27,6 +27,13 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $script:instance3
         $computername = $server.NetName
+        $servicename = $server.ServiceName
+        if ($servicename -eq 'MSSQLSERVER') {
+            $instancename = "$computername"
+        }
+        else {
+            $instancename = "$computername\$servicename"
+        }
         $dbname = "dbatoolsci_agroupdb"
         $server.Query("create database $dbname")
         $backup = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
@@ -39,15 +46,20 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
                             FOR DATABASE_MIRRORING (AUTHENTICATION = CERTIFICATE dbatoolsci_AGCert,ROLE = ALL)")
         $server.Query("CREATE AVAILABILITY GROUP dbatoolsci_agroup
                             WITH (DB_FAILOVER = OFF, DTC_SUPPORT = NONE, CLUSTER_TYPE = NONE)
-                            FOR DATABASE $dbname REPLICA ON N'$script:instance3'
+                            FOR DATABASE $dbname REPLICA ON N'$instancename'
                             WITH (ENDPOINT_URL = N'TCP://$computername`:5022', FAILOVER_MODE = MANUAL, AVAILABILITY_MODE = SYNCHRONOUS_COMMIT)")
     }
     AfterAll {
-        if ($backup.BackupPath) { Remove-Item -Path $backup.BackupPath -ErrorAction SilentlyContinue }
-        $server.Query("DROP AVAILABILITY GROUP dbatoolsci_agroup")
-        Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Remove-DbaDatabase -Confirm:$false
-        $server.Query("DROP ENDPOINT dbatoolsci_AGEndpoint")
-        $server.Query("DROP CERTIFICATE dbatoolsci_AGCert")
+        try {
+            if ($backup.BackupPath) { Remove-Item -Path $backup.BackupPath -ErrorAction SilentlyContinue }
+            $server.Query("DROP AVAILABILITY GROUP dbatoolsci_agroup")
+            Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+            $server.Query("DROP ENDPOINT dbatoolsci_AGEndpoint")
+            $server.Query("DROP CERTIFICATE dbatoolsci_AGCert")
+        }
+        catch {
+            # dont care    
+        }
     }
     
     Context "gets ags" {

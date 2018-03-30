@@ -85,7 +85,7 @@ function Disable-DbaAgHadr {
                     }
                     
                     if ($null -eq $currentState.IsHadrEnabled) {
-                        $isenabled = "Unsupported"
+                        $isenabled = $false
                     }
                     else {
                         $isenabled = $currentState.IsHadrEnabled
@@ -126,12 +126,6 @@ function Disable-DbaAgHadr {
             $isHadrEnabled = $currentState.IsHadrEnabled
             Write-Message -Level InternalComment -Message "$instance Hadr current value: $isHadrEnabled"
             
-            if ($isHadrEnabled -is [string]) {
-                Stop-Function -Message "Failure on $($instance.FullName) | The AlwaysOn Availability Groups feature requires the x86(non-WOW) or x64 Enterprise Edition of SQL Server 2012 (or later version) running on Windows Server 2008 (or later version) with WSFC hotfix KB 2494036 installed."
-                $noChange = $true
-                continue
-            }
-            
             if (-not $isHadrEnabled) {
                 Write-Message -Level Warning -Message "Hadr is already disabled for instance: $($instance.FullName)"
                 $noChange = $true
@@ -150,7 +144,7 @@ function Disable-DbaAgHadr {
                         Invoke-ManagedComputerCommand -ComputerName $computerFullName -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $instancename
                     }
                     catch {
-                        Stop-Function -Message "Failure on $($instance.FullName) | This may be because AlwaysOn Availability Groups feature requires the x86(non-WOW) or x64 Enterprise Edition of SQL Server 2012 (or later version) running on Windows Server 2008 (or later version) with WSFC hotfix KB 2494036 installed."
+                        Stop-Function -Continue -Message "Failure on $($instance.FullName) | This may be because AlwaysOn Availability Groups feature requires the x86(non-WOW) or x64 Enterprise Edition of SQL Server 2012 (or later version) running on Windows Server 2008 (or later version) with WSFC hotfix KB 2494036 installed."
                     }
                 }
                 if (Test-Bound 'Force') {
