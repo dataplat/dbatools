@@ -22,6 +22,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+    $dbname = "dbatoolsci_agroupdb"
     if (-not $env:appveyor) {
         BeforeAll {
             # $script:instance2 - to make it appear in the proper place on appveyor
