@@ -91,10 +91,10 @@ function Disable-DbaAgHadr {
                         $isenabled = $currentState.IsHadrEnabled
                     }
                     [PSCustomObject]@{
-                        ComputerName   = $computer
-                        InstanceName   = $instanceName
-                        SqlInstance    = $instance.FullName
-                        IsHadrEnabled  = $isenabled
+                        ComputerName     = $computer
+                        InstanceName     = $instanceName
+                        SqlInstance      = $instance.FullName
+                        IsHadrEnabled    = $isenabled
                     }
                 }
             }
@@ -109,12 +109,12 @@ function Disable-DbaAgHadr {
                 return
             }
             $noChange = $false
-
+            
             switch ($instance.InstanceName) {
                 'MSSQLSERVER' { $agentName = 'SQLSERVERAGENT' }
                 default { $agentName = "SQLAgent`$$instanceName" }
             }
-
+            
             try {
                 Write-Message -Level Verbose -Message "Checking current Hadr setting for $computer"
                 $currentState = GetDbaAgHadr -SqlInstance $instance -Credential $Credential
@@ -161,15 +161,14 @@ function Disable-DbaAgHadr {
                 $newState = GetDbaAgHadr -SqlInstance $instance -Credential $Credential
                 
                 if (Test-Bound -Not -ParameterName Force) {
-                    Write-Message -Level Warning -Message "Successfully updated. You must restart the SQL Server for it to take effect."
+                    Write-Message -Level Warning -Message "You must restart the SQL Server for it to take effect."
                 }
                 
                 [PSCustomObject]@{
-                    ComputerName = $newState.ComputerName
-                    InstanceName = $newState.InstanceName
-                    SqlInstance  = $newState.SqlInstance
-                    HadrPrevious = $currentState.IsHadrEnabled
-                    HadrCurrent  = $newState.IsHadrEnabled
+                    ComputerName   = $newState.ComputerName
+                    InstanceName   = $newState.InstanceName
+                    SqlInstance    = $newState.SqlInstance
+                    IsHadrEnabled  = $false
                 }
             }
         }
