@@ -158,11 +158,14 @@ function Enable-DbaAgHadr {
             $isHadrEnabled = $currentState.IsHadrEnabled
             Write-Message -Level InternalComment -Message "$instance Hadr current value: $isHadrEnabled"
             
+            # hadr results from sql wmi can be iffy, skip the check
+            <#
             if ($isHadrEnabled) {
                 Write-Message -Level Warning -Message "Hadr is already enabled for instance: $($instance.FullName)"
                 $noChange = $true
                 continue
             }
+            #>
             
             $scriptblock = {
                 $instance = $args[0]
