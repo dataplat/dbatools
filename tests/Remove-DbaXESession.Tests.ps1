@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    AfterAll {
+    BeforeAll {
         $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
     }
     AfterAll {
@@ -13,14 +13,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Test Importing Session Template" {
         $results = Import-DbaXESessionTemplate -SqlInstance $script:instance2 -Template 'Profiler TSQL Duration'
         
-        It -Skip "session should exist" {
+        It "session should exist" {
             $results.Name | Should Be 'Profiler TSQL Duration'
         }
         
         $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
         $results = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration'
         
-        It -Skip "session should no longer exist" {
+        It "session should no longer exist" {
             $results.Name | Should Be $null
             $results.Status | Should Be $null
         }

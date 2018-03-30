@@ -1,3 +1,4 @@
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Set-DbaDbQueryStoreOptions {
     <#
         .SYNOPSIS
@@ -63,7 +64,7 @@ function Set-DbaDbQueryStoreOptions {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Set-DbaQueryStoreOptions
@@ -110,7 +111,8 @@ function Set-DbaDbQueryStoreOptions {
         [ValidateSet('Auto', 'Off')]
         [string[]]$CleanupMode,
         [int64]$StaleQueryThreshold,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $ExcludeDatabase += 'master', 'tempdb'
@@ -138,14 +140,14 @@ function Set-DbaDbQueryStoreOptions {
             }
 
             # We have to exclude all the system databases since they cannot have the Query Store feature enabled
-            $dbs = Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -ExcludeDatabase $ExcludeDatabase -Database $Database | Where-Object IsAccessible
+            $dbs = Get-DbaDatabase -SqlInstance $server -ExcludeDatabase $ExcludeDatabase -Database $Database | Where-Object IsAccessible
 
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.name) on $instance"
 
                 if ($db.IsAccessible -eq $false) {
                     Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
-                    Continue
+                    continue
                 }
 
                 if ($State) {
@@ -158,7 +160,7 @@ function Set-DbaDbQueryStoreOptions {
 
                 if ($db.QueryStoreOptions.DesiredState -eq "Off" -and (Test-Bound -Parameter State -Not)) {
                     Write-Message -Level Warning -Message "State is set to Off; cannot change values. Please update State to ReadOnly or ReadWrite."
-                    Continue
+                    continue
                 }
 
                 if ($FlushInterval) {

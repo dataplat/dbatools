@@ -36,7 +36,7 @@ Author: Brandon Abshire, netnerds.net
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .LINK
 https://dbatools.io/Get-DbaFile
@@ -75,7 +75,8 @@ Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql201
         [string[]]$Path,
         [string[]]$FileType,
         [int]$Depth = 1,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $sql = ""

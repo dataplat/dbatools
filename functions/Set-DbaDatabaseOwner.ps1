@@ -46,7 +46,7 @@ function Set-DbaDatabaseOwner {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Set-DbaDatabaseOwner
@@ -78,7 +78,8 @@ function Set-DbaDatabaseOwner {
         [object[]]$ExcludeDatabase,
         [Alias("Login")]
         [string]$TargetLogin,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {
@@ -132,7 +133,7 @@ function Set-DbaDatabaseOwner {
                         # Ownership validations checks
 
                         #Database is online and accessible
-                        if ($db.Status -ne 'Normal') {
+                        if ($db.Status -notmatch 'Normal') {
                             Write-Message -Level Warning -Message "$dbname on $instance is in a  $($db.Status) state and can not be altered. It will be skipped."
                         }
                         #Database is updatable, not read-only

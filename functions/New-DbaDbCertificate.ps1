@@ -49,7 +49,7 @@ Tags: Certificate
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
 New-DbaDbCertificate -SqlInstance Server1
@@ -74,7 +74,8 @@ Suppresses all prompts to install but prompts to securely enter your password an
         [datetime]$ExpirationDate = $StartDate.AddYears(5),
         [switch]$ActiveForServiceBrokerDialog,
         [Security.SecureString]$Password,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias New-DbaDatabaseCertificate

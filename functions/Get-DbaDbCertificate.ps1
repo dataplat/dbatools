@@ -30,7 +30,7 @@ Get specific certificate
 Tags: Certificate
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
 Get-DbaDbCertificate -SqlInstance sql2016
@@ -57,7 +57,8 @@ Gets the cert1 certificate within the db1 database
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [object[]]$Certificate,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseCertificate

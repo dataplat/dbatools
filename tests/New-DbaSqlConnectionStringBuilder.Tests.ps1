@@ -74,4 +74,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.ColumnEncryptionSetting | Should Be 'Enabled'
         }
     }
+    Context "Set IntegratedSecurity" {
+        $results = New-DbaSqlConnectionStringBuilder -IntegratedSecurity $True
+        It "Should have a `"Integrated Security Setting`" value of `"True`"" {
+            $results.IntegratedSecurity | Should Be $True
+        }
+    }
 }

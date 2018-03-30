@@ -58,7 +58,7 @@ function Measure-DbaBackupThroughput {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Measure-DbaBackupThroughput
@@ -109,7 +109,8 @@ function Measure-DbaBackupThroughput {
         [ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
         [string]$Type = "Full",
         [string[]]$DeviceType,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

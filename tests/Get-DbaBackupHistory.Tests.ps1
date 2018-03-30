@@ -34,6 +34,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "First backup should be a Full Backup" {
             $results[0].Type | Should be "Full"
         }
+        It "Duration should be meaningful" {
+            ($results[0].end - $results[0].start).TotalSeconds | Should Be $results[0].Duration.TotalSeconds
+        }
         It "Last Backup Should be a log backup" {
             $results[-1].Type | Should Be "Log"
         }

@@ -47,7 +47,7 @@ function Get-DbaPermission {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaPermission
@@ -85,7 +85,8 @@ function Get-DbaPermission {
         [object[]]$ExcludeDatabase,
         [switch]$IncludeServerLevel,
         [switch]$NoSystemObjects,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         if ($NoSystemObjects) {

@@ -45,7 +45,7 @@ The database(s) to exclude - this list is auto-populated from the server
 Tags: Database
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .LINK
 https://dbatools.io/Get-DbaEstimatedCompletionTime
@@ -80,7 +80,8 @@ Gets estimated completion times for queries performed against the Northwind, pub
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

@@ -30,7 +30,7 @@ function Get-DbaTrace {
 
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
         Get-DbaTrace -SqlInstance sql2016
@@ -51,7 +51,8 @@ function Get-DbaTrace {
         [PSCredential]$SqlCredential,
         [int[]]$Id,
         [switch]$Default,
-        [switch][Alias('Silent')]$EnableException
+        [switch][Alias('Silent')]
+        $EnableException
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaTraceFile
@@ -88,31 +89,40 @@ function Get-DbaTrace {
             }
             
             foreach ($row in $results) {
-               [PSCustomObject]@{
-                    ComputerName          = $server.NetName
-                    InstanceName          = $server.ServiceName
-                    SqlInstance           = $server.DomainInstanceName
-                    Id                    = $row.id
-                    Status                = $row.status
-                    IsRunning               = ($row.status -eq 1)
-                    Path                  = $row.path
-                    MaxSize               = $row.max_size
-                    StopTime              = $row.stop_time
-                    MaxFiles              = $row.max_files
-                    IsRowset              = $row.is_rowset
-                    IsRollover            = $row.is_rollover
-                    IsShutdown            = $row.is_shutdown
-                    IsDefault             = $row.is_default
-                    BufferCount           = $row.buffer_count
-                    BufferSize            = $row.buffer_size
-                    FilePosition          = $row.file_position
-                    ReaderSpid            = $row.reader_spid
-                    StartTime             = $row.start_time
-                    LastEventTime         = $row.last_event_time
-                    EventCount            = $row.event_count
-                    DroppedEventCount     = $row.dropped_event_count
-                    Parent                = $server
-                } | Select-DefaultView -ExcludeProperty Parent, Status
+                if ($row.Path.ToString().Length -gt 0) {
+                    $remotefile = Join-AdminUnc -servername $server.NetName -filepath $row.path
+                }
+                else {
+                    $remotefile = $null
+                }
+                
+                [PSCustomObject]@{
+                    ComputerName             = $server.NetName
+                    InstanceName             = $server.ServiceName
+                    SqlInstance              = $server.DomainInstanceName
+                    Id                       = $row.id
+                    Status                   = $row.status
+                    IsRunning                = ($row.status -eq 1)
+                    Path                     = $row.path
+                    RemotePath               = $remotefile
+                    MaxSize                  = $row.max_size
+                    StopTime                 = $row.stop_time
+                    MaxFiles                 = $row.max_files
+                    IsRowset                 = $row.is_rowset
+                    IsRollover               = $row.is_rollover
+                    IsShutdown               = $row.is_shutdown
+                    IsDefault                = $row.is_default
+                    BufferCount              = $row.buffer_count
+                    BufferSize               = $row.buffer_size
+                    FilePosition             = $row.file_position
+                    ReaderSpid               = $row.reader_spid
+                    StartTime                = $row.start_time
+                    LastEventTime            = $row.last_event_time
+                    EventCount               = $row.event_count
+                    DroppedEventCount        = $row.dropped_event_count
+                    Parent                   = $server
+                    SqlCredential            = $SqlCredential
+                } | Select-DefaultView -ExcludeProperty Parent, RemotePath, RemoStatus, SqlCredential
             }
         }
     }

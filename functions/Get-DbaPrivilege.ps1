@@ -24,7 +24,7 @@ function Get-DbaPrivilege {
       Tags: Privilege
       Website: https://dbatools.io
       Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-      License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+      License: MIT https://opensource.org/licenses/MIT
 
     .LINK
       https://dbatools.io/Get-DbaPrivilege
@@ -54,7 +54,7 @@ function Get-DbaPrivilege {
         [switch][Alias('Silent')]
         $EnableException
     )
-    
+
     begin {
         $ResolveSID = @"
     function Convert-SIDToUserName ([string] `$SID ) {
@@ -76,7 +76,7 @@ function Get-DbaPrivilege {
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools.cfg > $NULL;
                         Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -match "SeBatchLogonRight" -or $_ -match 'SeManageVolumePrivilege' -or $_ -match 'SeLockMemoryPrivilege' }
                     }
-                    
+
                     Write-Message -Level Verbose -Message "Getting Batch Logon Privileges on $Computer"
                     $BL = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
                         Param ($ResolveSID)
@@ -88,7 +88,7 @@ function Get-DbaPrivilege {
                     if ($BL.count -eq 0) {
                         Write-Message -Level Verbose -Message "No users with Batch Logon Rights on $computer"
                     }
-                    
+
                     Write-Message -Level Verbose -Message "Getting Instant File Initialization Privileges on $Computer"
                     $ifi = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
                         Param ($ResolveSID)
@@ -100,7 +100,7 @@ function Get-DbaPrivilege {
                     if ($ifi.count -eq 0) {
                         Write-Message -Level Verbose -Message "No users with Instant File Initialization Rights on $computer"
                     }
-                    
+
                     Write-Message -Level Verbose -Message "Getting Lock Pages in Memory Privileges on $Computer"
                     $lpim = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
                         Param ($ResolveSID)
@@ -109,7 +109,7 @@ function Get-DbaPrivilege {
                         (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeLockMemoryPrivilege*' }).substring(24).split(",").replace("`*", "") |
                         ForEach-Object { Convert-SIDToUserName -SID $_ }
                     } -ErrorAction SilentlyContinue
-                    
+
                     if ($lpim.count -eq 0) {
                         Write-Message -Level Verbose -Message "No users with Lock Pages in Memory Rights on $computer"
                     }
@@ -131,7 +131,7 @@ function Get-DbaPrivilege {
                 }
             }
             catch {
-                Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer
             }
         }
     }

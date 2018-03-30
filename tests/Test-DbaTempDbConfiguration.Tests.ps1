@@ -22,22 +22,26 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         [object[]]$params = (Get-ChildItem function:\Test-DbaTempDbConfiguration).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'Detailed'
         It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
         It "Should only contain $paramCount parameters" {
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
+        It "Should throw on an invalid SQL Connection" {
+            Mock -ModuleName 'dbatools' Connect-SqlInstance { throw }
+            { Test-DbaTempDbConfiguration -SqlInstance 'MadeUpServer' -EnableException } | Should Throw
+        }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Command actually works" {
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    Context "Command actually works on $script:instance2" {
         $results = Test-DbaTempDbConfiguration -SqlInstance $script:instance2
         It "Should have correct properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Rule,Recommended,CurrentSetting,IsBestPractice,Notes'.Split(',')
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
-
+        
         $rule = 'File Location'
         It "Should return false for IsBestPractice with rule: $rule" {
             ($results | Where-Object Rule -match $rule).IsBestPractice | Should Be $false

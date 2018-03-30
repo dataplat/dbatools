@@ -1,3 +1,4 @@
+#ValidationTags#Messaging#
 function Get-DbaAgentJob {
     <#
         .SYNOPSIS
@@ -32,7 +33,7 @@ function Get-DbaAgentJob {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaAgentJob
@@ -72,17 +73,18 @@ function Get-DbaAgentJob {
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [object[]]$Job,
         [object[]]$ExcludeJob,
         [switch]$NoDisabledJobs,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Verbose "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

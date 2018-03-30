@@ -37,7 +37,7 @@ function Set-DbaAgentJobOutputFile {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
             # todo - allow piping and add -All
 
@@ -76,7 +76,8 @@ function Set-DbaAgentJobOutputFile {
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
         [string]$OutputFile,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     foreach ($instance in $sqlinstance) {

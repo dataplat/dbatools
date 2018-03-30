@@ -29,7 +29,8 @@ function Update-SqlPermissions {
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [object]$DestLogin,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     $destination = $DestServer.DomainInstanceName
@@ -273,9 +274,9 @@ function Update-SqlPermissions {
         $dbUsername = $db.Username;
         $dbLogin = $db.LoginName
 
-        if ($null -eq $destDb) {
+        if ($null -ne $destDb) {
             if (!$destDb.IsAccessible) {
-                Write-Message -Level Verbose -Message "Database [$($destDb.Name)] is not accessible. Skipping."
+                Write-Message -Level Verbose -Message "Database [$dbName] is not accessible. Skipping."
                 continue
             }
             if ($null -eq $destDb.Users[$dbUsername]) {

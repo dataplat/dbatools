@@ -42,7 +42,7 @@ Tags: Agent, Job, Schedule
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .LINK
 https://dbatools.io/Remove-DbaAgentJobSchedule
@@ -88,8 +88,8 @@ Remove the schedules using a pipeline
         [object[]]$Schedule,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "schedules")]
         [Microsoft.SqlServer.Management.Smo.Agent.ScheduleBase[]]$ScheduleCollection,
-        [switch][Alias('Silent')]$EnableException,
-
+        [Alias('Silent')]
+        [switch]$EnableException,
         [switch]$Force
     )
 

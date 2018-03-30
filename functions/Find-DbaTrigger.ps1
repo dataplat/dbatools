@@ -43,7 +43,7 @@ Author: Cláudio Silva, @ClaudioESSilva
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .LINK
 https://dbatools.io/Find-DbaTrigger
@@ -84,7 +84,8 @@ Searches in "mydb" database triggers for "runtime" in the textbody
         [string]$TriggerLevel = 'All',
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

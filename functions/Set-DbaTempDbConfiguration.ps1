@@ -13,7 +13,7 @@ function Set-DbaTempDbConfiguration {
 
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .PARAMETER SqlInstance
             The SQL Server Instance to connect to.
@@ -113,7 +113,8 @@ function Set-DbaTempDbConfiguration {
         [string]$OutFile,
         [switch]$OutputScriptOnly,
         [switch]$DisableGrowth,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $sql = @()
@@ -266,7 +267,6 @@ function Set-DbaTempDbConfiguration {
                     Write-Message -Level Output -Message "tempdb reconfigured. You must restart the SQL Service for settings to take effect."
                 }
                 catch {
-                    # write-exception writes the full exception to file
                     Stop-Function -Message "Unable to reconfigure tempdb. Exception: $_" -Target $sql -InnerErrorRecord $_
                     return
                 }

@@ -28,7 +28,7 @@ Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
 
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .LINK
 https://dbatools.io/Get-DbaSpn
@@ -56,7 +56,8 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
         [string[]]$AccountName,
         [Parameter(Mandatory = $false)]
         [PSCredential]$Credential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         Function Process-Account ($AccountName) {

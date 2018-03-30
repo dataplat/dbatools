@@ -26,15 +26,22 @@
 
             Placeholders are in the form {PropertyName}, where PropertyName is one of the fields or actions available in the Event object.
 
+        .PARAMETER Event
+            Each Response can be limited to processing specific events, while ignoring all the other ones. When this attribute is omitted, all events are processed.
+
+        .PARAMETER Filter
+            You can specify a filter expression by using this attribute. The filter expression is in the same form that you would use in a SQL query. For example, a valid example looks like this: duration > 10000 AND cpu_time > 10000
+            
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: ExtendedEvent, XE, Xevent
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/New-DbaXESmartQueryExec
@@ -54,7 +61,9 @@
         [PSCredential]$SqlCredential,
         [string]$Database,
         [string]$Query,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [string[]]$Event,
+        [string]$Filter
     )
     begin {
         try {
@@ -87,6 +96,13 @@
             if ($SqlCredential) {
                 $execute.UserName = $SqlCredential.UserName
                 $execute.Password = $SqlCredential.GetNetworkCredential().Password
+            }
+
+            if (Test-Bound -ParameterName "Event") {
+                $execute.Events = $Event
+            }
+            if (Test-Bound -ParameterName "Filter") {
+                $execute.Filter = $Filter
             }
 
             $execute

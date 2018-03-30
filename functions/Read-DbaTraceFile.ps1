@@ -126,7 +126,7 @@ function Read-DbaTraceFile {
         Tags: Security, Trace
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
         Read-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\traces\big.trc
@@ -145,13 +145,20 @@ function Read-DbaTraceFile {
         Reads the tracefile C:\traces\big.trc, stored on the sql2016 sql server.
         Filters only results where LinkServerName = myls and StartTime is greater than '5/30/2017 4:27:52 PM'.
 
+        .EXAMPLE
+        Get-DbaTrace -SqlInstance sql2014 | Read-DbaTraceFile
+
+        Reads every trace file on sql2014
+
 #>
     [CmdletBinding()]
     Param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Position = 0, Mandatory, ValueFromPipelineByPropertyName)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
+        [parameter(ValueFromPipelineByPropertyName)]
         [PSCredential]$SqlCredential,
+        [parameter(ValueFromPipelineByPropertyName)]
         [string[]]$Path,
         [string[]]$Database,
         [string[]]$Login,
@@ -164,7 +171,8 @@ function Read-DbaTraceFile {
         [string[]]$ApplicationName,
         [string[]]$ObjectName,
         [string]$Where,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

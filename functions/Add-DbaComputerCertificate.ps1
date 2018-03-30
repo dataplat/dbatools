@@ -44,7 +44,7 @@ function Add-DbaComputerCertificate {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
             Add-DbaComputerCertificate -ComputerName Server1 -Path C:\temp\cert.cer
@@ -106,13 +106,13 @@ function Add-DbaComputerCertificate {
 
             $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
             $cert.Import($CertificateData, $Password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-            Write-Verbose "Importing cert to $Folder\$Store"
+            Write-Message -Level Verbose -Message "Importing cert to $Folder\$Store"
             $tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
             $tempStore.Open('ReadWrite')
             $tempStore.Add($cert)
             $tempStore.Close()
 
-            Write-Verbose "Searching Cert:\$Store\$Folder"
+            Write-Message -Level Verbose -Message "Searching Cert:\$Store\$Folder"
             Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
         }
         #endregion Remoting Script

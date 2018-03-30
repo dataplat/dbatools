@@ -7,7 +7,7 @@ function Get-DbaAgentLog {
         Gets the "SQL Agent Error Log" of an instance. Returns all 10 error logs by default.
 
     .PARAMETER SqlInstance
-        The SQL Server instance, or instances.
+        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
@@ -24,7 +24,7 @@ function Get-DbaAgentLog {
         Tags: Logging
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaAgentLog
@@ -44,7 +44,6 @@ function Get-DbaAgentLog {
         $servers | Get-DbaAgentLog -LogNumber 0
 
         Returns the most recent SQL Agent error logs for "sql2014","sql2016" and "sqlcluster\sharepoint"
-
 #>
     [CmdletBinding()]
     param (
@@ -56,7 +55,8 @@ function Get-DbaAgentLog {
         $SqlCredential,
         [ValidateRange(0, 9)]
         [int[]]$LogNumber,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {

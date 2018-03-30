@@ -1,3 +1,4 @@
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDbVirtualLogFile {
     <#
         .SYNOPSIS
@@ -45,7 +46,7 @@ function Get-DbaDbVirtualLogFile {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaDbVirtualLogFile
@@ -53,10 +54,10 @@ function Get-DbaDbVirtualLogFile {
         .EXAMPLE
             Get-DbaDbVirtualLogFile -SqlInstance sqlcluster
 
-            Returns all user database virtual log file counts for the sqlcluster instance.
+            Returns all user database virtual log file details for the sqlcluster instance.
 
         .EXAMPLE
-            Get-DbaDbVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}
+            Get-DbaDbVirtualLogFile -SqlInstance sqlserver | Group-Object -Property Database | Where-Object Count -gt 50
 
             Returns user databases that have 50 or more VLFs.
 
@@ -80,7 +81,8 @@ function Get-DbaDbVirtualLogFile {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

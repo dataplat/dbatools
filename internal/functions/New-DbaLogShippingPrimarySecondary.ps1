@@ -45,7 +45,7 @@ Tags: Log shipping, primary database, secondary database
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .LINK
 
@@ -81,7 +81,8 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
         [System.Management.Automation.PSCredential]
         $SecondarySqlCredential,
 
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     # Try connecting to the instance

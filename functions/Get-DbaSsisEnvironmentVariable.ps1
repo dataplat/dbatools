@@ -92,7 +92,7 @@ Tags:
 Author: Bartosz Ratajczyk ( @b_ratajczyk )
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 #>
     [CmdletBinding()]
     Param (
@@ -109,7 +109,8 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
         [object[]]$Folder,
         [parameter(Mandatory = $false)]
         [object[]]$FolderExclude,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {

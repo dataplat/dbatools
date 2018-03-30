@@ -18,23 +18,26 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     $computerName = $server1.NetName
     $winLogin = "$computerName\$credLogin"
     $logins = "claudio", "port", "tester", "certifico", $winLogin
-
+    
     #cleanup
-    foreach ($instance in $servers) {
-        foreach ($login in $logins) {
-            if ($l = Get-DbaLogin -SqlInstance $instance -Login $login) {
-                $results = $instance.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'")
-                foreach ($spid in $results.spid) {
-                    $null = $instance.Query("kill $spid")
+    try {
+        foreach ($instance in $servers) {
+            foreach ($login in $logins) {
+                if ($l = Get-DbaLogin -SqlInstance $instance -Login $login) {
+                    $results = $instance.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'")
+                    foreach ($spid in $results.spid) {
+                        $null = $instance.Query("kill $spid")
+                    }
+                    if ($c = $l.EnumCredentials()) {
+                        $l.DropCredential($c)
+                    }
+                    $l.Drop()
                 }
-                if ($c = $l.EnumCredentials()) {
-                    $l.DropCredential($c)
-                }
-                $l.Drop()
             }
         }
     }
-
+    catch {<#nbd#> }
+    
     #create Windows login
     $computer = [ADSI]"WinNT://$computerName"
     try {
@@ -56,16 +59,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     if (!($mkey = Get-DbaDatabaseMasterKey -SqlInstance $server1 -Database master)) {
         $null = New-DbaDatabaseMasterKey -SqlInstance $server1 -Database master -Password $securePassword -Confirm:$false
     }
-
-    #create certificate
-    if ($crt = $server1.Databases['master'].Certificates[$certificateName]) {
-        $crt.Drop()
+    
+    try {
+        #create certificate
+        if ($crt = $server1.Databases['master'].Certificates[$certificateName]) {
+            $crt.Drop()
+        }
     }
+    catch {<#nbd#> }
     $null = New-DbaDbCertificate $server1 -Name $certificateName -Password $null
 
     Context "Create new logins" {
         It "Should be created successfully - Hashed password" {
-            $results = New-DbaLogin -SqlInstance $server1 -Login tester -HashedPassword (Get-PasswordHash $securePassword $server1.VersionMajor)
+            $results = New-DbaLogin -SqlInstance $server1 -Login tester -HashedPassword (Get-PasswordHash $securePassword $server1.VersionMajor) -Force
             $results.Name | Should Be "tester"
             $results.DefaultDatabase | Should be 'master'
             $results.IsDisabled | Should be $false
@@ -156,45 +162,47 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $login1.Sid | Should Not be $login2.Sid
         }
     }
-    Context "Connect with a new login" {
-        It "Should login with newly created Sql Login, get instance name and kill the process" {
-            $cred = New-Object System.Management.Automation.PSCredential ("tester", $securePassword)
-            $s = Connect-SqlInstance -SqlInstance $script:instance1 -SqlCredential $cred
-            $s.Name | Should Be $script:instance1
-            $results = $server1.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$($cred.UserName)') EXEC sp_who '$($cred.UserName)'")
-            $results | Should Not BeNullOrEmpty
-            foreach ($spid in $results.spid) {
-                { Invoke-SqlCmd2 -ServerInstance $script:instance1 -Query "kill $spid" -ErrorAction Stop} | Should Not Throw
+    
+    if ((Connect-DbaInstance -SqlInstance $script:instance1).LoginMode -eq "Mixed") {
+        Context "Connect with a new login" {
+            It "Should login with newly created Sql Login, get instance name and kill the process" {
+                $cred = New-Object System.Management.Automation.PSCredential ("tester", $securePassword)
+                $s = Connect-DbaInstance -SqlInstance $script:instance1 -Credential $cred
+                $s.Name | Should Be $script:instance1
+                Stop-DbaProcess -SqlInstance $script:instance1 -Login tester
             }
         }
     }
-
+    
     Context "No overwrite" {
-        $null = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -WarningVariable warning 3>&1
+        $null = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -WarningAction SilentlyContinue -WarningVariable warning 3>&1
         It "Should not attempt overwrite" {
             $warning | Should Match "Login tester already exists"
         }
     }
-
-    foreach ($instance in $servers) {
-        foreach ($login in $logins) {
-            if ($l = Get-DbaLogin -SqlInstance $instance -Login $login) {
-                $results = $instance.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'")
-                foreach ($spid in $results.spid) {
-                    $null = $instance.Query("kill $spid")
+    
+    try {
+        foreach ($instance in $servers) {
+            foreach ($login in $logins) {
+                if ($l = Get-DbaLogin -SqlInstance $instance -Login $login) {
+                    $results = $instance.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'")
+                    foreach ($spid in $results.spid) {
+                        $null = $instance.Query("kill $spid")
+                    }
+                    if ($c = $l.EnumCredentials()) {
+                        $l.DropCredential($c)
+                    }
+                    $l.Drop()
                 }
-                if ($c = $l.EnumCredentials()) {
-                    $l.DropCredential($c)
-                }
-                $l.Drop()
             }
         }
+        
+        $computer.Delete('User', $credLogin)
+        $server1.Credentials[$credLogin].Drop()
+        $server1.Databases['master'].Certificates[$certificateName].Drop()
+        if (!$mkey) {
+            $null = Remove-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database master -Confirm:$false
+        }
     }
-
-    $computer.Delete('User', $credLogin)
-    $server1.Credentials[$credLogin].Drop()
-    $server1.Databases['master'].Certificates[$certificateName].Drop()
-    if (!$mkey) {
-        $null = Remove-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database master -Confirm:$false
-    }
+    catch {<#nbd#> }
 }

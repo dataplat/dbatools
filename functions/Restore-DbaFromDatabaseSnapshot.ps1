@@ -1,70 +1,70 @@
 #ValidationTags#FlowControl#
 function Restore-DbaFromDatabaseSnapshot {
     <#
-        .SYNOPSIS
-            Restores databases from snapshots
+    .SYNOPSIS
+        Restores databases from snapshots
 
-        .DESCRIPTION
-            Restores the database from the snapshot, discarding every modification made to the database
-            NB: Restoring to a snapshot will result in every other snapshot of the same database to be dropped
-            It also fixes some long-standing bugs in SQL Server when restoring from snapshots
+    .DESCRIPTION
+        Restores the database from the snapshot, discarding every modification made to the database
+        NB: Restoring to a snapshot will result in every other snapshot of the same database to be dropped
+        It also fixes some long-standing bugs in SQL Server when restoring from snapshots
 
-        .PARAMETER SqlInstance
-            The SQL Server that you're connecting to
+    .PARAMETER SqlInstance
+        The SQL Server that you're connecting to
 
-        .PARAMETER SqlCredential
-            Credential object used to connect to the SQL Server as a different user
+    .PARAMETER SqlCredential
+        Credential object used to connect to the SQL Server as a different user
 
-        .PARAMETER Database
-            Restores from the last snapshot databases with this names only. You can pass either Databases or Snapshots
+    .PARAMETER Database
+        Restores from the last snapshot databases with this names only. You can pass either Databases or Snapshots
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
 
-        .PARAMETER Snapshot
-            Restores databases from snapshots with this names only. You can pass either Databases or Snapshots
+    .PARAMETER Snapshot
+        Restores databases from snapshots with this names only. You can pass either Databases or Snapshots
 
-        .PARAMETER Force
-            If restoring from a snapshot involves dropping any other shapshot, you need to explicitly
-            use -Force to let this command delete the ones not involved in the restore process.
-            Also, -Force will forcibly kill all running queries that prevent the restore process.
+    .PARAMETER Force
+        If restoring from a snapshot involves dropping any other shapshot, you need to explicitly
+        use -Force to let this command delete the ones not involved in the restore process.
+        Also, -Force will forcibly kill all running queries that prevent the restore process.
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run
 
-        .PARAMETER Confirm
-            Prompts for confirmation of every step.
+    .PARAMETER Confirm
+        Prompts for confirmation of every step.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: DisasterRecovery, Snapshot, Backup, Restore, Database
-            Author: niphlod
+    .NOTES
+        Tags: DisasterRecovery, Snapshot, Backup, Restore, Database
+        Author: niphlod
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Website: https://dbatools.io
+        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-             https://dbatools.io/Restore-DbaFromDatabaseSnapshot
+    .LINK
+        https://dbatools.io/Restore-DbaFromDatabaseSnapshoT
 
-        .EXAMPLE
-            Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
+    .EXAMPLE
+        Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 
-            Restores HR and Accounting databases using the latest snapshot available
+        Restores HR and Accounting databases using the latest snapshot available
 
-        .EXAMPLE
-            Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Force
+    .EXAMPLE
+        Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Force
 
-            Restores HR database from latest snapshot and kills any active connections in the database on sqlserver2014a.
+        Restores HR database from latest snapshot and kills any active connections in the database on sqlserver2014a.
 
-        .EXAMPLE
-            Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, Accounting_snap_20161101
+    .EXAMPLE
+        Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, Accounting_snap_20161101
 
-            Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101
+        Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
@@ -78,7 +78,8 @@ function Restore-DbaFromDatabaseSnapshot {
         [object[]]$ExcludeDatabase,
         [object[]]$Snapshot,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     process {
@@ -95,8 +96,33 @@ function Restore-DbaFromDatabaseSnapshot {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $allDbs = $server.Databases
-
+            #$allDbs = $server.Databases
+            $alldbq = @"
+SELECT sn.name AS Name,
+       dt.name AS DatabaseSnapshotBaseName,
+       sn.create_date AS CreateDate,
+       CASE
+           WHEN sn.source_database_id IS NOT NULL
+           THEN CASE
+                    WHEN dt.state = 6
+                    THEN 0
+                    ELSE 1
+                END
+           ELSE CASE
+                    WHEN sn.state = 6
+                    THEN 0
+                    ELSE 1
+                END
+       END AS IsAccessible,
+       CASE
+           WHEN sn.source_database_id IS NOT NULL
+           THEN 1
+           ELSE 0
+       END AS IsDatabaseSnapshot
+FROM sys.databases sn
+     LEFT JOIN sys.databases dt ON sn.source_database_id = dt.database_id
+"@
+            $alldbs = $server.Query($alldbq)
             # vault to hold all programmed operations from --> to
             $operations = @()
 
@@ -128,10 +154,12 @@ function Restore-DbaFromDatabaseSnapshot {
                     continue
                 }
             }
-
             $opsHash = @{ }
-
             foreach ($db in $dbs) {
+                if (-not($db.IsAccessible)) {
+                    Write-Message -Level Warning -Message "Database $db is not accessible."
+                    continue
+                }
                 if ($db.DatabaseSnapshotBaseName -notin $opsHash.Keys) {
                     if ($snapshot.Count -gt 0) {
                         # just in the need to drop every other snapshot
@@ -169,7 +197,6 @@ function Restore-DbaFromDatabaseSnapshot {
                     'drop' = $drop
                 }
             }
-
             foreach ($op in $operations) {
                 # Check if there are FS, because then a restore is not possible
                 $all_FS = $server.Databases[$op['to']].FileGroups | Where-Object FileGroupType -EQ 'FileStreamDataFileGroup'
@@ -187,7 +214,7 @@ function Restore-DbaFromDatabaseSnapshot {
                     break
                 }
                 # Get log size and autogrowth
-                $orig_logproperties = $server.Databases[$op['to']].LogFiles | Select-Object Id, Size
+                $orig_logproperties = $server.Databases[$op['to']].LogFiles | Select-Object Id, Size, Growth, GrowthType
                 # Drop what needs to be dropped
                 $opError = $false
 
@@ -266,14 +293,21 @@ function Restore-DbaFromDatabaseSnapshot {
                     }
                     break
                 }
-                # Comparing sizes before and after, need to reconnect to see if size
-                # changed
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                # Comparing sizes before and after, need to refresh to see if size
+                foreach ($log in $server.Databases[$op['to']].LogFiles) {
+                    $log.Refresh()
+                }
                 foreach ($log in $server.Databases[$op['to']].LogFiles) {
                     $matching = $orig_logproperties | Where-Object ID -EQ $log.ID
-                    if ($matching.Size -ne $log.Size) {
-                        Write-Message -Level Verbose -Message "Resizing log to the original value"
-                        $log.Size = $matching.Size
+                    $changeflag = 0
+                    foreach ($prop in @('Size', 'Growth', 'Growth', 'GrowthType')) {
+                        if ($matching.$prop -ne $log.$prop) {
+                            $changeflag = 1
+                            $log.$prop = $matching.$prop
+                        }
+                    }
+                    if ($changeflag -ne 0) {
+                        Write-Message -Level Verbose -Message "Restoring original settings for log file"
                         $log.Alter()
                     }
                 }

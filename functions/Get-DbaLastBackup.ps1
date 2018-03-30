@@ -36,7 +36,7 @@ function Get-DbaLastBackup {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaLastBackup
@@ -72,7 +72,8 @@ function Get-DbaLastBackup {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         function Get-DbaDateOrNull ($TimeSpan) {
@@ -114,7 +115,7 @@ function Get-DbaLastBackup {
                     Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
                     Continue
                 }
-                $LastFullBackup = ($FullHistory | Where-Object Database -eq $db.Name).End
+                $LastFullBackup = ($FullHistory | Where-Object Database -eq $db.Name | Sort-Object -Property End -Descending | Select-Object -First 1).End
                 if ($null -ne $LastFullBackup) {
                     $SinceFull_ = [DbaTimeSpan](New-TimeSpan -Start $LastFullBackup)
                 }
@@ -122,7 +123,7 @@ function Get-DbaLastBackup {
                     $SinceFull_ = $StartOfTime
                 }
 
-                $LastDiffBackup = ($DiffHistory | Where-Object Database -eq $db.Name).End
+                $LastDiffBackup = ($DiffHistory | Where-Object Database -eq $db.Name | Sort-Object -Property End -Descending | Select-Object -First 1).End
                 if ($null -ne $LastDiffBackup) {
                     $SinceDiff_ = [DbaTimeSpan](New-TimeSpan -Start $LastDiffBackup)
                 }
@@ -130,7 +131,7 @@ function Get-DbaLastBackup {
                     $SinceDiff_ = $StartOfTime
                 }
 
-                $LastIncrBackup = ($IncrHistory | Where-Object Database -eq $db.Name).End
+                $LastIncrBackup = ($IncrHistory | Where-Object Database -eq $db.Name | Sort-Object -Property End -Descending | Select-Object -First 1).End
                 if ($null -ne $LastIncrBackup) {
                     $SinceLog_ = [DbaTimeSpan](New-TimeSpan -Start $LastIncrBackup)
                 }

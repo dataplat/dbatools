@@ -43,7 +43,7 @@ function Start-DbaSqlService {
     Tags:
     dbatools PowerShell module (https://dbatools.io)
     Copyright (C) 2017 Chrissy LeMaire
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    License: MIT https://opensource.org/licenses/MIT
 
     .LINK
     https://dbatools.io/Start-DbaSqlService
@@ -82,7 +82,8 @@ function Start-DbaSqlService {
         [object[]]$ServiceCollection,
         [int]$Timeout = 30,
         [PSCredential]$Credential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
         $processArray = @()
@@ -104,6 +105,6 @@ function Start-DbaSqlService {
         if ($processArray) {
             Update-ServiceStatus -ServiceCollection $processArray -Action 'start' -Timeout $Timeout -EnableException $EnableException
         }
-        else { Write-Message -Level Warning -EnableException $EnableException -Message "No SQL Server services found with current parameters." }
+        else { Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." -Category ObjectNotFound }
     }
 }

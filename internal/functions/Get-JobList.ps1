@@ -52,7 +52,7 @@ function Get-JobList {
 
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        License: MIT https://opensource.org/licenses/MIT
     #>
     [cmdletbinding()]
     param(
@@ -62,7 +62,8 @@ function Get-JobList {
         [string[]]$JobFilter,
         [string[]]$StepFilter,
         [switch]$Not,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential

@@ -40,6 +40,9 @@ function Copy-DbaLogin {
         .PARAMETER ExcludeLogin
             The login(s) to exclude. Options for this list are auto-populated from the server.
 
+        .PARAMETER ExcludeSystemLogin
+            If this switch is enabled, NT SERVICE accounts will be skipped.
+
         .PARAMETER SyncOnly
             If this switch is enabled, only SQL Server login permissions, roles, etc. will be synced. Logins and users will not be added or dropped.  If a matching Login does not exist on the destination, the Login will be skipped.
             Credential removal is not currently supported for this parameter.
@@ -50,7 +53,7 @@ function Copy-DbaLogin {
         .PARAMETER OutFile
             Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This does not perform a copy, so no destination is required.
 
-        .PARAMETER PipeLogin
+        .PARAMETER InputObject
             Takes the parameters required from a Login object that has been piped into the command
 
         .PARAMETER LoginRenameHashtable
@@ -82,7 +85,7 @@ function Copy-DbaLogin {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Copy-DbaLogin
@@ -124,29 +127,37 @@ function Copy-DbaLogin {
             Copy-DbaLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
 
             Copies OldUser and then renames it to newlogin.
+    
+        .EXAMPLE
+            Get-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017
+
+            Displays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(ParameterSetName = "SqlInstance", Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]
         $SourceSqlCredential,
-        [parameter(ParameterSetName = "Destination", Mandatory = $true)]
+        [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$Destination,
-        [PSCredential]
-        $DestinationSqlCredential,
+        [PSCredential]$DestinationSqlCredential,
         [object[]]$Login,
         [object[]]$ExcludeLogin,
+        [switch]$ExcludeSystemLogin,
         [switch]$SyncOnly,
         [parameter(ParameterSetName = "Live")]
         [switch]$SyncSaName,
-        [parameter(ParameterSetName = "File", Mandatory = $true)]
+        [parameter(ParameterSetName = "File", Mandatory)]
         [string]$OutFile,
-        [object]$PipeLogin,
+        [parameter(ParameterSetName = "InputObject", ValueFromPipeline)]
+        [object]$InputObject,
         [hashtable]$LoginRenameHashtable,
         [switch]$KillActiveConnection,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
@@ -209,6 +220,15 @@ function Copy-DbaLogin {
                         continue
                     }
                     else {
+                        if ($ExcludeSystemLogin) {
+                            Write-Message -Level Verbose -Message "$userName was skipped because ExcludeSystemLogin was specified."
+
+                            $copyLoginStatus.Status = "Skipped"
+                            $copyLoginStatus.Notes = "System login"
+                            $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            continue
+                        }
+
                         if ($Pscmdlet.ShouldProcess("console", "Stating local login $userName since the source and destination server reside on the same machine.")) {
                             Write-Message -Level Verbose -Message "Copying local login $userName since the source and destination server reside on the same machine."
                         }
@@ -482,35 +502,36 @@ function Copy-DbaLogin {
                 }
             } #end for each $sourceLogin
         } #end function Copy-Login
-
-        Write-Message -Level Verbose -Message "Attempting to connect to SQL Servers."
-        $sourceServer = Connect-SqlInstance -RegularUser -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $source = $sourceServer.DomainInstanceName
-
+    }
+    
+    process {
+        
+        if (Test-Bound -ParameterName InputObject) {
+            $Source = $InputObject[0].Parent.Name
+            $Sourceserver = $InputObject[0].Parent
+            $Login = $InputObject.Name
+        }
+        else {
+            Write-Message -Level Verbose -Message "Attempting to connect to SQL Servers."
+            $sourceServer = Connect-SqlInstance -RegularUser -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            $source = $sourceServer.DomainInstanceName
+        }
+        
         if ($Destination) {
             $destServer = Connect-SqlInstance -RegularUser -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
             $Destination = $destServer.DomainInstanceName
-
+            
             $sourceVersionMajor = $sourceServer.VersionMajor
             $destVersionMajor = $destServer.VersionMajor
             if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
                 Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
-
+            
             if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
-                Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -InnerErrorRecord $_ -Target $sourceServer
+                Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
         }
-
-        return $serverParms
-    }
-
-    process {
-        if ($PipeLogin.Length -gt 0) {
-            $Source = $PipeLogin[0].Parent.Name
-            $Login = $PipeLogin.Name
-        }
-
+        
         if ($SyncOnly) {
             Sync-DbaSqlLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
             return

@@ -129,7 +129,7 @@ function Import-DbaCsvToSql {
             Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://blog.netnerds.net/2015/09/Import-DbaCsvtosql-super-fast-csv-to-sql-server-import-powershell-module/

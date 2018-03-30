@@ -6,9 +6,7 @@ function Test-DbaDatabaseOwner {
         .DESCRIPTION
             This function will check all databases on an instance against a SQL login to validate if that
             login owns those databases or not. By default, the function will check against 'sa' for
-            ownership, but the user can pass a specific login if they use something else. Only databases
-            that do not match this ownership will be displayed, but if the -Detailed switch is set all
-            databases will be shown.
+            ownership, but the user can pass a specific login if they use something else.
 
             Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
 
@@ -17,7 +15,7 @@ function Test-DbaDatabaseOwner {
             Author: Michael Fal (@Mike_Fal), http://mikefal.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .PARAMETER SqlInstance
             Specifies the SQL Server instance(s) to scan.
@@ -41,7 +39,7 @@ function Test-DbaDatabaseOwner {
             Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
         .PARAMETER Detailed
-            Deprecated
+            Will be deprecated in 1.0.0 release.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -71,9 +69,10 @@ function Test-DbaDatabaseOwner {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [string]$TargetLogin = "sa",
+        [string]$TargetLogin ,
         [Switch]$Detailed,
-        [switch]$EnableException
+        [Alias('Silent')]
+        [Switch]$EnableException
     )
 
     begin {
@@ -95,8 +94,8 @@ function Test-DbaDatabaseOwner {
             }
 
             #Validate login
-            if (($server.Logins.Name) -notmatch $TargetLogin) {
-                Stop-Function -Message "$TargetLogin is not a valid login on $instance. Moving on." -Target $instance -Continue
+            if (($server.Logins.Name) -notmatch [Regex]::Escape($TargetLogin)) {
+                Write-Message -Level Verbose -Message "$TargetLogin is not a login on $instance" -Target $instance
             }
         }
         #use online/available dbs

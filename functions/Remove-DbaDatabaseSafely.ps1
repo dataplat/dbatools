@@ -81,7 +81,7 @@ function Remove-DbaDatabaseSafely {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Remove-DbaDatabaseSafely
@@ -149,7 +149,8 @@ function Remove-DbaDatabaseSafely {
         [string]$BackupCompression = 'Default',
         [switch]$ReuseSourceFolderStructure,
         [switch]$Force,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
@@ -169,8 +170,8 @@ function Remove-DbaDatabaseSafely {
 
             $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
 
-            $sourcenb = $sourceserver.ComputerNamePhysicalNetBIOS
-            $destnb = $sourceserver.ComputerNamePhysicalNetBIOS
+            $sourcenb = $instance.ComputerName
+            $destnb = $instance.ComputerName
 
             if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcenb -ne $destnb) {
                 Stop-Function -Message "Backup folder must be a network share if the source and destination servers are not the same." -InnerErrorRecord $_ -Target $backupFolder
@@ -610,8 +611,7 @@ function Remove-DbaDatabaseSafely {
             if ($Pscmdlet.ShouldProcess($destination, "Dropping Database $dbname on $sourceserver")) {
                 ## Drop the database
                 try {
-                    # Remove-SqlDatabase is a function in SharedFunctions.ps1 that tries 3 different ways to drop a database
-                    Remove-SqlDatabase -SqlInstance $sourceserver -DbName $dbname
+                    $null = Remove-DbaDatabase -SqlInstance $sourceserver -Database $dbname -Confirm:$false
                     Write-Message -Level Verbose -Message "Dropped $dbname Database on $source prior to running the Agent Job"
                 }
                 catch {
@@ -675,7 +675,7 @@ function Remove-DbaDatabaseSafely {
             if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination")) {
                 ## Drop the database
                 try {
-                    $null = Remove-SqlDatabase -SqlInstance $sourceserver -DbName $dbname
+                    $null = Remove-DbaDatabase -SqlInstance $sourceserver -Database $dbname -Confirm:$false
                     Write-Message -Level Verbose -Message "Dropped $dbname database on $destination."
                 }
                 catch {

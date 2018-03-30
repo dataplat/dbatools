@@ -29,12 +29,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should Be $null
         }
     }
-
-    Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    
     Context "Database is properly removed again after withreplace test" {
+        Get-DbaProcess $script:instance1 -Database singlerestore | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+        $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
+        Get-DbaProcess $script:instance1 -Database singlerestore | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
-            $results.Status | Should Be "Dropped"
+            $results.Status -eq "Dropped" -or $results.Status -eq $null
         }
     }
 
@@ -49,7 +51,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "Test VerifyOnly works with db in existance" {
+    Context "Test VerifyOnly works with db in existence" {
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1  -VerifyOnly
         It "Should have verified Successfully" {
             $results[0] | Should Be "Verify successful"
@@ -346,7 +348,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 1
-
+    
+    Get-DbaProcess $script:instance1 | Where-Object Program -match 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
     Context "Check Get-DbaBackupHistory pipes into Restore-DbaDatabase" {
         $history = Get-DbaBackupHistory -SqlInstance $script:instance1 -Database RestoreTimeClean -Last
         $results = $history | Restore-DbaDatabase -SqlInstance $script:instance1 -WithReplace -TrustDbBackupHistory

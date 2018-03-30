@@ -32,7 +32,7 @@ function Get-DbaDetachedDatabaseInfo {
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaDetachedDatabaseInfo
@@ -62,7 +62,7 @@ function Get-DbaDetachedDatabaseInfo {
             $servername = $server.name
             $serviceaccount = $server.ServiceAccount
 
-            $exists = Test-DbaSqlPath $server $Path
+            $exists = Test-DbaSqlPath -SqlInstance $server -Path $Path
 
             if ($exists -eq $false) {
                 throw "$servername cannot access the file $path. Does the file exist and does the service account ($serviceaccount) have access to the path?"

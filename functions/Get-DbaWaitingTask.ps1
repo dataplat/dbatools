@@ -36,7 +36,7 @@ function Get-DbaWaitingTask {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaWaitingTask
@@ -60,7 +60,8 @@ function Get-DbaWaitingTask {
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [object[]]$Spid,
         [switch]$IncludeSystemSpid,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {

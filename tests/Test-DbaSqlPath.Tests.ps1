@@ -50,5 +50,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should only return false if the path IS NOT accessible to the instance" {
             $result | Should Be $false
         }
+        $results = Test-DbaSqlPath -SqlInstance $script:instance2 -Path $trueTest, $falseTest
+        It "Should return multiple results when passed multiple paths" {
+            ($results | Where-Object FilePath -eq $trueTest).FileExists | Should Be $true
+            ($results | Where-Object FilePath -eq $falseTest).FileExists | Should Be $false
+        }
+        $results = Test-DbaSqlPath -SqlInstance $script:instance2,$script:instance1 -Path $falseTest
+        It "Should return multiple results when passed multiple instances" {
+            foreach($result in $results) {
+                $result.FileExists | Should Be $false
+            }
+            ($results.SqlInstance | Sort-Object -Unique).Count | Should Be 2
+        }
     }
 }
