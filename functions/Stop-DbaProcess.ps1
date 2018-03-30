@@ -36,7 +36,7 @@ function Stop-DbaProcess {
 
             Exclude is the last filter to run, so even if a spid matches (for example) Hosts, if it's listed in Exclude it wil be excluded.
 
-        .PARAMETER ProcessCollection
+        .PARAMETER InputObject
             This is the process object passed by Get-DbaProcess if using a pipeline.
 
         .PARAMETER WhatIf
@@ -104,7 +104,7 @@ function Stop-DbaProcess {
         [string[]]$Hostname,
         [string[]]$Program,
         [parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Process")]
-        [object[]]$ProcessCollection,
+        [object[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -112,11 +112,11 @@ function Stop-DbaProcess {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        if (!$ProcessCollection) {
-            $ProcessCollection = Get-DbaProcess @PSBoundParameters
+        if (!$InputObject) {
+            $InputObject = Get-DbaProcess @PSBoundParameters
         }
 
-        foreach ($session in $ProcessCollection) {
+        foreach ($session in $InputObject) {
             $sourceserver = $session.Parent
 
             if (!$sourceserver) {

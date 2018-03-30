@@ -42,7 +42,7 @@ function Set-DbaDbRecoveryModel {
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER DatabaseCollection
+        .PARAMETER InputObject
         A collection of databases (such as returned by Get-DbaDatabase)
 
         .NOTES
@@ -95,7 +95,7 @@ function Set-DbaDbRecoveryModel {
         [switch]$AllDatabases,
         [switch]$EnableException,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Pipeline")]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject
     )
     process {
         foreach ($instance in $SqlInstance) {
@@ -130,10 +130,10 @@ function Set-DbaDbRecoveryModel {
                 return
             }
 
-            $DatabaseCollection += $databases
+            $InputObject += $databases
         }
 
-        foreach ($db in $DatabaseCollection) {
+        foreach ($db in $InputObject) {
             if ($db.RecoveryModel -eq $RecoveryModel) {
                 Stop-Function -Message "Recovery Model for database $db is already set to $RecoveryModel" -Category ConnectionError -Target $instance -Continue
             }
