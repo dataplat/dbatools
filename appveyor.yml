@@ -34,6 +34,8 @@ before_test:
 
   # Setting up the local SQL Server environments
   - ps: .\Tests\appveyor.sqlserver.ps1
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
  
 test_script:
    # Test with native PS version
@@ -45,5 +47,5 @@ test_script:
 after_test:
   - ps: .\Tests\appveyor.post.ps1
 
-on_finish:
-  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+#on_finish:
+#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
