@@ -12,7 +12,7 @@ function Get-DbaCredential {
             to be executed against multiple SQL Server instances.
 
         .PARAMETER SqlCredential
-            SqlCredential object to connect as. If not specified, current Windows login will be used.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Name
             Only include specific names
