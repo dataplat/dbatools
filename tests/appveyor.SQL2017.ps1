@@ -14,7 +14,7 @@ Set-Service -Name SQLBrowser -StartupType Automatic -WarningAction SilentlyConti
 Set-Service -Name "SQLAgent`$$instance" -StartupType Automatic -WarningAction SilentlyContinue
 Start-Service SQLBrowser -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
-$null = Enable-DbaAgHadr -SqlInstance $sqlinstance -Confirm:$false -WarningAction SilentlyContinue
+Enable-DbaAgHadr -SqlInstance $sqlinstance -Confirm:$false
 
 Write-Host -Object "$indent Changing the port on $instance to $port" -ForegroundColor DarkGreen
 $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
