@@ -641,7 +641,7 @@ The script will show a message that the copy destination has not been supplied a
             $SourceServer = Connect-SqlInstance -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
         }
         catch {
-            Stop-Function -Message "Could not connect to Sql Server instance $SourceSqlInstance" -InnerErrorRecord $_ -Target $SourceSqlInstance
+            Stop-Function -Message "Could not connect to Sql Server instance $SourceSqlInstance" -ErrorRecord $_ -Target $SourceSqlInstance
             return
         }
 
@@ -651,7 +651,7 @@ The script will show a message that the copy destination has not been supplied a
             $DestinationServer = Connect-SqlInstance -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential
         }
         catch {
-            Stop-Function -Message "Could not connect to Sql Server instance $DestinationSqlInstance" -InnerErrorRecord $_ -Target $DestinationSqlInstance
+            Stop-Function -Message "Could not connect to Sql Server instance $DestinationSqlInstance" -ErrorRecord $_ -Target $DestinationSqlInstance
             return
         }
 
@@ -759,7 +759,7 @@ The script will show a message that the copy destination has not been supplied a
                                 Write-Message -Message "Copy destination $CopyDestinationFolder created." -Level Verbose
                             }
                             catch {
-                                Stop-Function -Message "Something went wrong creating the copy destination folder $CopyDestinationFolder. `n$_" -Target $DestinationSqlInstance -InnerErrorRecord $_
+                                Stop-Function -Message "Something went wrong creating the copy destination folder $CopyDestinationFolder. `n$_" -Target $DestinationSqlInstance -ErrorRecord $_
                                 return
                             }
                         }
@@ -777,7 +777,7 @@ The script will show a message that the copy destination has not been supplied a
                         Write-Message -Message "Copy destination $CopyDestinationFolder created." -Level Verbose
                     }
                     catch {
-                        Stop-Function -Message "Something went wrong creating the copy destination folder $CopyDestinationFolder. `n$_" -Target $DestinationSqlInstance -InnerErrorRecord $_
+                        Stop-Function -Message "Something went wrong creating the copy destination folder $CopyDestinationFolder. `n$_" -Target $DestinationSqlInstance -ErrorRecord $_
                         return
                     }
                 } # else not force
@@ -1217,7 +1217,7 @@ The script will show a message that the copy destination has not been supplied a
                     }
                 }
                 catch {
-                    Stop-Function -Message "Something went wrong creating the directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+                    Stop-Function -Message "Something went wrong creating the directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
                 }
             }
 
@@ -1241,7 +1241,7 @@ The script will show a message that the copy destination has not been supplied a
 
             # Check if secondary database is present on secondary instance
             if (-not $Force -and -not $NoInitialization -and ($DestinationServer.Databases[$SecondaryDatabase].Status -ne 'Restoring') -and ($DestinationServer.Databases.Name -contains $SecondaryDatabase)) {
-                Stop-Function -Message "Secondary database already exists on instance $DestinationSqlInstance." -InnerErrorRecord $_ -Target $DestinationSqlInstance -Continue
+                Stop-Function -Message "Secondary database already exists on instance $DestinationSqlInstance." -ErrorRecord $_ -Target $DestinationSqlInstance -Continue
             }
 
             # Check if the secondary database needs tobe initialized
@@ -1251,7 +1251,7 @@ The script will show a message that the copy destination has not been supplied a
                     # Check if force is being used and no option to generate the full backup is set
                     if ($Force -and -not ($GenerateFullBackup -or $UseExistingFullBackup)) {
                         # Set the option to generate a full backup
-                        Write-Message -Message "Set option to initialize secondary database with full backup." -Level Verbose
+                        Write-Message -Message "Set option to initialize secondary database with full backup" -Level Verbose
                         $GenerateFullBackup = $true
                     }
                     elseif (-not $Force -and -not $GenerateFullBackup -and -not $UseExistingFullBackup -and -not $UseBackupFolder) {
@@ -1321,7 +1321,7 @@ The script will show a message that the copy destination has not been supplied a
                                 }
                             }
                             catch {
-                                Stop-Function -Message "Something went wrong creating the restore data directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+                                Stop-Function -Message "Something went wrong creating the restore data directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
                             }
                         }
                     }
@@ -1340,7 +1340,7 @@ The script will show a message that the copy destination has not been supplied a
                                 }
                             }
                             catch {
-                                Stop-Function -Message "Something went wrong creating the restore log directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+                                Stop-Function -Message "Something went wrong creating the restore log directory" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
                             }
                         }
                     }
@@ -1350,13 +1350,13 @@ The script will show a message that the copy destination has not been supplied a
                 if ($FullBackupPath) {
                     Write-Message -Message "Testing full backup path $FullBackupPath" -Level Verbose
                     if ((Test-DbaSqlPath -Path $FullBackupPath -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
-                        Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential. `n$($_.Exception.Message)") -InnerErrorRecord $_ -Target $DestinationSqlInstance -Continue
+                        Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential") -ErrorRecord $_ -Target $DestinationSqlInstance -Continue
                     }
                 }
                 elseif ($UseBackupFolder.Length -ge 1) {
                     Write-Message -Message "Testing backup folder $UseBackupFolder" -Level Verbose
                     if ((Test-DbaSqlPath -Path $UseBackupFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
-                        Stop-Function -Message ("The path to the backup folder could not be reached. Check the path and/or the crdential. `n$($_.Exception.Message)") -InnerErrorRecord $_ -Target $DestinationSqlInstance -Continue
+                        Stop-Function -Message ("The path to the backup folder could not be reached. Check the path and/or the crdential") -ErrorRecord $_ -Target $DestinationSqlInstance -Continue
                     }
 
                     $BackupPath = $UseBackupFolder
@@ -1372,11 +1372,11 @@ The script will show a message that the copy destination has not been supplied a
                         # Test the path to the backup
                         Write-Message -Message "Testing last backup path $(($LastBackup[-1]).Path[-1])" -Level Verbose
                         if ((Test-DbaSqlPath -Path ($LastBackup[-1]).Path[-1] -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
-                            Stop-Function -Message "The full backup could not be found on $($LastBackup.Path). Check path and/or credentials. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $DestinationSqlInstance -Continue
+                            Stop-Function -Message "The full backup could not be found on $($LastBackup.Path). Check path and/or credentials" -ErrorRecord $_ -Target $DestinationSqlInstance -Continue
                         }
                         # Check if the source for the last full backup is remote and the backup is on a shared location
                         elseif (($LastBackup.Computername -ne $SourceServerName) -and (($LastBackup[-1]).Path[-1].StartsWith('\\') -eq $false)) {
-                            Stop-Function -Message "The last full backup is not located on shared location. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $DestinationSqlInstance -Continue
+                            Stop-Function -Message "The last full backup is not located on shared location. `n$($_.Exception.Message)" -ErrorRecord $_ -Target $DestinationSqlInstance -Continue
                         }
                         else {
                             #$FullBackupPath = $LastBackup.Path
@@ -1428,7 +1428,7 @@ The script will show a message that the copy destination has not been supplied a
                         }
                     }
                     catch {
-                        Stop-Function -Message "Something went wrong creating the database copy destination folder. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $DestinationServerName -Continue
+                        Stop-Function -Message "Something went wrong creating the database copy destination folder. `n$($_.Exception.Message)" -ErrorRecord $_ -Target $DestinationServerName -Continue
                     }
                 }
             }
@@ -1454,25 +1454,31 @@ The script will show a message that the copy destination has not been supplied a
             # If the database needs to be backed up first
             if ($GenerateFullBackup) {
                 if ($PSCmdlet.ShouldProcess($SourceSqlInstance, "Backing up database $db")) {
+
                     Write-Message -Message "Generating full backup." -Level Output
                     Write-Message -Message "Backing up database $db to $DatabaseBackupNetworkPath" -Level Output
 
-                    $Timestamp = Get-Date -format "yyyyMMddHHmmss"
+                    try {
+                        $Timestamp = Get-Date -format "yyyyMMddHHmmss"
 
-                    $LastBackup = Backup-DbaDatabase -SqlInstance $SourceSqlInstance `
-                        -SqlCredential $SourceSqlCredential `
-                        -BackupDirectory $DatabaseBackupNetworkPath `
-                        -BackupFileName "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak" `
-                        -Databases $($db.Name) `
-                        -Type Full
+                        $LastBackup = Backup-DbaDatabase -SqlInstance $SourceSqlInstance `
+                            -SqlCredential $SourceSqlCredential `
+                            -BackupDirectory $DatabaseBackupNetworkPath `
+                            -BackupFileName "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak" `
+                            -Databases $($db.Name) `
+                            -Type Full
 
-                    Write-Message -Message "Backup completed." -Level Output
+                        Write-Message -Message "Backup completed." -Level Output
 
-                    # Get the last full backup path
-                    #$FullBackupPath = $LastBackup.BackupPath
-                    $BackupPath = $LastBackup.BackupPath
+                        # Get the last full backup path
+                        #$FullBackupPath = $LastBackup.BackupPath
+                        $BackupPath = $LastBackup.BackupPath
 
-                    Write-Message -Message "Backup is located at $BackupPath" -Level Verbose
+                        Write-Message -Message "Backup is located at $BackupPath" -Level Verbose
+                    }
+                    catch {
+                        Stop-Function -Message "Something went wrong generating the full backup" -ErrorRecord $_ -Target $DestinationServerName -Continue
+                    }
                 }
             }
 
@@ -1492,11 +1498,11 @@ The script will show a message that the copy destination has not been supplied a
             # Check the PrimaryMonitorServerSecurityMode if it's SQL Server authentication
             if ($PrimaryMonitorServerSecurityMode -eq 0) {
                 if ($PrimaryMonitorServerLogin) {
-                    Stop-Function -Message "The PrimaryMonitorServerLogin cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+                    Stop-Function -Message "The PrimaryMonitorServerLogin cannot be empty when using SQL Server authentication." -Target $SourceSqlInstance -Continue
                 }
 
                 if ($PrimaryMonitorServerPassword) {
-                    Stop-Function -Message "The PrimaryMonitorServerPassword cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $ -Continue
+                    Stop-Function -Message "The PrimaryMonitorServerPassword cannot be empty when using SQL Server authentication." -Target $ -Continue
                 }
             }
 
@@ -1516,11 +1522,11 @@ The script will show a message that the copy destination has not been supplied a
             # Check the MonitorServerSecurityMode if it's SQL Server authentication
             if ($SecondaryMonitorServerSecurityMode -eq 0) {
                 if ($SecondaryMonitorServerLogin) {
-                    Stop-Function -Message "The SecondaryMonitorServerLogin cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+                    Stop-Function -Message "The SecondaryMonitorServerLogin cannot be empty when using SQL Server authentication." -Target $SourceSqlInstance -Continue
                 }
 
                 if ($SecondaryMonitorServerPassword) {
-                    Stop-Function -Message "The SecondaryMonitorServerPassword cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+                    Stop-Function -Message "The SecondaryMonitorServerPassword cannot be empty when using SQL Server authentication." -Target $SourceSqlInstance -Continue
                 }
             }
 
@@ -1591,7 +1597,7 @@ The script will show a message that the copy destination has not been supplied a
                         }
                     }
                     catch {
-                        Stop-Function -Message "Something went wrong restoring the secondary database.`n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+                        Stop-Function -Message "Something went wrong restoring the secondary database" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
                     }
 
                     Write-Message -Message "Restore completed." -Level Output
@@ -1659,7 +1665,7 @@ The script will show a message that the copy destination has not been supplied a
                         -SecondarySqlCredential $DestinationSqlCredential
                 }
                 catch {
-                    Stop-Function -Message "Something went wrong setting up log shipping for primary instance.`n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+                    Stop-Function -Message "Something went wrong setting up log shipping for primary instance" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
                 }
             }
             #endregion Set up log shipping on the primary instance
@@ -1753,7 +1759,7 @@ The script will show a message that the copy destination has not been supplied a
 
                 }
                 catch {
-                    Stop-Function -Message "Something went wrong setting up log shipping for secondary instance.`n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $DestinationSqlInstance -Continue
+                    Stop-Function -Message "Something went wrong setting up log shipping for secondary instance.`n$($_.Exception.Message)" -ErrorRecord $_ -Target $DestinationSqlInstance -Continue
                 }
             }
             #endregion Set up log shipping on the secondary instance
