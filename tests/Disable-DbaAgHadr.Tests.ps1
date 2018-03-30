@@ -24,18 +24,17 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $current = Get-DbaAgHadr -SqlInstance $script:instance3 # for appveyor $script:instance2
-        Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -WarningAction SilentlyContinue
+        Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -WarningAction SilentlyContinue -Force
     }
     AfterAll {
         if ($current.IsHadrEnabled) {
-            Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -WarningAction SilentlyContinue
+            Enable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -WarningAction SilentlyContinue -Force
         }
     }
     
-    $results = Disable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -WarningAction SilentlyContinue -WarningVariable warn
+    $results = Disable-DbaAgHadr -SqlInstance $script:instance3 -Confirm:$false -Force
     
-    It "disables hadr and returns a warning to restart" {
-        $warn | Should -Not -Be $null
+    It "disables hadr" {
         $results.IsHadrEnabled | Should -Be $false
     }
 }
