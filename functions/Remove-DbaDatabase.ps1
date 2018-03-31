@@ -15,7 +15,7 @@ Login to the target instance using alternative credentials. Windows and SQL Auth
 .PARAMETER Database
 The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER DatabaseCollection
+.PARAMETER InputObject
 A collection of databases (such as returned by Get-DbaDatabase), to be removed.
 
 .PARAMETER IncludeSystemDb
@@ -80,7 +80,7 @@ Removes all the user databases from server\instance without any confirmation
         [Alias("Databases")]
         [object[]]$Database,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$IncludeSystemDb,
         [Alias('Silent')]
         [switch]$EnableException
@@ -96,16 +96,16 @@ Removes all the user databases from server\instance without any confirmation
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $databasecollection += $server.Databases | Where-Object { $_.Name -in $Database }
+            $InputObject += $server.Databases | Where-Object { $_.Name -in $Database }
         }
 
         $system_dbs = @( "master", "model", "tempdb", "resource", "msdb" )
 
         if (-not($IncludeSystemDb)) {
-            $databasecollection = $databasecollection | Where-Object { $_.Name -notin $system_dbs}
+            $InputObject = $InputObject | Where-Object { $_.Name -notin $system_dbs}
         }
 
-        foreach ($db in $databasecollection) {
+        foreach ($db in $InputObject) {
             try {
                 $server = $db.Parent
                 if ($Pscmdlet.ShouldProcess("$db on $server", "KillDatabase")) {

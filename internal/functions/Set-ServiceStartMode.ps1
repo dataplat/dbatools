@@ -6,7 +6,7 @@ function Set-ServiceStartMode {
         .DESCRIPTION
         Accepts objects from Get-DbaSqlService and performs a corresponding action.
 
-        .PARAMETER ServiceCollection
+        .PARAMETER InputObject
         A collection of services from Get-DbaSqlService.
 
         .PARAMETER Mode
@@ -32,7 +32,7 @@ function Set-ServiceStartMode {
 
         .EXAMPLE
         $services = Get-DbaSqlService -ComputerName sql1
-        Set-ServiceStartMode -ServiceCollection $services -Mode 'Automatic'
+        Set-ServiceStartMode -InputObject $services -Mode 'Automatic'
 
         Sets all SQL services on sql1 to Automatic startup.
 
@@ -41,7 +41,7 @@ function Set-ServiceStartMode {
     param (
         [string]$Mode,
         [parameter(ValueFromPipeline = $true, Mandatory = $true)]
-        [object[]]$ServiceCollection
+        [object[]]$InputObject
     )
     begin {
         $callStack = Get-PSCallStack
@@ -55,7 +55,7 @@ function Set-ServiceStartMode {
     }
     process {
         #Get all the objects from the pipeline before proceeding
-        $ProcessArray += $ServiceCollection
+        $ProcessArray += $InputObject
     }
     end {
         $ProcessArray = $ProcessArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.type -in $Type) }

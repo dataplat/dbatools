@@ -72,8 +72,8 @@ For -Detached it is required to break mirroring and Availability Groups
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER DatabaseCollection
-Internal parameter for piped objects - this will likely go away once we move to better dynamic parameters
+.PARAMETER InputObject
+Accepts piped database objects
 
 .NOTES
 Author: niphlod
@@ -141,7 +141,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
         [Alias('Silent')]
         [switch]$EnableException,
         [parameter(Mandatory = $true, ValueFromPipeline, ParameterSetName = "Database")]
-        [PsCustomObject[]]$DatabaseCollection
+        [PsCustomObject[]]$InputObject
     )
 
     begin {
@@ -238,19 +238,19 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
     process {
         if (Test-FunctionInterrupt) { return }
         $dbs = @()
-        if (!$Database -and !$AllDatabases -and !$DatabaseCollection -and !$ExcludeDatabase) {
+        if (!$Database -and !$AllDatabases -and !$InputObject -and !$ExcludeDatabase) {
             Stop-Function -Message "You must specify a -AllDatabases or -Database to continue"
             return
         }
 
-        if ($DatabaseCollection) {
-            if ($DatabaseCollection.Database) {
+        if ($InputObject) {
+            if ($InputObject.Database) {
                 # comes from Get-DbaDatabaseState
-                $dbs += $DatabaseCollection.Database
+                $dbs += $InputObject.Database
             }
-            elseif ($DatabaseCollection.Name) {
+            elseif ($InputObject.Name) {
                 # comes from Get-DbaDatabase
-                $dbs += $DatabaseCollection
+                $dbs += $InputObject
             }
         }
         else {
