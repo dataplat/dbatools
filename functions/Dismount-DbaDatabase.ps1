@@ -18,7 +18,7 @@ function Dismount-DbaDatabase {
         .PARAMETER FileStructure
             A StringCollection object value that contains a list database files. If FileStructure is not specified, BackupHistory will be used to guess the structure.
 
-        .PARAMETER DatabaseCollection
+        .PARAMETER InputObject
             A collection of databases (such as returned by Get-DbaDatabase), to be detached.
 
         .PARAMETER UpdateStatistics
@@ -74,7 +74,7 @@ function Dismount-DbaDatabase {
         [parameter(Mandatory, ParameterSetName = 'SqlInstance')]
         [string]$Database,
         [parameter(Mandatory, ParameterSetName = 'Pipeline', ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Switch]$UpdateStatistics,
         [switch]$Force,
         [Alias('Silent')]
@@ -90,18 +90,18 @@ function Dismount-DbaDatabase {
             }
 
             if ($Database) {
-                $DatabaseCollection += $server.Databases | Where-Object Name -in $Database
+                $InputObject += $server.Databases | Where-Object Name -in $Database
             }
             else {
-                $DatabaseCollection += $server.Databases
+                $InputObject += $server.Databases
             }
 
             if ($ExcludeDatabase) {
-                $DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase
+                $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeDatabase
             }
         }
 
-        foreach ($db in $DatabaseCollection) {
+        foreach ($db in $InputObject) {
             $db.Refresh()
             $server = $db.Parent
 

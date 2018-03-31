@@ -16,7 +16,7 @@ Login to the target instance using alternative credentials. Windows and SQL Auth
 .PARAMETER Schedule
 The name of the job schedule.
 
-.PARAMETER ScheduleCollection
+.PARAMETER InputObject
 A collection of schedule (such as returned by Get-DbaAgentSchedule), to be removed.
 
 .PARAMETER WhatIf
@@ -85,7 +85,7 @@ Remove the schedules using a pipeline
         [Alias("Schedules")]
         [object[]]$Schedule,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "schedules")]
-        [Microsoft.SqlServer.Management.Smo.Agent.ScheduleBase[]]$ScheduleCollection,
+        [Microsoft.SqlServer.Management.Smo.Agent.ScheduleBase[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
@@ -103,11 +103,11 @@ Remove the schedules using a pipeline
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $ScheduleCollection += $server.JobServer.SharedSchedules | Where-Object { $_.Name -in $Schedule }
+            $InputObject += $server.JobServer.SharedSchedules | Where-Object { $_.Name -in $Schedule }
 
         } # foreach object instance
 
-        foreach ($s in $ScheduleCollection) {
+        foreach ($s in $InputObject) {
 
             if ($Server.JobServer.SharedSchedules.Name -contains $s.Name) {
                 # Get job count
