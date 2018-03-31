@@ -187,7 +187,7 @@ function Set-DbaDbCompression {
                                             Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                             break
                                         }
-                                        foreach ($p in $obj.PhysicalPartitions) {
+                                        foreach ($p in $($obj.PhysicalPartitions | Where-Object {$_.DataCompression -ne $CompressionType})) {
                                             Write-Message -Level Verbose -Message "Compressing heap $($obj.Schema).$($obj.Name)"
                                             $($obj.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
 
@@ -222,7 +222,7 @@ function Set-DbaDbCompression {
                                     break
                                 }
                                 Write-Message -Level Verbose -Message "Compressing $($Index.IndexType) $($Index.Name)"
-                                foreach ($p in $index.PhysicalPartitions) {
+                                foreach ($p in $($index.PhysicalPartitions | Where-Object {$_.DataCompression -ne $CompressionType})) {
                                     $($Index.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
                                     $results +=
                                     [pscustomobject]@{
@@ -248,12 +248,8 @@ function Set-DbaDbCompression {
                                     }
                                 }
                                 $index.Rebuild()
-
                             }
-
                         }
-
-
                     }
                 }
                 catch {
