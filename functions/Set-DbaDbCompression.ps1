@@ -77,7 +77,7 @@ function Set-DbaDbCompression {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [ValidateSet("Recommended", "PAGE", "ROW")]$CompressionType = "Recommended",
+        [ValidateSet("Recommended", "Page", "Row")]$CompressionType = "Recommended",
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [int]$MaxRunTime = 0,
@@ -200,14 +200,14 @@ function Set-DbaDbCompression {
                                                 Schema                        = $obj.Schema
                                                 TableName                     = $obj.Name
                                                 IndexName                     = $null
-                                                Partition                     = $p.Partition
-                                                IndexID                       = $null
-                                                IndexType                     = $null
+                                                Partition                     = $p.PartitionNumber
+                                                IndexID                       = 0
+                                                IndexType                     = 'Heap'
                                                 PercentScan                   = $null
                                                 PercentUpdate                 = $null
                                                 RowEstimatePercentOriginal    = $null
                                                 PageEstimatePercentOriginal   = $null
-                                                CompressionTypeRecommendation = $CompressionType
+                                                CompressionTypeRecommendation = $CompressionType.ToUpper()
                                                 SizeCurrent                   = $null
                                                 SizeRequested                 = $null
                                                 PercentCompression            = $null
@@ -232,15 +232,15 @@ function Set-DbaDbCompression {
                                         Database                      = $db.Name
                                         Schema                        = $obj.Schema
                                         TableName                     = $obj.Name
-                                        IndexName                     = $index.IndexName
-                                        Partition                     = $p.Partition
-                                        IndexID                       = $index.IndexID
+                                        IndexName                     = $index.Name
+                                        Partition                     = $p.PartitionNumber
+                                        IndexID                       = $index.Id
                                         IndexType                     = $index.IndexType
                                         PercentScan                   = $null
                                         PercentUpdate                 = $null
                                         RowEstimatePercentOriginal    = $null
                                         PageEstimatePercentOriginal   = $null
-                                        CompressionTypeRecommendation = $CompressionType
+                                        CompressionTypeRecommendation = $CompressionType.ToUpper()
                                         SizeCurrent                   = $null
                                         SizeRequested                 = $null
                                         PercentCompression            = $null
@@ -250,12 +250,6 @@ function Set-DbaDbCompression {
                                 $index.Rebuild()
 
                             }
-
-
-
-
-
-
 
                         }
 
