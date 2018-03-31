@@ -84,6 +84,7 @@ function Update-DbaSqlServiceAccount {
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "InputObject")]
+        [Alias("ServiceCollection")]
         [object[]]$InputObject,
         [parameter(ParameterSetName = "ServiceName", Position = 1, Mandatory = $true)]
         [Alias("Name", "Service")]

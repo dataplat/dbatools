@@ -31,7 +31,7 @@ function Get-DbaHelpIndex {
 
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-			
+
         .PARAMETER Database
             The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
 
