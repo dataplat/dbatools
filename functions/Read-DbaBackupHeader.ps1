@@ -12,11 +12,7 @@ function Read-DbaBackupHeader {
             The SQL Server instance to use for parsing the backup files.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            To connect as a different Windows user, run PowerShell as that user.i
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Path
             Path to SQL Server backup file. This can be a full, differential or log backup file. Accepts valid filesystem paths and URLs.

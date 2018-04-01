@@ -192,12 +192,12 @@ function Get-DbaSqlService {
                                 Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue $priority
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value {
                                     Param ([bool]$Force = $false)
-                                    Stop-DbaSqlService -ServiceCollection $this -Force:$Force
+                                    Stop-DbaSqlService -InputObject $this -Force:$Force
                                 }
-                                Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Start" -Value { Start-DbaSqlService -ServiceCollection $this }
+                                Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Start" -Value { Start-DbaSqlService -InputObject $this }
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Restart" -Value {
                                     Param ([bool]$Force = $false)
-                                    Restart-DbaSqlService -ServiceCollection $this -Force:$Force
+                                    Restart-DbaSqlService -InputObject $this -Force:$Force
                                 }
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "ChangeStartMode" -Value {
                                     Param (
@@ -209,7 +209,7 @@ function Get-DbaSqlService {
                                         Stop-Function -Message ("Incorrect mode '$Mode'. Use one of the following values: {0}" -f ($supportedModes -join ' | ')) -EnableException $false -FunctionName 'Get-DbaSqlService'
                                         Return
                                     }
-                                    Set-ServiceStartMode -ServiceCollection $this -Mode $Mode -ErrorAction Stop
+                                    Set-ServiceStartMode -InputObject $this -Mode $Mode -ErrorAction Stop
                                     $this.StartMode = $Mode
                                 }
                                 Select-DefaultView -InputObject $service -Property ComputerName, ServiceName, ServiceType, InstanceName, DisplayName, StartName, State, StartMode -TypeName DbaSqlService

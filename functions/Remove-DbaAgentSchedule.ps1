@@ -11,14 +11,12 @@ Remove-DbaAgentJobSchedule removes a a job in the SQL Server Agent.
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-To connect as a different Windows user, run PowerShell as that user.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER Schedule
 The name of the job schedule.
 
-.PARAMETER ScheduleCollection
+.PARAMETER InputObject
 A collection of schedule (such as returned by Get-DbaAgentSchedule), to be removed.
 
 .PARAMETER WhatIf
@@ -87,7 +85,7 @@ Remove the schedules using a pipeline
         [Alias("Schedules")]
         [object[]]$Schedule,
         [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "schedules")]
-        [Microsoft.SqlServer.Management.Smo.Agent.ScheduleBase[]]$ScheduleCollection,
+        [Microsoft.SqlServer.Management.Smo.Agent.ScheduleBase[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException,
         [switch]$Force
@@ -105,11 +103,11 @@ Remove the schedules using a pipeline
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $ScheduleCollection += $server.JobServer.SharedSchedules | Where-Object { $_.Name -in $Schedule }
+            $InputObject += $server.JobServer.SharedSchedules | Where-Object { $_.Name -in $Schedule }
 
         } # foreach object instance
 
-        foreach ($s in $ScheduleCollection) {
+        foreach ($s in $InputObject) {
 
             if ($Server.JobServer.SharedSchedules.Name -contains $s.Name) {
                 # Get job count
