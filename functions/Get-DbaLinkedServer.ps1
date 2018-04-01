@@ -11,7 +11,7 @@ function Get-DbaLinkedServer {
             to be executed against multiple SQL Server instances.
 
         .PARAMETER SqlCredential
-            SqlCredential object to connect as. If not specified, current Windows login will be used.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER LinkedServer
             The linked server(s) to process - this list is auto-populated from the server. If unspecified, all linked servers will be processed.

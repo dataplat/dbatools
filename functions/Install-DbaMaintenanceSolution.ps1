@@ -9,11 +9,7 @@ function Install-DbaMaintenanceSolution {
             The target SQL Server instance onto which the Maintenance Solution will be installed.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             The database where Ola Hallengren's solution will be installed. Defaults to master.

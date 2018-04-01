@@ -19,8 +19,8 @@ function Get-DbaDatabaseFile {
     .PARAMETER ExcludeDatabase
     The database(s) to exclude - this list is auto-populated from the server
 
-    .PARAMETER DatabaseCollection
-    Internal Variable
+    .PARAMETER InputObject
+    A piped collection of database objects
 
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -58,7 +58,7 @@ function Get-DbaDatabaseFile {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [object[]]$DatabaseCollection,
+        [object[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -139,17 +139,17 @@ function Get-DbaDatabaseFile {
             left outer join  sysfilegroups fg on df.groupid=fg.groupid"
 
             if ($Database) {
-                $DatabaseCollection = $server.Databases | Where-Object Name -in $database
+                $InputObject = $server.Databases | Where-Object Name -in $database
             }
             else {
-                $DatabaseCollection = $server.Databases
+                $InputObject = $server.Databases
             }
 
             if ($ExcludeDatabase) {
-                $DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase
+                $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeDatabase
             }
 
-            foreach ($db in $DatabaseCollection) {
+            foreach ($db in $InputObject) {
                 if (!$db.IsAccessible) {
                     Write-Message -Level Warning -Message "Database $db is not accessible. Skipping"
                     continue

@@ -30,11 +30,7 @@ function Get-DbaHelpIndex {
             SQL Server name or SMO object representing the SQL Server to connect to.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-            $cred = Get-Credential, then pass $cred variable to this parameter.
-
-            Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows use
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.

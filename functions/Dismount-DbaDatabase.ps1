@@ -10,13 +10,7 @@ function Dismount-DbaDatabase {
             The SQL Server instance.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             The database(s) to detach.
@@ -24,7 +18,7 @@ function Dismount-DbaDatabase {
         .PARAMETER FileStructure
             A StringCollection object value that contains a list database files. If FileStructure is not specified, BackupHistory will be used to guess the structure.
 
-        .PARAMETER DatabaseCollection
+        .PARAMETER InputObject
             A collection of databases (such as returned by Get-DbaDatabase), to be detached.
 
         .PARAMETER UpdateStatistics
@@ -80,7 +74,7 @@ function Dismount-DbaDatabase {
         [parameter(Mandatory, ParameterSetName = 'SqlInstance')]
         [string]$Database,
         [parameter(Mandatory, ParameterSetName = 'Pipeline', ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Switch]$UpdateStatistics,
         [switch]$Force,
         [Alias('Silent')]
@@ -96,18 +90,18 @@ function Dismount-DbaDatabase {
             }
 
             if ($Database) {
-                $DatabaseCollection += $server.Databases | Where-Object Name -in $Database
+                $InputObject += $server.Databases | Where-Object Name -in $Database
             }
             else {
-                $DatabaseCollection += $server.Databases
+                $InputObject += $server.Databases
             }
 
             if ($ExcludeDatabase) {
-                $DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase
+                $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeDatabase
             }
         }
 
-        foreach ($db in $DatabaseCollection) {
+        foreach ($db in $InputObject) {
             $db.Refresh()
             $server = $db.Parent
 

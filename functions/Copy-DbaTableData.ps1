@@ -15,23 +15,13 @@ function Copy-DbaTableData {
             Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
-
-            Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Destination
             Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
         .PARAMETER DestinationSqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-            $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
-
-            Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             The database to copy the table from.
@@ -215,7 +205,7 @@ function Copy-DbaTableData {
                 return
             }
 
-            $tablecollection = [Microsoft.SqlServer.Management.Smo.Table[]]$tablecollection
+            $InputObject = [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
@@ -231,7 +221,7 @@ function Copy-DbaTableData {
             }
 
             try {
-                $tablecollection += Get-DbaTable -SqlInstance $server -Table $Table -Database $Database -EnableException -Verbose:$false
+                $InputObject += Get-DbaTable -SqlInstance $server -Table $Table -Database $Database -EnableException -Verbose:$false
             }
             catch {
                 Stop-Function -Message "Unable to determine source table : $Table"
@@ -239,11 +229,11 @@ function Copy-DbaTableData {
             }
         }
 
-        if (-not $tablecollection) {
-            $tablecollection = [Microsoft.SqlServer.Management.Smo.Table[]]$Table
+        if (-not $InputObject) {
+            $InputObject = [Microsoft.SqlServer.Management.Smo.Table[]]$Table
         }
 
-        foreach ($sqltable in $tablecollection) {
+        foreach ($sqltable in $InputObject) {
 
             $Database = $sqltable.Parent.Name
             $server = $sqltable.Parent.Parent
