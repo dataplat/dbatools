@@ -2,10 +2,44 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 5
+        $defaultParamCount = 11
+        [object[]]$params = (Get-ChildItem function:\Test-DbaDbCompression).Parameters.Keys
+        $knownParameters = 'SqlInstance', 'SqlCredential','Database','ExcludeDatabase','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
+
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "command can run" {
-        It "should be able to run - not much to test here" {
-            Test-DbaDbCompression -SqlInstance $script:instance2 -Database tempdb | Should Be $null
+    BeforeAll {
+        Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $dbname = "dbatoolsci_test_$(get-random)"
+        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $null = $server.Query("Create Database [$dbname]")
+        $null = $server.Query("select * into syscols from sys.all_columns
+                                select * into sysallparams from sys.all_parameters
+                                create clustered index CL_sysallparams on sysallparams (object_id)
+                                create nonclustered index NC_syscols on syscols (precision) include (collation_name)",$dbname)
+       }
+    AfterAll {
+        Get-DbaProcess -SqlInstance $script:instance1 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+    }
+    Context "Command gets suggestions" {
+        It "Should get results for $dbaname" {
+            $(Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname) | Should Not Be $null
+        }
+    }
+    Context "Command excludes results for specified database" {
+        It "Shouldn't get any results for $dbname" {
+            $(Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname -ExcludeDatabase $dbname).Database | Should not Match $dbname
         }
     }
 }
