@@ -34,6 +34,9 @@ function Reset-DbaAdmin {
 
             When adding a Windows login to remote servers, ensure the SQL Server can add the login (ie, don't add WORKSTATION\Admin to remoteserver\instance. Domain users and Groups are valid input.
 
+        .PARAMETER SecurePassword
+            By default, if a SQL Login is detected, you will be prompted for a password. Use this to securely bypass the prompt.
+
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -86,6 +89,7 @@ function Reset-DbaAdmin {
         [DbaInstanceParameter]
         $SqlInstance,
         [string]$Login = "sa",
+        [SecureString]$SecurePassword,
         [switch]$Force,
         [Alias('Silent')]
         [switch]$EnableException
@@ -240,14 +244,18 @@ function Reset-DbaAdmin {
             }
 
             # If it's not a Windows login, it's a SQL login, so it needs a password.
-            if ($windowslogin -ne $true) {
+            if ($windowslogin -ne $true -and (Test-Bound -Not -ParameterName SecurePassword)) {
                 Write-Message -Level Verbose -Message "SQL login detected"
                 do {
                     $Password = Read-Host -AsSecureString "Please enter a new password for $login"
                 }
                 while ($Password.Length -eq 0)
             }
-
+            
+            If ((Test-Bound -ParameterName SecurePassword)) {
+                $Password = $SecurePassword
+            }
+            
             # Get instance and service display name, then get services
             $instance = $null
             $instance = $SqlInstance.InstanceName
