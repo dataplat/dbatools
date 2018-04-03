@@ -26,15 +26,32 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = $server.Query("select * into syscols from sys.all_columns
                                 select * into sysallparams from sys.all_parameters
                                 create clustered index CL_sysallparams on sysallparams (object_id)
-                                create nonclustered index NC_syscols on syscols (precision) include (collation_name)",$dbname)
+                                create nonclustered index NC_syscols on syscols (precision) include (collation_name)
+                                update sysallparams set is_xml_document = 1 where name = '@dbname'
+                                ",$dbname)
        }
     AfterAll {
         Get-DbaProcess -SqlInstance $script:instance1 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
     }
     Context "Command gets suggestions" {
+        $results = Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname
         It "Should get results for $dbaname" {
-            $(Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname) | Should Not Be $null
+            $results | Should Not Be $null
+        }
+        $results.foreach{
+            It "Should suggest ROW, PAGE or NO_GAIN for $($PSitem.TableName) - $($PSitem.IndexType) " {
+                $PSitem.CompressionTypeRecommendation | Should BeIn ("ROW","PAGE","NO_GAIN")
+            }
+        }
+    }
+    Context "Command makes right suggestions" {
+        $results = Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname
+        It "Should sugggest PAGE compression for a table with no updates or scans" {
+            $($results | Where-Object { $_.TableName -eq "syscols" -and $_.IndexType -eq "HEAP"}).CompressionTypeRecommendation | Should Be "PAGE"
+        }
+        It "Should sugggest ROW compression for table with more updates" {
+            $($results | Where-Object { $_.TableName -eq "sysallparams"}).CompressionTypeRecommendation | Should Be "ROW"
         }
     }
     Context "Command excludes results for specified database" {
