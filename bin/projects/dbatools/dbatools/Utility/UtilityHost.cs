@@ -36,7 +36,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <summary>
         /// The number of digits a size object shows by default
         /// </summary>
-        public static int SizeDigits;
+        public static int SizeDigits = 2;
 
         /// <summary>
         /// The way size objects are usually displayed
