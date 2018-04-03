@@ -128,7 +128,7 @@ Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking
 #imports the psm1 to be able to use internal functions in tests
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
 
-$ScriptAnalyzerRulesExclude = @('PSUseOutputTypeCorrectly', 'PSAvoidUsingPlainTextForPassword')
+$ScriptAnalyzerRulesExclude = @('PSUseOutputTypeCorrectly', 'PSAvoidUsingPlainTextForPassword', 'PSUseBOMForUnicodeEncodedFile')
 
 $testInt = $false
 if ($config_TestIntegration) {
