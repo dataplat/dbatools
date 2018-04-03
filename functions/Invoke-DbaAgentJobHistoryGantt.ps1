@@ -4,7 +4,7 @@ function Invoke-DbaAgentJobHistoryGantt {
 Produces a Gantt chart (timeline) based on SQL Agent job history.
 
 .DESCRIPTION
-Reads job history for a given SQL instance, date & time range, 
+Reads job history for a given SQL instance, date & time range,
 then outputs that history to a temp HTML file that can be rendered
 as a Gantt chart (timeline) using Google charts.
 The .html file opens using your default browser.
@@ -53,10 +53,10 @@ The SQL Server that you're connecting to.
 
     Google timeline chart template
     https://developers.google.com/chart/interactive/docs/gallery/timeline
-   
+
     Customisation for color mapping
     http://stackoverflow.com/questions/23268616/color-in-googles-timeline-chart-bars-based-in-the-a-specific-value
-   
+
     Timeline chart data format
     https://developers.google.com/chart/interactive/docs/gallery/timeline#data-format
 
@@ -86,11 +86,11 @@ The SQL Server that you're connecting to.
 <html>
   <head>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-        
+
     <script type="text/javascript">
       google.charts.load("current", {packages:["timeline"]});
       google.charts.setOnLoadCallback(drawChart);
-        
+
       function drawChart() {
         var container = document.getElementById('SQLTimelineDIV');
         var chart = new google.visualization.Timeline(container);
@@ -101,7 +101,7 @@ The SQL Server that you're connecting to.
         dataTable.addColumn({ type: 'date', id: 'Start' });
         dataTable.addColumn({ type: 'date', id: 'End' });
         // <DATATABLEADDROWS>
-        
+
         var arrcolors = [];
         var colorMap = {
             // should contain a map of RunStatus -> color for every RunStatus
@@ -110,7 +110,7 @@ The SQL Server that you're connecting to.
             Retry: '#FFC300',
             Canceled: 'black'
         }
-        //  
+        //
         var tooltip = '';
         var runStatus = '';
         for (var i = 0; i < dataTable.getNumberOfRows(); i++) {
@@ -132,14 +132,14 @@ The SQL Server that you're connecting to.
 
           arrcolors.push(colorMap[runStatus]);
         };
-            
+
         var options = {
                       colors: arrcolors,
                         timeline: {
                             colorByRowLabel: false,
                             showBarLabels: false,
                             groupByRowLabel: true,
-                            rowLabelStyle: { fontSize: 9 }, 
+                            rowLabelStyle: { fontSize: 9 },
                             barLabelStyle: { fontSize: 7 }
                             },
                         avoidOverlappingGridLines: true,
@@ -166,7 +166,7 @@ The SQL Server that you're connecting to.
       }
   </script>
 </head>
-  <body>        
+  <body>
     <H3 style="font-family: Arial, Helvetica, sans-serif; font-weight: lighter;">
     Server: <SERVER><p>
     <DATERANGE>
@@ -191,7 +191,7 @@ The SQL Server that you're connecting to.
       [string]$ToolJobStart = ''
       [string]$ToolJobEnd = ''
       [string]$outspan = ''
-      
+
       $RunStates = @('Failed','Succeeded','Retry','Canceled')
 
     } # begin
@@ -203,7 +203,7 @@ The SQL Server that you're connecting to.
         param ([datetime]$DataDate)
 
         [string]$DateFormat = 'MM/dd/yyyy HH:mm:ss'
-                
+
         $YYYY   = $DataDate.tostring($DateFormat).Substring(6,4)
         $MM     = $DataDate.tostring($DateFormat).Substring(0,2)
         $DD     = $DataDate.tostring($DateFormat).Substring(3,2)
@@ -225,7 +225,7 @@ The SQL Server that you're connecting to.
     function verboseTS {
         param ([timespan]$ts)
         [string]$verboseSpan =  '{0} seconds' -f $ts.Seconds.tostring()
-        
+
         if ($ts.Minutes -gt 0) {
             $verboseSpan = $ts.minutes.tostring() + ' minutes, ' + $verboseSpan
         }
@@ -257,7 +257,7 @@ The SQL Server that you're connecting to.
 
             # Get a temp html file name for output
             $TempFile = [IO.Path]::GetTempFileName() | Rename-Item -NewName { $_ -replace 'tmp$', 'html' } -PassThru
-            
+
             $TempDIR = [System.io.path]::GetDirectoryName($TempFile)
             $TempName = [System.io.path]::GetFileName($TempFile)
 
@@ -285,14 +285,14 @@ The SQL Server that you're connecting to.
 
                 $DataStartDate = formatChartDate -DataDate $JobRun.RunDate
                 $DataEndDate = formatChartDate -DataDate $RunEndDateTime
-                
+
                 $ToolJobStart = tooltipDate -toolDate $JobRun.RunDate
                 $ToolJobEnd = tooltipDate -toolDate $RunEndDateTime
 
                 $ts = New-TimeSpan -Start $JobRun.RunDate -End $RunEndDateTime
 
                 $outspan = verboseTS -ts $ts
-                
+
                 if ($NoJobSteps) {
                   $rowlabel  = $JobRun.JobName
                 } else {
@@ -324,10 +324,10 @@ The SQL Server that you're connecting to.
             $htmContent = $htmContent.replace('<DATERANGE>',$daterange)
 
             # Write the file
-            add-content -Path $TempHTMLFile -Value $htmContent -Encoding Ascii           
-            
+            add-content -Path $TempHTMLFile -Value $htmContent -Encoding Ascii
+
             # Launch the file
             invoke-item -Path $TempHTMLFile
     } # foreach (instance)
-  } # process 
+  } # process
 } #function
