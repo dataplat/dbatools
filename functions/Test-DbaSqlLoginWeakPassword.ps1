@@ -19,7 +19,7 @@ function Test-DbaSqlLoginWeakPassword {
 
             To connect as a different Windows user, run PowerShell as that user.
 
-        .PARAMETER SqlPass
+        .PARAMETER Dictionary
             Specifies a list of passwords to include in the test for weak passwords.
 
         .PARAMETER Path
@@ -47,38 +47,25 @@ function Test-DbaSqlLoginWeakPassword {
             Test all SQL logins that the password is null or same as username on SQL server instance Dev01
 
         .EXAMPLE
-            Test-DbaSqlLoginWeakPassword -SqlInstance Dev01 -SQLPass Test1,test2
+            Test-DbaSqlLoginWeakPassword -SqlInstance Dev01 -Dictionary Test1,test2
 
-            Test all SQL logins that the password is null, same as username or Test1,Test2 on SQL server instance Dev01
-
-        .EXAMPLE
-            Test-DbaSqlLoginWeakPassword -SqlInstance Dev01 -Path c:\dbatools\weakpassword.cvs
-
-            Test all SQL logins that the password is null, same as username and defined in the csv file on SQL server instance Dev01
-
+            Test all SQL logins that the password is null, same as username or Test1,Test2 on SQL server instance Dev0
     #>
+    
     [CmdletBinding()]
     Param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [String[]]$SQLPass,
-        [String]$Path,
-        [Alias('Silent')]
+        [String[]]$Dictionary,
         [switch]$EnableException
     )
 
     begin {
-        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
-
         $CheckPasses = "''", "'@@Name'"
-
-        if ($SQLPass) {
-            $SQLPass | ForEach-Object {$CheckPasses += "'" + $psitem + "'" }
-        }
-        if ($Path) {
-            Import-Csv -Path $Path -Header 'Password' | ForEach-Object { $CheckPasses += "'" + $psitem.password + "'" }
+        if ($Dictionary) {
+            $Dictionary | ForEach-Object {$CheckPasses += "'" + $psitem + "'" }
         }
 
         foreach ($CheckPass in $CheckPasses) {
