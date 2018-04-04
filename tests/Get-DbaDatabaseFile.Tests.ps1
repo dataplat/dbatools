@@ -11,7 +11,7 @@ Describe "$commandname Unit Tests" -Tag "Unit" {
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {   
+Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "Count system databases on localhost" {
         $results = Get-DbaDatabaseFile -SqlInstance $script:instance1
         It "returns information about tempdb" {
