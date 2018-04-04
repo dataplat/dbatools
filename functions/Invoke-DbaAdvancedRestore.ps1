@@ -168,6 +168,7 @@ function Invoke-DbaAdvancedRestore {
             $backups = @($InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
             foreach ($backup in $backups) {
+                $LastBackup = $false
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
                 if (($backup -ne $backups[-1]) -or $true -eq $NoRecovery) {
                     $Restore.NoRecovery = $True
@@ -178,8 +179,9 @@ function Invoke-DbaAdvancedRestore {
                 }
                 else {
                     $Restore.NoRecovery = $False
+                    $LastBackup = $True
                 }
-                if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date)) {
+                if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date) -or $LastBackup -eq $true ) {
                     $Restore.ToPointInTime = $null
                 }
                 else {
