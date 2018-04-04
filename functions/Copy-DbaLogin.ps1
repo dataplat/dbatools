@@ -534,7 +534,7 @@ function Copy-DbaLogin {
             Write-Message -Level Verbose -Message "Attempting Login Migration."
         }
 
-        Copy-Login -sourceserver $sourceServer -destserver $destServer -Login $Login -Exclude $ExcludeLogin -Force $force
+        Copy-Login -sourceserver $sourceServer -destserver $destServer -Login $Login -Exclude $ExcludeLogin
 
         if ($SyncSaName) {
             $sa = $sourceServer.Logins | Where-Object id -eq 1
