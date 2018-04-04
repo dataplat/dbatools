@@ -80,8 +80,8 @@ function Test-DbaSqlLoginWeakPassword {
             $checks
 
             SELECT SERVERPROPERTY('MachineName') AS [ComputerName],
-	            SERVERPROPERTY('InstanceName') AS [Instance],
-	            SERVERPROPERTY('ServerName') AS [SqlInstance],
+                SERVERPROPERTY('InstanceName') AS [Instance],
+                SERVERPROPERTY('ServerName') AS [SqlInstance],
                 SysLogins.name as SqlLogin,
                 REPLACE(WeakPassword.WeakPwd,'@@Name',SysLogins.name) As [Password],
                 SysLogins.is_disabled as Disabled,
