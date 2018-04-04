@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 20, 2018
+-- Last Modified: April 3, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -235,17 +235,19 @@ EXEC sys.xp_readerrorlog 0, 1, N'Database Instant File Initialization';
 -- SQL Server 2016 lets you enable this during the SQL server installation process
 
 -- Database Instant File Initialization
--- https://docs.microsoft.com/en-us/sql/relational-databases/databases/database-instant-file-initialization
+-- https://bit.ly/2nTX74y
 
 -- Misconceptions around instant file initialization
--- https://www.sqlskills.com/blogs/paul/misconceptions-around-instant-file-initialization/
+-- https://bit.ly/2oBSKgZ
+
 
 
 -- SQL Server Process Address space info  (Query 7) (Process Memory)
 -- (shows whether locked pages is enabled, among other things)
 SELECT physical_memory_in_use_kb/1024 AS [SQL Server Memory Usage (MB)],
-       large_page_allocations_kb, locked_page_allocations_kb, page_fault_count, 
-	   memory_utilization_percentage, available_commit_limit_kb, 
+	   locked_page_allocations_kb/1024 AS [SQL Server Locked Pages Allocation (MB)],
+       large_page_allocations_kb/1024 AS [SQL Server Large Pages Allocation (MB)], 
+	   page_fault_count, memory_utilization_percentage, available_commit_limit_kb, 
 	   process_physical_memory_low, process_virtual_memory_low
 FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
 ------
@@ -257,6 +259,9 @@ FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- How to enable the "locked pages" feature in SQL Server 2012
 -- https://support.microsoft.com/en-us/kb/2659143
+
+-- Memory Management Architecture Guide
+-- https://docs.microsoft.com/en-us/sql/relational-databases/memory-management-architecture-guide 
 
 
 
@@ -311,10 +316,10 @@ ORDER BY sj.name OPTION (RECOMPILE);
 -- Look for jobs that have a notify_level_email set to 0 (meaning no e-mail is ever sent)
 --
 -- MSDN sysjobs documentation
--- https://msdn.microsoft.com/en-us/library/ms189817.aspx
+-- http://bit.ly/2paDEOP 
 
 -- SQL Server Maintenance Solution
--- https://ola.hallengren.com/
+-- http://bit.ly/1pgchQu  
 
 
 -- Get SQL Server Agent Alert Information (Query 11) (SQL Server Agent Alerts)
@@ -324,8 +329,9 @@ FROM msdb.dbo.sysalerts WITH (NOLOCK)
 ORDER BY name OPTION (RECOMPILE);
 ------
 
--- Gives you some basic information about your SQL Server Agent Alerts (which are different from SQL Server Agent jobs)
--- Read more about Agent Alerts here: https://www.sqlskills.com/blogs/glenn/creating-sql-server-agent-alerts-for-critical-errors/
+-- Gives you some basic information about your SQL Server Agent Alerts 
+-- (which are different from SQL Server Agent jobs)
+-- Read more about Agent Alerts here: http://bit.ly/2Giz0Xf 
 
 
 
@@ -369,11 +375,15 @@ WHERE node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
 
 -- Gives you some useful information about the composition and relative load on your NUMA nodes
 -- You want to see an equal number of schedulers on each NUMA node
--- Watch out if SQL Server 2014 Standard Edition has been installed on a machine with more than 16 physical cores
--- Watch out if you have a VM with more than 4 NUMA nodes with SQL Server Standard Edition, since there is a four-socket license limit
+-- Watch out if SQL Server 2014 Standard Edition has been installed 
+-- on a physical or virtual machine with more than four sockets or more than 16 physical cores
+
+
+-- sys.dm_os_nodes (Transact-SQL)
+-- http://bit.ly/2pn5Mw8
 
 -- Balancing Your Available SQL Server Core Licenses Evenly Across NUMA Nodes
--- https://www.sqlskills.com/blogs/glenn/balancing-your-available-sql-server-core-licenses-evenly-across-numa-nodes/
+-- http://bit.ly/2vfC4Rq
 
 
 
@@ -395,6 +405,9 @@ FROM sys.dm_os_sys_memory WITH (NOLOCK) OPTION (RECOMPILE);
 -- Physical memory usage is steady
 -- Available physical memory is low
 -- Physical memory state is transitioning
+
+-- sys.dm_os_sys_memory (Transact-SQL)
+-- http://bit.ly/2pcV0xq
 
 
 -- You can skip the next two queries if you know you don't have a clustered instance
@@ -455,9 +468,24 @@ FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
 -- Gives you some good basic hardware information about your database server
--- Cannot distinguish between HT and multi-core
 -- Note: virtual_machine_type_desc of HYPERVISOR does not automatically mean you are running SQL Server inside of a VM
 -- It merely indicates that you have a hypervisor running on your host
+
+-- sys.dm_os_sys_info (Transact-SQL)
+-- http://bit.ly/2pczOYs
+
+-- Soft NUMA configuration was a new column for SQL Server 2016
+-- OFF = Soft-NUMA feature is OFF
+-- ON = SQL Server automatically determines the NUMA node sizes for Soft-NUMA
+-- MANUAL = Manually configured soft-NUMA
+
+-- Configure SQL Server to Use Soft-NUMA (SQL Server)
+-- http://bit.ly/2HTpKJt
+
+-- sql_memory_model_desc values (Added in SQL Server 2016 SP1)
+-- CONVENTIONAL
+-- LOCK_PAGES
+-- LARGE_PAGES
 
 
 -- Get System Manufacturer and model number from SQL Server Error log (Query 19) (System Manufacturer)
@@ -490,11 +518,11 @@ EXEC sys.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'HARDWARE\DESCRIPTION\Syste
 -- http://www.cpuid.com/softwares/cpu-z.html
 
 -- You can learn more about processor selection for SQL Server by following this link
--- https://www.sqlskills.com/blogs/glenn/processor-selection-for-sql-server/
+-- http://bit.ly/2F3aVlP
 
 
 
--- See if buffer pool extensions (BPE) is enabled (Query 22) (BPE Configuration)
+-- See if buffer pool extension (BPE) is enabled (Query 22) (BPE Configuration)
 SELECT [path], state_description, current_size_in_kb, 
 CAST(current_size_in_kb/1048576.0 AS DECIMAL(10,2)) AS [Size (GB)]
 FROM sys.dm_os_buffer_pool_extension_configuration WITH (NOLOCK) OPTION (RECOMPILE);
@@ -504,10 +532,10 @@ FROM sys.dm_os_buffer_pool_extension_configuration WITH (NOLOCK) OPTION (RECOMPI
 -- It is a more interesting feature for Standard Edition
 
 -- Buffer Pool Extension to SSDs in SQL Server 2014
--- http://blogs.technet.com/b/dataplatforminsider/archive/2013/07/25/buffer-pool-extension-to-ssds-in-sql-server-2014.aspx
+-- http://bit.ly/1bm08m8
 
 -- Buffer Pool Extension
--- https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/buffer-pool-extension
+-- http://bit.ly/2oBuieO
 
 
 
@@ -538,6 +566,8 @@ ORDER BY creation_time DESC OPTION (RECOMPILE);
 -- http://bit.ly/2elwWll
 
 
+
+
 -- Look at Suspect Pages table (Query 25) (Suspect Pages)
 SELECT DB_NAME(database_id) AS [Database Name], [file_id], page_id, 
        event_type, error_count, last_update_date 
@@ -546,18 +576,19 @@ ORDER BY database_id OPTION (RECOMPILE);
 ------
 
 -- event_type value descriptions
--- 1 = 823 error caused by an operating system CRC error or 824 error other than a bad checksum or a torn page (for example, a bad page ID)
+-- 1 = 823 error caused by an operating system CRC error
+--     or 824 error other than a bad checksum or a torn page (for example, a bad page ID)
 -- 2 = Bad checksum
 -- 3 = Torn page
 -- 4 = Restored (The page was restored after it was marked bad)
 -- 5 = Repaired (DBCC repaired the page)
 -- 7 = Deallocated by DBCC
 
--- Manage the suspect_pages Table
--- https://docs.microsoft.com/en-us/sql/relational-databases/backup-restore/manage-the-suspect-pages-table-sql-server  
-
 -- Ideally, this query returns no results. The table is limited to 1000 rows.
 -- If you do get results here, you should do further investigation to determine the root cause
+
+-- Manage the suspect_pages Table
+-- http://bit.ly/2Fvr1c9
 
 
 -- Get number of data files in tempdb database (Query 26) (Tempdb Data Files)
@@ -566,6 +597,7 @@ EXEC sys.xp_readerrorlog 0, 1, N'The tempdb database has';
 
 -- Get the number of data files in the tempdb database
 -- 4-8 data files that are all the same size is a good starting point
+-- This query will return no results if your error log has been recycled since the instance was last started
 -- This will be blank unless you have Service Pack 2 or later
 
 
@@ -590,10 +622,12 @@ ORDER BY DB_NAME([database_id]), [file_id] OPTION (RECOMPILE);
 
 
 -- Volume info for all LUNS that have database files on the current instance (Query 28) (Volume Info)
-SELECT DISTINCT vs.volume_mount_point, vs.file_system_type, 
-vs.logical_volume_name, CONVERT(DECIMAL(18,2),vs.total_bytes/1073741824.0) AS [Total Size (GB)],
+SELECT DISTINCT vs.volume_mount_point, vs.file_system_type, vs.logical_volume_name, 
+CONVERT(DECIMAL(18,2), vs.total_bytes/1073741824.0) AS [Total Size (GB)],
 CONVERT(DECIMAL(18,2), vs.available_bytes/1073741824.0) AS [Available Size (GB)],  
-CONVERT(DECIMAL(18,2), vs.available_bytes * 1. / vs.total_bytes * 100.) AS [Space Free %]
+CONVERT(DECIMAL(18,2), vs.available_bytes * 1. / vs.total_bytes * 100.) AS [Space Free %],
+vs.supports_compression, vs.is_compressed, 
+vs.supports_sparse_files, vs.supports_alternate_streams
 FROM sys.master_files AS f WITH (NOLOCK)
 CROSS APPLY sys.dm_os_volume_stats(f.database_id, f.[file_id]) AS vs 
 ORDER BY vs.volume_mount_point OPTION (RECOMPILE);
@@ -601,6 +635,9 @@ ORDER BY vs.volume_mount_point OPTION (RECOMPILE);
 
 -- Shows you the total and free space on the LUNs where you have database files
 -- Being low on free space can negatively affect performance
+
+-- sys.dm_os_volume_stats (Transact-SQL)
+-- http://bit.ly/2oBPNNr
 
 
 
@@ -760,6 +797,9 @@ ORDER BY index_advantage DESC OPTION (RECOMPILE);
 -- Also look at avg_user_impact and avg_total_user_cost to help determine importance
 -- SQL Server is overly eager to add included columns, so beware
 -- Do not just blindly add indexes that show up from this query!!!
+
+-- SQL Server Index Design Guide
+-- https://docs.microsoft.com/en-us/sql/relational-databases/sql-server-index-design-guide
 
 
 
@@ -944,7 +984,7 @@ ORDER BY ec.client_net_address, es.[program_name] OPTION (RECOMPILE);
 -- and verifies connectivity from other machines
 
 -- Solving Connectivity errors to SQL Server
--- https://support.microsoft.com/en-us/help/4009936/solving-connectivity-errors-to-sql-server
+-- https://bit.ly/2EgzoD0
 
 
 
@@ -965,7 +1005,7 @@ WHERE scheduler_id < 255 OPTION (RECOMPILE);
 -- High Avg Pending DiskIO Counts are a sign of disk pressure
 
 -- How to Do Some Very Basic SQL Server Monitoring
--- https://www.sqlskills.com/blogs/glenn/how-to-do-some-very-basic-sql-server-monitoring/
+-- https://bit.ly/2q3Btgt
 
 
 
@@ -1060,7 +1100,7 @@ AND counter_name = N'Page life expectancy' OPTION (RECOMPILE);
 -- This will only return one row for non-NUMA systems
 
 -- Page Life Expectancy isn’t what you think…
--- https://www.sqlskills.com/blogs/paul/page-life-expectancy-isnt-what-you-think/
+-- https://bit.ly/2EgynLa
 
 
 -- Memory Grants Pending value for current instance  (Query 45) (Memory Grants Pending)
@@ -1112,7 +1152,7 @@ ORDER BY cp.size_in_bytes DESC OPTION (RECOMPILE);
 -- Enabling forced parameterization for the database can help, but test first!
 
 -- Plan cache, adhoc workloads and clearing the single-use plan cache bloat
--- https://www.sqlskills.com/blogs/kimberly/plan-cache-adhoc-workloads-and-clearing-the-single-use-plan-cache-bloat/
+-- https://bit.ly/2EfYOkl
 
 
 -- Get top total logical reads queries for entire instance (Query 48) (Top Logical Reads Queries)
@@ -1243,16 +1283,21 @@ ORDER BY qs.execution_count DESC OPTION (RECOMPILE);
 ------
 
 
--- Queries 53 through 57 are the "Bad Man List" for stored procedures
+-- Queries 54 through 58 are the "Bad Man List" for stored procedures
+
 -- Top Cached SPs By Execution Count (Query 54) (SP Execution Counts)
-SELECT TOP(100) p.name AS [SP Name], qs.execution_count,
+SELECT TOP(100) p.name AS [SP Name], qs.execution_count AS [Execution Count],
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
-qs.total_worker_time/qs.execution_count AS [AvgWorkerTime], qs.total_worker_time AS [TotalWorkerTime],  
-qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
-qs.cached_time
+qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],
+qs.total_worker_time/qs.execution_count AS [Avg Worker Time],    
+qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads],
+FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
+FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+-- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
 ON p.[object_id] = qs.[object_id]
+CROSS APPLY sys.dm_exec_query_plan(qs.plan_handle) AS qp
 WHERE qs.database_id = DB_ID()
 AND DATEDIFF(Minute, qs.cached_time, GETDATE()) > 0
 ORDER BY qs.execution_count DESC OPTION (RECOMPILE);
@@ -1267,10 +1312,14 @@ SELECT TOP(25) p.name AS [SP Name], qs.min_elapsed_time, qs.total_elapsed_time/q
 qs.max_elapsed_time, qs.last_elapsed_time, qs.total_elapsed_time, qs.execution_count, 
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute], 
 qs.total_worker_time/qs.execution_count AS [AvgWorkerTime], 
-qs.total_worker_time AS [TotalWorkerTime], qs.cached_time
+qs.total_worker_time AS [TotalWorkerTime],
+FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
+FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+-- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
 ON p.[object_id] = qs.[object_id]
+CROSS APPLY sys.dm_exec_query_plan(qs.plan_handle) AS qp
 WHERE qs.database_id = DB_ID()
 AND DATEDIFF(Minute, qs.cached_time, GETDATE()) > 0
 ORDER BY avg_elapsed_time DESC OPTION (RECOMPILE);
@@ -1285,11 +1334,14 @@ ORDER BY avg_elapsed_time DESC OPTION (RECOMPILE);
 SELECT TOP(25) p.name AS [SP Name], qs.total_worker_time AS [TotalWorkerTime], 
 qs.total_worker_time/qs.execution_count AS [AvgWorkerTime], qs.execution_count, 
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
-qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count 
-AS [avg_elapsed_time], qs.cached_time
+qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
+FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
+FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+-- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
 ON p.[object_id] = qs.[object_id]
+CROSS APPLY sys.dm_exec_query_plan(qs.plan_handle) AS qp
 WHERE qs.database_id = DB_ID()
 AND DATEDIFF(Minute, qs.cached_time, GETDATE()) > 0
 ORDER BY qs.total_worker_time DESC OPTION (RECOMPILE);
@@ -1303,11 +1355,14 @@ ORDER BY qs.total_worker_time DESC OPTION (RECOMPILE);
 SELECT TOP(25) p.name AS [SP Name], qs.total_logical_reads AS [TotalLogicalReads], 
 qs.total_logical_reads/qs.execution_count AS [AvgLogicalReads],qs.execution_count, 
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute], 
-qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count 
-AS [avg_elapsed_time], qs.cached_time
+qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time], 
+FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
+FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+-- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
 ON p.[object_id] = qs.[object_id]
+CROSS APPLY sys.dm_exec_query_plan(qs.plan_handle) AS qp
 WHERE qs.database_id = DB_ID()
 AND DATEDIFF(Minute, qs.cached_time, GETDATE()) > 0
 ORDER BY qs.total_logical_reads DESC OPTION (RECOMPILE);
@@ -1320,11 +1375,14 @@ ORDER BY qs.total_logical_reads DESC OPTION (RECOMPILE);
 -- Top Cached SPs By Total Physical Reads. Physical reads relate to disk read I/O pressure  (Query 58) (SP Physical Reads)
 SELECT TOP(25) p.name AS [SP Name],qs.total_physical_reads AS [TotalPhysicalReads], 
 qs.total_physical_reads/qs.execution_count AS [AvgPhysicalReads], qs.execution_count, 
-qs.total_logical_reads,qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count 
-AS [avg_elapsed_time], qs.cached_time 
+qs.total_logical_reads,qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
+FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
+FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+-- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan 
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
 ON p.[object_id] = qs.[object_id]
+CROSS APPLY sys.dm_exec_query_plan(qs.plan_handle) AS qp
 WHERE qs.database_id = DB_ID()
 AND qs.total_physical_reads > 0
 ORDER BY qs.total_physical_reads DESC, qs.total_logical_reads DESC OPTION (RECOMPILE);
@@ -1341,10 +1399,13 @@ SELECT TOP(25) p.name AS [SP Name], qs.total_logical_writes AS [TotalLogicalWrit
 qs.total_logical_writes/qs.execution_count AS [AvgLogicalWrites], qs.execution_count,
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
 qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time], 
-qs.cached_time
+FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
+FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
+-- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan 
 FROM sys.procedures AS p WITH (NOLOCK)
 INNER JOIN sys.dm_exec_procedure_stats AS qs WITH (NOLOCK)
 ON p.[object_id] = qs.[object_id]
+CROSS APPLY sys.dm_exec_query_plan(qs.plan_handle) AS qp
 WHERE qs.database_id = DB_ID()
 AND qs.total_logical_writes > 0
 AND DATEDIFF(Minute, qs.cached_time, GETDATE()) > 0
@@ -1686,13 +1747,14 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- These three Pluralsight Courses go into more detail about how to run these queries and interpret the results
 
 -- SQL Server 2014 DMV Diagnostic Queries – Part 1 
--- https://www.pluralsight.com/courses/sql-server-2014-dmv-diagnostic-queries-part1
+-- https://bit.ly/2plxCer
 
 -- SQL Server 2014 DMV Diagnostic Queries – Part 2
--- https://www.pluralsight.com/courses/sql-server-2014-dmv-diagnostic-queries-part2
+-- https://bit.ly/2IuJpzI
 
 -- SQL Server 2014 DMV Diagnostic Queries – Part 3
--- https://www.pluralsight.com/courses/sql-server-2014-dmv-diagnostic-queries-part3
+-- https://bit.ly/2FIlCPb
+
 
 
 -- Sign up for Microsoft Visual Studio Dev Essentials and get a free three month pass to Pluralsight
@@ -1708,4 +1770,4 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 
 
 -- August 2017 blog series about upgrading and migrating SQL Server
--- https://www.sqlskills.com/blogs/glenn/category/upgrading-sql-server/
+-- https://bit.ly/2ftKVrX
