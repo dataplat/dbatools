@@ -206,8 +206,8 @@ FROM @FixedDrives AS fd
 INNER JOIN sys.database_files AS df
 ON fd.Drive = LEFT(df.physical_name, 1);
 '@
-                        $disks = $server.Query($query2, $db.Name)
                         # if the server has one drive xp_fixeddrives returns one row, but we still need $disks to be an array.
+                        $disks = @($server.Query($query2, $db.Name))
                         $MbFreeColName = $disks[0].psobject.Properties.Name
                         # get the free MB value for the drive in question
                         $free = $disks | Where-Object { $_.drive -eq $result.PhysicalName.Substring(0, 1) } | Select-Object $MbFreeColName

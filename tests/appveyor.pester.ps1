@@ -266,8 +266,7 @@ if (-not $Finalize) {
             foreach ($k in $validScenarios) {
                 $AllTestsToExclude += Get-TestsForScenario -scenario $k -AllTest $AllTests
             }
-            $AllTests = $AllTests | Where-Object { $_ -notin $AllTestsToExclude }
-            $AllScenarioTests = $AllTests
+            $AllScenarioTests = $AllTests | Where-Object { $_ -notin $AllTestsToExclude }
         }
     }
     else {

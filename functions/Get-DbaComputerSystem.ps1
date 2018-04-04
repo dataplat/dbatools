@@ -151,7 +151,7 @@ function Get-DbaComputerSystem {
                 Select-DefaultView -InputObject $inputObject -ExcludeProperty $excludes
             }
             catch {
-                Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
         }
     }
