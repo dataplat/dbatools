@@ -459,7 +459,8 @@
         'Invoke-DbaXeReplay',
         'Find-DbaInstance',
         'Test-DbaDiskSpeed',
-        'Get-DbaDbExtentDiff'
+        'Get-DbaDbExtentDiff',
+        'Read-DbaAuditFile'
     )
     
     # Cmdlets to export from this module
