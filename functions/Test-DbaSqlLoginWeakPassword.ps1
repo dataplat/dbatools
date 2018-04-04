@@ -22,10 +22,6 @@ function Test-DbaSqlLoginWeakPassword {
         .PARAMETER Dictionary
             Specifies a list of passwords to include in the test for weak passwords.
 
-        .PARAMETER Path
-            Specifies a csv file path of passwords to include in the test for weak passwords.
-            The CSV file has no header, it should just have the passwords you want to check.
-
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -51,7 +47,7 @@ function Test-DbaSqlLoginWeakPassword {
 
             Test all SQL logins that the password is null, same as username or Test1,Test2 on SQL server instance Dev0
     #>
-    
+
     [CmdletBinding()]
     Param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
@@ -83,7 +79,9 @@ function Test-DbaSqlLoginWeakPassword {
             INSERT INTO @WeakPwdList(WeakPwd)
             $checks
 
-            SELECT @@SERVERNAME As ServerName,
+            SELECT SERVERPROPERTY('MachineName') AS [ComputerName],
+	            SERVERPROPERTY('InstanceName') AS [Instance],
+	            SERVERPROPERTY('ServerName') AS [SqlInstance],
                 SysLogins.name as SqlLogin,
                 REPLACE(WeakPassword.WeakPwd,'@@Name',SysLogins.name) As [Password],
                 SysLogins.is_disabled as Disabled,
@@ -93,8 +91,6 @@ function Test-DbaSqlLoginWeakPassword {
             FROM sys.sql_logins SysLogins
             INNER JOIN @WeakPwdList WeakPassword ON (PWDCOMPARE(WeakPassword.WeakPwd, password_hash) = 1
                 OR PWDCOMPARE(REPLACE(WeakPassword.WeakPwd,'@@Name',SysLogins.name),password_hash) = 1)"
-
-
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -111,7 +107,6 @@ function Test-DbaSqlLoginWeakPassword {
             Write-Message -Level Verbose -Message "Testing: same username as Password"
             Write-Message -Level Verbose -Message "Testing: the following Passwords $CheckPasses"
             $server.Query("$sql")
-
         }
     }
     end {}
