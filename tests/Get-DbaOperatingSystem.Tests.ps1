@@ -37,11 +37,11 @@ Describe "Get-DbaOperatingSystem Integration Test" -Tag "IntegrationTests" {
     Context "Validate output" {
         foreach ($prop in $props) {
             $p = $result.PSObject.Properties[$prop]
-            it "Should return property: $prop" {
+            It "Should return property: $prop" {
                 $p.Name | Should Be $prop
             }
         }
-        it "Should return nothing if unable to connect to server" {
+        It "Should return nothing if unable to connect to server" {
             $result = Get-DbaOperatingSystem -ComputerName 'Melton5312' -WarningAction SilentlyContinue
             $result | Should Be $null
         }
