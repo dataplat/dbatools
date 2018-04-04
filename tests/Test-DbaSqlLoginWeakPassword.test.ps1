@@ -14,17 +14,12 @@ Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
         It "Should have a parameter SqlCredential" {
             $Params['SqlCredential'].Count | Should Be 1
         }
-        It "Should have a parameter SQLPass" {
-            $Params['SQLPass'].Count | Should Be 1
-        }
-        It "Should have a parameter Path" {
-            $Params['Path'].Count | Should Be 1
+        It "Should have a parameter Dictionary" {
+            $Params['Dictionary'].Count | Should Be 1
         }
         It "Should have a parameter EnableException" {
             $Params['EnableException'].Count | Should Be 1
         }
-        It "Should have a silent alias for parameter EnableException" {
-            $Params['EnableException'].Aliases | Should Be 'Silent'
-        }
+
     }
 }
