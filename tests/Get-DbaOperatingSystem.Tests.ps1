@@ -1,25 +1,23 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-Describe "Get-DbaOperatingSystem Unit Tests" -Tag "UnitTests" {
-    InModuleScope dbatools {
-        Context "Validate parameters" {
-            $params = (Get-ChildItem function:\Get-DbaOperatingSystem).Parameters
-            it "should have a parameter named ComputerName" {
-                $params.ContainsKey("ComputerName") | Should Be $true
-            }
-            it "should have a parameter named Credential" {
-                $params.ContainsKey("Credential") | Should Be $true
-            }
-            it "should have a parameter named Silent" {
-                $params.ContainsKey("EnableException") | Should Be $true
-            }
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = x
+        $commonParamCount = ([System.Management.Automation.PSCmdlet]::CommonParameters).Count
+        [object[]]$params = (Get-ChildItem function:\Get-DBaOperatingSystem).Parameters.Keys
+        $knownParameters = 'ComputerName', 'Credential', 'EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
-        Context "Validate input" {
-            it "Cannot resolve hostname of computer" {
-                mock Resolve-DbaNetworkName {$null}
-                {Get-DbaOperatingSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null} | Should Throw
-            }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $commonParamCount | Should Be $paramCount
+        }
+    }
+    Context "Validate input" {
+        It "Cannot resolve hostname of computer" {
+            mock Resolve-DbaNetworkName {$null}
+            {Get-DbaOperatingSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null} | Should Throw
         }
     }
 }
