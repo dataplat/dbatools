@@ -4,7 +4,7 @@ function Set-DbaDbCompression {
             Sets tables and indexes with preferred compression setting.
 
         .DESCRIPTION
-            This function set the appropriate compression recommendation, determined either by using the Tiger Team's query or set to the CompressionType parameter. 
+            This function sets the appropriate compression recommendation, determined either by using the Tiger Team's query or set to the CompressionType parameter.
 
             Remember Uptime is critical for the Tiger Team query, the longer uptime, the more accurate the analysis is.
             You would probably be best if you utilized Get-DbaUptime first, before running this command.
@@ -17,7 +17,7 @@ function Set-DbaDbCompression {
 
         .PARAMETER SqlCredential
             SqlCredential object to connect as. If not specified, current Windows login will be used.
-            
+
         .PARAMETER CompressionType
             Control the compression type applied. Default is 'Recommended' which uses the Tiger Team query to use the most appropriate setting per object. Other option is to compress all objects to either Row or Page.
 
@@ -53,9 +53,9 @@ function Set-DbaDbCompression {
 
             Set the compression run time to 60 minutes and will start the compression of tables/indexes that have a difference of 25% or higher between current and recommended.
 
-        .EXAMPLE 
+        .EXAMPLE
             Set-DbaDbCompression -SqlInstance ServerA -Database DBName -CompressionType Page
-            
+
             Utilizes Page compression for all objects in DBName on ServerA with no time limit.
 
         .EXAMPLE
@@ -190,7 +190,7 @@ function Set-DbaDbCompression {
                                 foreach ($p in $($obj.PhysicalPartitions | Where-Object {$_.DataCompression -ne $CompressionType})) {
                                     Write-Message -Level Verbose -Message "Compressing heap $($obj.Schema).$($obj.Name)"
                                     $($obj.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
-                                    
+
                                     $results +=
                                     [pscustomobject]@{
                                         ComputerName                  = $server.NetName
@@ -216,7 +216,7 @@ function Set-DbaDbCompression {
                                 }
                                 $obj.Rebuild()
                             }
-                            
+
                             foreach ($index in $($obj.Indexes)) {
                                 if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).Minutes -ge $MaxRunTime) {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
@@ -278,7 +278,7 @@ function Set-DbaDbCompression {
                                     AlreadyProcesssed             = "True"
                                 }
                                 $index.Rebuild()
-                            }   
+                            }
                         }
                     }
                 }
