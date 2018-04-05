@@ -167,8 +167,13 @@ function Invoke-DbaAdvancedRestore {
             Write-Message -Message "WithReplace  = $WithReplace" -Level Debug
             $backups = @($InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
+            $CanDoStopAt = $false
+            foreach($backup in $backups) {
+                if ($backup.Type -eq 'Transaction Log') {
+                    $CanDoStopAt = $true
+                }
+            }
             foreach ($backup in $backups) {
-                $LastBackup = $false
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
                 if (($backup -ne $backups[-1]) -or $true -eq $NoRecovery) {
                     $Restore.NoRecovery = $True
@@ -179,20 +184,20 @@ function Invoke-DbaAdvancedRestore {
                 }
                 else {
                     $Restore.NoRecovery = $False
-                    $LastBackup = $True
                 }
-                if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date) -or $LastBackup -eq $true ) {
-                    $Restore.ToPointInTime = $null
-                }
-                else {
-                    if ($RestoreTime -ne $Restore.RestoreTime) {
-                        $Restore.ToPointInTime = $backup.RestoreTime
+                if ($CanDoStopAt) {
+                    if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date)) {
+                        $Restore.ToPointInTime = $null
                     }
                     else {
-                        $Restore.ToPointInTime = $RestoreTime
+                        if ($RestoreTime -ne $Restore.RestoreTime) {
+                            $Restore.ToPointInTime = $backup.RestoreTime
+                        }
+                        else {
+                            $Restore.ToPointInTime = $RestoreTime
+                        }
                     }
                 }
-
                 $Restore.Database = $database
                 $Restore.ReplaceDatabase = $WithReplace
                 if ($MaxTransferSize) {
