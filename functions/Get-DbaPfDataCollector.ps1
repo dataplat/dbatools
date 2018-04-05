@@ -1,10 +1,10 @@
 ﻿function Get-DbaPfDataCollector {
     <#
         .SYNOPSIS
-            Gets Performance Monitor Data Collectors
+            Gets Performance Monitor Data Collectors.
 
         .DESCRIPTION
-           Gets Performance Monitor Data Collectors
+           Gets Performance Monitor Data Collectors.
 
         .PARAMETER ComputerName
             The target computer. Defaults to localhost.
@@ -16,10 +16,10 @@
 
         .PARAMETER CollectorSet
             The Collector Set name.
-  
+
         .PARAMETER Collector
             The Collector name.
-    
+
         .PARAMETER InputObject
             Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
 
@@ -27,35 +27,35 @@
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
         .NOTES
             Tags: PerfMon
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
-    
+
         .LINK
             https://dbatools.io/Get-DbaPfDataCollector
 
         .EXAMPLE
             Get-DbaPfDataCollector
-    
+
             Gets all Collectors on localhost.
 
         .EXAMPLE
             Get-DbaPfDataCollector -ComputerName sql2017
-    
+
             Gets all Collectors on sql2017.
-    
+
         .EXAMPLE
             Get-DbaPfDataCollector -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
-    
+
             Gets all Collectors for the 'System Correlation' CollectorSet on sql2017 and sql2016 using alternative credentials.
-    
+
         .EXAMPLE
             Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPfDataCollector
-    
+
             Gets all Collectors for the 'System Correlation' CollectorSet.
     #>
     [CmdletBinding()]
@@ -77,27 +77,27 @@
         if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
             $Credential = $InputObject.Credential
         }
-        
+
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
                 $InputObject += Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet
             }
         }
-        
+
         if ($InputObject) {
             if (-not $InputObject.DataCollectorSetObject) {
                 Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet."
                 return
             }
         }
-        
+
         foreach ($set in $InputObject) {
             $collectorxml = ([xml]$set.Xml).DataCollectorSet.PerformanceCounterDataCollector
             foreach ($col in $collectorxml) {
                 if ($Collector -and $Collector -notcontains $col.Name) {
                     continue
                 }
-                
+
                 $outputlocation = $col.LatestOutputLocation
                 if ($outputlocation) {
                     $dir = ($outputlocation).Replace(':', '$')
@@ -106,7 +106,7 @@
                 else {
                     $remote = $null
                 }
-                
+
                 [pscustomobject]@{
                     ComputerName               = $set.ComputerName
                     DataCollectorSet           = $set.Name
