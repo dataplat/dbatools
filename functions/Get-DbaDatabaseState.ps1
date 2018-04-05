@@ -61,6 +61,7 @@ Gets options for all databases of the sqlserver2014a instance except HR
 Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 
 #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseLiteralInitializerForHashtable", "")]
     [CmdletBinding()]
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -97,17 +98,14 @@ FROM sys.databases
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $all_dbs = $server.Databases
-            $dbs = $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
-
+            $dbStates = $server.Query($DbStatesQuery)
+            $dbs = $dbStates | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
             if ($Database) {
                 $dbs = $dbs | Where-Object Name -In $Database
             }
             if ($ExcludeDatabase) {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
-
-            $dbStates = $server.Query($DbStatesQuery)
             # "normal" hashtable doesn't account for case sensitivity
             $dbStatesHash = New-Object -TypeName System.Collections.Hashtable
             foreach ($db in $dbStates) {
@@ -119,7 +117,6 @@ FROM sys.databases
             }
             foreach ($db in $dbs) {
                 $db_status = $dbStatesHash[$db.Name]
-
                 [PSCustomObject]@{
                     SqlInstance  = $server.Name
                     InstanceName = $server.ServiceName
@@ -128,7 +125,7 @@ FROM sys.databases
                     RW           = $db_status.RW
                     Status       = $db_status.Status
                     Access       = $db_status.Access
-                    Database     = $db
+                    Database     = $server.Databases[$db.Name]
                 } | Select-DefaultView -ExcludeProperty Database
             }
         }
