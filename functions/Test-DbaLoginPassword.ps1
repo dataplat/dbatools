@@ -106,7 +106,7 @@ function Test-DbaLoginPassword {
             Write-Message -Level Debug -Message "Executing $sql"
             Write-Message -Level Verbose -Message "Testing: same username as Password"
             Write-Message -Level Verbose -Message "Testing: the following Passwords $CheckPasses"
-            $server.Query("$sql") | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, SqlLogin, Password
+            $server.Query("$sql") | Select-DefaultView -Property ComputerName, Instance, SqlInstance, SqlLogin, Password, Disabled, CreatedDate, ModifiedDate, DefaultDatabase
         }
     }
     end {}
