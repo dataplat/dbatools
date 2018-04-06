@@ -1,7 +1,7 @@
-function Test-DbaSqlLoginWeakPassword {
+function Test-DbaLoginPassword {
     <#
         .SYNOPSIS
-            Test-DbaSqlLoginWeakPassword finds any logins on SQL instance that are SQL Logins and have a password that is either null or same as the login
+            Test-DbaLoginPassword finds any logins on SQL instance that are SQL Logins and have a password that is either null or same as the login
 
         .DESCRIPTION
             The purpose of this function is to find SQL Server logins that have no password or the same password as login. You can add your own password to check for or add them to a csv file.
@@ -35,15 +35,15 @@ function Test-DbaSqlLoginWeakPassword {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Test-DbaSqlLoginWeakPassword
+            https://dbatools.io/Test-DbaLoginPassword
 
         .EXAMPLE
-            Test-DbaSqlLoginWeakPassword -SqlInstance Dev01
+            Test-DbaLoginPassword -SqlInstance Dev01
 
             Test all SQL logins that the password is null or same as username on SQL server instance Dev01
 
         .EXAMPLE
-            Test-DbaSqlLoginWeakPassword -SqlInstance Dev01 -Dictionary Test1,test2
+            Test-DbaLoginPassword -SqlInstance Dev01 -Dictionary Test1,test2
 
             Test all SQL logins that the password is null, same as username or Test1,Test2 on SQL server instance Dev0
     #>
@@ -106,7 +106,7 @@ function Test-DbaSqlLoginWeakPassword {
             Write-Message -Level Debug -Message "Executing $sql"
             Write-Message -Level Verbose -Message "Testing: same username as Password"
             Write-Message -Level Verbose -Message "Testing: the following Passwords $CheckPasses"
-            $server.Query("$sql")
+            $server.Query("$sql") | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, SqlLogin, Password
         }
     }
     end {}
