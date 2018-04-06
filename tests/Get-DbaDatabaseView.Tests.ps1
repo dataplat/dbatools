@@ -48,12 +48,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
              $results.IsSystemObject | Should Not Contain $true
         }
     }
-    
-    Context "Fails gracefully" {
-        It "Should throw on an invalid SQL Connection" {
-                Mock -ModuleName 'dbatools' Connect-SqlInstance { throw }
-                {Get-DbaDatabaseView -SqlInstance 'MadeUpServer' -EnableException } | Should Throw
-            }
-        }
-        
 }

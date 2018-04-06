@@ -10,7 +10,7 @@ function Start-DbaAgentJob {
             SQL Server name or SMO object representing the SQL Server to connect to.
 
         .PARAMETER SqlCredential
-            SqlCredential object to connect as. If not specified, current Windows login will be used.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Job
             The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
@@ -21,7 +21,7 @@ function Start-DbaAgentJob {
         .PARAMETER Wait
             Wait for output until the job has started
 
-        .PARAMETER JobCollection
+        .PARAMETER InputObject
             Internal parameter that enables piping
 
         .PARAMETER WhatIf
@@ -74,7 +74,7 @@ function Start-DbaAgentJob {
         [string[]]$Job,
         [string[]]$ExcludeJob,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Object")]
-        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$JobCollection,
+        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch]$Wait,
         [Alias('Silent')]
         [switch]$EnableException
@@ -90,17 +90,17 @@ function Start-DbaAgentJob {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $jobcollection += $server.JobServer.Jobs
+            $InputObject += $server.JobServer.Jobs
 
             if ($Job) {
-                $jobcollection = $jobcollection | Where-Object Name -In $Job
+                $InputObject = $InputObject | Where-Object Name -In $Job
             }
             if ($ExcludeJob) {
-                $jobcollection = $jobcollection | Where-Object Name -NotIn $ExcludeJob
+                $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeJob
             }
         }
 
-        foreach ($currentjob in $JobCollection) {
+        foreach ($currentjob in $InputObject) {
             $server = $currentjob.Parent.Parent
             $status = $currentjob.CurrentRunStatus
             if ($status -ne 'Idle') {

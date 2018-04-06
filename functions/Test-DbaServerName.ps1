@@ -16,13 +16,7 @@ function Test-DbaServerName {
             The SQL Server that you're connecting to.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -Credential parameter.
-
-            Windows Authentication will be used if Credential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Detailed
             Output all properties, will be deprecated in 1.0.0 release.
@@ -80,13 +74,13 @@ function Test-DbaServerName {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    
     begin {
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
         Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NoWarning
     }
     process {
-
+        
         foreach ($instance in $SqlInstance) {
             Write-Verbose "Attempting to connect to $instance"
             try {
@@ -95,14 +89,14 @@ function Test-DbaServerName {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
             if ($server.IsClustered) {
-                Write-Message -Level Warning -Message  "$instance is a cluster. Renaming clusters is not supported by Microsoft."
+                Write-Message -Level Warning -Message "$instance is a cluster. Renaming clusters is not supported by Microsoft."
             }
-
+            
             $sqlInstanceName = $server.Query("SELECT @@servername AS ServerName").ServerName
             $instance = $server.InstanceName
-
+            
             if ($instance.Length -eq 0) {
                 $serverInstanceName = $server.NetName
                 $instance = "MSSQLSERVER"
@@ -111,32 +105,32 @@ function Test-DbaServerName {
                 $netname = $server.NetName
                 $serverInstanceName = "$netname\$instance"
             }
-
+            
             $serverInfo = [PSCustomObject]@{
-                ComputerName   = $server.NetName
-                InstanceName   = $server.ServiceName
-                SqlInstance    = $server.DomainInstanceName
-                IsEqual        = $serverInstanceName -eq $sqlInstanceName
-                RenameRequired = $serverInstanceName -ne $sqlInstanceName
-                Updatable      = "N/A"
-                Warnings       = $null
-                Blockers       = $null
+                ComputerName     = $server.NetName
+                ServerName       = $sqlInstanceName
+                InstanceName     = $server.ServiceName
+                SqlInstance      = $server.DomainInstanceName
+                RenameRequired   = $serverInstanceName -ne $sqlInstanceName
+                Updatable        = "N/A"
+                Warnings         = $null
+                Blockers         = $null
             }
-
+            
             $reasons = @()
             $ssrsService = "SQL Server Reporting Services ($instance)"
-
+            
             Write-Message -Level Verbose -Message "Checking for $serverName on $netBiosName"
             $rs = $null
             if ($SkipSsrs -eq $false -or $NoWarning -eq $false) {
                 try {
-                    $rs = Get-DbaSqlService -ComputerName $instance.ComputerName -Instance $server.ServiceName -Type SSRS -EnableException -WarningAction Stop
+                    $rs = Get-DbaSqlService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type SSRS -EnableException -WarningAction Stop
                 }
                 catch {
-                    Write-Message -Level Warning -Message  "Unable to pull information on $ssrsService." -ErrorRecord $_ -Target $instance
+                    Write-Message -Level Warning -Message "Unable to pull information on $ssrsService." -ErrorRecord $_ -Target $instance
                 }
             }
-
+            
             if ($null -ne $rs -or $rs.Count -gt 0) {
                 if ($rs.State -eq 'Running') {
                     $rstext = "$ssrsService must be stopped and updated."
@@ -149,37 +143,37 @@ function Test-DbaServerName {
             else {
                 $serverInfo.Warnings = "N/A"
             }
-
+            
             # check for mirroring
             $mirroredDb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
-
-            Write-Debug "Found the following mirrored dbs: $($mirroredDb.Name)"
-
+            
+            Write-Message -Level Debug -Message "Found the following mirrored dbs: $($mirroredDb.Name)"
+            
             if ($mirroredDb.Length -gt 0) {
                 $dbs = $mirroredDb.Name -join ", "
                 $reasons += "Databases are being mirrored: $dbs"
             }
-
+            
             # check for replication
             $sql = "SELECT name FROM sys.databases WHERE is_published = 1 OR is_subscribed = 1 OR is_distributor = 1"
             Write-Message -Level Debug -Message "SQL Statement: $sql"
             $replicatedDb = $server.Query($sql)
-
+            
             if ($replicatedDb.Count -gt 0) {
                 $dbs = $replicatedDb.Name -join ", "
                 $reasons += "Database(s) are involved in replication: $dbs"
             }
-
+            
             # check for even more replication
             $sql = "SELECT srl.remote_name as RemoteLoginName FROM sys.remote_logins srl JOIN sys.sysservers sss ON srl.server_id = sss.srvid"
             Write-Message -Level Debug -Message "SQL Statement: $sql"
             $results = $server.Query($sql)
-
+            
             if ($results.RemoteLoginName.Count -gt 0) {
                 $remoteLogins = $results.RemoteLoginName -join ", "
                 $reasons += "Remote logins still exist: $remoteLogins"
             }
-
+            
             if ($reasons.Length -gt 0) {
                 $serverInfo.Updatable = $false
                 $serverInfo.Blockers = $reasons
@@ -188,8 +182,8 @@ function Test-DbaServerName {
                 $serverInfo.Updatable = $true
                 $serverInfo.Blockers = "N/A"
             }
-
-            $serverInfo | Select-DefaultView -ExcludeProperty Warnings, Blockers
+            
+            $serverInfo | Select-DefaultView -ExcludeProperty InstanceName, SqlInstance
         }
     }
 }

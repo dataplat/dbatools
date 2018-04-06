@@ -9,8 +9,8 @@ function Get-DbaAgHadr {
         .PARAMETER SqlInstance
             The SQL Server that you're connecting to.
 
-        .PARAMETER Credential
-            Credential object used to connect to the Windows server itself as a different user
+        .PARAMETER SqlCredential
+            Credential object used to connect to the SQL instance
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -38,29 +38,26 @@ function Get-DbaAgHadr {
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]$Credential,
+        [Alias("Credential")]
+        [PSCredential]$SqlCredential,
         [Alias('Silent')]
         [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
-
             try {
-                $computer = $instance.ComputerName
-                $instanceName = $instance.InstanceName
-                $computerName = (Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential).FullComputerName
-                Write-Message -Level Verbose -Message "Attempting to connect to $computer"
-                $currentState = Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock { $wmi.Services[$args[0]] | Select-Object IsHadrEnabled } -ArgumentList $instanceName -Credential $Credential
+                Write-Message -Level Verbose -Message "Connecting to $instance."
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {
-                Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            [PSCustomObject]@{
-                ComputerName  = $computerName
-                InstanceName  = $instanceName
-                SqlInstance   = $instance.FullName
-                IsHadrEnabled = $currentState.IsHadrEnabled
-            }
+            
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $server.NetName
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+            
+            Select-DefaultView -InputObject $server -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'IsHadrEnabled'
         }
     }
 }

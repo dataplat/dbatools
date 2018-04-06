@@ -11,11 +11,7 @@ function Get-DbaMaxMemory {
             Allows you to specify a comma separated list of servers to query.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-            $cred = Get-Credential, then pass $cred variable to this parameter.
-
-            Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

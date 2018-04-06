@@ -36,7 +36,7 @@ function Invoke-DbaDatabaseUpgrade {
     .PARAMETER NoRefreshView
     Skip view update
 
-    .PARAMETER DatabaseCollection
+    .PARAMETER InputObject
     A collection of databases (such as returned by Get-DbaDatabase)
 
     .PARAMETER WhatIf
@@ -106,18 +106,18 @@ function Invoke-DbaDatabaseUpgrade {
         [switch]$AllUserDatabases,
         [switch]$Force,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException
     )
     process {
 
-        if (Test-Bound -not 'SqlInstance', 'DatabaseCollection') {
+        if (Test-Bound -not 'SqlInstance', 'InputObject') {
             Write-Message -Level Warning -Message "You must specify either a SQL instance or pipe a database collection"
             continue
         }
 
-        if (Test-Bound -not 'Database', 'DatabaseCollection', 'ExcludeDatabase', 'AllUserDatabases') {
+        if (Test-Bound -not 'Database', 'InputObject', 'ExcludeDatabase', 'AllUserDatabases') {
             Write-Message -Level Warning -Message "You must explicitly specify a database. Use -Database, -ExcludeDatabase, -AllUserDatabases or pipe a database collection"
             continue
         }
@@ -131,18 +131,18 @@ function Invoke-DbaDatabaseUpgrade {
             catch {
                 Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
             }
-            $DatabaseCollection += $server.Databases | Where-Object IsAccessible
+            $InputObject += $server.Databases | Where-Object IsAccessible
         }
 
-        $DatabaseCollection = $DatabaseCollection | Where-Object { $_.IsSystemObject -eq $false }
+        $InputObject = $InputObject | Where-Object { $_.IsSystemObject -eq $false }
         if ($Database) {
-            $DatabaseCollection = $DatabaseCollection | Where-Object { $_.Name -contains $Database }
+            $InputObject = $InputObject | Where-Object { $_.Name -contains $Database }
         }
         if ($ExcludeDatabase) {
-            $DatabaseCollection = $DatabaseCollection | Where-Object { $_.Name -notcontains $ExcludeDatabase }
+            $InputObject = $InputObject | Where-Object { $_.Name -notcontains $ExcludeDatabase }
         }
 
-        foreach ($db in $DatabaseCollection) {
+        foreach ($db in $InputObject) {
             # create objects to use in updates
             $server = $db.Parent
             $ServerVersion = $server.VersionMajor
