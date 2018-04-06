@@ -295,6 +295,30 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 1
 
+    Context "RestoreTime point in time with Simple Model" {
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appveyorlabrepo\sql2008-backups\SimpleRecovery\ -RestoreTime (get-date "2018-04-06 10:37:44")
+        $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from SimpleBackTest.dbo.steps"
+        It "Should have restored 2 files" {
+            $results.count | Should be 2
+        }
+        It "Should have restored from 2018-04-06 10:30:32" {
+            $sqlResults.mindt | Should be (get-date "2018-04-06 10:30:32")
+        }
+        It "Should have restored to 2018-04-06 10:35:02" {
+            $sqlResults.maxdt | Should be (get-date "2018-04-06 10:35:02")
+        }
+    }
+
+    Context "All user databases are removed" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        It "Should say the status was dropped post point in time test" {
+            Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
+        }
+    }
+
+    Clear-DbaSqlConnectionPool
+    Start-Sleep -Seconds 1
+
     Context "RestoreTime point in time and continue" {
         AfterAll {
             $null = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false

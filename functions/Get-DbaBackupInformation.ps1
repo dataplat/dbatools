@@ -299,6 +299,7 @@ function Get-DbaBackupInformation {
                 $historyObject.CheckpointLSN = $group.Group[0].CheckpointLSN
                 $historyObject.LastLsn = $group.Group[0].LastLsn
                 $historyObject.SoftwareVersionMajor = $group.Group[0].SoftwareVersionMajor
+                $historyObject.RecoveryModel = $group.Group.RecoveryModel
                 $groupResults += $historyObject
             }
         }

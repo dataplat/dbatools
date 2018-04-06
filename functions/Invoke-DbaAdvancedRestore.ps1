@@ -168,11 +168,6 @@ function Invoke-DbaAdvancedRestore {
             $backups = @($InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
             $CanDoStopAt = $false
-            foreach($backup in $backups) {
-                if ($backup.Type -eq 'Transaction Log') {
-                    $CanDoStopAt = $true
-                }
-            }
             foreach ($backup in $backups) {
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
                 if (($backup -ne $backups[-1]) -or $true -eq $NoRecovery) {
@@ -185,17 +180,15 @@ function Invoke-DbaAdvancedRestore {
                 else {
                     $Restore.NoRecovery = $False
                 }
-                if ($CanDoStopAt) {
-                    if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date)) {
-                        $Restore.ToPointInTime = $null
+                if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
+                    $Restore.ToPointInTime = $null
+                }
+                else {
+                    if ($RestoreTime -ne $Restore.RestoreTime) {
+                        $Restore.ToPointInTime = $backup.RestoreTime
                     }
                     else {
-                        if ($RestoreTime -ne $Restore.RestoreTime) {
-                            $Restore.ToPointInTime = $backup.RestoreTime
-                        }
-                        else {
-                            $Restore.ToPointInTime = $RestoreTime
-                        }
+                        $Restore.ToPointInTime = $RestoreTime
                     }
                 }
                 $Restore.Database = $database
