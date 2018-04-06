@@ -77,6 +77,9 @@ function Copy-DbaTableData {
         .PARAMETER BulkCopyTimeOut
             Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
 
+        .PARAMETER InputObject
+            Enables piping of Table objects from Get-DbaTable
+
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -146,8 +149,7 @@ function Copy-DbaTableData {
         [PSCredential]$DestinationSqlCredential,
         [string]$Database,
         [string]$DestinationDatabase,
-        [Parameter(Mandatory, ValueFromPipeline)]
-        [object[]]$Table,
+        [string[]]$Table,
         [string]$Query,
         [int]$BatchSize = 50000,
         [int]$NotifyAfter = 5000,
@@ -159,6 +161,8 @@ function Copy-DbaTableData {
         [switch]$KeepNulls,
         [switch]$Truncate,
         [int]$bulkCopyTimeOut = 5000,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -198,13 +202,16 @@ function Copy-DbaTableData {
     }
 
     process {
+        if ((Test-Bound -Not -ParameterName Table, SqlInstance) -and (Test-Bound -Not -ParameterName InputObject)) {
+            Stop-Function -Message "You must pipe in a table or specify SqlInstance, Database and Table."
+            return
+        }
+
         if ($SqlInstance) {
             if ((Test-Bound -Not -ParameterName Database)) {
                 Stop-Function -Message "Database is required when passing a SqlInstance" -Target $Table
                 return
             }
-
-            #$InputObject = [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
@@ -228,9 +235,6 @@ function Copy-DbaTableData {
             }
         }
 
-        if (-not $InputObject) {
-            $InputObject = [Microsoft.SqlServer.Management.Smo.Table[]]$Table
-        }
         foreach ($sqltable in $InputObject) {
             $Database = $sqltable.Parent.Name
             $server = $sqltable.Parent.Parent
@@ -323,20 +327,19 @@ function Copy-DbaTableData {
                 $reader.Close()
 
                 [pscustomobject]@{
-                    SourceInstance      = $server.Name
-                    SourceDatabase      = $Database
-                    SourceTable         = $sqltable.Name
-                    DestinationInstance = $destServer.name
-                    DestinationDatabase = $DestinationDatabase
-                    DestinationTable    = $desttable.Name
-                    RowsCopied          = $rowstotal
-                    Elapsed             = [prettytimespan]$elapsed.Elapsed
+                    SourceInstance       = $server.Name
+                    SourceDatabase       = $Database
+                    SourceTable          = $sqltable.Name
+                    DestinationInstance  = $destServer.name
+                    DestinationDatabase  = $DestinationDatabase
+                    DestinationTable     = $desttable.Name
+                    RowsCopied           = $rowstotal
+                    Elapsed              = [prettytimespan]$elapsed.Elapsed
                 }
             }
             catch {
                 Stop-Function -Message "Something went wrong" -ErrorRecord $_ -Target $server -continue
             }
         }
-        $InputObject = $null
     }
 }
