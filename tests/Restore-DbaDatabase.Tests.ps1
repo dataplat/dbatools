@@ -298,6 +298,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "RestoreTime point in time with Simple Model" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appveyorlabrepo\sql2008-backups\SimpleRecovery\ -RestoreTime (get-date "2018-04-06 10:37:44")
         $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from SimpleBackTest.dbo.steps"
+        
         It "Should have restored 2 files" {
             $results.count | Should be 2
         }
