@@ -93,28 +93,28 @@
             https://dbatools.io/Import-DbaPfDataCollectorSetTemplate
 
         .EXAMPLE
-            Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query'
+            Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template 'Long Running Query'
 
             Creates a new data collector set named 'Long Running Query' from the dbatools repository on the SQL Server sql2017.
 
         .EXAMPLE
-            Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -DisplayName 'New Long running query' -Confirm
+            Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template 'Long Running Query' -DisplayName 'New Long running query' -Confirm
 
             Creates a new data collector set named "New Long Running Query" using the 'Long Running Query' template. Forces a confirmation if the template exists.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorSet -SqlInstance sql2017 -Session db_ola_health | Remove-Dbadata collector set
-            Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template db_ola_health | Start-Dbadata collector set
+            Get-DbaPfDataCollectorSet -ComputerName sql2017 -Session db_ola_health | Remove-DbaPfDataCollectorSet
+            Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template db_ola_health | Start-DbaPfDataCollectorSet
 
             Imports a session if it exists, then recreates it using a template.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017
+            Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017
 
             Allows you to select a Session template then import to an instance named sql2017.
 
         .EXAMPLE
-            Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -Instance SHAREPOINT
+            Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template 'Long Running Query' -Instance SHAREPOINT
 
             Creates a new data collector set named 'Long Running Query' from the dbatools repository on the SQL Server sql2017 for both the default and the SHAREPOINT instance.
 
