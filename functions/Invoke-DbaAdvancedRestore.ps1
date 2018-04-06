@@ -167,7 +167,6 @@ function Invoke-DbaAdvancedRestore {
             Write-Message -Message "WithReplace  = $WithReplace" -Level Debug
             $backups = @($InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
-            $CanDoStopAt = $false
             foreach ($backup in $backups) {
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
                 if (($backup -ne $backups[-1]) -or $true -eq $NoRecovery) {
