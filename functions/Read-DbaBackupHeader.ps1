@@ -1,7 +1,7 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Read-DbaBackupHeader {
-    <#
+	<#
         .SYNOPSIS
             Reads and displays detailed information about a SQL Server backup.
 
@@ -83,134 +83,199 @@ function Read-DbaBackupHeader {
 
             Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
     #>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", '')]
-    <# AzureCredential is utilized in this command is not a formal Credential object. #>
-    [CmdletBinding()]
-    param (
-        [parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstance]$SqlInstance,
-        [PsCredential]$SqlCredential,
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [object[]]$Path,
-        [switch]$Simple,
-        [switch]$FileList,
-        [string]$AzureCredential,
-        [Alias('Silent')]
-        [switch]$EnableException
-    )
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", '')]
+	<# AzureCredential is utilized in this command is not a formal Credential object. #>
+	[CmdletBinding()]
+	param (
+		[parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstance]$SqlInstance,
+		[PsCredential]$SqlCredential,
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[object[]]$Path,
+		[switch]$Simple,
+		[switch]$FileList,
+		[string]$AzureCredential,
+		[Alias('Silent')]
+		[switch]$EnableException
+	)
 
-    begin {
-        $loopCnt = 1
-        try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            return
-        }
-    }
+	begin {
+		try {
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+		}
+		catch {
+			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			return
+		}
+		$getHeaderScript = {
+			Param (
+				$SqlInstance,
+				$Path,
+				$DeviceType,
+				$AzureCredential   
+			)
+			#Copy existing connection to create an independent TSQL session
+			$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance.ConnectionContext.Copy()
+			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
+            
+			if ($DeviceType -eq 'URL') {
+				$restore.CredentialName = $AzureCredential
+			}
 
-    process {
-        if (Test-FunctionInterrupt) { return }
-        $pathCount = $Path.Length
-        Write-Message -Level Verbose -Message "$pathCount files to scan."
-        foreach ($file in $Path) {
-            if ($null -ne $file.FullName) {
-                $file = $file.FullName
-            }
-            Write-Progress -Id 1 -Activity Updating -Status 'Progress' -CurrentOperation "Scanning Restore headers on File $loopCnt - $file."
+			$device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $Path, $DeviceType
+			$restore.Devices.Add($device)
+			$dataTable = $restore.ReadBackupHeader($server)
 
-            Write-Message -Level Verbose -Message "Scanning file $file."
-            $restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-            if ($file -like 'http*') {
-                $deviceType = 'URL'
-                $restore.CredentialName = $AzureCredential
-            }
-            else {
-                $deviceType = 'FILE'
-            }
-            $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $file, $deviceType
-            $restore.Devices.Add($device)
-            if ((Test-DbaSqlPath -SqlInstance $server -Path $file) -or $deviceType -eq 'URL') {
-                try {
-                    $dataTable = $restore.ReadBackupHeader($server)
-                }
-                catch {
-                    if ($deviceType -eq 'FILE') {
-                        Stop-Function -Message "Problem found with $file." -Target $file -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException -Continue
-                    }
-                    else {
-                        Stop-Function -Message "Unable to read $file, check credential $AzureCredential and network connectivity." -Target $file -ErrorRecord $_ -Excpetion $_.Exception.InnerException.InnerException -Continue
-                    }
-                }
-                if ($dataTable.BackupName -eq "*** INCOMPLETE ***") {
-                    Write-Message -Level Warning -Message "$file appears to be from a new version of SQL Server than $SqlInstance, skipping"
-                }
-                else {
-                    $null = $dataTable.Columns.Add("FileList", [object])
+			$null = $dataTable.Columns.Add("FileList", [object])
 
-                    $mb = $dataTable.Columns.Add("BackupSizeMB", [int])
-                    $mb.Expression = "BackupSize / 1024 / 1024"
-                    $gb = $dataTable.Columns.Add("BackupSizeGB")
-                    $gb.Expression = "BackupSizeMB / 1024"
+			$mb = $dataTable.Columns.Add("BackupSizeMB", [int])
+			$mb.Expression = "BackupSize / 1024 / 1024"
+			$gb = $dataTable.Columns.Add("BackupSizeGB")
+			$gb.Expression = "BackupSizeMB / 1024"
 
-                    if ($null -eq $dataTable.Columns['CompressedBackupSize']) {
-                        $formula = "0"
-                    }
-                    else {
-                        $formula = "CompressedBackupSize / 1024 / 1024"
-                    }
+			if ($null -eq $dataTable.Columns['CompressedBackupSize']) {
+				$formula = "0"
+			}
+			else {
+				$formula = "CompressedBackupSize / 1024 / 1024"
+			}
 
-                    $cmb = $dataTable.Columns.Add("CompressedBackupSizeMB", [int])
-                    $cmb.Expression = $formula
-                    $cgb = $dataTable.Columns.Add("CompressedBackupSizeGB")
-                    $cgb.Expression = "CompressedBackupSizeMB / 1024"
+			$cmb = $dataTable.Columns.Add("CompressedBackupSizeMB", [int])
+			$cmb.Expression = $formula
+			$cgb = $dataTable.Columns.Add("CompressedBackupSizeGB")
+			$cgb.Expression = "CompressedBackupSizeMB / 1024"
 
-                    $null = $dataTable.Columns.Add("SqlVersion")
+			$null = $dataTable.Columns.Add("SqlVersion")
 
-                    $null = $dataTable.Columns.Add("BackupPath")
-                    $dbVersion = $dataTable.Rows[0].DatabaseVersion
+			$null = $dataTable.Columns.Add("BackupPath")
+            
+			foreach ($row in $dataTable) {
+				$row.BackupPath = $Path
+				$restore.FileNumber = $row.Position
+				<# Select-Object does a quick and dirty conversion from datatable to PS object #>
+				$row.FileList = $restore.ReadFileList($server) | Select-Object *
+			}
+			$dataTable
+		}
+	}
 
-                    $backupSlot = 1
-                    foreach ($row in $dataTable) {
-                        $row.SqlVersion = (Convert-DbVersionToSqlVersion $dbVersion)
-                        $row.BackupPath = $file
-                        try {
-                            $restore.FileNumber = $backupSlot
-                            <# Select-Object does a quick and dirty conversion from datatable to PS object #>
-                            $allFiles = $restore.ReadFileList($server) | Select-Object *
-                        }
-                        catch {
-                            $shortName = Split-Path $file -Leaf
-                            if (!(Test-DbaSqlPath -SqlInstance $server -Path $file)) {
-                                Stop-Function -Message "File $shortName does not exist or you do not have permission to access it. The SQL Server service account may not have access to the source directory." -Target $file -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException -Continue
-                            }
-                            else {
-                                Stop-Function -Message "File list for $shortName could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or timeouts with the SQL Server, or the SQL Server service account does not have access to the source directory." -Target $file -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException -Continue
-                            }
-                        }
-                        $row.FileList = $allFiles
-                        $backupSlot++
-                    }
+	process {
+		if (Test-FunctionInterrupt) { return }
+        
+		#Extract fullnames from the file system objects
+		$pathStrings = @()
+		foreach ($pathItem in $Path) {
+			if ($null -ne $pathItem.FullName) {
+				$pathStrings += $pathItem.FullName
+			}
+			else {
+				$pathStrings += $pathItem
+			}
+		}
+		#Group by filename
+		$pathGroup = $pathStrings | Group-Object -NoElement | Select-Object -ExpandProperty Name
+        
+		$pathCount = ($pathGroup | Measure-Object).Count
+		Write-Message -Level Verbose -Message "$pathCount unique files to scan."
+		Write-Message -Level Verbose -Message "Checking accessibility for all the files."
+                
+		$testPath = Test-DbaSqlPath -SqlInstance $server -Path $pathGroup
+        
+		#Setup initial session state
+		$InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+		#Create Runspace pool, min - 1, max - 10 sessions: there is internal SQL Server queue for the restore operations. 10 threads seem to perform best
+		$runspacePool = [runspacefactory]::CreateRunspacePool(1, 10, $InitialSessionState, $Host)
+		$runspacePool.Open()
 
-                    if ($Simple) {
-                        $dataTable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
-                    }
-                    elseif ($FileList) {
-                        $dataTable.filelist
-                    }
-                    else {
-                        $dataTable
-                    }
-                }
-            }
-            else {
-                Write-Message -Level Warning -Message "File $shortName does not exist or access denied. The SQL Server service account may not have access to the source directory."
-            }
-            Remove-Variable dataTable -ErrorAction SilentlyContinue
+		$threads = @()
+        
+		foreach ($file in $pathGroup) {
+			if ($file -like 'http*') {
+				$deviceType = 'URL'
+			}
+			else {
+				$deviceType = 'FILE'
+			}
+			if ($pathCount -eq 1) {
+				$fileExists = $testPath
+			}
+			else {
+				$fileExists = ($testPath | Where-Object FilePath -eq $file).FileExists
+			}
+			if ($fileExists -or $deviceType -eq 'URL') {
+				#Create parameters hashtable
+				$argsRunPool = @{
+					SqlInstance     = $server
+					Path            = $file
+					AzureCredential = $AzureCredential  
+					DeviceType      = $deviceType
+				}
+				Write-Message -Level Verbose -Message "Scanning file $file."
+				#Create new runspace thread
+				$thread = [powershell]::Create()
+				$thread.RunspacePool = $runspacePool
+				$thread.AddScript($getHeaderScript) | Out-Null
+				$thread.AddParameters($argsRunPool) | Out-Null
+				#Start the thread
+				$handle = $thread.BeginInvoke()
+				$threads += [pscustomobject]@{
+					handle      = $handle
+					thread      = $thread
+					file        = $file
+					deviceType  = $deviceType
+					isRetrieved = $false
+					started     = Get-Date
+				}
+			}
+			else {
+				Write-Message -Level Warning -Message "File $file does not exist or access denied. The SQL Server service account may not have access to the source directory."
+			}
+		}
+		#receive runspaces
+		while ($threads | Where-Object { $_.isRetrieved -eq $false }) {
+			$totalThreads = ($threads | Measure-Object).Count
+			$totalRetrievedThreads = ($threads | Where-Object { $_.isRetrieved -eq $false } | Measure-Object).Count
+			Write-Progress -Id 1 -Activity Updating -Status 'Progress' -CurrentOperation "Scanning Restore headers: $totalRetrievedThreads/$totalThreads" -PercentComplete ($totalRetrievedThreads / $totalThreads * 100)
+			foreach ($thread in ($threads | Where-Object { $_.isRetrieved -eq $false })) {
+				if ($thread.Handle.IsCompleted) {
+					$dataTable = $thread.thread.EndInvoke($thread.handle)
+					$thread.isRetrieved = $true
+					#Check if thread had any errors
+					if ($thread.thread.HadErrors) {
+						if ($thread.deviceType -eq 'FILE') {
+							Stop-Function -Message "Problem found with $($thread.file)." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
+						}
+						else {
+							Stop-Function -Message "Unable to read $($thread.file), check credential $AzureCredential and network connectivity." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
+						}
+					}
+					#Process the result of this thread
 
-        }
-        $loopCnt++
-    }
+					$dbVersion = $dataTable[0].DatabaseVersion
+
+					foreach ($row in $dataTable) {
+						$row.SqlVersion = (Convert-DbVersionToSqlVersion $dbVersion)
+						if ($row.BackupName -eq "*** INCOMPLETE ***") {
+							Stop-Function -Message "$($thread.file) appears to be from a new version of SQL Server than $SqlInstance, skipping" -Target $thread.file -Continue
+						}
+					}
+					if ($Simple) {
+						$dataTable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
+					}
+					elseif ($FileList) {
+						$dataTable.filelist
+					}
+					else {
+						$dataTable
+					}
+
+					$thread.thread.Dispose()
+				}
+			}
+			Start-Sleep -Milliseconds 50
+		}
+		#Close the runspace pool
+		$runspacePool.Close()
+	}
 }
