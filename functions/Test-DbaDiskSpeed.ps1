@@ -1,10 +1,10 @@
 ﻿function Test-DbaDiskSpeed {
     <#
     .SYNOPSIS
-        Tests how disks are performing
+        Tests how disks are performing.
 
     .DESCRIPTION
-        Tests how disks are performing
+        Tests how disks are performing.
 
         This command uses a query from Rich Benner which was adapted from David Pless's article:
         https://blogs.msdn.microsoft.com/dpless/2010/12/01/leveraging-sys-dm_io_virtual_file_stats/
@@ -44,7 +44,7 @@
 
     .EXAMPLE
         Test-DbaDiskSpeed -SqlInstance sql2008 -Database tempdb
-        Tests how disks storing tempdb files on sql2008 are performing
+        Tests how disks storing tempdb files on sql2008 are performing.
     #>
     [CmdletBinding()]
     Param (
