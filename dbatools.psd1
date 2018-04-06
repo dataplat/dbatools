@@ -11,7 +11,7 @@
     RootModule                = 'dbatools.psm1'
     
     # Version number of this module.
-    ModuleVersion             = '0.9.315'
+    ModuleVersion             = '0.9.321'
     
     # ID used to uniquely identify this module
     GUID                      = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -459,7 +459,8 @@
         'Invoke-DbaXeReplay',
         'Find-DbaInstance',
         'Test-DbaDiskSpeed',
-        'Get-DbaDbExtentDiff'
+        'Get-DbaDbExtentDiff',
+        'Read-DbaAuditFile'
     )
     
     # Cmdlets to export from this module
@@ -602,8 +603,8 @@
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU0Ya69eCBDlv5aVZ5Quw/AyD3
-# NUeggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU5ELZRaaslMB6xoX+i6zQc5pU
+# jPaggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -734,22 +735,22 @@
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUfif9xzpFtx+AHBkadWKWHoD19VowDQYJKoZIhvcNAQEBBQAE
-# ggEAOOrUAGWNjnKI2X0t8XOQpNwBesBlGMvPP6jebhKMySDmQjmM5owR0lB4gsjY
-# ENN5d3AOxXILDzFqswv3TYSG+F+pgcZDSGDhZMWcqOnTM77AjtHiw58vMQoMjkFy
-# vOpsUT79c9duAC6IBMZ6aEz0cClaV3Pgqnfc5eOSV3Gg86N5pzvNdsGsrdYm0dZ8
-# aNweG1Z54hStmAmxXTQ4/vhxpdqBUSzRpOzQ85rlBxtjHsFk2itBgvzJd2MSjHhq
-# /KqyaJOtWMy57tfy3khQTgNxhZYtZ5pReHVmZBoRW8gBPi2YVN2i39QjjPlXKdM/
-# 42BNUJ0P/71ZJmwG5Jxd4GhdbaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUXUr+LYRpHAxk73SKyiKEzrq5J0UwDQYJKoZIhvcNAQEBBQAE
+# ggEAhkdv9yvfEd33oTpwuXHazFuhkK64Rn02mTtPpYD2T+OQIp3b0LDmQfcYNDYk
+# ke7kOkV5aqtpNqUje37OsasED/i56max4imAxpP+i0yXQ+yp5mkiemba4v1giMgW
+# nJKPHtai1KOgrUqldDEqu9uzud1s3Mg//0+s6qbW2/4/KyY4TBmxePmPQ1yOrpen
+# b16z76qomFrKDgTBdEwsafRD1++IhBAPD52gYUCfaX3zzl4+i/zFa5eZPfy3IZwj
+# WozmJK5Gwd4EQ/wR/9wnva/li5NPh9opjHZuoaZbhhj2H1eWFMtsD3jq0upPIBUN
+# h753dBppkWKwFdk3EJtyoCR4P6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwMzI3MTQ1MTM3WjAj
-# BgkqhkiG9w0BCQQxFgQUeLBFPXfxMUt9fAckp1a2FbKbjO4wDQYJKoZIhvcNAQEB
-# BQAEggEAHNNxKjkNbh+GfdxvSxEzfXRXglIIgSidYO7FbETj8SYMOv2q9gYq9iz1
-# 5P6cLPmOKifv/OaoY2B783LvN0PNgQF5NnYFzc/RxNLZ2jYnnK2HDmT/vJaQUTQp
-# FhO52d7iajJ+Efs56FiI+UagHd49sBO6N+hatHym9uYkJjToEszUWnSK6MfJCy7V
-# MB430tWF2xT9+vvPyDD+oh7Y9t7tdS8fUrkVa8xtPNKymUApMXcirqDLYsVNmLy5
-# 0dXrOtRvRYv5YYbzAxk4s+/LdqNygeiSqwpNQUf7OT4Gq1dlpElhP0Wig+OGSEdl
-# /GrTUMXjAsy3nlxrj3QwTa0MUhzUjw==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwNDA0MTkxNzE0WjAj
+# BgkqhkiG9w0BCQQxFgQUb90YONTyIoHY3TjVF7/Sn0wvBScwDQYJKoZIhvcNAQEB
+# BQAEggEAMTx3N87dVPQ9crV+SvVblavoa5T2YbKmw02AtE34ioIm9Y3Py1mxl0qS
+# Q1R9bi7UtsPohtv6wVN1gClpzsIDY9sZkdRJZzN8CAOII+PB77XeNJrQqd0ZSGtk
+# VzpebcGaBTJ2smxxDLWDW0zYcRFWIIlb3cTuYAbMRtkuB6uHRH01lbhtD4c8ozoP
+# QwXqdUvExYYfYnVuWiXLLZpexsFdXFZdS2vgU+u9h7l6wZ62QqZCvkH9fbeBYOBL
+# O1NfVSp23RzQf3eDnTYpBaBxF97uBOn08NYY1FR8bLDMgcDr/vHNV9q38TbxhIUV
+# 323wk3lc9ET+SEyAGTSvE5PegQgvsw==
 # SIG # End signature block

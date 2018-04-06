@@ -13,7 +13,7 @@ function Set-DbaSpConfigure {
             collection and receive pipeline input
 
         .PARAMETER SqlCredential
-            PSCredential object to connect as. If not specified, current Windows login will be used.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER ConfigName
             The name of the configuration to be set -- Configs is auto-populated for tabbing convenience.

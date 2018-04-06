@@ -362,4 +362,22 @@
       <Nil N="VeryHighLoad" />
     </MS>
   </Obj>
+    <Obj RefId="40">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">AlwaysOn Health Enhanced</S>
+      <S N="Source">Jonathan Kehayias</S>
+      <I32 N="Compatibility">2014</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
+    <Obj RefId="41">
+    <TNRef RefId="0" />
+    <MS>
+      <S N="Name">Login Tracker</S>
+      <S N="Source">Chrissy LeMaire</S>
+      <I32 N="Compatibility">2012</I32>
+      <Nil N="VeryHighLoad" />
+    </MS>
+  </Obj>
 </Objs>

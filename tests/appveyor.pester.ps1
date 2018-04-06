@@ -266,8 +266,7 @@ if (-not $Finalize) {
             foreach ($k in $validScenarios) {
                 $AllTestsToExclude += Get-TestsForScenario -scenario $k -AllTest $AllTests
             }
-            $AllTests = $AllTests | Where-Object { $_ -notin $AllTestsToExclude }
-            $AllScenarioTests = $AllTests
+            $AllScenarioTests = $AllTests | Where-Object { $_ -notin $AllTestsToExclude }
         }
     }
     else {
@@ -307,7 +306,10 @@ if (-not $Finalize) {
         }
         # Pester 4.0 outputs already what file is being ran. If we remove write-host from every test, we can time
         # executions for each test script (i.e. Executing Get-DbaFoo .... Done (40 seconds))
-        Invoke-Pester @PesterSplat | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
+        Add-AppveyorTest -Name $f.Name -Framework NUnit -FileName $f.FullName -Outcome Running
+        $PesterRun = Invoke-Pester @PesterSplat
+        $PesterRun | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
+        Update-AppveyorTest -Name $f.Name -Framework NUnit -FileName $f.FullName -Outcome Passed -Duration $PesterRun.Time.TotalMilliseconds
     }
 }
 else {

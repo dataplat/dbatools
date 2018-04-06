@@ -13,10 +13,26 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         [object[]]$params = (Get-ChildItem function:\Get-DbaAvailabilityGroup).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'IsPrimary', 'EnableException'
         it "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
         it "Should only contain $paramCount parameters" {
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
     }
 }
+
+Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+    $dbname = "dbatoolsci_agroupdb"
+    Context "gets ags" {
+        $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3
+        It "returns results with proper data" {
+            $results.AvailabilityGroup | Should -Contain 'dbatoolsci_agroup'
+            $results.AvailabilityDatabases.Name | Should -Contain $dbname
+        }
+        $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup dbatoolsci_agroup
+        It "returns a single result" {
+            $results.AvailabilityGroup | Should -Be 'dbatoolsci_agroup'
+            $results.AvailabilityDatabases.Name | Should -Be $dbname
+        }
+    }
+} #$script:instance2 for appveyor

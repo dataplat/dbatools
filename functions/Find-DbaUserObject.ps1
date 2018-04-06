@@ -22,7 +22,7 @@ function Find-DbaUserObject {
             SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
 
         .PARAMETER SqlCredential
-            PSCredential object to connect as. If not specified, current Windows login will be used.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Pattern
             The regex pattern that the command will search for

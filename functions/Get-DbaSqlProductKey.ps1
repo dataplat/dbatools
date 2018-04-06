@@ -20,11 +20,7 @@ sqlserver1
 sqlserver2
 
 .PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-$cred = Get-Credential, this pass this $cred to the param.
-
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .NOTES
 Author: Chrissy LeMaire (@cl), netnerds.net
