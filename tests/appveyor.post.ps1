@@ -1,10 +1,11 @@
-﻿Write-Host -Object "appveyor.post: Sending coverage data" -ForeGroundColor DarkGreen
+﻿Add-AppveyorTest -Name "appveyor.post" -Framework NUnit -FileName "appveyor.post.ps1" -Outcome Running
+$sw = [system.diagnostics.stopwatch]::startNew()
+Write-Host -Object "appveyor.post: Sending coverage data" -ForeGroundColor DarkGreen
 Push-AppveyorArtifact PesterResultsCoverage.json -FileName "PesterResultsCoverage"
 codecov -f PesterResultsCoverage.json --flag "ps,$($env:SCENARIO.toLower())" | Out-Null
 # DLL unittests only in default scenario
 if($env:SCENARIO -eq 'default') {
   Write-Host -Object "appveyor.post: DLL unittests"  -ForeGroundColor DarkGreen
-  choco install opencover.portable | Out-Null
   OpenCover.Console.exe `
     -register:user `
     -target:"vstest.console.exe" `
@@ -15,3 +16,5 @@ if($env:SCENARIO -eq 'default') {
   Push-AppveyorArtifact coverage.xml -FileName "OpenCover c# report"
   codecov -f "coverage.xml" --flag "dll,$($env:SCENARIO.toLower())" | Out-Null
 }
+$sw.Stop()
+Update-AppveyorTest -Name "appveyor.post" -Framework NUnit -FileName "appveyor.post.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds

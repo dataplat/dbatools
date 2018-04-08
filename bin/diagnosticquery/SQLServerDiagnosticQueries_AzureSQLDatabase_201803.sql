@@ -1,7 +1,7 @@
 
 -- Azure SQL Database Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: February 21, 2018
+-- Last Modified: April 4, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -74,7 +74,7 @@ ORDER BY end_time DESC OPTION (RECOMPILE);
 ------
 
 -- sys.dm_db_resource_stats (Azure SQL Database)
--- https://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-db-resource-stats-azure-sql-database
+-- https://bit.ly/2HaSpKn
 
 
 
@@ -140,7 +140,7 @@ ORDER BY [VLF Count] DESC  OPTION (RECOMPILE);
 -- Try to keep your VLF counts under 200 in most cases (depending on log file size)
 
 -- Important change to VLF creation algorithm in SQL Server 2014
--- https://www.sqlskills.com/blogs/paul/important-change-vlf-creation-algorithm-sql-server-2014/
+-- https://bit.ly/2Hsjbg4
 
 
 
@@ -199,7 +199,7 @@ ORDER BY ec.client_net_address, es.[program_name] OPTION (RECOMPILE);
 -- and verifies connectivity from other machines
 
 -- Solving Connectivity errors to SQL Server
--- https://support.microsoft.com/en-us/help/4009936/solving-connectivity-errors-to-sql-server
+-- https://bit.ly/2EgzoD0
 
 
 
@@ -263,7 +263,7 @@ AND counter_name = N'Page life expectancy' OPTION (RECOMPILE);
 -- This will only return one row for non-NUMA systems
 
 -- Page Life Expectancy isn’t what you think…
--- https://www.sqlskills.com/blogs/paul/page-life-expectancy-isnt-what-you-think/
+-- https://bit.ly/2EgynLa
 
 
 -- Memory Grants Pending value for current instance  (Query 14) (Memory Grants Pending)
@@ -313,7 +313,7 @@ ORDER BY cp.size_in_bytes DESC OPTION (RECOMPILE);
 -- Enabling forced parameterization for the database can help, but test first!
 
 -- Plan cache, adhoc workloads and clearing the single-use plan cache bloat
--- https://www.sqlskills.com/blogs/kimberly/plan-cache-adhoc-workloads-and-clearing-the-single-use-plan-cache-bloat/
+-- https://bit.ly/2EfYOkl
 
 
 
@@ -333,7 +333,7 @@ WHERE [type_desc] = N'ROWS' OPTION (RECOMPILE);
 -- This gives you the actual space usage within the data file only, to match what the Azure portal shows for the database size
 
 -- Determining Database Size in Azure SQL Database V12
--- https://blogs.msdn.microsoft.com/sqlcat/2016/09/21/determining-database-size-in-azure-sql-database-v12/
+-- https://bit.ly/2JjrqNh
 
 
 
@@ -403,7 +403,7 @@ FROM sys.database_scoped_configurations WITH (NOLOCK) OPTION (RECOMPILE);
 -- ALTER DATABASE SCOPED CONFIGURATION CLEAR PROCEDURE_CACHE;
 
 -- ALTER DATABASE SCOPED CONFIGURATION (Transact-SQL)
--- https://msdn.microsoft.com/en-us/library/mt629158.aspx
+-- https://bit.ly/2sOH7nb
 
 
 -- I/O Statistics by file for the current database  (Query 22) (IO Stats By File)
@@ -857,7 +857,7 @@ ORDER BY OBJECT_NAME(t.[object_id]), p.index_id OPTION (RECOMPILE);
 -- temporal_type_desc, is_remote_data_archive_enabled, is_external are new in SQL Server 2016
 
 -- sys.tables (Transact-SQL)
--- https://msdn.microsoft.com/en-us/library/ms187406.aspx
+-- https://bit.ly/2Gk7998
 
 
 
@@ -884,7 +884,7 @@ ORDER BY STATS_DATE(i.[object_id], i.index_id) DESC OPTION (RECOMPILE);
 -- Also gives you an idea which indexes are the most active
 
 -- sys.stats (Transact-SQL)
--- https://msdn.microsoft.com/en-us/library/ms177623.aspx
+-- https://bit.ly/2GyAxrn
 
 
 
@@ -979,7 +979,7 @@ ORDER BY OBJECT_NAME(i.[object_id]) OPTION (RECOMPILE);
 -- Returns no data if you are not using in-memory OLTP
 
 -- Guidelines for Using Indexes on Memory-Optimized Tables
--- https://msdn.microsoft.com/en-us/library/dn133166.aspx
+-- https://bit.ly/2GCP8lF
 
 
 
@@ -998,7 +998,7 @@ ORDER BY ps.object_id, ps.partition_number, ps.row_group_id OPTION (RECOMPILE);
 ------
 
 -- sys.dm_db_column_store_row_group_physical_stats (Transact-SQL)
--- https://msdn.microsoft.com/en-us/library/dn832030.aspx
+-- https://bit.ly/2q276XQ
 
 
 
@@ -1039,7 +1039,7 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 -- Helps you investigate scalar UDF performance issues
 
 -- sys.dm_exec_function_stats (Transact-SQL)
--- https://msdn.microsoft.com/en-US/library/mt429371.aspx
+-- https://bit.ly/2q1Q6BM
 
 
 
@@ -1055,7 +1055,7 @@ FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);
 -- Requires that QueryStore is enabled for this database
 
 -- Tuning Workload Performance with Query Store
--- http://blogs.technet.com/b/dataplatforminsider/archive/2015/12/16/tuning-workload-performance-with-query-store.aspx
+-- https://bit.ly/1kHSl7w
 
 
 -- Get highest aggregate duration queries over last hour (Query 51) (High Aggregate Duration Queries)
@@ -1116,7 +1116,7 @@ AND es.session_id <> @@SPID OPTION (RECOMPILE);
 -- Replaces DBCC INPUTBUFFER
 
 -- New DMF for retrieving input buffer in SQL Server
--- https://blogs.msdn.microsoft.com/sql_server_team/new-dmf-for-retrieving-input-buffer-in-sql-server/
+-- https://bit.ly/2uHKMbz
 
 
 
@@ -1128,7 +1128,7 @@ OPTION (RECOMPILE);
 ------ 
 
 -- index_resumable_operations (Transact-SQL)
--- https://docs.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-index-resumable-operations
+-- https://bit.ly/2pYSWqq
 
 
 -- Get database automatic tuning options (Query 54) (Automatic Tuning Options)
@@ -1138,7 +1138,7 @@ OPTION (RECOMPILE);
 ------ 
 
 -- sys.database_automatic_tuning_options (Transact-SQL)
--- https://docs.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-database-automatic-tuning-options-transact-sql
+-- https://bit.ly/2FHhLkL
 
 
 
@@ -1149,7 +1149,7 @@ FROM sys.dm_geo_replication_link_status;
 ------  
 
 -- sys.dm_geo_replication_link_status (Azure SQL Database)
--- https://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-geo-replication-link-status-azure-sql-database
+-- https://bit.ly/2GwIqC2
 
 
 
@@ -1161,7 +1161,7 @@ SELECT DATABASEPROPERTYEX (DB_NAME(DB_ID()), 'Edition') AS [Database Edition],
 ------  
 
 -- DATABASEPROPERTYEX (Transact-SQL)
--- https://docs.microsoft.com/en-us/sql/t-sql/functions/databasepropertyex-transact-sql
+-- https://bit.ly/2ItexPg
 
 
 
