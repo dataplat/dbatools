@@ -37,7 +37,7 @@
         .EXAMPLE
             Get-ChildItem C:\temp\audit\*.sqlaudit | Read-DbaAuditFile
 
-            Returns events from all .sqlaudit files in C:\temp\audit
+            Returns events from all .sqlaudit files in C:\temp\audit.
 
         .EXAMPLE
             Get-DbaServerAudit -SqlInstance sql2014 -Audit LoginTracker | Read-DbaAuditFile
@@ -59,7 +59,7 @@
             # in order to ensure CSV gets all fields, all columns will be
             # collected and output in the first (all all subsequent) object
             $columns = @("name", "timestamp")
-            
+
             if ($file -is [System.String]) {
                 $currentfile = $file
                 $manualadd = $true
@@ -73,14 +73,14 @@
                     Stop-Function -Message "Unsupported file type."
                     return
                 }
-                
+
                 if ($file.FullName.Length -eq 0) {
                     Stop-Function -Message "This Audit does not have an associated file."
                     return
                 }
-                
+
                 $instance = [dbainstance]$file.ComputerName
-                
+
                 if ($instance.IsLocalHost) {
                     $currentfile = $file.FullName
                 }
@@ -88,54 +88,54 @@
                     $currentfile = $file.RemoteFullName
                 }
             }
-            
+
             if (-not $Exact) {
                 $currentfile = $currentfile.Replace('.sqlaudit', '*.sqlaudit')
-                
+
                 if ($currentfile -notmatch "sqlaudit") {
                     $currentfile = "$currentfile*.sqlaudit"
                 }
             }
-            
+
             $accessible = Test-Path -Path $currentfile
             $whoami = whoami
-            
+
             if (-not $accessible) {
                 if ($file.Status -eq "Stopped") { continue }
                 Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
             }
-            
+
             if ($raw) {
                 return New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
             }
-            
+
             $enum = New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
             $newcolumns = ($enum.Fields.Name | Select-Object -Unique)
-            
+
             $actions = ($enum.Actions.Name | Select-Object -Unique)
             foreach ($action in $actions) {
                 $newcolumns += ($action -Split '\.')[-1]
             }
-            
+
             $newcolumns = $newcolumns | Sort-Object
             $columns = ($columns += $newcolumns) | Select-Object -Unique
-            
+
             # Make it selectable, otherwise it's a weird enumeration
             foreach ($event in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
                 $hash = [ordered]@{ }
-                
+
                 foreach ($column in $columns) {
                     $null = $hash.Add($column, $event.$column)
                 }
-                
+
                 foreach ($action in $event.Actions) {
                     $hash[$action.Name] = $action.Value
                 }
-                
+
                 foreach ($field in $event.Fields) {
                     $hash[$field.Name] = $field.Value
                 }
-                
+
                 [pscustomobject]$hash
             }
         }

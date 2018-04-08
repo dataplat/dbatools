@@ -29,7 +29,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should Be $null
         }
     }
-    
+
     Context "Database is properly removed again after withreplace test" {
         Get-DbaProcess $script:instance1 -Database singlerestore | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
@@ -210,9 +210,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Database is properly removed again after ola pipe test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
-        It "Should say the status was dropped" {
-            $results | ForEach-Object { $_.Status | Should Be "Dropped" }
+        Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+
+        It "Should say the status was dropped or null" {
+            foreach ($result in $results) {
+                $result.Status -eq "Dropped" -or $result.Status -eq $null
+            }
         }
     }
 
@@ -373,7 +379,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 1
-    
+
     Get-DbaProcess $script:instance1 | Where-Object Program -match 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
     Context "Check Get-DbaBackupHistory pipes into Restore-DbaDatabase" {
         $history = Get-DbaBackupHistory -SqlInstance $script:instance1 -Database RestoreTimeClean -Last

@@ -1,5 +1,4 @@
 Here, we'll help you understand how to contribute to the project, and talk about fun stuff like styles and guidelines.
-
 # Contributing
 Let's sum this up saying that we'd love your help. We're slowly getting ready for the 1.0 release albeit a bit too slowly!
 
@@ -25,10 +24,10 @@ Documentation is really the area we welcome any help possible. The documentation
 Start out reviewing the [list of functions on the website](https://dbatools.io/functions/), or pulling the list from the module with `Get-Command -Module dbatools -CommandType Function | Out-GridView`. If you find something similar already exists, open [a new issue on GitHub](https://GitHub.com/sqlcollaborative/dbatools/issues/new) to request an enhancement to that command. New ideas already accepted can be found on [New Command](https://github.com/sqlcollaborative/dbatools/labels/Type%3A%20New%20Command) tagged issues. If nothing similar pops up, either ping @cl on Slack with your idea about the new command or open a new issue on GitHub with details or requirements you need.
 
 ## Report Bugs
-[Open a new issue](https://GitHub.com/sqlcollaborative/dbatools/issues/new) on GitHub and fill in all the details. The title should report the affected function, followed by a brief description (e.g. _Get-DbaDatabase - Add property x to default view_). The provided template holds most of the details coders need to fix the issue.
+[Open a new issue](https://dbatools.io/new-issue/) on GitHub and fill in all the details. The title should report the affected function, followed by a brief description (e.g. _Get-DbaDatabase - Add property x to default view_). The provided template holds most of the details coders need to fix the issue.
 
 ## Fix Bugs
-If you don't know to use github, we have a [step-by-step guide](https://dbatools.io/firstpull) to get acquainted.
+We have a [step-by-step guide](https://dbatools.io/firstpull) if you don't know Github enough.
 [Open a PR](https://GitHub.com/sqlcollaborative/dbatools/pulls) targeting ideally just one ps1 file (the PR needs to target the *development* branch), with the name of the function being fixed as a title. Everyone will chime in reviewing the code and either approve the PR or request changes. The more targeted and focused the PR, the easier to merge, the fastest to go into the next release. Keep them as simple as possible to speed up the process.
 
 ## Standardize Parameters and Variables
@@ -43,7 +42,7 @@ We chose to follow the standards below when creating parameters and variables fo
 
 When you are working with "objects" in SQL Server, say with databases, what variable name you use should be based on what operation you are doing. You can find examples of various situations in the current code of the module to see more detailed examples. As an example: in situations where you are looping over the databases for an instance, try to use a plural variable name for the collection and then single or abbreviated name in the loop for each object of that collection. e.g. `foreach ($db in $databases) {...`.
 
-If you have any questions around the above do not hesitate to ask in Slack.
+[This page](https://github.com/sqlcollaborative/dbatools/wiki/Standard-Documentation) sums up what we currently use. We aim at standardizing and reducing to a set of self-documenting and reusable parameters. If you have any questions around the above do not hesitate to ask in Slack.
 
 ## Tests
 Remember that tests are needed to make sure dbatools code behaves properly. The ultimate goal is for any user to be able to run dbatools' tests within their environment and, depending on the result, be sure everything works as expected. Dbatools works on a matrix of environments that will hardly be fully covered by a Continuous Integration system. That being said, we have AppVeyor (see later) set up to run at each and every commit.
@@ -63,10 +62,11 @@ TODO: how to run tests in your environment, tests\manual.pester.ps1
 
 ### AppVeyor setup
 
-AppVeyor is hooked up to test any commit, including PRs. Each commit triggers 4 builds, each referred to as a "scenario":
+AppVeyor is hooked up to test any commit, including PRs. Each commit triggers 5 builds, each referred to as a "scenario":
  - 2008R2 : a server with a single SQL Server 2008 R2 Express Edition instance available ($script:instance1)
  - 2016 : a server with a single SQL Server 2016 Developer Edition instance available ($script:instance2)
  - 2016_service: used to test service restarts
+ - 2016_2017 : a server with two instances available, 2016 and 2017 Developer Edition
  - default: a server with two instances available, one SQL Server 2008 R2 Express Edition and a SQL Server 2016 Developer Edition
 
 Builds are split among "scenario"(s) because not every test requires everything to be up and running, and resources on AppVeyor are constrained.
@@ -74,10 +74,10 @@ Builds are split among "scenario"(s) because not every test requires everything 
 Ideally:
  1) Whenever possible, write UnitTests.
  2) You should write IntegrationTests ideally running in **EITHER** the 2008R2 or the 2016 "scenario".
- 3) Default is the most resource constrained and is left to run the Copy-* commands; which are the only ones **needing** two active instances.
- 4) If you want to write tests that target **BOTH** 2008R2 and 2016, try to avoid writing tests that need both instances to be active at the same time.
+ 3) Default and 216_2017 are the most resource constrained and are left to run the Copy-* commands which are the only ones **needing** two active instances.
+ 4) If you want to write tests that, e.g, target **BOTH** 2008R2 and 2016, try to avoid writing tests that need both instances to be active at the same time.
 
-AppVeyor is set up to recognize what "scenario" is required by your test, simply inspecting for the presence of "$script:instance1" and/or "$script:instance2". If you need to fall into case (4), write two test files, e.g. _Get-DbaFoo.first.Tests.ps1 (targeting $script:instance1 only) and _Get-DbaFoo.second.Tests.ps1_ (targeting $script:instance2 only). If you don't want to wait for the entire test suite to run (i.e. you need to run only Get-DbaFoo on AppVeyor), you can use a "magic command" within the commit message, namely `(do Get-DbaFoo)` . This will run only test files within the test folder matching this mask `tests\*Get-DbaFoo*.Tests.ps1`.
+AppVeyor is set up to recognize what "scenario" is required by your test, simply inspecting for the presence of combinations of "$script:instance1", "$script:instance2" and "$script:instance3". If you need to fall into case (4), write two test files, e.g. _Get-DbaFoo.first.Tests.ps1 (targeting $script:instance1 only) and _Get-DbaFoo.second.Tests.ps1_ (targeting $script:instance2 only). If you don't want to wait for the entire test suite to run (i.e. you need to run only Get-DbaFoo on AppVeyor), you can use a "magic command" within the commit message, namely `(do Get-DbaFoo)` . This will run only test files within the test folder matching this mask `tests\*Get-DbaFoo*.Tests.ps1`.
 
 TODO: how to run your own AppVeyor before pushing a PR
 
@@ -94,5 +94,3 @@ In order to reach 1.0, on top of everything discussed above, we choose to wait f
 When each and every function is healthy enough, the module itself will be ready for 1.0 release. We may continue to use the same approach (with different checks) for later releases.
 
 There are a few checks which need a core developer to manually sign off the "check", but there are a lot everyone else can fix too, namely ScriptAnalyzer and CodeCoverage.
-
-
