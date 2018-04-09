@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $configs = $script:instance1, $script:instance2 | Get-DbaSpConfigure -Name DefaultTraceEnabled
+        $configs = $script:instance1, $script:instance2 | Get-DbaSpConfigure -ConfigName DefaultTraceEnabled
         $configs | Set-DbaSpConfigure -Value $true -WarningAction SilentlyContinue
     }
     AfterAll {
