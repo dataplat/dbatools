@@ -496,7 +496,7 @@ function Restore-DbaDatabase {
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
             if ($PipeDatabaseName -eq $true) {$DatabaseName = ''}
             Write-Message -message "ParameterSet  = Restore" -Level Verbose
-            if ($TrustDbBackupHistory -or $path.GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
+            if ($TrustDbBackupHistory -or $path[0].GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
                 foreach ($f in $path) {
                     Write-Message -Level Verbose -Message "Trust Database Backup History Set"
                     if ("BackupPath" -notin $f.PSobject.Properties.name) {
