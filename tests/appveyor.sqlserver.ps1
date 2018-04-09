@@ -2,7 +2,7 @@ Write-Host -Object "Creating migration & backup directories" -ForegroundColor Da
 New-Item -Path C:\temp -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 New-Item -Path C:\temp\migration -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
-
+New-Item -Path C:\github\dbatools\.git -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 
 if ($env:SCENARIO) {
     Write-Host -Object "Scenario $($env:scenario)" -ForegroundColor DarkGreen
