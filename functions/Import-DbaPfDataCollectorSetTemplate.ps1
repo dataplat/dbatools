@@ -95,7 +95,7 @@
         .EXAMPLE
             Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query'
 
-            Creates a new data collector set named 'Long Running Query' from the dbatools repository on the SQL Server sql2017
+            Creates a new data collector set named 'Long Running Query' from the dbatools repository on the SQL Server sql2017.
 
         .EXAMPLE
             Import-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template 'Long Running Query' -DisplayName 'New Long running query' -Confirm
