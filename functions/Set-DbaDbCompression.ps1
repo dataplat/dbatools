@@ -18,14 +18,14 @@ function Set-DbaDbCompression {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER CompressionType
-            Control the compression type applied. Default is 'Recommended' which uses the Tiger Team query to use the most appropriate setting per object. Other option is to compress all objects to either Row or Page.
-
         .PARAMETER Database
             The database(s) to process - this list is auto populated from the server. If unspecified, all databases will be processed.
 
         .PARAMETER ExcludeDatabase
             The database(s) to exclude - this list is auto populated from the server.
+
+        .PARAMETER CompressionType
+            Control the compression type applied. Default is 'Recommended' which uses the Tiger Team query to use the most appropriate setting per object. Other option is to compress all objects to either Row or Page.
 
         .PARAMETER MaxRunTime
             Will continue to alter tables and indexes for the given amount of minutes.
@@ -93,9 +93,9 @@ function Set-DbaDbCompression {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [ValidateSet("Recommended", "Page", "Row", "None")]$CompressionType = "Recommended",
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [ValidateSet("Recommended", "Page", "Row", "None")]$CompressionType = "Recommended",
         [int]$MaxRunTime = 0,
         [int]$PercentCompression = 0,
         $InputObject,
