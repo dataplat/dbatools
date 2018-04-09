@@ -15,12 +15,15 @@ function Set-DbaSpConfigure {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER ConfigName
+        .PARAMETER Name
             The name of the configuration to be set -- Configs is auto-populated for tabbing convenience.
 
         .PARAMETER Value
             The new value for the configuration
 
+        .PARAMETER InputObject
+            Piped objectgs from Get-DbaSpConfigure
+    
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
 
