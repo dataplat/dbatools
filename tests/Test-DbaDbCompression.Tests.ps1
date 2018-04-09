@@ -19,9 +19,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        Get-DbaProcess -SqlInstance $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $dbname = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
         $null = $server.Query("Create Database [$dbname]")
         $null = $server.Query("select * into syscols from sys.all_columns
                                 select * into sysallparams from sys.all_parameters
@@ -31,11 +31,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                                 ",$dbname)
        }
     AfterAll {
-        Get-DbaProcess -SqlInstance $script:instance1 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+        Get-DbaProcess -SqlInstance $script:instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
     }
     Context "Command gets suggestions" {
-        $results = Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname
+        $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
         It "Should get results for $dbaname" {
             $results | Should Not Be $null
         }
@@ -46,7 +46,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Command makes right suggestions" {
-        $results = Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname
+        $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
         It "Should sugggest PAGE compression for a table with no updates or scans" {
             $($results | Where-Object { $_.TableName -eq "syscols" -and $_.IndexType -eq "HEAP"}).CompressionTypeRecommendation | Should Be "PAGE"
         }
@@ -56,7 +56,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Command excludes results for specified database" {
         It "Shouldn't get any results for $dbname" {
-            $(Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname -ExcludeDatabase $dbname).Database | Should not Match $dbname
+            $(Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -ExcludeDatabase $dbname).Database | Should not Match $dbname
         }
     }
 }
