@@ -14,9 +14,14 @@ function Get-DbaSpConfigure {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER ConfigName
+        .PARAMETER Name
             Return only specific configurations -- auto-populated from source server
 
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    
         .NOTES
             Author: Nic Cain, https://sirsql.net/
 
@@ -30,7 +35,7 @@ function Get-DbaSpConfigure {
         .EXAMPLE
             Get-DbaSpConfigure -SqlInstance localhost
 
-            Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
+            Returns server level configuration data on the localhost (ServerName, Name, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
 
         .EXAMPLE
             'localhost','localhost\namedinstance' | Get-DbaSpConfigure
@@ -40,10 +45,10 @@ function Get-DbaSpConfigure {
         .EXAMPLE
             Get-DbaSpConfigure -SqlInstance localhost
 
-            Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
+            Returns server level configuration data on the localhost (ServerName, Name, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
 
         .EXAMPLE
-            Get-DbaSpConfigure -SqlInstance sql2012 -ConfigName MaxServerMemory
+            Get-DbaSpConfigure -SqlInstance sql2012 -Name MaxServerMemory
 
             Returns only the system configuration for MaxServerMemory. Configs is auto-populated for tabbing convenience.
         #>
@@ -53,10 +58,11 @@ function Get-DbaSpConfigure {
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Config")]
-        [object[]]$ConfigName
+        [Alias("Config", "ConfigName")]
+        [string[]]$Name,
+        [switch]$EnableException
     )
-
+    
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -66,45 +72,50 @@ function Get-DbaSpConfigure {
                 Write-Warning "Failed to connect to: $instance"
                 continue
             }
-
+            
             #Get a list of the configuration property parents, and exclude the Parent, Properties values
             $proplist = Get-Member -InputObject $server.Configuration -MemberType Property -Force | Select-Object Name | Where-Object { $_.Name -ne "Parent" -and $_.Name -ne "Properties" }
-
-            if ($ConfigName) {
-                $proplist = $proplist | Where-Object { $_.Name -in $ConfigName }
+            
+            if ($Name) {
+                $proplist = $proplist | Where-Object { $_.Name -in $Name }
             }
-
+            
             #Grab the default sp_configure property values from the external function
             $defaultConfigs = (Get-SqlDefaultSpConfigure -SqlVersion $server.VersionMajor).psobject.properties;
-
+            
             #Iterate through the properties to get the configuration settings
             foreach ($prop in $proplist) {
                 $propInfo = $server.Configuration.$($prop.Name)
                 $defaultConfig = $defaultConfigs | Where-Object { $_.Name -eq $propInfo.DisplayName };
-
+                
                 if ($defaultConfig.Value -eq $propInfo.RunValue) { $isDefault = $true }
                 else { $isDefault = $false }
-
+                
                 #Ignores properties that are not valid on this version of SQL
                 if (!([string]::IsNullOrEmpty($propInfo.RunValue))) {
                     # some displaynames were empty
                     $displayname = $propInfo.DisplayName
                     if ($displayname.Length -eq 0) { $displayname = $prop.Name }
-
+                    
                     [pscustomobject]@{
-                        ServerName            = $server.Name
-                        ConfigName            = $prop.Name
-                        DisplayName           = $displayname
-                        Description           = $propInfo.Description
-                        IsAdvanced            = $propInfo.IsAdvanced
-                        IsDynamic             = $propInfo.IsDynamic
-                        MinValue              = $propInfo.Minimum
-                        MaxValue              = $propInfo.Maximum
-                        ConfiguredValue       = $propInfo.ConfigValue
-                        RunningValue          = $propInfo.RunValue
-                        DefaultValue          = $defaultConfig.Value
-                        IsRunningDefaultValue = $isDefault
-                    }
+                        ServerName                 = $server.Name
+                        ComputerName               = $server.NetName
+                        InstanceName               = $server.ServiceName
+                        SqlInstance                = $server.DomainInstanceName
+                        Name                       = $prop.Name
+                        DisplayName                = $displayname
+                        Description                = $propInfo.Description
+                        IsAdvanced                 = $propInfo.IsAdvanced
+                        IsDynamic                  = $propInfo.IsDynamic
+                        MinValue                   = $propInfo.Minimum
+                        MaxValue                   = $propInfo.Maximum
+                        ConfiguredValue            = $propInfo.ConfigValue
+                        RunningValue               = $propInfo.RunValue
+                        DefaultValue               = $defaultConfig.Value
+                        IsRunningDefaultValue      = $isDefault
+                        Parent                     = $server
+                        ConfigName                 = $prop.Name
+                    } | Select-DefaultView -ExcludeProperty ServerName, Parent, ConfigName
                 }
             }
         }
