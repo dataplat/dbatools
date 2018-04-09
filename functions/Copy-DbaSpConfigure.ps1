@@ -131,7 +131,7 @@ function Copy-DbaSpConfigure {
                 try {
                     $destOldConfigValue = $destProp.ConfiguredValue
 
-                    $result = Set-DbaSpConfigure -SqlInstance $destServer -ConfigName $sConfigName -Value $sConfiguredValue -EnableException -Mode 'Lazy'
+                    $result = Set-DbaSpConfigure -SqlInstance $destServer -ConfigName $sConfigName -Value $sConfiguredValue -EnableException
                     if ($result) {
                         Write-Message -Level Verbose -Message "Updated $($destProp.ConfigName) ($($destProp.DisplayName)) from $destOldConfigValue to $sConfiguredValue."
                     }

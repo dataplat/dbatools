@@ -179,7 +179,7 @@ function Invoke-DbaAdvancedRestore {
                 else {
                     $Restore.NoRecovery = $False
                 }
-                if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date)) {
+                if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date) -or $backup.RecoveryModel -eq 'Simple') {
                     $Restore.ToPointInTime = $null
                 }
                 else {
@@ -190,7 +190,6 @@ function Invoke-DbaAdvancedRestore {
                         $Restore.ToPointInTime = $RestoreTime
                     }
                 }
-
                 $Restore.Database = $database
                 $Restore.ReplaceDatabase = $WithReplace
                 if ($MaxTransferSize) {

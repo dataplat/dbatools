@@ -6,7 +6,7 @@ function Invoke-DbaXeReplay {
 
         .DESCRIPTION
             This command replays events from Read-DbaXEFile. It is simplistic in its approach.
-    
+
             - Writes all queries to a temp sql file
             - Executes temp file using . $sqlcmd so that batches are executed properly
             - Deletes temp file
@@ -25,7 +25,7 @@ function Invoke-DbaXeReplay {
 
         .PARAMETER Raw
             By dafault, the results of . $sqlcmd are collected, cleaned up and displayed. If you'd like to see all results immeidately, use Raw.
-    
+
         .PARAMETER InputObject
             Accepts the object output of Read-DbaXESession.
 
@@ -39,12 +39,12 @@ function Invoke-DbaXeReplay {
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
-    
+
         .EXAMPLE
             Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017
 
             Runs all batch_text for sql_batch_completed against tempdb on sql2017.
-        
+
         .EXAMPLE
             Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017 -Database planning -Event sql_batch_completed
 
@@ -53,7 +53,7 @@ function Invoke-DbaXeReplay {
         .EXAMPLE
             Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXeReplay -SqlInstance sql2017, sql2016
 
-            Runs all batch_text for sql_batch_completed against tempdb on sql2017 and sql2016
+            Runs all batch_text for sql_batch_completed against tempdb on sql2017 and sql2016.
 
     #>
     Param (
@@ -69,14 +69,14 @@ function Invoke-DbaXeReplay {
         [switch]$Raw,
         [switch]$EnableException
     )
-    
+
     begin {
         $querycolumns = 'statement', 'batch_text'
         $timestamp = (Get-Date -Format yyyyMMddHHmm)
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $filename = "$temp\dbatools-replay-$timestamp.sql"
         Set-Content $filename -Value $null
-        
+
         $sqlcmd = "$script:PSModuleRoot\bin\sqlcmd\sqlcmd.exe"
     }
     process {
@@ -84,7 +84,7 @@ function Invoke-DbaXeReplay {
         if ($InputObject.Name -notin $Event) {
             continue
         }
-        
+
         if ($InputObject.statement) {
             if ($InputObject.statement -notmatch "ALTER EVENT SESSION") {
                 Add-Content -Path $filename -Value $InputObject.statement
@@ -108,8 +108,8 @@ function Invoke-DbaXeReplay {
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
-            
-            
+
+
             if ($Raw) {
                 if (Test-Bound -ParameterName SqlCredential) {
                     . $sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
@@ -120,14 +120,14 @@ function Invoke-DbaXeReplay {
                     continue
                 }
             }
-            
+
             if (Test-Bound -ParameterName SqlCredential) {
                 $output = . $sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
             }
             else {
                 $output = . $sqlcmd -S $instance -i $filename
             }
-            
+
             foreach ($line in $output) {
                 $newline = $line.Trim()
                 if ($newline -and $newline -notmatch "------------------------------------------------------------------------------------") {

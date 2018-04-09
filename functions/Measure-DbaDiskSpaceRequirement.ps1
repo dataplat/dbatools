@@ -5,7 +5,7 @@ function Measure-DbaDiskSpaceRequirement {
 
         .DESCRIPTION
             Returns a file list from source and destination where source file may overwrite destination. Complex scenarios where a new file may exist is taken into account.
-            This command will accept an hash object in pipeline with the following keys: Source, SourceDatabase, Destination. Using this command will provide a way to prepare before a complex migration with multiple databases from different sources and destinations.
+            This command will accept a hash object in pipeline with the following keys: Source, SourceDatabase, Destination. Using this command will provide a way to prepare before a complex migration with multiple databases from different sources and destinations.
 
         .PARAMETER Source
             Source SQL Server.
@@ -55,12 +55,12 @@ function Measure-DbaDiskSpaceRequirement {
               [PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB2'}
             ) | Measure-DbaDiskSpaceRequirement
 
-            Using a PSCustomObject with 2 databases to migrate on SQL2
+            Using a PSCustomObject with 2 databases to migrate on SQL2.
 
         .EXAMPLE
             Import-Csv -Path .\migration.csv -Delimiter "`t" | Measure-DbaDiskSpaceRequirement | Format-Table -AutoSize
 
-            Using a CSV file. You will need to use this header line "Source<tab>Destination<tab>Database<tab>DestinationDatabase"
+            Using a CSV file. You will need to use this header line "Source<tab>Destination<tab>Database<tab>DestinationDatabase".
 
         .EXAMPLE
             Invoke-DbaSqlCmd -SqlInstance DBA -Database Migrations -Query 'select Source, Destination, Database from dbo.Migrations' `
