@@ -20,7 +20,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolsci_test_$(get-random)"
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
         $null = $server.Query("Create Database [$dbname]")
         $null = $server.Query("select * into syscols from sys.all_columns
                                 select * into sysallparams from sys.all_parameters
@@ -28,11 +28,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                                 create nonclustered index NC_syscols on syscols (precision) include (collation_name)",$dbname)
        }
     AfterAll {
-        Get-DbaProcess -SqlInstance $script:instance1 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+        Get-DbaProcess -SqlInstance $script:instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
     }
-    $InputObject = Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname
-    $results = Set-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname -MaxRunTime 5 -PercentCompression 0
+    $InputObject = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+    $results = Set-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -MaxRunTime 5 -PercentCompression 0
     Context "Command gets results" {
         It "Should contain objects" {
             $results | Should Not Be $null
@@ -57,11 +57,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.Databases[$dbname].Tables['syscols'].PhysicalPartitions[0].DataCompression = "NONE"
         $server.Databases[$dbname].Tables['syscols'].Rebuild()
         It "Shouldn't get any results for $dbname" {
-            $(Set-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname -ExcludeDatabase $dbname -MaxRunTime 5 -PercentCompression 0).Database | Should not Match $dbname
+            $(Set-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -ExcludeDatabase $dbname -MaxRunTime 5 -PercentCompression 0).Database | Should not Match $dbname
         }
     }
     Context "Command can accept InputObject from Test-DbaDbCompression" {
-        $results = @(Set-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname -MaxRunTime 5 -PercentCompression 0 -InputObject $InputObject)
+        $results = @(Set-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -MaxRunTime 5 -PercentCompression 0 -InputObject $InputObject)
         It "Should get results" {
             $results | Should not be $null
         }
