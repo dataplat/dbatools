@@ -15,6 +15,7 @@ shallow_clone: true
 environment: 
   environment: development
   version: 0.9.$(appveyor_build_number)
+  appveyor_rdp_password: 2odCuiKmYiem
   
   matrix:
     - scenario: 2008R2
