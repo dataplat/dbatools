@@ -4,7 +4,7 @@
             Find Disabled indexes
 
         .DESCRIPTION
-            This command will help you to find disabled indexes on a database or a list of databases
+            This command will help you to find disabled indexes on a database or a list of databases.
 
         .PARAMETER SqlInstance
             The SQL Server you want to check for disabled indexes.
@@ -59,7 +59,7 @@
         .EXAMPLE
             Find-DbadisabledIndex -SqlInstance sqlserver2016 -Database db1, db2
 
-            Generates the SQL Statement to to drop selected indexes in databases db1 & db2 on server "sqlserver2016".
+            Generates the SQL Statement to drop selected indexes in databases db1 & db2 on server "sqlserver2016".
 
         .EXAMPLE
             Find-DbadisabledIndex -SqlInstance sqlserver2016
