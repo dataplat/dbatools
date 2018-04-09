@@ -34,17 +34,23 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     $InputObject = Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname
     $results = Set-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname -MaxRunTime 5 -PercentCompression 0
+    Context "Command gets results" {
+        It "Should contain objects" {
+            $results | Should Not Be $null
+        }
+    }
+
     Context "Command handles heaps and clustered indexes" {
-        @($results | Where-Object {$_.IndexId -le 1}).Foreach{
-            It "Should process object $($PSItem.TableName)" {
-                $PSItem.AlreadyProcesssed | Should Be $True
+        foreach ($row in $results | Where-Object {$_.IndexId -le 1}){
+            It "Should process object $($row.TableName)" {
+                $row.AlreadyProcesssed | Should Be $True
             }
         }
     }
     Context "Command handles nonclustered indexes" {
-        @($results | Where-Object {$_.IndexId -gt 1}).Foreach{
-            It "Should process nonclustered index $($PSItem.IndexName)" {
-                $PSItem.AlreadyProcesssed | Should Be $True
+        foreach ($row in $results | Where-Object {$_.IndexId -gt 1}){
+            It "Should process nonclustered index $($row.IndexName)" {
+                $row.AlreadyProcesssed | Should Be $True
             }
         }
     }
@@ -60,9 +66,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should get results" {
             $results | Should not be $null
         }
-        $results.Foreach{
-            It "Should process object $($PSItem.TableName) from InputObject" {
-                $PSItem.AlreadyProcesssed | Should Be $True
+        foreach ($row in $results) {
+            It "Should process object $($row.TableName) from InputObject" {
+                $row.AlreadyProcesssed | Should Be $True
             }
         }
     }

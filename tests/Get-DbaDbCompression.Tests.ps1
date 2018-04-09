@@ -38,9 +38,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Gets results" {
             $results | Should Not Be $null
         }
-        @($results | Where-Object {$_.IndexId -le 1}).Foreach{
-            It "Should return compression level for object $($PSItem.TableName)" {
-                $PSItem.DataCompression | Should BeIn ('None','Row','Page')
+        Foreach ($row in $results | Where-Object {$_.IndexId -le 1}) {
+            It "Should return compression level for object $($row.TableName)" {
+                $row.DataCompression | Should BeIn ('None','Row','Page')
             }
         }
     }
@@ -48,9 +48,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Gets results" {
             $results | Should Not Be $null
         }
-        @($results | Where-Object {$_.IndexId -gt 1}).Foreach{
-            It "Should return compression level for nonclustered index $($PSItem.IndexName)" {
-                $PSItem.DataCompression | Should BeIn ('None','Row','Page')
+        Foreach ($row in $results | Where-Object {$_.IndexId -gt 1}) {
+            It "Should return compression level for nonclustered index $($row.IndexName)" {
+                $row.DataCompression | Should BeIn ('None','Row','Page')
             }
         }
     }
