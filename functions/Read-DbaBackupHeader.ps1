@@ -101,6 +101,7 @@ function Read-DbaBackupHeader {
 	)
 
 	begin {
+		Write-Message -Level InternalComment -Message "Starting reading headers"
 		try {
 			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		}
