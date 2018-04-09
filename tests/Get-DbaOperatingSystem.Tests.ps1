@@ -3,9 +3,9 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = x
+        $paramCount = 3
         $commonParamCount = ([System.Management.Automation.PSCmdlet]::CommonParameters).Count
-        [object[]]$params = (Get-ChildItem function:\Get-DBaOperatingSystem).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Get-DbaOperatingSystem).Parameters.Keys
         $knownParameters = 'ComputerName', 'Credential', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
