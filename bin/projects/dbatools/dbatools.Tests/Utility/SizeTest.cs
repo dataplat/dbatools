@@ -12,6 +12,12 @@ namespace Sqlcollaborative.Dbatools.Utility
             var size = new Size();
             Assert.AreEqual(0, size.Byte);
             Assert.AreEqual("0 B", size.ToString());
+            // Make sure the defaults come from the utility host.
+            Assert.AreEqual(UtilityHost.SizeStyle, size.Style);
+            Assert.AreEqual(UtilityHost.SizeDigits, size.Digits);
+            // Make sure the defautl are what we explicitly what we expect them to be.
+            Assert.AreEqual(SizeStyle.Dynamic, size.Style);
+            Assert.AreEqual(2, size.Digits);
         }
 
         [TestMethod]
@@ -23,7 +29,53 @@ namespace Sqlcollaborative.Dbatools.Utility
         }
         
         [TestMethod]
-        public void TestCompareTo()
+        public void TestCompareToObjOfSize()
+        {
+            var sizes = new Object[] { new Size(42), new Size(56), new Size(42)};
+            Assert.AreEqual(-1, ((Size)sizes[0]).CompareTo(sizes[1]));
+            Assert.AreEqual(0, ((Size)sizes[0]).CompareTo(sizes[2]));
+            Assert.AreEqual(1, ((Size)sizes[1]).CompareTo(sizes[2]));
+        }
+
+        [TestMethod]
+        public void TestCompareToObjOfInt()
+        {
+            var sizes = new[] { new Size(42), new Size(56), new Size(42) };
+            Assert.AreEqual(-1, sizes[0].CompareTo(sizes[1].Byte));
+            Assert.AreEqual(0, sizes[0].CompareTo(sizes[2].Byte));
+            Assert.AreEqual(1, sizes[1].CompareTo(sizes[2].Byte));
+        }
+
+        [TestMethod]
+        public void TestCompareToObjOfUInt()
+        {
+            var sizes = new[] { new Size(42), new Size(56), new Size(42) };
+            Assert.AreEqual(-1, sizes[0].CompareTo(56u));
+            Assert.AreEqual(0, sizes[0].CompareTo(42u));
+            Assert.AreEqual(1, sizes[1].CompareTo(42u));
+        }
+
+        [TestMethod]
+        public void TestCompareToObjOfDecimal()
+        {
+            var sizes = new[] { new Size(42), new Size(56), new Size(42) };
+            Assert.AreEqual(-1, sizes[0].CompareTo(56m));
+            Assert.AreEqual(0, sizes[0].CompareTo(42m));
+            Assert.AreEqual(1, sizes[1].CompareTo(42m));
+        }
+
+        [TestMethod]
+        public void TestCompareToObjOfDouble()
+        {
+            var sizes = new[] { new Size(42), new Size(56), new Size(42) };
+            Assert.AreEqual(-1, sizes[0].CompareTo(56D));
+            Assert.AreEqual(0, sizes[0].CompareTo(42D));
+            Assert.AreEqual(1, sizes[1].CompareTo(42D));
+        }
+
+
+        [TestMethod]
+        public void TestCompareToSize()
         {
             var sizes = new[] { new Size(42), new Size(56), new Size(42)};
             Assert.AreEqual(-1, sizes[0].CompareTo(sizes[1]));
@@ -49,6 +101,30 @@ namespace Sqlcollaborative.Dbatools.Utility
             size.Digits = 0;
             Assert.AreEqual("5 TB", size.ToString());
             size.Digits = -42;
+            Assert.AreEqual("5 TB", size.ToString());
+        }
+
+        [TestMethod]
+        public void TestStyleToString()
+        {
+            var size = new Size(5607509301657);
+            Assert.AreEqual("5.10 TB", size.ToString());
+            size.Style = SizeStyle.Gigabyte;
+            Assert.AreEqual("5,222.40 GB", size.ToString());
+            size.Digits = 1;
+            Assert.AreEqual("5,222.4 GB", size.ToString());
+            size.Digits = 0;
+            Assert.AreEqual("5,222 GB", size.ToString());
+            size.Style = SizeStyle.Megabyte;
+            Assert.AreEqual("5,347,738 MB", size.ToString());
+            size.Style = SizeStyle.Kilobyte;
+            Assert.AreEqual("5,476,083,302 KB", size.ToString());
+            size.Style = SizeStyle.Byte;
+            Assert.AreEqual("5607509301657 B", size.ToString());
+            size.Style = SizeStyle.Plain;
+            Assert.AreEqual("5607509301657", size.ToString());
+            // Because the first time we were using dynamic styling.
+            size.Style = SizeStyle.Terabyte;
             Assert.AreEqual("5 TB", size.ToString());
         }
 
@@ -94,6 +170,20 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             var size = new Size(-1);
             Assert.AreEqual("Unlimited", size.ToString());
+        }
+
+        [TestMethod]
+        public void TestZeroBytes()
+        {
+            var size = new Size(0);
+            Assert.AreEqual("0 B", size.ToString());
+        }
+
+        [TestMethod]
+        public void TestNegativeBytes()
+        {
+            var size = new Size(-2);
+            Assert.AreEqual("", size.ToString());
         }
     }
 }

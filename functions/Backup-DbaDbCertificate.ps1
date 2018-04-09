@@ -33,8 +33,8 @@ function Backup-DbaDbCertificate {
         .PARAMETER Suffix
             The suffix of the filename of the exported certificate.
 
-        .PARAMETER CertificateCollection
-            Internal parameter to support pipeline input.
+        .PARAMETER InputObject
+            Certificate object
 
         .PARAMETER Confirm
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
@@ -118,7 +118,7 @@ function Backup-DbaDbCertificate {
         [System.IO.FileInfo]$Path,
         [string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
         [parameter(ValueFromPipeline, ParameterSetName = "collection")]
-        [Microsoft.SqlServer.Management.Smo.Certificate[]]$CertificateCollection,
+        [Microsoft.SqlServer.Management.Smo.Certificate[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -246,14 +246,14 @@ function Backup-DbaDbCertificate {
                 $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
             }
             foreach ($db in $databases.Name) {
-                $DBCertificateCollection = Get-DbaDbCertificate -SqlInstance $server -Database $db
+                $DBInputObject = Get-DbaDbCertificate -SqlInstance $server -Database $db
                 if ($Certificate) {
-                    $CertificateCollection += $DBCertificateCollection | Where-Object Name -In $Certificate
+                    $InputObject += $DBInputObject | Where-Object Name -In $Certificate
                 }
                 else {
-                    $CertificateCollection += $DBCertificateCollection | Where-Object Name -NotLike "##*"
+                    $InputObject += $DBInputObject | Where-Object Name -NotLike "##*"
                 }
-                if (!$CertificateCollection) {
+                if (!$InputObject) {
                     Write-Message -Level Output -Message "No certificates found to export in $db."
                     continue
                 }
@@ -261,7 +261,7 @@ function Backup-DbaDbCertificate {
 
         }
 
-        foreach ($cert in $CertificateCollection) {
+        foreach ($cert in $InputObject) {
             if ($cert.Name.StartsWith("##")) {
                 Write-Message -Level Output -Message "Skipping system cert $cert"
             }

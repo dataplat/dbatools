@@ -42,7 +42,7 @@ function Invoke-ManagedComputerCommand {
     
     $null = Test-ElevationRequirement -ComputerName $computer -EnableException $true
     
-    $resolved = Resolve-DbaNetworkName -ComputerName $computer
+    $resolved = Resolve-DbaNetworkName -ComputerName $computer -Turbo
     $ipaddr = $resolved.IpAddress
     $ArgumentList += $ipaddr
     

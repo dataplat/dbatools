@@ -21,7 +21,7 @@ function Stop-DbaAgentJob {
         .PARAMETER Wait
             Wait for output until the job has completely stopped
 
-        .PARAMETER JobCollection
+        .PARAMETER InputObject
             Internal parameter that enables piping
 
         .PARAMETER WhatIf
@@ -69,7 +69,7 @@ function Stop-DbaAgentJob {
         [string[]]$Job,
         [string[]]$ExcludeJob,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Object")]
-        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$JobCollection,
+        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch]$Wait,
         [Alias('Silent')]
         [switch]$EnableException
@@ -85,17 +85,17 @@ function Stop-DbaAgentJob {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $jobcollection += $server.JobServer.Jobs
+            $InputObject += $server.JobServer.Jobs
 
             if ($Job) {
-                $jobcollection = $jobcollection | Where-Object Name -In $Job
+                $InputObject = $InputObject | Where-Object Name -In $Job
             }
             if ($ExcludeJob) {
-                $jobcollection = $jobcollection | Where-Object Name -NotIn $ExcludeJob
+                $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeJob
             }
         }
 
-        foreach ($currentjob in $JobCollection) {
+        foreach ($currentjob in $InputObject) {
 
             $server = $currentjob.Parent.Parent
             $status = $currentjob.CurrentRunStatus
