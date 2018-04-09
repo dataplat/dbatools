@@ -138,5 +138,11 @@ namespace Sqlcollaborative.Dbatools.Database
         /// Recovery Fork backup was takeon
         /// </summary>
         public Guid LastRecoveryForkGUID;
+
+        /// <summary>
+        /// Recovery Model of the database when backup was taken
+        /// </summary>
+        public string RecoveryModel;
+        
     }
 }

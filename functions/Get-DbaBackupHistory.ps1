@@ -378,7 +378,8 @@ function Get-DbaBackupHistory {
                                   backupset.software_major_version,
                                   mediaset.software_name AS Software,
                                   backupset.is_copy_only,
-                                  backupset.last_recovery_fork_guid
+                                  backupset.last_recovery_fork_guid,
+                                  backupset.recovery_model
                                 FROM msdb..backupmediafamily AS mediafamily
                                 JOIN msdb..backupmediaset AS mediaset
                                   ON mediafamily.media_set_id = mediaset.media_set_id
@@ -460,7 +461,8 @@ function Get-DbaBackupHistory {
                               backupset.software_major_version,
                               mediaset.software_name AS Software,
                               backupset.is_copy_only,
-                              backupset.last_recovery_fork_guid"
+                              backupset.last_recovery_fork_guid,
+                              backupset.recovery_model"
                 }
 
                 $from = " FROM msdb..backupmediafamily mediafamily
@@ -589,6 +591,7 @@ function Get-DbaBackupHistory {
                     $historyObject.SoftwareVersionMajor = $commonFields.Software_Major_Version
                     $historyObject.IsCopyOnly = ($commonFields.is_copy_only -eq 1)
                     $historyObject.LastRecoveryForkGuid = $commonFields.last_recovery_fork_guid
+                    $historyObject.RecoveryModel = $commonFields.Recovery_Model
                     $historyObject
                 }
                 $groupResults | Sort-Object -Property LastLsn, Type
