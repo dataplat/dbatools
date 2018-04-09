@@ -236,7 +236,7 @@ function Read-DbaBackupHeader {
         #receive runspaces
         while ($threads | Where-Object { $_.isRetrieved -eq $false }) {
             $totalThreads = ($threads | Measure-Object).Count
-            $totalRetrievedThreads = ($threads | Where-Object { $_.isRetrieved -eq $false } | Measure-Object).Count
+            $totalRetrievedThreads = ($threads | Where-Object { $_.isRetrieved -eq $true } | Measure-Object).Count
             Write-Progress -Id 1 -Activity Updating -Status 'Progress' -CurrentOperation "Scanning Restore headers: $totalRetrievedThreads/$totalThreads" -PercentComplete ($totalRetrievedThreads / $totalThreads * 100)
             foreach ($thread in ($threads | Where-Object { $_.isRetrieved -eq $false })) {
                 if ($thread.Handle.IsCompleted) {
