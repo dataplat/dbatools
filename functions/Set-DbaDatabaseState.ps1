@@ -183,15 +183,6 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
             return $warn
         }
 
-        $UserAccessHash = @{
-            'Single'     = 'SINGLE_USER'
-            'Restricted' = 'RESTRICTED_USER'
-            'Multiple'   = 'MULTI_USER'
-        }
-        $ReadOnlyHash = @{
-            $true  = 'READ_ONLY'
-            $false = 'READ_WRITE'
-        }
         $StatusHash = @{
             'Offline'       = 'OFFLINE'
             'Normal'        = 'ONLINE'
@@ -469,7 +460,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
                 # we can do that here
                 if ($Pscmdlet.ShouldProcess($server, "Detaching $db")) {
                     if ($db_status.Status -ne 'OFFLINE') {
-                        $opstatus = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "OFFLINE" -immediate $true
+                        $null = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "OFFLINE" -immediate $true
                     }
                     try {
                         $sql = "EXEC master.dbo.sp_detach_db N'$($db.Name)'"
