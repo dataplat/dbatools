@@ -1,4 +1,4 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 5
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaDbCompression).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Get-DbaDbCompression).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential','Database','ExcludeDatabase','EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -26,37 +26,38 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = $server.Query("select * into syscols from sys.all_columns
                                 select * into sysallparams from sys.all_parameters
                                 create clustered index CL_sysallparams on sysallparams (object_id)
-                                create nonclustered index NC_syscols on syscols (precision) include (collation_name)
-                                update sysallparams set is_xml_document = 1 where name = '@dbname'
-                                ",$dbname)
+                                create nonclustered index NC_syscols on syscols (precision) include (collation_name)",$dbname)
        }
     AfterAll {
         Get-DbaProcess -SqlInstance $script:instance1 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
     }
-    Context "Command gets suggestions" {
-        $results = Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname
-        It "Should get results for $dbaname" {
+    $results = Get-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname
+
+    Context "Command handles heaps and clustered indexes" {
+        It "Gets results" {
             $results | Should Not Be $null
         }
-        $results.foreach{
-            It "Should suggest ROW, PAGE or NO_GAIN for $($PSitem.TableName) - $($PSitem.IndexType) " {
-                $PSitem.CompressionTypeRecommendation | Should BeIn ("ROW","PAGE","NO_GAIN")
+        @($results | Where-Object {$_.IndexId -le 1}).Foreach{
+            It "Should return compression level for object $($PSItem.TableName)" {
+                $PSItem.DataCompression | Should BeIn ('None','Row','Page')
             }
         }
     }
-    Context "Command makes right suggestions" {
-        $results = Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname
-        It "Should sugggest PAGE compression for a table with no updates or scans" {
-            $($results | Where-Object { $_.TableName -eq "syscols" -and $_.IndexType -eq "HEAP"}).CompressionTypeRecommendation | Should Be "PAGE"
+    Context "Command handles nonclustered indexes" {
+        It "Gets results" {
+            $results | Should Not Be $null
         }
-        It "Should sugggest ROW compression for table with more updates" {
-            $($results | Where-Object { $_.TableName -eq "sysallparams"}).CompressionTypeRecommendation | Should Be "ROW"
+        @($results | Where-Object {$_.IndexId -gt 1}).Foreach{
+            It "Should return compression level for nonclustered index $($PSItem.IndexName)" {
+                $PSItem.DataCompression | Should BeIn ('None','Row','Page')
+            }
         }
     }
+
     Context "Command excludes results for specified database" {
         It "Shouldn't get any results for $dbname" {
-            $(Test-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname -ExcludeDatabase $dbname).Database | Should not Match $dbname
+            $(Get-DbaDbCompression -SqlInstance $script:instance1 -Database $dbname -ExcludeDatabase $dbname) | Should not Match $dbname
         }
     }
 }
