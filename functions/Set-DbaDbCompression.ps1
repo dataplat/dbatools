@@ -33,6 +33,9 @@ function Set-DbaDbCompression {
         .PARAMETER PercentCompression
             Will only work on the tables/indexes that have the calculated savings at and higher for the given number provided.
 
+        .PARAMETER InputObject
+            Takes the output of Test-DbaDbCompression as an object and applied compression based on those recommendations.
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -62,6 +65,12 @@ function Set-DbaDbCompression {
             Set-DbaDbCompression -SqlInstance ServerA -Database DBName -PercentCompression 25 | Out-GridView
 
             Will compress tables/indexes within the specified database that would show any % improvement with compression and with no time limit. The results will be piped into a nicely formated GridView.
+
+        .EXAMPLE
+            $testCompression = Test-DbaDbCompression -SqlInstance ServerA -Database DBName
+            Set-DbaDbCompression -SqlInstance ServerA -Database DBName -InputObject $testCompression
+
+            Gets the compression suggestions from Test-DbaDbCompression into a variable, this can then be reviewed and passed into Set-DbaDbCompression.
 
         .EXAMPLE
             $cred = Get-Credential sqladmin
