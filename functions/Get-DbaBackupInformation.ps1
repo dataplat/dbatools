@@ -271,7 +271,8 @@ function Get-DbaBackupInformation {
                 $Files = $Files | Where-Object {$_.FullName -notlike '*\LOG\*'}
             }
 
-            $FileDetails = $Files | Read-DbaBackupHeader -SqlInstance $server
+            Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
+            $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files
 
             $groupdetails = $FileDetails | group-object -Property BackupSetGUID
 
