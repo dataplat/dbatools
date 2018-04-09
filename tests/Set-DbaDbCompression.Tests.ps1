@@ -19,7 +19,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $dbname = "dbatoolsci_test_$(get-random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance1
         $null = $server.Query("Create Database [$dbname]")
