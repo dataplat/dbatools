@@ -528,8 +528,17 @@ function Restore-DbaDatabase {
                 }
             }
             else {
-                Write-Message -Level Verbose -Message "Unverified input, full scans - $($path -join ';')"
-                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -Path $path -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup
+                $files = @()
+                foreach ($f in $Path) {
+                    if ($f -is [System.IO.FileSystemInfo]) {
+                        $files += $f.fullname
+                    }
+                    else {
+                        $files += $f
+                    }
+                }
+                Write-Message -Level Verbose -Message "Unverified input, full scans - $($files -join ';')"
+                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (-not (Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {
