@@ -205,7 +205,7 @@ function Copy-DbaTableData {
                 return
             }
 
-            $tablecollection = [Microsoft.SqlServer.Management.Smo.Table[]]$tablecollection
+            $InputObject = [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
@@ -221,7 +221,7 @@ function Copy-DbaTableData {
             }
 
             try {
-                $tablecollection += Get-DbaTable -SqlInstance $server -Table $Table -Database $Database -EnableException -Verbose:$false
+                $InputObject += Get-DbaTable -SqlInstance $server -Table $Table -Database $Database -EnableException -Verbose:$false
             }
             catch {
                 Stop-Function -Message "Unable to determine source table : $Table"
@@ -229,11 +229,11 @@ function Copy-DbaTableData {
             }
         }
 
-        if (-not $tablecollection) {
-            $tablecollection = [Microsoft.SqlServer.Management.Smo.Table[]]$Table
+        if (-not $InputObject) {
+            $InputObject = [Microsoft.SqlServer.Management.Smo.Table[]]$Table
         }
 
-        foreach ($sqltable in $tablecollection) {
+        foreach ($sqltable in $InputObject) {
 
             $Database = $sqltable.Parent.Name
             $server = $sqltable.Parent.Parent

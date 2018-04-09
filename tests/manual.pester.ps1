@@ -29,7 +29,7 @@
         Enables checking the called function's code with Invoke-ScriptAnalyzer, with dbatools's profile
 
     .EXAMPLE
-        .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCovearge -ScriptAnalyzer
+        .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCoverage -ScriptAnalyzer
 
         The most complete number of checks:
           - Runs both unittests and integrationtests
@@ -67,7 +67,7 @@
         Gathers and shows code coverage measurement for Find-DbaOrphanedFile
 
     .EXAMPLE
-        .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCovearge
+        .\manual.pester.ps1 -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCoverage
 
         Gathers and shows code coverage measurement for Find-DbaOrphanedFile and all its dependencies
 
@@ -119,7 +119,9 @@ if (($HasPester -and $HasScriptAnalyzer) -eq $false) {
 
 $ModuleBase = Split-Path -Path $PSScriptRoot -Parent
 
-$global:dbatools_dotsourcemodule = $true
+if (-not(Test-Path "$ModuleBase\.git" -Type Container)) {
+    New-Item -Type Container -Path "$ModuleBase\.git"
+}
 
 #removes previously imported dbatools, if any
 Remove-Module dbatools -ErrorAction Ignore
@@ -128,7 +130,7 @@ Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking
 #imports the psm1 to be able to use internal functions in tests
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
 
-$ScriptAnalyzerRulesExclude = @('PSUseOutputTypeCorrectly', 'PSAvoidUsingPlainTextForPassword')
+$ScriptAnalyzerRulesExclude = @('PSUseOutputTypeCorrectly', 'PSAvoidUsingPlainTextForPassword', 'PSUseBOMForUnicodeEncodedFile')
 
 $testInt = $false
 if ($config_TestIntegration) {
@@ -197,17 +199,18 @@ $AllTestsWithinScenario = $files
 
 foreach ($f in $AllTestsWithinScenario) {
     $PesterSplat = @{
-        'Script' = $f.FullName
-        'Show'   = $show
+        'Script'   = $f.FullName
+        'Show'     = $show
         'PassThru' = $passThru
     }
     #opt-in
     $HeadFunctionPath = $f.FullName
 
-    if ($Coverage) {
+    if ($Coverage -or $ScriptAnalyzer) {
         $CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
         $HeadFunctionPath = $CoverFiles | Select-Object -First 1
-
+    }
+    if ($Coverage) {
         if ($DependencyCoverage) {
             $CoverFilesPester = $CoverFiles
         }

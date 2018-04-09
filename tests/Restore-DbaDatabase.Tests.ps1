@@ -29,7 +29,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should Be $null
         }
     }
-    
+
     Context "Database is properly removed again after withreplace test" {
         Get-DbaProcess $script:instance1 -Database singlerestore | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
@@ -201,7 +201,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Properly restores an instance using ola-style backups via pipe" {
         $results = Get-ChildItem $script:appveyorlabrepo\sql2008-backups | Restore-DbaDatabase -SqlInstance $script:instance1
         It "Restored files count should be the right number" {
-            $results.DatabaseName.Count | Should Be 26
+            $results.DatabaseName.Count | Should Be 28
         }
         It "Should return successful restore" {
             ($results.RestoreComplete -contains $false) | Should Be $false
@@ -210,16 +210,22 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Database is properly removed again after ola pipe test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
-        It "Should say the status was dropped" {
-            $results | ForEach-Object { $_.Status | Should Be "Dropped" }
+        Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+
+        It "Should say the status was dropped or null" {
+            foreach ($result in $results) {
+                $result.Status -eq "Dropped" -or $result.Status -eq $null
+            }
         }
     }
 
     Context "Properly restores an instance using ola-style backups via string" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\sql2008-backups
         It "Restored files count should be the right number" {
-            $results.DatabaseName.Count | Should Be 26
+            $results.DatabaseName.Count | Should Be 28
         }
         It "Should return successful restore" {
             ($results.RestoreComplete -contains $false) | Should Be $false
@@ -348,7 +354,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 1
-    
+
     Get-DbaProcess $script:instance1 | Where-Object Program -match 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
     Context "Check Get-DbaBackupHistory pipes into Restore-DbaDatabase" {
         $history = Get-DbaBackupHistory -SqlInstance $script:instance1 -Database RestoreTimeClean -Last

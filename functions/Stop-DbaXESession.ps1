@@ -18,7 +18,7 @@ function Stop-DbaXESession {
         .PARAMETER AllSessions
             If this switch is enabled, all Extended Events sessions will be stopped except the packaged sessions AlwaysOn_health, system_health, telemetry_xevents.
 
-        .PARAMETER SessionCollection
+        .PARAMETER InputObject
             Accepts the object output by Get-DbaXESession as the list of sessions to be stopped.
 
         .PARAMETER EnableException
@@ -70,7 +70,7 @@ function Stop-DbaXESession {
         [switch]$AllSessions,
 
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Object')]
-        [Microsoft.SqlServer.Management.XEvent.Session[]]$SessionCollection,
+        [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -101,8 +101,8 @@ function Stop-DbaXESession {
     }
 
     process {
-        if ($SessionCollection) {
-            Stop-XESessions $SessionCollection
+        if ($InputObject) {
+            Stop-XESessions $InputObject
         }
         else {
             foreach ($instance in $SqlInstance) {
