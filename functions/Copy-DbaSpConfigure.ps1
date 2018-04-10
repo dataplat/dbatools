@@ -130,12 +130,13 @@ function Copy-DbaSpConfigure {
             if ($Pscmdlet.ShouldProcess($destination, "Updating $sConfigName [$displayName]")) {
                 try {
                     $destOldConfigValue = $destProp.ConfiguredValue
-
-                    $result = Set-DbaSpConfigure -SqlInstance $destServer -ConfigName $sConfigName -Value $sConfiguredValue -EnableException
-                    if ($result) {
-                        Write-Message -Level Verbose -Message "Updated $($destProp.ConfigName) ($($destProp.DisplayName)) from $destOldConfigValue to $sConfiguredValue."
+                    
+                    if ($sConfiguredValue -ne $destOldConfigValue) {
+                        $result = Set-DbaSpConfigure -SqlInstance $destServer -Name $sConfigName -Value $sConfiguredValue -EnableException -WarningAction SilentlyContinue
+                        if ($result) {
+                            Write-Message -Level Verbose -Message "Updated $($destProp.ConfigName) ($($destProp.DisplayName)) from $destOldConfigValue to $sConfiguredValue."
+                        }
                     }
-
                     if ($requiresRestart -eq $false) {
                         Write-Message -Level Verbose -Message "Configuration option $sConfigName ($displayName) requires restart."
                         $copySpConfigStatus.Notes = "Requires restart"
@@ -144,8 +145,13 @@ function Copy-DbaSpConfigure {
                     $copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
                 catch {
-                    $copySpConfigStatus.Status = "Failed"
-                    $copySpConfigStatus.Notes = $_.Exception
+                    if ($_.Exception -match 'the same as the') {
+                        $copySpConfigStatus.Status = "Successful"
+                    }
+                    else {
+                        $copySpConfigStatus.Status = "Failed"
+                        $copySpConfigStatus.Notes = $_.Exception
+                    }
                     $copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                     Stop-Function -Message "Could not set $($destProp.ConfigName) to $sConfiguredValue." -Target $sConfigName -ErrorRecord $_
