@@ -53,12 +53,10 @@ function Get-DbaDbCompression {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 
     process {
-        $results = @()
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
@@ -69,18 +67,14 @@ function Get-DbaDbCompression {
             }
 
             try {
-                $dbs = $server.Databases | Where-Object IsAccessible
+                $dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.IsSystemObject -eq 0 }
 
                 if ($Database) {
-                    $dbs = $dbs | Where-Object { $Database -contains $_.Name -and $_.IsSystemObject -eq 0 }
+                    $dbs = $dbs | Where-Object { $_.Name -In $Database }
                 }
 
-                else {
-                    $dbs = $dbs | Where-Object { $_.IsSystemObject -eq 0 }
-                }
-
-                if (Test-Bound "ExcludeDatabase") {
-                    $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+                if ($ExcludeDatabase) {
+                    $dbs = $dbs | Where-Object { $_.Name -NotIn $ExcludeDatabase }
                 }
             }
             catch {
@@ -92,7 +86,7 @@ function Get-DbaDbCompression {
                     foreach ($obj in $server.Databases[$($db.name)].Tables) {
                         if ($obj.HasHeapIndex) {
                             foreach ($p in $obj.PhysicalPartitions) {
-                                $results += [pscustomobject]@{
+                                [pscustomobject]@{
                                     ComputerName        = $server.NetName
                                     InstanceName        = $server.ServiceName
                                     SqlInstance         = $server.DomainInstanceName
@@ -112,7 +106,7 @@ function Get-DbaDbCompression {
 
                         foreach ($index in $obj.Indexes) {
                             foreach ($p in $index.PhysicalPartitions) {
-                                $results += [pscustomobject]@{
+                                [pscustomobject]@{
                                     ComputerName        = $server.NetName
                                     InstanceName        = $server.ServiceName
                                     SqlInstance         = $server.DomainInstanceName
@@ -138,6 +132,5 @@ function Get-DbaDbCompression {
 
             }
         }
-        return $results
     }
 }
