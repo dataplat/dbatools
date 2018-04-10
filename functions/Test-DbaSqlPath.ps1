@@ -54,7 +54,7 @@ function Test-DbaSqlPath {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
-        [string[]]$Path,
+        [object]$Path,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -69,6 +69,8 @@ function Test-DbaSqlPath {
             }
             $counter = [pscustomobject] @{ Value = 0 }
             $groupSize = 100
+            $RawPath = $Path
+            $Path = [string[]]$Path
             $groups = $Path | Group-Object -Property { [math]::Floor($counter.Value++ / $groupSize) }
             foreach ($g in $groups) {
                 $PathsBatch = $g.Group
@@ -78,7 +80,7 @@ function Test-DbaSqlPath {
                 }
                 $sql = $query -join ';'
                 $batchresult = $server.ConnectionContext.ExecuteWithResults($sql)
-                if ($Path.Count -eq 1 -and $SqlInstance.Count -eq 1) {
+                if ($Path.Count -eq 1 -and $SqlInstance.Count -eq 1 -and (-not($RawPath -is [array]))) {
                     if ($batchresult.Tables.rows[0] -eq $true -or $batchresult.Tables.rows[1] -eq $true) {
                         return $true
                     }
@@ -94,8 +96,9 @@ function Test-DbaSqlPath {
                             SqlInstance  = $server.Name
                             InstanceName = $server.ServiceName
                             ComputerName = $server.NetName
-                            FilePath   = $PathsBatch[$i]
-                            FileExists = $DoesPass
+                            FilePath     = $PathsBatch[$i]
+                            FileExists   = $DoesPass
+                            IsContainer  = $r[1] -eq $true
                         }
                         $i += 1
                     }
