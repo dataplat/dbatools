@@ -460,7 +460,8 @@
         'Find-DbaInstance',
         'Test-DbaDiskSpeed',
         'Get-DbaDbExtentDiff',
-        'Read-DbaAuditFile'
+        'Read-DbaAuditFile',
+        'Get-DbaDbCompression'
     )
     
     # Cmdlets to export from this module
