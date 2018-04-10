@@ -136,6 +136,7 @@ function Copy-DbaLogin {
         [switch]$ExcludeSystemLogin,
         [switch]$SyncOnly,
         [parameter(ParameterSetName = "Live")]
+        [parameter(ParameterSetName = "SqlInstance")]
         [switch]$SyncSaName,
         [parameter(ParameterSetName = "File", Mandatory)]
         [string]$OutFile,
