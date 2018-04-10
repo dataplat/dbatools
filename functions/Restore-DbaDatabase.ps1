@@ -496,8 +496,8 @@ function Restore-DbaDatabase {
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
             if ($PipeDatabaseName -eq $true) {$DatabaseName = ''}
             Write-Message -message "ParameterSet  = Restore" -Level Verbose
-            foreach ($f in $path) {
-                if ($TrustDbBackupHistory -or $f.GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
+            if ($TrustDbBackupHistory -or $path[0].GetType().ToString() -eq 'Sqlcollaborative.Dbatools.Database.BackupHistory') {
+                foreach ($f in $path) {
                     Write-Message -Level Verbose -Message "Trust Database Backup History Set"
                     if ("BackupPath" -notin $f.PSobject.Properties.name) {
                         Write-Message -Level Verbose -Message "adding BackupPath - $($_.Fullname)"
@@ -526,13 +526,19 @@ function Restore-DbaDatabase {
                     $BackupHistory += $F | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
 
                 }
-                else {
-                    Write-Message -Level Verbose -Message "Unverified input, full scans - $f"
+            }
+            else {
+                $files = @()
+                foreach ($f in $Path) {
                     if ($f -is [System.IO.FileSystemInfo]) {
-                        $f = $f.fullname
+                        $files += $f.fullname
                     }
-                    $BackupHistory += $f | Get-DbaBackupInformation -SqlInstance $RestoreInstance -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup
+                    else {
+                        $files += $f
+                    }
                 }
+                Write-Message -Level Verbose -Message "Unverified input, full scans - $($files -join ';')"
+                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (-not (Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {
