@@ -95,13 +95,10 @@ function Test-DbaLoginPassword {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
                 Write-Message -Message "Connected to: $instance." -Level Verbose
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-            if ($Server.VersionMajor -lt 10) {
-                throw "PWDCOMPARE is only supported on sql 2008 and up. Quitting."
             }
             Write-Message -Level Debug -Message "Executing $sql"
             Write-Message -Level Verbose -Message "Testing: same username as Password"
