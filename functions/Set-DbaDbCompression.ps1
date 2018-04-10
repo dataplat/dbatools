@@ -18,20 +18,23 @@ function Set-DbaDbCompression {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER CompressionType
-            Control the compression type applied. Default is 'Recommended' which uses the Tiger Team query to use the most appropriate setting per object. Other option is to compress all objects to either Row or Page.
-
         .PARAMETER Database
             The database(s) to process - this list is auto populated from the server. If unspecified, all databases will be processed.
 
         .PARAMETER ExcludeDatabase
             The database(s) to exclude - this list is auto populated from the server.
 
+        .PARAMETER CompressionType
+            Control the compression type applied. Default is 'Recommended' which uses the Tiger Team query to use the most appropriate setting per object. Other option is to compress all objects to either Row or Page.
+
         .PARAMETER MaxRunTime
             Will continue to alter tables and indexes for the given amount of minutes.
 
         .PARAMETER PercentCompression
             Will only work on the tables/indexes that have the calculated savings at and higher for the given number provided.
+
+        .PARAMETER InputObject
+            Takes the output of Test-DbaDbCompression as an object and applied compression based on those recommendations.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -64,6 +67,12 @@ function Set-DbaDbCompression {
             Will compress tables/indexes within the specified database that would show any % improvement with compression and with no time limit. The results will be piped into a nicely formated GridView.
 
         .EXAMPLE
+            $testCompression = Test-DbaDbCompression -SqlInstance ServerA -Database DBName
+            Set-DbaDbCompression -SqlInstance ServerA -Database DBName -InputObject $testCompression
+
+            Gets the compression suggestions from Test-DbaDbCompression into a variable, this can then be reviewed and passed into Set-DbaDbCompression.
+
+        .EXAMPLE
             $cred = Get-Credential sqladmin
             Set-DbaDbCompression -SqlInstance ServerA -ExcludeDatabase Database -SqlCredential $cred -MaxRunTime 60 -PercentCompression 25
 
@@ -84,9 +93,9 @@ function Set-DbaDbCompression {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [ValidateSet("Recommended", "Page", "Row")]$CompressionType = "Recommended",
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [ValidateSet("Recommended", "Page", "Row", "None")]$CompressionType = "Recommended",
         [int]$MaxRunTime = 0,
         [int]$PercentCompression = 0,
         $InputObject,
@@ -99,7 +108,7 @@ function Set-DbaDbCompression {
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SourceSqlCredential -MinimumVersion 10
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             }
             catch {
                 Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
@@ -108,27 +117,22 @@ function Set-DbaDbCompression {
             $Server.ConnectionContext.StatementTimeout = 0
 
             #The reason why we do this is because of SQL 2016 and they now allow for compression on standard edition.
-            if ($Server.EngineEdition -notmatch 'Enterprise' -and $Server.VersionMajor -lt '13') {
-                Stop-Function -Message "Only SQL Server Enterprise Edition supports compression on $Server" -Target $Server -Continue
+            if ($server.EngineEdition -notmatch 'Enterprise' -and $server.VersionMajor -lt '13') {
+                Stop-Function -Message "Only SQL Server Enterprise Edition supports compression on $server" -Target $server -Continue
             }
             try {
-                $dbs = $server.Databases
+                $dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.IsSystemObject -eq 0}
                 if ($Database) {
-                    $dbs = $dbs | Where-Object { $Database -contains $_.Name -and $_.IsAccessible -and $_.IsSystemObject -EQ 0 }
+                    $dbs = $dbs | Where-Object { $_.Name -in $Database }
                 }
-                else {
-                    $dbs = $dbs | Where-Object { $_.IsAccessible -and $_.IsSystemObject -EQ 0 }
-                }
-
-                if (Test-Bound "ExcludeDatabase") {
-                    $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+                if ($ExcludeDatabase) {
+                    $dbs = $dbs | Where-Object { $_.Name -NotIn $ExcludeDatabase }
                 }
             }
             catch {
                 Stop-Function -Message "Unable to gather list of databases for $instance" -Target $instance -ErrorRecord $_ -Continue
             }
 
-            $results = @()
             foreach ($db in $dbs) {
                 try {
                     Write-Message -Level Verbose -Message "Querying $instance - $db"
@@ -158,11 +162,10 @@ function Set-DbaDbCompression {
                         Write-Message -Level Verbose -Message "Applying suggested compression settings using Test-DbaDbCompression"
                         $results += $compressionSuggestion | Select-Object *, @{l = 'AlreadyProcesssed'; e = {"False"}}
                         foreach ($obj in ($results | Where-Object {$_.CompressionTypeRecommendation -ne 'NO_GAIN' -and $_.PercentCompression -ge $PercentCompression} | Sort-Object PercentCompression -Descending)) {
-                            if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).Minutes -ge $MaxRunTime) {
+                            if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                 Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                 break
                             }
-
                             if ($obj.indexId -le 1) {
                                 ##heaps and clustered indexes
                                 Write-Message -Level Verbose -Message "Applying $($obj.CompressionTypeRecommendation) compression to $($obj.Database).$($obj.Schema).$($obj.TableName)"
@@ -177,21 +180,21 @@ function Set-DbaDbCompression {
                                 $server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].Indexes[$obj.IndexName].Rebuild()
                                 $obj.AlreadyProcesssed = "True"
                             }
+                            $obj
                         }
                     }
                     else {
                         Write-Message -Level Verbose -Message "Applying $CompressionType compression to all objects in $($db.name)"
                         foreach ($obj in $server.Databases[$($db.name)].Tables) {
                             if ($obj.HasHeapIndex) {
-                                if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).Minutes -ge $MaxRunTime) {
+                                if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                     break
                                 }
                                 foreach ($p in $($obj.PhysicalPartitions | Where-Object {$_.DataCompression -ne $CompressionType})) {
                                     Write-Message -Level Verbose -Message "Compressing heap $($obj.Schema).$($obj.Name)"
                                     $($obj.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
-
-                                    $results +=
+                                    $obj.Rebuild()
                                     [pscustomobject]@{
                                         ComputerName                  = $server.NetName
                                         InstanceName                  = $server.ServiceName
@@ -214,18 +217,17 @@ function Set-DbaDbCompression {
                                         AlreadyProcesssed             = "True"
                                     }
                                 }
-                                $obj.Rebuild()
                             }
 
                             foreach ($index in $($obj.Indexes)) {
-                                if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).Minutes -ge $MaxRunTime) {
+                                if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                     break
                                 }
                                 foreach ($p in $($index.PhysicalPartitions | Where-Object {$_.DataCompression -ne $CompressionType})) {
                                     Write-Message -Level Verbose -Message "Compressing $($Index.IndexType) $($Index.Name) Partition $($p.PartitionNumber)"
                                     $($Index.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
-                                    $results +=
+                                    $index.Rebuild()
                                     [pscustomobject]@{
                                         ComputerName                  = $server.NetName
                                         InstanceName                  = $server.ServiceName
@@ -248,14 +250,13 @@ function Set-DbaDbCompression {
                                         AlreadyProcesssed             = "True"
                                     }
                                 }
-                                $index.Rebuild()
                             }
                         }
                         foreach ($index in $($server.Databases[$($db.name)].Views | Where-Object {$_.Indexes}).Indexes) {
                             foreach ($p in $($index.PhysicalPartitions | Where-Object {$_.DataCompression -ne $CompressionType})) {
                                 $($index.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
                                 Write-Message -Level Verbose -Message "Compressing $($index.IndexType) $($index.Name) Partition $($p.PartitionNumber)"
-                                $results +=
+                                $index.Rebuild()
                                 [pscustomobject]@{
                                     ComputerName                  = $server.NetName
                                     InstanceName                  = $server.ServiceName
@@ -277,7 +278,6 @@ function Set-DbaDbCompression {
                                     PercentCompression            = $null
                                     AlreadyProcesssed             = "True"
                                 }
-                                $index.Rebuild()
                             }
                         }
                     }
@@ -286,7 +286,6 @@ function Set-DbaDbCompression {
                     Stop-Function -Message "Compression failed for $instance - $db" -Target $db -ErrorRecord $_ -Continue
                 }
             }
-            return $results
         }
     }
 }
