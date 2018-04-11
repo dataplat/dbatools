@@ -13,38 +13,38 @@ function Expand-DbaTLogResponsibly {
                     http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
                     http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
                     http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/
-                
+
                 In order to get rid of this fragmentation we need to grow the file taking the following into consideration:
                     - How many VLFs are created when we perform a grow operation or when an auto-grow is invoked?
-                
+
                 Note: In SQL Server 2014 this algorithm has changed (http://www.sqlskills.com/blogs/paul/important-change-vlf-creation-algorithm-sql-server-2014/)
 
             Attention:
                 We are growing in MB instead of GB because of known issue prior to SQL 2012:
-                    More detail here: 
+                    More detail here:
                         http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx
-                    and 
+                    and
                         http://connect.microsoft.com/SqlInstance/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately
-                    or 
+                    or
                         https://connect.microsoft.com/SqlInstance/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb
 
             Understanding related problems:
                     http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
                     http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
                     http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/
-                
+
             Known bug before SQL Server 2012
                     http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx
                     http://connect.microsoft.com/SqlInstance/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately
                     https://connect.microsoft.com/SqlInstance/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb
 
             How it works?
-                The transaction log will grow in chunks until it reaches the desired size. 
+                The transaction log will grow in chunks until it reaches the desired size.
                 Example: If you have a log file with 8192MB and you say that the target size is 81920MB (80GB) it will grow in chunks of 8192MB until it reaches 81920MB. 8192 -> 16384 -> 24576 ... 73728 -> 81920
 
-		.PARAMETER SqlInstance
+        .PARAMETER SqlInstance
             The target SQL Server instance.
-                    
+
         .PARAMETER Database
             The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
@@ -53,7 +53,7 @@ function Expand-DbaTLogResponsibly {
 
         .PARAMETER IncrementSizeMB
             Specifies the amount the transaction log should grow in megabytes. If this value differs from the suggested value based on your TargetLogSizeMB, you will be prompted to confirm your choice.
-            
+
             This value will be calculated if not specified.
 
         .PARAMETER LogFileId
@@ -73,40 +73,34 @@ function Expand-DbaTLogResponsibly {
             If this value is not specified, the SQL Server instance's default backup directory will be used.
 
          .PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
-
-		.PARAMETER ExcludeDatabase
+        .PARAMETER ExcludeDatabase
             The database(s) to exclude. Options for this list are auto-populated from the server.
-            
-		.PARAMETER WhatIf
-			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-		.PARAMETER Confirm
-			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-		.PARAMETER EnableException
-			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
         .NOTES
             Tags: Storage, Backup
             This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space
-            
+
             Author: Claudio Silva (@ClaudioESSilva)
             Requires: ALTER DATABASE permission
             Limitations: Freespace cannot be validated on the directory where the log file resides in SQL Server 2005.
 
             Website: https://dbatools.io
-            Copyright (C) 2016 Chrissy LeMaire		 
+            Copyright (C) 2016 Chrissy LeMaire
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Expand-DbaTLogResponsibly
@@ -160,13 +154,14 @@ function Expand-DbaTLogResponsibly {
         [parameter(Position = 10, ParameterSetName = 'Shrink')]
         [AllowEmptyString()]
         [string]$BackupDirectory,
-        [switch][Alias('Silent')]$EnableException
+        [switch][Alias('Silent')]
+        $EnableException
     )
-	
+
     begin {
         Write-Message -Level Verbose -Message "Set ErrorActionPreference to Inquire."
         $ErrorActionPreference = 'Inquire'
-		
+
         #Convert MB to KB (SMO works in KB)
         Write-Message -Level Verbose -Message "Convert variables MB to KB (SMO works in KB)."
         [int]$TargetLogSizeKB = $TargetLogSizeMB * 1024
@@ -179,37 +174,37 @@ function Expand-DbaTLogResponsibly {
         else {
             $true
         }
-		
+
         #Set base information
         Write-Message -Level Verbose -Message "Initialize the instance '$SqlInstance'."
-		
+
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-		
+
         if ($ShrinkLogFile -eq $true) {
             if ($BackupDirectory.length -eq 0) {
                 $backupdirectory = $server.Settings.BackupDirectory
             }
-			
+
             $pathexists = Test-DbaSqlPath -SqlInstance $server -Path $backupdirectory
-			
+
             if ($pathexists -eq $false) {
                 Stop-Function -Message "Backup directory does not exist."
             }
         }
     }
-	
+
     process {
-		
+
         try {
-			
+
             [datetime]$initialTime = Get-Date
-			
+
             #control the iteration number
             $databaseProgressbar = 0;
-			
+
             Write-Message -Level Verbose -Message "Resolving NetBIOS name."
             $sourcenetbios = Resolve-NetBiosName $server
-			
+
             $databases = $server.Databases | Where-Object IsAccessible
             Write-Message -Level Verbose -Message "Number of databases found: $($databases.Count)."
             if ($Database) {
@@ -224,17 +219,17 @@ function Expand-DbaTLogResponsibly {
             foreach ($db in $databases.Name) {
                 Write-Message -Level Verbose -Message "Working on $db."
                 $databaseProgressbar += 1
-				
+
                 #set step to reutilize on logging operations
                 [string]$step = "$databaseProgressbar/$($Database.Count)"
-				
+
                 if ($server.Databases[$db]) {
                     Write-Progress `
                         -Id 1 `
                         -Activity "Using database: $db on Instance: '$SqlInstance'" `
                         -PercentComplete ($databaseProgressbar / $Database.Count * 100) `
                         -Status "Processing - $databaseProgressbar of $($Database.Count)"
-					
+
                     #Validate which file will grow
                     if ($LogByFileID) {
                         $logfile = $server.Databases[$db].LogFiles.ItemById($LogFileId)
@@ -242,25 +237,25 @@ function Expand-DbaTLogResponsibly {
                     else {
                         $logfile = $server.Databases[$db].LogFiles[0]
                     }
-                    
+
                     $numLogfiles = $server.Databases[$db].LogFiles.Count
-					
+
                     Write-Message -Level Verbose -Message "$step - Use log file: $logfile."
                     $currentSize = $logfile.Size
-                    $currentSizeMB = $currentSize/1024
+                    $currentSizeMB = $currentSize / 1024
 
                     #Get the number of VLFs
-                    $initialVLFCount = Test-DbaVirtualLogFile -SqlInstance $server -Database $db
-					
+                    $initialVLFCount = Test-DbaDbVirtualLogFile -SqlInstance $server -Database $db
+
                     Write-Message -Level Verbose -Message "$step - Log file current size: $([System.Math]::Round($($currentSize/1024.0), 2)) MB "
                     [long]$requiredSpace = ($TargetLogSizeKB - $currentSize)
-					
+
                     Write-Message -Level Verbose -Message "Verifying if sufficient space exists ($([System.Math]::Round($($requiredSpace / 1024.0), 2))MB) on the volume to perform this task."
-					
+
                     [long]$TotalTLogFreeDiskSpaceKB = 0
                     Write-Message -Level Verbose -Message "Get TLog drive free space"
-                    [object]$AllDrivesFreeDiskSpace = Get-DbaDiskSpace -ComputerName $sourcenetbios -Unit KB | Select-Object Name, SizeInKB
-					
+                    [object]$AllDrivesFreeDiskSpace = Get-DbaDiskSpace -ComputerName $sourcenetbios | Select-Object Name, SizeInKB
+
                     #Verify path using Split-Path on $logfile.FileName in backwards. This way we will catch the LUNs. Example: "K:\Log01" as LUN name. Need to add final backslash if not there
                     $DrivePath = Split-Path $logfile.FileName -parent
                     $DrivePath = if (!($DrivePath.EndsWith("\"))) { "$DrivePath\" }
@@ -277,12 +272,12 @@ function Expand-DbaTLogResponsibly {
                             $DrivePath = if (!($DrivePath.EndsWith("\"))) { "$DrivePath\" }
                             else { $DrivePath }
                         }
-						
+
                     }
                     while (!$match -or ([string]::IsNullOrEmpty($DrivePath)))
-					
+
                     Write-Message -Level Verbose -Message "Total TLog Free Disk Space in MB: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))"
-					
+
                     if (($TotalTLogFreeDiskSpaceKB -le 0) -or ([string]::IsNullOrEmpty($TotalTLogFreeDiskSpaceKB))) {
                         $title = "Choose increment value for database '$db':"
                         $message = "Cannot validate freespace on drive where the log file resides. Do you wish to continue? (Y/N)"
@@ -292,11 +287,11 @@ function Expand-DbaTLogResponsibly {
                         $result = $host.ui.PromptForChoice($title, $message, $options, 0)
                         #no
                         if ($result -eq 1) {
-                            Write-Warning "You have cancelled the execution"
+                            Write-Message -Level Warning -Message "You have cancelled the execution"
                             return
                         }
                     }
-					
+
                     if ($requiredSpace -gt $TotalTLogFreeDiskSpaceKB) {
                         Write-Message -Level Verbose -Message "There is not enough space on volume to perform this task. `r`n" `
                             "Available space: $([System.Math]::Round($($TotalTLogFreeDiskSpaceKB / 1024.0), 2))MB;`r`n" `
@@ -309,7 +304,7 @@ function Expand-DbaTLogResponsibly {
                         }
                         else {
                             Write-Message -Level Verbose -Message "$step - [OK] There is sufficient free space to perform this task."
-							
+
                             # If SQL Server version is greater or equal to 2012
                             if ($server.Version.Major -ge "11") {
                                 switch ($TargetLogSizeMB) {
@@ -322,7 +317,7 @@ function Expand-DbaTLogResponsibly {
                                     { $_ -ge 16384 } { $SuggestLogIncrementSize = 8192 }
                                 }
                             }
-                            # 2008 R2 or under 
+                            # 2008 R2 or under
                             else {
                                 switch ($TargetLogSizeMB) {
                                     { $_ -le 64 } { $SuggestLogIncrementSize = 64 }
@@ -333,41 +328,41 @@ function Expand-DbaTLogResponsibly {
                                     { $_ -ge 8192 -and $_ -lt 16384 } { $SuggestLogIncrementSize = 4000 }
                                     { $_ -ge 16384 } { $SuggestLogIncrementSize = 8000 }
                                 }
-								
+
                                 if (($IncrementSizeMB % 4096) -eq 0) {
                                     Write-Message -Level Verbose -Message "Your instance version is below SQL 2012, remember the known BUG mentioned on HELP. `r`nUse Get-Help Expand-DbaTLogFileResponsibly to read help`r`nUse a different value for incremental size.`r`n"
                                     return
                                 }
                             }
                             Write-Message -Level Verbose -Message "Instance $server version: $($server.Version.Major) - Suggested TLog increment size: $($SuggestLogIncrementSize)MB"
-							
+
                             # Shrink Log File to desired size before re-growth to desired size (You need to remove as many VLF's as possible to ensure proper growth)
-                            $ShrinkSizeMB = $ShrinkSize/1024
+                            $ShrinkSizeMB = $ShrinkSize / 1024
                             if ($ShrinkLogFile -eq $true) {
                                 if ($server.Databases[$db].RecoveryModel -eq [Microsoft.SqlServer.Management.Smo.RecoveryModel]::Simple) {
-                                    Write-Warning "Database '$db' is in Simple RecoveryModel which does not allow log backups. Do not specify -ShrinkLogFile and -ShrinkSizeMB parameters."
+                                    Write-Message -Level Warning -Message "Database '$db' is in Simple RecoveryModel which does not allow log backups. Do not specify -ShrinkLogFile and -ShrinkSizeMB parameters."
                                     Continue
                                 }
-								
+
                                 try {
                                     $sql = "SELECT last_log_backup_lsn FROM sys.database_recovery_status WHERE database_id = DB_ID('$db')"
                                     $sqlResult = $server.ConnectionContext.ExecuteWithResults($sql);
-									
+
                                     if ($sqlResult.Tables[0].Rows[0]["last_log_backup_lsn"] -is [System.DBNull]) {
-                                        Write-Warning  "First, you need to make a full backup before you can do Tlog backup on database '$db' (last_log_backup_lsn is null)."
+                                        Write-Message -Level Warning -Message "First, you need to make a full backup before you can do Tlog backup on database '$db' (last_log_backup_lsn is null)."
                                         Continue
                                     }
                                 }
                                 catch {
                                     Stop-Function -Message "Can't execute SQL on $server. `r`n $($_)" -Continue
                                 }
-								
+
                                 If ($Pscmdlet.ShouldProcess($($server.name), "Backing up TLog for $db")) {
                                     Write-Message -Level Verbose -Message "We are about to backup the Tlog for database '$db' to '$backupdirectory' and shrink the log."
                                     Write-Message -Level Verbose -Message "Starting Size = $currentSizeMB."
-									
+
                                     $DefaultCompression = $server.Configuration.DefaultBackupCompression.ConfigValue
-									
+
                                     if ($currentSizeMB -gt $ShrinkSizeMB) {
                                         $backupRetries = 1
                                         Do {
@@ -380,14 +375,14 @@ function Expand-DbaTLogResponsibly {
                                                 $backup.Database = $db
                                                 $backup.MediaDescription = "Disk"
                                                 $dt = get-date -format yyyyMMddHHmmssms
-                                                $dir = $backup.Devices.AddDevice($backupdirectory + "\" + $db + "_db_" + $dt + ".trn", 'File')
+                                                $null = $backup.Devices.AddDevice($backupdirectory + "\" + $db + "_db_" + $dt + ".trn", 'File')
                                                 if ($DefaultCompression = $true) {
                                                     $backup.CompressionOption = 1
                                                 }
                                                 else {
                                                     $backup.CompressionOption = 0
                                                 }
-                                                $percnt = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
+                                                $null = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
                                                     Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
                                                 }
                                                 $backup.add_PercentComplete($percent)
@@ -401,22 +396,22 @@ function Expand-DbaTLogResponsibly {
                                             }
                                             catch {
                                                 Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
-                                                Write-Error "Backup failed for database '$db' with the following exception: $_"
+                                                Stop-Function -Message "Backup failed for database" -ErrorRecord $_ -Target $db -Continue
                                                 Continue
                                             }
-											
+
                                         }
-                                        while (($logfile.Size/1024) -gt $ShrinkSizeMB -and ++$backupRetries -lt 6)
-										
+                                        while (($logfile.Size / 1024) -gt $ShrinkSizeMB -and ++$backupRetries -lt 6)
+
                                         $currentSize = $logfile.Size
                                         Write-Message -Level Verbose -Message "TLog backup and truncate for database '$db' finished. Current TLog size after $backupRetries backups is $($currentSize/1024)MB"
                                     }
                                 }
                             }
-							
+
                             # SMO uses values in KB
                             $SuggestLogIncrementSize = $SuggestLogIncrementSize * 1024
-							
+
                             # If default, use $SuggestedLogIncrementSize
                             if ($IncrementSizeMB -eq -1) {
                                 $LogIncrementSize = $SuggestLogIncrementSize
@@ -433,22 +428,22 @@ function Expand-DbaTLogResponsibly {
                                     $LogIncrementSize = $SuggestLogIncrementSize
                                 }
                             }
-							
+
                             #start growing file
                             If ($Pscmdlet.ShouldProcess($($server.name), "Starting log growth. Increment chunk size: $($LogIncrementSize/1024)MB for database '$db'")) {
                                 Write-Message -Level Verbose -Message "Starting log growth. Increment chunk size: $($LogIncrementSize/1024)MB for database '$db'"
-								
+
                                 Write-Message -Level Verbose -Message "$step - While current size less than target log size."
-								
+
                                 while ($currentSize -lt $TargetLogSizeKB) {
-									
+
                                     Write-Progress `
                                         -Id 2 `
                                         -ParentId 1 `
                                         -Activity "Growing file $logfile on '$db' database" `
                                         -PercentComplete ($currentSize / $TargetLogSizeKB * 100) `
                                         -Status "Remaining - $([System.Math]::Round($($($TargetLogSizeKB - $currentSize) / 1024.0), 2)) MB"
-									
+
                                     Write-Message -Level Verbose -Message "$step - Verifying if the log can grow or if it's already at the desired size."
                                     if (($TargetLogSizeKB - $currentSize) -lt $LogIncrementSize) {
                                         Write-Message -Level Verbose -Message "$step - Log size is lower than the increment size. Setting current size equals $TargetLogSizeKB."
@@ -458,23 +453,23 @@ function Expand-DbaTLogResponsibly {
                                         Write-Message -Level Verbose -Message "$step - Grow the $logfile file in $([System.Math]::Round($($LogIncrementSize / 1024.0), 2)) MB"
                                         $currentSize += $LogIncrementSize
                                     }
-									
+
                                     #When -WhatIf Switch, do not run
                                     if ($PSCmdlet.ShouldProcess("$step - File will grow to $([System.Math]::Round($($currentSize/1024.0), 2)) MB", "This action will grow the file $logfile on database $db to $([System.Math]::Round($($currentSize/1024.0), 2)) MB .`r`nDo you wish to continue?", "Perform grow")) {
                                         Write-Message -Level Verbose -Message "$step - Set size $logfile to $([System.Math]::Round($($currentSize/1024.0), 2)) MB"
                                         $logfile.size = $currentSize
-										
+
                                         Write-Message -Level Verbose -Message "$step - Applying changes"
                                         $logfile.Alter()
                                         Write-Message -Level Verbose -Message "$step - Changes have been applied"
-										
+
                                         #Will put the info like VolumeFreeSpace up to date
                                         $logfile.Refresh()
                                     }
                                 }
-								
+
                                 Write-Message -Level Verbose -Message "`r`n$step - [OK] Growth process for logfile '$logfile' on database '$db', has been finished."
-								
+
                                 Write-Message -Level Verbose -Message "$step - Grow $logfile log file on $db database finished."
                             }
                         }
@@ -486,30 +481,30 @@ function Expand-DbaTLogResponsibly {
                 }
 
                 #Get the number of VLFs
-                $currentVLFCount = Test-DbaVirtualLogFile -SqlInstance $server -Database $db
+                $currentVLFCount = Test-DbaDbVirtualLogFile -SqlInstance $server -Database $db
 
-                [PSCustomObject]@{
- 									SqlInstance = $server.name
- 									DatabaseName = $db
-                                    LogFileID = $logfile.ID									
-                                    TLogFile = $logfile.Name
-                                    NumberOfLogFiles = $numLogfiles
- 									InitialSize = "$currentSizeMB MB"
-                                    CurrentSize = "$TargetLogSizeMB MB"
-                                    InitialVLFCount = $initialVLFCount.Count
-                                    CurrentVLFCount = $currentVLFCount.Count
- 								}
+                [pscustomobject]@{
+                    ComputerName    = $server.NetName
+                    InstanceName    = $server.ServiceName
+                    SqlInstance     = $server.DomainInstanceName
+                    Database        = $db
+                    ID              = $logfile.ID
+                    Name            = $logfile.Name
+                    LogFileCount    = $numLogfiles
+                    InitialSize     = [dbasize]($currentSizeMB * 1024)
+                    CurrentSize     = [dbasize]($TargetLogSizeMB * 1024)
+                    InitialVLFCount = $initialVLFCount.Total
+                    CurrentVLFCount = $currentVLFCount.Total
+                } | Select-DefaultView -ExcludeProperty LogFileCount
             } #foreach database
         }
         catch {
             Stop-Function -Message "Logfile $logfile on database $db not processed. Error: $($_.Exception.Message). Line Number:  $($_InvocationInfo.ScriptLineNumber)" -Continue
         }
     }
-	
-    END {
-        $server.ConnectionContext.Disconnect()
+
+    end {
         Write-Message -Level Verbose -Message "Process finished $((Get-Date) - ($initialTime))"
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Expand-SqlTLogResponsibly
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Expand-SqlTLogResponsibly
     }
 }
-

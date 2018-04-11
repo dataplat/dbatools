@@ -1,10 +1,10 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Get a ConnectionStringBuilder and assert its values" {
-        $results = New-DbaSqlConnectionStringBuilder "Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Column Encryption Setting=enabled" 
+        $results = New-DbaSqlConnectionStringBuilder "Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Column Encryption Setting=enabled"
         It "Should be a connection string builder" {
             $results.GetType() | Should Be System.Data.SqlClient.SqlConnectionStringBuilder
         }
@@ -25,7 +25,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Assert that the default Application name is preserved" {
-        $results = New-DbaSqlConnectionStringBuilder "Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Application Name=Always Encrypted MvcString;Column Encryption Setting=enabled" 
+        $results = New-DbaSqlConnectionStringBuilder "Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Application Name=Always Encrypted MvcString;Column Encryption Setting=enabled"
         It "Should have the Application name of `"Always Encrypted MvcString`"" {
             $results.ApplicationName  | Should Be "Always Encrypted MvcString"
         }
@@ -69,9 +69,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Set AlwaysEncrypted" {
-        $results = New-DbaSqlConnectionStringBuilder -AlwaysEncrypted "Enabled" 
+        $results = New-DbaSqlConnectionStringBuilder -AlwaysEncrypted "Enabled"
         It "Should have a `"Column Encryption Setting`" value of `"Enabled`"" {
             $results.ColumnEncryptionSetting | Should Be 'Enabled'
+        }
+    }
+    Context "Set IntegratedSecurity" {
+        $results = New-DbaSqlConnectionStringBuilder -IntegratedSecurity $True
+        It "Should have a `"Integrated Security Setting`" value of `"True`"" {
+            $results.IntegratedSecurity | Should Be $True
         }
     }
 }

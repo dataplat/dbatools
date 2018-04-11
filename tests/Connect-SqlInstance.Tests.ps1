@@ -1,12 +1,12 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\Connect-SqlInstance.ps1"
+. "$PSScriptRoot\..\internal\functions\Connect-SqlInstance.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	$password = 'MyV3ry$ecur3P@ssw0rd'
-	$securePassword = ConvertTo-SecureString $password -AsPlainText -Force
-	$server = Connect-SqlInstance -SqlInstance $script:instance1
+    $password = 'MyV3ry$ecur3P@ssw0rd'
+    $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+    $server = Connect-SqlInstance -SqlInstance $script:instance1
     $login = "csitester"
 
     #Cleanup
@@ -27,7 +27,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     $newLogin = New-Object Microsoft.SqlServer.Management.Smo.Login($server, $login)
     $newLogin.LoginType = "SqlLogin"
     $newLogin.Create($password)
-    
+
     Context "Connect with a new login" {
         It "Should login with newly created Sql Login (also tests credential login) and get instance name" {
             $cred = New-Object System.Management.Automation.PSCredential ($login, $securePassword)

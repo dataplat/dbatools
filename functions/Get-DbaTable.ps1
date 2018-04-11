@@ -1,5 +1,5 @@
 function Get-DbaTable {
-<#
+    <#
 .SYNOPSIS
 Returns a summary of information on the tables
 
@@ -7,11 +7,11 @@ Returns a summary of information on the tables
 Shows table information around table row and data sizes and if it has any table type information.
 
 .PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a
 collection and receive pipeline input
 
 .PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, current Windows login will be used.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER Database
 The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -29,17 +29,17 @@ This dbo.First.Table will try to find table named 'Table' on schema 'First' and 
 The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo.[First.Table]
 
 .PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 .NOTES
 Tags: Database, Tables
 Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .LINK
 https://dbatools.io/Get-DbaTable
@@ -65,153 +65,138 @@ Returns information on table called First.Table on schema dbo if it exists in an
 Returns information on the CommandLog table in the DBA database on both instances localhost and the named instance localhost\namedinstance
 
 #>
-	[CmdletBinding()]
-	param ([parameter(ValueFromPipeline, Mandatory = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[Alias("Credential")]
-		[PSCredential]
-		$SqlCredential,
-		[Alias("Databases")]
-		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[switch]$IncludeSystemDBs,
-		[string[]]$Table,
-		[switch][Alias('Silent')]$EnableException
-	)
+    [CmdletBinding()]
+    param ([parameter(ValueFromPipeline, Mandatory = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [Alias("Credential")]
+        [PSCredential]$SqlCredential,
+        [Alias("Databases")]
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
+        [switch]$IncludeSystemDBs,
+        [string[]]$Table,
+        [switch][Alias('Silent')]
+        $EnableException
+    )
 
-	begin {
-		$fqtns = @()
+    begin {
+        if ($Table) {
+            $fqtns = @()
+            foreach ($t in $Table) {
+                $splitName = [regex]::Matches($t, "(\[.+?\])|([^\.]+)").Value
+                $dotcount = $splitName.Count
 
-		if ($Table) {
-			foreach ($t in $Table) {
-				$splitName = [regex]::Matches($t, "(\[.+?\])|([^\.]+)").Value
-				$dotcount = $splitName.Count
+                $splitDb = $Schema = $null
 
-				$splitDb = $NULL
-				$Schema = $NULL
+                switch ($dotcount) {
+                    1 {
+                        $tbl = $t
+                    }
+                    2 {
+                        $schema = $splitName[0]
+                        $tbl = $splitName[1]
+                    }
+                    3 {
+                        $splitDb = $splitName[0]
+                        $schema = $splitName[1]
+                        $tbl = $splitName[2]
+                    }
+                    default {
+                        Write-Message -Level Warning -Message "Please make sure that you are using up to three-part names. If your search value contains '.' character you must use [ ] to wrap the name. The value $t is not a valid name."
+                        Continue
+                    }
+                }
 
-				switch ($dotcount) {
-					1 {
-						$tbl = $t
-					}
-					2 {
-						$schema = $splitName[0]
-						$tbl = $splitName[1]
-					}
-					3 {
-						$splitDb = $splitName[0]
-						$schema = $splitName[1]
-						$tbl = $splitName[2]
-					}
-					default {
-						Write-Message -Level Warning -Message "Please make sure that you are using up to three-part names. If your search value contains '.' character you must use [ ] to wrap the name. The value $t is not a valid name."
-						Continue
-					}
-				}
+                if ($splitDb -like "[[]*[]]") {
+                    $splitDb = $splitDb.Substring(1, ($splitDb.Length - 2))
+                }
 
-				if ($splitDb -like "[[]*[]]") {
-					$splitDb = $splitDb.Substring(1, ($splitDb.Length - 2))
-				}
+                if ($schema -like "[[]*[]]") {
+                    $schema = $schema.Substring(1, ($schema.Length - 2))
+                }
 
-				if ($schema -like "[[]*[]]") {
-					$schema = $schema.Substring(1, ($schema.Length - 2))
-				}
+                if ($tbl -like "[[]*[]]") {
+                    $tbl = $tbl.Substring(1, ($tbl.Length - 2))
+                }
 
-				if ($tbl -like "[[]*[]]") {
-					$tbl = $tbl.Substring(1, ($tbl.Length - 2))
-				}
+                $fqtns += [PSCustomObject] @{
+                    Database = $splitDb
+                    Schema   = $Schema
+                    Table    = $tbl
+                }
+            }
+        }
+    }
 
-				$fqtn = [PSCustomObject] @{
-					Database = $splitDb
-					Schema   = $Schema
-					Table    = $tbl
-				}
-				$fqtns += $fqtn
-			}
-		}
-	}
+    process {
+        foreach ($instance in $sqlinstance) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance"
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-	process {
-		foreach ($instance in $sqlinstance) {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+            try {
+                #only look at online databases (Status equal normal)
+                $dbs = $server.Databases | Where-Object IsAccessible
 
-			try {
-				#only look at online databases (Status equal normal)
-				$dbs = $server.Databases | Where-Object { $_.Status -eq 'Normal' }
+                #If IncludeSystemDBs is false, exclude systemdbs
+                if (!$IncludeSystemDBs -and !$Database) {
+                    $dbs = $dbs | Where-Object { !$_.IsSystemObject }
+                }
 
-				#If IncludeSystemDBs is false, exclude systemdbs
-				if (!$IncludeSystemDBs) {
-					$dbs = $dbs | Where-Object { !$_.IsSystemObject }
-				}
+                if ($Database) {
+                    $dbs = $dbs | Where-Object { $Database -contains $_.Name }
+                }
 
-				if ($Database) {
-					$dbs = $dbs | Where-Object { $Database -contains $_.Name }
-				}
+                if ($ExcludeDatabase) {
+                    $dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.Name }
+                }
+            }
+            catch {
+                Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue -ErrorRecord $_
+            }
 
-				if ($ExcludeDatabase) {
-					$dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.Name }
-				}
-			}
-			catch {
-				Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue -InnerErrorRecord $_
-			}
+            foreach ($db in $dbs) {
+                Write-Message -Level Verbose -Message "Processing $db"
 
-			foreach ($db in $dbs) {
-				Write-Message -Level Verbose -Message "Processing $db"
-				$skipped = $false
+                if ($fqtns) {
+                    $tables = @()
+                    foreach ($fqtn in $fqtns) {
+                        # If the user specified a database in a three-part name, and it's not the
+                        # database currently being processed, skip this table.
+                        if ($fqtn.Database) {
+                            if ($fqtn.Database -ne $db.Name) {
+                                continue
+                            }
+                        }
 
-				if ($fqtns.Count -gt 0) {
-					foreach ($fqtn in $fqtns) {
-						# If the user specified a database in a three-part name, and it's not the
-						# database currently being processed, skip this table.
-						if ($fqtn.Database) {
-							if ($fqtn.Database -ne $db.Name) {
-								$skipped = $true
-								continue
-							}
-							else {
-								$skipped = $false
-							}
-						}
+                        $tbl = $db.tables | Where-Object { $_.Name -in $fqtn.Table -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
 
-						$tables = $db.tables | Where-Object {$fqtn.Table -eq $_.name -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null)}
-						if ($tables.Count -eq 0) {
-							$outSchema = ""
-							if ($fqtn.Schema) {
-								$outSchema = ", schema: $($fqtn.Schema)"
-							}
+                        if (-not $tbl) {
+                            Write-Message -Level Verbose -Message "Could not find table $($fqtn.Table) in $db on $server"
+                        }
+                        $tables += $tbl
+                    }
+                }
+                else {
+                    $tables = $db.Tables
+                }
 
-							$outDatabase = ""
-							if ($fqtn.Database) {
-								$outDatabase = ", database: $($fqtn.Database)"
-							}
+                foreach ($sqltable in $tables) {
+                    $sqltable | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                    $sqltable | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                    $sqltable | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                    $sqltable | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name
 
-							Write-Message -Level Verbose -Message "Could not find table. Instance: $($server.DomainInstanceName)$outDatabase$outSchema, name: $($fqtn.Table)"
-						}
-					}
-				}
-				else {
-					$tables = $db.Tables
-				}
+                    $defaultprops = "ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
 
-				if (!$skipped) {
-					$tables | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.NetName
-					$tables | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-					$tables | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-					$tables | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name
-
-					$defaultprops = "ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
-
-					Select-DefaultView -InputObject $tables -Property $defaultprops
-				}
-			}
-		}
-	}
+                    Select-DefaultView -InputObject $sqltable -Property $defaultprops
+                }
+            }
+        }
+    }
 }

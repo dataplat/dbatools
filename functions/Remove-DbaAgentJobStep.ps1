@@ -1,141 +1,145 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentJobStep {
     <#
-.SYNOPSIS 
-Remove-DbaAgentJobStep removes a job step.
+        .SYNOPSIS
+            Removes a step from the specified SQL Agent job.
 
-.DESCRIPTION
-Remove-DbaAgentJobStep removes a job step in the SQL Server Agent.
+        .DESCRIPTION
+            Removes a job step from a SQL Server Agent job.
 
-.PARAMETER SqlInstance
-SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        .PARAMETER SqlInstance
+            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+        
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
-To connect as a different Windows user, run PowerShell as that user.
+        .PARAMETER Job
+            The name of the job.
 
-.PARAMETER Job
-The name of the job. Can be null if the the job id is being used.
+        .PARAMETER StepName
+            The name of the job step.
 
-.PARAMETER StepName
-The name of the step.
-	
-.PARAMETER KeepHistory
-Specifies to keep the history for the job. By default is history is deleted.
+        .PARAMETER Mode
+            Default: Strict
+            How strict does the command take lesser issues?
+            Strict: Interrupt if the configuration already has the same value as the one specified.
+            Lazy:   Silently skip over instances that already have this configuration at the specified value.
 
-.PARAMETER KeepUnusedSchedule
-Specifies to keep the schedules attached to this job if they are not attached to any other job. By default the unused schedule is deleted.
+        .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
-.NOTES 
-Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job, Job Step
-	
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .NOTES
+            Author: Sander Stad (@sqlstad, sqlstad.nl)
+            Tags: Agent, Job, Job Step
 
-.LINK
-https://dbatools.io/Remove-DbaAgentJobStep
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE   
-Remove-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1
-Remove the job step from the job
+        .LINK
+            https://dbatools.io/Remove-DbaAgentJobStep
 
-.EXAMPLE   
-Remove-DbaAgentJobStep -SqlInstance sql1 -Job Job1, Job2, Job3 -StepName Step1
-Remove the job step from the job for multiple jobs
+        .EXAMPLE
+            Remove-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1
 
-.EXAMPLE   
-Remove-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1
-Remove the job step from the job on multiple servers
+            Remove 'Step1' from job 'Job1' on sql1.
 
+        .EXAMPLE
+            Remove-DbaAgentJobStep -SqlInstance sql1 -Job Job1, Job2, Job3 -StepName Step1
 
-.EXAMPLE   
-sql1, sql2, sql3 | Remove-DbaAgentJobStep -Job Job1 -StepName Step1
-Remove the job step from the job on multiple servers using pipeline
+            Remove the job step from multiple jobs.
 
-#>	
-	
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[Parameter(Mandatory = $false)]
-		[PSCredential]$SqlCredential,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object[]]$Job,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]$StepName,
-		[Parameter(Mandatory = $false)]
-		[switch][Alias('Silent')]$EnableException
-	)
-	
-	process {
-		
-		foreach ($instance in $sqlinstance) {
-			
-			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
-			try {
-				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-			
-			foreach ($j in $Job) {
-				
-				# Check if the job exists
-				if ($Server.JobServer.Jobs.Name -notcontains $j) {
-					Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
-				}
-				else {
-					# Check if the job step exists
-					if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
-						Write-Message -Message "Step $StepName doesn't exist for $job on $instance" -Level Warning
-					}
-					else {
-						# Get the job step
-						try {
-							$JobStep = $Server.JobServer.Jobs[$j].JobSteps[$StepName]
-						}
-						catch {
-							Stop-Function -Message "Something went wrong creating the job step. `n$($_.Exception.Message)" -Target $JobStep -Continue -InnerErrorRecord $_
-						}
-						
-						# Execute 
-						if ($PSCmdlet.ShouldProcess($instance, "Removing the job step $StepName for job $j")) {
-							try {
-								Write-Message -Message "Removing the job step $StepName for job $j" -Level Output
-								
-								$JobStep.Drop()
-							}
-							catch {
-								Stop-Function -Message "Something went wrong removing the job step. `n$($_.Exception.Message)" -Target $JobStep -Continue -InnerErrorRecord $_
-							}
-						}
-					}
-				}
-				
-			} # foreach object job
-		} # foreach object instance
-	} # process
-	
-	end {
-		Write-Message -Message "Finished removing the jobs step(s)" -Level Verbose
-	}
+        .EXAMPLE
+            Remove-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1
+
+            Remove the job step from the job on multiple servers.
+
+        .EXAMPLE
+            sql1, sql2, sql3 | Remove-DbaAgentJobStep -Job Job1 -StepName Step1
+
+            Remove the job step from the job on multiple servers using pipeline.
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [Parameter(Mandatory = $false)]
+        [PSCredential]$SqlCredential,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [object[]]$Job,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$StepName,
+        [DbaMode]$Mode = (Get-DbaConfigValue -Name 'message.mode.default' -Fallback "Strict"),
+        [Alias('Silent')]
+        [switch]$EnableException
+    )
+
+    process {
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            foreach ($j in $Job) {
+                Write-Message -Level Verbose -Message "Processing job $j"
+                # Check if the job exists
+                if ($Server.JobServer.Jobs.Name -notcontains $j) {
+                    switch ($Mode) {
+                        'Lazy' {
+                            Write-Message -Level Verbose -Message "Job $j doesn't exists on $instance." -Target $instance
+                        }
+                        'Strict' {
+                            Stop-Function -Message "Job $j doesnn't exist on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
+                        }
+                    }
+                }
+                else {
+                    # Check if the job step exists
+                    if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
+                        switch ($Mode) {
+                            'Lazy' {
+                                Write-Message -Level Verbose -Message "Step $StepName doesn't exist for $job on $instance." -Target $instance
+                            }
+                            'Strict' {
+                                Stop-Function -Message "Step $StepName doesn't exist for $job on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
+                            }
+                        }
+                    }
+                    else {
+                        # Execute
+                        if ($PSCmdlet.ShouldProcess($instance, "Removing the job step $StepName for job $j")) {
+                            try {
+                                $JobStep = $Server.JobServer.Jobs[$j].JobSteps[$StepName]
+                                Write-Message -Level SomewhatVerbose -Message "Removing the job step $StepName for job $j."
+                                $JobStep.Drop()
+                            }
+                            catch {
+                                Stop-Function -Message "Something went wrong removing the job step" -Target $JobStep -Continue -ErrorRecord $_
+                                Write-Message -Level Verbose -Message "Could not remove the job step $StepName from $j"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    end {
+        Write-Message -Message "Finished removing the jobs step(s)" -Level Verbose
+    }
 }

@@ -1,135 +1,166 @@
 ﻿$scriptBlock = {
-	Param (
-		$ModuleRoot
-	)
-	
-	try
-	{
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.BatchParser.dll" -ErrorAction Stop
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.BatchParserClient.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.BulkInsertTaskConnections.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.DTSRuntimeWrap.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.DtsServer.Interop.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.DTSUtilities.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ForEachFileEnumeratorWrap.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ManagedDTS.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ODataConnectionManager.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ODataSrc.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.PipelineHost.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.PackageFormatUpdate.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.SqlCEDest.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.SQLTask.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.TxScript.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.XE.Core.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.XEvent.Configuration.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.XEvent.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.XEvent.Linq.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.XmlSrc.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.DTSPipelineWrap.dll"
-		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ScriptTask.dll" -ErrorAction Stop
-	}
-	catch
-	{
-		# don't care ;)
-	}
-	
-	Add-Type -Path "$ModuleRoot\bin\smo\Accessibility.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\EnvDTE.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.AnalysisServices.AppLocal.Core.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.AnalysisServices.AppLocal.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.Azure.KeyVault.Core.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.Data.Edm.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.Data.OData.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.Practices.TransientFaultHandling.Core.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.DataTransfer.Common.Utils.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ASTasks.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfo.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfoExtended.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.DataProfiler.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.DataProfilingTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Diagnostics.STrace.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Dmf.Common.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Dmf.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.DMQueryTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.DTEnum.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Dts.Design.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Dts.DtsClient.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.DtsMsg.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Edition.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ExecProcTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ExpressionTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.FileSystemTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ForEachADOEnumerator.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ForEachFromVarEnumerator.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ForEachNodeListEnumerator.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ForEachSMOEnumerator.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.FtpTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.GridControl.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Instapi.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ClusterManagement.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Common.ObjectModel.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ISServerDBUpgrade.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Server.Common.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Server.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Server.IPC.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.server.shared.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.TaskScheduler.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ManagedConnections.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.CollectorEnum.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.CollectorTasks.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.HadrDMF.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.HelpViewer.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.IntegrationServices.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.IntegrationServicesEnum.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.RegisteredServers.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.Sdk.Sfc.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.SmartAdminPolicies.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.SqlParser.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.SystemMetadataProvider.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.Utility.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.UtilityEnum.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEvent.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScoped.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScopedEnum.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.MSMQTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.PipelineXML.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.PolicyEnum.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.RegSvrEnum.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Replication.BusinessLogicSupport.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.SendMailTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.ServiceBrokerEnum.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.SmoExtended.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.SqlClrProvider.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.SqlEnum.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.SQLTaskConnectionsWrap.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.SqlTDiagM.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.SqlWmiManagement.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.SString.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.TransferDatabasesTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.TransferErrorMessagesTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.TransferJobsTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.TransferLoginsTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.TransferObjectsTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.TransferSqlServerObjectsTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.TransferStoredProceduresTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Types.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Types.resources.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.VSTAScriptingLib.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.WebServiceTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.WMIDRTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.WmiEnum.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.WMIEWTask.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.XMLTask.dll"
-	# x86
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Dmf.Adapters.dll"
-	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.DmfSqlClrWrapper.dll"
-	
-	<#
+    Param (
+        $ModuleRoot,
+
+        $DllRoot,
+
+        $DoCopy
+    )
+
+    function Copy-Assembly {
+        [CmdletBinding()]
+        Param (
+            [string]$ModuleRoot,
+            [string]$DllRoot,
+            [bool]$DoCopy,
+            [string]$Name
+        )
+
+        if (-not $DoCopy) {
+            return
+        }
+        if ("$ModuleRoot\bin\smo" -eq $DllRoot) {
+            return
+        }
+
+        if (-not (Test-Path $DllRoot)) {
+            $null = New-Item -Path $DllRoot -ItemType Directory -ErrorAction Ignore
+        }
+
+        Copy-Item -Path "$ModuleRoot\bin\smo\$Name.dll" -Destination $DllRoot
+    }
+
+    #region Names
+    $names = @(
+        'Microsoft.SqlServer.BatchParser',
+        'Microsoft.SqlServer.BatchParserClient',
+        'Microsoft.SqlServer.BulkInsertTaskConnections',
+        'Microsoft.SqlServer.DTSRuntimeWrap',
+        'Microsoft.SqlServer.DtsServer.Interop',
+        'Microsoft.SqlServer.DTSUtilities',
+        'Microsoft.SqlServer.ForEachFileEnumeratorWrap',
+        'Microsoft.SqlServer.ManagedDTS',
+        'Microsoft.SqlServer.IntegrationServices.ODataConnectionManager',
+        'Microsoft.SqlServer.IntegrationServices.ODataSrc',
+        'Microsoft.SqlServer.PipelineHost',
+        'Microsoft.SqlServer.PackageFormatUpdate',
+        'Microsoft.SqlServer.Replication',
+        'Microsoft.SqlServer.SqlCEDest',
+        'Microsoft.SqlServer.SQLTask',
+        'Microsoft.SqlServer.TxScript',
+        'Microsoft.SqlServer.XE.Core',
+        'Microsoft.SqlServer.XEvent.Configuration',
+        'Microsoft.SqlServer.XEvent',
+        'Microsoft.SqlServer.XEvent.Linq',
+        'Microsoft.SqlServer.XmlSrc',
+        'Microsoft.SqlServer.Rmo',
+        'Microsoft.SqlServer.DTSPipelineWrap',
+        'Microsoft.SqlServer.ScriptTask',
+
+        'Accessibility',
+        'EnvDTE',
+        'Microsoft.AnalysisServices.AppLocal.Core',
+        'Microsoft.AnalysisServices.AppLocal',
+        'Microsoft.Azure.KeyVault.Core',
+        'Microsoft.Data.Edm',
+        'Microsoft.Data.OData',
+        'Microsoft.Practices.TransientFaultHandling.Core',
+        'Microsoft.DataTransfer.Common.Utils',
+        'Microsoft.SqlServer.ASTasks',
+        'Microsoft.SqlServer.ConnectionInfo',
+        'Microsoft.SqlServer.ConnectionInfoExtended',
+        'Microsoft.SqlServer.DataProfiler',
+        'Microsoft.SqlServer.DataProfilingTask',
+        'Microsoft.SqlServer.Diagnostics.STrace',
+        'Microsoft.SqlServer.Dmf.Common',
+        'Microsoft.SqlServer.Dmf',
+        'Microsoft.SqlServer.DMQueryTask',
+        'Microsoft.SqlServer.DTEnum',
+        'Microsoft.SqlServer.Dts.Design',
+        'Microsoft.SqlServer.Dts.DtsClient',
+        'Microsoft.SqlServer.DtsMsg',
+        'Microsoft.SqlServer.Edition',
+        'Microsoft.SqlServer.ExecProcTask',
+        'Microsoft.SqlServer.ExpressionTask',
+        'Microsoft.SqlServer.FileSystemTask',
+        'Microsoft.SqlServer.ForEachADOEnumerator',
+        'Microsoft.SqlServer.ForEachFromVarEnumerator',
+        'Microsoft.SqlServer.ForEachNodeListEnumerator',
+        'Microsoft.SqlServer.ForEachSMOEnumerator',
+        'Microsoft.SqlServer.FtpTask',
+        'Microsoft.SqlServer.GridControl',
+        'Microsoft.SqlServer.Instapi',
+        'Microsoft.SqlServer.IntegrationServices.ClusterManagement',
+        'Microsoft.SqlServer.IntegrationServices.Common.ObjectModel',
+        'Microsoft.SqlServer.IntegrationServices.ISServerDBUpgrade',
+        'Microsoft.SqlServer.IntegrationServices.Server.Common',
+        'Microsoft.SqlServer.IntegrationServices.Server',
+        'Microsoft.SqlServer.IntegrationServices.Server.IPC',
+        'Microsoft.SqlServer.IntegrationServices.server.shared',
+        'Microsoft.SqlServer.IntegrationServices.TaskScheduler',
+        'Microsoft.SqlServer.ManagedConnections',
+        'Microsoft.SqlServer.Management.Collector',
+        'Microsoft.SqlServer.Management.CollectorEnum',
+        'Microsoft.SqlServer.Management.CollectorTasks',
+        'Microsoft.SqlServer.Management.HadrDMF',
+        'Microsoft.SqlServer.Management.HelpViewer',
+        'Microsoft.SqlServer.Management.IntegrationServices',
+        'Microsoft.SqlServer.Management.IntegrationServicesEnum',
+        'Microsoft.SqlServer.Management.RegisteredServers',
+        'Microsoft.SqlServer.Management.Sdk.Sfc',
+        'Microsoft.SqlServer.Management.SmartAdminPolicies',
+        'Microsoft.SqlServer.Management.SqlParser',
+        'Microsoft.SqlServer.Management.SystemMetadataProvider',
+        'Microsoft.SqlServer.Management.Utility',
+        'Microsoft.SqlServer.Management.UtilityEnum',
+        'Microsoft.SqlServer.Management.XEvent',
+        'Microsoft.SqlServer.Management.XEventDbScoped',
+        'Microsoft.SqlServer.Management.XEventDbScopedEnum',
+        'Microsoft.SqlServer.Management.XEventEnum',
+        'Microsoft.SqlServer.MSMQTask',
+        'Microsoft.SqlServer.PipelineXML',
+        'Microsoft.SqlServer.PolicyEnum',
+        'Microsoft.SqlServer.RegSvrEnum',
+        'Microsoft.SqlServer.Replication.BusinessLogicSupport',
+        'Microsoft.SqlServer.SendMailTask',
+        'Microsoft.SqlServer.ServiceBrokerEnum',
+        'Microsoft.SqlServer.Smo',
+        'Microsoft.SqlServer.SmoExtended',
+        'Microsoft.SqlServer.SqlClrProvider',
+        'Microsoft.SqlServer.SqlEnum',
+        'Microsoft.SqlServer.SQLTaskConnectionsWrap',
+        'Microsoft.SqlServer.SqlTDiagm',
+        'Microsoft.SqlServer.SqlWmiManagement',
+        'Microsoft.SqlServer.SString',
+        'Microsoft.SqlServer.TransferDatabasesTask',
+        'Microsoft.SqlServer.TransferErrorMessagesTask',
+        'Microsoft.SqlServer.TransferJobsTask',
+        'Microsoft.SqlServer.TransferLoginsTask',
+        'Microsoft.SqlServer.TransferObjectsTask',
+        'Microsoft.SqlServer.TransferSqlServerObjectsTask',
+        'Microsoft.SqlServer.TransferStoredProceduresTask',
+        'Microsoft.SqlServer.Types',
+        'Microsoft.SqlServer.Types.resources',
+        'Microsoft.SqlServer.VSTAScriptingLib',
+        'Microsoft.SqlServer.WebServiceTask',
+        'Microsoft.SqlServer.WMIDRTask',
+        'Microsoft.SqlServer.WmiEnum',
+        'Microsoft.SqlServer.WMIEWTask',
+        'Microsoft.SqlServer.XMLTask',
+
+        'Microsoft.SqlServer.Dmf.Adapters',
+        'Microsoft.SqlServer.DmfSqlClrWrapper'
+    )
+    #endregion Names
+
+    foreach ($name in $names) {
+        Copy-Assembly -ModuleRoot $ModuleRoot -DllRoot $DllRoot -DoCopy $DoCopy -Name $name
+    }
+    foreach ($name in $names) {
+        Add-Type -Path "$DllRoot\$name.dll"
+    }
+
+    <#
 Likely don't need yet
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WizardFramework.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WizardFrameworkLite.dll"
@@ -180,12 +211,14 @@ Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.MaintenancePlan
 }
 
 if ($script:serialImport) {
-	$scriptBlock.Invoke($script:PSModuleRoot)
+    $scriptBlock.Invoke($script:PSModuleRoot, "$script:DllRoot\smo", (-not $script:strictSecurityMode))
 }
 else {
-	$script:smoRunspace = [System.Management.Automation.PowerShell]::Create()
-	try { $script:smoRunspace.Runspace.Name = "dbatools-import-smo" }
-	catch { }
-	$script:smoRunspace.AddScript($scriptBlock).AddArgument($script:PSModuleRoot)
-	$script:smoRunspace.BeginInvoke()
+    $script:smoRunspace = [System.Management.Automation.PowerShell]::Create()
+    if ($script:smoRunspace.Runspace.Name) {
+        try { $script:smoRunspace.Runspace.Name = "dbatools-import-smo" }
+        catch { }
+    }
+    $script:smoRunspace.AddScript($scriptBlock).AddArgument($script:PSModuleRoot).AddArgument("$script:DllRoot\smo").AddArgument((-not $script:strictSecurityMode))
+    $script:smoRunspace.BeginInvoke()
 }

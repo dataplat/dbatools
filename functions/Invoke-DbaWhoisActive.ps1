@@ -1,5 +1,5 @@
 function Invoke-DbaWhoisActive {
-	<#
+    <#
 .SYNOPSIS
 Outputs results of Adam Machanic's sp_WhoIsActive DataTable
 
@@ -151,9 +151,7 @@ rest of the parameters. The CREATE TABLE statement will have a placeholder token
 Help! What do I do?
 
 .PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use: $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
@@ -162,15 +160,15 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command.
 
 .PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 .NOTES
 Tags: Memory
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .LINK
 https://dbatools.io/Invoke-DbaWhoisActive
@@ -196,148 +194,155 @@ Invoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetOuterCommand -FindBlockLea
 Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
-	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias('ServerInstance', 'SqlServer')]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]
-		$SqlCredential,
-		[object]$Database,
-		[Alias('As')]
-		[ValidateLength(0, 128)]
-		[string]$Filter,
-		[ValidateSet('Session', 'Program', 'Database', 'Login', 'Host')]
-		[string]$FilterType = 'Session',
-		[ValidateLength(0, 128)]
-		[string]$NotFilter,
-		[ValidateSet('Session', 'Program', 'Database', 'Login', 'Host')]
-		[string]$NotFilterType = 'Session',
-		[switch]$ShowOwnSpid,
-		[switch]$ShowSystemSpids,
-		[ValidateRange(0, 255)]
-		[int]$ShowSleepingSpids,
-		[switch]$GetFullInnerText,
-		[ValidateRange(0, 255)]
-		[int]$GetPlans,
-		[switch]$GetOuterCommand,
-		[switch]$GetTransactionInfo,
-		[ValidateRange(0, 2)]
-		[int]$GetTaskInfo,
-		[switch]$GetLocks,
-		[switch]$GetAverageTime,
-		[switch]$GetAdditonalInfo,
-		[switch]$FindBlockLeaders,
-		[ValidateRange(0, 255)]
-		[int]$DeltaInterval,
-		[ValidateLength(0, 8000)]
-		[string]$OutputColumnList = '[dd%][session_id][sql_text][sql_command][login_name][wait_info][tasks][tran_log%][cpu%][temp%][block%][reads%][writes%][context%][physical%][query_plan][locks][%]',
-		[ValidateLength(0, 500)]
-		[string]$SortOrder = '[start_time] ASC',
-		[ValidateRange(0, 255)]
-		[int]$FormatOutput = 1,
-		[ValidateLength(0, 4000)]
-		[string]$DestinationTable = '',
-		[switch]$ReturnSchema,
-		[string]$Schema,
-		[switch]$Help,
-		[switch][Alias('Silent')]$EnableException
-	)
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias('ServerInstance', 'SqlServer')]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]
+        $SqlCredential,
+        [object]$Database,
+        [Alias('As')]
+        [ValidateLength(0, 128)]
+        [string]$Filter,
+        [ValidateSet('Session', 'Program', 'Database', 'Login', 'Host')]
+        [string]$FilterType = 'Session',
+        [ValidateLength(0, 128)]
+        [string]$NotFilter,
+        [ValidateSet('Session', 'Program', 'Database', 'Login', 'Host')]
+        [string]$NotFilterType = 'Session',
+        [switch]$ShowOwnSpid,
+        [switch]$ShowSystemSpids,
+        [ValidateRange(0, 255)]
+        [int]$ShowSleepingSpids,
+        [switch]$GetFullInnerText,
+        [ValidateRange(0, 255)]
+        [int]$GetPlans,
+        [switch]$GetOuterCommand,
+        [switch]$GetTransactionInfo,
+        [ValidateRange(0, 2)]
+        [int]$GetTaskInfo,
+        [switch]$GetLocks,
+        [switch]$GetAverageTime,
+        [switch]$GetAdditonalInfo,
+        [switch]$FindBlockLeaders,
+        [ValidateRange(0, 255)]
+        [int]$DeltaInterval,
+        [ValidateLength(0, 8000)]
+        [string]$OutputColumnList = '[dd%][session_id][sql_text][sql_command][login_name][wait_info][tasks][tran_log%][cpu%][temp%][block%][reads%][writes%][context%][physical%][query_plan][locks][%]',
+        [ValidateLength(0, 500)]
+        [string]$SortOrder = '[start_time] ASC',
+        [ValidateRange(0, 255)]
+        [int]$FormatOutput = 1,
+        [ValidateLength(0, 4000)]
+        [string]$DestinationTable = '',
+        [switch]$ReturnSchema,
+        [string]$Schema,
+        [switch]$Help,
+        [Alias('Silent')]
+        [switch]$EnableException
+    )
 
-	begin {
-		$passedparams = $psboundparameters.Keys | Where-Object { 'Silent', 'SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
-		$localparams = $psboundparameters
-	}
+    begin {
+        $passedparams = $psboundparameters.Keys | Where-Object { 'Silent', 'SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
+        $localparams = $psboundparameters
+    }
 
-	process {
+    process {
 
-		foreach ($instance in $sqlinstance) {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+        foreach ($instance in $sqlinstance) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance"
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-			if ($server.VersionMajor -lt 9) {
-				throw "sp_WhoIsActive is only supported in SQL Server 2005 and above"
-			}
+            if ($server.VersionMajor -lt 9) {
+                throw "sp_WhoIsActive is only supported in SQL Server 2005 and above"
+            }
 
-			$paramdictionary = @{
-				Filter             = '@filter'
-				FilterType         = '@filter_type'
-				NotFilter          = 'not_filter'
-				NotFilterType      = '@not_filter_type'
-				ShowOwnSpid        = '@show_own_spid'
-				ShowSystemSpids    = '@show_system_spids'
-				ShowSleepingSpids  = '@show_sleeping_spids'
-				GetFullInnerText   = '@get_full_inner_text'
-				GetPlans           = '@get_plans'
-				GetOuterCommand    = '@get_outer_command'
-				GetTransactionInfo = '@get_transaction_info'
-				GetTaskInfo        = '@get_task_info'
-				GetLocks           = '@get_locks '
-				GetAverageTime     = '@get_avg_time'
-				GetAdditonalInfo   = '@get_additional_info'
-				FindBlockLeaders   = '@find_block_leaders'
-				DeltaInterval      = '@delta_interval'
-				OutputColumnList   = '@output_column_list'
-				SortOrder          = '@sort_order'
-				FormatOutput       = '@format_output '
-				DestinationTable   = '@destination_table '
-				ReturnSchema       = '@return_schema'
-				Schema             = '@schema'
-				Help               = '@help'
-			}
+            $paramdictionary = @{
+                Filter             = '@filter'
+                FilterType         = '@filter_type'
+                NotFilter          = 'not_filter'
+                NotFilterType      = '@not_filter_type'
+                ShowOwnSpid        = '@show_own_spid'
+                ShowSystemSpids    = '@show_system_spids'
+                ShowSleepingSpids  = '@show_sleeping_spids'
+                GetFullInnerText   = '@get_full_inner_text'
+                GetPlans           = '@get_plans'
+                GetOuterCommand    = '@get_outer_command'
+                GetTransactionInfo = '@get_transaction_info'
+                GetTaskInfo        = '@get_task_info'
+                GetLocks           = '@get_locks '
+                GetAverageTime     = '@get_avg_time'
+                GetAdditonalInfo   = '@get_additional_info'
+                FindBlockLeaders   = '@find_block_leaders'
+                DeltaInterval      = '@delta_interval'
+                OutputColumnList   = '@output_column_list'
+                SortOrder          = '@sort_order'
+                FormatOutput       = '@format_output '
+                DestinationTable   = '@destination_table '
+                ReturnSchema       = '@return_schema'
+                Schema             = '@schema'
+                Help               = '@help'
+            }
 
-			Write-Message -Level Verbose -Message "Collecting sp_whoisactive data from server: $instance"
+            Write-Message -Level Verbose -Message "Collecting sp_whoisactive data from server: $instance"
 
-			try {
-				$sqlconnection = New-Object System.Data.SqlClient.SqlConnection
-				$sqlconnection.ConnectionString = $server.ConnectionContext.ConnectionString
-				$sqlconnection.Open()
+            try {
+                $sqlconnection = New-Object System.Data.SqlClient.SqlConnection
+                $sqlconnection.ConnectionString = $server.ConnectionContext.ConnectionString
+                $sqlconnection.Open()
 
-				if ($Database) {
-					# database is being returned as something weird. change it to string without using a method then trim.
-					$Database = "$Database"
-					$Database = $Database.Trim()
-					$sqlconnection.ChangeDatabase($Database)
-				}
+                if ($Database) {
+                    # database is being returned as something weird. change it to string without using a method then trim.
+                    $Database = "$Database"
+                    $Database = $Database.Trim()
+                    $sqlconnection.ChangeDatabase($Database)
+                }
 
-				$sqlcommand = New-Object System.Data.SqlClient.SqlCommand
-				$sqlcommand.CommandType = "StoredProcedure"
-				$sqlcommand.CommandText = "dbo.sp_WhoIsActive"
-				$sqlcommand.Connection = $sqlconnection
+                $sqlcommand = New-Object System.Data.SqlClient.SqlCommand
+                $sqlcommand.CommandType = "StoredProcedure"
+                $sqlcommand.CommandText = "dbo.sp_WhoIsActive"
+                $sqlcommand.Connection = $sqlconnection
 
-				foreach ($param in $passedparams) {
-					$sqlparam = $paramdictionary[$param]
-					$value = $localparams[$param]
+                foreach ($param in $passedparams) {
+                    Write-Message -Level Verbose -Message "Check parameter '$param'"
 
-					switch ($value) {
-						$true { $value = 1 }
-						$false { $value = 0 }
-					}
+                    $sqlparam = $paramdictionary[$param]
+                    
+                    if ($sqlparam) {
+                    
+                        $value = $localparams[$param]
+   
+                        switch ($value) {
+                            $true { $value = 1 }
+                            $false { $value = 0 }
+                        }
+                        Write-Message -Level Verbose -Message "Adding parameter '$sqlparam' with value '$value'"
+                        [Void]$sqlcommand.Parameters.AddWithValue($sqlparam, $value)
+                    }
+                }
 
-					[Void]$sqlcommand.Parameters.AddWithValue($sqlparam, $value)
-				}
-
-				$datatable = New-Object system.Data.DataSet
-				$dataadapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlcommand)
-				$dataadapter.fill($datatable) | Out-Null
-				$datatable.Tables.Rows
-			}
-			catch {
-				if ($_.Exception.InnerException -Like "*Could not find*") {
-					Stop-Function -Message "sp_whoisactive not found, please install using Install-DbaWhoIsActive." -Continue
-				}
-				else {
-					Stop-Function -Message "Invalid query." -Continue
-				}
-			}
-		}
-	}
-	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-SqlWhoIsActive -CustomMessage "Show-SqlWhoIsActive is no longer supported. Use Invoke-DbaWhoIsActive | Out-GridView for similar results."
-	}
+                $datatable = New-Object system.Data.DataSet
+                $dataadapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlcommand)
+                $dataadapter.fill($datatable) | Out-Null
+                $datatable.Tables.Rows
+            }
+            catch {
+                if ($_.Exception.InnerException -Like "*Could not find*") {
+                    Stop-Function -Message "sp_whoisactive not found, please install using Install-DbaWhoIsActive." -Continue
+                }
+                else {
+                    Stop-Function -Message "Invalid query." -Continue
+                }
+            }
+        }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-SqlWhoIsActive -CustomMessage "Show-SqlWhoIsActive is no longer supported. Use Invoke-DbaWhoIsActive | Out-GridView for similar results."
+    }
 }

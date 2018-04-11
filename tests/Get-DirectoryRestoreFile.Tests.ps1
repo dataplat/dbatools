@@ -1,4 +1,4 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -53,7 +53,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             ($results2 | Where-Object {$_.Fullname -like '*\backups\*.trn'}).count | Should be 3
         }
         It "Should  contain log2b.trn" {
-            ($results2 | Where-Object {$_.Fullname -like '*\backups\*log2b.trn'}).count | Should be 1          
+            ($results2 | Where-Object {$_.Fullname -like '*\backups\*log2b.trn'}).count | Should be 1
         }
     }
 }

@@ -1,89 +1,86 @@
 function Test-DbaOptimizeForAdHoc {
-	<#
-		.SYNOPSIS
-			Displays information relating to SQL Server Optimize for AdHoc Workloads setting.  Works on SQL Server 2008-2016.
+    <#
+        .SYNOPSIS
+            Displays information relating to SQL Server Optimize for AdHoc Workloads setting.  Works on SQL Server 2008-2016.
 
-		.DESCRIPTION
-			When this option is set, plan cache size is further reduced for single-use ad hoc OLTP workload.
+        .DESCRIPTION
+            When this option is set, plan cache size is further reduced for single-use ad hoc OLTP workload.
 
-			More info: https://msdn.microsoft.com/en-us/library/cc645587.aspx
-			http://www.sqlservercentral.com/blogs/glennberry/2011/02/25/some-suggested-sql-server-2008-r2-instance-configuration-settings/
+            More info: https://msdn.microsoft.com/en-us/library/cc645587.aspx
+            http://www.sqlservercentral.com/blogs/glennberry/2011/02/25/some-suggested-sql-server-2008-r2-instance-configuration-settings/
 
-			These are just general recommendations for SQL Server and are a good starting point for setting the "optimize for adhoc workloads" option.
+            These are just general recommendations for SQL Server and are a good starting point for setting the "optimize for adhoc workloads" option.
 
-		.PARAMETER SqlInstance
-			A collection of one or more SQL Server instance names to query.
+        .PARAMETER SqlInstance
+            A collection of one or more SQL Server instance names to query.
 
-		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-			$cred = Get-Credential, this pass this $cred to the param.
+    .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message. This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting. Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-			Windows Authentication will be used if SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+        .NOTES
+            Tags: Configure, SPConfigure
+            Author: Brandon Abshire, netnerds.net
 
-	.PARAMETER EnableException
-			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message. This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting. Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-		.NOTES
-			Tags: Configure, SPConfigure
-			Author: Brandon Abshire, netnerds.net
+        .LINK
+            https://dbatools.io/Test-DbaOptimizeForAdHoc
 
-			Website: https://dbatools.io
-			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .EXAMPLE
+            Test-DbaOptimizeForAdHoc -SqlInstance sql2008, sqlserver2012
 
-		.LINK
-			https://dbatools.io/Test-DbaOptimizeForAdHoc
+            Validates whether Optimize for AdHoc Workloads setting is enabled for servers sql2008 and sqlserver2012.
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [DbaInstance[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Alias('Silent')]
+        [switch]$EnableException
+    )
 
-		.EXAMPLE
-			Test-DbaOptimizeForAdHoc -SqlInstance sql2008, sqlserver2012
+    begin {
+        $notesAdHocZero = "Recommended configuration is 1 (enabled)."
+        $notesAsRecommended = "Configuration is already set as recommended."
+        $recommendedValue = 1
+    }
+    process {
 
-			Validates whether Optimize for AdHoc Workloads setting is enabled for servers sql2008 and sqlserver2012.
-	#>
-	[CmdletBinding()]
-	param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[DbaInstance[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[switch][Alias('Silent')]$EnableException
-	)
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance."
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-	begin {
-		$notesAdHocZero = "Recommended configuration is 1 (enabled)."
-		$notesAsRecommended = "Configuration is already set as recommended."
-		$recommendedValue = 1
-	}
-	process {
+            #Get current configured value
+            $optimizeAdHoc = $server.Configuration.OptimizeAdhocWorkloads.ConfigValue
 
-		foreach ($instance in $SqlInstance) {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance."
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+            #Setting notes for optimize adhoc value
+            if ($optimizeAdHoc -eq $recommendedValue) {
+                $notes = $notesAsRecommended
+            }
+            else {
+                $notes = $notesAdHocZero
+            }
 
-			#Get current configured value
-			$optimizeAdHoc = $server.Configuration.OptimizeAdhocWorkloads.ConfigValue
-
-			#Setting notes for optimize adhoc value
-			if ($optimizeAdHoc -eq $recommendedValue) {
-				$notes = $notesAsRecommended
-			}
-			else {
-				$notes = $notesAdHocZero
-			}
-
-			[pscustomobject]@{
-				ComputerName             = $server.NetName
-				InstanceName             = $server.ServiceName
-				SqlInstance              = $server.DomainInstanceName
-				CurrentOptimizeAdHoc     = $optimizeAdHoc
-				RecommendedOptimizeAdHoc = $recommendedValue
-				Notes                    = $notes
-			}
-		}
-	}
+            [pscustomobject]@{
+                ComputerName             = $server.NetName
+                InstanceName             = $server.ServiceName
+                SqlInstance              = $server.DomainInstanceName
+                CurrentOptimizeAdHoc     = $optimizeAdHoc
+                RecommendedOptimizeAdHoc = $recommendedValue
+                Notes                    = $notes
+            }
+        }
+    }
 }

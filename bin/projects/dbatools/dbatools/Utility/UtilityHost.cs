@@ -34,6 +34,16 @@ namespace Sqlcollaborative.Dbatools.Utility
         public static string FormatTime = "HH:mm:ss";
 
         /// <summary>
+        /// The number of digits a size object shows by default
+        /// </summary>
+        public static int SizeDigits = 2;
+
+        /// <summary>
+        /// The way size objects are usually displayed
+        /// </summary>
+        public static SizeStyle SizeStyle = SizeStyle.Dynamic;
+
+        /// <summary>
         /// Implement's VB's Like operator logic.
         /// </summary>
         /// <param name="CaseSensitive">Whether the comparison is case sensitive</param>

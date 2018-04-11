@@ -1,5 +1,5 @@
 function Find-DbaView {
-<#
+    <#
 .SYNOPSIS
 Returns all views that contain a specific case-insensitive string or regex pattern.
 
@@ -7,10 +7,10 @@ Returns all views that contain a specific case-insensitive string or regex patte
 This function can either run against specific databases or all databases searching all user or user and system views.
 
 .PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
 
 .PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, current Windows login will be used.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER Database
 The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -30,16 +30,16 @@ Warning - this will likely make it super slow if you run it on all databases.
 By default system databases are ignored but you can include them within the search using this parameter
 
 .PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 .NOTES
 Author: Cláudio Silva (@ClaudioESSilva)
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .LINK
 https://dbatools.io/Find-DbaView
@@ -78,7 +78,8 @@ Searches in "mydb" database views for "runtime" in the textbody
         [string]$Pattern,
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
@@ -165,7 +166,7 @@ Searches in "mydb" database views for "runtime" in the textbody
 
                     foreach ($vw in $Views) {
                         $totalcount++; $vwcount++; $everyservervwcount++
-                        
+
                         $viewSchema = $row.ViewSchema
                         $view = $vw.Name
 

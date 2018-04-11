@@ -36,18 +36,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 $loginTest.Drop()
             }
         }
-	
-	It "drops a user with no ownerships" {
+
+        It "drops a user with no ownerships" {
             Remove-DbaDbUser $server -Database tempdb -User $user.Name
-			$db.Users[$user.Name] | Should BeNullOrEmpty
+            $db.Users[$user.Name] | Should BeNullOrEmpty
         }
-        
+
         It "drops a user with a schema of the same name, but no objects owned by the schema" {
             $schema = New-Object Microsoft.SqlServer.Management.SMO.Schema($db, $user.Name)
             $schema.Owner = $user.Name
             $schema.Create()
             Remove-DbaDbUser $server -Database tempdb -User $user.Name
-			$db.Users[$user.Name] | Should BeNullOrEmpty
+            $db.Users[$user.Name] | Should BeNullOrEmpty
         }
 
         It "does NOT drop a user that owns objects other than a schema" {
@@ -61,5 +61,5 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Remove-DbaDbUser $server -Database tempdb -User $user.Name -WarningAction SilentlyContinue
             $db.Users[$user.Name] | Should Be $user
         }
-	}
+    }
 }

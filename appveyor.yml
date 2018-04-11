@@ -3,10 +3,19 @@
 build: false
 version: 0.9.{build}
 
+cache:
+  - C:\ProgramData\chocolatey\bin -> appveyor.yml
+  - C:\ProgramData\chocolatey\lib -> appveyor.yml
+  - C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer -> appveyor.yml
+  - C:\Program Files\WindowsPowerShell\Modules\Pester -> appveyor.yml
+
+shallow_clone: true
+
 # Set build info
 environment: 
   environment: development
   version: 0.9.$(appveyor_build_number)
+  #appveyor_rdp_password: 2odCuiKmYiem
   
   matrix:
     - scenario: 2008R2
@@ -15,9 +24,12 @@ environment:
     - scenario: 2016
       main_instance: localhost\SQL2016
       setup_scripts: \tests\appveyor.SQL2016.ps1
-    - scenario: 2016_service
-      main_instance: localhost\SQL2016
-      setup_scripts: \tests\appveyor.SQL2016.ps1
+    - scenario: service_restarts
+      main_instance: localhost\SQL2017,localhost\SQL2016
+      setup_scripts: \tests\appveyor.SQL2017.ps1,\tests\appveyor.SQL2016.ps1
+    - scenario: 2016_2017
+      main_instance: localhost\SQL2017,localhost\SQL2016
+      setup_scripts: \tests\appveyor.SQL2017.ps1,\tests\appveyor.SQL2016.ps1
     - scenario: default
       main_instance: localhost\SQL2008R2SP2,localhost\SQL2016
       setup_scripts: \tests\appveyor.SQL2008R2SP2.ps1,\tests\appveyor.SQL2016.ps1
@@ -31,7 +43,8 @@ before_test:
 
   # Setting up the local SQL Server environments
   - ps: .\Tests\appveyor.sqlserver.ps1
- 
+  #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 test_script:
    # Test with native PS version
   - ps: .\Tests\appveyor.pester.ps1 -IncludeCoverage

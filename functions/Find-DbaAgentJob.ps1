@@ -1,236 +1,237 @@
 function Find-DbaAgentJob {
-	<#
-		.SYNOPSIS
-			Find-DbaAgentJob finds agent job/s that fit certain search filters.
+    <#
+        .SYNOPSIS
+            Find-DbaAgentJob finds agent job/s that fit certain search filters.
 
-		.DESCRIPTION
-			This command filters SQL Agent jobs giving the DBA a list of jobs that may need attention or could possibly be options for removal.
+        .DESCRIPTION
+            This command filters SQL Agent jobs giving the DBA a list of jobs that may need attention or could possibly be options for removal.
 
-		.PARAMETER SqlInstance
-			The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        .PARAMETER SqlInstance
+            The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
-		.PARAMETER JobName
-			Filter agent jobs to only the name(s) you list. 
-			Supports regular expression (e.g. MyJob*) being passed in.
+        .PARAMETER JobName
+            Filter agent jobs to only the name(s) you list.
+            Supports regular expression (e.g. MyJob*) being passed in.
 
-		.PARAMETER ExcludeJobName
-			Allows you to enter an array of agent job names to ignore
+        .PARAMETER ExcludeJobName
+            Allows you to enter an array of agent job names to ignore
 
-		.PARAMETER StepName
-			Filter based on StepName. 
-			Supports regular expression (e.g. MyJob*) being passed in.
+        .PARAMETER StepName
+            Filter based on StepName.
+            Supports regular expression (e.g. MyJob*) being passed in.
 
-		.PARAMETER LastUsed
-			Find all jobs that havent ran in the INT number of previous day(s)
+        .PARAMETER LastUsed
+            Find all jobs that havent ran in the INT number of previous day(s)
 
-		.PARAMETER IsDisabled
-			Find all jobs that are disabled
+        .PARAMETER IsDisabled
+            Find all jobs that are disabled
 
-		.PARAMETER IsFailed
-			Find all jobs that have failed
+        .PARAMETER IsFailed
+            Find all jobs that have failed
 
-		.PARAMETER IsNotScheduled
-			Find all jobs with no schedule assigned
+        .PARAMETER IsNotScheduled
+            Find all jobs with no schedule assigned
 
-		.PARAMETER IsNoEmailNotification
-			Find all jobs without email notification configured
+        .PARAMETER IsNoEmailNotification
+            Find all jobs without email notification configured
 
-		.PARAMETER Category
-			Filter based on agent job categories
+        .PARAMETER Category
+            Filter based on agent job categories
 
-		.PARAMETER Owner
-			Filter based on owner of the job/s
+        .PARAMETER Owner
+            Filter based on owner of the job/s
 
-		.PARAMETER Since
-			Datetime object used to narrow the results to a date
+        .PARAMETER Since
+            Datetime object used to narrow the results to a date
 
-		.PARAMETER EnableException
-			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
-		.NOTES
-			Tags: Agent, Job
-			Author: Stephen Bennett (https://sqlnotesfromtheunderground.wordpress.com/)
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-			Website: https://dbatools.io
-			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .NOTES
+            Tags: Agent, Job
+            Author: Stephen Bennett (https://sqlnotesfromtheunderground.wordpress.com/)
 
-		.LINK
-			https://dbatools.io/Find-DbaAgentJob
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01 -JobName backup*
+        .LINK
+            https://dbatools.io/Find-DbaAgentJob
 
-			Returns all agent job(s) that have backup in the name
+        .EXAMPLE
+            Find-DbaAgentJob -SqlInstance Dev01 -JobName backup*
 
-		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01, Dev02 -JobName Mybackup
+            Returns all agent job(s) that have backup in the name
 
-			Returns all agent job(s) that are named exactly Mybackup
+        .EXAMPLE
+            Find-DbaAgentJob -SqlInstance Dev01, Dev02 -JobName Mybackup
 
-		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10
+            Returns all agent job(s) that are named exactly Mybackup
 
-			Returns all agent job(s) that have not ran in 10 days
+        .EXAMPLE
+            Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10
 
-		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01 -IsDisabled -IsNoEmailNotification -IsNotScheduled
+            Returns all agent job(s) that have not ran in 10 days
 
-			Returns all agent job(s) that are either disabled, have no email notification or don't have a schedule. returned with detail
-	
-		.EXAMPLE
-			$servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob 
+        .EXAMPLE
+            Find-DbaAgentJob -SqlInstance Dev01 -IsDisabled -IsNoEmailNotification -IsNotScheduled
 
-			Finds all failed job then starts them. Consider using a -WhatIf at the end of Start-DbaAgentJob to see what it'll do first
+            Returns all agent job(s) that are either disabled, have no email notification or don't have a schedule. returned with detail
 
-		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 -Exclude "Yearly - RollUp Workload", "SMS - Notification"
+        .EXAMPLE
+            $servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob
 
-			Returns all agent jobs that havent ran in the last 10 ignoring jobs "Yearly - RollUp Workload" and "SMS - Notification"
+            Finds all failed job then starts them. Consider using a -WhatIf at the end of Start-DbaAgentJob to see what it'll do first
 
-		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01 -Category "REPL-Distribution", "REPL-Snapshot" -Detailed | Format-Table -AutoSize -Wrap
+        .EXAMPLE
+            Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 -Exclude "Yearly - RollUp Workload", "SMS - Notification"
 
-			Returns all job/s on Dev01 that are in either category "REPL-Distribution" or "REPL-Snapshot" with detailed output
+            Returns all agent jobs that havent ran in the last 10 ignoring jobs "Yearly - RollUp Workload" and "SMS - Notification"
 
-		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01, Dev02 -IsFailed -Since '7/1/2016 10:47:00'
+        .EXAMPLE
+            Find-DbaAgentJob -SqlInstance Dev01 -Category "REPL-Distribution", "REPL-Snapshot" -Detailed | Format-Table -AutoSize -Wrap
 
-			Returns all agent job(s) that have failed since July of 2016 (and still have history in msdb)
+            Returns all job/s on Dev01 that are in either category "REPL-Distribution" or "REPL-Snapshot" with detailed output
 
-		.EXAMPLE
-			Get-DbaRegisteredServer -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -IsNotScheduled | Format-Table -AutoSize -Wrap
+        .EXAMPLE
+            Find-DbaAgentJob -SqlInstance Dev01, Dev02 -IsFailed -Since '7/1/2016 10:47:00'
 
-			Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.
-	#>
-	[CmdletBinding()]
-	Param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]
-		$SqlCredential,
-		[Alias("Name")]
-		[string[]]$JobName,
-		[string[]]$ExcludeJobName,
-		[string[]]$StepName,
-		[int]$LastUsed,
-		[Alias("Disabled")]
-		[switch]$IsDisabled,
-		[Alias("Failed")]
-		[switch]$IsFailed,
-		[Alias("NoSchedule")]
-		[switch]$IsNotScheduled,
-		[Alias("NoEmailNotification")]
-		[switch]$IsNoEmailNotification,
-		[string[]]$Category,
-		[string]$Owner,
-		[datetime]$Since,
-		[switch][Alias('Silent')]$EnableException
-	)
-	begin {
-		if ($IsFailed, [boolean]$JobName, [boolean]$StepName, [boolean]$LastUsed.ToString(), $IsDisabled, $IsNotScheduled, $IsNoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$ExcludeJobName -notcontains $true) {
-			Stop-Function -Message "At least one search term must be specified"
-		}
-	}
-	process {
-		if (Test-FunctionInterrupt) { return }
+            Returns all agent job(s) that have failed since July of 2016 (and still have history in msdb)
 
-		foreach ($instance in $SqlInstance) {
-			Write-Message -Level Verbose -Message "Running Scan on: $instance"
+        .EXAMPLE
+            Get-DbaRegisteredServer -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -IsNotScheduled | Format-Table -AutoSize -Wrap
 
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+            Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.
+    #>
+    [CmdletBinding()]
+    Param (
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]
+        $SqlCredential,
+        [Alias("Name")]
+        [string[]]$JobName,
+        [string[]]$ExcludeJobName,
+        [string[]]$StepName,
+        [int]$LastUsed,
+        [Alias("Disabled")]
+        [switch]$IsDisabled,
+        [Alias("Failed")]
+        [switch]$IsFailed,
+        [Alias("NoSchedule")]
+        [switch]$IsNotScheduled,
+        [Alias("NoEmailNotification")]
+        [switch]$IsNoEmailNotification,
+        [string[]]$Category,
+        [string]$Owner,
+        [datetime]$Since,
+        [Alias('Silent')]
+        [switch]$EnableException
+    )
+    begin {
+        if ($IsFailed, [boolean]$JobName, [boolean]$StepName, [boolean]$LastUsed.ToString(), $IsDisabled, $IsNotScheduled, $IsNoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$ExcludeJobName -notcontains $true) {
+            Stop-Function -Message "At least one search term must be specified"
+        }
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
 
-			$jobs = $server.JobServer.jobs
-			$output = @()
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Running Scan on: $instance"
 
-			if ($IsFailed) {
-				Write-Message -Level Verbose -Message "Checking for failed jobs."
-				$output += $jobs | Where-Object LastRunOutcome -eq "Failed"
-			}
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance"
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-			if ($JobName) {
-				Write-Message -Level Verbose -Message "Retrieving jobs by their name."
-				$output += Get-JobList -SqlInstance $server -JobFilter $JobName
-			}
+            $jobs = $server.JobServer.jobs
+            $output = @()
 
-			if ($StepName) {
-				Write-Message -Level Verbose -Message "Retrieving jobs by their step names."
-				$output += Get-JobList -SqlInstance $server -StepFilter $StepName
-			}
+            if ($IsFailed) {
+                Write-Message -Level Verbose -Message "Checking for failed jobs."
+                $output += $jobs | Where-Object LastRunOutcome -eq "Failed"
+            }
 
-			if ($LastUsed) {
-				$DaysBack = $LastUsed * -1
-				$SinceDate = (Get-date).AddDays($DaysBack)
-				Write-Message -Level Verbose -Message "Finding job/s not ran in last $LastUsed days"
-				$output += $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
-			}
+            if ($JobName) {
+                Write-Message -Level Verbose -Message "Retrieving jobs by their name."
+                $output += Get-JobList -SqlInstance $server -JobFilter $JobName
+            }
 
-			if ($IsDisabled) {
-				Write-Message -Level Verbose -Message "Finding job/s that are disabled"
-				$output += $jobs | Where-Object IsEnabled -eq $false
-			}
+            if ($StepName) {
+                Write-Message -Level Verbose -Message "Retrieving jobs by their step names."
+                $output += Get-JobList -SqlInstance $server -StepFilter $StepName
+            }
 
-			if ($IsNotScheduled) {
-				Write-Message -Level Verbose -Message "Finding job/s that have no schedule defined"
-				$output += $jobs | Where-Object HasSchedule -eq $false
-			}
-			if ($IsNoEmailNotification) {
-				Write-Message -Level Verbose -Message "Finding job/s that have no email operator defined"
-				$output += $jobs | Where-Object { [string]::IsNullOrEmpty($_.OperatorToEmail) -eq $true }
-			}
+            if ($LastUsed) {
+                $DaysBack = $LastUsed * -1
+                $SinceDate = (Get-date).AddDays($DaysBack)
+                Write-Message -Level Verbose -Message "Finding job/s not ran in last $LastUsed days"
+                $output += $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
+            }
 
-			if ($Category) {
-				Write-Message -Level Verbose -Message "Finding job/s that have the specified category defined"
-				$output += $jobs | Where-Object { $Category -contains $_.Category }
-			}
+            if ($IsDisabled) {
+                Write-Message -Level Verbose -Message "Finding job/s that are disabled"
+                $output += $jobs | Where-Object IsEnabled -eq $false
+            }
 
-			if ($Owner) {
-				Write-Message -Level Verbose -Message "Finding job/s with owner critera"
-				if ($Owner -match "-") {
-					$OwnerMatch = $Owner -replace "-", ""
-					Write-Message -Level Verbose -Message "Checking for jobs that NOT owned by: $OwnerMatch"
-					$output += $server.JobServer.jobs | Where-Object { $OwnerMatch -notcontains $_.OwnerLoginName }
-				}
-				else {
-					Write-Message -Level Verbose -Message "Checking for jobs that are owned by: $owner"
-					$output += $server.JobServer.jobs | Where-Object { $Owner -contains $_.OwnerLoginName }
-				}
-			}
+            if ($IsNotScheduled) {
+                Write-Message -Level Verbose -Message "Finding job/s that have no schedule defined"
+                $output += $jobs | Where-Object HasSchedule -eq $false
+            }
+            if ($IsNoEmailNotification) {
+                Write-Message -Level Verbose -Message "Finding job/s that have no email operator defined"
+                $output += $jobs | Where-Object { [string]::IsNullOrEmpty($_.OperatorToEmail) -eq $true }
+            }
 
-			if ($Exclude) {
-				Write-Message -Level Verbose -Message "Excluding job/s based on Exclude"
-				$output = $output | Where-Object { $Exclude -notcontains $_.Name }
-			}
+            if ($Category) {
+                Write-Message -Level Verbose -Message "Finding job/s that have the specified category defined"
+                $output += $jobs | Where-Object { $Category -contains $_.Category }
+            }
 
-			if ($Since) {
-				#$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
-				Write-Message -Level Verbose -Message "Getting only jobs whose LastRunDate is greater than or equal to $since"
-				$output = $output | Where-Object { $_.LastRunDate -ge $since }
-			}
+            if ($Owner) {
+                Write-Message -Level Verbose -Message "Finding job/s with owner critera"
+                if ($Owner -match "-") {
+                    $OwnerMatch = $Owner -replace "-", ""
+                    Write-Message -Level Verbose -Message "Checking for jobs that NOT owned by: $OwnerMatch"
+                    $output += $server.JobServer.jobs | Where-Object { $OwnerMatch -notcontains $_.OwnerLoginName }
+                }
+                else {
+                    Write-Message -Level Verbose -Message "Checking for jobs that are owned by: $owner"
+                    $output += $server.JobServer.jobs | Where-Object { $Owner -contains $_.OwnerLoginName }
+                }
+            }
 
-			$jobs = $output | Select-Object -Unique
+            if ($Exclude) {
+                Write-Message -Level Verbose -Message "Excluding job/s based on Exclude"
+                $output = $output | Where-Object { $Exclude -notcontains $_.Name }
+            }
 
-			foreach ($job in $jobs) {
-				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name JobName -value $job.Name
-				
-				
-				Select-DefaultView -InputObject $job -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, CurrentRunStatus, CurrentRunRetryAttempt, 'IsEnabled as Enabled', LastRunDate, LastRunOutcome, DateCreated, HasSchedule, OperatorToEmail, 'DateCreated as CreateDate'
-			}
-		}
-	}
+            if ($Since) {
+                #$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
+                Write-Message -Level Verbose -Message "Getting only jobs whose LastRunDate is greater than or equal to $since"
+                $output = $output | Where-Object { $_.LastRunDate -ge $since }
+            }
+
+            $jobs = $output | Select-Object -Unique
+
+            foreach ($job in $jobs) {
+                Add-Member -Force -InputObject $job -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $job -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $job -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $job -MemberType NoteProperty -Name JobName -value $job.Name
+
+
+                Select-DefaultView -InputObject $job -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, CurrentRunStatus, CurrentRunRetryAttempt, 'IsEnabled as Enabled', LastRunDate, LastRunOutcome, DateCreated, HasSchedule, OperatorToEmail, 'DateCreated as CreateDate'
+            }
+        }
+    }
 }

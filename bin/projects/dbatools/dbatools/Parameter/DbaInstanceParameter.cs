@@ -21,7 +21,13 @@ namespace Sqlcollaborative.Dbatools.Parameter
         [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
         public string ComputerName
         {
-            get { return _ComputerName; }
+            get
+            {
+                // Pretend to be localhost for all non-sql functions
+                if (_ComputerName == "(localdb)")
+                    return "localhost";
+                return _ComputerName;
+            }
         }
 
         /// <summary>
@@ -72,6 +78,9 @@ namespace Sqlcollaborative.Dbatools.Parameter
         {
             get
             {
+                // Pretend to be localhost for all non-sql functions
+                if (_ComputerName == "(localdb)")
+                    return true;
                 return Utility.Validation.IsLocalhost(_ComputerName);
             }
         }
@@ -149,7 +158,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         /// Whether the input is a connection string
         /// </summary>
         [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
-        public bool IsConnectionString { get; private set; } //TODO: figure out how to not limit ourselves to .NET 4.0
+        public bool IsConnectionString { get; private set; }
 
         /// <summary>
         /// The original object passed to the parameter class.
@@ -184,6 +193,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
                             return DbaInstanceInputType.Linked;
                         case "microsoft.sqlserver.management.registeredservers.registeredserver":
                             return DbaInstanceInputType.RegisteredServer;
+                        case "system.data.sqlclient.sqlconnection":
+                            return DbaInstanceInputType.SqlConnection;
                         default:
                             return DbaInstanceInputType.Default;
                     }
@@ -255,6 +266,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
 
             string tempString = Name.Trim();
             tempString = Regex.Replace(tempString, @"^\[(.*)\]$", "$1");
+            if (UtilityHost.IsLike(tempString, "*.WORKGROUP"))
+                tempString = Regex.Replace(tempString, @"\.WORKGROUP$", "", RegexOptions.IgnoreCase);
 
             // Named Pipe path notation interpretation
             if (Regex.IsMatch(tempString, @"^\\\\[^\\]+\\pipe\\([^\\]+\\){0,1}sql\\query$", RegexOptions.IgnoreCase))
@@ -292,6 +305,9 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     _Port = tempParam.Port;
                 }
                 _NetworkProtocol = tempParam.NetworkProtocol;
+                
+                if (UtilityHost.IsLike(tempString, @"(localdb)\*"))
+                    _NetworkProtocol = SqlConnectionProtocol.NP;
 
                 IsConnectionString = true;
 
@@ -409,9 +425,13 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     }
                 }
 
-                if (Utility.Validation.IsValidComputerTarget(tempComputerName) && Utility.Validation.IsValidInstanceName(tempInstanceName, true))
+                // LocalDBs mostly ignore regular Instance Name rules, so that validation is only relevant for regular connections
+                if (UtilityHost.IsLike(tempComputerName, "(localdb)") || (Utility.Validation.IsValidComputerTarget(tempComputerName) && Utility.Validation.IsValidInstanceName(tempInstanceName, true)))
                 {
-                    _ComputerName = tempComputerName;
+                    if (UtilityHost.IsLike(tempComputerName, "(localdb)"))
+                        _ComputerName = "(localdb)";
+                    else
+                        _ComputerName = tempComputerName;
                     if ((tempInstanceName.ToLower() != "default") && (tempInstanceName.ToLower() != "mssqlserver"))
                         _InstanceName = tempInstanceName;
                 }
@@ -433,6 +453,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         public DbaInstanceParameter(IPAddress Address)
         {
             _ComputerName = Address.ToString();
+            InputObject = Address;
         }
 
         /// <summary>
@@ -442,6 +463,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         public DbaInstanceParameter(PingReply Ping)
         {
             _ComputerName = Ping.Address.ToString();
+            InputObject = Ping;
         }
 
         /// <summary>
@@ -451,6 +473,38 @@ namespace Sqlcollaborative.Dbatools.Parameter
         public DbaInstanceParameter(IPHostEntry Entry)
         {
             _ComputerName = Entry.HostName;
+            InputObject = Entry;
+        }
+
+        /// <summary>
+        /// Creates a DBA Instance Parameter from an established SQL Connection
+        /// </summary>
+        /// <param name="Connection">The connection to reuse</param>
+        public DbaInstanceParameter(System.Data.SqlClient.SqlConnection Connection)
+        {
+            InputObject = Connection;
+            DbaInstanceParameter tempParam = new DbaInstanceParameter(Connection.DataSource);
+
+            _ComputerName = tempParam.ComputerName;
+            if (tempParam.InstanceName != "MSSQLSERVER")
+            {
+                _InstanceName = tempParam.InstanceName;
+            }
+            if (tempParam.Port != 1433)
+            {
+                _Port = tempParam.Port;
+            }
+            _NetworkProtocol = tempParam.NetworkProtocol;
+        }
+
+        /// <summary>
+        /// Accept and understand discovery reports.
+        /// </summary>
+        /// <param name="Report">The report to interpret</param>
+        public DbaInstanceParameter(Discovery.DbaInstanceReport Report)
+            : this(Report.SqlInstance)
+        {
+            InputObject = Report;
         }
 
         /// <summary>
@@ -476,8 +530,15 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 case "microsoft.sqlserver.management.smo.server":
                     try
                     {
-                        if (tempInput.Properties["NetName"] != null) { _ComputerName = (string)tempInput.Properties["NetName"].Value; }
-                        else { _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["DomainInstanceName"].Value)).ComputerName; }
+                        if (tempInput.Properties["ServerType"] != null && (string)tempInput.Properties["ServerType"].Value.ToString() == "SqlAzureDatabase")
+                            _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["Name"].Value)).ComputerName;
+                        else
+                        { 
+                            if (tempInput.Properties["NetName"] != null)
+                                _ComputerName = (string)tempInput.Properties["NetName"].Value;
+                            else
+                                _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["DomainInstanceName"].Value)).ComputerName;
+                        }
                         _InstanceName = (string)tempInput.Properties["InstanceName"].Value;
                         PSObject tempObject = new PSObject(tempInput.Properties["ConnectionContext"].Value);
 

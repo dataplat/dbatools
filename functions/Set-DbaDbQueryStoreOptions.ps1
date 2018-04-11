@@ -1,93 +1,94 @@
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Set-DbaDbQueryStoreOptions {
     <#
-		.SYNOPSIS
-			Configure Query Store settings for a specific or multiple databases.
+        .SYNOPSIS
+            Configure Query Store settings for a specific or multiple databases.
 
-		.DESCRIPTION
-			Configure Query Store settings for a specific or multiple databases.
+        .DESCRIPTION
+            Configure Query Store settings for a specific or multiple databases.
 
-		.PARAMETER SqlInstance
-			The SQL Server that you're connecting to.
+        .PARAMETER SqlInstance
+            The SQL Server that you're connecting to.
 
-		.PARAMETER SqlCredential
-			SqlCredential object used to connect to the SQL Server as a different user.
+        .PARAMETER SqlCredential
+            SqlCredential object used to connect to the SQL Server as a different user.
 
-		.PARAMETER Database
-			The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        .PARAMETER Database
+            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-		.PARAMETER ExcludeDatabase
-			The database(s) to exclude - this list is auto-populated from the server
+        .PARAMETER ExcludeDatabase
+            The database(s) to exclude - this list is auto-populated from the server
 
-		.PARAMETER AllDatabases
-			Run command against all user databases
+        .PARAMETER AllDatabases
+            Run command against all user databases
 
-		.PARAMETER State
-			Set the state of the Query Store. Valid options are "ReadWrite", "ReadOnly" and "Off".
+        .PARAMETER State
+            Set the state of the Query Store. Valid options are "ReadWrite", "ReadOnly" and "Off".
 
-		.PARAMETER FlushInterval
-			Set the flush to disk interval of the Query Store in seconds.
+        .PARAMETER FlushInterval
+            Set the flush to disk interval of the Query Store in seconds.
 
-		.PARAMETER CollectionInterval
-			Set the runtime statistics collection interval of the Query Store in minutes.
+        .PARAMETER CollectionInterval
+            Set the runtime statistics collection interval of the Query Store in minutes.
 
-		.PARAMETER MaxSize
-			Set the maximum size of the Query Store in MB.
+        .PARAMETER MaxSize
+            Set the maximum size of the Query Store in MB.
 
-		.PARAMETER CaptureMode
-			Set the query capture mode of the Query Store. Valid options are "Auto" and "All".
+        .PARAMETER CaptureMode
+            Set the query capture mode of the Query Store. Valid options are "Auto" and "All".
 
-		.PARAMETER CleanupMode
-			Set the query cleanup mode policy. Valid options are "Auto" and "Off".
+        .PARAMETER CleanupMode
+            Set the query cleanup mode policy. Valid options are "Auto" and "Off".
 
-		.PARAMETER StaleQueryThreshold
-			Set the stale query threshold in days.
+        .PARAMETER StaleQueryThreshold
+            Set the stale query threshold in days.
 
-		.PARAMETER WhatIf
-			Shows what would happen if the command were to run
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run
 
-		.PARAMETER Confirm
-			Prompts for confirmation of every step. For example:
+        .PARAMETER Confirm
+            Prompts for confirmation of every step. For example:
 
-			Are you sure you want to perform this action?
-			Performing the operation "Changing Desired State" on target "pubs on SQL2016\VNEXT".
-			[Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
+            Are you sure you want to perform this action?
+            Performing the operation "Changing Desired State" on target "pubs on SQL2016\VNEXT".
+            [Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
 
-		.PARAMETER EnableException
-			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
-		.NOTES
-			Tags: QueryStore
-			Author: Enrico van de Laar ( @evdlaar )
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-			Website: https://dbatools.io
-			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .NOTES
+            Tags: QueryStore
+            Author: Enrico van de Laar ( @evdlaar )
 
-		.LINK
-			https://dbatools.io/Set-DbaQueryStoreOptions
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-		.EXAMPLE
-			Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode All -CleanupMode Auto -StaleQueryThreshold 100 -AllDatabases
+        .LINK
+            https://dbatools.io/Set-DbaQueryStoreOptions
 
-			Configure the Query Store settings for all user databases in the ServerA\SQL Instance.
+        .EXAMPLE
+            Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode All -CleanupMode Auto -StaleQueryThreshold 100 -AllDatabases
 
-		.EXAMPLE
-			Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -FlushInterval 600
+            Configure the Query Store settings for all user databases in the ServerA\SQL Instance.
 
-			Only configure the FlushInterval setting for all Query Store databases in the ServerA\SQL Instance.
+        .EXAMPLE
+            Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -FlushInterval 600
 
-		.EXAMPLE
-			Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -Database AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
+            Only configure the FlushInterval setting for all Query Store databases in the ServerA\SQL Instance.
 
-			Configure the Query Store settings for the AdventureWorks database in the ServerA\SQL Instance.
+        .EXAMPLE
+            Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -Database AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
 
-		.EXAMPLE
-			Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -Exclude AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
+            Configure the Query Store settings for the AdventureWorks database in the ServerA\SQL Instance.
 
-			Configure the Query Store settings for all user databases except the AdventureWorks database in the ServerA\SQL Instance.
-	#>
+        .EXAMPLE
+            Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -Exclude AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
+
+            Configure the Query Store settings for all user databases except the AdventureWorks database in the ServerA\SQL Instance.
+    #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -97,7 +98,7 @@ function Set-DbaDbQueryStoreOptions {
         [PSCredential]
         $SqlCredential,
         [Alias("Databases")]
-		[object[]]$Database,
+        [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$AllDatabases,
         [ValidateSet('ReadWrite', 'ReadOnly', 'Off')]
@@ -110,10 +111,11 @@ function Set-DbaDbQueryStoreOptions {
         [ValidateSet('Auto', 'Off')]
         [string[]]$CleanupMode,
         [int64]$StaleQueryThreshold,
-		[switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
-        $ExcludeDatabase += 'master','tempdb'
+        $ExcludeDatabase += 'master', 'tempdb'
     }
 
     process {
@@ -138,31 +140,30 @@ function Set-DbaDbQueryStoreOptions {
             }
 
             # We have to exclude all the system databases since they cannot have the Query Store feature enabled
-			$dbs = Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -ExcludeDatabase $ExcludeDatabase |
-                Where-Object { ($_.Name -in $Database -or !$Database) }
+            $dbs = Get-DbaDatabase -SqlInstance $server -ExcludeDatabase $ExcludeDatabase -Database $Database | Where-Object IsAccessible
 
-			foreach ($db in $dbs) {
+            foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.name) on $instance"
 
                 if ($db.IsAccessible -eq $false) {
                     Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
-                    Continue
-				}
-								
-				if ($State) {
+                    continue
+                }
+
+                if ($State) {
                     if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing DesiredState to $state")) {
-						$db.QueryStoreOptions.DesiredState = $State
-						$db.QueryStoreOptions.Alter()
-						$db.QueryStoreOptions.Refresh()
+                        $db.QueryStoreOptions.DesiredState = $State
+                        $db.QueryStoreOptions.Alter()
+                        $db.QueryStoreOptions.Refresh()
                     }
                 }
-				
-				if ($db.QueryStoreOptions.DesiredState -eq "Off" -and (Test-Bound -Parameter State -Not)) {
-					Write-Message -Level Warning -Message "State is set to Off; cannot change values. Please update State to ReadOnly or ReadWrite."
-					Continue
-				}
-				
-				if ($FlushInterval) {
+
+                if ($db.QueryStoreOptions.DesiredState -eq "Off" -and (Test-Bound -Parameter State -Not)) {
+                    Write-Message -Level Warning -Message "State is set to Off; cannot change values. Please update State to ReadOnly or ReadWrite."
+                    continue
+                }
+
+                if ($FlushInterval) {
                     if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing DataFlushIntervalInSeconds to $FlushInterval")) {
                         $db.QueryStoreOptions.DataFlushIntervalInSeconds = $FlushInterval
                     }
@@ -192,7 +193,7 @@ function Set-DbaDbQueryStoreOptions {
                     }
                 }
 
-				if ($StaleQueryThreshold) {
+                if ($StaleQueryThreshold) {
                     if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing StaleQueryThresholdInDays to $StaleQueryThreshold")) {
                         $db.QueryStoreOptions.StaleQueryThresholdInDays = $StaleQueryThreshold
                     }
@@ -201,8 +202,8 @@ function Set-DbaDbQueryStoreOptions {
                 # Alter the Query Store Configuration
                 if ($Pscmdlet.ShouldProcess("$db on $instance", "Altering Query Store configuration on database")) {
                     try {
-						$db.QueryStoreOptions.Alter()
-						$db.Alter()
+                        $db.QueryStoreOptions.Alter()
+                        $db.Alter()
                         $db.Refresh()
                     }
                     catch {

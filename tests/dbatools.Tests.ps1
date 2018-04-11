@@ -1,17 +1,8 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $Path = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ModulePath = (get-item $Path ).parent.FullName
+$ModulePath = (Get-Item $Path).Parent.FullName
 $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
-$ManifestPath   = "$ModulePath\$ModuleName.psd1"
-
-Describe 'dbatools module test' -Tag 'Compliance' {
-	Context 'Doing something awesome' {
-		It 'It should have tests' {
-			$true | Should be $true
-		}
-	}
-}
-
+#$ManifestPath = "$ModulePath\$ModuleName.psd1"
 
 Describe "$ModuleName Aliases" -tag Build , Aliases {
     ## Get the Aliases that should be set from the psm1 file
@@ -25,9 +16,41 @@ Describe "$ModuleName Aliases" -tag Build , Aliases {
             $Definition = (Get-Alias $Alias).Definition
             It "$Alias Alias should exist" {
                 Get-Alias $Alias| Should Not BeNullOrEmpty
-            }   
+            }
             It "$Alias Aliased Command $Definition Should Exist" {
                 Get-Command $Definition -ErrorAction SilentlyContinue | Should Not BeNullOrEmpty
+            }
+        }
+    }
+}
+
+Describe "$ModuleName indentation" -Tag 'Compliance' {
+    $AllFiles = Get-ChildItem -Path $ModulePath -File -Recurse  -Filter '*.ps*1'
+
+    foreach ($f in $AllFiles) {
+        $LeadingTabs = Select-String -Path $f -Pattern '^[\t]+'
+        if ($LeadingTabs.Count -gt 0) {
+            It "$f is not indented with tabs (line(s) $($LeadingTabs.LineNumber -join ','))" {
+                $LeadingTabs.Count | Should Be 0
+            }
+        }
+        $TrailingSpaces = Select-String -Path $f -Pattern '([^ \t\r\n])[ \t]+$'
+        if ($TrailingSpaces.Count -gt 0) {
+            It "$f has no trailing spaces (line(s) $($TrailingSpaces.LineNumber -join ','))" {
+                $TrailingSpaces.Count | Should Be 0
+            }
+        }
+    }
+}
+
+Describe "$ModuleName ScriptAnalyzerErrors" -Tag 'Compliance' {
+    $ScriptAnalyzerErrors = @()
+    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModuleBase\functions" -Severity Error
+    $ScriptAnalyzerErrors += Invoke-ScriptAnalyzer -Path "$ModuleBase\internal\functions" -Severity Error
+    if ($ScriptAnalyzerErrors.Count -gt 0) {
+        foreach($err in $ScriptAnalyzerErrors) {
+            It "$($err.scriptName) has Error(s) : $($err.RuleName)" {
+                $err.Message | Should Be $null
             }
         }
     }
@@ -59,7 +82,7 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 
 
 
-	It "has a valid root module" {
+    It "has a valid root module" {
 
         $Script:Manifest.RootModule | Should Be "$ModuleName.psm1"
 
@@ -67,58 +90,58 @@ $Script:Manifest = Test-ModuleManifest -Path $ManifestPath -ErrorAction Silently
 
 
 
-	It "has a valid Description" {
+    It "has a valid Description" {
 
         $Script:Manifest.Description | Should Be 'Provides extra functionality for SQL Server Database admins and enables SQL Server instance migrations.'
 
     }
 
-	It "has a valid Author" {
-		$Script:Manifest.Author | Should Be 'Chrissy LeMaire'
-	}
+    It "has a valid Author" {
+        $Script:Manifest.Author | Should Be 'Chrissy LeMaire'
+    }
 
-	It "has a valid Company Name" {
-		$Script:Manifest.CompanyName | Should Be 'dbatools.io'
-	}
+    It "has a valid Company Name" {
+        $Script:Manifest.CompanyName | Should Be 'dbatools.io'
+    }
     It "has a valid guid" {
 
         $Script:Manifest.Guid | Should Be '9d139310-ce45-41ce-8e8b-d76335aa1789'
 
     }
-	It "has valid PowerShell version" {
-		$Script:Manifest.PowerShellVersion | Should Be '3.0'
-	}
+    It "has valid PowerShell version" {
+        $Script:Manifest.PowerShellVersion | Should Be '3.0'
+    }
 
-	It "has valid  required assemblies" {
-		{$Script:Manifest.RequiredAssemblies -eq @()} | Should Be $true
-	}
+    It "has valid  required assemblies" {
+        {$Script:Manifest.RequiredAssemblies -eq @()} | Should Be $true
+    }
 
-	It "has a valid copyright" {
+    It "has a valid copyright" {
 
-		$Script:Manifest.CopyRight | Should BeLike '* Chrissy LeMaire'
+        $Script:Manifest.CopyRight | Should BeLike '* Chrissy LeMaire'
 
-	}
+    }
 
 
 
  # Don't want this just yet
 
-	It 'exports all public functions' {
+    It 'exports all public functions' {
 
-		$FunctionFiles = Get-ChildItem "$ModulePath\functions" -Filter *.ps1 | Select-Object -ExpandProperty BaseName
+        $FunctionFiles = Get-ChildItem "$ModulePath\functions" -Filter *.ps1 | Select-Object -ExpandProperty BaseName
 
-		$FunctionNames = $FunctionFiles
+        $FunctionNames = $FunctionFiles
 
-		$ExFunctions = $Script:Manifest.ExportedFunctions.Values.Name
-		$ExFunctions
-		foreach ($FunctionName in $FunctionNames)
+        $ExFunctions = $Script:Manifest.ExportedFunctions.Values.Name
+        $ExFunctions
+        foreach ($FunctionName in $FunctionNames)
 
-		{
+        {
 
-			$ExFunctions -contains $FunctionName | Should Be $true
+            $ExFunctions -contains $FunctionName | Should Be $true
 
-		}
+        }
 
-	}
+    }
 }
 #>

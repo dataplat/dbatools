@@ -1,0 +1,50 @@
+﻿TOPIC
+	about_dbatools
+	
+SHORT DESCRIPTION
+	Gives on overview over the advanced dbatools topics
+	
+LONG DESCRIPTION
+	Welcome to the dbatools help central.
+	This guide tries to show you how to best get help.
+	
+	Over the project's lifetime, dbatools has grown explosively and many
+	features were added to cope with the sheer scale of this project. Thus,
+	dbatools has become highly complex as far as a PowerShell module goes. With
+	great complexity comes a great need for documentation.
+	Which is where this article comes in.
+	
+	
+	#-------------------------------------------------------------------------#
+	#                           Table of Contents                             #
+	#-------------------------------------------------------------------------#
+
+	- Getting Help
+	- Import Options
+	
+	
+	#-------------------------------------------------------------------------#
+	#                              Getting Help                               #
+	#-------------------------------------------------------------------------#
+	
+	When something breaks unexpectedly, you'll probably want help. We have put
+	together a guide to help you through our process:
+	
+	  Get-Help about_dbatools_support
+	
+	
+	#-------------------------------------------------------------------------#
+	#                             Import Options                              #
+	#-------------------------------------------------------------------------#
+	
+	When designing the way the module is imported, we had to make several trade-
+	offs. Not every decision we made is always the right way for everybody
+	however, so we set up some options that let you decide, which way you
+	prefer. Basically, we had to balance import time vs. security policies and
+	resource cost. This guide explains what the settings do and how to set them:
+	
+	  Get-Help about_dbatools_importoptions
+	
+	
+KEYWORDS
+	dbatools general

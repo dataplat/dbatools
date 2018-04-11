@@ -11,20 +11,20 @@ function Remove-DbaCmConnection {
     Accepts both text as well as the output of Get-DbaCmConnection.
 
     .PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
-	.NOTES
-	Author: Fred Winmann (@FredWeinmann)
-	Tags: ComputerManagement
-	
-	Website: https://dbatools.io
-	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-	.LINK
-	https://dbatools.io/Remove-DbaCmConnection
+    .NOTES
+    Author: Fred Winmann (@FredWeinmann)
+    Tags: ComputerManagement
+
+    Website: https://dbatools.io
+    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+    License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+    https://dbatools.io/Remove-DbaCmConnection
 
     .EXAMPLE
     Remove-DbaCmConnection -ComputerName sql2014

@@ -1,5 +1,5 @@
-Function Get-DbaDatabaseMasterKey {
-	<#
+function Get-DbaDatabaseMasterKey {
+    <#
 .SYNOPSIS
 Gets specified database master key
 
@@ -25,16 +25,16 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command
 
 .PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 .NOTES
 Tags: Certificate, Databases
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
 Get-DbaDatabaseMasterKey -SqlInstance sql2016
@@ -47,56 +47,57 @@ Get-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1
 Gets the master key for the db1 database
 
 #>
-	[CmdletBinding()]
-	param (
-		[parameter(Mandatory, ValueFromPipeline)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[switch][Alias('Silent')]$EnableException
-	)
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
+        [Alias('Silent')]
+        [switch]$EnableException
+    )
 
-	process {
-		foreach ($instance in $SqlInstance) {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-			
-			$databases = $server.Databases
-			
-			if ($Database) {
-				$databases = $databases | Where-Object Name -In $Database
-			}
-			if ($ExcludeDatabase) {
-				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-			}
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance"
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-			foreach ($db in $databases) {
-				if (!$db.IsAccessible) {
-					Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
-					continue
-				}
+            $databases = $server.Databases | Where-Object IsAccessible
 
-				$masterkey = $db.MasterKey
+            if ($Database) {
+                $databases = $databases | Where-Object Name -In $Database
+            }
+            if ($ExcludeDatabase) {
+                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+            }
 
-				if (!$masterkey) {
-					Write-Message -Message "No master key exists in the $db database on $instance" -Target $db -Level Verbose
-					continue
-				}
+            foreach ($db in $databases) {
+                if (!$db.IsAccessible) {
+                    Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
+                    continue
+                }
 
-				Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-				Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $db.Name
+                $masterkey = $db.MasterKey
 
-				Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
-			}
-		}
-	}
+                if (!$masterkey) {
+                    Write-Message -Message "No master key exists in the $db database on $instance" -Target $db -Level Verbose
+                    continue
+                }
+
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $db.Name
+
+                Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
+            }
+        }
+    }
 }
