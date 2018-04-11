@@ -322,14 +322,6 @@ namespace Sqlcollaborative.Dbatools.Utility
             return new Size((double)a);
         }
 
-        // <summary>
-        // Implicitly converts size to double
-        // </summary>
-        // <param name="a">The size to convert</param>
-     //   public static implicit operator double(Size a)
-     //   {
-        //    return a.Byte;
-       // }
         #endregion Operators
     }
 }
