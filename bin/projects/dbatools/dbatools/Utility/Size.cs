@@ -11,7 +11,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <summary>
         /// Number of bytes contained in whatever object uses this object as a property
         /// </summary>
-        public long Byte { get; set; }
+        public double  Byte { get; set; }
 
         /// <summary>
         /// Kilobyte representation of the bytes
@@ -168,7 +168,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// Creates a size with some content
         /// </summary>
         /// <param name="Byte">The length in bytes to set the size to</param>
-        public Size(long Byte)
+        public Size(double Byte)
         {
             this.Byte = Byte;
         }
@@ -299,7 +299,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// Implicitly converts size to long
         /// </summary>
         /// <param name="a">The size to convert</param>
-        public static implicit operator Int64(Size a)
+        public static implicit operator double(Size a)
         {
             return a.Byte;
         }
@@ -319,17 +319,17 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <param name="a">The number to convert</param>
         public static implicit operator Size(double a)
         {
-            return new Size((long)a);
+            return new Size((double)a);
         }
 
-        /// <summary>
-        /// Implicitly converts size to double
-        /// </summary>
-        /// <param name="a">The size to convert</param>
-        public static implicit operator double(Size a)
-        {
-            return a.Byte;
-        }
+        // <summary>
+        // Implicitly converts size to double
+        // </summary>
+        // <param name="a">The size to convert</param>
+     //   public static implicit operator double(Size a)
+     //   {
+        //    return a.Byte;
+       // }
         #endregion Operators
     }
 }
