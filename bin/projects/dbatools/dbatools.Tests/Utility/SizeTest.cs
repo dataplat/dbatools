@@ -185,5 +185,26 @@ namespace Sqlcollaborative.Dbatools.Utility
             var size = new Size(-2);
             Assert.AreEqual("", size.ToString());
         }
+
+        [TestMethod]
+        public void TestLargeDecimal()
+        {
+            Size size = 1000000000000000m;
+            Assert.AreEqual(909, size.Terabyte, 0.9);
+            Assert.AreEqual(953674316, size.Megabyte, 0.9);
+            Assert.AreEqual("909.49 TB", size.ToString());
+            decimal reverse = size;
+            Assert.AreEqual(1000000000000000m, reverse);
+        }
+
+        [TestMethod]
+        public void TestLargeDouble()
+        {
+            Size size = 1000000000000000d;
+            Assert.AreEqual(909, size.Terabyte, 0.9);
+            Assert.AreEqual("909.49 TB", size.ToString());
+            double reverse = size;
+            Assert.AreEqual(1000000000000000d, reverse);
+        }
     }
 }
