@@ -274,7 +274,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <param name="a">The number to convert</param>
         public static implicit operator Size(decimal a)
         {
-            return new Size((int)a);
+            return new Size((long)a);
         }
 
         /// <summary>
