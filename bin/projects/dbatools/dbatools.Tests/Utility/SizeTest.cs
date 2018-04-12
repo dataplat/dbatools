@@ -15,7 +15,7 @@ namespace Sqlcollaborative.Dbatools.Utility
             // Make sure the defaults come from the utility host.
             Assert.AreEqual(UtilityHost.SizeStyle, size.Style);
             Assert.AreEqual(UtilityHost.SizeDigits, size.Digits);
-            // Make sure the defautl are what we explicitly what we expect them to be.
+            // Make sure the default are what we explicitly what we expect them to be.
             Assert.AreEqual(SizeStyle.Dynamic, size.Style);
             Assert.AreEqual(2, size.Digits);
         }
@@ -24,14 +24,14 @@ namespace Sqlcollaborative.Dbatools.Utility
         public void TestGetHash()
         {
             var size = 10234453626262624;
-            var byteSize = new Size(size);
+            var byteSize = size ;
             Assert.AreEqual(size.GetHashCode(), byteSize.GetHashCode());
         }
-        
+
         [TestMethod]
         public void TestCompareToObjOfSize()
         {
-            var sizes = new Object[] { new Size(42), new Size(56), new Size(42)};
+            var sizes = new Object[] { new Size(42), new Size(56), new Size(42) };
             Assert.AreEqual(-1, ((Size)sizes[0]).CompareTo(sizes[1]));
             Assert.AreEqual(0, ((Size)sizes[0]).CompareTo(sizes[2]));
             Assert.AreEqual(1, ((Size)sizes[1]).CompareTo(sizes[2]));
@@ -46,38 +46,70 @@ namespace Sqlcollaborative.Dbatools.Utility
             Assert.AreEqual(1, sizes[1].CompareTo(sizes[2].Byte));
         }
 
+        [DataRow(42u, 56u)]
+        [DataRow(10000u, 2500000u)]
+        [DataRow(2u, 7u)]
         [TestMethod]
-        public void TestCompareToObjOfUInt()
+        public void TestCompareToObjOfUInt(uint a, uint b)
         {
-            var sizes = new[] { new Size(42), new Size(56), new Size(42) };
-            Assert.AreEqual(-1, sizes[0].CompareTo(56u));
-            Assert.AreEqual(0, sizes[0].CompareTo(42u));
-            Assert.AreEqual(1, sizes[1].CompareTo(42u));
+            Assert.IsTrue(a < b, $"Invalid test data, A ({a}) should be less than B ({b})");
+            var sizes = new[] { (Size)a, (Size)b, (Size)a };
+            Assert.AreEqual(-1, sizes[0].CompareTo(b));
+            Assert.AreEqual(0, sizes[0].CompareTo(a));
+            Assert.AreEqual(1, sizes[1].CompareTo(a));
+        }
+
+        [DataRow(42, 56)]
+        [DataRow(10000, 2500000)]
+        [DataRow(2, 7)]
+        [TestMethod]
+        public void TestCompareToObjOfDecimal(int a, int b)
+        {
+            Assert.IsTrue(a < b, $"Invalid test data, A ({a}) should be less than B ({b})");
+            var sizes = new[] { (Size)(decimal)a, (Size)(decimal)b, (Size)(decimal)a };
+            Assert.AreEqual(-1, sizes[0].CompareTo((decimal)b));
+            Assert.AreEqual(0, sizes[0].CompareTo((decimal)a));
+            Assert.AreEqual(1, sizes[1].CompareTo((decimal)a));
+        }
+
+        [DataRow(42d, 56d)]
+        [DataRow(10000d, 2500000d)]
+        [DataRow(2d, 7d)]
+        [TestMethod]
+        public void TestCompareToObjOfDouble(double a, double b)
+        {
+            Assert.IsTrue(a < b, $"Invalid test data, A ({a}) should be less than B ({b})");
+            var sizes = new [] { (Size)a, (Size)b, (Size)a };
+            Assert.AreEqual(-1, sizes[0].CompareTo(b));
+            Assert.AreEqual(0, sizes[0].CompareTo(a));
+            Assert.AreEqual(1, sizes[1].CompareTo(a));
         }
 
         [TestMethod]
-        public void TestCompareToObjOfDecimal()
+        [ExpectedException(typeof(ArgumentException))]
+        public void TestCompareToObjOfInvalid()
         {
-            var sizes = new[] { new Size(42), new Size(56), new Size(42) };
-            Assert.AreEqual(-1, sizes[0].CompareTo(56m));
-            Assert.AreEqual(0, sizes[0].CompareTo(42m));
-            Assert.AreEqual(1, sizes[1].CompareTo(42m));
+            var size = new Size();
+            try
+            {
+                size.CompareTo(Guid.Empty);
+            }
+            catch (ArgumentException ex)
+            {
+                Assert.AreEqual("Cannot compare a Sqlcollaborative.Dbatools.Utility.Size to a System.Guid", ex.Message);
+                throw;
+            }
         }
 
-        [TestMethod]
-        public void TestCompareToObjOfDouble()
-        {
-            var sizes = new[] { new Size(42), new Size(56), new Size(42) };
-            Assert.AreEqual(-1, sizes[0].CompareTo(56D));
-            Assert.AreEqual(0, sizes[0].CompareTo(42D));
-            Assert.AreEqual(1, sizes[1].CompareTo(42D));
-        }
 
-
+        [DataRow(42, 56)]
+        [DataRow(10000, 2500000)]
+        [DataRow(2, 7)]
         [TestMethod]
-        public void TestCompareToSize()
+        public void TestCompareToSize(int a, int b)
         {
-            var sizes = new[] { new Size(42), new Size(56), new Size(42)};
+            Assert.IsTrue(a < b, $"Invalid test data, A ({a}) should be less than B ({b})");
+            var sizes = new[] { new Size(a), new Size(b), new Size(a)};
             Assert.AreEqual(-1, sizes[0].CompareTo(sizes[1]));
             Assert.AreEqual(0, sizes[0].CompareTo(sizes[2]));
             Assert.AreEqual(1, sizes[1].CompareTo(sizes[2]));
@@ -205,6 +237,30 @@ namespace Sqlcollaborative.Dbatools.Utility
             Assert.AreEqual("909.49 TB", size.ToString());
             double reverse = size;
             Assert.AreEqual(1000000000000000d, reverse);
+        }
+
+        [TestMethod]
+        public void TestInt32Cast()
+        {
+            int iSize = 1000000000;
+            Size size = iSize;
+            Assert.AreEqual(iSize, size.Byte);
+            Assert.AreEqual(953, size.Megabyte, 0.9);
+            Assert.AreEqual("953.67 MB", size.ToString());
+            int reverse = size;
+            Assert.AreEqual(1000000000, reverse);
+        }
+
+        [DataRow(1)]
+        [DataRow(50)]
+        [DataRow(230)]
+        [DataRow(53687091200)] // 50 GB
+        [DataRow(1000000000000000)]
+        [TestMethod]
+        public void TestGetHashCode(long iSize)
+        {
+            var size = new Size(iSize);
+            Assert.AreEqual(iSize.GetHashCode(), size.GetHashCode());
         }
     }
 }
