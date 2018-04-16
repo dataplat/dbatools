@@ -82,6 +82,11 @@ function Backup-DbaDatabase {
             .PARAMETER NoRecovery
                 This is passed in to perform a tail log backup if needed
 
+            .PARAMETER IgnoreFileCheck
+                This switch witll bypass the checks for files and filepaths.
+                Usefull if server only has write to backup location. 
+                Note, that this means you have to be sure the paths are correct, and that we're not clobbering anything important!
+
             .PARAMETER EnableException
                 By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
                 This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -142,6 +147,7 @@ function Backup-DbaDatabase {
         [string]$AzureBaseUrl,
         [string]$AzureCredential,
         [switch]$NoRecovery,
+        [switch]$IgnoreFileCheck,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -319,13 +325,15 @@ function Backup-DbaDatabase {
 
                 Write-Message -Level Verbose -Message "Single db and filename"
 
-                if (Test-DbaSqlPath -SqlInstance $server -Path (Split-Path $BackupFileName)) {
-                    $FinalBackupPath += $BackupFileName
-                }
-                else {
-                    $failreason = "SQL Server cannot write to the location $(Split-Path $BackupFileName)"
-                    $failures += $failreason
-                    Write-Message -Level Warning -Message "$failreason"
+                if ($true -ne $IgnoreFileCheck){
+                    if (Test-DbaSqlPath -SqlInstance $server -Path (Split-Path $BackupFileName)) {
+                        $FinalBackupPath += $BackupFileName
+                    }
+                    else {
+                        $failreason = "SQL Server cannot write to the location $(Split-Path $BackupFileName)"
+                        $failures += $failreason
+                        Write-Message -Level Warning -Message "$failreason"
+                    }
                 }
             }
             else {
