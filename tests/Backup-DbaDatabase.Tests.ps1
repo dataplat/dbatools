@@ -54,6 +54,27 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
+    Context "Should take path and filename" {
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master -BackupFileName 'PesterTest.bak'
+        It "Should report it has backed up to the path with the corrrect name"{
+            $results.Fullname | Should BeLike "$DestBackupDir*PesterTest.bak"
+        }
+        It "Should have backed up to the path with the corrrect name"{
+            Test-Path "$DestBackupDir\PesterTest.bak" | Should Be $true
+        }
+    }
+
+    Context "Should Backup to default path if none specified" {
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName 'PesterTest.bak'
+        $DefaultPath = (Get-DbaDefaultPath -SqlInstance $script:instance1).Backup
+        It "Should report it has backed up to the path with the corrrect name"{
+            $results.Fullname | Should BeLike "$DefaultPath*PesterTest.bak"
+        }
+        It "Should have backed up to the path with the corrrect name"{
+            Test-Path "$DefaultPath\PesterTest.bak" | Should Be $true
+        }
+    }
+
     Context "Backup can pipe to restore" {
         $null = Restore-DbaDatabase -SqlServer $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName "dbatoolsci_singlerestore"
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database "dbatoolsci_singlerestore" | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName $DestDbRandom -TrustDbBackupHistory -ReplaceDbNameInFile
