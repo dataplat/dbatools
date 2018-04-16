@@ -84,7 +84,7 @@ function Backup-DbaDatabase {
 
             .PARAMETER IgnoreFileCheck
                 This switch witll bypass the checks for files and filepaths.
-                Usefull if server only has write to backup location. 
+                Usefull if server only has write to backup location.
                 Note, that this means you have to be sure the paths are correct, and that we're not clobbering anything important!
 
             .PARAMETER EnableException
