@@ -91,7 +91,7 @@ END
         Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteDacConnectionsEnabled -Value 0
 
         It "Should throw error" {
-                Invoke-DbaDecryptDatabaseObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunctionStoredProcedure
+                Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunctionStoredProcedure
                 $error[0].Exception | Should -BeLike "*DAC is not enabled for instance*"
         }
 
@@ -100,7 +100,7 @@ END
 
     Context "Decrypt Function" {
         It "Should be successful" {
-            $result = Invoke-DbaDecryptDatabaseObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunction
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunction
             $result
             $result.Script | Should Be $queryFunction
 
@@ -109,7 +109,7 @@ END
 
     Context "Decrypt Stored Procedure" {
         It "Should be successful" {
-            $result = Invoke-DbaDecryptDatabaseObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunctionStoredProcedure
+            $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunctionStoredProcedure
             $result
             $result.Script | Should Be $queryStoredProcedure
 
