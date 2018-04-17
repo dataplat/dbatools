@@ -1,6 +1,6 @@
 <#
     .SYNOPSIS
-        Invoke-DbaDecryptDatabaseObject returns the decrypted version of an object
+        Invoke-DbaDbDecryptObject returns the decrypted version of an object
 
     .DESCRIPTION
         When a procedure or a function is created with encryption and you lost the code you're in trouble.
@@ -44,9 +44,6 @@
         Used for exporting the results to.
         The destiation will use the instance name, database name and object type i.e.: C:\temp\decrypt\SQLDB1\DB1\StoredProcedure
 
-    .PARAMETER Force
-        Used to forcefully create items like directories and files
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -67,30 +64,30 @@
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDecryptDatabaseObject
+        https://dbatools.io/Invoke-DbaDbDecryptObject
 
     .EXAMPLE
-    Invoke-DbaDecryptDatabaseObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1
+    Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1
 
     Decrypt objct "Function1" in DB1 of instance SQLDB1 and output the data to the user
 
     .EXAMPLE
-    Invoke-DbaDecryptDatabaseObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1 -Force -ExportDestination C:\temp\decrypt
+    Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1 -Force -ExportDestination C:\temp\decrypt
 
     Decrypt object "Function1" in DB1 of instance SQLDB1 and output the data to the folder "C:\temp\decrypt"
 
     .EXAMPLE
-    Invoke-DbaDecryptDatabaseObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1, Function2
+    Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1, Function2
 
     Decrypt objects "Function1" and "Function2" and output the data to the user
 
     .EXAMPLE
-    "SQLDB1" | Invoke-DbaDecryptDatabaseObject -Database DB1 -ObjectName Function1, Function2
+    "SQLDB1" | Invoke-DbaDbDecryptObject -Database DB1 -ObjectName Function1, Function2
 
     Decrypt objects "Function1" and "Function2" and output the data to the user using a pipeline for the instance
 
 #>
-function Invoke-DbaDecryptDatabaseObject {
+function Invoke-DbaDbDecryptObject {
     [CmdLetBinding()]
 
     param(
@@ -105,8 +102,7 @@ function Invoke-DbaDecryptDatabaseObject {
         [ValidateSet('ASCII', 'UTF8')]
         [string]$EncodingType = 'ASCII',
         [string]$ExportDestination,
-        [switch]$EnableException,
-        [switch]$Force
+        [switch]$EnableException
     )
 
     begin {
@@ -162,18 +158,13 @@ function Invoke-DbaDecryptDatabaseObject {
         }
 
         # Check the export parameter
-        if ($ExportDestination) {
-            if (-not (Test-Path $ExportDestination) -and -not $Force) {
-                Stop-Function -Message "The destination folder does not exist. Please user -Force to create it" -Target $instance -Continue
+        if ($ExportDestination -and -not (Test-Path $ExportDestination)) {
+            try {
+                # Create the new destination
+                New-Item -Path $ExportDestination -ItemType Directory -Force | Out-Null
             }
-            elseif (-not (Test-Path $ExportDestination) -and $Force) {
-                try {
-                    # Create the new destination
-                    New-Item -Path $ExportDestination -ItemType Directory -Force:$Force | Out-Null
-                }
-                catch {
-                    Stop-Function -Message "Couldn't create destination folder $ExportDestination" -ErrorRecord $_ -Target $instance -Continue
-                }
+            catch {
+                Stop-Function -Message "Couldn't create destination folder $ExportDestination" -ErrorRecord $_ -Target $instance -Continue
             }
         }
 
@@ -188,7 +179,7 @@ function Invoke-DbaDecryptDatabaseObject {
 
             # Check the configuration of the intance to see if the DAC is enabled
             $config = Get-DbaSpConfigure -SqlInstance $instance -ConfigName RemoteDacConnectionsEnabled
-            if($config.ConfiguredValue -ne 1){
+            if ($config.ConfiguredValue -ne 1) {
                 Stop-Function -Message "DAC is not enabled for instance $instance.`nPlease use 'Set-DbaSpConfigure -SqlInstance $instance -ConfigName RemoteDacConnectionsEnabled -Value 1' to configure the instance to allow DAC connections" -Target $instance -Continue
             }
 
@@ -322,7 +313,7 @@ function Invoke-DbaDecryptDatabaseObject {
 
                             # Export the result
                             try {
-                                $result | Out-File -FilePath $filePath
+                                $result | Out-File -FilePath $filePath -Force
                             }
                             catch {
                                 Stop-Function -Message "Couldn't export the results of $($object.Name) to $filePath" -ErrorRecord $_ -Target $instance -Continue
