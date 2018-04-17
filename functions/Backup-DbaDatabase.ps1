@@ -335,6 +335,9 @@ function Backup-DbaDatabase {
                         Write-Message -Level Warning -Message "$failreason"
                     }
                 }
+                else {
+                    $FinalBackupPath += $BackupFileName
+                }
             }
             else {
                 if (!$BackupDirectory) {
