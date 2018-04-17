@@ -336,6 +336,7 @@ function Backup-DbaDatabase {
                     }
                 }
                 else {
+                    Write-Message -Level Verbose -Message "Ignoring filechecks, backup may fail as we're not sure it even exists"
                     $FinalBackupPath += $BackupFileName
                 }
             }
