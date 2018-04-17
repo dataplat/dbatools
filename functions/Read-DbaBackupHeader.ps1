@@ -101,6 +101,12 @@ function Read-DbaBackupHeader {
     )
 
     begin {
+        foreach($p in $path) {
+            if ([System.IO.Path]::GetExtension($p).Length -eq 0) {
+                Stop-Function -Message "Path ($p) should be a file, not a folder" -Category InvalidArgument
+                return
+            }
+        }
         Write-Message -Level InternalComment -Message "Starting reading headers"
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
@@ -119,7 +125,7 @@ function Read-DbaBackupHeader {
             #Copy existing connection to create an independent TSQL session
             $server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance.ConnectionContext.Copy()
             $restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-            
+
             if ($DeviceType -eq 'URL') {
                 $restore.CredentialName = $AzureCredential
             }
@@ -150,7 +156,7 @@ function Read-DbaBackupHeader {
             $null = $dataTable.Columns.Add("SqlVersion")
 
             $null = $dataTable.Columns.Add("BackupPath")
-            
+
             foreach ($row in $dataTable) {
                 $row.BackupPath = $Path
                 $restore.FileNumber = $row.Position
@@ -163,7 +169,7 @@ function Read-DbaBackupHeader {
 
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         #Extract fullnames from the file system objects
         $pathStrings = @()
         foreach ($pathItem in $Path) {
@@ -176,13 +182,13 @@ function Read-DbaBackupHeader {
         }
         #Group by filename
         $pathGroup = $pathStrings | Group-Object -NoElement | Select-Object -ExpandProperty Name
-        
+
         $pathCount = ($pathGroup | Measure-Object).Count
         Write-Message -Level Verbose -Message "$pathCount unique files to scan."
         Write-Message -Level Verbose -Message "Checking accessibility for all the files."
-                
+
         $testPath = Test-DbaSqlPath -SqlInstance $server -Path $pathGroup
-        
+
         #Setup initial session state
         $InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
         #Create Runspace pool, min - 1, max - 10 sessions: there is internal SQL Server queue for the restore operations. 10 threads seem to perform best
@@ -190,7 +196,7 @@ function Read-DbaBackupHeader {
         $runspacePool.Open()
 
         $threads = @()
-        
+
         foreach ($file in $pathGroup) {
             if ($file -like 'http*') {
                 $deviceType = 'URL'
@@ -254,9 +260,9 @@ function Read-DbaBackupHeader {
                     #Process the result of this thread
 
                     $dbVersion = $dataTable[0].DatabaseVersion
-
+                    $SqlVersion = (Convert-DbVersionToSqlVersion $dbVersion)
                     foreach ($row in $dataTable) {
-                        $row.SqlVersion = (Convert-DbVersionToSqlVersion $dbVersion)
+                        $row.SqlVersion = $SqlVersion
                         if ($row.BackupName -eq "*** INCOMPLETE ***") {
                             Stop-Function -Message "$($thread.file) appears to be from a new version of SQL Server than $SqlInstance, skipping" -Target $thread.file -Continue
                         }
@@ -274,7 +280,7 @@ function Read-DbaBackupHeader {
                     $thread.thread.Dispose()
                 }
             }
-            Start-Sleep -Milliseconds 50
+            Start-Sleep -Milliseconds 500
         }
         #Close the runspace pool
         $runspacePool.Close()
