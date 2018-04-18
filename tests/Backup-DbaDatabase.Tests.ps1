@@ -77,19 +77,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     if ($env:APPVEYOR -eq 'True') {
         #This test doesn't play nice on domain joined machines that can't see their home domain, so only run on Appyveyor
         Context " backup to a write only folder with ignore filechecks" {
-            New-Item -ItemType Directory -Path "$DestBackupDir\WriteOnly"
-            $acl = Get-Acl "$DestBackupDir\WriteOnly"
+            $ReadOnlyFolder = "c:\temp\WriteOnly"
+            New-Item -ItemType Directory -Path $ReadOnlyFolder
+            $acl = Get-Acl $ReadOnlyFolder
             $perm = 'Everyone', 'Read', 'ContainerInherit, ObjectInherit', 'None', 'Deny'
             $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule $perm
             $acl.AddAccessRule($accessRule)
-            $acl | Set-Acl -Path "$DestBackupDir\WriteOnly"
+            $acl | Set-Acl -Path $ReadOnlyFolder
             It "Should fail without the switch" {
-                $results =  Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir\WriteOnly -ErrorVariable backuperrvar
+                $results =  Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $ReadOnlyFolder -ErrorVariable backuperrvar
                 ($null -eq $backuperrvar) | Should Be $false
                 ($null -eq $results) | Should Be $True
             }
             It "Should succeed with the switch" {
-                $results =  Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir\WriteOnly -ErrorVariable backuperrvar
+                $results =  Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $ReadOnlyFolder -ErrorVariable backuperrvar
                 ($null -eq $backuperrvar) | Should Be $True
                 ($null -eq $results) | Should Be $false
             }
