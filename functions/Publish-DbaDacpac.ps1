@@ -119,7 +119,7 @@ function Publish-DbaDacpac {
                 $instance = $builder['server']
             }
 
-            return $instance.ToString().Replace('\', '-')
+            return $instance.ToString().Replace('\', '-').Replace('(','').Replace(')','')
         }
         if (Test-Bound -Not -ParameterName 'DacfxPath'){
             $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
@@ -182,7 +182,7 @@ function Publish-DbaDacpac {
 
         foreach ($connstring in $ConnectionString) {
             $cleaninstance = Get-ServerName $connstring
-            $instance = $cleaninstance.ToString().Replace('--', '\')
+            $ins7tance = $cleaninstance.ToString().Replace('--', '\')
 
             foreach ($dbname in $database) {
                 if ($GenerateDeploymentScript -or $GenerateDeploymentReport) {
