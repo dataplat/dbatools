@@ -87,7 +87,7 @@ Doesn't Change the alert but shows what would happen.
     )
 
     begin {
-	}
+}
         process {
 
             if (Test-FunctionInterrupt) { return }
@@ -163,7 +163,7 @@ Doesn't Change the alert but shows what would happen.
                 }
             }
         }
-	}
+}
         {
             Write-Message -Message "Finished changing alert(s)" -Level Verbose
         }
