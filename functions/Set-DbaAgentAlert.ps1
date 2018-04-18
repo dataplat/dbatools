@@ -25,9 +25,6 @@ Enabled the alert.
 .PARAMETER Disabled
 Disabled the alert.
 
-.PARAMETER Category
-The category of the alert.
-
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 
@@ -82,7 +79,6 @@ Doesn't Change the alert but shows what would happen.
         [string]$NewName,
         [switch]$Enabled,
         [switch]$Disabled,
-        [string]$Category,
         [switch]$Force,
         [parameter(ValueFromPipeline = $true)]
         [Microsoft.SqlServer.Management.Smo.Agent.Alert[]]$InputObject,
@@ -91,114 +87,83 @@ Doesn't Change the alert but shows what would happen.
     )
 
     begin {
+	}
+        process {
 
-    process {
+            if (Test-FunctionInterrupt) { return }
 
-        if (Test-FunctionInterrupt) { return }
-
-        if ((-not $InputObject) -and (-not $Alert)) {
-            Stop-Function -Message "You must specify an alert name or pipe in results from another command" -Target $sqlinstance
-            return
-        }
-
-        foreach ($instance in $sqlinstance) {
-            # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            if ((-not $InputObject) -and (-not $Alert)) {
+                Stop-Function -Message "You must specify an alert name or pipe in results from another command" -Target $sqlinstance
+                return
             }
 
-            foreach ($a in $Alert) {
-
-                # Check if the alert exists
-                if ($server.JobServer.Alert.Name -notcontains $a) {
-                    Stop-Function -Message "Alert $a doesn't exists on $instance" -Target $instance
-                }
-                else {
-                    # Get the alert
-                    try {
-                        $InputObject += $server.JobServer.Alert[$a]
-
-                        # Refresh the object
-                        $InputObject.Refresh()
-                    }
-                    catch {
-                        Stop-Function -Message "Something went wrong retrieving the alert" -Target $a -ErrorRecord $_ -Continue
-                    }
-                }
-            }
-        }
-
-        foreach ($currentalert in $InputObject) {
-                $server = $currentalert.Parent.Parent
-
-            #region alert options
-            # Settings the options for the alert
-            if ($NewName) {
-                Write-Message -Message "Setting alert name to $NewName" -Level Verbose
-                    $currentalert.Rename($NewName)
-            }
-
-            if ($Enabled) {
-                Write-Message -Message "Setting alert to enabled" -Level Verbose
-                    $currentalert.IsEnabled = $true
-            }
-
-            if ($Disabled) {
-                Write-Message -Message "Setting alert to disabled" -Level Verbose
-                    $currentalert.IsEnabled = $false
-            }
-
-            if ($Category) {
-                # Check if the alert category exists
-                if ($Category -notin $server.JobServer.AlertCategory.Name) {
-                    if ($Force) {
-                        if ($PSCmdlet.ShouldProcess($instance, "Creating alert category on $instance")) {
-                            try {
-                                # Create the category
-                                #New-DbaAgentJobCategory -SqlInstance $instance -Category $Category
-
-                                Write-Message -Message "Setting alert category to $Category" -Level Verbose
-                                    $currentalert.Category = $Category
-                            }
-                            catch {
-                                Stop-Function -Message "Couldn't create alert category $Category from $instance" -Target $instance -ErrorRecord $_
-                            }
-                        }
-                    }
-                    else {
-                        Stop-Function -Message "Alert category $Category doesn't exist on $instance. Use -Force to create it." -Target $instance
-                        return
-                    }
-                }
-                else {
-                    Write-Message -Message "Setting alert category to $Category" -Level Verbose
-                        $currentalert.Category = $Category
-                }
-            }
-
-            #endregion alert options
-
-            # Execute
-            if ($PSCmdlet.ShouldProcess($SqlInstance, "Changing the alert $a")) {
+            foreach ($instance in $sqlinstance) {
+                # Try connecting to the instance
+                Write-Message -Message "Attempting to connect to $instance" -Level Verbose
                 try {
-                    Write-Message -Message "Changing the alert" -Level Verbose
-
-                    # Change the alert
-                        $currentalert.Alter()
+                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 }
                 catch {
-                    Stop-Function -Message "Something went wrong changing the alert" -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
+            foreach ($a in $Alert) {
+                    # Check if the alert exists
+                    if ($server.JobServer.Alerts.Name -notcontains $a) {
+                        Stop-Function -Message "Alert $a doesn't exists on $instance" -Target $instance
+                    }
+                    else {
+                        # Get the alert
+                        try {
+                            $InputObject += $server.JobServer.Alerts[$a]
+
+                            # Refresh the object
+                            $InputObject.Refresh()
+                        }
+                        catch {
+                            Stop-Function -Message "Something went wrong retrieving the alert" -Target $a -ErrorRecord $_ -Continue
+                        }
+                    }
+                }
+            }
+
+            foreach ($currentalert in $InputObject) {
+                $server = $currentalert.Parent.Parent
+
+                #region alert options
+                # Settings the options for the alert
+                if ($NewName) {
+                    Write-Message -Message "Setting alert name to $NewName" -Level Verbose
+                    $currentalert.Rename($NewName)
+                }
+
+                if ($Enabled) {
+                    Write-Message -Message "Setting alert to enabled" -Level Verbose
+                    $currentalert.IsEnabled = $true
+                }
+
+                if ($Disabled) {
+                    Write-Message -Message "Setting alert to disabled" -Level Verbose
+                    $currentalert.IsEnabled = $false
+                }
+
+                #endregion alert options
+
+                # Execute
+                if ($PSCmdlet.ShouldProcess($SqlInstance, "Changing the alert $a")) {
+                    try {
+                        Write-Message -Message "Changing the alert" -Level Verbose
+
+                        # Change the alert
+                        $currentalert.Alter()
+                    }
+                    catch {
+                        Stop-Function -Message "Something went wrong changing the alert" -ErrorRecord $_ -Target $instance -Continue
+                    }
                     Get-DbaAgentAlert -SqlInstance $server | Where-Object Name -eq $currentalert.name
+                }
             }
         }
-    }
-
-    end {
-        Write-Message -Message "Finished changing alert(s)" -Level Verbose
-    }
-}
+	}
+        {
+            Write-Message -Message "Finished changing alert(s)" -Level Verbose
+        }
