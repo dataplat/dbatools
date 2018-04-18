@@ -74,26 +74,27 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             Test-Path "$DefaultPath\PesterTest.bak" | Should Be $true
         }
     }
-
-    Context " backup to a write only folder with ignore filechecks" {
-        New-Item -ItemType Directory -Path "$DestBackupDir\WriteOnly"
-        $acl = Get-Acl "$DestBackupDir\WriteOnly"
-        $perm = 'Everyone', 'Read', 'ContainerInherit, ObjectInherit', 'None', 'Deny'
-        $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule $perm
-        $acl.AddAccessRule($accessRule)
-        $acl | Set-Acl -Path "$DestBackupDir\WriteOnly"
-        It "Should fail without the switch" {
-           $results =  Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir\WriteOnly -ErrorVariable backerrvar
-           ($null -eq $backuperrvar) | Should Be $false
-           ($null -eq $results) | Should Be $True
+    if ($env:APPVEYOR -eq 'True') {
+        #This test doesn't play nice on domain joined machines that can't see their home domain, so only run on Appyveyor
+        Context " backup to a write only folder with ignore filechecks" {
+            New-Item -ItemType Directory -Path "$DestBackupDir\WriteOnly"
+            $acl = Get-Acl "$DestBackupDir\WriteOnly"
+            $perm = 'Everyone', 'Read', 'ContainerInherit, ObjectInherit', 'None', 'Deny'
+            $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule $perm
+            $acl.AddAccessRule($accessRule)
+            $acl | Set-Acl -Path "$DestBackupDir\WriteOnly"
+            It "Should fail without the switch" {
+                $results =  Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir\WriteOnly -ErrorVariable backuperrvar
+                ($null -eq $backuperrvar) | Should Be $false
+                ($null -eq $results) | Should Be $True
+            }
+            It "Should succeed with the switch" {
+                $results =  Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir\WriteOnly -ErrorVariable backuperrvar
+                ($null -eq $backuperrvar) | Should Be $True
+                ($null -eq $results) | Should Be $false
+            }
         }
-        It "Should succeed with the switch" {
-            $results =  Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir\WriteOnly -ErrorVariable backerrvar
-            ($null -eq $backuperrvar) | Should Be $True
-            ($null -eq $results) | Should Be $false
-         }
     }
-
     Context "Backup can pipe to restore" {
         $null = Restore-DbaDatabase -SqlServer $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName "dbatoolsci_singlerestore"
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database "dbatoolsci_singlerestore" | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName $DestDbRandom -TrustDbBackupHistory -ReplaceDbNameInFile
