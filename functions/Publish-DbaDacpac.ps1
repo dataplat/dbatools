@@ -182,7 +182,7 @@ function Publish-DbaDacpac {
 
         foreach ($connstring in $ConnectionString) {
             $cleaninstance = Get-ServerName $connstring
-            $ins7tance = $cleaninstance.ToString().Replace('--', '\')
+            $instance = $cleaninstance.ToString().Replace('--', '\')
 
             foreach ($dbname in $database) {
                 if ($GenerateDeploymentScript -or $GenerateDeploymentReport) {
