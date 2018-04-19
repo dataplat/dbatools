@@ -87,12 +87,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             It "Should fail without the switch" {
                 $results =  Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $ReadOnlyFolder -ErrorVariable backuperrvar
                 ($null -eq $backuperrvar) | Should Be $false
-                ($null -eq $results) | Should Be $True
+                ($null -eq $results) | Should Be $false
             }
             It "Should succeed with the switch" {
                 $results =  Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $ReadOnlyFolder -ErrorVariable backuperrvar
                 ($null -eq $backuperrvar) | Should Be $True
-                ($null -eq $results) | Should Be $false
+                ($null -eq $results) | Should Be $True
             }
         }
     }
