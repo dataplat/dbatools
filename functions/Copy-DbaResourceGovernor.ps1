@@ -89,6 +89,8 @@ function Copy-DbaResourceGovernor {
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
+        $classifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $Source -SqlCredential $SourceSqlCredential
+
         $source = $sourceServer.DomainInstanceName
         $destination = $destServer.DomainInstanceName
 
@@ -109,6 +111,16 @@ function Copy-DbaResourceGovernor {
             Notes             = $null
             DateTime          = [DbaDateTime](Get-Date)
         }
+        
+        $copyResourceGovClassifierFunc = [pscustomobject]@{
+            SourceServer      = $sourceServer.Name
+            DestinationServer = $destServer.Name
+            Type              = "Resource Governor Settings"
+            Name              = "Classifier Function"
+            Status            = $null
+            Notes             = $null
+            DateTime          = [DbaDateTime](Get-Date)
+        }
 
         if ($Pscmdlet.ShouldProcess($destination, "Updating Resource Governor settings")) {
             if ($destServer.Edition -notmatch 'Enterprise' -and $destServer.Edition -notmatch 'Datacenter' -and $destServer.Edition -notmatch 'Developer') {
@@ -116,6 +128,61 @@ function Copy-DbaResourceGovernor {
             }
             else {
                 try {
+                    Write-Message -Level Verbose -Message "Managing classifier function."
+                    if (!$classifierFunction)
+                    {
+                        $copyResourceGovClassifierFunc.Status = "Skipped"
+                        $copyResourceGovClassifierFunc.Notes = "No classifier function, default settings used."
+                        $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
+                    else
+                    {
+                        $destClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+
+                        $sqlCreateClassifierFunction = $classifierFunction.TextHeader + $classifierFunction.TextBody | Out-String #script method is not returning the right script to execute (CREATE FUNCTION MUST BE THE FIRST STATEMENT)
+
+                        if (!$destClassifierFunction)
+                        {
+                            Write-Message -Level Debug -Message $sqlCreateClassifierFunction
+                            Write-Message -Level Verbose -Message "Adding Resource Governor classifier function."
+                            $destServer.Query($sqlCreateClassifierFunction)
+
+                            $copyResourceGovClassifierFunc.Status = "Successful"
+                            $copyResourceGovClassifierFunc.Notes = $null
+                            $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject            
+                        } 
+                        else
+                        {
+                            if ($Force -eq $false)
+                            {
+                                $copyResourceGovClassifierFunc.Status = "Skipped"
+                                $copyResourceGovClassifierFunc.Notes = "A classifier function already exists"
+                                $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject            
+                            }
+                            else
+                            {
+                                $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL);"
+                                Write-Message -Level Debug -Message $sql
+                                Write-Message -Level Verbose -Message "Disabling the Resource Governor."
+                                #$destServer.Query($sql)
+                                
+                                $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
+                                Write-Message -Level Debug -Message $sql
+                                Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
+                                #$destServer.Query($sql)
+
+                                $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
+                                Write-Message -Level Debug -Message $sql
+                                Write-Message -Level Verbose -Message "Re-creating the Resource Governor classifier function."
+                                #$destServer.Query($sql)
+
+                                $copyResourceGovClassifierFunc.Status = "Successful"
+                                $copyResourceGovClassifierFunc.Notes = "The old classifier function has been overwritten."
+                                $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject            
+                            }
+                        }
+                    }
+
                     $sql = $sourceServer.ResourceGovernor.Script() | Out-String
                     Write-Message -Level Debug -Message $sql
                     Write-Message -Level Verbose -Message "Updating Resource Governor settings."
@@ -128,7 +195,7 @@ function Copy-DbaResourceGovernor {
                     $copyResourceGovSetting.Status = "Failed"
                     $copyResourceGovSetting.Notes = $_.Exception
                     $copyResourceGovSetting | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
+                    $error[0]
                     Stop-Function -Message "Not able to update settings." -Target $destServer -ErrorRecord $_
                 }
             }
