@@ -144,7 +144,8 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <returns>True if equal, false elsewise</returns>
         public override bool Equals(object obj)
         {
-            return (obj is Size size && (Byte == size.Byte));
+            var size = obj as Size;
+            return (size != null  && (Byte == size.Byte));
         }
 
         /// <inheritdoc cref="Int64.GetHashCode"/>
@@ -184,7 +185,8 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <exception cref="ArgumentException">If you compare with something invalid.</exception>
         public int CompareTo(object obj)
         {
-            if (obj is Size size)
+            var size = obj as Size;
+            if (size != null)
             {
                 return CompareTo(size);
             }
@@ -226,7 +228,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         }
 
         /// <summary>
-        /// Divides one size by another.
+        /// Divides one size by another. 
         /// </summary>
         /// <param name="a">The size to divide</param>
         /// <param name="b">The size to divide with</param>
