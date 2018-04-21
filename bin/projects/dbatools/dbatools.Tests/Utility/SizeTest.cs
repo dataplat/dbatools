@@ -262,5 +262,43 @@ namespace Sqlcollaborative.Dbatools.Utility
             var size = new Size(iSize);
             Assert.AreEqual(iSize.GetHashCode(), size.GetHashCode());
         }
+
+        [DataRow(2, 2, 4)]
+        [DataRow(1024, 1024, 2048)]
+        [DataRow(1024, -1024, 0)]
+        [TestMethod]
+        public void TestAddition(long a, long b, long result)
+        {
+            Assert.AreEqual(new Size(result), new Size(a) + new Size(b));
+        }
+
+        [DataRow(2, 2, 0)]
+        [DataRow(1024, 1024, 0)]
+        [DataRow(1024, -1024, 2048)]
+        [TestMethod]
+        public void TestSubtraction(long a, long b, long result)
+        {
+            Assert.AreEqual(new Size(result), new Size(a) - new Size(b));
+        }
+
+        [DataRow(2, 2, 4)]
+        [DataRow(2, 3, 6)]
+        [DataRow(1024, 1024, 1048576)]
+        [DataRow(1024, -1024, -1048576)]
+        [TestMethod]
+        public void TestMultiplication(long a, long b, long result)
+        {
+            Assert.AreEqual(new Size(result), new Size(a) * new Size(b));
+        }
+
+        [DataRow(2, 2, 1)]
+        [DataRow(2, 3, 0)]
+        [DataRow(1024, 1024, 1)]
+        [DataRow(1024, -1024, -1)]
+        [TestMethod]
+        public void TestDivision(long a, long b, long result)
+        {
+            Assert.AreEqual(new Size(result), new Size(a) / new Size(b));
+        }
     }
 }
