@@ -1769,6 +1769,84 @@
             <param name="Name">THe name of the user to put in the prompt</param>
             <returns>The result object</returns>
         </member>
+        <member name="T:Sqlcollaborative.Dbatools.Utility.DbaValidatePatternAttribute">
+            <summary>
+            Validates that each parameter argument matches the RegexPattern
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaValidatePatternAttribute.ValidateElement(System.Object)">
+            <summary>
+            Validates that each parameter argument matches the RegexPattern
+            </summary>
+            <param name="element">object to validate</param>
+            <exception cref="T:System.Management.Automation.ValidationMetadataException">if <paramref name="element"/> is not a string
+             that matches the pattern
+             and for invalid arguments</exception>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaValidatePatternAttribute.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the PsfValidatePatternAttribute class
+            </summary>
+            <param name="regexPattern">Pattern string to match</param>
+            <exception cref="T:System.ArgumentException">for invalid arguments</exception>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaValidatePatternAttribute.RegexPattern">
+            <summary>
+            Gets the Regex pattern to be used in the validation
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaValidatePatternAttribute.Options">
+            <summary>
+            Gets or sets the Regex options to be used in the validation
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaValidatePatternAttribute.ErrorMessage">
+             <summary>
+             Gets or sets the custom error message pattern that is displayed to the user.
+            
+             The text representation of the object being validated and the validating regex is passed as
+             the first and second formatting parameters to the ErrorMessage formatting pattern.
+             <example>
+             [ValidatePattern("\s+", ErrorMessage="The text '{0}' did not pass validation of regex '{1}'")]
+             </example>
+             </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Utility.DbaValidateScriptAttribute">
+            <summary>
+            Class for validating against a script block.
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaValidateScriptAttribute.ValidateElement(System.Object)">
+            <summary>
+            Validates that each parameter argument matches the scriptblock
+            </summary>
+            <param name="element">object to validate</param>
+            <exception cref="T:System.Management.Automation.ValidationMetadataException">if <paramref name="element"/> is invalid</exception>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Utility.DbaValidateScriptAttribute.#ctor(System.Management.Automation.ScriptBlock)">
+            <summary>
+            Initializes a new instance of the ValidateScriptBlockAttribute class
+            </summary>
+            <param name="scriptBlock">Scriptblock to match</param>
+            <exception cref="T:System.ArgumentException">for invalid arguments</exception>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaValidateScriptAttribute.ErrorMessage">
+             <summary>
+             Gets or sets the custom error message that is displayed to the user.
+            
+             The item being validated and the validating scriptblock is passed as the first and second
+             formatting argument.
+            
+             <example>
+             [ValidateScript("$_ % 2", ErrorMessage = "The item '{0}' did not pass validation of script '{1}'")]
+             </example>
+             </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.DbaValidateScriptAttribute.ScriptBlock">
+            <summary>
+            Gets the scriptblock to be used in the validation
+            </summary>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Utility.SizeStyle">
             <summary>
             How size objects should be displayed
