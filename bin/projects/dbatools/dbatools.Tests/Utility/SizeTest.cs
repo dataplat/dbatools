@@ -52,7 +52,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         [TestMethod]
         public void TestCompareToObjOfUInt(uint a, uint b)
         {
-            Assert.IsTrue(a < b, $"Invalid test data, A ({a}) should be less than B ({b})");
+            Assert.IsTrue(a < b, string.Format("Invalid test data, A ({0}) should be less than B ({1})", a, b));
             var sizes = new[] { (Size)a, (Size)b, (Size)a };
             Assert.AreEqual(-1, sizes[0].CompareTo(b));
             Assert.AreEqual(0, sizes[0].CompareTo(a));
@@ -65,7 +65,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         [TestMethod]
         public void TestCompareToObjOfDecimal(int a, int b)
         {
-            Assert.IsTrue(a < b, $"Invalid test data, A ({a}) should be less than B ({b})");
+            Assert.IsTrue(a < b, string.Format("Invalid test data, A ({0}) should be less than B ({1})", a, b));
             var sizes = new[] { (Size)(decimal)a, (Size)(decimal)b, (Size)(decimal)a };
             Assert.AreEqual(-1, sizes[0].CompareTo((decimal)b));
             Assert.AreEqual(0, sizes[0].CompareTo((decimal)a));
@@ -78,7 +78,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         [TestMethod]
         public void TestCompareToObjOfDouble(double a, double b)
         {
-            Assert.IsTrue(a < b, $"Invalid test data, A ({a}) should be less than B ({b})");
+            Assert.IsTrue(a < b, string.Format("Invalid test data, A ({0}) should be less than B ({1})", a, b));
             var sizes = new [] { (Size)a, (Size)b, (Size)a };
             Assert.AreEqual(-1, sizes[0].CompareTo(b));
             Assert.AreEqual(0, sizes[0].CompareTo(a));
@@ -108,7 +108,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         [TestMethod]
         public void TestCompareToSize(int a, int b)
         {
-            Assert.IsTrue(a < b, $"Invalid test data, A ({a}) should be less than B ({b})");
+            Assert.IsTrue(a < b, string.Format("Invalid test data, A ({0}) should be less than B ({1})", a, b));
             var sizes = new[] { new Size(a), new Size(b), new Size(a)};
             Assert.AreEqual(-1, sizes[0].CompareTo(sizes[1]));
             Assert.AreEqual(0, sizes[0].CompareTo(sizes[2]));
