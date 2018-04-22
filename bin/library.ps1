@@ -78,43 +78,7 @@ if ($ImportLibrary) {
                 Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
             }
             elseif ($hasProject) {
-                $start = Get-Date
-                $system = [Appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -like "System, *"
-                $msbuild = (Resolve-Path "$(Split-Path $system.Location)\..\..\..\..\Framework$(if ([intptr]::Size -eq 8) { "64" })\$($system.ImageRuntimeVersion)\msbuild.exe").Path
-                switch ($PSVersionTable.PSVersion.Major) {
-                    3 { $msbuildConfiguration = "/p:Configuration=ps3" }
-                    4 { $msbuildConfiguration = "/p:Configuration=ps4" }
-                    default { $msbuildConfiguration = "/p:Configuration=Release" }
-                }
-                $msbuildOptions = ""
-                if ($env:APPVEYOR -eq 'True') {
-                    # This doesn't seem to work. Keep it here for now
-                    $msbuildOptions = '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"'
-                    $msbuildConfiguration = '/p:Configuration=Debug'
-
-                    if (-not (Test-Path "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll")) {
-                        throw "msbuild logger not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
-                    }
-                }
-
-                if (-not (Test-Path $msbuild)) {
-                    throw "msbuild not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
-                }
-
-                Write-Verbose -Message "Building the library"
-                & $msbuild "$libraryBase\projects\dbatools\dbatools.sln" $msbuildConfiguration $msbuildOptions
-
-                try {
-                    Write-Verbose -Message "Found library, trying to copy & import"
-                    if ($script:alwaysBuildLibrary) { Move-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
-                    else { Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
-                    Add-Type -Path "$script:DllRoot\dbatools.dll" -ErrorAction Stop
-                }
-                catch {
-                    Write-Verbose -Message "Failed to copy&import, attempting to import straight from the module directory"
-                    Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
-                }
-                Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
+                "$($PSScriptRoot)\build-project.ps1"
             }
             else {
                 throw "No valid dbatools library found! Check your module integrity"
