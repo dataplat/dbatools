@@ -38,6 +38,8 @@ environment:
 clone_folder: c:\github\dbatools
 
 before_test:
+  - nuget restore bin\projects\dbatools\dbatools.sln
+
   # grab appveyor lab files and needed requirements for tests in CI
   - ps: .\Tests\appveyor.prep.ps1
 
