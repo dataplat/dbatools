@@ -99,7 +99,9 @@ param (
 )
 
 $HasScriptAnalyzer = $null -ne (Get-Command Invoke-ScriptAnalyzer -ErrorAction SilentlyContinue).Version
-$HasPester = $null -ne (Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version
+$MinimumPesterVersion = [Version] '3.4.5.0' # Because this is when -Show was introduced
+$PesterVersion = (Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version
+$HasPester = $null -ne $PesterVersion
 
 if (!($HasScriptAnalyzer)) {
     Write-Warning "Please install PSScriptAnalyzer"
@@ -107,7 +109,12 @@ if (!($HasScriptAnalyzer)) {
     Write-Warning "     or go to https://github.com/PowerShell/PSScriptAnalyzer"
 }
 if (!($HasPester)) {
-    Write-Warning "Please install PSScriptAnalyzer"
+    Write-Warning "Please install Pester"
+    Write-Warning "     Install-Module -Name Pester -Force -SkipPublisherCheck"
+    Write-Warning "     or go to https://github.com/pester/Pester"
+}
+if ($PesterVersion -lt $MinimumPesterVersion) {
+    Write-Warning "Please update Pester to at least 3.4.5"
     Write-Warning "     Install-Module -Name Pester -Force -SkipPublisherCheck"
     Write-Warning "     or go to https://github.com/pester/Pester"
 }
