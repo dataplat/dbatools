@@ -64,6 +64,58 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
+    Context "Handling backup paths that don't exist" {
+        $MissingPath = "$DestBackupDir\Missing1\Awol2\"
+        $null = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $MissingPath -WarningVariable warnvar
+        It "Should warn and fail if path doesn't exist and BuildPath not set" {
+            $warnvar | Should BeLike "*$MissingPath*"
+        }
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $MissingPath -WarningVariable warnvar -BuildPath
+        It "Should have backed up to $MissingPath" {
+            $results.BackupFolder | Should Be "$MissingPath"
+        }
+    }
+
+    Context "CreateFolder switch should append the databasename to the backup path" {
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir -CreateFolder
+        It "Should have appended master to the backup path" {
+            $results.BackupFolder | Should Be "$DestBackupDir\master"
+        }
+    }
+    Context "A fully qualified path should override a backupfolder" {
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory c:\temp -BackupFileName "$DestBackupDir\PesterTest2.bak"
+        It "Should report backed up to $DestBackupDir"  {
+            $results.FullName | Should BeLike "$DestBackupDir\PesterTest2.bak"
+            $results.BackupFolder | Should Not Be 'c:\temp'
+        }
+        It "Should have backuped up to $DestBackupDir\PesterTest2.bak" {
+            Test-Path "$DestBackupDir\PesterTest2.bak" | Should Be $true
+        }
+    }
+
+    Context "Should stripe if multiple backupfolders specified" {
+        New-item -Path $DestBackupDir\stripe1 -ItemType Directory
+        New-item -Path $DestBackupDir\stripe2 -ItemType Directory
+        New-item -Path $DestBackupDir\stripe3 -ItemType Directory
+        
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir\stripe1,$DestBackupDir\stripe2, $DestBackupDir\stripe3
+        It "Should have created 3 backups" {
+            $results.BackupFilesCount | Should be 3
+        }
+        It "Should have written to all 3 folders" {
+            ("$DestBackupDir\stripe1","$DestBackupDir\stripe2", "$DestBackupDir\stripe3").ForEach{
+                $_ | Should BeIn ($results.BackupFolder)
+            }
+        }
+    }
+
+    Context "Should stripe on filecount > 1" {
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir -FileCount 3
+        It "Should have created 3 backups" {
+            $results.BackupFilesCount | Should be 3
+        }
+    }
+
     Context "Should Backup to default path if none specified" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName 'PesterTest.bak'
         $DefaultPath = (Get-DbaDefaultPath -SqlInstance $script:instance1).Backup
@@ -74,28 +126,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             Test-Path "$DefaultPath\PesterTest.bak" | Should Be $true
         }
     }
-    if ($env:APPVEYOR -eq 'True') {
-        #This test doesn't play nice on domain joined machines that can't see their home domain, so only run on Appyveyor
-        Context " backup to a write only folder with ignore filechecks" {
-            $ReadOnlyFolder = "c:\temp\WriteOnly"
-            New-Item -ItemType Directory -Path $ReadOnlyFolder
-            $acl = Get-Acl $ReadOnlyFolder
-            $perm = 'Everyone', 'Read', 'ContainerInherit, ObjectInherit', 'None', 'Deny'
-            $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule $perm
-            $acl.AddAccessRule($accessRule)
-            $acl | Set-Acl -Path $ReadOnlyFolder
-            It "Should fail without the switch" {
-                $results =  Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $ReadOnlyFolder -ErrorVariable backuperrvar
-                ($null -eq $backuperrvar) | Should Be $false
-                ($null -eq $results) | Should Be $false
-            }
-            It "Should succeed with the switch" {
-                $results =  Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $ReadOnlyFolder -ErrorVariable backuperrvar
-                ($null -eq $backuperrvar) | Should Be $True
-                ($null -eq $results) | Should Be $True
-            }
-        }
-    }
+
     Context "Backup can pipe to restore" {
         $null = Restore-DbaDatabase -SqlServer $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName "dbatoolsci_singlerestore"
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database "dbatoolsci_singlerestore" | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName $DestDbRandom -TrustDbBackupHistory -ReplaceDbNameInFile
