@@ -148,6 +148,7 @@ function Backup-DbaDatabase {
         [string]$AzureCredential,
         [switch]$NoRecovery,
         [switch]$IgnoreFileCheck,
+        [switch]$BuildPath,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -308,92 +309,70 @@ function Backup-DbaDatabase {
             if ('' -ne $AzureBaseUrl) {
                 $backup.CredentialName = $AzureCredential
             }
-
-            Write-Message -Level VeryVerbose -Message "Sorting Paths"
-
-            #If a backupfilename has made it this far, use it
+            
+            Write-Message -Level Verbose -Message "Building file name"
+            $SetDbName = ''
+            if ($CreateFolder) {
+                $SetDbName = "\$($dbname)"
+            }
+            $BackupFinalName = ''
             $FinalBackupPath = @()
+            if ('' -ne $BackupFileName){
+                $File = New-Object System.IO.FileInfo($BackupFileName)
+                $BackupFinalName = $file.Name
+                $suffix = $file.extension
+                if ( '' -ne (Split-Path $BackupFileName)){
+                    Write-Message -Level Verbose -Message "Fully qualified path passed in"
+                    $FinalBackupPath += $file.DirectoryName
+                }
+            }
+            else {
+                $timestamp = (Get-Date -Format yyyyMMddHHmm)
+                Write-Message -Level VeryVerbose -Message "Setting filename"
+                $BackupFinalName = "$($dbname)_$timestamp.$suffix"
+            }
 
-            if ($BackupFileName) {
-                if ($BackupFileName -notlike "*:*") {
-                    if (!$BackupDirectory) {
-                        $BackupDirectory = $server.BackupDirectory
-                    }
-
-                    $BackupFileName = "$BackupDirectory\$BackupFileName" # removed auto suffix
+            Write-Message -Level Verbose -Message "Building backup path"
+            if ($FinalBackupPath.count -eq 0) {
+                $FinalBackupPath += $BackupDirectory
+            }
+            
+            if ($BackupDirectory.count -eq 1 -and $filecount -gt 1){
+                For ($i=0; $i -lt ($filecount -1); $i++){
+                    $FinalBackupPath += $FinalBackupPath[0]
                 }
 
-                Write-Message -Level Verbose -Message "Single db and filename"
+            }
 
-                if ($true -ne $IgnoreFileCheck){
-                    if (Test-DbaSqlPath -SqlInstance $server -Path (Split-Path $BackupFileName)) {
-                        $FinalBackupPath += $BackupFileName
+            if ($FinalBackupPath.Count -gt 1) {
+                $File = New-Object System.IO.FileInfo($BackupFinalName)
+                For ($i =0; $i -lt $FinalbackupPath.count; $i++) {
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i]+"\"+$($File.BaseName)+"-$($i+1)-of-"+$($file.count)+$suffix
+                }
+            }
+            else {
+                $FinalBackupPath[0] = $FinalBackupPath[0]+$SetDbName+"\"+$BackupFinalName
+            }
+            
+            ForEach ($Path in $FinalBackupPath){
+
+                if (-not (Test-DbaSqlPath -SqlInstance $server -Path (split-path $path))) {
+                    if (($BuildPath -eq $true) -or ($CreateFolder -eq $True)) {
+                       $null = New-DbaSqlDirectory -SqlInstance $server -Path (split-path $path)
                     }
                     else {
-                        $failreason = "SQL Server cannot write to the location $(Split-Path $BackupFileName)"
+                        $failreason += "SQL Server cannot write to the location $(Split-Path $Path)"
                         $failures += $failreason
                         Write-Message -Level Warning -Message "$failreason"
                     }
                 }
-                else {
-                    Write-Message -Level Verbose -Message "Ignoring filechecks, backup may fail as we're not sure it even exists"
-                    $FinalBackupPath += $BackupFileName
-                }
             }
-            else {
-                if (!$BackupDirectory) {
-                    $BackupDirectory += $server.BackupDirectory
-                }
+        
 
-                $timestamp = (Get-Date -Format yyyyMMddHHmm)
-                Write-Message -Level VeryVerbose -Message "Setting filename"
-                $BackupFileName = "$($dbname)_$timestamp"
-                if ('' -ne $AzureBaseUrl) {
-                    Write-Message -Level VeryVerbose -Message "Azure div"
-                    $PathDivider = "/"
-                }
-                else {
-                    $PathDivider = "\"
-                }
-                Foreach ($path in $BackupDirectory) {
-                    if ($CreateFolder) {
-                        $Path = $path + $PathDivider + $Database.name
-                        Write-Message -Level Verbose -Message "Creating Folder $Path"
-                        if ($Pscmdlet.ShouldProcess($server.Name, "Creating folder $path")) {
-                            if (((New-DbaSqlDirectory -SqlInstance $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and '' -eq $AzureBaseUrl) {
-                                $failreason = "Cannot create or write to folder $path"
-                                $failures += $failreason
-                                Write-Message -Level Warning -Message "$failreason"
-                            }
-                            else {
-                                $FinalBackupPath += "$path$PathDivider$BackupFileName.$suffix"
-                            }
-                        }
-                    }
-                    else {
-                        $FinalBackupPath += "$path$PathDivider$BackupFileName.$suffix"
-                    }
-                    <#
-                        The code below attempts to create the directory even when $CreateFolder -- was it supposed to be Test-DbaSqlPath?
-                        else
-                        {
-                            if ((New-DbaSqlDirectory -SqlInstance $server -SqlCredential $SqlCredential -Path $path).Created -eq $false)
-                            {
-                                $failreason = "Cannot create or write to folder $path"
-                                $failures += $failreason
-                                Write-Message -Level Warning -Message  "$failreason"
-                            }
-                            $FinalBackupPath += "$path\$BackupFileName.$suffix"
-                        }
-                        #>
-                }
-            }
 
             if ('' -eq $AzureBaseUrl) {
-                $file = New-Object System.IO.FileInfo($FinalBackupPath[0])
+               # $file = New-Object System.IO.FileInfo($FinalBackupPath[0])
             }
-            $suffix = $file.Extension
-
             if ($FileCount -gt 1 -and $FinalBackupPath.count -eq 1) {
                 Write-Message -Level Verbose -Message "Striping for Filecount of $filecount"
                 $stripes = $filecount
