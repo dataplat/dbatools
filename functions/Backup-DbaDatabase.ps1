@@ -82,10 +82,8 @@ function Backup-DbaDatabase {
             .PARAMETER NoRecovery
                 This is passed in to perform a tail log backup if needed
 
-            .PARAMETER IgnoreFileCheck
-                This switch witll bypass the checks for files and filepaths.
-                Usefull if server only has write to backup location.
-                Note, that this means you have to be sure the paths are correct, and that we're not clobbering anything important!
+            .PARAMETER BuildPath
+                By default this command won't attempt to create missing paths, this switch will change the behavious so that it wll
 
             .PARAMETER EnableException
                 By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -147,7 +145,6 @@ function Backup-DbaDatabase {
         [string]$AzureBaseUrl,
         [string]$AzureCredential,
         [switch]$NoRecovery,
-        [switch]$IgnoreFileCheck,
         [switch]$BuildPath,
         [Alias('Silent')]
         [switch]$EnableException
