@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Runtime.InteropServices.ComTypes;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Sqlcollaborative.Dbatools.Connection;
 using Sqlcollaborative.Dbatools.Exceptions;
@@ -93,6 +94,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
             Assert.AreEqual(".", dbaInstanceParamater.FullName);
             Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
             Assert.AreEqual("NP:.", dbaInstanceParamater.FullSmoName);
+            Assert.AreEqual(@"localhost\MSSQLLocalDB", dbaInstanceParamater.InstanceName);
+            Assert.AreEqual(@"localhost\MSSQLLocalDB", dbaInstanceParamater.SqlInstanceName);
             Assert.AreEqual(SqlConnectionProtocol.NP, dbaInstanceParamater.NetworkProtocol);
             Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
             Assert.IsFalse(dbaInstanceParamater.IsConnectionString);
@@ -102,19 +105,37 @@ namespace Sqlcollaborative.Dbatools.Parameter
         /// Checks that . is treated as a localhost connection
         /// </summary>
         [TestMethod]
+        [Ignore()]
         public void TestLocalDb()
+        {
+            var dbaInstanceParamater = new DbaInstanceParameter(@"(LocalDb)\MSSQLLocalDB");
+
+            Assert.AreEqual("localhost", dbaInstanceParamater.ComputerName);
+            Assert.AreEqual("[localhost]", dbaInstanceParamater.SqlComputerName);
+            Assert.AreEqual(@"localhost\MSSQLLocalDB", dbaInstanceParamater.FullName);
+            Assert.AreEqual(@"localhost\MSSQLLocalDB", dbaInstanceParamater.FullSmoName);
+            Assert.AreEqual(@"localhost\MSSQLLocalDB", dbaInstanceParamater.InstanceName);
+            Assert.AreEqual(@"localhost\MSSQLLocalDB", dbaInstanceParamater.SqlInstanceName);
+            Assert.AreEqual(SqlConnectionProtocol.Any, dbaInstanceParamater.NetworkProtocol);
+            Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
+            Assert.IsTrue(dbaInstanceParamater.IsConnectionString);
+        }
+
+        /// <summary>
+        /// Checks parsing of a localdb connectionstring
+        /// </summary>
+        [TestMethod]
+        public void TestLocalDbConnectionString()
         {
             var dbaInstanceParamater = new DbaInstanceParameter(@"Data Source=(LocalDb)\MSSQLLocalDB;Initial Catalog=aspnet-MvcMovie;Integrated Security=SSPI;AttachDBFilename=|DataDirectory|\Movies.mdf");
 
             Assert.AreEqual("localhost", dbaInstanceParamater.ComputerName);
             Assert.AreEqual("[localhost]", dbaInstanceParamater.SqlComputerName);
             Assert.AreEqual(@"localhost\MSSQLLocalDB", dbaInstanceParamater.FullName);
-            Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
             Assert.AreEqual(@"localhost\MSSQLLocalDB", dbaInstanceParamater.FullSmoName);
-            Assert.AreEqual(SqlConnectionProtocol.Any, dbaInstanceParamater.NetworkProtocol);
+            Assert.AreEqual(SqlConnectionProtocol.Any, dbaInstanceParamater.NetworkProtocol);;
             Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
             Assert.IsTrue(dbaInstanceParamater.IsConnectionString);
-            Assert.AreEqual("MSSQLLocalDB", dbaInstanceParamater.InstanceName);
         }
 
         /// <summary>
