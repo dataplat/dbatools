@@ -102,6 +102,8 @@ function Install-DbaFirstResponderKit {
         Write-Message -Level Verbose -Message "Downloading and unzipping the First Responder Kit zip file."
 
         try {
+            $oldSslSettings = [System.Net.ServicePointManager]::SecurityProtocol
+            [System.Net.ServicePointManager]::SecurityProtocol = "Tls12"
             try {
                 Invoke-WebRequest $url -OutFile $zipfile
             }
@@ -110,6 +112,7 @@ function Install-DbaFirstResponderKit {
                 (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
                 Invoke-WebRequest $url -OutFile $zipfile
             }
+            [System.Net.ServicePointManager]::SecurityProtocol = $oldSslSettings
 
             # Unblock if there's a block
             Unblock-File $zipfile -ErrorAction SilentlyContinue
