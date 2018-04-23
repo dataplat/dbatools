@@ -21,11 +21,26 @@ namespace Sqlcollaborative.Dbatools.Parameter
             Assert.IsFalse(dbaInstanceParamater.IsConnectionString);
         }
 
+        [DataRow(null)]
+        [DataRow("")]
+        [DataRow(" ")]
+        [DataRow("\n")]
+        [DataRow(" \n \t")]
+        [DataRow(" \v\t\t ")]
+        [DataRow(null)]
         [ExpectedException(typeof(BloodyHellGiveMeSomethingToWorkWithException), "Bloody hell! Don't give me an empty string for an instance name!")]
         [TestMethod]
-        public void TestEmptyString()
+        public void TestEmptyString(string whitespace)
         {
-            var dbaInstanceParamater = new DbaInstanceParameter("\t");
+            try
+            {
+                var dbaInstanceParamater = new DbaInstanceParameter(whitespace);
+            }
+            catch (BloodyHellGiveMeSomethingToWorkWithException ex)
+            {
+                Assert.AreEqual("DbaInstanceParameter", ex.ParameterClass);
+                throw;
+            }
         }
 
         [TestMethod]
@@ -73,12 +88,33 @@ namespace Sqlcollaborative.Dbatools.Parameter
         {
             var dbaInstanceParamater = new DbaInstanceParameter(".");
 
+            Assert.AreEqual(".", dbaInstanceParamater.ComputerName);
+            Assert.AreEqual("[.]", dbaInstanceParamater.SqlComputerName);
             Assert.AreEqual(".", dbaInstanceParamater.FullName);
             Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
             Assert.AreEqual("NP:.", dbaInstanceParamater.FullSmoName);
             Assert.AreEqual(SqlConnectionProtocol.NP, dbaInstanceParamater.NetworkProtocol);
             Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
             Assert.IsFalse(dbaInstanceParamater.IsConnectionString);
+        }
+
+        /// <summary>
+        /// Checks that . is treated as a localhost connection
+        /// </summary>
+        [TestMethod]
+        public void TestLocalDb()
+        {
+            var dbaInstanceParamater = new DbaInstanceParameter(@"Data Source=(LocalDb)\MSSQLLocalDB;Initial Catalog=aspnet-MvcMovie;Integrated Security=SSPI;AttachDBFilename=|DataDirectory|\Movies.mdf");
+
+            Assert.AreEqual("localhost", dbaInstanceParamater.ComputerName);
+            Assert.AreEqual("[localhost]", dbaInstanceParamater.SqlComputerName);
+            Assert.AreEqual(@"localhost\MSSQLLocalDB", dbaInstanceParamater.FullName);
+            Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
+            Assert.AreEqual(@"localhost\MSSQLLocalDB", dbaInstanceParamater.FullSmoName);
+            Assert.AreEqual(SqlConnectionProtocol.Any, dbaInstanceParamater.NetworkProtocol);
+            Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
+            Assert.IsTrue(dbaInstanceParamater.IsConnectionString);
+            Assert.AreEqual("MSSQLLocalDB", dbaInstanceParamater.InstanceName);
         }
 
         /// <summary>
