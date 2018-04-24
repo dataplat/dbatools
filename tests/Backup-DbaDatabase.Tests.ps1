@@ -144,4 +144,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.FullName[0] | Should Be 'NUL:'
         }
     }
+
+    Context "Should only output a T-SQL String if OutputScriptOnly specified" {
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName c:\notexists\file.bak -OutputScriptOnly
+        It "Should return a string" {
+            $results.GetType().ToString() | Should Be 'System.String'
+        }
+        it "Should return BACKUP DATABASE [master] TO  DISK = N'c:\notexists\file.bak' WITH NOFORMAT, NOINIT, NOSKIP, REWIND, NOUNLOAD,  STATS = 1" {
+            $results | Should Be "BACKUP DATABASE [master] TO  DISK = N'c:\notexists\file.bak' WITH NOFORMAT, NOINIT, NOSKIP, REWIND, NOUNLOAD,  STATS = 1"
+        }
+    }
 }
