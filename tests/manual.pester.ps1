@@ -119,7 +119,7 @@ if ($PesterVersion -lt $MinimumPesterVersion) {
     Write-Warning "     or go to https://github.com/pester/Pester"
 }
 
-if (($HasPester -and $HasScriptAnalyzer) -eq $false) {
+if (($HasPester -and $HasScriptAnalyzer -and ($PesterVersion -ge $MinimumPesterVersion)) -eq $false) {
     Write-Warning "Exiting..."
     return
 }
