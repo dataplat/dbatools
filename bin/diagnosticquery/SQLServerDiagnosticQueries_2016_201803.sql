@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 3, 2018
+-- Last Modified: April 21, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -13,6 +13,13 @@
 
 
 -- Please make sure you are using the correct version of these diagnostic queries for your version of SQL Server
+
+
+-- If you like PowerShell, there is a very useful community solution for running these queries in an automated fashion
+-- https://dbatools.io/
+
+-- Invoke-DbaDiagnosticQuery
+-- https://dbatools.io/functions/invoke-dbadiagnosticquery/
 
 
 --******************************************************************************
@@ -79,34 +86,34 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
--- https://support.microsoft.com/en-us/kb/321185														
+-- https://bit.ly/2oAjKgW														
 
 -- How to obtain the latest Service Pack for SQL Server 2016
--- https://support.microsoft.com/en-us/kb/3177534
+-- https://bit.ly/2egtfzK
 
 -- Microsoft SQL Server 2016 SP1 Latest Cumulative Update
--- https://www.microsoft.com/en-us/download/details.aspx?id=54613 
+-- https://bit.ly/2jTwxWC
 
 -- SQL Server 2016 build versions 
--- https://support.microsoft.com/en-us/kb/3177312
+-- https://bit.ly/2epkTDT
 
 -- Where to find information about the latest SQL Server builds
--- https://support.microsoft.com/en-us/help/957826/where-to-find-information-about-the-latest-sql-server-builds
+-- https://bit.ly/2IGHbfY
 
 -- Performance and Stability Related Fixes in Post-SQL Server 2016 SP1 Builds
--- https://www.sqlskills.com/blogs/glenn/performance-and-stability-related-fixes-in-post-sql-server-2016-sp1-builds/			
+-- https://bit.ly/2gr7k9L			
 
 -- Announcing updates to the SQL Server Incremental Servicing Model (ISM)
--- https://blogs.msdn.microsoft.com/sqlreleaseservices/announcing-updates-to-the-sql-server-incremental-servicing-model-ism/
+-- https://bit.ly/1RzYITz
 
 -- Update Center for Microsoft SQL Server
--- http://bit.ly/2pZptuQ
+-- https://bit.ly/2pZptuQ
 
 -- Download SQL Server Management Studio (SSMS)
--- https://msdn.microsoft.com/en-us/library/mt238290.aspx
+-- https://bit.ly/1OcupT9
 
 -- Download and install Microsoft SQL Operations Studio 
--- https://docs.microsoft.com/en-us/sql/sql-operations-studio/download
+-- https://bit.ly/2vgke1A
 	
 
 
@@ -158,7 +165,7 @@ SERVERPROPERTY('IsAdvancedAnalyticsInstalled') AS [IsRServicesInstalled];	-- New
 -- Note: Some columns will be NULL on older SQL Server builds
 
 -- SERVERPROPERTY (Transact-SQL)
--- http://bit.ly/2eeaXeI
+-- https://bit.ly/2eeaXeI
 
 
 
@@ -190,7 +197,7 @@ ORDER BY name OPTION (RECOMPILE);
 -- remote data archive (Allow the use of the REMOTE_DATA_ARCHIVE data access for Stretch databases)
 
 -- SQLSweet16!, Episode 1: Backup Compression for TDE-enabled Databases
--- https://blogs.msdn.microsoft.com/sqlcat/2016/06/20/sqlsweet16-episode-1-backup-compression-for-tde-enabled-databases/
+-- https://bit.ly/28Rpb2x
 
 
 
@@ -203,19 +210,19 @@ DBCC TRACESTATUS (-1);
 
 -- Common trace flags that should be enabled in most cases
 -- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
---           https://www.sqlskills.com/blogs/paul/fed-up-with-backup-success-messages-bloating-your-error-logs/
+--           https://bit.ly/2p6MTjS
 
 -- TF 6534 - Enables use of native code to improve performance with spatial data
---           https://blogs.msdn.microsoft.com/bobsql/2016/06/03/sql-2016-it-just-runs-faster-native-spatial-implementations/
+--           https://bit.ly/2HrQUpU
 
 -- The behavior of TF 1117, 1118 are enabled for tempdb in SQL Server 2016 by default
 -- SQL 2016 – It Just Runs Faster: -T1117 and -T1118 changes for TEMPDB and user databases
--- http://bit.ly/2lbNWxK           
+-- https://bit.ly/2lbNWxK           
 
 -- The behavior of TF 2371 is enabled by default in SQL Server 2016 and newer (in compat level 130 and higher)
 
 -- DBCC TRACEON - Trace Flags (Transact-SQL)
--- http://bit.ly/2FuSvPg
+-- https://bit.ly/2FuSvPg
 
 
 
@@ -251,10 +258,10 @@ FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
 -- If locked_page_allocations_kb > 0, then LPIM is enabled
 
 -- How to enable the "locked pages" feature in SQL Server 2012
--- https://support.microsoft.com/en-us/kb/2659143
+-- https://bit.ly/2F5UjOA
 
 -- Memory Management Architecture Guide
--- https://docs.microsoft.com/en-us/sql/relational-databases/memory-management-architecture-guide 
+-- https://bit.ly/2JKkadC 
 
 
 
@@ -310,10 +317,10 @@ ORDER BY sj.name OPTION (RECOMPILE);
 -- Look for jobs that have a notify_level_email set to 0 (meaning no e-mail is ever sent)
 --
 -- MSDN sysjobs documentation
--- http://bit.ly/2paDEOP 
+-- https://bit.ly/2paDEOP 
 
 -- SQL Server Maintenance Solution
--- http://bit.ly/1pgchQu  
+-- https://bit.ly/1pgchQu  
 
 
 -- Get SQL Server Agent Alert Information (Query 11) (SQL Server Agent Alerts)
@@ -325,7 +332,7 @@ ORDER BY name OPTION (RECOMPILE);
 
 -- Gives you some basic information about your SQL Server Agent Alerts 
 -- (which are different from SQL Server Agent jobs)
--- Read more about Agent Alerts here: http://bit.ly/2Giz0Xf 
+-- Read more about Agent Alerts here: https://bit.ly/2Giz0Xf 
 
 
 
@@ -336,10 +343,10 @@ FROM sys.dm_os_windows_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
 -- Gives you major OS version, Service Pack, Edition, and language info for the operating system
--- 6.3 is either Windows 8.1, Windows 10 or Windows Server 2012 R2, Windows Server 2016 
+-- 10.0 is either Windows 10 or Windows Server 2016
+-- 6.3 is either Windows 8.1 or Windows Server 2012 R2 
 -- 6.2 is either Windows 8 or Windows Server 2012
--- 6.1 is either Windows 7 or Windows Server 2008 R2
--- 6.0 is either Windows Vista or Windows Server 2008
+
 
 -- Windows SKU codes
 -- 4 is Enterprise Edition
@@ -347,19 +354,20 @@ FROM sys.dm_os_windows_info WITH (NOLOCK) OPTION (RECOMPILE);
 -- 8 is Datacenter Server Edition
 -- 10 is Enterprise Server Edition
 -- 48 is Professional Edition
+-- 161 is Pro for Workstations
 
 -- 1033 for os_language_version is US-English
 
 -- SQL Server 2016 requires Windows Server 2012 or newer
 
 -- Quick-Start Installation of SQL Server 2016
--- https://msdn.microsoft.com/en-us/library/bb500433(v=sql.130).aspx
+-- https://bit.ly/2qtxQ3G
 
 -- Hardware and Software Requirements for Installing SQL Server 2016
--- https://msdn.microsoft.com/en-us/library/ms143506(v=sql.130).aspx
+-- https://bit.ly/2JJIUTl
 
 -- Using SQL Server in Windows 8 and later versions of Windows operating system 
--- https://support.microsoft.com/en-us/kb/2681562
+-- https://bit.ly/2F7Ax0P
 
 
 -- SQL Server NUMA Node information  (Query 13) (SQL Server NUMA Info)
@@ -376,10 +384,10 @@ WHERE node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
 
 
 -- sys.dm_os_nodes (Transact-SQL)
--- http://bit.ly/2pn5Mw8
+-- https://bit.ly/2pn5Mw8
 
 -- Balancing Your Available SQL Server Core Licenses Evenly Across NUMA Nodes
--- http://bit.ly/2vfC4Rq
+-- https://bit.ly/2vfC4Rq
 
 
 
@@ -403,7 +411,7 @@ FROM sys.dm_os_sys_memory WITH (NOLOCK) OPTION (RECOMPILE);
 -- Physical memory state is transitioning
 
 -- sys.dm_os_sys_memory (Transact-SQL)
--- http://bit.ly/2pcV0xq
+-- https://bit.ly/2pcV0xq
 
 
 -- You can skip the next two queries if you know you don't have a clustered instance
@@ -420,7 +428,7 @@ FROM sys.dm_os_cluster_nodes WITH (NOLOCK) OPTION (RECOMPILE);
 -- You will see no results if your instance is not clustered
 
 -- Recommended hotfixes and updates for Windows Server 2012 R2-based failover clusters
--- http://support.microsoft.com/kb/2920151
+-- https://bit.ly/1z5BfCw
 
 
 -- Get information about any AlwaysOn AG cluster this instance is a part of (Query 16) (AlwaysOn AG Cluster)
@@ -453,7 +461,7 @@ ORDER BY ag.name, ar.replica_server_name, adc.[database_name] OPTION (RECOMPILE)
 -- You will see no results if your instance is not using AlwaysOn AGs
 
 -- SQL Server 2016 – It Just Runs Faster: Always On Availability Groups Turbocharged
--- https://blogs.msdn.microsoft.com/bobsql/2016/09/26/sql-server-2016-it-just-runs-faster-always-on-availability-groups-turbocharged/
+-- https://bit.ly/2dn1H6r
 
 
 -- Hardware information from SQL Server 2016  (Query 18) (Hardware Info)
@@ -475,7 +483,7 @@ FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 -- It merely indicates that you have a hypervisor running on your host
 
 -- sys.dm_os_sys_info (Transact-SQL)
--- http://bit.ly/2pczOYs
+-- https://bit.ly/2pczOYs
 
 -- Soft NUMA configuration was a new column for SQL Server 2016
 -- OFF = Soft-NUMA feature is OFF
@@ -483,7 +491,7 @@ FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 -- MANUAL = Manually configured soft-NUMA
 
 -- Configure SQL Server to Use Soft-NUMA (SQL Server)
--- http://bit.ly/2HTpKJt
+-- https://bit.ly/2HTpKJt
 
 -- sql_memory_model_desc values (Added in SQL Server 2016 SP1)
 -- CONVENTIONAL
@@ -518,10 +526,10 @@ EXEC sys.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'HARDWARE\DESCRIPTION\Syste
 -- to the Windows Power Plan or hardware power management
 
 -- You can use CPU-Z to get your actual CPU core speed and a lot of other useful information
--- http://www.cpuid.com/softwares/cpu-z.html
+-- https://bit.ly/QhR6xF
 
 -- You can learn more about processor selection for SQL Server by following this link
--- http://bit.ly/2F3aVlP
+-- https://bit.ly/2F3aVlP
 
 
 
@@ -535,10 +543,10 @@ FROM sys.dm_os_buffer_pool_extension_configuration WITH (NOLOCK) OPTION (RECOMPI
 -- It is a more interesting feature for Standard Edition
 
 -- Buffer Pool Extension to SSDs in SQL Server 2014
--- http://bit.ly/1bm08m8
+-- https://bit.ly/1bm08m8
 
 -- Buffer Pool Extension
--- http://bit.ly/2oBuieO
+-- https://bit.ly/2oBuieO
 
 
 -- Look at buffer descriptors to see BPE usage by database (Query 23) (BPE Usage) 
@@ -565,7 +573,7 @@ ORDER BY creation_time DESC OPTION (RECOMPILE);
 -- not had any memory dumps (which is a good thing)
 
 -- sys.dm_server_memory_dumps (Transact-SQL)
--- http://bit.ly/2elwWll
+-- https://bit.ly/2elwWll
 
 
 
@@ -590,7 +598,7 @@ ORDER BY database_id OPTION (RECOMPILE);
 -- If you do get results here, you should do further investigation to determine the root cause
 
 -- Manage the suspect_pages Table
--- http://bit.ly/2Fvr1c9
+-- https://bit.ly/2Fvr1c9
 
 
 -- Get number of data files in tempdb database (Query 26) (TempDB Data Files)
@@ -638,7 +646,7 @@ ORDER BY vs.volume_mount_point OPTION (RECOMPILE);
 -- Being low on free space can negatively affect performance
 
 -- sys.dm_os_volume_stats (Transact-SQL)
--- http://bit.ly/2oBPNNr
+-- https://bit.ly/2oBPNNr
 
 
 
@@ -738,7 +746,7 @@ DROP TABLE #IOWarningResults;
 -- Look to see if you see any patterns in the results (same files, same drives, same time of day, etc.)
 
 -- Diagnostics in SQL Server help detect stalled and stuck I/O operations
--- https://support.microsoft.com/en-us/kb/897284
+-- https://bit.ly/2qtaw73
 
 
 
@@ -784,13 +792,13 @@ ORDER BY db.[name] OPTION (RECOMPILE);
 
 -- is_mixed_page_allocation_on is a new property for SQL Server 2016. Equivalent to TF 1118 for a user database
 -- SQL Server 2016: Changes in default behavior for autogrow and allocations for tempdb and user databases
--- https://blogs.msdn.microsoft.com/sql_server_team/sql-server-2016-changes-in-default-behavior-for-autogrow-and-allocations-for-tempdb-and-user-databases/
+-- https://bit.ly/2evRZSR
 
 -- A non-zero value for target_recovery_time_in_seconds means that indirect checkpoint is enabled 
 -- If the setting has a zero value it indicates that automatic checkpoint is enabled
 
 -- Changes in SQL Server 2016 Checkpoint Behavior
--- https://blogs.msdn.microsoft.com/sqlcat/2016/08/03/changes-in-sql-server-2016-checkpoint-behavior/
+-- https://bit.ly/2pdggk3
 
 
 -- Missing Indexes for all databases by Index Advantage  (Query 33) (Missing Indexes All Databases)
@@ -813,7 +821,7 @@ ORDER BY index_advantage DESC OPTION (RECOMPILE);
 -- Do not just blindly add indexes that show up from this query!!!
 
 -- SQL Server Index Design Guide
--- https://docs.microsoft.com/en-us/sql/relational-databases/sql-server-index-design-guide
+-- https://bit.ly/2qtZr4N
 
 
 
@@ -850,7 +858,7 @@ DROP TABLE #VLFCountResults;
 -- Try to keep your VLF counts under 200 in most cases (depending on log file size)
 
 -- Important change to VLF creation algorithm in SQL Server 2014
--- https://www.sqlskills.com/blogs/paul/important-change-vlf-creation-algorithm-sql-server-2014/
+-- https://bit.ly/2Hsjbg4
 
 
 
@@ -977,19 +985,19 @@ OPTION (RECOMPILE);
 -- Cumulative wait stats are not as useful on an idle instance that is not under load or performance pressure
 
 -- SQL Server Wait Types Library (Paul Randal)
--- https://www.sqlskills.com/help/waits/
+-- https://bit.ly/2ePzYO2
 
 -- The SQL Server Wait Type Repository
--- http://blogs.msdn.com/b/psssql/archive/2009/11/03/the-sql-server-wait-type-repository.aspx
+-- https://bit.ly/1afzfjC
 
 -- Wait statistics, or please tell me where it hurts
--- https://www.sqlskills.com/blogs/paul/wait-statistics-or-please-tell-me-where-it-hurts/
+-- https://bit.ly/2wsQHQE
 
 -- SQL Server 2005 Performance Tuning using the Waits and Queues
--- http://technet.microsoft.com/en-us/library/cc966413.aspx
+-- https://bit.ly/1o2NFoF
 
 -- sys.dm_os_wait_stats (Transact-SQL)
--- http://msdn.microsoft.com/en-us/library/ms179984(v=sql.120).aspx
+-- https://bit.ly/2Hjq9Yl
 
 
 
@@ -1236,7 +1244,7 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 ------
 
 -- sys.dm_exec_function_stats (Transact-SQL)
--- https://msdn.microsoft.com/en-US/library/mt429371.aspx
+-- https://bit.ly/2q1Q6BM
 
 
 
@@ -1265,7 +1273,7 @@ ORDER BY f.[file_id] OPTION (RECOMPILE);
 -- is_autogrow_all_files is new for SQL Server 2016. Equivalent to TF 1117 for user databases
 
 -- SQL Server 2016: Changes in default behavior for autogrow and allocations for tempdb and user databases
--- http://bit.ly/2evRZSR
+-- https://bit.ly/2evRZSR
 
 
 -- Log space usage for current database  (Query 52) (Log Space Usage)
@@ -1296,7 +1304,7 @@ FROM sys.database_scoped_configurations WITH (NOLOCK) OPTION (RECOMPILE);
 -- ALTER DATABASE SCOPED CONFIGURATION CLEAR PROCEDURE_CACHE;
 
 -- ALTER DATABASE SCOPED CONFIGURATION (Transact-SQL)
--- https://msdn.microsoft.com/en-us/library/mt629158.aspx
+-- https://bit.ly/2sOH7nb
 
 
 -- I/O Statistics by file for the current database  (Query 54) (IO Stats By File)
@@ -1495,8 +1503,8 @@ ORDER BY [Avg IO] DESC OPTION (RECOMPILE);
 -- Possible Bad NC Indexes (writes > reads)  (Query 63) (Bad NC Indexes)
 SELECT OBJECT_NAME(s.[object_id]) AS [Table Name], i.name AS [Index Name], i.index_id, 
 i.is_disabled, i.is_hypothetical, i.has_filter, i.fill_factor,
-user_updates AS [Total Writes], user_seeks + user_scans + user_lookups AS [Total Reads],
-user_updates - (user_seeks + user_scans + user_lookups) AS [Difference]
+s.user_updates AS [Total Writes], s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads],
+s.user_updates - (s.user_seeks + s.user_scans + s.user_lookups) AS [Difference]
 FROM sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 INNER JOIN sys.indexes AS i WITH (NOLOCK)
 ON s.[object_id] = i.[object_id]
@@ -1505,7 +1513,7 @@ WHERE OBJECTPROPERTY(s.[object_id],'IsUserTable') = 1
 AND s.database_id = DB_ID()
 AND s.user_updates > (s.user_seeks + s.user_scans + s.user_lookups)
 AND i.index_id > 1 AND i.[type_desc] = N'NONCLUSTERED'
-AND i.is_primary_key = 0 AND i.is_unique_constraint = 0
+AND i.is_primary_key = 0 AND i.is_unique_constraint = 0 AND i.is_unique = 0
 ORDER BY [Difference] DESC, [Total Writes] DESC, [Total Reads] ASC OPTION (RECOMPILE);
 ------
 
@@ -1617,7 +1625,7 @@ ORDER BY OBJECT_NAME(t.[object_id]), p.index_id OPTION (RECOMPILE);
 -- temporal_type_desc, is_remote_data_archive_enabled, is_external are new in SQL Server 2016
 
 -- sys.tables (Transact-SQL)
--- https://msdn.microsoft.com/en-us/library/ms187406.aspx
+-- https://bit.ly/2Gk7998
 
 
 
@@ -1644,7 +1652,10 @@ ORDER BY STATS_DATE(i.[object_id], i.index_id) DESC OPTION (RECOMPILE);
 -- Also gives you an idea which indexes are the most active
 
 -- sys.stats (Transact-SQL)
--- https://msdn.microsoft.com/en-us/library/ms177623.aspx
+-- https://bit.ly/2GyAxrn
+
+-- UPDATEs to Statistics (Erin Stellato)
+-- https://bit.ly/2vhrYQy
 
 
 
@@ -1739,7 +1750,7 @@ ORDER BY OBJECT_NAME(i.[object_id]) OPTION (RECOMPILE);
 -- Returns no data if you are not using in-memory OLTP
 
 -- Guidelines for Using Indexes on Memory-Optimized Tables
--- https://msdn.microsoft.com/en-us/library/dn133166.aspx
+-- https://bit.ly/2GCP8lF
 
 
 -- Look at Columnstore index physical statistics (Query 75) (Columnstore Index Physical Stat)
@@ -1757,7 +1768,7 @@ ORDER BY ps.object_id, ps.partition_number, ps.row_group_id OPTION (RECOMPILE);
 ------
 
 -- sys.dm_db_column_store_row_group_physical_stats (Transact-SQL)
--- https://msdn.microsoft.com/en-us/library/dn832030.aspx
+-- https://bit.ly/2q276XQ
 
 
 -- Get lock waits for current database (Query 76) (Lock Waits)
