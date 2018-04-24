@@ -261,7 +261,12 @@ function Get-DbaDatabase {
                 default { @($true, $false, $null) }
             }
             function Invoke-QueryRawDatabases {
-                $server.Query("SELECT *, SUSER_NAME(owner_sid) AS [Owner] FROM sys.databases")
+                if ($server.VersionMajor -eq 8) {
+                    $server.Query("SELECT *, SUSER_NAME(sid) AS [Owner] FROM master.dbo.sysdatabases")
+                }
+                else {
+                    $server.Query("SELECT *, SUSER_NAME(owner_sid) AS [Owner] FROM sys.databases")
+                }
             }
             $backed_info = Invoke-QueryRawDatabases
             $backed_info = $backed_info | Where-Object {
