@@ -1,5 +1,5 @@
 {
-    "LastUpdated": "2018-04-19T00:00:00",
+    "LastUpdated": "2018-04-24T00:00:00",
     "Data": [
     {
         "Version":  "8.0.47",
@@ -3711,10 +3711,7 @@
         "KBList": "4058559"
     },
     {
-        "SP":  [
-                   "SP1",
-                   "LATEST"
-               ],
+        "SP":  "SP1",
         "Version":  "13.0.4001",
         "SupportedUntil":  "2026-07-14T00:00:00",
         "KBList":  "3182545"
@@ -3777,6 +3774,15 @@
         "CU": "CU8",
         "Version": "13.0.4474",
         "KBList": "4077064"
+    },
+    {
+        "SP": [
+            "SP2",
+            "LATEST"
+        ],
+        "Version": "13.0.5026",
+        "SupportedUntil": "2026-07-14T00:00:00",
+        "KBList": "4052908"
     },
     {
         "Version":  "14.0.1",
