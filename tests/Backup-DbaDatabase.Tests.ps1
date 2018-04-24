@@ -134,4 +134,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.RestoreComplete | Should Be $true
         }
     }
+
+    Context "Should handle NUL as an input path" {
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName NUL
+        It "Should return succesful backup" {
+            $results.BackupComplete | Should Be $true
+        }
+        It "Should have backuped to NUL:" {
+            $results.FullName[0] | Should Be 'NUL:'
+        }
+    }
 }
