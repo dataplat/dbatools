@@ -331,7 +331,7 @@ function Backup-DbaDatabase {
             if ('NUL' -eq $BackupFileName){
                 $FinalBackupPath += 'NUL:'
                 $IgnoreFileChecks = $true
-            } 
+            }
             elseif ('' -ne $BackupFileName){
                 $File = New-Object System.IO.FileInfo($BackupFileName)
                 $BackupFinalName = $file.Name
