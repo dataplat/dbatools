@@ -312,9 +312,13 @@ function Backup-DbaDatabase {
             if ($CreateFolder) {
                 $SetDbName = "\$($dbname)"
             }
+
             $BackupFinalName = ''
             $FinalBackupPath = @()
-            if ('' -ne $BackupFileName){
+            if ('NUL' -eq $BackupFileName){
+                $FinalBackupPath += 'NUL:'
+            } 
+            elseif ('' -ne $BackupFileName){
                 $File = New-Object System.IO.FileInfo($BackupFileName)
                 $BackupFinalName = $file.Name
                 $suffix = $file.extension
@@ -347,24 +351,24 @@ function Backup-DbaDatabase {
                     $FinalBackupPath[$i] = $FinalBackupPath[$i]+"\"+$($File.BaseName)+"-$($i+1)-of-"+$($file.count)+$suffix
                 }
             }
-            else {
+            elseif ($FinalBackupPath[0] -ne 'NUL:') {
                 $FinalBackupPath[0] = $FinalBackupPath[0]+$SetDbName+"\"+$BackupFinalName
             }
             
-            ForEach ($Path in $FinalBackupPath){
-
-                if (-not (Test-DbaSqlPath -SqlInstance $server -Path (split-path $path))) {
-                    if (($BuildPath -eq $true) -or ($CreateFolder -eq $True)) {
-                       $null = New-DbaSqlDirectory -SqlInstance $server -Path (split-path $path)
-                    }
-                    else {
-                        $failreason += "SQL Server cannot write to the location $(Split-Path $Path)"
-                        $failures += $failreason
-                        Write-Message -Level Warning -Message "$failreason"
+            if ($FinalBackupPath[0] -ne 'NUL:'){
+                ForEach ($Path in $FinalBackupPath){
+                    if (-not (Test-DbaSqlPath -SqlInstance $server -Path (split-path $path))) {
+                        if (($BuildPath -eq $true) -or ($CreateFolder -eq $True)) {
+                        $null = New-DbaSqlDirectory -SqlInstance $server -Path (split-path $path)
+                        }
+                        else {
+                            $failreason += "SQL Server cannot write to the location $(Split-Path $Path)"
+                            $failures += $failreason
+                            Write-Message -Level Warning -Message "$failreason"
+                        }
                     }
                 }
             }
-        
 
 
             if ('' -eq $AzureBaseUrl) {
@@ -477,7 +481,13 @@ function Backup-DbaDatabase {
                         $HeaderInfo | Add-Member -Type NoteProperty -Name BackupComplete -Value $BackupComplete
                         $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFile -Value (Split-Path $FinalBackupPath -leaf)
                         $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFilesCount -Value $FinalBackupPath.count
-                        $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFolder -Value (Split-Path $FinalBackupPath | Sort-Object -Unique)
+                        if ($FinalBackupPath[0] -eq 'NUL:'){
+                            $pathresult = "NUL:"
+                        }
+                        else {
+                            $pathresult = (Split-Path $FinalBackupPath | Sort-Object -Unique)
+                        }
+                        $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFolder -Value $pathresult
                         $HeaderInfo | Add-Member -Type NoteProperty -Name BackupPath -Value ($FinalBackupPath | Sort-Object -Unique)
                         $HeaderInfo | Add-Member -Type NoteProperty -Name DatabaseName -Value $dbname
                         $HeaderInfo | Add-Member -Type NoteProperty -Name Notes -Value ($failures -join (','))
