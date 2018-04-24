@@ -40,10 +40,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $newServer2.ServerName = $srvName2
             $newServer2.Description = $regSrvDesc2
             $newServer2.Create()
+
+            $regSrvName3 = "dbatoolsci-server3"
+            $srvName3 = "dbatoolsci-server3"
+            $regSrvDesc3 = "dbatoolsci-server3desc"
+            $newServer3 = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($dbStore, $regSrvName3)
+            $newServer3.ServerName = $srvName3
+            $newServer3.Description = $regSrvDesc3
+            $newServer3.Create()
         }
         AfterAll {
             <# The top level group is all that is needed to be dropped #>
             $newGroup.Drop()
+            # plus the root one
+            $newServer3.Drop()
         }
 
         It "Should return multiple objects" {
@@ -53,6 +63,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should allow searching subgroups" {
             $results = Get-DbaRegisteredServer -SqlInstance $script:instance1 -Group "$group\$group2"
             $results.Count | Should Be 1
+        }
+        It "Should return the root server when excluding (see #3529)" {
+            $results = Get-DbaRegisteredServer -SqlInstance $script:instance1 -ExcludeGroup "$group\$group2"
+            @($results | Where-Object Name -eq $srvName3).Count | Should -Be 1
         }
 
         # Property Comparisons will come later when we have the commands
