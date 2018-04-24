@@ -119,7 +119,7 @@ function Publish-DbaDacpac {
                 $instance = $builder['server']
             }
 
-            return $instance.ToString().Replace('\', '-')
+            return $instance.ToString().Replace('\', '-').Replace('(','').Replace(')','')
         }
         if (Test-Bound -Not -ParameterName 'DacfxPath'){
             $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
