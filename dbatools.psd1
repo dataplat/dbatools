@@ -461,7 +461,8 @@
         'Test-DbaDiskSpeed',
         'Get-DbaDbExtentDiff',
         'Read-DbaAuditFile',
-        'Get-DbaDbCompression'
+        'Get-DbaDbCompression',
+        'Invoke-DbaDbDecryptObject'
     )
     
     # Cmdlets to export from this module
