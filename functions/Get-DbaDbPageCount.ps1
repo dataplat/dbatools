@@ -1,4 +1,64 @@
 function Get-DbaDbPageCount {
+        <#
+    .SYNOPSIS
+        Get-DbaDbPageCount will count the pages in a database and return the used, unused and total pages
+
+    .DESCRIPTION
+        Get-DbaDbPageCount is able to return information about the pages in a database.
+        It's possible to return the information for multiple databases and filter on specific databases, schemas and tables
+
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to
+
+    .PARAMETER Database
+        Database to perform the restore for. This value can also be piped enabling multiple databases to be recovered.
+        If this value is not supplied all databases will be recovered.
+
+    .PARAMETER SqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        To connect as a different Windows user, run PowerShell as that user.
+
+    .PARAMETER Database
+        Parameter to specify the database to get the results from
+
+    .PARAMETER Schema
+        Filter to only get specific schemas
+
+    .PARAMETER Table
+        Filter to only get specific tables
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+
+    .EXAMPLE
+        Invoke-DbaLogShippingRecovery -SqlServer server1
+
+        Recovers all the databases on the instance that are enabled for log shipping
+
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
+        Tags: Log Shipping, Configuration
+
+        Website: https://dbatools.io
+        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaDbPageCount
+#>
+
     [CmdLetBinding()]
 
     param(
