@@ -43,7 +43,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                         StepID      = 0
                         StepName    = '(Job outcome)'
                         RunDate     = [DateTime]::Parse('2017-09-26T13:00:00')
-                        RunDuration = 2
+                        RunDuration = 112
                         RunStatus   = 0
                     },
                     @{
@@ -130,6 +130,21 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -NoJobSteps
                 $Results.Length | Should Be 2
+            }
+            It 'Returns our own "augmented" properties, too' {
+                $Results = @()
+                $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -NoJobSteps
+                $Results[0].psobject.properties.Name | Should -Contain 'StartDate'
+                $Results[0].psobject.properties.Name | Should -Contain 'EndDate'
+                $Results[0].psobject.properties.Name | Should -Contain 'Duration'
+            }
+            It 'Returns "augmented" properties that are correct' {
+                $Results = @()
+                $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -NoJobSteps
+                $Results[0].StartDate | Should -Be $Results[0].RunDate
+                $Results[0].RunDuration | Should -Be 112
+                $Results[0].Duration.TotalSeconds | Should -Be 72
+                $Results[0].EndDate | Should -Be ($Results[0].StartDate.AddSeconds($Results[0].Duration.TotalSeconds))
             }
             It "Figures out plain outputfiles" {
                 $Results = @()
