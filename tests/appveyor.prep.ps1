@@ -7,10 +7,6 @@ git clone -q --branch=master --depth=1 https://github.com/sqlcollaborative/appve
 Write-Host -Object "appveyor.prep: Install codecov" -ForegroundColor DarkGreen
 choco install codecov | Out-Null
 
-#Write-Host -Object "appveyor.prep: Install Nuget" -ForegroundColor DarkGreen
-## appveyor has 2.8.5.208 installed, so no need to nuget over and over just to fetch scriptanalyzer
-#Install-PackageProvider Nuget –Force | Out-Null
-
 #Get PSScriptAnalyzer (to check warnings)
 Write-Host -Object "appveyor.prep: Install PSScriptAnalyzer" -ForegroundColor DarkGreen
 Install-Module -Name PSScriptAnalyzer | Out-Null
