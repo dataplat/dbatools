@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 21, 2018
+-- Last Modified: April 24, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -56,8 +56,8 @@ IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductVersi
 SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info];
 ------
 
--- SQL Server 2016 RTM Branch Builds								-- SQL Server 2016 SP1 Branch Builds										
--- Build			Description			Release Date				Build			Description			Release Date				
+-- SQL Server 2016 RTM Branch Builds								-- SQL Server 2016 SP1 Branch Builds                     -- SQL Server 2016 SP2 Branch Builds										
+-- Build			Description			Release Date				Build			Description			Release Date	     Build			Description			Release Date			
 -- 13.0.200.172		CTP 2.0				5/26/2015
 -- 13.0.300.44		CTP 2.1				6/14/2015
 -- 13.0.407.1		CTP 2.2				7/28/2015
@@ -82,7 +82,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 13.0.2213.0		RTM CU8				9/18/2017   ---->           13.0.4451.0		SP1 CU5				 9/18/2017
 -- 13.0.2216.0		RTM CU9				11/21/2017  ---->			13.0.4457.0		SP1 CU6				 11/21/2017
 --																	13.0.4466.4		SP1 CU7				  1/4/2018
---																	13.0.4474.0		SP1 CU8				  3/20/2018
+--																	13.0.4474.0		SP1 CU8				  3/20/2018	---->	13.0.5026		SP2 RTM				4/24/2018
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
