@@ -103,7 +103,7 @@ function Get-DbaDbCheckConstraint {
                     }
 
                     if ($tbl.Checks.Count -eq 0) {
-                        Write-Message -Message "No Checks exist in $tbl table on the $db database on $instance" -Target $tbl -Level Output
+                        Write-Message -Message "No Checks exist in $tbl table on the $db database on $instance" -Target $tbl -Level Verbose
                         continue
                     }
 
