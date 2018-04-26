@@ -18,8 +18,8 @@ function Get-DbaDbForeignKey {
         .PARAMETER ExcludeDatabase
             The database(s) to exclude - this list is auto populated from the server
 
-        .PARAMETER ExcludeSystemSp
-            This switch removes all system objects from the Stored Procedure collection
+        .PARAMETER ExcludeSystemTable
+            This switch removes all system objects from the tables collection
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -50,9 +50,9 @@ function Get-DbaDbForeignKey {
             Gets the Foreign Keys for all databases except db1
 
         .EXAMPLE
-            Get-DbaDbForeignKey -SqlInstance Server1 -ExcludeSystemSp
+            Get-DbaDbForeignKey -SqlInstance Server1 -ExcludeSystemTable
 
-            Gets the Foreign Keys for all databases that are not system objects
+            Gets the Foreign Keys from all tables that are not system objects from all databases
 
         .EXAMPLE
             'Sql1','Sql2/sqlexpress' | Get-DbaDbForeignKey
@@ -67,8 +67,6 @@ function Get-DbaDbForeignKey {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [object[]]$Table,
-        [object[]]$ExcludeTable,
         [switch]$ExcludeSystemTable,
         [Alias('Silent')]
         [switch]$EnableException
@@ -100,7 +98,7 @@ function Get-DbaDbForeignKey {
                 }
 
                 foreach($tbl in $db.Tables) {
-                    if ( (Test-Bound -ParameterName ExcludeSystemTable) -and $bl.IsSystemObject ) {
+                    if ( (Test-Bound -ParameterName ExcludeSystemTable) -and $tbl.IsSystemObject ) {
                         continue
                     }
 

@@ -18,8 +18,8 @@ function Get-DbaDbCheckConstraint {
         .PARAMETER ExcludeDatabase
             The database(s) to exclude - this list is auto populated from the server
 
-        .PARAMETER ExcludeSystemSp
-            This switch removes all system objects from the Stored Procedure collection
+        .PARAMETER ExcludeSystemTable
+            This switch removes all system objects from the table collection
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -50,7 +50,7 @@ function Get-DbaDbCheckConstraint {
             Gets the check constraints for all databases except db1
 
         .EXAMPLE
-            Get-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeSystemSp
+            Get-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeSystemTable
 
             Gets the check constraints for all databases that are not system objects
 
@@ -67,8 +67,6 @@ function Get-DbaDbCheckConstraint {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [object[]]$Table,
-        [object[]]$ExcludeTable,
         [switch]$ExcludeSystemTable,
         [Alias('Silent')]
         [switch]$EnableException
@@ -100,7 +98,7 @@ function Get-DbaDbCheckConstraint {
                 }
 
                 foreach($tbl in $db.Tables) {
-                    if ( (Test-Bound -ParameterName ExcludeSystemTable) -and $bl.IsSystemObject ) {
+                    if ( (Test-Bound -ParameterName ExcludeSystemTable) -and $tbl.IsSystemObject ) {
                         continue
                     }
 
