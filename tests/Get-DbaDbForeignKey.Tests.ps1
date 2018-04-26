@@ -32,7 +32,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $fkName = "dbatools_getdbfk"
         $dbname = "dbatoolsci_getdbfk$random"
         $server.Query("CREATE DATABASE $dbname")
-        $server.Query("CREATE TABLE $tableName (idTbl1 INT)", $dbname)
+        $server.Query("CREATE TABLE $tableName (idTbl1 INT PRIMARY KEY)", $dbname)
         $server.Query("CREATE TABLE $tableName2 (idTbl2 INT, idTbl1 INT)", $dbname)
         $server.Query("ALTER TABLE $tableName2 ADD CONSTRAINT $fkName FOREIGN KEY (idTbl1) REFERENCES $tableName (idTbl1) ON UPDATE NO ACTION ON DELETE NO ACTION ", $dbname)
     }
@@ -41,7 +41,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
-    Context "Can get table foreign keys" {
+    Context "Command actually works" {
         It "returns no foreign keys from excluded DB with -ExcludeDatabase" {
             $results = Get-DbaDbForeignKey -SqlInstance $script:instance2 -ExcludeDatabase master
             $results.where( {$_.Database -eq 'master'}).count | Should Be 0

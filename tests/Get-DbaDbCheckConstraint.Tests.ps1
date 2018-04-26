@@ -32,7 +32,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $ckName = "dbatools_getdbck"
         $dbname = "dbatoolsci_getdbfk$random"
         $server.Query("CREATE DATABASE $dbname")
-        $server.Query("CREATE TABLE $tableName (idTbl1 INT)", $dbname)
+        $server.Query("CREATE TABLE $tableName (idTbl1 INT PRIMARY KEY)", $dbname)
         $server.Query("CREATE TABLE $tableName2 (idTbl2 INT, idTbl1 INT, id3 INT)", $dbname)
         $server.Query("ALTER TABLE $tableName2 ADD CONSTRAINT $ckName CHECK (id3 > 10)", $dbname)
     }
