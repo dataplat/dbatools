@@ -6,4 +6,4 @@ vstest.*/
 *.user
 packages/ 
 *.v3.ncrunchsolution 
-_NCrunch_*/  
+_NCrunch_*/

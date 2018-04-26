@@ -12,12 +12,12 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <summary>
         /// Gets the Regex pattern to be used in the validation
         /// </summary>
-        public string RegexPattern { get; }
+        public string RegexPattern { get; private set; }
 
         /// <summary>
         /// Gets or sets the Regex options to be used in the validation
         /// </summary>
-        public RegexOptions Options { set; get; } = RegexOptions.IgnoreCase;
+        public RegexOptions Options { set; get; }
 
         /// <summary>
         /// Gets or sets the custom error message pattern that is displayed to the user.
@@ -60,8 +60,10 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <exception cref="ArgumentException">for invalid arguments</exception>
         public DbaValidatePatternAttribute(string regexPattern)
         {
-            if (String.IsNullOrEmpty(regexPattern))
-                throw new ArgumentNullException("Must specify a pattern!");
+            Options = RegexOptions.IgnoreCase;
+            if (String.IsNullOrEmpty(regexPattern)) {
+                throw new ArgumentNullException("regexPattern", "Must specify a pattern!");
+            }
 
             RegexPattern = regexPattern;
         }
