@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAgentJobHistory {
     <#
         .SYNOPSIS
@@ -238,9 +239,21 @@ function Get-DbaAgentJobHistory {
                 }
                 $outcome = [pscustomobject]@{}
                 foreach ($execution in $executions) {
+                    $status = switch ($execution.RunStatus) {
+                        0 { "Failed" }
+                        1 { "Succeeded" }
+                        2 { "Retry" }
+                        3 { "Canceled" }
+                    }
+                    
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name ComputerName -value $server.NetName
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    $DurationInSeconds = ($execution.RunDuration % 100) + [int]( ($execution.RunDuration % 10000 ) / 100 ) * 60 + [int]( ($execution.RunDuration % 1000000 ) / 10000 ) * 60 * 60
+                    Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name StartDate -value ([dbadatetime]$execution.RunDate)
+                    Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name EndDate -value ([dbadatetime]$execution.RunDate.AddSeconds($DurationInSeconds))
+                    Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name Duration -value ([prettytimespan](New-TimeSpan -Seconds $DurationInSeconds))
+                    Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name Status -value $status
                     if ($WithOutputFile) {
                         if ($execution.StepID -eq 0) {
                             $outcome = $execution
@@ -256,10 +269,10 @@ function Get-DbaAgentJobHistory {
                         }
                         Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name OutputFileName -value $outname
                         Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name RemoteOutputFileName -value $outremote
-                        Select-DefaultView -InputObject $execution -Property ComputerName, InstanceName, SqlInstance, 'JobName as Job', StepName, RunDate, RunDuration, RunStatus, OutputFileName, RemoteOutputFileName
+                        Select-DefaultView -InputObject $execution -Property ComputerName, InstanceName, SqlInstance, 'JobName as Job', StepName, RunDate, StartDate, EndDate, Duration, Status, OperatorEmailed, Message, OutputFileName, RemoteOutputFileName
                     }
                     else {
-                        Select-DefaultView -InputObject $execution -Property ComputerName, InstanceName, SqlInstance, 'JobName as Job', StepName, RunDate, RunDuration, RunStatus
+                        Select-DefaultView -InputObject $execution -Property ComputerName, InstanceName, SqlInstance, 'JobName as Job', StepName, RunDate, StartDate, EndDate, Duration, Status, OperatorEmailed, Message
                     }
 
                 }

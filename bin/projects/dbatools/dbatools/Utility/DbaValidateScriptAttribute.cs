@@ -23,7 +23,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <summary>
         /// Gets the scriptblock to be used in the validation
         /// </summary>
-        public ScriptBlock ScriptBlock { get; }
+        public ScriptBlock ScriptBlock { get; private set; }
 
         /// <summary>
         /// Validates that each parameter argument matches the scriptblock
@@ -49,11 +49,14 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <summary>
         /// Initializes a new instance of the ValidateScriptBlockAttribute class
         /// </summary>
-        /// <param name="ScriptBlock">Scriptblock to match</param>
+        /// <param name="scriptBlock">Scriptblock to match</param>
         /// <exception cref="ArgumentException">for invalid arguments</exception>
-        public DbaValidateScriptAttribute(ScriptBlock ScriptBlock)
+        public DbaValidateScriptAttribute(ScriptBlock scriptBlock)
         {
-            this.ScriptBlock = ScriptBlock ?? throw new ArgumentNullException("Need to specify a scriptblock!");
+            if (scriptBlock == null) {
+                throw new ArgumentNullException("scriptBlock", "Need to specify a scriptblock!");
+            }
+            this.ScriptBlock = ScriptBlock;
         }
     }
 }
