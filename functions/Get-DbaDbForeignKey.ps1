@@ -103,7 +103,7 @@ function Get-DbaDbForeignKey {
                     }
 
                     if ($tbl.ForeignKeys.Count -eq 0) {
-                        Write-Message -Message "No Foreign Keys exist in $tbl table on the $db database on $instance" -Target $tbl -Level Output
+                        Write-Message -Message "No Foreign Keys exist in $tbl table on the $db database on $instance" -Target $tbl -Level Verbose
                         continue
                     }
 
