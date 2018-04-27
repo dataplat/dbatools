@@ -40,7 +40,9 @@ function Get-DbaWaitResource {
         Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)' -row
 
         Will return an object containing; database name, schema name and index name which is being waited on, and in addition the contents of the locked row at the time the command is run
-    
+
+        To see the contents of the row, expand the ObjectData property like this: 
+        Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)' -row | Select * -ExpandProperty ObjectData
     .NOTES
         Tags: Pages, DBCC
         Author: Stuart Moore (@napalmgram), stuart-moore.com
@@ -152,7 +154,7 @@ function Get-DbaWaitResource {
                     Write-Message -Level warning -Message "Could not retrieve the data. It may have been deleted or moved since the wait resource value was generated"
                 }
                 else{
-                    $output | Add-Member -Type NoteProperty -Name ObjectData -Value $Data
+                    $output | Add-Member -Type NoteProperty -Name ObjectData -Value ( $Data | select -ExpandProperty datarow)  
                 }
             }
             $output
