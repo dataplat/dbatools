@@ -67,7 +67,6 @@
     
     # Functions to export from this module
     FunctionsToExport         = @(
-        'Get-DbaWaitResource',
         'Start-DbaMigration',
         'Copy-DbaDatabase',
         'Copy-DbaLogin',
