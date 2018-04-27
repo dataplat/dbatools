@@ -6,21 +6,21 @@ function Get-DbaSqlFeature {
 
         .DESCRIPTION
             Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)
-            
-            Inspired by Dave Mason's (@BeginTry) post at 
+
+            Inspired by Dave Mason's (@BeginTry) post at
             https://itsalljustelectrons.blogspot.be/2018/04/SQL-Server-Discovery-Report.html
-    
+
             Assumptions:
-            1. The sub-folder "Microsoft SQL Server" exists in $env:ProgramFiles, 
-                even if SQL was installed to a non-default path. This has been 
+            1. The sub-folder "Microsoft SQL Server" exists in $env:ProgramFiles,
+                even if SQL was installed to a non-default path. This has been
                 verified on SQL 2008R2 and SQL 2012. Further verification may be needed.
-            2. The discovery report displays installed components for the version of SQL 
-                Server associated with setup.exe, along with installed components of all 
+            2. The discovery report displays installed components for the version of SQL
+                Server associated with setup.exe, along with installed components of all
                 lesser versions of SQL Server that are installed.
 
         .PARAMETER ComputerName
             The target computer. If the target is not localhost, it must have PowerShell remoting enabled.
-    
+
             Note that this is not the SqlInstance, but rather the ComputerName
 
         .PARAMETER Credential
@@ -46,12 +46,12 @@ function Get-DbaSqlFeature {
             Get-DbaSqlFeature -ComputerName sql2017, sql2016, sql2005
 
             Gets all SQL Server features for all instances on sql2017, sql2016 and sql2005
-    
+
         .EXAMPLE
             Get-DbaSqlFeature -Verbose
 
             Gets all SQL Server features for all instances on localhost. Outputs to screen if no instances are found.
-    
+
         .EXAMPLE
             Get-DbaSqlFeature -ComputerName sql2017 -Credential (Get-Credential ad\sqladmin)
 
@@ -64,7 +64,7 @@ function Get-DbaSqlFeature {
         [PSCredential]$Credential,
         [switch]$EnableException
     )
-    
+
     begin {
         $scriptblock = {
             $setup = Get-ChildItem -Recurse -Include setup.exe -Path "$env:ProgramFiles\Microsoft SQL Server" -ErrorAction SilentlyContinue |
@@ -74,7 +74,7 @@ function Get-DbaSqlFeature {
                 $null = Start-Process -FilePath $setup.FullName -ArgumentList "/Action=RunDiscovery /q" -Wait
                 $parent = Split-Path (Split-Path $setup.Fullname)
                 $xmlfile = Get-ChildItem -Recurse -Include SqlDiscoveryReport.xml -Path $parent | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-                
+
                 if ($xmlfile) {
                     $xml = [xml](Get-Content -Path $xmlfile)
                     $xml.ArrayOfDiscoveryInformation.DiscoveryInformation
@@ -82,16 +82,16 @@ function Get-DbaSqlFeature {
             }
         }
     }
-    
+
     process {
         foreach ($computer in $ComputerName) {
             try {
                 $results = Invoke-Command2 -ComputerName $Computer -ScriptBlock $scriptblock -Credential $Credential -Raw
-                
+
                 if (-not $results) {
-                    Write-Message -Level Verbose -Message "No features found on $computer"    
+                    Write-Message -Level Verbose -Message "No features found on $computer"
                 }
-                
+
                 foreach ($result in $results) {
                     [pscustomobject]@{
                         ComputerName      = $computer
