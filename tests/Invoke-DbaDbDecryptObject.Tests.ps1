@@ -75,7 +75,7 @@ END
         # Check if DAC is enabled
         $config = Get-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteDacConnectionsEnabled
         if ($config.ConfiguredValue -ne 1) {
-            Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteDacConnectionsEnabled -Value 1
+            Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteDacConnectionsEnabled -Value $true
         }
     }
 
@@ -84,36 +84,33 @@ END
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
 
         # Set the original configuration
-        Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteDacConnectionsEnabled -Value $config.ConfiguredValue
+        Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteDacConnectionsEnabled -Value $config.ConfiguredValue -WarningAction SilentlyContinue
     }
 
     Context "DAC enabled" {
-        Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteDacConnectionsEnabled -Value 0
+        Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteDacConnectionsEnabled -Value $false
 
-        It "Should throw error" {
-                Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunctionStoredProcedure
-                $error[0].Exception | Should -BeLike "*DAC is not enabled for instance*"
+        It "Should show warning" {
+                Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunctionStoredProcedure -WarningVariable warn -WarningAction SilentlyContinue
+                $warn | Should -BeLike "*to allow DAC*"
         }
 
-        Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteDacConnectionsEnabled -Value 1
+        Set-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteDacConnectionsEnabled -Value $true -WarningAction SilentlyContinue
     }
 
     Context "Decrypt Function" {
-        It "Should be successful" {
+        It "Should -Be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunction
-            $result
-            $result.Script | Should Be $queryFunction
+            $result.Script | Should -Be $queryFunction
 
         }
     }
 
     Context "Decrypt Stored Procedure" {
-        It "Should be successful" {
+        It "Should -Be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunctionStoredProcedure
-            $result
-            $result.Script | Should Be $queryStoredProcedure
+            $result.Script | Should -Be $queryStoredProcedure
 
         }
     }
-
 }
