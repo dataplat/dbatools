@@ -78,17 +78,35 @@ function Get-DbaWaitResource {
         $ResourceType = $matches.Type
         $DbId = $matches.DbId
         $DbName = ($server.Databases | Where-Object ID -eq $dbid).Name
-        if ($dbname -eq ''){
-        
+        if ($null -eq $DbName){
+            stop-function -Message "Database with id $dbid does not exist on $server"
+            return
         }
         if ($ResourceType -eq 'PAGE'){
             $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):(?<FileID>[0-9]*):(?<PageID>[0-9]*)$'
             $DataFileSql = "select name, physical_name from sys.master_files where database_id=$DbID and file_ID=$($matches.FileID);"
             $DataFile = $server.query($DataFileSql)
+            if ($null -eq $DataFile){
+                Write-Message -Level Warning -Message "Datafile with id $($matches.FileID) for $dbname not found"
+                return 
+            }
             $ObjectIdSQL = "dbcc traceon (3604); dbcc page ($dbid,$($matches.fileID),$($matches.PageID),2) with tableresults;"
-            $ObjectID = ($server.databases[$dbname].Query($ObjectIdSQL) | Where-Object Field -eq 'Metadata: ObjectId').Value
+            try {
+                $ObjectID = ($server.databases[$dbname].Query($ObjectIdSQL) | Where-Object Field -eq 'Metadata: ObjectId').Value
+            }
+            catch {
+                Stop-Function -Message "You've requested a page beyond the end of the database, exiting"
+                return
+            }
+            if ($null -eq $ObjectID){
+            Write-Message -Level Warning -Message "Object not found, could have been delete, or a transcription error when copying the Wait_resource to PowerShell"
+            return
+            }
             $ObjectSql = "select SCHEMA_NAME(schema_id) as SchemaName, name, type_desc from sys.all_objects where object_id=$objectID;"
             $Object = $server.databases[$dbname].query($ObjectSql)
+            if ($null -eq $Object){
+                Write-Message -Warning "Object could not be found. Could have been removed, or could be a transcription error copying the Wait_resource to sowerShell"
+            }
             [PsCustomObject]@{
                 DatabaseID = $DbId
                 DatabaseName = $DbName
@@ -114,6 +132,10 @@ function Get-DbaWaitResource {
                             hobt_id = $($matches.frodo);
                 "
             $Index = $server.databases[$dbname].Query($IndexSql)
+            if ($null -eq $Index){
+                Write-Message -Level Warning -Message "Heap or B-Tree with ID $($matches.frodo) can not be found in $dbname on $server"
+                return
+            }
             $output = [PsCustomObject]@{
                 DatabaseID = $DbId
                 DatabaseName = $DbName
@@ -126,7 +148,12 @@ function Get-DbaWaitResource {
             if ($row -eq $True){
                 $DataSql = "select * from $($Index.SchemaName).$($Index.ObjectName) with (NOLOCK) where %%lockres%% ='($($matches.physloc))'"
                 $Data = $server.databases[$dbname].query($DataSql)
-                $output | Add-Member -Type NoteProperty -Name ObjectData -Value $Data
+                if ($null -eq $data){
+                    Write-Message -Level warning -Message "Could not retrieve the data. It may have been deleted or moved since the wait resource value was generated"
+                }
+                else{
+                    $output | Add-Member -Type NoteProperty -Name ObjectData -Value $Data
+                }
             }
             $output
         }
