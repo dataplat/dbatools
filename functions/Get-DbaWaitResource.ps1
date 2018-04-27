@@ -1,7 +1,7 @@
 function Get-DbaWaitResource {
     <#
     .SYNOPSIS
-        Returns the resource being waited 
+        Returns the resource being waited upon
 
     .DESCRIPTION
         Given a wait resource in the form of:
@@ -31,18 +31,18 @@ function Get-DbaWaitResource {
 
         Will return an object containing; database name, data file name, schema name and the object which owns the resouce
 
-    .EXAMPLE 
+    .EXAMPLE
         Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)'
 
         Will return an object containing; database name, schema name and index name which is being waited on
     
-    .EXAMPLE 
+    .EXAMPLE
         Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)' -row
 
         Will return an object containing; database name, schema name and index name which is being waited on, and in addition the contents of the locked row at the time the command is run
     
     .NOTES
-        Tags: 
+        Tags: Pages, DBCC
         Author: Stuart Moore (@napalmgram), stuart-moore.com
 
         dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -102,22 +102,23 @@ function Get-DbaWaitResource {
         }
         if ($ResourceType -eq 'KEY'){
             $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):(?<frodo>[0-9]*) \((?<physloc>.*)\)$'
-            $IndexSql = "select 
+            $IndexSql = "select
                             sp.object_id as ObjectID,
-                            OBJECT_SCHEMA_NAME(sp.object_id) as SchemaName, 
-                            sao.name as ObjectName, 
+                            OBJECT_SCHEMA_NAME(sp.object_id) as SchemaName,
+                            sao.name as ObjectName,
                             si.name as IndexName
-                        from 
-                            sys.partitions sp inner join sys.indexes si on sp.index_id=si.index_id
+                        from
+                            sys.partitions sp inner join sys.indexes si on sp.index_id=si.index_id and sp.object_id=si.object_id
                                 inner join sys.all_objects sao on sp.object_id=sao.object_id
-                        where 
+                        where
                             hobt_id = $($matches.frodo);
                 "
             $Index = $server.databases[$dbname].Query($IndexSql)
             $output = [PsCustomObject]@{
                 DatabaseID = $DbId
                 DatabaseName = $DbName
-                SchemaName = $Index.IndexName
+                SchemaName = $Index.SchemaName
+                IndexName = $Index.IndexName
                 ObjectID = $index.ObjectID
                 Objectname = $index.ObjectName
                 HobtID = $matches.frodo
