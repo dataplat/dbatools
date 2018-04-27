@@ -99,7 +99,7 @@ END
     }
 
     Context "Decrypt Function" {
-        It "Should -Be successful" {
+        It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunction
             $result.Script | Should -Be $queryFunction
 
@@ -107,7 +107,7 @@ END
     }
 
     Context "Decrypt Stored Procedure" {
-        It "Should -Be successful" {
+        It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunctionStoredProcedure
             $result.Script | Should -Be $queryStoredProcedure
 

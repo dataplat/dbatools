@@ -139,7 +139,6 @@ function Invoke-DbaDbDecryptObject {
         }
 
         # Create array list to hold the results
-        $collection = New-Object System.Collections.ArrayList
         $objectCollection = New-Object System.Collections.ArrayList
 
         # Set the encoding
@@ -315,7 +314,7 @@ function Invoke-DbaDbDecryptObject {
                         }
 
                         # Add the results to the custom object
-                        $null = $collection.Add([PSCustomObject]@{
+                        [PSCustomObject]@{
                                 Server   = $instance
                                 Database = $db.Name
                                 Type     = $object.ObjectType
@@ -323,18 +322,16 @@ function Invoke-DbaDbDecryptObject {
                                 Name     = $object.Name
                                 FullName = "$($object.Schema).$($object.Name)"
                                 Script   = $result
-                            })
+                            }
 
                     } # end if secret
 
                 } # end for each object
 
             } # end for each database
-
+            
         } # end for each instance
-
-        return $collection
-
+        
     } # process
 
     end {
@@ -342,6 +339,4 @@ function Invoke-DbaDbDecryptObject {
 
         Write-Message -Message "Finished decrypting data" -Level Verbose
     }
-
-
 }
