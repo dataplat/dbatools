@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: April 3, 2018
+-- Last Modified: April 21, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -13,6 +13,13 @@
 
 
 -- Please make sure you are using the correct version of these diagnostic queries for your version of SQL Server!
+
+
+-- If you like PowerShell, there is a very useful community solution for running these queries in an automated fashion
+-- https://dbatools.io/
+
+-- Invoke-DbaDiagnosticQuery
+-- https://dbatools.io/functions/invoke-dbadiagnosticquery/
 
 
 --******************************************************************************
@@ -86,37 +93,37 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 
 -- How to determine the version, edition and update level of SQL Server and its components 
--- https://support.microsoft.com/en-us/kb/321185
+-- https://bit.ly/2oAjKgW	
 
 -- SQL Server 2014 build versions
--- http://support.microsoft.com/kb/2936603
+-- https://bit.ly/2HpmYOG
 
 -- Where to find information about the latest SQL Server builds
--- https://support.microsoft.com/en-us/help/957826/where-to-find-information-about-the-latest-sql-server-builds
+-- https://bit.ly/2IGHbfY
 
 -- Recommended updates and configuration options for SQL Server 2012 and SQL Server 2014 used with high-performance workloads
--- http://support.microsoft.com/kb/2964518/EN-US
+-- https://bit.ly/2Hy3zIZ
 
 -- Performance and Stability Related Fixes in Post-SQL Server 2014 RTM Builds
--- https://www.sqlskills.com/blogs/glenn/performance-and-stability-related-fixes-in-post-sql-server-2014-rtm-builds/
+-- https://bit.ly/2Hx50HU
 
 -- Performance and Stability Related Fixes in Post-SQL Server 2014 SP1 Builds
--- https://www.sqlskills.com/blogs/glenn/performance-and-stability-related-fixes-in-post-sql-server-2014-sp1-builds/
+-- https://bit.ly/2GWLx6a
 
 -- Performance and Stability Related Fixes in Post-SQL Server 2014 SP2 Builds
--- https://www.sqlskills.com/blogs/glenn/performance-and-stability-related-fixes-in-post-sql-server-2014-sp2-builds/
+-- https://bit.ly/2iJ9G4N
 
 -- Announcing updates to the SQL Server Incremental Servicing Model (ISM)
--- https://blogs.msdn.microsoft.com/sqlreleaseservices/announcing-updates-to-the-sql-server-incremental-servicing-model-ism/
+-- https://bit.ly/1RzYITz
 
 -- Update Center for Microsoft SQL Server
--- http://bit.ly/2pZptuQ
+-- https://bit.ly/2pZptuQ
 
 -- Download SQL Server Management Studio (SSMS)
--- https://msdn.microsoft.com/en-us/library/mt238290.aspx
+-- https://bit.ly/1OcupT9
 
 -- Download and install Microsoft SQL Operations Studio 
--- https://docs.microsoft.com/en-us/sql/sql-operations-studio/download
+-- https://bit.ly/2vgke1A
 
 
 -- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
@@ -165,7 +172,7 @@ SERVERPROPERTY('IsXTPSupported') AS [IsXTPSupported];
 -- Note: Some columns will be NULL on older SQL Server builds
 
 -- SERVERPROPERTY (Transact-SQL)
--- http://bit.ly/2eeaXeI
+-- https://bit.ly/2eeaXeI
 
 
 -- Get instance-level configuration values for instance  (Query 4) (Configuration Values)
@@ -196,33 +203,33 @@ DBCC TRACESTATUS (-1);
 
 -- Common trace flags that should be enabled in most cases
 -- TF 1117 - When growing a data file, grow all files at the same time so they remain the same size, reducing allocation contention points
---           https://support2.microsoft.com/kb/2154845
+--           https://bit.ly/2GY1kOl
 -- 
 -- TF 1118 - Helps alleviate allocation contention in tempdb, SQL Server allocates full extents to each database object, 
 --           thereby eliminating the contention on SGAM pages (more important with older versions of SQL Server)
 --           Recommendations to reduce allocation contention in SQL Server tempdb database
---           https://support2.microsoft.com/kb/2154845
+--           https://bit.ly/2GY1kOl
 
 -- TF 2371 - Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)
---           https://blogs.msdn.com/b/saponsqlserver/archive/2011/09/07/changes-to-automatic-update-statistics-in-sql-server-traceflag-2371.aspx
+--           https://bit.ly/2HySkAg
 
 -- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
---           https://www.sqlskills.com/blogs/paul/fed-up-with-backup-success-messages-bloating-your-error-logs/
+--           https://bit.ly/2p6MTjS
 
 -- TF 3449 - Enables use of dirty page manager (SQL Server 2014 SP1 CU7 and later)
---			 https://blogs.msdn.microsoft.com/psssql/2017/06/29/sql-server-large-ram-and-db-checkpointing/
+--			 https://bit.ly/2uj0h5M
 
 -- TF 6533 - Spatial performance improvements in SQL Server 2012 and 2014
---           https://support.microsoft.com/en-us/kb/3107399
+--           https://bit.ly/2v7C7ze
 
 -- TF 6534 - Enables use of native code to improve performance with spatial data
---           https://blogs.msdn.microsoft.com/bobsql/2016/06/03/sql-2016-it-just-runs-faster-native-spatial-implementations/
+--           https://bit.ly/2HrQUpU
 
 -- TF 8079 - Enables automatic soft-NUMA on systems with eight or more physical cores per NUMA node (with SQL Server 2014 SP2)
---           https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-2014-service-pack-2-is-now-available/
+--           https://bit.ly/29B7oR8
 
 -- DBCC TRACEON - Trace Flags (Transact-SQL)
--- https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-traceon-trace-flags-transact-sql
+-- https://bit.ly/2FuSvPg
 
 
 
@@ -258,10 +265,10 @@ FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
 -- If locked_page_allocations_kb > 0, then LPIM is enabled
 
 -- How to enable the "locked pages" feature in SQL Server 2012
--- https://support.microsoft.com/en-us/kb/2659143
+-- https://bit.ly/2F5UjOA
 
 -- Memory Management Architecture Guide
--- https://docs.microsoft.com/en-us/sql/relational-databases/memory-management-architecture-guide 
+-- https://bit.ly/2JKkadC 
 
 
 
@@ -316,10 +323,10 @@ ORDER BY sj.name OPTION (RECOMPILE);
 -- Look for jobs that have a notify_level_email set to 0 (meaning no e-mail is ever sent)
 --
 -- MSDN sysjobs documentation
--- http://bit.ly/2paDEOP 
+-- https://bit.ly/2paDEOP 
 
 -- SQL Server Maintenance Solution
--- http://bit.ly/1pgchQu  
+-- https://bit.ly/1pgchQu  
 
 
 -- Get SQL Server Agent Alert Information (Query 11) (SQL Server Agent Alerts)
@@ -331,7 +338,7 @@ ORDER BY name OPTION (RECOMPILE);
 
 -- Gives you some basic information about your SQL Server Agent Alerts 
 -- (which are different from SQL Server Agent jobs)
--- Read more about Agent Alerts here: http://bit.ly/2Giz0Xf 
+-- Read more about Agent Alerts here: https://bit.ly/2Giz0Xf 
 
 
 
@@ -359,10 +366,10 @@ FROM sys.dm_os_windows_info WITH (NOLOCK) OPTION (RECOMPILE);
 -- SQL Server 2014 requires Windows Server 2008 SP2 or newer
 
 -- Hardware and Software Requirements for Installing SQL Server 2014
--- https://msdn.microsoft.com/en-us/library/ms143506.aspx
+-- https://bit.ly/1yRYXkQ
 
 -- Using SQL Server in Windows 8 and later versions of Windows operating system 
--- https://support.microsoft.com/en-us/kb/2681562
+-- https://bit.ly/2F7Ax0P
 
 
 
@@ -380,10 +387,10 @@ WHERE node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
 
 
 -- sys.dm_os_nodes (Transact-SQL)
--- http://bit.ly/2pn5Mw8
+-- https://bit.ly/2pn5Mw8
 
 -- Balancing Your Available SQL Server Core Licenses Evenly Across NUMA Nodes
--- http://bit.ly/2vfC4Rq
+-- https://bit.ly/2vfC4Rq
 
 
 
@@ -472,7 +479,7 @@ FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 -- It merely indicates that you have a hypervisor running on your host
 
 -- sys.dm_os_sys_info (Transact-SQL)
--- http://bit.ly/2pczOYs
+-- https://bit.ly/2pczOYs
 
 -- Soft NUMA configuration was a new column for SQL Server 2016
 -- OFF = Soft-NUMA feature is OFF
@@ -480,7 +487,7 @@ FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 -- MANUAL = Manually configured soft-NUMA
 
 -- Configure SQL Server to Use Soft-NUMA (SQL Server)
--- http://bit.ly/2HTpKJt
+-- https://bit.ly/2HTpKJt
 
 -- sql_memory_model_desc values (Added in SQL Server 2016 SP1)
 -- CONVENTIONAL
@@ -515,10 +522,10 @@ EXEC sys.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'HARDWARE\DESCRIPTION\Syste
 -- to the Windows Power Plan or hardware power management
 
 -- You can use CPU-Z to get your actual CPU core speed and a lot of other useful information
--- http://www.cpuid.com/softwares/cpu-z.html
+-- https://bit.ly/QhR6xF
 
 -- You can learn more about processor selection for SQL Server by following this link
--- http://bit.ly/2F3aVlP
+-- https://bit.ly/2F3aVlP
 
 
 
@@ -532,10 +539,10 @@ FROM sys.dm_os_buffer_pool_extension_configuration WITH (NOLOCK) OPTION (RECOMPI
 -- It is a more interesting feature for Standard Edition
 
 -- Buffer Pool Extension to SSDs in SQL Server 2014
--- http://bit.ly/1bm08m8
+-- https://bit.ly/1bm08m8
 
 -- Buffer Pool Extension
--- http://bit.ly/2oBuieO
+-- https://bit.ly/2oBuieO
 
 
 
@@ -563,7 +570,7 @@ ORDER BY creation_time DESC OPTION (RECOMPILE);
 -- not had any memory dumps (which is a good thing)
 
 -- sys.dm_server_memory_dumps (Transact-SQL)
--- http://bit.ly/2elwWll
+-- https://bit.ly/2elwWll
 
 
 
@@ -588,7 +595,7 @@ ORDER BY database_id OPTION (RECOMPILE);
 -- If you do get results here, you should do further investigation to determine the root cause
 
 -- Manage the suspect_pages Table
--- http://bit.ly/2Fvr1c9
+-- https://bit.ly/2Fvr1c9
 
 
 -- Get number of data files in tempdb database (Query 26) (Tempdb Data Files)
@@ -637,7 +644,7 @@ ORDER BY vs.volume_mount_point OPTION (RECOMPILE);
 -- Being low on free space can negatively affect performance
 
 -- sys.dm_os_volume_stats (Transact-SQL)
--- http://bit.ly/2oBPNNr
+-- https://bit.ly/2oBPNNr
 
 
 
@@ -737,7 +744,7 @@ DROP TABLE #IOWarningResults;
 -- Look to see if you see any patterns in the results (same files, same drives, same time of day, etc.)
 
 -- Diagnostics in SQL Server help detect stalled and stuck I/O operations
--- https://support.microsoft.com/en-us/kb/897284
+-- https://bit.ly/2qtaw73
 
 
 
@@ -799,7 +806,7 @@ ORDER BY index_advantage DESC OPTION (RECOMPILE);
 -- Do not just blindly add indexes that show up from this query!!!
 
 -- SQL Server Index Design Guide
--- https://docs.microsoft.com/en-us/sql/relational-databases/sql-server-index-design-guide
+-- https://bit.ly/2qtZr4N
 
 
 
@@ -836,7 +843,7 @@ DROP TABLE #VLFCountResults;
 -- Try to keep your VLF counts under 200 in most cases (depending on log file size)
 
 -- Important change to VLF creation algorithm in SQL Server 2014
--- https://www.sqlskills.com/blogs/paul/important-change-vlf-creation-algorithm-sql-server-2014/
+-- https://bit.ly/2Hsjbg4
 
 
 
@@ -954,19 +961,19 @@ OPTION (RECOMPILE);
 -- Cumulative wait stats are not as useful on an idle instance that is not under load or performance pressure
 
 -- SQL Server Wait Types Library (Paul Randal)
--- https://www.sqlskills.com/help/waits/
+-- https://bit.ly/2ePzYO2
 
 -- The SQL Server Wait Type Repository
--- http://blogs.msdn.com/b/psssql/archive/2009/11/03/the-sql-server-wait-type-repository.aspx
+-- https://bit.ly/1afzfjC
 
 -- Wait statistics, or please tell me where it hurts
--- https://www.sqlskills.com/blogs/paul/wait-statistics-or-please-tell-me-where-it-hurts/
+-- https://bit.ly/2wsQHQE
 
 -- SQL Server 2005 Performance Tuning using the Waits and Queues
--- http://technet.microsoft.com/en-us/library/cc966413.aspx
+-- https://bit.ly/1o2NFoF
 
 -- sys.dm_os_wait_stats (Transact-SQL)
--- http://msdn.microsoft.com/en-us/library/ms179984(v=sql.120).aspx
+-- https://bit.ly/2Hjq9Yl
 
 
 
@@ -1438,8 +1445,8 @@ ORDER BY [Avg IO] DESC OPTION (RECOMPILE);
 -- Possible Bad NC Indexes (writes > reads)  (Query 61) (Bad NC Indexes)
 SELECT OBJECT_NAME(s.[object_id]) AS [Table Name], i.name AS [Index Name], i.index_id, 
 i.is_disabled, i.is_hypothetical, i.has_filter, i.fill_factor,
-user_updates AS [Total Writes], user_seeks + user_scans + user_lookups AS [Total Reads],
-user_updates - (user_seeks + user_scans + user_lookups) AS [Difference]
+s.user_updates AS [Total Writes], s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads],
+s.user_updates - (s.user_seeks + s.user_scans + s.user_lookups) AS [Difference]
 FROM sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 INNER JOIN sys.indexes AS i WITH (NOLOCK)
 ON s.[object_id] = i.[object_id]
@@ -1448,7 +1455,7 @@ WHERE OBJECTPROPERTY(s.[object_id],'IsUserTable') = 1
 AND s.database_id = DB_ID()
 AND s.user_updates > (s.user_seeks + s.user_scans + s.user_lookups)
 AND i.index_id > 1 AND i.[type_desc] = N'NONCLUSTERED'
-AND i.is_primary_key = 0 AND i.is_unique_constraint = 0
+AND i.is_primary_key = 0 AND i.is_unique_constraint = 0 AND i.is_unique = 0
 ORDER BY [Difference] DESC, [Total Writes] DESC, [Total Reads] ASC OPTION (RECOMPILE);
 ------
 
@@ -1582,7 +1589,10 @@ ORDER BY STATS_DATE(i.[object_id], i.index_id) DESC OPTION (RECOMPILE);
 -- Also gives you an idea which indexes are the most active
 
 -- sys.stats (Transact-SQL)
--- https://msdn.microsoft.com/en-us/library/ms177623.aspx
+-- https://bit.ly/2GyAxrn
+
+-- UPDATEs to Statistics (Erin Stellato)
+-- https://bit.ly/2vhrYQy
 
 
 
@@ -1677,7 +1687,7 @@ ORDER BY OBJECT_NAME(i.[object_id]) OPTION (RECOMPILE);
 -- Returns no data if you are not using in-memory OLTP
 
 -- Guidelines for Using Indexes on Memory-Optimized Tables
--- https://msdn.microsoft.com/en-us/library/dn133166.aspx
+-- https://bit.ly/2GCP8lF
 
 
 -- Get lock waits for current database (Query 73) (Lock Waits)
@@ -1717,7 +1727,7 @@ AND es.session_id <> @@SPID OPTION (RECOMPILE);
 -- Requires SQL Server 2014 SP2 or later
 
 -- New DMF for retrieving input buffer in SQL Server
--- https://blogs.msdn.microsoft.com/sql_server_team/new-dmf-for-retrieving-input-buffer-in-sql-server/
+-- https://bit.ly/2uHKMbz
 
 
 -- Look at recent Full backups for the current database (Query 75) (Recent Full Backups)
@@ -1760,13 +1770,13 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- Sign up for Microsoft Visual Studio Dev Essentials and get a free three month pass to Pluralsight
 
 -- Microsoft Visual Studio Dev Essentials
--- http://bit.ly/1q6xbDL
+-- https://bit.ly/1q6xbDL
 
 
 -- Sign up for Microsoft IT Pro Cloud Essentials and get lots of free Azure usage credits, MCP exam voucher, three month Pluralsight subscription
 
 -- Microsoft IT Pro Cloud Essentials
--- http://bit.ly/2443SAd
+-- https://bit.ly/2443SAd
 
 
 -- August 2017 blog series about upgrading and migrating SQL Server
