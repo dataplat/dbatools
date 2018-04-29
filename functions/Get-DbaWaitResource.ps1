@@ -41,8 +41,6 @@ function Get-DbaWaitResource {
 
         Will return an object containing; database name, schema name and index name which is being waited on, and in addition the contents of the locked row at the time the command is run
 
-        To see the contents of the row, expand the ObjectData property like this: 
-        Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)' -row | Select * -ExpandProperty ObjectData
     .NOTES
         Tags: Pages, DBCC
         Author: Stuart Moore (@napalmgram), stuart-moore.com
@@ -90,7 +88,7 @@ function Get-DbaWaitResource {
             $DataFile = $server.query($DataFileSql)
             if ($null -eq $DataFile){
                 Write-Message -Level Warning -Message "Datafile with id $($matches.FileID) for $dbname not found"
-                return 
+                return
             }
             $ObjectIdSQL = "dbcc traceon (3604); dbcc page ($dbid,$($matches.fileID),$($matches.PageID),2) with tableresults;"
             try {
@@ -121,7 +119,7 @@ function Get-DbaWaitResource {
             }
         }
         if ($ResourceType -eq 'KEY'){
-            $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):(?<frodo>[0-9]*) \((?<physloc>.*)\)$'
+            $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):(?<frodo>[0-9]*) (?<physloc>\(.*\))$'
             $IndexSql = "select
                             sp.object_id as ObjectID,
                             OBJECT_SCHEMA_NAME(sp.object_id) as SchemaName,
@@ -148,16 +146,19 @@ function Get-DbaWaitResource {
                 HobtID = $matches.frodo
             }
             if ($row -eq $True){
-                $DataSql = "select * from $($Index.SchemaName).$($Index.ObjectName) with (NOLOCK) where %%lockres%% ='($($matches.physloc))'"
+                $DataSql = "select * from $($Index.SchemaName).$($Index.ObjectName) with (NOLOCK) where %%lockres%% ='$($matches.physloc)'"
                 $Data = $server.databases[$dbname].query($DataSql)
                 if ($null -eq $data){
                     Write-Message -Level warning -Message "Could not retrieve the data. It may have been deleted or moved since the wait resource value was generated"
                 }
                 else{
-                    $output | Add-Member -Type NoteProperty -Name ObjectData -Value ( $Data | select -ExpandProperty datarow)  
+                    $output | Add-Member -Type NoteProperty -Name ObjectData -Value $Data
+                    $output | Select-Object * -ExpandProperty ObjectData
                 }
             }
-            $output
+            else {
+                $output
+            }
         }
     }
 }
