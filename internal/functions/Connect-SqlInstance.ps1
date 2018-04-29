@@ -22,7 +22,7 @@ function Connect-SqlInstance {
 
         .PARAMETER AzureUnsupported
             Throw if Azure is detected but not supported
-    
+
         .PARAMETER RegularUser
             The connection doesn't require SA privileges.
             By default, the assumption is that SA is no longer required.
@@ -222,17 +222,24 @@ function Connect-SqlInstance {
             throw "SQL Server version $MinimumVersion required - $server not supported."
         }
     }
-    
-    
+
     if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
         throw "SQL Azure DB not supported :("
     }
-    
+
     if (-not $RegularUser) {
         if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin") {
             throw "Not a sysadmin on $ConvertedSqlInstance. Quitting."
         }
     }
+    #'PrimaryFilePath' seems the culprit for slow SMO on databases
+    $Fields2000_Db = 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsSystemObject', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'ReadOnly', 'RecoveryModel', 'ReplicationOptions', 'Status', 'Version'
+    $Fields200x_Db = $Fields2000_Db + @('BrokerEnabled', 'IsMirroringEnabled', 'Trustworthy')
+    $Fields201x_Db = $Fields200x_Db + @('ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'ContainmentType', 'EncryptionEnabled')
+
+    $Fields2000_Login = 'CreateDate' , 'DateLastModified' , 'DefaultDatabase' , 'DenyWindowsLogin' , 'IsSystemObject' , 'Language' , 'LanguageAlias' , 'LoginType' , 'Name' , 'Sid' , 'WindowsLoginAccessType'
+    $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
+    $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
 
     if ($loadedSmoVersion -ge 11) {
         try {
@@ -247,18 +254,30 @@ function Connect-SqlInstance {
 
                 if ($server.VersionMajor -eq 8) {
                     # 2000
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType')
+                    $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsDb.AddRange($Fields2000_Db)
+                    $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsLogin.AddRange($Fields2000_Login)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
                 }
                 elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
                     # 2005 and 2008
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+                    $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsDb.AddRange($Fields200x_Db)
+                    $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsLogin.AddRange($Fields200x_Login)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
                 }
                 else {
                     # 2012 and above
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+                    $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsDb.AddRange($Fields201x_Db)
+                    $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsLogin.AddRange($Fields201x_Login)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
                 }
             }
         }
