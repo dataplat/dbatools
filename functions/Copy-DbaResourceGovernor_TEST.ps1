@@ -11,7 +11,9 @@ $ScriptDirectory = Split-Path (Split-Path -Path $MyInvocation.MyCommand.Definiti
 . ("$ScriptDirectory\functions\Get-DbaResourceGovernorClassiferFunction.ps1")
 
 Copy-DbaResourceGovernor -Source "localhost\MSSQL2012" -Destination "localhost\MSSQL2016" -Force
+#Copy-DbaResourceGovernor -Source "localhost\MSSQL2016" -Destination "localhost\MSSQL2012"
+#Copy-DbaResourceGovernor -Source "localhost\MSSQL2012" -Destination "localhost\MSSQL2016" -Force
 #Get-DbaResourceGovernorClassiferFunction -SqlInstance localhost\MSSQL2012
 #Write-Host $f
 
-##
+## 44#fds4e[gG1_V@@_43r
