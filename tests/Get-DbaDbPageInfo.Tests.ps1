@@ -9,7 +9,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests" {
         $random = Get-Random
 
         # Setup the database name
-        $dbname = "dbatoolsci_pagecount_$random"
+        $dbname = "dbatoolsci_pageinfo_$random"
 
         # Remove the database if it exists
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
@@ -47,11 +47,11 @@ VALUES
         # Execute the query
         $server.Databases[$dbname].Query($query)
 
-        $result = Get-DbaDbPageCount -SqlInstance $script:instance1 -Database $dbname
+        $result = Get-DbaDbPageInfo -SqlInstance $script:instance1 -Database $dbname
 
-        $result.TotalPages | Should Be 17
-        $result.UnusedPages | Should Be 3
-        $result.UsedPages | Should Be 14
+        $result.Count | Should Be 17
+        ($result | Where-Object {$_.IsAllocated -eq $false}).Count | Should Be 3
+        ($result | Where-Object {$_.IsAllocated -eq $true}).Count | Should Be 14
 
     }
 
