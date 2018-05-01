@@ -17,11 +17,13 @@ Describe "$commandname Unit Tests" -Tags "UnitTests" {
         # Get a server object
         $server = Connect-DbaInstance -SqlInstance $script:instance1
 
-        # Create the database
-        $server.Query("CREATE DATABASE $dbname;")
+        if($server.VersionMajor){
+            # Create the database
+            $server.Query("CREATE DATABASE $dbname;")
 
-        # Create the test table
-        $server.Databases[$dbname].Query('CREATE TABLE [dbo].[TestTable](TestText VARCHAR(MAX) NOT NULL)')
+            # Create the test table
+            $server.Databases[$dbname].Query('CREATE TABLE [dbo].[TestTable](TestText VARCHAR(MAX) NOT NULL)')
+        }
     }
 
     AfterAll {
@@ -30,8 +32,9 @@ Describe "$commandname Unit Tests" -Tags "UnitTests" {
     }
 
     Context "Count Pages" {
-        # Setup the initial query
-        $query = "
+        if($server.VersionMajor){
+            # Setup the initial query
+            $query = "
 INSERT INTO dbo.TestTable
 (
     TestText
@@ -39,15 +42,14 @@ INSERT INTO dbo.TestTable
 VALUES
 ('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')"
 
-        # Generate a bunch of extra inserts to create enough pages
-        for ($i = 0; $i -lt 500; $i++) {
-            $query += ",('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')"
-        }
+            # Generate a bunch of extra inserts to create enough pages
+            for ($i = 0; $i -lt 500; $i++) {
+                $query += ",('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')"
+            }
 
-        # Execute the query
-        $server.Databases[$dbname].Query($query)
+            # Execute the query
+            $server.Databases[$dbname].Query($query)
 
-        if($server.MajorVersion -ge 11){
             $result = Get-DbaDbPageInfo -SqlInstance $script:instance1 -Database $dbname
 
             $result.Count | Should Be 17
