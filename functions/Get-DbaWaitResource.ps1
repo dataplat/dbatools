@@ -21,11 +21,11 @@ function Get-DbaWaitResource {
 
     .PARAMETER Row
         If this switch provided also returns the value of the row being waited on with KEY wait resources
-    
+
     .PARAMETER EnableException
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
-    
+
     .EXAMPLE
         Get-DbaWaitResource -SqlInstance server1 -WaitResource 'PAGE: 10:1:9180084'
 
@@ -35,7 +35,7 @@ function Get-DbaWaitResource {
         Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)'
 
         Will return an object containing; database name, schema name and index name which is being waited on
-    
+
     .EXAMPLE
         Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)' -row
 
