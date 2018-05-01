@@ -1429,6 +1429,20 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbMailLog -SqlInstance sql01\\sharepoint\r\n\r\nReturns the entire dbmail log on sql01\\sharepoint\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbMailLog -SqlInstance sql01\\sharepoint | Select *\r\n\r\nReturns the entire dbmail log on sql01\\sharepoint then return a bunch more columns\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\r\n\r\n$servers | Get-DbaDbMailLog -Type Error, Information\r\n\r\nReturns only the Error and Information dbmail log for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaDbPageInfo",
+        "Description":  "Get-DbaDbPageInfo is able to return information about the pages in a database.\nIt\u0027s possible to return the information for multiple databases and filter on specific databases, schemas and tables",
+        "Tags":  [
+                     "Pages",
+                     "Databases",
+                     "Used space"
+                 ],
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "Synopsis":  "Get-DbaDbPageInfo will return page information for a database",
+        "Name":  "Get-DbaDbPageInfo",
+        "Links":  "https://dbatools.io/Get-DbaDbPageInfo",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShippingRecovery -SqlServer server1\r\n\r\nRecovers all the databases on the instance that are enabled for log shipping\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaDbQueryStoreOptions",
         "Description":  "Retrieves and returns the Query Store configuration for every database that has the Query Store feature enabled.",
         "Tags":  "QueryStore",
@@ -2330,6 +2344,19 @@
         "Name":  "Get-DbaWaitingTask",
         "Links":  "https://dbatools.io/Get-DbaWaitingTask",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitingTask -SqlInstance sqlserver2014a\r\n\r\nReturns the waiting task for all sessions on sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitingTask -SqlInstance sqlserver2014a -IncludeSystemSpid\r\n\r\nReturns the waiting task for all sessions (user and system) on sqlserver2014a\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaWaitResource",
+        "Description":  "Given a wait resource in the form of:\n    \u0027PAGE: 10:1:9180084 \u0027\nreturns the database, data file and the system oject which is being waited up\nGiven a wait resource in the form of:\n    \u0027KEY: 7:35457594073541168 (de21f92a1572)\u0027\nreturns the database, object and index that is being waited on, With the -row switch the row data will also be returned",
+        "Tags":  [
+                     "Pages",
+                     "DBCC"
+                 ],
+        "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
+        "Synopsis":  "Returns the resource being waited upon",
+        "Name":  "Get-DbaWaitResource",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitResource -SqlInstance server1 -WaitResource \u0027PAGE: 10:1:9180084\u0027\r\n\r\nWill return an object containing; database name, data file name, schema name and the object which owns the resouce\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitResource -Sql Instance server2 -WaitResource \u0027KEY: 7:35457594073541168 (de21f92a1572)\u0027\r\n\r\nWill return an object containing; database name, schema name and index name which is being waited on\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitResource -Sql Instance server2 -WaitResource \u0027KEY: 7:35457594073541168 (de21f92a1572)\u0027 -row\r\n\r\nWill return an object containing; database name, schema name and index name which is being waited on, and in addition \r\nthe contents of the locked row at the time the command is run\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaWaitStatistic",
