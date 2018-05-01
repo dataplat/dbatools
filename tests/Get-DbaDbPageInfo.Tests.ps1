@@ -17,7 +17,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests" {
         # Get a server object
         $server = Connect-DbaInstance -SqlInstance $script:instance1
 
-        if($server.VersionMajor){
+        if($server.VersionMajor -ge 11){
             # Create the database
             $server.Query("CREATE DATABASE $dbname;")
 
@@ -32,7 +32,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests" {
     }
 
     Context "Count Pages" {
-        if($server.VersionMajor){
+        if($server.VersionMajor -ge 11){
             # Setup the initial query
             $query = "
 INSERT INTO dbo.TestTable
