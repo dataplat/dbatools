@@ -11,7 +11,7 @@
     RootModule                = 'dbatools.psm1'
     
     # Version number of this module.
-    ModuleVersion             = '0.9.329'
+    ModuleVersion             = '0.9.330'
     
     # ID used to uniquely identify this module
     GUID                      = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -467,7 +467,8 @@
         'Get-DbaDbCheckConstraint',
         'Set-DbaAgentAlert',
         'Get-DbaSqlFeature',
-        'Get-DbaWaitResource'
+        'Get-DbaWaitResource',
+        'Get-DbaDbPageInfo'
     )
     
     # Cmdlets to export from this module
