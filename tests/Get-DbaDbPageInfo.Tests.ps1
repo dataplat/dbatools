@@ -47,11 +47,13 @@ VALUES
         # Execute the query
         $server.Databases[$dbname].Query($query)
 
-        $result = Get-DbaDbPageInfo -SqlInstance $script:instance1 -Database $dbname
+        if($server.MajorVersion -ge 11){
+            $result = Get-DbaDbPageInfo -SqlInstance $script:instance1 -Database $dbname
 
-        $result.Count | Should Be 17
-        ($result | Where-Object {$_.IsAllocated -eq $false}).Count | Should Be 3
-        ($result | Where-Object {$_.IsAllocated -eq $true}).Count | Should Be 14
+            $result.Count | Should Be 17
+            ($result | Where-Object {$_.IsAllocated -eq $false}).Count | Should Be 3
+            ($result | Where-Object {$_.IsAllocated -eq $true}).Count | Should Be 14
+        }
 
     }
 
