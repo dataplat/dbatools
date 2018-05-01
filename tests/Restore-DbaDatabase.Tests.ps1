@@ -237,7 +237,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "All user databases are removed post ola-style test" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
-        It "Should say the status was dropped" {
+        It -Skip "Should say the status was dropped" {
             $results | ForEach-Object { $_.Status | Should Be "Dropped" }
         }
     }

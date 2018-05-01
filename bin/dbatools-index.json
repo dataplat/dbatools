@@ -1368,6 +1368,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCertificate -SqlInstance sql2016\r\n\r\nGets all certificates\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCertificate -SqlInstance Server1 -Database db1\r\n\r\nGets the certificate for the db1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCertificate -SqlInstance Server1 -Database db1 -Certificate cert1\r\n\r\nGets the cert1 certificate within the db1 database\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaDbCheckConstraint",
+        "Description":  "Gets database Checks constraints",
+        "Tags":  "Databases",
+        "Author":  "Cláudio Silva ( @ClaudioESSilva | https://claudioessilva.eu)",
+        "Synopsis":  "Gets database Check constraints",
+        "Name":  "Get-DbaDbCheckConstraint",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCheckConstraint -SqlInstance sql2016\r\n\r\nGets all database check constraints\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCheckConstraint -SqlInstance Server1 -Database db1\r\n\r\nGets the check constraints for the db1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeDatabase db1\r\n\r\nGets the check constraints for all databases except db1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeSystemTable\r\n\r\nGets the check constraints for all databases that are not system objects\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbCheckConstraint\r\n\r\nGets the check constraints for the databases on Sql1 and Sql2/sqlexpress\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaDbCompression",
         "Description":  "This function gets the current size and compression for all objects in the specified database(s), if no database is specified it will return all objects in all user databases.",
         "Tags":  [
@@ -1391,6 +1401,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet the changes for the DBA database.\r\n\r\nGet-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet the changes for the DB01 database on multiple servers.\r\n\r\nGet-DbaDbExtentDiff -SqlInstance $SQL2017N1, $SQL2017N2, $SQL2016 -Database DB01 -SqlCredential $Cred\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaDbForeignKey",
+        "Description":  "Gets database Foreign Keys",
+        "Tags":  "Databases",
+        "Author":  "Cláudio Silva ( @ClaudioESSilva | https://claudioessilva.eu)",
+        "Synopsis":  "Gets database Foreign Keys",
+        "Name":  "Get-DbaDbForeignKey",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbForeignKey -SqlInstance sql2016\r\n\r\nGets all database Foreign Keys\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbForeignKey -SqlInstance Server1 -Database db1\r\n\r\nGets the Foreign Keys for the db1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbForeignKey -SqlInstance Server1 -ExcludeDatabase db1\r\n\r\nGets the Foreign Keys for all databases except db1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbForeignKey -SqlInstance Server1 -ExcludeSystemTable\r\n\r\nGets the Foreign Keys from all tables that are not system objects from all databases\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbForeignKey\r\n\r\nGets the Foreign Keys for the databases on Sql1 and Sql2/sqlexpress\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaDbMailHistory",
         "Description":  "Gets the history of mail sent from a SQL instance",
         "Tags":  "Logging",
@@ -1407,6 +1427,20 @@
         "Name":  "Get-DbaDbMailLog",
         "Links":  "https://dbatools.io/Get-DbaDbMailLog",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbMailLog -SqlInstance sql01\\sharepoint\r\n\r\nReturns the entire dbmail log on sql01\\sharepoint\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbMailLog -SqlInstance sql01\\sharepoint | Select *\r\n\r\nReturns the entire dbmail log on sql01\\sharepoint then return a bunch more columns\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\r\n\r\n$servers | Get-DbaDbMailLog -Type Error, Information\r\n\r\nReturns only the Error and Information dbmail log for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaDbPageInfo",
+        "Description":  "Get-DbaDbPageInfo is able to return information about the pages in a database.\nIt\u0027s possible to return the information for multiple databases and filter on specific databases, schemas and tables",
+        "Tags":  [
+                     "Pages",
+                     "Databases",
+                     "Used space"
+                 ],
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
+        "Synopsis":  "Get-DbaDbPageInfo will return page information for a database",
+        "Name":  "Get-DbaDbPageInfo",
+        "Links":  "https://dbatools.io/Get-DbaDbPageInfo",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShippingRecovery -SqlServer server1\r\n\r\nRecovers all the databases on the instance that are enabled for log shipping\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaDbQueryStoreOptions",
@@ -2053,6 +2087,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlBuildReference -Build \"12.00.4502\"\r\n\r\nReturns information about a build identified by  \"12.00.4502\" (which is SQL 2014 with SP1 and CU11)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlBuildReference -Build \"12.00.4502\" -Update\r\n\r\nReturns information about a build trying to fetch the most up to date index online. When the online version is newer, \r\nthe local one gets overwritten\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlBuildReference -Build \"12.0.4502\",\"10.50.4260\"\r\n\r\nReturns information builds identified by these versions strings\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a | Get-DbaSqlBuildReference\r\n\r\nIntegrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaSqlFeature",
+        "Description":  "Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)\n\nInspired by Dave Mason\u0027s (@BeginTry) post at\nhttps://itsalljustelectrons.blogspot.be/2018/04/SQL-Server-Discovery-Report.html\n\nAssumptions:\n1. The sub-folder \"Microsoft SQL Server\" exists in $env:ProgramFiles,\n    even if SQL was installed to a non-default path. This has been\n    verified on SQL 2008R2 and SQL 2012. Further verification may be needed.\n2. The discovery report displays installed components for the version of SQL\n    Server associated with setup.exe, along with installed components of all\n    lesser versions of SQL Server that are installed.",
+        "Author":  "Chrissy LeMaire (@cl)",
+        "Synopsis":  "Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)",
+        "Name":  "Get-DbaSqlFeature",
+        "Links":  "https://dbatools.io/Get-DbaSqlFeature",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlFeature -ComputerName sql2017, sql2016, sql2005\r\n\r\nGets all SQL Server features for all instances on sql2017, sql2016 and sql2005\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlFeature -Verbose\r\n\r\nGets all SQL Server features for all instances on localhost. Outputs to screen if no instances are found.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlFeature -ComputerName sql2017 -Credential (Get-Credential ad\\sqladmin)\r\n\r\nGets all SQL Server features for all instances on sql2017 using the ad\\sqladmin credential (which has access to the \r\nWindows Server).\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaSqlInstanceProperty",
         "Description":  "The Get-DbaSqlInstanceProperty command gets SQL Instance properties from the SMO object sqlserver.",
         "Author":  "Klaas Vandenberghe (@powerdbaklaas)",
@@ -2301,6 +2344,19 @@
         "Name":  "Get-DbaWaitingTask",
         "Links":  "https://dbatools.io/Get-DbaWaitingTask",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitingTask -SqlInstance sqlserver2014a\r\n\r\nReturns the waiting task for all sessions on sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitingTask -SqlInstance sqlserver2014a -IncludeSystemSpid\r\n\r\nReturns the waiting task for all sessions (user and system) on sqlserver2014a\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaWaitResource",
+        "Description":  "Given a wait resource in the form of:\n    \u0027PAGE: 10:1:9180084 \u0027\nreturns the database, data file and the system oject which is being waited up\nGiven a wait resource in the form of:\n    \u0027KEY: 7:35457594073541168 (de21f92a1572)\u0027\nreturns the database, object and index that is being waited on, With the -row switch the row data will also be returned",
+        "Tags":  [
+                     "Pages",
+                     "DBCC"
+                 ],
+        "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
+        "Synopsis":  "Returns the resource being waited upon",
+        "Name":  "Get-DbaWaitResource",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitResource -SqlInstance server1 -WaitResource \u0027PAGE: 10:1:9180084\u0027\r\n\r\nWill return an object containing; database name, data file name, schema name and the object which owns the resouce\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitResource -Sql Instance server2 -WaitResource \u0027KEY: 7:35457594073541168 (de21f92a1572)\u0027\r\n\r\nWill return an object containing; database name, schema name and index name which is being waited on\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitResource -Sql Instance server2 -WaitResource \u0027KEY: 7:35457594073541168 (de21f92a1572)\u0027 -row\r\n\r\nWill return an object containing; database name, schema name and index name which is being waited on, and in addition \r\nthe contents of the locked row at the time the command is run\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaWaitStatistic",
@@ -3514,6 +3570,19 @@
         "Name":  "Select-DbaBackupInformation",
         "Links":  "https://dbatools.io/Select-DbaBackupInformation",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\\\server1\\backups$\r\n\r\n$FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1)\r\n\r\nReturns all backups needed to restore all the backups in \\\\server1\\backups$ to 1 hour ago\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\\\server1\\backups$\r\n\r\n$FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1) -DatabaseName ProdFinance\r\n\r\nReturns all the backups needed to restore Database ProdFinance to an hour ago\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\\\server1\\backups$\r\n\r\n$FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1) -IgnoreLogs\r\n\r\nReturns all the backups in \\\\server1\\backups$ to restore to as close prior to 1 hour ago as can be managed with only \r\nfull and differential backups\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\\\server1\\backups$\r\n\r\n$FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1) -IgnoreDiffs\r\n\r\nReturns all the backups in \\\\server1\\backups$ to restore to 1 hour ago using only Full and Diff backups.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Set-DbaAgentAlert",
+        "Description":  "Set-DbaAgentAlert updates an alert in the SQL Server Agent with parameters supplied.",
+        "Tags":  [
+                     "Agent",
+                     "Alert"
+                 ],
+        "Author":  "Garry Bargsley (@gbargsley, garrybargsley.com)",
+        "Synopsis":  "Set-DbaAgentAlert updates a the status of a SQL Agent Alert.",
+        "Name":  "Set-DbaAgentAlert",
+        "Links":  "https://dbatools.io/Set-DbaAgentAlert",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentAlert -SqlInstance sql1 -Alert \u0027Severity 025: Fatal Error\u0027 -Disabled\r\n\r\nChanges the alert to disabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentAlert -SqlInstance sql1 -Alert \u0027Severity 025: Fatal Error\u0027, \u0027Error Number 825\u0027, \u0027Error Number 824\u0027 \r\n-Enabled\r\n\r\nChanges multiple alerts to enabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentAlert -SqlInstance sql1, sql2, sql3 -Alert \u0027Severity 025: Fatal Error\u0027, \u0027Error Number 825\u0027, \u0027Error \r\nNumber 824\u0027 -Enabled\r\n\r\nChanges multiple alerts to enabled on multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentAlert -SqlInstance sql1 -Alert \u0027Severity 025: Fatal Error\u0027 -Disabled -Whatif\r\n\r\nDoesn\u0027t Change the alert but shows what would happen.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaAgentJob",
