@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaOrphanUser {
     <#
         .SYNOPSIS
@@ -46,7 +47,7 @@ function Remove-DbaOrphanUser {
         .NOTES
             Tags: Orphan, Databases
             Author: Claudio Silva (@ClaudioESSilva)
-
+            Editor: Simone Bizzotto (@niphlod)
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -115,21 +116,13 @@ function Remove-DbaOrphanUser {
                 continue
             }
 
-            if (!$Database) {
-                $databases = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true }
-            }
-            else {
-                if ($pipedatabase) {
-                    $Source = $pipedatabase[0].parent.name
-                    $databases = $pipedatabase.name
-                }
-                else {
-                    $databases = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($Database -contains $_.Name) }
-                }
-            }
+            $DatabaseCollection = $server.Databases | Where-Object IsAccessible
 
+            if ($Database) {
+                $DatabaseCollection = $DatabaseCollection | Where-Object Name -In $Database
+            }
             if ($ExcludeDatabase) {
-                $databases = $server.Databases | Where-Object {$_.Name -notin $ExcludeDatabase -and $_.IsAccessible -eq $true -and $_.IsSystemObject -eq $false }
+                $DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase
             }
 
             $CallStack = Get-PSCallStack | Select-Object -Property *
@@ -141,10 +134,8 @@ function Remove-DbaOrphanUser {
                 $StackSource = $CallStack[($CallStack.Count - 2)].Command
             }
 
-            if ($databases) {
-                $start = [System.Diagnostics.Stopwatch]::StartNew()
-
-                foreach ($db in $databases) {
+            if ($DatabaseCollection) {
+                foreach ($db in $DatabaseCollection) {
                     try {
                         #if SQL 2012 or higher only validate databases with ContainmentType = NONE
                         if ($server.versionMajor -gt 10) {
@@ -166,14 +157,10 @@ function Remove-DbaOrphanUser {
                                 $User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
                             }
                             else {
-                                if ($pipedatabase) {
-                                    $Source = $pipedatabase[0].parent.name
-                                    $User = $pipedatabase.name
-                                }
-                                else {
-                                    #the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-                                    $User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
-                                }
+
+                                #the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
+                                $User = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($User -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
+
                             }
                         }
 
@@ -230,8 +217,10 @@ function Remove-DbaOrphanUser {
                                                         $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
 
                                                         [pscustomobject]@{
-                                                            Instance          = $server.Name
-                                                            Database          = $db.Name
+                                                            ComputerName      = $server.NetName
+                                                            InstanceName      = $server.ServiceName
+                                                            SqlInstance       = $server.DomainInstanceName
+                                                            DatabaseName      = $db.Name
                                                             SchemaName        = $sch.Name
                                                             Action            = "ALTER OWNER"
                                                             SchemaOwnerBefore = $sch.Owner
@@ -253,8 +242,10 @@ function Remove-DbaOrphanUser {
                                                         $DropSchema += "DROP SCHEMA [$($sch.Name)]"
 
                                                         [pscustomobject]@{
-                                                            Instance          = $server.Name
-                                                            Database          = $db.Name
+                                                            ComputerName      = $server.NetName
+                                                            InstanceName      = $server.ServiceName
+                                                            SqlInstance       = $server.DomainInstanceName
+                                                            DatabaseName      = $db.Name
                                                             SchemaName        = $sch.Name
                                                             Action            = "DROP"
                                                             SchemaOwnerBefore = $sch.Owner
@@ -269,8 +260,10 @@ function Remove-DbaOrphanUser {
                                                         $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
 
                                                         [pscustomobject]@{
-                                                            Instance          = $server.Name
-                                                            Database          = $db.Name
+                                                            ComputerName      = $server.NetName
+                                                            InstanceName      = $server.ServiceName
+                                                            SqlInstance       = $server.DomainInstanceName
+                                                            DatabaseName      = $db.Name
                                                             SchemaName        = $sch.Name
                                                             Action            = "ALTER OWNER"
                                                             SchemaOwnerBefore = $sch.Owner
@@ -335,14 +328,6 @@ function Remove-DbaOrphanUser {
         }
     }
     end {
-
-        $totaltime = $start.Elapsed
-
-        #If the call don't come from Repair-DbaOrphanUser function, show elapsed time
-        if ($StackSource -ne "Repair-DbaOrphanUser") {
-            Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
-        }
-
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Remove-SqlOrphanUser
     }
 }

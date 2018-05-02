@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Repair-DbaOrphanUser {
     <#
         .SYNOPSIS
@@ -22,6 +23,9 @@ function Repair-DbaOrphanUser {
 
         .PARAMETER Database
             Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+
+        .PARAMETER ExcludeDatabase
+            Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server
 
         .PARAMETER Users
             Specifies the list of usernames to repair.
@@ -76,6 +80,7 @@ function Repair-DbaOrphanUser {
         .NOTES
             Tags: Orphan
             Author: Claudio Silva (@ClaudioESSilva)
+            Editor: Simone Bizzotto (@niphlod)
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -91,6 +96,7 @@ function Repair-DbaOrphanUser {
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
+        [object[]]$ExcludeDatabase,
         [parameter(Mandatory = $false, ValueFromPipeline = $true)]
         [object[]]$Users,
         [switch]$RemoveNotExisting,
@@ -100,7 +106,7 @@ function Repair-DbaOrphanUser {
     )
 
     process {
-        $start = [System.Diagnostics.Stopwatch]::StartNew()
+
         foreach ($instance in $SqlInstance) {
 
             try {
@@ -112,18 +118,13 @@ function Repair-DbaOrphanUser {
                 continue
             }
 
-            if ($Database.Count -eq 0) {
+            $DatabaseCollection = $server.Databases | Where-Object IsAccessible
 
-                $DatabaseCollection = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true }
+            if ($Database) {
+                $DatabaseCollection = $DatabaseCollection | Where-Object Name -In $Database
             }
-            else {
-                if ($pipedatabase.Length -gt 0) {
-                    $Source = $pipedatabase[0].parent.name
-                    $DatabaseCollection = $pipedatabase.name
-                }
-                else {
-                    $DatabaseCollection = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($Database -contains $_.Name) }
-                }
+            if ($ExcludeDatabase) {
+                $DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase
             }
 
             if ($DatabaseCollection.Count -gt 0) {
@@ -144,14 +145,10 @@ function Repair-DbaOrphanUser {
                             $UsersToWork = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false }
                         }
                         else {
-                            if ($pipedatabase.Length -gt 0) {
-                                $Source = $pipedatabase[3].parent.name
-                                $UsersToWork = $pipedatabase.name
-                            }
-                            else {
-                                #the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-                                $UsersToWork = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($Users -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
-                            }
+
+                            #the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
+                            $UsersToWork = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($Users -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
+
                         }
 
                         if ($UsersToWork.Count -gt 0) {
@@ -175,10 +172,12 @@ function Repair-DbaOrphanUser {
 
                                     if ($Pscmdlet.ShouldProcess($db.Name, "Mapping user '$($User.Name)'")) {
                                         $server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-                                        Write-Message -Level Verbose -Message "`r`nUser '$($User.Name)' mapped with their login."
+                                        Write-Message -Level Verbose -Message "User '$($User.Name)' mapped with their login."
 
                                         [PSCustomObject]@{
-                                            SqlInstance  = $server.name
+                                            ComputerName = $server.NetName
+                                            InstanceName = $server.ServiceName
+                                            SqlInstance  = $server.DomainInstanceName
                                             DatabaseName = $db.Name
                                             User         = $User.Name
                                             Status       = "Success"
@@ -193,7 +192,9 @@ function Repair-DbaOrphanUser {
                                     else {
                                         Write-Message -Level Verbose -Message "Orphan user $($User.Name) does not have matching login."
                                         [PSCustomObject]@{
-                                            SqlInstance  = $server.name
+                                            ComputerName = $server.NetName
+                                            InstanceName = $server.ServiceName
+                                            SqlInstance  = $server.DomainInstanceName
                                             DatabaseName = $db.Name
                                             User         = $User.Name
                                             Status       = "No matching login"
@@ -207,15 +208,15 @@ function Repair-DbaOrphanUser {
                                 if ($Force) {
                                     if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
                                         Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser' with -Force."
-                                        Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -User $UsersToRemove -Force
+                                        Remove-DbaOrphanUser -SqlInstance $server -Database $db.Name -User $UsersToRemove -Force
                                     }
                                 }
-                                Else {
-                                    If ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
-                                    Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser'."
-                                    Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -User $UsersToRemove
+                                else {
+                                    if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
+                                        Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser'."
+                                        Remove-DbaOrphanUser -SqlInstance $server -Database $db.Name -User $UsersToRemove
+                                    }
                                 }
-                            }
                             }
                         }
                         else {
@@ -235,10 +236,6 @@ function Repair-DbaOrphanUser {
         }
     }
     end {
-        $totaltime = ($start.Elapsed)
-        $start.Stop()
-        Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime."
-
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Repair-SqlOrphanUser
     }
 }
