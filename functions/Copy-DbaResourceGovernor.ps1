@@ -138,23 +138,22 @@ function Copy-DbaResourceGovernor {
                         $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     else
-                    {
-                        #script method is not returning the right script to execute (CREATE FUNCTION MUST BE THE FIRST STATEMENT)
-                        $sqlCreateClassifierFunction = $sourceClassifierFunction.TextHeader + $sourceClassifierFunction.TextBody | Out-String
-                        $fullyQualifiedName = $sourceClassifierFunction.Schema+"."+$sourceClassifierFunction.Name
-                        
+                    {      
+                        $fullyQualifiedFunctionName = $sourceClassifierFunction.Schema+"."+$sourceClassifierFunction.Name           
                         if (!$destClassifierFunction)
                         {
-                            $sql = "IF OBJECT_ID('$fullyQualifiedName') IS NOT NULL DROP FUNCTION $fullyQualifiedName"
-                            Write-Message -Level Debug -Message $sql
-                            Write-Message -Level Verbose -Message "Dropping the function with the source classifier function name."
-                            $destServer.Query($sql)
+                            $destFunction = $destServer.Databases["master"].UserDefinedFunctions[$sourceClassifierFunction.Name]
+                            if ($destFunction)
+                            {
+                                Write-Message -Level Verbose -Message "Dropping the function with the source classifier function name."
+                                $destFunction.Drop()
+                            }
 
-                            Write-Message -Level Debug -Message $sqlCreateClassifierFunction
                             Write-Message -Level Verbose -Message "Creating function."
-                            $destServer.Query($sqlCreateClassifierFunction)
+                            $destServer.Query($sourceClassifierFunction.Script())
                             
-                            $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = $fullyQualifiedName);"
+                            $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = $fullyQualifiedFunctionName);"
+                            $sql
                             Write-Message -Level Debug -Message $sql
                             Write-Message -Level Verbose -Message "Mapping Resource Governor classifier function."
                             $destServer.Query($sql)
@@ -183,16 +182,13 @@ function Copy-DbaResourceGovernor {
                                 Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
                                 $destServer.Query($sql)
 
-                                $sql = "IF OBJECT_ID('$fullyQualifiedName') IS NOT NULL DROP FUNCTION $fullyQualifiedName"
-                                Write-Message -Level Debug -Message $sql
-                                Write-Message -Level Verbose -Message "Dropping the function with the source classifier function name."
-                                $destServer.Query($sql)
-
-                                Write-Message -Level Debug -Message $sqlCreateClassifierFunction
+                                Write-Message -Level Verbose -Message "Dropping the destination classifier function."
+                                $destClassifierFunction.Drop()
+                                
                                 Write-Message -Level Verbose -Message "Re-creating the Resource Governor classifier function."
-                                $destServer.Query($sqlCreateClassifierFunction)
+                                $destServer.Query($sourceClassifierFunction.Script())
 
-                                $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = $fullyQualifiedName);"
+                                $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = $fullyQualifiedFunctionName);"
                                 Write-Message -Level Debug -Message $sql
                                 Write-Message -Level Verbose -Message "Mapping Resource Governor classifier function."
                                 $destServer.Query($sql)
