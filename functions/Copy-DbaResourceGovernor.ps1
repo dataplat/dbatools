@@ -204,7 +204,7 @@ function Copy-DbaResourceGovernor {
                     $copyResourceGovSetting.Status = "Failed"
                     $copyResourceGovSetting.Notes = $_.Exception
                     $copyResourceGovSetting | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    $error[0]
+                    
                     Stop-Function -Message "Not able to update settings." -Target $destServer -ErrorRecord $_
                 }
             }
