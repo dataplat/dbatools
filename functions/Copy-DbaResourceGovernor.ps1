@@ -89,15 +89,17 @@ function Copy-DbaResourceGovernor {
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-        $sourceClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $Source -SqlCredential $SourceSqlCredential
-
-        $source = $sourceServer.DomainInstanceName
-        $destination = $destServer.DomainInstanceName
-
         if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
             Stop-Function -Message "Resource Governor is only supported in SQL Server 2008 and above. Quitting."
             return
         }
+
+        $sourceClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        $destClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+
+        $source = $sourceServer.DomainInstanceName
+        $destination = $destServer.DomainInstanceName
+
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -137,45 +139,29 @@ function Copy-DbaResourceGovernor {
                     }
                     else
                     {
-                        $destClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-
-                        $sqlCreateClassifierFunction = $sourceClassifierFunction.TextHeader + $sourceClassifierFunction.TextBody | Out-String #script method is not returning the right script to execute (CREATE FUNCTION MUST BE THE FIRST STATEMENT)
+                        #script method is not returning the right script to execute (CREATE FUNCTION MUST BE THE FIRST STATEMENT)
+                        $sqlCreateClassifierFunction = $sourceClassifierFunction.TextHeader + $sourceClassifierFunction.TextBody | Out-String
+                        $fullyQualifiedName = $sourceClassifierFunction.Schema+"."+$sourceClassifierFunction.Name
                         
                         if (!$destClassifierFunction)
                         {
-                            if ($Force -eq $false)
-                            {
-                                $copyResourceGovClassifierFunc.Status = "Skipped"
-                                $copyResourceGovClassifierFunc.Notes = "No classifier function has been created, use the -Force parameter to create it."
-                                $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject            
-                            }
-                            else
-                            {
-                                $fullyQualifiedName = $sourceClassifierFunction.Schema+"."+$sourceClassifierFunction.Name
-                                $sql = "IF OBJECT_ID('$fullyQualifiedName') IS NOT NULL DROP FUNCTION $fullyQualifiedName"
-                                Write-Message -Level Debug -Message $sql
-                                Write-Message -Level Verbose -Message "Dropping the function with the source classifier function name."
-                                $destServer.Query($sql)
+                            $sql = "IF OBJECT_ID('$fullyQualifiedName') IS NOT NULL DROP FUNCTION $fullyQualifiedName"
+                            Write-Message -Level Debug -Message $sql
+                            Write-Message -Level Verbose -Message "Dropping the function with the source classifier function name."
+                            $destServer.Query($sql)
 
-                                Write-Message -Level Debug -Message $sqlCreateClassifierFunction
-                                Write-Message -Level Verbose -Message "Creating function."
-                                $destServer.Query($sqlCreateClassifierFunction)
+                            Write-Message -Level Debug -Message $sqlCreateClassifierFunction
+                            Write-Message -Level Verbose -Message "Creating function."
+                            $destServer.Query($sqlCreateClassifierFunction)
+                            
+                            $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = $fullyQualifiedName);"
+                            Write-Message -Level Debug -Message $sql
+                            Write-Message -Level Verbose -Message "Mapping Resource Governor classifier function."
+                            $destServer.Query($sql)
 
-
-                                $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = $fullyQualifiedName);"
-                                Write-Message -Level Debug -Message $sql
-                                Write-Message -Level Verbose -Message "Mapping Resource Governor classifier function."
-                                $destServer.Query($sql)
-                                
-                                $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
-                                Write-Message -Level Debug -Message $sql
-                                Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
-                                $destServer.Query($sql)
-
-                                $copyResourceGovClassifierFunc.Status = "Successful"
-                                $copyResourceGovClassifierFunc.Notes = "The new classifier function has been created"
-                                $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject            
-                            }
+                            $copyResourceGovClassifierFunc.Status = "Successful"
+                            $copyResourceGovClassifierFunc.Notes = "The new classifier function has been created"
+                            $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         } 
                         else
                         {
@@ -197,9 +183,19 @@ function Copy-DbaResourceGovernor {
                                 Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
                                 $destServer.Query($sql)
 
+                                $sql = "IF OBJECT_ID('$fullyQualifiedName') IS NOT NULL DROP FUNCTION $fullyQualifiedName"
+                                Write-Message -Level Debug -Message $sql
+                                Write-Message -Level Verbose -Message "Dropping the function with the source classifier function name."
+                                $destServer.Query($sql)
+
                                 Write-Message -Level Debug -Message $sqlCreateClassifierFunction
                                 Write-Message -Level Verbose -Message "Re-creating the Resource Governor classifier function."
                                 $destServer.Query($sqlCreateClassifierFunction)
+
+                                $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = $fullyQualifiedName);"
+                                Write-Message -Level Debug -Message $sql
+                                Write-Message -Level Verbose -Message "Mapping Resource Governor classifier function."
+                                $destServer.Query($sql)
 
                                 $copyResourceGovClassifierFunc.Status = "Successful"
                                 $copyResourceGovClassifierFunc.Notes = "The old classifier function has been overwritten."
@@ -325,9 +321,19 @@ function Copy-DbaResourceGovernor {
                 Write-Message -Level Verbose -Message "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
             }
             else {
+
                 Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
-                $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
-                $destServer.Query($sql)
+
+                if (!$sourceServer.ResourceGovernor.Enabled)
+                {
+                    $sql = "ALTER RESOURCE GOVERNOR DISABLE"
+                    $destServer.Query($sql)
+                } 
+                else 
+                {
+                    $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
+                    $destServer.Query($sql)
+                }
 
                 $copyResourceGovReconfig = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
