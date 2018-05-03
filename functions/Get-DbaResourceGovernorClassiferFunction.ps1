@@ -65,12 +65,6 @@ Gets the classifier function object on Sql1 and Sql2/sqlexpress instances
             $db = $server.Databases["master"]
             $resourceGovernor = $server.ResourceGovernor
             
-            if (!$resourceGovernor.Enabled)
-            {
-                Stop-Function -Message "Resource Governor is not enabled on $instance. Quitting."
-                return
-            }
-
             $classifierFunction = $null
             foreach ($currentFunction in $db.UserDefinedFunctions)
             {
@@ -81,17 +75,12 @@ Gets the classifier function object on Sql1 and Sql2/sqlexpress instances
                 }
             }
             
-            if (!$classifierFunction) {
-                Stop-Function -Message "No classifier function exist in the $db database on $instance. This Resource Governor is implemented with the default settings. Quitting."
-                return
+            if ($classifierFunction) {
+                Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name Database -value $db.Name
             }
-
-            Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name ComputerName -value $server.NetName
-            Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-            Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-            Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name Database -value $db.Name
-
-            $classifierFunction.Script()
 
             Select-DefaultView -InputObject $classifierFunction -Property ComputerName, InstanceName, SqlInstance, Database, Schema, CreateDate, DateLastModified, Name, DataType
         }
