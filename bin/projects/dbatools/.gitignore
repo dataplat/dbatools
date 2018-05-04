@@ -4,3 +4,6 @@ obj/
 vstest.*/
 /*.pdb/
 *.user
+packages/ 
+*.v3.ncrunchsolution 
+_NCrunch_*/

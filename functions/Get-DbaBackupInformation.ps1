@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaBackupInformation {
     <#
     .SYNOPSIS
@@ -138,8 +139,7 @@ function Get-DbaBackupInformation {
 
     )
     begin {
-
-        Function Get-HashString {
+        function Get-HashString {
             param(
                 [String]$InString
             )
@@ -172,16 +172,16 @@ function Get-DbaBackupInformation {
         }
 
         if ($true -eq $IgnoreLogBackup -and $true -ne $MaintenanceSolution) {
-            Write-Message -Message "IgnoreLogBackup can only by used with Maintenance Soultion. Will not be used" -Level Warning
+            Write-Message -Message "IgnoreLogBackup can only by used with MaintenanceSolution. Will not be used" -Level Warning
         }
     }
     process {
         if (Test-FunctionInterrupt) { return }
         if ((Test-Bound -Parameter Import) -and ($true -eq $Import)) {
-            ForEach ($f in $Path) {
+            foreach ($f in $Path) {
                 if (Test-Path -Path $f) {
                     $GroupResults += Import-CliXml -Path $f
-                    ForEach ($group in  $GroupResults) {
+                    foreach ($group in  $GroupResults) {
                         $Group.FirstLsn = [BigInt]$group.FirstLSN.ToString()
                         $Group.CheckpointLSN = [BigInt]$group.CheckpointLSN.ToString()
                         $Group.DatabaseBackupLsn = [BigInt]$group.DatabaseBackupLsn.ToString()
@@ -197,8 +197,8 @@ function Get-DbaBackupInformation {
             $Files = @()
             $groupResults = @()
             if ($NoXpDirTree -ne $true) {
-                ForEach ($f in $path) {
-                    if ($f -match '\.\w{3}\Z') {
+                foreach ($f in $path) {
+                    if ([System.IO.Path]::GetExtension($f).Length -gt 1) {
                         if ("Fullname" -notin $f.PSobject.Properties.name) {
                             $f = $f | Select-Object *, @{ Name = "FullName"; Expression = { $f } }
                         }
@@ -210,8 +210,8 @@ function Get-DbaBackupInformation {
                             Write-Message -Level Verbose -Message "$server cannot 'see' file $($f.FullName)"
                         }
                     }
-                    elseif ($True -eq $MaintenanceSolution){
-                        if ($true -eq $IgnoreLogBackup -and $f -like '*log*'){
+                    elseif ($True -eq $MaintenanceSolution) {
+                        if ($true -eq $IgnoreLogBackup -and [System.IO.Path]::GetDirectoryName($f) -like '*LOG') {
                             Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
                         }
                         else {
@@ -222,7 +222,7 @@ function Get-DbaBackupInformation {
                     else {
                         Write-Message -Message "Testing a folder $f" -Level Verbose
                         $Files += $Check = Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
-                        if  ($null -eq $check) {
+                        if ($null -eq $check) {
                             Write-Message -Message "Nothing returned from $f" -Level Verbose
                         }
                     }
@@ -276,7 +276,7 @@ function Get-DbaBackupInformation {
 
             $groupdetails = $FileDetails | group-object -Property BackupSetGUID
 
-            Foreach ($Group in $GroupDetails) {
+            foreach ($Group in $GroupDetails) {
                 $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
                 $historyObject.ComputerName = $group.group[0].MachineName
                 $historyObject.InstanceName = $group.group[0].ServiceName
@@ -287,9 +287,9 @@ function Get-DbaBackupInformation {
                 $historyObject.End = [DateTime]$group.Group[0].BackupFinishDate
                 $historyObject.Duration = ([DateTime]$group.Group[0].BackupFinishDate - [DateTime]$group.Group[0].BackupStartDate)
                 $historyObject.Path = [string[]]$Group.Group.BackupPath
-                $historyObject.FileList = ($group.Group.FileList | select-object type, logicalname, physicalname)
-                $historyObject.TotalSize = ($Group.Group.BackupSize | Measure-Object -sum).sum
-                $HistoryObject.CompressedBackupSize = ($Group.Group.CompressedBackupSize | Measure-Object -sum).sum
+                $historyObject.FileList = ($group.Group.FileList | select-object Type, LogicalName, PhysicalName)
+                $historyObject.TotalSize = ($Group.Group.BackupSize | Measure-Object -Sum).Sum
+                $HistoryObject.CompressedBackupSize = ($Group.Group.CompressedBackupSize | Measure-Object -Sum).Sum
                 $historyObject.Type = $group.Group[0].BackupTypeDescription
                 $historyObject.BackupSetId = $group.group[0].BackupSetGUID
                 $historyObject.DeviceType = 'Disk'
@@ -312,7 +312,7 @@ function Get-DbaBackupInformation {
             $groupResults = $groupResults | Where-Object {$_.Database -in $DatabaseName}
         }
         if ($true -eq $Anonymise) {
-            ForEach ($group in $GroupResults) {
+            foreach ($group in $GroupResults) {
                 $group.ComputerName = Get-HashString -InString $group.ComputerName
                 $group.InstanceName = Get-HashString -InString $group.InstanceName
                 $group.SqlInstance = Get-HashString -InString $group.SqlInstance
@@ -330,6 +330,4 @@ function Get-DbaBackupInformation {
         }
         $groupResults | Sort-Object -Property End -Descending
     }
-
-
 }

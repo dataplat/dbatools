@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaRegisteredServer {
     <#
         .SYNOPSIS
@@ -153,6 +154,10 @@ function Get-DbaRegisteredServer {
             else {
                 $cms = $cmsStore.DatabaseEngineServerGroup
                 $servers += ($cms.GetDescendantRegisteredServers())
+            }
+            if ($Group -and (Test-Bound -ParameterName Group -Not)) {
+                #add root ones
+                $servers += ($cmsstore.DatabaseEngineServerGroup.RegisteredServers)
             }
 
             # Close the connection, otherwise using it with the ServersStore will keep it open
