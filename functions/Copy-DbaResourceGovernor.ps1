@@ -131,20 +131,18 @@ function Copy-DbaResourceGovernor {
             else {
                 try {
                     Write-Message -Level Verbose -Message "Managing classifier function."
-                    if (!$sourceClassifierFunction)
-                    {
+                    if (!$sourceClassifierFunction) {
                         $copyResourceGovClassifierFunc.Status = "Skipped"
                         $copyResourceGovClassifierFunc.Notes = $null
                         $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-                    else
-                    {      
-                        $fullyQualifiedFunctionName = $sourceClassifierFunction.Schema+"."+$sourceClassifierFunction.Name           
-                        if (!$destClassifierFunction)
-                        {
+                    else {
+                        $fullyQualifiedFunctionName = $sourceClassifierFunction.Schema+"."+$sourceClassifierFunction.Name 
+                                  
+                        if (!$destClassifierFunction) {
                             $destFunction = $destServer.Databases["master"].UserDefinedFunctions[$sourceClassifierFunction.Name]
-                            if ($destFunction)
-                            {
+
+                            if ($destFunction) {
                                 Write-Message -Level Verbose -Message "Dropping the function with the source classifier function name."
                                 $destFunction.Drop()
                             }
@@ -162,16 +160,13 @@ function Copy-DbaResourceGovernor {
                             $copyResourceGovClassifierFunc.Notes = "The new classifier function has been created"
                             $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         } 
-                        else
-                        {
-                            if ($Force -eq $false)
-                            {
+                        else {
+                            if ($Force -eq $false) {
                                 $copyResourceGovClassifierFunc.Status = "Skipped"
                                 $copyResourceGovClassifierFunc.Notes = "A classifier function already exists"
                                 $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject            
                             }
-                            else
-                            {
+                            else {
                                 $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL);"
                                 Write-Message -Level Debug -Message $sql
                                 Write-Message -Level Verbose -Message "Disabling the Resource Governor."
@@ -320,13 +315,11 @@ function Copy-DbaResourceGovernor {
 
                 Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
 
-                if (!$sourceServer.ResourceGovernor.Enabled)
-                {
+                if (!$sourceServer.ResourceGovernor.Enabled) {
                     $sql = "ALTER RESOURCE GOVERNOR DISABLE"
                     $destServer.Query($sql)
                 } 
-                else 
-                {
+                else {
                     $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
                     $destServer.Query($sql)
                 }
