@@ -185,7 +185,7 @@ function Set-DbaDbCompression {
                     }
                     else {
                         Write-Message -Level Verbose -Message "Applying $CompressionType compression to all objects in $($db.name)"
-                        foreach ($obj in $server.Databases[$($db.name)].Tables) {
+                        foreach ($obj in $server.Databases[$($db.name)].Tables | where {!$_.IsMemoryOptimized}) {
                             if ($obj.HasHeapIndex) {
                                 if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
