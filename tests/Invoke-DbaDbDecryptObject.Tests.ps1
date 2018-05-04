@@ -105,8 +105,8 @@ END
         }
     }
 
-    Context -Skip "Decrypt Stored Procedure" {
-        It "Should be successful" {
+    Context "Decrypt Stored Procedure" {
+        It -Skip "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunctionStoredProcedure
             $result.Script | Should -Be $queryStoredProcedure
 
