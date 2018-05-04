@@ -237,4 +237,19 @@ Describe "Testing input parameters" {
 
         }
     }
+
+    Context "Verifying a datatable gets cloned when passed in" {
+        $obj = New-Object -TypeName psobject -Property @{
+            col1 = 'col1'
+            col2 = 'col2'
+        }
+        $first = $obj | ConvertTo-DbaDataTable
+        $second = $first | ConvertTo-DbaDataTable
+        It "Should have the same columns" {
+            # does not add ugly RowError,RowState Table, ItemArray, HasErrors
+            $firstColumns = ($first.Columns.ColumnName | Sort-Object) -Join ','
+            $secondColumns = ($second.Columns.ColumnName | Sort-Object) -Join ','
+            $firstColumns | Should -Be $secondColumns
+        }
+    }
 }

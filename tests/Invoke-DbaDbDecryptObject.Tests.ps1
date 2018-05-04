@@ -2,7 +2,7 @@ $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Unit Tests" -Tags "UnitTests" {
+Describe "$commandname Integration Tests" -Tags "UnitTests" {
 
     BeforeAll {
         # Get a random value for the database name
@@ -98,14 +98,14 @@ END
     }
 
     Context "Decrypt Function" {
-        It "Should be successful" {
+        It -Skip "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunction
             $result.Script | Should -Be $queryFunction
 
         }
     }
 
-    Context "Decrypt Stored Procedure" {
+    Context -Skip "Decrypt Stored Procedure" {
         It "Should be successful" {
             $result = Invoke-DbaDbDecryptObject -SqlInstance $script:instance1 -Database $dbname -ObjectName DummyEncryptedFunctionStoredProcedure
             $result.Script | Should -Be $queryStoredProcedure
