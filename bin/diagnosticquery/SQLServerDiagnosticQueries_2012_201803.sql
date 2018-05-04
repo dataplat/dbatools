@@ -1,7 +1,7 @@
 
 -- SQL Server 2012 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: March 17, 2018
+-- Last Modified: April 30, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -13,7 +13,14 @@
 
 
 -- Please make sure you are using the correct version of these diagnostic queries for your version of SQL Server
--- Many of these queries will not work if you have databases in 80 compatibility mode
+
+
+-- If you like PowerShell, there is a very useful community solution for running these queries in an automated fashion
+-- https://dbatools.io/
+
+-- Invoke-DbaDiagnosticQuery
+-- https://dbatools.io/functions/invoke-dbadiagnosticquery/
+
 
 --******************************************************************************
 --*   Copyright (C) 2018 Glenn Berry, SQLskills.com
@@ -89,55 +96,55 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 --																																																							11.0.7001		SP4 RTM				10/3/2017	
 -- 
 -- Security Update for SQL Server 2012 SP4 (KB4057116) 
--- https://www.microsoft.com/en-us/download/details.aspx?id=56490
+-- https://bit.ly/2F33Sc4
 --                                                                                                                                                                                                                          11.0.7462	    Security Update		1/12/2018  (Security Update for SQL Server 2012 SP4 (KB4057116))
 -- SQL Server 2012 Service Pack 4 (SP4) Released!
--- https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2012-service-pack-4-sp4-released/
+-- https://bit.ly/2qN8kr3
 
 -- How to determine the version, edition and update level of SQL Server and its components 
--- https://support.microsoft.com/en-us/kb/321185
+-- https://bit.ly/2oAjKgW	
 
 -- SQL Server 2012 SP3 build versions
--- https://support.microsoft.com/en-us/kb/3133750 
+-- https://bit.ly/2HFjAzA 
 
 -- SQL Server 2012 SP2 build versions 
--- https://support.microsoft.com/kb/2983249
+-- https://bit.ly/2qLqqcS
 
 -- The SQL Server 2012 builds that were released after SQL Server 2012 Service Pack 1 was released
--- https://support.microsoft.com/kb/2772858
+-- https://bit.ly/2HG21za
 
 -- The SQL Server 2012 builds that were released after SQL Server 2012 was released
--- https://support.microsoft.com/kb/2692828
+-- https://bit.ly/2K1xZnX
 
 -- Where to find information about the latest SQL Server builds
--- https://support.microsoft.com/en-us/help/957826/where-to-find-information-about-the-latest-sql-server-builds
+-- https://bit.ly/2IGHbfY
 
 -- Recommended updates and configuration options for SQL Server 2012 and SQL Server 2014 used with high-performance workloads
--- https://support.microsoft.com/kb/2964518/EN-US
+-- https://bit.ly/2Hy3zIZ
 
 -- Performance and Stability Related Fixes in Post-SQL Server 2012 SP3 Builds
--- https://www.sqlskills.com/blogs/glenn/performance-and-stability-related-fixes-in-post-sql-server-2012-sp3-builds/
+-- https://bit.ly/2woDJ4Z
 
 -- Performance and Stability Related Fixes in Post-SQL Server 2012 SP2 Builds
--- https://www.sqlskills.com/blogs/glenn/performance-and-stability-related-fixes-in-post-sql-server-2012-sp2-builds/
+-- https://bit.ly/2vuKZzp
 
 -- Performance and Stability Related Fixes in Post-SQL Server 2012 SP1 Builds
--- https://www.sqlskills.com/blogs/glenn/performance-and-stability-related-fixes-in-post-sql-server-2012-sp1-builds-2/
+-- https://bit.ly/2vBt1LC
 
 -- Performance Related Fixes in Post-SQL Server 2012 RTM Builds
 -- https://www.sqlskills.com/blogs/glenn/performance-related-fixes-in-post-sql-server-2012-rtm-builds/
 
 -- Announcing updates to the SQL Server Incremental Servicing Model (ISM)
--- https://blogs.msdn.microsoft.com/sqlreleaseservices/announcing-updates-to-the-sql-server-incremental-servicing-model-ism/
+-- https://bit.ly/1RzYITz
 
 -- Update Center for Microsoft SQL Server
--- http://bit.ly/2pZptuQ
+-- https://bit.ly/2pZptuQ
 
 -- Download SQL Server Management Studio (SSMS)
--- https://msdn.microsoft.com/en-us/library/mt238290.aspx
+-- https://bit.ly/1OcupT9
 
 -- Download and install Microsoft SQL Operations Studio 
--- https://docs.microsoft.com/en-us/sql/sql-operations-studio/download
+-- https://bit.ly/2vgke1A
 
 
 -- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
@@ -186,7 +193,7 @@ SERVERPROPERTY('BuildClrVersion') AS [Build CLR Version];
 -- Note: Some columns will be NULL on older SQL Server builds
 
 -- SERVERPROPERTY (Transact-SQL)
--- http://bit.ly/2eeaXeI
+-- https://bit.ly/2eeaXeI
 
 
 -- Get instance-level configuration values for instance  (Query 4) (Configuration Values)
@@ -216,36 +223,36 @@ DBCC TRACESTATUS (-1);
 
 -- Common trace flags that should be enabled in most cases
 -- TF 1117 - When growing a data file, grow all files at the same time so they remain the same size, reducing allocation contention points
---           https://support2.microsoft.com/kb/2154845
+--           https://bit.ly/2GY1kOl
 -- 
 -- TF 1118 - Helps alleviate allocation contention in tempdb, SQL Server allocates full extents to each database object, 
 --           thereby eliminating the contention on SGAM pages (more important with older versions of SQL Server)
 --           Recommendations to reduce allocation contention in SQL Server tempdb database
---           https://support2.microsoft.com/kb/2154845
+--           https://bit.ly/2GY1kOl
 
 -- TF 2371 - Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)
---           https://blogs.msdn.com/b/saponsqlserver/archive/2011/09/07/changes-to-automatic-update-statistics-in-sql-server-traceflag-2371.aspx
+--           https://bit.ly/2HySkAg
 
 -- TF 3023 - Enables backup checksum default
---           https://support.microsoft.com/en-us/help/2656988/how-to-enable-the-checksum-option-if-backup-utilities-do-not-expose-th
+--           https://bit.ly/2vtjqqc
 
 -- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
---           https://www.sqlskills.com/blogs/paul/fed-up-with-backup-success-messages-bloating-your-error-logs/
+--           https://bit.ly/2p6MTjS
 
 -- TF 3449 - Enables use of dirty page manager (SQL Server 2012 SP3 CU3 and later)
---			 https://blogs.msdn.microsoft.com/psssql/2017/06/29/sql-server-large-ram-and-db-checkpointing/
+--			 https://bit.ly/2uj0h5M
 
 -- TF 6533 - Spatial performance improvements in SQL Server 2012 and 2014
---           https://support.microsoft.com/en-us/kb/3107399
+--           https://bit.ly/2v7C7ze
 
 -- TF 6534 - Enables use of native code to improve performance with spatial data
---           https://blogs.msdn.microsoft.com/bobsql/2016/06/03/sql-2016-it-just-runs-faster-native-spatial-implementations/
+--           https://bit.ly/2HrQUpU
 
 -- TF 8079 - Enables automatic soft-NUMA on systems with eight or more physical cores per NUMA node (with SQL Server 2012 SP4)
---           https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2012-service-pack-4-sp4-released/
+--           https://bit.ly/2qN8kr3
 
---- DBCC TRACEON - Trace Flags (Transact-SQL)
--- https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-traceon-trace-flags-transact-sql
+-- DBCC TRACEON - Trace Flags (Transact-SQL)
+-- https://bit.ly/2FuSvPg
 
 
 
@@ -264,7 +271,7 @@ FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
 -- If locked_page_allocations_kb > 0, then LPIM is enabled
 
 -- How to enable the "locked pages" feature in SQL Server 2012
--- https://support.microsoft.com/en-us/kb/2659143
+-- https://bit.ly/2F5UjOA
 
 
 
@@ -319,10 +326,10 @@ ORDER BY sj.name OPTION (RECOMPILE);
 -- Look for jobs that have a notify_level_email set to 0 (meaning no e-mail is ever sent)
 --
 -- MSDN sysjobs documentation
--- https://msdn.microsoft.com/en-us/library/ms189817.aspx
+-- https://bit.ly/2paDEOP
 
 -- SQL Server Maintenance Solution
--- https://ola.hallengren.com/
+-- https://bit.ly/1pgchQu
 
 
 -- Get SQL Server Agent Alert Information (Query 10) (SQL Server Agent Alerts)
@@ -333,7 +340,7 @@ ORDER BY name OPTION (RECOMPILE);
 ------
 
 -- Gives you some basic information about your SQL Server Agent Alerts (which are different from SQL Server Agent jobs)
--- Read more about Agent Alerts here: https://www.sqlskills.com/blogs/glenn/creating-sql-server-agent-alerts-for-critical-errors/
+-- Read more about Agent Alerts here: https://bit.ly/2Giz0Xf
 
 
 
@@ -361,10 +368,10 @@ FROM sys.dm_os_windows_info WITH (NOLOCK) OPTION (RECOMPILE);
 -- SQL Server 2012 requires Windows Server 2008 SP2 or newer
 
 -- Hardware and Software Requirements for Installing SQL Server 2012
--- https://msdn.microsoft.com/en-us/library/ms143506.aspx
+-- https://bit.ly/1yRYXkQ
 
 -- Using SQL Server in Windows 8 and later versions of Windows operating system 
--- https://support.microsoft.com/en-us/kb/2681562
+-- https://bit.ly/2F7Ax0P
 
 
 
@@ -381,7 +388,7 @@ WHERE node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
 -- Watch out if you have a VM with more than 4 NUMA nodes with SQL Server Standard Edition, since there is a four-socket license limit
 
 -- Balancing Your Available SQL Server Core Licenses Evenly Across NUMA Nodes
--- https://www.sqlskills.com/blogs/glenn/balancing-your-available-sql-server-core-licenses-evenly-across-numa-nodes/
+-- https://bit.ly/2vfC4Rq
 
 
 
@@ -419,7 +426,7 @@ FROM sys.dm_os_cluster_nodes WITH (NOLOCK) OPTION (RECOMPILE);
 -- You will see no results if your instance is not clustered
 
 -- Recommended hotfixes and updates for Windows Server 2012 R2-based failover clusters
--- http://support.microsoft.com/kb/2920151
+-- https://bit.ly/1z5BfCw
 
 
 -- Get information about any AlwaysOn AG cluster this instance is a part of (Query 15) (AlwaysOn AG Cluster)
@@ -474,10 +481,10 @@ EXEC sys.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'HARDWARE\DESCRIPTION\Syste
 -- to the Windows Power Plan or hardware power management
 
 -- You can use CPU-Z to get your actual CPU core speed and a lot of other useful information
--- http://www.cpuid.com/softwares/cpu-z.html
+-- https://bit.ly/QhR6xF
 
 -- You can learn more about processor selection for SQL Server by following this link
--- https://www.sqlskills.com/blogs/glenn/processor-selection-for-sql-server/
+-- https://bit.ly/2F3aVlP
 
 
 
@@ -491,7 +498,7 @@ ORDER BY creation_time DESC OPTION (RECOMPILE);
 -- not had any memory dumps (which is a good thing)
 
 -- sys.dm_server_memory_dumps (Transact-SQL)
--- http://bit.ly/2elwWll
+-- https://bit.ly/2elwWll
 
 
 -- Look at Suspect Pages table (Query 21) (Suspect Pages)
@@ -510,7 +517,7 @@ ORDER BY database_id OPTION (RECOMPILE);
 -- 7 = Deallocated by DBCC
 
 -- Manage the suspect_pages Table
--- https://docs.microsoft.com/en-us/sql/relational-databases/backup-restore/manage-the-suspect-pages-table-sql-server  
+-- https://bit.ly/2Fvr1c9  
 
 -- Ideally, this query returns no results. The table is limited to 1000 rows.
 -- If you do get results here, you should do further investigation to determine the root cause
@@ -647,7 +654,7 @@ DROP TABLE #IOWarningResults;
 -- Look to see if you see any patterns in the results (same files, same drives, same time of day, etc.)
 
 -- Diagnostics in SQL Server help detect stalled and stuck I/O operations
--- https://support.microsoft.com/en-us/kb/897284
+-- https://bit.ly/2qtaw73
 
 
 
@@ -1302,8 +1309,8 @@ ORDER BY [Avg IO] DESC OPTION (RECOMPILE);
 -- Possible Bad NC Indexes (writes > reads)  (Query 55) (Bad NC Indexes)
 SELECT OBJECT_NAME(s.[object_id]) AS [Table Name], i.name AS [Index Name], i.index_id, 
 i.is_disabled, i.is_hypothetical, i.has_filter, i.fill_factor,
-user_updates AS [Total Writes], user_seeks + user_scans + user_lookups AS [Total Reads],
-user_updates - (user_seeks + user_scans + user_lookups) AS [Difference]
+s.user_updates AS [Total Writes], s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads],
+s.user_updates - (s.user_seeks + s.user_scans + s.user_lookups) AS [Difference]
 FROM sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 INNER JOIN sys.indexes AS i WITH (NOLOCK)
 ON s.[object_id] = i.[object_id]
@@ -1312,7 +1319,7 @@ WHERE OBJECTPROPERTY(s.[object_id],'IsUserTable') = 1
 AND s.database_id = DB_ID()
 AND s.user_updates > (s.user_seeks + s.user_scans + s.user_lookups)
 AND i.index_id > 1 AND i.[type_desc] = N'NONCLUSTERED'
-AND i.is_primary_key = 0 AND i.is_unique_constraint = 0
+AND i.is_primary_key = 0 AND i.is_unique_constraint = 0 AND i.is_unique = 0
 ORDER BY [Difference] DESC, [Total Writes] DESC, [Total Reads] ASC OPTION (RECOMPILE);
 ------
 

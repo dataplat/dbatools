@@ -1,6 +1,14 @@
 ﻿# See http://www.appveyor.com/docs/appveyor-yml for many more options
 
-build: false
+configuration: "Debug"
+
+
+before_build:
+  - nuget restore bin\projects\dbatools\dbatools.sln
+  
+build:
+  project: bin\projects\dbatools\dbatools.sln
+
 version: 0.9.{build}
 
 cache:

@@ -1,7 +1,7 @@
 
 -- SQL Server 2008 R2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: February 21, 2018
+-- Last Modified: April 30, 2018
 -- https://www.sqlserverperformance.wordpress.com/
 -- https://www.sqlskills.com/blogs/glenn/
 -- Twitter: GlennAlanBerry
@@ -1376,13 +1376,13 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- Sign up for Microsoft Visual Studio Dev Essentials and get a free three month pass to Pluralsight
 
 -- Microsoft Visual Studio Dev Essentials
--- http://bit.ly/1q6xbDL
+-- https://bit.ly/1q6xbDL
 
 
 -- Sign up for Microsoft IT Pro Cloud Essentials and get lots of free Azure usage credits, MCP exam voucher, three month Pluralsight subscription
 
 -- Microsoft IT Pro Cloud Essentials
--- http://bit.ly/2443SAd
+-- https://bit.ly/2443SAd
 
 
 -- August 2017 blog series about upgrading and migrating SQL Server

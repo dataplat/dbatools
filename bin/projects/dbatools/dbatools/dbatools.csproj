@@ -42,6 +42,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <LangVersion>5</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ps4|AnyCPU'">
     <OutputPath>..\..\..\</OutputPath>
@@ -107,6 +108,8 @@
     <Compile Include="TabExpansion\TabCompletionSet.cs" />
     <Compile Include="TypeConversion\DbaCredentialParameterConverter.cs" />
     <Compile Include="Utility\CredentialPrompt.cs" />
+    <Compile Include="Utility\DbaValidatePatternAttribute.cs" />
+    <Compile Include="Utility\DbaValidateScriptAttribute.cs" />
     <Compile Include="Utility\SizeStyle.cs" />
     <Compile Include="Validation\LinkedServerResult.cs" />
     <Compile Include="Utility\DateTimeExtension.cs" />
