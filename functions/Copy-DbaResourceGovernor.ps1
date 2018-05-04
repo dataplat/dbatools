@@ -137,7 +137,7 @@ function Copy-DbaResourceGovernor {
                         $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     else {
-                        $fullyQualifiedFunctionName = $sourceClassifierFunction.Schema+"."+$sourceClassifierFunction.Name 
+                        $fullyQualifiedFunctionName = $sourceClassifierFunction.Schema+"."+$sourceClassifierFunction.Name
                                   
                         if (!$destClassifierFunction) {
                             $destFunction = $destServer.Databases["master"].UserDefinedFunctions[$sourceClassifierFunction.Name]
@@ -159,12 +159,12 @@ function Copy-DbaResourceGovernor {
                             $copyResourceGovClassifierFunc.Status = "Successful"
                             $copyResourceGovClassifierFunc.Notes = "The new classifier function has been created"
                             $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        } 
+                        }
                         else {
                             if ($Force -eq $false) {
                                 $copyResourceGovClassifierFunc.Status = "Skipped"
                                 $copyResourceGovClassifierFunc.Notes = "A classifier function already exists"
-                                $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject            
+                                $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             }
                             else {
                                 $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL);"
@@ -190,7 +190,7 @@ function Copy-DbaResourceGovernor {
 
                                 $copyResourceGovClassifierFunc.Status = "Successful"
                                 $copyResourceGovClassifierFunc.Notes = "The old classifier function has been overwritten."
-                                $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject            
+                                $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             }
                         }
                     }
@@ -318,7 +318,7 @@ function Copy-DbaResourceGovernor {
                 if (!$sourceServer.ResourceGovernor.Enabled) {
                     $sql = "ALTER RESOURCE GOVERNOR DISABLE"
                     $destServer.Query($sql)
-                } 
+                }
                 else {
                     $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
                     $destServer.Query($sql)
