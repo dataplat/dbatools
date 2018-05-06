@@ -137,7 +137,7 @@ function Set-DbaDbCompression {
                 try {
                     Write-Message -Level Verbose -Message "Querying $instance - $db"
                     if ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) {
-                        Write-Message -Level Warning -Message "$db is not accessible." -Target $db
+                        Write-Message -Level Warning -Message "$db is not accessible" -Target $db
                         continue
                     }
                     if ($db.CompatibilityLevel -lt 'Version100') {
