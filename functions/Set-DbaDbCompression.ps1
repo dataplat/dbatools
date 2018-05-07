@@ -137,7 +137,7 @@ function Set-DbaDbCompression {
                 try {
                     Write-Message -Level Verbose -Message "Querying $instance - $db"
                     if ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) {
-                        Write-Message -Level Warning -Message "$db is not accessible." -Target $db
+                        Write-Message -Level Warning -Message "$db is not accessible" -Target $db
                         continue
                     }
                     if ($db.CompatibilityLevel -lt 'Version100') {
@@ -185,7 +185,7 @@ function Set-DbaDbCompression {
                     }
                     else {
                         Write-Message -Level Verbose -Message "Applying $CompressionType compression to all objects in $($db.name)"
-                        foreach ($obj in $server.Databases[$($db.name)].Tables) {
+                        foreach ($obj in $server.Databases[$($db.name)].Tables | Where-Object {!$_.IsMemoryOptimized}) {
                             if ($obj.HasHeapIndex) {
                                 if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
@@ -219,7 +219,7 @@ function Set-DbaDbCompression {
                                 }
                             }
 
-                            foreach ($index in $($obj.Indexes)) {
+                            foreach ($index in $($obj.Indexes | Where-Object {!$_.IsMemoryOptimized})) {
                                 if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                     break
