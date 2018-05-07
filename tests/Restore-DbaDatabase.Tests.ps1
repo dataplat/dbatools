@@ -293,7 +293,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "All user databases are removed" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
-        It "Should say the status was dropped post point in time test" {
+        It -Skip "Should say the status was dropped post point in time test" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
