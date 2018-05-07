@@ -275,7 +275,7 @@ function Invoke-DbaDbDecryptObject {
 
                         # Setup the query to change the object in SQL Server and roll it back getting the encrypted version
                         $queryKnownSecret = "
-                            BEGIN TRAN;
+                            BEGIN TRANSACTION;
                                 EXEC ('$queryKnownPlain');
                                 SELECT imageval AS Value
                                 FROM sys.sysobjvalues
