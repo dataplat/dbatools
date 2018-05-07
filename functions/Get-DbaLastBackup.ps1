@@ -99,9 +99,9 @@ function Get-DbaLastBackup {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
             # Get-DbaBackupHistory -Last would make the job in one query but SMO's (and this) report the last backup of this type irregardless of the chain
-            $FullHistory = Get-DbaBackupHistory -SqlInstance $instance  -Database $dbs.Name -LastFull -IncludeCopyOnly -Raw
-            $DiffHistory = Get-DbaBackupHistory -SqlInstance $instance  -Database $dbs.Name -LastDiff -IncludeCopyOnly -Raw
-            $IncrHistory = Get-DbaBackupHistory -SqlInstance $instance  -Database $dbs.Name -LastLog -IncludeCopyOnly -Raw
+            $FullHistory = Get-DbaBackupHistory -SqlInstance $server -Database $dbs.Name -LastFull -IncludeCopyOnly -Raw
+            $DiffHistory = Get-DbaBackupHistory -SqlInstance $server -Database $dbs.Name -LastDiff -IncludeCopyOnly -Raw
+            $IncrHistory = Get-DbaBackupHistory -SqlInstance $server -Database $dbs.Name -LastLog -IncludeCopyOnly -Raw
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 
