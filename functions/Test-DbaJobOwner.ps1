@@ -138,10 +138,10 @@ function Test-DbaJobOwner {
                 $row = [ordered]@{
                     Server       = $server.Name
                     Job          = $j.Name
-                    JobType      = if($j.CategoryID -eq 1){ "Remote" } else{ $j.JobType }
+                    JobType      = if ($j.CategoryID -eq 1){ "Remote" } else { $j.JobType }
                     CurrentOwner = $j.OwnerLoginName
                     TargetOwner  = $Login
-                    OwnerMatch   = if($j.CategoryID -eq 1){ $true } else{ $j.OwnerLoginName -eq $Login }
+                    OwnerMatch   = if ($j.CategoryID -eq 1){ $true } else { $j.OwnerLoginName -eq $Login }
 
                 }
                 #add each custom object to the return array
@@ -157,7 +157,7 @@ function Test-DbaJobOwner {
     }
     end {
         #return results
-            Select-DefaultView -InputObject $results -Property Server,Job,JobType,CurrentOwner,TargetOwner,OwnerMatch
+            Select-DefaultView -InputObject $results -Property Server, Job, JobType, CurrentOwner, TargetOwner, OwnerMatch
     }
 
 }
