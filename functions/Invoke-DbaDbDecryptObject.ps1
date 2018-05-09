@@ -8,18 +8,18 @@ function Invoke-DbaDbDecryptObject {
         You cannot alter the object or view the definition.
         With this command you can search for the object and decrypt the it.
 
-        The comand will output the results to the console.
-        There is an option to export all the results to a folder creating .sql files
+        The command will output the results to the console.
+        There is an option to export all the results to a folder creating .sql files.
 
         Make sure the instance allowed dedicated administrator connections (DAC).
         The binary versions of the objects can only be retrieved using a DAC connection.
         You can check the DAC connection with:
         'Get-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled'
-        It should say 1 in the ConfiguredValue
+        It should say 1 in the ConfiguredValue.
 
         To change the configurations you can use the Set-DbaSpConfigure command:
         'Set-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled -Value 1'
-        In some cases you may ned to reboot the instance
+        In some cases you may need to reboot the instance.
 
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to
@@ -39,7 +39,7 @@ function Invoke-DbaDbDecryptObject {
         The name of the object to search for in the database.
 
     .PARAMETER EncodingType
-        The encoding that's used to decrypt and encrypt values
+        The encoding that's used to decrypt and encrypt values.
 
     .PARAMETER ExportDestination
         Used for exporting the results to.
@@ -64,22 +64,22 @@ function Invoke-DbaDbDecryptObject {
     .EXAMPLE
     Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1
 
-    Decrypt objct "Function1" in DB1 of instance SQLDB1 and output the data to the user
+    Decrypt object "Function1" in DB1 of instance SQLDB1 and output the data to the user.
 
     .EXAMPLE
     Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1 -Force -ExportDestination C:\temp\decrypt
 
-    Decrypt object "Function1" in DB1 of instance SQLDB1 and output the data to the folder "C:\temp\decrypt"
+    Decrypt object "Function1" in DB1 of instance SQLDB1 and output the data to the folder "C:\temp\decrypt".
 
     .EXAMPLE
     Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1, Function2
 
-    Decrypt objects "Function1" and "Function2" and output the data to the user
+    Decrypt objects "Function1" and "Function2" and output the data to the user.
 
     .EXAMPLE
     "SQLDB1" | Invoke-DbaDbDecryptObject -Database DB1 -ObjectName Function1, Function2
 
-    Decrypt objects "Function1" and "Function2" and output the data to the user using a pipeline for the instance
+    Decrypt objects "Function1" and "Function2" and output the data to the user using a pipeline for the instance.
 
 #>
    [CmdletBinding()]
