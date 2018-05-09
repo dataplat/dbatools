@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 2, 2018
+-- Last Modified: May 4, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -470,14 +470,16 @@ ORDER BY ag.name, ar.replica_server_name, adc.[database_name] OPTION (RECOMPILE)
 
 -- Hardware information from SQL Server 2016  (Query 18) (Hardware Info)
 SELECT cpu_count AS [Logical CPU Count], scheduler_count, 
-       (socket_count * cores_per_socket) AS [Physical Core Count], 
-       socket_count AS [Socket Count], cores_per_socket, numa_node_count,
+       hyperthread_ratio AS [Hyperthread Ratio],
+       cpu_count/hyperthread_ratio AS [Physical CPU Count], 
        physical_memory_kb/1024 AS [Physical Memory (MB)], 
+	   committed_kb/1024 AS [Committed Memory (MB)],
+       committed_target_kb/1024 AS [Committed Target Memory (MB)],
        max_workers_count AS [Max Workers Count], 
 	   affinity_type_desc AS [Affinity Type], 
        sqlserver_start_time AS [SQL Server Start Time], 
-	   virtual_machine_type_desc AS [Virtual Machine Type], 
-       softnuma_configuration_desc AS [Soft NUMA Configuration], 
+	   virtual_machine_type_desc AS [Virtual Machine Type],
+	   softnuma_configuration_desc AS [Soft NUMA Configuration], 
 	   sql_memory_model_desc -- New in SQL Server 2016
 FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
