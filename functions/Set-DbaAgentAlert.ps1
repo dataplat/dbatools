@@ -55,15 +55,15 @@ https://dbatools.io/Set-DbaAgentAlert
 
 .EXAMPLE
 Set-DbaAgentAlert -SqlInstance sql1 -Alert 'Severity 025: Fatal Error' -Disabled
-Changes the alert to disabled
+Changes the alert to disabled.
 
 .EXAMPLE
 Set-DbaAgentAlert -SqlInstance sql1 -Alert 'Severity 025: Fatal Error', 'Error Number 825', 'Error Number 824' -Enabled
-Changes multiple alerts to enabled
+Changes multiple alerts to enabled.
 
 .EXAMPLE
 Set-DbaAgentAlert -SqlInstance sql1, sql2, sql3 -Alert 'Severity 025: Fatal Error', 'Error Number 825', 'Error Number 824' -Enabled
-Changes multiple alerts to enabled on multiple servers
+Changes multiple alerts to enabled on multiple servers.
 
 .EXAMPLE
 Set-DbaAgentAlert -SqlInstance sql1 -Alert 'Severity 025: Fatal Error' -Disabled -Whatif
