@@ -85,8 +85,7 @@ function Watch-DbaXESession {
         }
         
         if ($InputObject) {
-            $status = $InputObject.Status
-            if ($status -ne "Running") {
+            if (-Not $InputObject.IsRunning) {
                 Stop-Function -Message "$($InputObject.Name) is in a $status state."
                 return
             }
