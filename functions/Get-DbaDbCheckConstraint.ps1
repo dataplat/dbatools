@@ -1,10 +1,10 @@
 function Get-DbaDbCheckConstraint {
     <#
         .SYNOPSIS
-            Gets database Check constraints
+            Gets database Check constraints.
 
         .DESCRIPTION
-            Gets database Checks constraints
+            Gets database Checks constraints.
 
         .PARAMETER SqlInstance
             The target SQL Server instance(s)
@@ -37,27 +37,27 @@ function Get-DbaDbCheckConstraint {
         .EXAMPLE
             Get-DbaDbCheckConstraint -SqlInstance sql2016
 
-            Gets all database check constraints
+            Gets all database check constraints.
 
         .EXAMPLE
             Get-DbaDbCheckConstraint -SqlInstance Server1 -Database db1
 
-            Gets the check constraints for the db1 database
+            Gets the check constraints for the db1 database.
 
         .EXAMPLE
             Get-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeDatabase db1
 
-            Gets the check constraints for all databases except db1
+            Gets the check constraints for all databases except db1.
 
         .EXAMPLE
             Get-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeSystemTable
 
-            Gets the check constraints for all databases that are not system objects
+            Gets the check constraints for all databases that are not system objects.
 
         .EXAMPLE
             'Sql1','Sql2/sqlexpress' | Get-DbaDbCheckConstraint
 
-            Gets the check constraints for the databases on Sql1 and Sql2/sqlexpress
+            Gets the check constraints for the databases on Sql1 and Sql2/sqlexpress.
     #>
     [CmdletBinding()]
     param (

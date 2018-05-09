@@ -1,10 +1,10 @@
 function Get-DbaDbForeignKey {
     <#
         .SYNOPSIS
-            Gets database Foreign Keys
+            Gets database Foreign Keys.
 
         .DESCRIPTION
-            Gets database Foreign Keys
+            Gets database Foreign Keys.
 
         .PARAMETER SqlInstance
             The target SQL Server instance(s)
@@ -37,27 +37,27 @@ function Get-DbaDbForeignKey {
         .EXAMPLE
             Get-DbaDbForeignKey -SqlInstance sql2016
 
-            Gets all database Foreign Keys
+            Gets all database Foreign Keys.
 
         .EXAMPLE
             Get-DbaDbForeignKey -SqlInstance Server1 -Database db1
 
-            Gets the Foreign Keys for the db1 database
+            Gets the Foreign Keys for the db1 database.
 
         .EXAMPLE
             Get-DbaDbForeignKey -SqlInstance Server1 -ExcludeDatabase db1
 
-            Gets the Foreign Keys for all databases except db1
+            Gets the Foreign Keys for all databases except db1.
 
         .EXAMPLE
             Get-DbaDbForeignKey -SqlInstance Server1 -ExcludeSystemTable
 
-            Gets the Foreign Keys from all tables that are not system objects from all databases
+            Gets the Foreign Keys from all tables that are not system objects from all databases.
 
         .EXAMPLE
             'Sql1','Sql2/sqlexpress' | Get-DbaDbForeignKey
 
-            Gets the Foreign Keys for the databases on Sql1 and Sql2/sqlexpress
+            Gets the Foreign Keys for the databases on Sql1 and Sql2/sqlexpress.
     #>
     [CmdletBinding()]
     param (
