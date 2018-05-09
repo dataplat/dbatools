@@ -98,10 +98,25 @@ function Copy-DbaSqlServerAgent {
 
         # All of these support whatif inside of them
         Copy-DbaAgentCategory -Source $sourceServer -Destination $destServer -Force:$force
+        
+        $destServer.JobServer.JobCategories.Refresh()
+        $destServer.JobServer.OperatorCategories.Refresh()
+        $destServer.JobServer.AlertCategories.Refresh()
+        
         Copy-DbaAgentOperator -Source $sourceServer -Destination $destServer -Force:$force
+        $destServer.JobServer.Operators.Refresh()
+        
         Copy-DbaAgentAlert -Source $sourceServer -Destination $destServer -Force:$force -IncludeDefaults
+        $destServer.JobServer.Alerts.Refresh()
+        
         Copy-DbaAgentProxyAccount -Source $sourceServer -Destination $destServer -Force:$force
+        $destServer.JobServer.ProxyAccounts.Refresh()
+        
         Copy-DbaAgentSharedSchedule -Source $sourceServer -Destination $destServer -Force:$force
+        $destServer.JobServer.SharedSchedules.Refresh()
+        
+        $destServer.JobServer.Refresh()
+        $destServer.Refresh()
         Copy-DbaAgentJob -Source $sourceServer -Destination $destServer -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
 
         # To do
@@ -136,11 +151,12 @@ function Copy-DbaSqlServerAgent {
                 $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
             catch {
+                $message = $_.Exception.InnerException.InnerException.InnerException.Message
+                if (-not $message) { $message = $_.Exception.Message }
                 $copyAgentPropStatus.Status = "Failed"
-                $copyAgentPropStatus.Notes = $_.Exception.Message
+                $copyAgentPropStatus.Notes = $message
                 $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                Stop-Function -Message "Issue copying agent properties. This happens sometimes, moving on." -Target $destination
+                Stop-Function -Message $message -Target $destination
             }
         }
     }
