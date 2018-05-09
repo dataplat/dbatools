@@ -112,7 +112,7 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
                 $dbs = $dbs | Where-Object Name -In $Database
             }
 
-            if ($Exclude) {
+            if ($ExcludeDatabase) {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
 
