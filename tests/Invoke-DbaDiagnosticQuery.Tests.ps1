@@ -7,7 +7,7 @@ write-host "loaded constants"
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		$script:PesterOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
-		[io.directory]::CreateDirectory($script:PesterOutputPath) > $null
+		New-Item -Path $script:PesterOutputPath -ItemType Directory
 
 		$database = "dbatoolsci_frk_$(Get-Random)"
 		$database2 = "dbatoolsci_frk_$(Get-Random)"
@@ -22,11 +22,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		$server.Query("ALTER DATABASE $database2 SET OFFLINE WITH ROLLBACK IMMEDIATE")
 		$server.Query("DROP DATABASE IF EXISTS $database2")
 
-		Remove-Item $script:PesterOutputPath -recurse #clear test folder contents
+		Remove-Item $script:PesterOutputPath -recurse -erroraction silentlycontinue  #clear test folder contents
 
 	}
 	AfterEach {
-		Remove-Item "$script:PesterOutputPath\*" -Recurse #clear test folder contents
+		Remove-Item "$script:PesterOutputPath\*" -Recurse -erroraction silentlycontinue #clear test folder contents, doesn't need to fail if cleanup fails
 
 	}
 
@@ -43,6 +43,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	}
 
 	context "verifying output when exporting queries as files instead of running" {
+
 		It "exports queries to sql files without running" {
 			Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -QueryName 'Memory Clerk Usage' -OutputPath $script:PesterOutputPath
 			@(Get-ChildItem -path $script:PesterOutputPath -filter *.sql).Count | Should -be 1

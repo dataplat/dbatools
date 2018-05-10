@@ -96,19 +96,19 @@ Then it will export the results to Export-DbaDiagnosticQuery.
   - Instead of running the diagnostic queries, export them to SQL files
 
   # Export All Queries to Disk
-    Invoke-DbaDiagnosticQuery -sqlinstance localhost -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+	Invoke-DbaDiagnosticQuery -sqlinstance localhost -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
 
   # Export Database Specific Queries for all User Dbs
-    Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+	Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
 
   # Export Database Specific Queries For One Target Database
-    Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+	Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
 
   # Export Database Specific Queries For One Target Database and One Specific Query
-    Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries" -queryname 'Database-scoped Configurations'
+	Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries" -queryname 'Database-scoped Configurations'
 
   # Choose Queries To Export
-    Invoke-DbaDiagnosticQuery -sqlinstance localhost -UseSelectionHelper
+	Invoke-DbaDiagnosticQuery -sqlinstance localhost -UseSelectionHelper
 
 This will export with SqlInstance, DatabaseName, and QueryName as appropriate based on query.
 
@@ -277,7 +277,7 @@ Run diagnostic queries targeted at specific database, and only run database leve
 				if (($QueryName.Count -ne 0) -and ($QueryName -notcontains $scriptpart.QueryName)) { continue }
 				if (!$scriptpart.DBSpecific -and !$DatabaseSpecific) {
 					if ($ExportQueries) {
-						[io.directory]::CreateDirectory($OutputPath)>$null
+						New-Item -Path $OutputPath -ItemType Directory $OutputPath
 						$FileName = Remove-InvalidFileNameChars ('{0}.sql' -f $Scriptpart.QueryName)
 						$FullName = ([io.path]::combine($OutputPath, $FileName))
 						Write-Message -Level Verbose -Message  "Creating file: $FullName" -Verbose
@@ -352,7 +352,7 @@ Run diagnostic queries targeted at specific database, and only run database leve
 						$dbname = $currentdb.name
 
 						if ($ExportQueries) {
-							[io.directory]::CreateDirectory($OutputPath)>$null
+							New-Item -Path $OutputPath -ItemType Directory $OutputPath
 							$FileName = Remove-InvalidFileNameChars ('{0}-{1}-{2}.sql' -f $server.DomainInstanceName, $dbname, $Scriptpart.QueryName)
 							$FullName = ([io.path]::combine($OutputPath, $FileName))
 							Write-Message -Level Verbose -Message  "Creating file: $FullName" -Verbose
