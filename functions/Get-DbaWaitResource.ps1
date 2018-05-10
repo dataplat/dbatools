@@ -6,10 +6,10 @@ function Get-DbaWaitResource {
     .DESCRIPTION
         Given a wait resource in the form of:
             'PAGE: 10:1:9180084 '
-        returns the database, data file and the system oject which is being waited up
+        returns the database, data file and the system object which is being waited up.
         Given a wait resource in the form of:
             'KEY: 7:35457594073541168 (de21f92a1572)'
-        returns the database, object and index that is being waited on, With the -row switch the row data will also be returned
+        returns the database, object and index that is being waited on, With the -row switch the row data will also be returned.
     .PARAMETER SqlInstance
         The SQL Server instance to restore to.
 
@@ -29,17 +29,17 @@ function Get-DbaWaitResource {
     .EXAMPLE
         Get-DbaWaitResource -SqlInstance server1 -WaitResource 'PAGE: 10:1:9180084'
 
-        Will return an object containing; database name, data file name, schema name and the object which owns the resouce
+        Will return an object containing; database name, data file name, schema name and the object which owns the resource
 
     .EXAMPLE
         Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)'
 
-        Will return an object containing; database name, schema name and index name which is being waited on
+        Will return an object containing; database name, schema name and index name which is being waited on.
 
     .EXAMPLE
         Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)' -row
 
-        Will return an object containing; database name, schema name and index name which is being waited on, and in addition the contents of the locked row at the time the command is run
+        Will return an object containing; database name, schema name and index name which is being waited on, and in addition the contents of the locked row at the time the command is run.
 
     .NOTES
         Tags: Pages, DBCC
