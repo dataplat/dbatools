@@ -155,7 +155,7 @@ Run diagnostic queries targeted at specific database, and only run database leve
 
 	begin {
 		[int]$ProgressId = Get-Random
-		[System.Collections.Generic.List[pscustomobject]]$QueryDetail = @()
+
 		function Invoke-DiagnosticQuerySelectionHelper {
 			[CmdletBinding()]
 			Param (
@@ -242,12 +242,12 @@ Run diagnostic queries targeted at specific database, and only run database leve
 
 			if (!$instanceOnly) {
 				if (@($DatabaseName).count -eq 0) {
-					$databases = $server.Query("Select Name from sys.databases where name not in ('master', 'model', 'msdb', 'tempdb')")
+					$databases = $server.Query("Select name from sys.databases where name not in ('master', 'model', 'msdb', 'tempdb')")
 				}
 				else {
 					[string]$FilteredList = "'" + ($DatabaseName -join "','") + "'"
-					write-verbose "Database Specific Filtered List: $FilteredList"
-					$databases = $server.Query("Select Name from sys.databases where name in ($FilteredList)")
+					Write-Message -Level Verbose -Message  "Database Specific Filtered List: $FilteredList"
+					$databases = $server.Query("Select name from sys.databases where name in ($FilteredList)")
 				}
 			}
 
@@ -280,7 +280,7 @@ Run diagnostic queries targeted at specific database, and only run database leve
 						[io.directory]::CreateDirectory($OutputPath)>$null
 						$FileName = Remove-InvalidFileNameChars ('{0}.sql' -f $Scriptpart.QueryName)
 						$FullName = ([io.path]::combine($OutputPath, $FileName))
-						write-verbose "Creating file: $FullName" -Verbose
+						Write-Message -Level Verbose -Message  "Creating file: $FullName" -Verbose
 						$scriptPart.Text | out-file -FilePath $FullName -encoding UTF8 -force
 						continue
 					}
@@ -295,26 +295,7 @@ Run diagnostic queries targeted at specific database, and only run database leve
 							$result = $server.Query($scriptpart.Text)
 							Write-Message -Level Verbose -Message "Processed $($scriptpart.QueryName) on $instance"
 							if (!$result) {
-								[void]$QueryDetail.Add( [pscustomobject]@{
-										ComputerName     = $server.NetName
-										InstanceName     = $server.ServiceName
-										SqlInstance      = $server.DomainInstanceName
-										Number           = $scriptpart.QueryNr
-										Name             = $scriptpart.QueryName
-										Description      = $scriptpart.Description
-										DatabaseSpecific = $scriptpart.DBSpecific
-										DatabaseName     = $null
-										Notes            = "Empty Result for this Query"
-										Result           = $null
-									})
-								Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description)
-							}
-						}
-						catch {
-							Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1}, result unavailable' -f $instance, $scriptpart.QueryName) -Target $instance -ErrorRecord $_
-						}
-						if ($result) {
-							[void]$QueryDetail.Add( [pscustomobject]@{
+								[pscustomobject]@{
 									ComputerName     = $server.NetName
 									InstanceName     = $server.ServiceName
 									SqlInstance      = $server.DomainInstanceName
@@ -323,15 +304,16 @@ Run diagnostic queries targeted at specific database, and only run database leve
 									Description      = $scriptpart.Description
 									DatabaseSpecific = $scriptpart.DBSpecific
 									DatabaseName     = $null
-									Notes            = $null
-									Result           = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
+									Notes            = "Empty Result for this Query"
+									Result           = $null
 								}
-							)
+								Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description)
+							}
 						}
-					}
-					else {
-						# if running WhatIf, then return the queries that would be run as an object, not just whatif output
-						[void]$QueryDetail.Add(
+						catch {
+							Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1}, result unavailable' -f $instance, $scriptpart.QueryName) -Target $instance -ErrorRecord $_
+						}
+						if ($result) {
 							[pscustomobject]@{
 								ComputerName     = $server.NetName
 								InstanceName     = $server.ServiceName
@@ -341,9 +323,27 @@ Run diagnostic queries targeted at specific database, and only run database leve
 								Description      = $scriptpart.Description
 								DatabaseSpecific = $scriptpart.DBSpecific
 								DatabaseName     = $null
-								Notes            = "WhatIf - Bypassed Execution"
-								Result           = $null
-							})
+								Notes            = $null
+								Result           = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
+							}
+
+						}
+					}
+					else {
+						# if running WhatIf, then return the queries that would be run as an object, not just whatif output
+
+						[pscustomobject]@{
+							ComputerName     = $server.NetName
+							InstanceName     = $server.ServiceName
+							SqlInstance      = $server.DomainInstanceName
+							Number           = $scriptpart.QueryNr
+							Name             = $scriptpart.QueryName
+							Description      = $scriptpart.Description
+							DatabaseSpecific = $scriptpart.DBSpecific
+							DatabaseName     = $null
+							Notes            = "WhatIf - Bypassed Execution"
+							Result           = $null
+						}
 					}
 
 				}
@@ -355,7 +355,7 @@ Run diagnostic queries targeted at specific database, and only run database leve
 							[io.directory]::CreateDirectory($OutputPath)>$null
 							$FileName = Remove-InvalidFileNameChars ('{0}-{1}-{2}.sql' -f $server.DomainInstanceName, $dbname, $Scriptpart.QueryName)
 							$FullName = ([io.path]::combine($OutputPath, $FileName))
-							write-verbose "Creating file: $FullName" -Verbose
+							Write-Message -Level Verbose -Message  "Creating file: $FullName" -Verbose
 							$scriptPart.Text | out-file -FilePath $FullName -encoding UTF8 -force
 							continue
 						}
@@ -368,18 +368,18 @@ Run diagnostic queries targeted at specific database, and only run database leve
 							try {
 								$result = $server.Query($scriptpart.Text, $currentdb.Name)
 								if (!$result) {
-									[void]$QueryDetail.Add([pscustomobject]@{
-											ComputerName     = $server.NetName
-											InstanceName     = $server.ServiceName
-											SqlInstance      = $server.DomainInstanceName
-											Number           = $scriptpart.QueryNr
-											Name             = $scriptpart.QueryName
-											Description      = $scriptpart.Description
-											DatabaseSpecific = $scriptpart.DBSpecific
-											DatabaseName     = $null
-											Notes            = "Empty Result for this Query"
-											Result           = $null
-										})
+									[pscustomobject]@{
+										ComputerName     = $server.NetName
+										InstanceName     = $server.ServiceName
+										SqlInstance      = $server.DomainInstanceName
+										Number           = $scriptpart.QueryNr
+										Name             = $scriptpart.QueryName
+										Description      = $scriptpart.Description
+										DatabaseSpecific = $scriptpart.DBSpecific
+										DatabaseName     = $null
+										Notes            = "Empty Result for this Query"
+										Result           = $null
+									}
 									Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description) -Target $scriptpart -ErrorRecord $_
 								}
 							}
@@ -387,34 +387,34 @@ Run diagnostic queries targeted at specific database, and only run database leve
 								Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $currentdb.Name) -Target $currentdb -ErrorRecord $_
 							}
 
-							[void]$QueryDetail.Add([pscustomobject]@{
-									ComputerName     = $server.NetName
-									InstanceName     = $server.ServiceName
-									SqlInstance      = $server.DomainInstanceName
-									Number           = $scriptpart.QueryNr
-									Name             = $scriptpart.QueryName
-									Description      = $scriptpart.Description
-									DatabaseSpecific = $scriptpart.DBSpecific
-									DatabaseName     = $currentdb.name
-									Notes            = $null
-									Result           = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
-								})
+							[pscustomobject]@{
+								ComputerName     = $server.NetName
+								InstanceName     = $server.ServiceName
+								SqlInstance      = $server.DomainInstanceName
+								Number           = $scriptpart.QueryNr
+								Name             = $scriptpart.QueryName
+								Description      = $scriptpart.Description
+								DatabaseSpecific = $scriptpart.DBSpecific
+								DatabaseName     = $currentdb.name
+								Notes            = $null
+								Result           = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
+							}
 						}
 						else {
 							# if running WhatIf, then return the queries that would be run as an object, not just whatif output
-							[void]$QueryDetail.Add(
-								[pscustomobject]@{
-									ComputerName     = $server.NetName
-									InstanceName     = $server.ServiceName
-									SqlInstance      = $server.DomainInstanceName
-									Number           = $scriptpart.QueryNr
-									Name             = $scriptpart.QueryName
-									Description      = $scriptpart.Description
-									DatabaseSpecific = $scriptpart.DBSpecific
-									DatabaseName     = $null
-									Notes            = "WhatIf - Bypassed Execution"
-									Result           = $null
-								})
+
+							[pscustomobject]@{
+								ComputerName     = $server.NetName
+								InstanceName     = $server.ServiceName
+								SqlInstance      = $server.DomainInstanceName
+								Number           = $scriptpart.QueryNr
+								Name             = $scriptpart.QueryName
+								Description      = $scriptpart.Description
+								DatabaseSpecific = $scriptpart.DBSpecific
+								DatabaseName     = $null
+								Notes            = "WhatIf - Bypassed Execution"
+								Result           = $null
+							}
 						}
 					}
 				}
@@ -423,6 +423,5 @@ Run diagnostic queries targeted at specific database, and only run database leve
 	}
 	end {
 		Write-Progress -Id $ProgressId -Activity 'Invoke-DbaDiagnosticQuery' -Completed
-		return [pscustomobject[]]$QueryDetail #cast from generic list back to just simple pscustomobject[] as some slight differences in behavior
 	}
 }
