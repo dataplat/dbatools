@@ -94,8 +94,8 @@ function Copy-DbaResourceGovernor {
             return
         }
 
-        $sourceClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+        $sourceClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential
+        $destClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $destServer -SqlCredential $DestinationSqlCredential
 
         $source = $sourceServer.DomainInstanceName
         $destination = $destServer.DomainInstanceName
