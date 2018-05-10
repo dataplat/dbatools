@@ -105,12 +105,12 @@ function Install-DbaFirstResponderKit {
             $oldSslSettings = [System.Net.ServicePointManager]::SecurityProtocol
             [System.Net.ServicePointManager]::SecurityProtocol = "Tls12"
             try {
-                Invoke-WebRequest $url -OutFile $zipfile
+                Invoke-WebRequest $url -OutFile $zipfile -UseBasicParsing
             }
             catch {
                 # Try with default proxy and usersettings
                 (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                Invoke-WebRequest $url -OutFile $zipfile
+                Invoke-WebRequest $url -OutFile $zipfile -UseBasicParsing
             }
             [System.Net.ServicePointManager]::SecurityProtocol = $oldSslSettings
 
