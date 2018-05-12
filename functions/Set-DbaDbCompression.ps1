@@ -317,7 +317,7 @@ function Set-DbaDbCompression {
                 catch {
                     Stop-Function -Message "Compression failed for $instance - $db" -Target $db -ErrorRecord $_ -Continue
                 }
-            }   
+            }
         }
     }
 }
