@@ -5,7 +5,7 @@ function Get-DbaDbPageInfo {
 
 .DESCRIPTION
     Get-DbaDbPageInfo is able to return information about the pages in a database.
-    It's possible to return the information for multiple databases and filter on specific databases, schemas and tables
+    It's possible to return the information for multiple databases and filter on specific databases, schemas and tables.
 
 .PARAMETER SqlInstance
     SQL Server name or SMO object representing the SQL Server to connect to
