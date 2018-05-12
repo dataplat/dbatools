@@ -186,13 +186,12 @@ function Set-DbaDbCompression {
                     else {
                         Write-Message -Level Verbose -Message "Applying $CompressionType compression to all objects in $($db.name)"
                         foreach ($obj in $server.Databases[$($db.name)].Tables | Where-Object {!$_.IsMemoryOptimized}) {
-                            if ($obj.HasHeapIndex) {
                                 if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                     break
                                 }
                                 foreach ($p in $($obj.PhysicalPartitions | Where-Object {$_.DataCompression -ne $CompressionType})) {
-                                    Write-Message -Level Verbose -Message "Compressing heap $($obj.Schema).$($obj.Name)"
+                                    Write-Message -Level Verbose -Message "Compressing table $($obj.Schema).$($obj.Name)"
                                     $($obj.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
                                     $obj.Rebuild()
                                     [pscustomobject]@{
@@ -205,7 +204,7 @@ function Set-DbaDbCompression {
                                         IndexName                     = $null
                                         Partition                     = $p.PartitionNumber
                                         IndexID                       = 0
-                                        IndexType                     = 'Heap'
+                                        IndexType                     = Switch ($obj.HasHeapIndex) {$false {"ClusteredIndex"} $true {"Heap"}}
                                         PercentScan                   = $null
                                         PercentUpdate                 = $null
                                         RowEstimatePercentOriginal    = $null
@@ -217,7 +216,6 @@ function Set-DbaDbCompression {
                                         AlreadyProcesssed             = "True"
                                     }
                                 }
-                            }
 
                             foreach ($index in $($obj.Indexes | Where-Object {!$_.IsMemoryOptimized})) {
                                 if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
