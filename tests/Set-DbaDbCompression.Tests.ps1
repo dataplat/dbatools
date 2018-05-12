@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $paramCount = 9
-        $defaultParamCount = 11
+        $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Set-DbaDbCompression).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential','Database','ExcludeDatabase','CompressionType','MaxRunTime','PercentCompression','InputObject','EnableException'
         It "Should contain our specific parameters" {
