@@ -71,4 +71,31 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
     }
+    Context "Command sets compression to Row all objects" {
+        $null = Set-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -CompressionType Row
+        $results = Get-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+        foreach ($row in $results) {
+            It "The $($row.IndexType) for $($row.schema).$($row.TableName) is row compressed" {
+                $row.DataCompression | Should Be "Row"
+            }
+        }
+    }
+    Context "Command sets compression to Page for all objects" {
+        $null = Set-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -CompressionType Page
+        $results = Get-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+        foreach ($row in $results) {
+            It "The $($row.IndexType) for $($row.schema).$($row.TableName) is page compressed" {
+                $row.DataCompression | Should Be "Page"
+            }
+        }
+    }
+    Context "Command sets compression to None for all objects" {
+        $null = Set-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -CompressionType None
+        $results = Get-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname
+        foreach ($row in $results) {
+            It "The $($row.IndexType) for $($row.schema).$($row.TableName) is not compressed" {
+                $row.DataCompression | Should Be "None"
+            }
+        }
+    }
 }
