@@ -36,6 +36,12 @@ function Set-DbaDbCompression {
         .PARAMETER InputObject
             Takes the output of Test-DbaDbCompression as an object and applied compression based on those recommendations.
 
+        .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -146,7 +152,7 @@ function Set-DbaDbCompression {
                     if ($CompressionType -eq "Recommended") {
                         if (Test-Bound "InputObject") {
                             Write-Message -Level Verbose -Message "Using passed in compression suggestions"
-                            $compressionSuggestion = $InputObject | Where-Object {$_.Database -eq $db.name}                        
+                            $compressionSuggestion = $InputObject | Where-Object {$_.Database -eq $db.name}
                         }
                         else {
                             Write-Message -Level Verbose -Message "Testing database for compression suggestions for $instance.$db"
@@ -228,7 +234,7 @@ function Set-DbaDbCompression {
                                     }
                                     foreach ($p in $($index.PhysicalPartitions | Where-Object {$_.DataCompression -ne $CompressionType})) {
                                         Write-Message -Level Verbose -Message "Compressing $($Index.IndexType) $($Index.Name) Partition $($p.PartitionNumber)"
-                                        
+
                                         ## There is a bug in SMO where setting compression to None at the index level doesn't work
                                         ## Once this UserVoice item is fixed the workaround can be removed
                                         ## https://feedback.azure.com/forums/908035-sql-server/suggestions/34080112-data-compression-smo-bug
@@ -239,7 +245,7 @@ function Set-DbaDbCompression {
                                         else {
                                             $($Index.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
                                             $index.Rebuild()
-                                        }                                    
+                                        }
 
                                         [pscustomobject]@{
                                             ComputerName                  = $server.NetName
@@ -268,7 +274,7 @@ function Set-DbaDbCompression {
                             foreach ($index in $($server.Databases[$($db.name)].Views | Where-Object {$_.Indexes}).Indexes) {
                                 foreach ($p in $($index.PhysicalPartitions | Where-Object {$_.DataCompression -ne $CompressionType})) {
                                     Write-Message -Level Verbose -Message "Compressing $($index.IndexType) $($index.Name) Partition $($p.PartitionNumber)"
-                                    
+
                                     ## There is a bug in SMO where setting compression to None at the index level doesn't work
                                     ## Once this UserVoice item is fixed the workaround can be removed
                                     ## https://feedback.azure.com/forums/908035-sql-server/suggestions/34080112-data-compression-smo-bug
