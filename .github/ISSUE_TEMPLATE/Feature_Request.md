@@ -1,5 +1,5 @@
 ---
-name: Feature request/idea
+name: Feature request/idea :bomb:
 about: Suggest a new feature or enhancement
 
 ---
