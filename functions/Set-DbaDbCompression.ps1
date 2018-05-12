@@ -117,7 +117,7 @@ function Set-DbaDbCompression {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             }
             catch {
-                Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failed to process Instance $instance" -ErrorRecord $_ -Target $instance -Continue
             }
 
             $Server.ConnectionContext.StatementTimeout = 0
@@ -317,7 +317,7 @@ function Set-DbaDbCompression {
                 catch {
                     Stop-Function -Message "Compression failed for $instance - $db" -Target $db -ErrorRecord $_ -Continue
                 }
-            }
+            }   
         }
     }
 }
