@@ -1,17 +1,17 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
+name: Feature request/idea :bomb:
+about: Suggest a new feature or enhancement
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+### Summary of new feature
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+* Clear/concise description of what the problem is that the new feature can solve.
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+### Proposed technical details (if applicable)
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+* e.g. Blog post reference that shows example code or functionality
+
+### Latest version of dbatools as of writing
+
+* Please provide the latest released version of dbatools module.
