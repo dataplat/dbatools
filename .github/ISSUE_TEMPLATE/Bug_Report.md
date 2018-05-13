@@ -1,5 +1,5 @@
 ---
-name: Bug report 🐛
+name: "Bug report \U0001F41B"
 about: Found errors or unexpected behavior using dbatools module
 
 ---
