@@ -1,4 +1,10 @@
 ---
+name: Feature request
+about: Suggest an idea for this project
+
+---
+
+---
 name: Feature request/idea :bomb:
 about: Suggest a new feature or enhancement
 
