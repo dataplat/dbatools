@@ -52,7 +52,7 @@ function Invoke-DbaDbDecryptObject {
 
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
-        Tags: Log Shipping, Configuration
+        Tags: Encryption, Decrypt, Database Objects
 
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -67,9 +67,14 @@ function Invoke-DbaDbDecryptObject {
     Decrypt object "Function1" in DB1 of instance SQLDB1 and output the data to the user.
 
     .EXAMPLE
-    Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1 -Force -ExportDestination C:\temp\decrypt
+    Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1 -ExportDestination C:\temp\decrypt
 
     Decrypt object "Function1" in DB1 of instance SQLDB1 and output the data to the folder "C:\temp\decrypt".
+
+    .EXAMPLE
+    Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ExportDestination C:\temp\decrypt
+
+    Decrypt all objects in DB1 of instance SQLDB1 and output the data to the folder "C:\temp\decrypt"
 
     .EXAMPLE
     Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1, Function2
@@ -90,7 +95,6 @@ function Invoke-DbaDbDecryptObject {
         [PSCredential]$SqlCredential,
         [parameter(Mandatory = $true)]
         [object[]]$Database,
-        [parameter(Mandatory = $true)]
         [string[]]$ObjectName,
         [ValidateSet('ASCII', 'UTF8')]
         [string]$EncodingType = 'ASCII',
@@ -189,11 +193,24 @@ function Invoke-DbaDbDecryptObject {
 
             # Loop through each of databases
             foreach ($db in $databaseCollection) {
+                # Get the objects
+                if($ObjectName){
+                    $storedProcedures = @($db.StoredProcedures | Where-Object {$_.Name -in $ObjectName -and $_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {'StoredProcedure'}}, @{N = "SubType"; E = {''}})
+                    $functions = @($db.UserDefinedFunctions | Where-Object {$_.Name -in $ObjectName -and $_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {"UserDefinedFunction"}}, @{N = "SubType"; E = {$_.FunctionType.ToString().Trim()}})
+                    $views = @($db.Views | Where-Object {$_.Name -in $ObjectName -and $_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {'View'}}, @{N = "SubType"; E = {''}})
+                }
+                else{
+                    # Get all encrypted objects
+                    $storedProcedures = @($db.StoredProcedures | Where-Object {$_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {'StoredProcedure'}}, @{N = "SubType"; E = {''}})
+                    $functions = @($db.UserDefinedFunctions | Where-Object {$_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {"UserDefinedFunction"}}, @{N = "SubType"; E = {$_.FunctionType.ToString().Trim()}})
+                    $views = @($db.Views | Where-Object {$_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {'View'}}, @{N = "SubType"; E = {''}})
+                }
 
-                # Get all the objects
+                <# Get all the objects
                 $storedProcedures = @($db.StoredProcedures | Where-Object {$_.Name -in $ObjectName -and $_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {'StoredProcedure'}}, @{N = "SubType"; E = {''}})
                 $functions = @($db.UserDefinedFunctions | Where-Object {$_.Name -in $ObjectName -and $_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {"UserDefinedFunction"}}, @{N = "SubType"; E = {$_.FunctionType.ToString().Trim()}})
                 $views = @($db.Views | Where-Object {$_.Name -in $ObjectName -and $_.IsEncrypted -eq $true} | Select-Object Name, Schema, @{N = "ObjectType"; E = {'View'}}, @{N = "SubType"; E = {''}})
+                #>
 
                 # Check if there are any objects
                 if ($storedProcedures.Count -ge 1) {
@@ -263,7 +280,7 @@ function Invoke-DbaDbDecryptObject {
 
                         # Setup the query to change the object in SQL Server and roll it back getting the encrypted version
                         $queryKnownSecret = "
-                            BEGIN TRAN;
+                            BEGIN TRANSACTION;
                                 EXEC ('$queryKnownPlain');
                                 SELECT imageval AS Value
                                 FROM sys.sysobjvalues
