@@ -1,41 +1,59 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaOrphanUser {
     <#
         .SYNOPSIS
             Get orphaned users.
+
         .DESCRIPTION
             An orphan user is defined by a user that does not have their matching login. (Login property = "").
+
         .PARAMETER SqlInstance
             The SQL Server Instance to connect to.
+
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+
         .PARAMETER Database
             Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+
+        .PARAMETER ExcludeDatabase
+            Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server
+
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
         .PARAMETER Confirm
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
         .NOTES
             Tags: Orphan, Databases
             Author: Claudio Silva (@ClaudioESSilva)
             Author: Garry Bargsley (@gbargsley)
+            Editor: Simone Bizzotto (@niphlod)
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
         .LINK
+
             https://dbatools.io/Get-DbaOrphanUser
+
         .EXAMPLE
             Get-DbaOrphanUser -SqlInstance localhost\sql2016
             Finds all orphan users without matching Logins in all databases present on server 'localhost\sql2016'.
+
         .EXAMPLE
             Get-DbaOrphanUser -SqlInstance localhost\sql2016 -SqlCredential $cred
             Finds all orphan users without matching Logins in all databases present on server 'localhost\sql2016'. SQL Server authentication will be used in connecting to the server.
+
         .EXAMPLE
             Get-DbaOrphanUser -SqlInstance localhost\sql2016 -Database db1
             Finds orphan users without matching Logins in the db1 database present on server 'localhost\sql2016'.
+
     #>
     [CmdletBinding()]
     Param (
@@ -45,6 +63,7 @@ function Get-DbaOrphanUser {
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
+        [object[]]$ExcludeDatabase,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -58,18 +77,15 @@ function Get-DbaOrphanUser {
                 Write-Message -Level Warning -Message "Failed to connect to: $SqlInstance."
                 continue
             }
-            if ($Database.Count -eq 0) {
-                $DatabaseCollection = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true }
+            $DatabaseCollection = $server.Databases | Where-Object IsAccessible
+
+            if ($Database) {
+                $DatabaseCollection = $DatabaseCollection | Where-Object Name -In $Database
             }
-            else {
-                if ($pipedatabase.Length -gt 0) {
-                    $Source = $pipedatabase[0].parent.name
-                    $DatabaseCollection = $pipedatabase.name
-                }
-                else {
-                    $DatabaseCollection = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($Database -contains $_.Name) }
-                }
+            if ($ExcludeDatabase) {
+                $DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase
             }
+
             if ($DatabaseCollection.Count -gt 0) {
                 foreach ($db in $DatabaseCollection) {
                     try {
@@ -81,27 +97,19 @@ function Get-DbaOrphanUser {
                             }
                         }
                         Write-Message -Level Verbose -Message "Validating users on database '$db'."
-                        if ($Users.Count -eq 0) {
-                            #the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-                            $UsersToWork = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false }
-                        }
-                        else {
-                            if ($pipedatabase.Length -gt 0) {
-                                $Source = $pipedatabase[3].parent.name
-                                $UsersToWork = $pipedatabase.name
-                            }
-                            else {
-                                #the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-                                $UsersToWork = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($Users -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
-                            }
-                        }
+                        $UsersToWork = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false }
+
                         if ($UsersToWork.Count -gt 0) {
                             Write-Message -Level Verbose -Message "Orphan users found"
+                            foreach ($user in $UsersToWork) {
                                 [PSCustomObject]@{
-                                    SqlInstance  = $server.name
+                                    ComputerName = $server.NetName
+                                    InstanceName = $server.ServiceName
+                                    SqlInstance  = $server.DomainInstanceName
                                     DatabaseName = $db.Name
-                                    User         = $UsersToWork.Name
+                                    User         = $user.Name
                                 }
+                            }
                         }
                         else {
                             Write-Message -Level Verbose -Message "No orphan users found on database '$db'."
@@ -115,11 +123,9 @@ function Get-DbaOrphanUser {
                 }
             }
             else {
-                Write-Message -Level Verbose -Message "There are no databases to analyse."
+                Write-Message -Level VeryVerbose -Message "There are no databases to analyse."
             }
         }
     }
-    end {
-        Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime."
-    }
+
 }
