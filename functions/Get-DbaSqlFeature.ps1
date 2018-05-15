@@ -45,7 +45,7 @@ function Get-DbaSqlFeature {
         .EXAMPLE
             Get-DbaSqlFeature -ComputerName sql2017, sql2016, sql2005
 
-            Gets all SQL Server features for all instances on sql2017, sql2016 and sql2005
+            Gets all SQL Server features for all instances on sql2017, sql2016 and sql2005.
 
         .EXAMPLE
             Get-DbaSqlFeature -Verbose
