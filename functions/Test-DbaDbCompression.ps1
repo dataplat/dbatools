@@ -176,6 +176,7 @@ WHERE objectproperty(t.object_id, 'IsUserTable') = 1
     AND p.data_compression_desc = 'NONE'
     AND p.rows > 0
     AND t.is_memory_optimized = 0
+    AND t.object_id not in (select object_id from sys.columns where encryption_type IS NOT NULL)
 ORDER BY [TableName] ASC;
 
 DECLARE @schema SYSNAME
