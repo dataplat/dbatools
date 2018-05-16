@@ -175,7 +175,7 @@ INNER JOIN sys.partitions p ON x.object_id = p.object_id
 WHERE objectproperty(t.object_id, 'IsUserTable') = 1
     AND p.data_compression_desc = 'NONE'
     AND p.rows > 0
-	AND t.is_memory_optimized = 0
+    AND t.is_memory_optimized = 0
 ORDER BY [TableName] ASC;
 
 DECLARE @schema SYSNAME
