@@ -24,7 +24,7 @@ function Get-DbaDbPageInfo {
     Filter to only get specific tables
 
     .PARAMETER InputObject
-    Enables piping from Get-DbaDatabase 
+    Enables piping from Get-DbaDatabase
 
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -62,27 +62,27 @@ function Get-DbaDbPageInfo {
     begin {
         $sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
         ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-        SERVERPROPERTY('ServerName') AS SqlInstance, [Database] = DB_NAME(DB_ID()), 
+        SERVERPROPERTY('ServerName') AS SqlInstance, [Database] = DB_NAME(DB_ID()),
         ss.name AS [Schema], st.name AS [Table], dbpa.page_type_desc AS PageType,
                         dbpa.page_free_space_percent AS PageFreePercent,
-                        IsAllocated =  
-                          CASE dbpa.is_allocated  
-                             WHEN 0 THEN 'False'  
-                             WHEN 1 THEN 'True' 
+                        IsAllocated =
+                          CASE dbpa.is_allocated
+                             WHEN 0 THEN 'False'
+                             WHEN 1 THEN 'True'
                           END,
-                        IsMixedPage =  
+                        IsMixedPage =
                           CASE dbpa.is_mixed_page_allocation
-                             WHEN 0 THEN 'False'  
-                             WHEN 1 THEN 'True' 
+                             WHEN 0 THEN 'False'
+                             WHEN 1 THEN 'True'
                           END
                         FROM sys.dm_db_database_page_allocations(DB_ID(), NULL, NULL, NULL, 'DETAILED') AS dbpa
                         INNER JOIN sys.tables AS st ON st.object_id = dbpa.object_id
                         INNER JOIN sys.schemas AS ss ON ss.schema_id = st.schema_id"
-        
+
         if ($Schema) {
             $sql = "$sql WHERE ss.name IN ('$($Schema -join "','")')"
         }
-        
+
         if ($Table) {
             if ($schema) {
                 $sql = "$sql AND st.name IN ('$($Table -join "','")')"
@@ -95,7 +95,7 @@ function Get-DbaDbPageInfo {
     process {
         # Loop through all the instances
         foreach ($instance in $SqlInstance) {
-            
+
             # Try connecting to the instance
             Write-Message -Message "Attempting to connect to $instance" -Level Verbose
             try {
@@ -104,7 +104,7 @@ function Get-DbaDbPageInfo {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             if ($Database) {
                 $InputObject += $server.Databases | Where-Object { $_.Name -in $Database }
             }
@@ -112,7 +112,7 @@ function Get-DbaDbPageInfo {
                 $InputObject += $server.Databases
             }
         }
-        
+
         # Loop through each of databases
         foreach ($db in $InputObject) {
             # Revalidate the version of the server in case db is piped in
