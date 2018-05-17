@@ -128,7 +128,7 @@ FROM sys.dm_db_database_page_allocations(DB_ID(), NULL, NULL, NULL, 'DETAILED') 
                     }
 
                     # Add the results to the collection
-                    $collection += $results.Foreach{
+                    $collection += $results | % {
                         [PSCustomObject]@{
                             ComputerName    = $server.NetName
                             InstanceName    = $server.ServiceName
