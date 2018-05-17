@@ -1431,16 +1431,10 @@
     {
         "CommandName":  "Get-DbaDbPageInfo",
         "Description":  "Get-DbaDbPageInfo is able to return information about the pages in a database.\nIt\u0027s possible to return the information for multiple databases and filter on specific databases, schemas and tables.",
-        "Tags":  [
-                     "Pages",
-                     "Databases",
-                     "Used space"
-                 ],
-        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
         "Synopsis":  "Get-DbaDbPageInfo will return page information for a database",
         "Name":  "Get-DbaDbPageInfo",
-        "Links":  "https://dbatools.io/Get-DbaDbPageInfo",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShippingRecovery -SqlServer server1\r\n\r\nRecovers all the databases on the instance that are enabled for log shipping\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbPageInfo -SqlInstance sql2017\r\n\r\nReturns page information for all databases on sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbPageInfo -SqlInstance sql2017, sql2016 -Database testdb\r\n\r\nReturns page information for the testdb on sql2017 and sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$servers | Get-DbaDatabase -Database testdb | Get-DbaDbPageInfo\r\n\r\nReturns page information for the testdb on all $servers\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaDbQueryStoreOptions",

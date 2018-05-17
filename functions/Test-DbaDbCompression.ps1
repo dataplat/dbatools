@@ -159,22 +159,24 @@ INSERT INTO ##testdbacompression (
     ,[PercentScan]
     ,[PercentUpdate]
     )
-SELECT s.NAME AS [Schema]
-    ,o.NAME AS [TableName]
+    SELECT s.NAME AS [Schema]
+    ,t.NAME AS [TableName]
     ,x.NAME AS [IndexName]
     ,p.partition_number AS [Partition]
     ,x.Index_ID AS [IndexID]
     ,x.type_desc AS [IndexType]
     ,NULL AS [PercentScan]
     ,NULL AS [PercentUpdate]
-FROM sys.objects o
-INNER JOIN sys.schemas s ON o.schema_id = s.schema_id
-INNER JOIN sys.indexes x ON x.object_id = o.object_id
+FROM sys.tables t
+INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+INNER JOIN sys.indexes x ON x.object_id = t.object_id
 INNER JOIN sys.partitions p ON x.object_id = p.object_id
     AND x.Index_ID = p.Index_ID
-WHERE objectproperty(o.object_id, 'IsUserTable') = 1
+WHERE objectproperty(t.object_id, 'IsUserTable') = 1
     AND p.data_compression_desc = 'NONE'
     AND p.rows > 0
+    AND t.is_memory_optimized = 0
+    AND t.object_id not in (select object_id from sys.columns where encryption_type IS NOT NULL)
 ORDER BY [TableName] ASC;
 
 DECLARE @schema SYSNAME
