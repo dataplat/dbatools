@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 12, 2018
+-- Last Modified: May 15, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -85,9 +85,6 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 -- Performance and Stability Fixes in SQL Server 2017 CU Builds
 -- https://bit.ly/2GV3CNM
-
--- Microsoft for the Modern Data Estate
--- https://bit.ly/2xAlFHa
 
 -- What's New in SQL Server 2017 (Database Engine)
 -- https://bit.ly/2HjSeyQ
@@ -259,7 +256,7 @@ FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
 -- SQL Server Services information (Query 8) (SQL Server Services Info)
 SELECT servicename, process_id, startup_type_desc, status_desc, 
 last_startup_time, service_account, is_clustered, cluster_nodename, [filename], 
-instant_file_initialization_enabled 
+instant_file_initialization_enabled
 FROM sys.dm_server_services WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
