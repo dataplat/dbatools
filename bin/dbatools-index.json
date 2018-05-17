@@ -1369,13 +1369,13 @@
     },
     {
         "CommandName":  "Get-DbaDbCheckConstraint",
-        "Description":  "Gets database Checks constraints",
+        "Description":  "Gets database Checks constraints.",
         "Tags":  "Databases",
         "Author":  "Cláudio Silva ( @ClaudioESSilva | https://claudioessilva.eu)",
-        "Synopsis":  "Gets database Check constraints",
+        "Synopsis":  "Gets database Check constraints.",
         "Name":  "Get-DbaDbCheckConstraint",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCheckConstraint -SqlInstance sql2016\r\n\r\nGets all database check constraints\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCheckConstraint -SqlInstance Server1 -Database db1\r\n\r\nGets the check constraints for the db1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeDatabase db1\r\n\r\nGets the check constraints for all databases except db1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeSystemTable\r\n\r\nGets the check constraints for all databases that are not system objects\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbCheckConstraint\r\n\r\nGets the check constraints for the databases on Sql1 and Sql2/sqlexpress\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCheckConstraint -SqlInstance sql2016\r\n\r\nGets all database check constraints.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCheckConstraint -SqlInstance Server1 -Database db1\r\n\r\nGets the check constraints for the db1 database.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeDatabase db1\r\n\r\nGets the check constraints for all databases except db1.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeSystemTable\r\n\r\nGets the check constraints for all databases that are not system objects.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbCheckConstraint\r\n\r\nGets the check constraints for the databases on Sql1 and Sql2/sqlexpress.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaDbCompression",
@@ -1402,13 +1402,13 @@
     },
     {
         "CommandName":  "Get-DbaDbForeignKey",
-        "Description":  "Gets database Foreign Keys",
+        "Description":  "Gets database Foreign Keys.",
         "Tags":  "Databases",
         "Author":  "Cláudio Silva ( @ClaudioESSilva | https://claudioessilva.eu)",
-        "Synopsis":  "Gets database Foreign Keys",
+        "Synopsis":  "Gets database Foreign Keys.",
         "Name":  "Get-DbaDbForeignKey",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbForeignKey -SqlInstance sql2016\r\n\r\nGets all database Foreign Keys\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbForeignKey -SqlInstance Server1 -Database db1\r\n\r\nGets the Foreign Keys for the db1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbForeignKey -SqlInstance Server1 -ExcludeDatabase db1\r\n\r\nGets the Foreign Keys for all databases except db1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbForeignKey -SqlInstance Server1 -ExcludeSystemTable\r\n\r\nGets the Foreign Keys from all tables that are not system objects from all databases\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbForeignKey\r\n\r\nGets the Foreign Keys for the databases on Sql1 and Sql2/sqlexpress\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbForeignKey -SqlInstance sql2016\r\n\r\nGets all database Foreign Keys.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbForeignKey -SqlInstance Server1 -Database db1\r\n\r\nGets the Foreign Keys for the db1 database.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbForeignKey -SqlInstance Server1 -ExcludeDatabase db1\r\n\r\nGets the Foreign Keys for all databases except db1.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbForeignKey -SqlInstance Server1 -ExcludeSystemTable\r\n\r\nGets the Foreign Keys from all tables that are not system objects from all databases.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbForeignKey\r\n\r\nGets the Foreign Keys for the databases on Sql1 and Sql2/sqlexpress.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaDbMailHistory",
@@ -1430,7 +1430,7 @@
     },
     {
         "CommandName":  "Get-DbaDbPageInfo",
-        "Description":  "Get-DbaDbPageInfo is able to return information about the pages in a database.\nIt\u0027s possible to return the information for multiple databases and filter on specific databases, schemas and tables",
+        "Description":  "Get-DbaDbPageInfo is able to return information about the pages in a database.\nIt\u0027s possible to return the information for multiple databases and filter on specific databases, schemas and tables.",
         "Tags":  [
                      "Pages",
                      "Databases",
@@ -2093,7 +2093,7 @@
         "Synopsis":  "Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)",
         "Name":  "Get-DbaSqlFeature",
         "Links":  "https://dbatools.io/Get-DbaSqlFeature",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlFeature -ComputerName sql2017, sql2016, sql2005\r\n\r\nGets all SQL Server features for all instances on sql2017, sql2016 and sql2005\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlFeature -Verbose\r\n\r\nGets all SQL Server features for all instances on localhost. Outputs to screen if no instances are found.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlFeature -ComputerName sql2017 -Credential (Get-Credential ad\\sqladmin)\r\n\r\nGets all SQL Server features for all instances on sql2017 using the ad\\sqladmin credential (which has access to the \r\nWindows Server).\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlFeature -ComputerName sql2017, sql2016, sql2005\r\n\r\nGets all SQL Server features for all instances on sql2017, sql2016 and sql2005.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlFeature -Verbose\r\n\r\nGets all SQL Server features for all instances on localhost. Outputs to screen if no instances are found.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlFeature -ComputerName sql2017 -Credential (Get-Credential ad\\sqladmin)\r\n\r\nGets all SQL Server features for all instances on sql2017 using the ad\\sqladmin credential (which has access to the \r\nWindows Server).\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaSqlInstanceProperty",
@@ -2347,7 +2347,7 @@
     },
     {
         "CommandName":  "Get-DbaWaitResource",
-        "Description":  "Given a wait resource in the form of:\n    \u0027PAGE: 10:1:9180084 \u0027\nreturns the database, data file and the system oject which is being waited up\nGiven a wait resource in the form of:\n    \u0027KEY: 7:35457594073541168 (de21f92a1572)\u0027\nreturns the database, object and index that is being waited on, With the -row switch the row data will also be returned",
+        "Description":  "Given a wait resource in the form of:\n    \u0027PAGE: 10:1:9180084 \u0027\nreturns the database, data file and the system object which is being waited up.\nGiven a wait resource in the form of:\n    \u0027KEY: 7:35457594073541168 (de21f92a1572)\u0027\nreturns the database, object and index that is being waited on, With the -row switch the row data will also be returned.",
         "Tags":  [
                      "Pages",
                      "DBCC"
@@ -2356,7 +2356,7 @@
         "Synopsis":  "Returns the resource being waited upon",
         "Name":  "Get-DbaWaitResource",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitResource -SqlInstance server1 -WaitResource \u0027PAGE: 10:1:9180084\u0027\r\n\r\nWill return an object containing; database name, data file name, schema name and the object which owns the resouce\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitResource -Sql Instance server2 -WaitResource \u0027KEY: 7:35457594073541168 (de21f92a1572)\u0027\r\n\r\nWill return an object containing; database name, schema name and index name which is being waited on\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitResource -Sql Instance server2 -WaitResource \u0027KEY: 7:35457594073541168 (de21f92a1572)\u0027 -row\r\n\r\nWill return an object containing; database name, schema name and index name which is being waited on, and in addition \r\nthe contents of the locked row at the time the command is run\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitResource -SqlInstance server1 -WaitResource \u0027PAGE: 10:1:9180084\u0027\r\n\r\nWill return an object containing; database name, data file name, schema name and the object which owns the resource\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitResource -Sql Instance server2 -WaitResource \u0027KEY: 7:35457594073541168 (de21f92a1572)\u0027\r\n\r\nWill return an object containing; database name, schema name and index name which is being waited on.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitResource -Sql Instance server2 -WaitResource \u0027KEY: 7:35457594073541168 (de21f92a1572)\u0027 -row\r\n\r\nWill return an object containing; database name, schema name and index name which is being waited on, and in addition \r\nthe contents of the locked row at the time the command is run.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaWaitStatistic",
@@ -2606,16 +2606,17 @@
     },
     {
         "CommandName":  "Invoke-DbaDbDecryptObject",
-        "Description":  "When a procedure or a function is created with encryption and you lost the code you\u0027re in trouble.\nYou cannot alter the object or view the definition.\nWith this command you can search for the object and decrypt the it.\n\nThe comand will output the results to the console.\nThere is an option to export all the results to a folder creating .sql files\n\nMake sure the instance allowed dedicated administrator connections (DAC).\nThe binary versions of the objects can only be retrieved using a DAC connection.\nYou can check the DAC connection with:\n\u0027Get-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled\u0027\nIt should say 1 in the ConfiguredValue\n\nTo change the configurations you can use the Set-DbaSpConfigure command:\n\u0027Set-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled -Value 1\u0027\nIn some cases you may ned to reboot the instance",
+        "Description":  "When a procedure or a function is created with encryption and you lost the code you\u0027re in trouble.\nYou cannot alter the object or view the definition.\nWith this command you can search for the object and decrypt the it.\n\nThe command will output the results to the console.\nThere is an option to export all the results to a folder creating .sql files.\n\nMake sure the instance allowed dedicated administrator connections (DAC).\nThe binary versions of the objects can only be retrieved using a DAC connection.\nYou can check the DAC connection with:\n\u0027Get-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled\u0027\nIt should say 1 in the ConfiguredValue.\n\nTo change the configurations you can use the Set-DbaSpConfigure command:\n\u0027Set-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled -Value 1\u0027\nIn some cases you may need to reboot the instance.",
         "Tags":  [
-                     "Log Shipping",
-                     "Configuration"
+                     "Encryption",
+                     "Decrypt",
+                     "Database Objects"
                  ],
         "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
         "Synopsis":  "Invoke-DbaDbDecryptObject returns the decrypted version of an object",
         "Name":  "Invoke-DbaDbDecryptObject",
         "Links":  "https://dbatools.io/Invoke-DbaDbDecryptObject",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1\r\n\r\nDecrypt objct \"Function1\" in DB1 of instance SQLDB1 and output the data to the user\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1 -Force -ExportDestination \r\nC:\\temp\\decrypt\r\n\r\nDecrypt object \"Function1\" in DB1 of instance SQLDB1 and output the data to the folder \"C:\\temp\\decrypt\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1, Function2\r\n\r\nDecrypt objects \"Function1\" and \"Function2\" and output the data to the user\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e\"SQLDB1\" | Invoke-DbaDbDecryptObject -Database DB1 -ObjectName Function1, Function2\r\n\r\nDecrypt objects \"Function1\" and \"Function2\" and output the data to the user using a pipeline for the instance\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1\r\n\r\nDecrypt object \"Function1\" in DB1 of instance SQLDB1 and output the data to the user.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1 -ExportDestination \r\nC:\\temp\\decrypt\r\n\r\nDecrypt object \"Function1\" in DB1 of instance SQLDB1 and output the data to the folder \"C:\\temp\\decrypt\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ExportDestination C:\\temp\\decrypt\r\n\r\nDecrypt all objects in DB1 of instance SQLDB1 and output the data to the folder \"C:\\temp\\decrypt\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1, Function2\r\n\r\nDecrypt objects \"Function1\" and \"Function2\" and output the data to the user.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\"SQLDB1\" | Invoke-DbaDbDecryptObject -Database DB1 -ObjectName Function1, Function2\r\n\r\nDecrypt objects \"Function1\" and \"Function2\" and output the data to the user using a pipeline for the instance.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Invoke-DbaDiagnosticQuery",
@@ -3582,7 +3583,7 @@
         "Synopsis":  "Set-DbaAgentAlert updates a the status of a SQL Agent Alert.",
         "Name":  "Set-DbaAgentAlert",
         "Links":  "https://dbatools.io/Set-DbaAgentAlert",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentAlert -SqlInstance sql1 -Alert \u0027Severity 025: Fatal Error\u0027 -Disabled\r\n\r\nChanges the alert to disabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentAlert -SqlInstance sql1 -Alert \u0027Severity 025: Fatal Error\u0027, \u0027Error Number 825\u0027, \u0027Error Number 824\u0027 \r\n-Enabled\r\n\r\nChanges multiple alerts to enabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentAlert -SqlInstance sql1, sql2, sql3 -Alert \u0027Severity 025: Fatal Error\u0027, \u0027Error Number 825\u0027, \u0027Error \r\nNumber 824\u0027 -Enabled\r\n\r\nChanges multiple alerts to enabled on multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentAlert -SqlInstance sql1 -Alert \u0027Severity 025: Fatal Error\u0027 -Disabled -Whatif\r\n\r\nDoesn\u0027t Change the alert but shows what would happen.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentAlert -SqlInstance sql1 -Alert \u0027Severity 025: Fatal Error\u0027 -Disabled\r\n\r\nChanges the alert to disabled.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentAlert -SqlInstance sql1 -Alert \u0027Severity 025: Fatal Error\u0027, \u0027Error Number 825\u0027, \u0027Error Number 824\u0027 \r\n-Enabled\r\n\r\nChanges multiple alerts to enabled.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentAlert -SqlInstance sql1, sql2, sql3 -Alert \u0027Severity 025: Fatal Error\u0027, \u0027Error Number 825\u0027, \u0027Error \r\nNumber 824\u0027 -Enabled\r\n\r\nChanges multiple alerts to enabled on multiple servers.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentAlert -SqlInstance sql1 -Alert \u0027Severity 025: Fatal Error\u0027 -Disabled -Whatif\r\n\r\nDoesn\u0027t Change the alert but shows what would happen.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaAgentJob",
