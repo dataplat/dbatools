@@ -277,7 +277,7 @@ Run diagnostic queries targeted at specific database, and only run database leve
 				if (($QueryName.Count -ne 0) -and ($QueryName -notcontains $scriptpart.QueryName)) { continue }
 				if (!$scriptpart.DBSpecific -and !$DatabaseSpecific) {
 					if ($ExportQueries) {
-						New-Item -Path $OutputPath -ItemType Directory $OutputPath
+						New-Item -Path $OutputPath -ItemType Directory -Force
 						$FileName = Remove-InvalidFileNameChars ('{0}.sql' -f $Scriptpart.QueryName)
 						$FullName = ([io.path]::combine($OutputPath, $FileName))
 						Write-Message -Level Verbose -Message  "Creating file: $FullName" -Verbose
@@ -352,7 +352,7 @@ Run diagnostic queries targeted at specific database, and only run database leve
 						$dbname = $currentdb.name
 
 						if ($ExportQueries) {
-							New-Item -Path $OutputPath -ItemType Directory $OutputPath
+							New-Item -Path $OutputPath -ItemType Directory -Force
 							$FileName = Remove-InvalidFileNameChars ('{0}-{1}-{2}.sql' -f $server.DomainInstanceName, $dbname, $Scriptpart.QueryName)
 							$FullName = ([io.path]::combine($OutputPath, $FileName))
 							Write-Message -Level Verbose -Message  "Creating file: $FullName" -Verbose

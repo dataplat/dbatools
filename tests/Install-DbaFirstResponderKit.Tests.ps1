@@ -10,8 +10,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $server.Query("CREATE DATABASE $database")
         }
         AfterAll {
-            $server.Query("ALTER DATABASE $database SET OFFLINE WITH ROLLBACK IMMEDIATE")
-            $server.Query("DROP DATABASE IF EXISTS $database")
+            $null = Get-DbaDatabase -SqlInstance $server -Database  $database | Remove-DbaDatabase -Confirm:$false
         }
 
         $results = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Branch master
