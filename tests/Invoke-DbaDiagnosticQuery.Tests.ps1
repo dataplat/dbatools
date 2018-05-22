@@ -6,8 +6,8 @@ write-host "loaded constants"
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
-		$script:PesterOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
-		New-Item -Path $script:PesterOutputPath -ItemType Directory -Force
+		$script:PesterOutputPath = "TestDrive:$commandName"
+
 
 		$database = "dbatoolsci_frk_$(Get-Random)"
 		$database2 = "dbatoolsci_frk_$(Get-Random)"
@@ -22,7 +22,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
 	}
 	AfterEach {
-		Remove-Item $script:PesterOutputPath  -Recurse -erroraction silentlycontinue #clear test folder contents, doesn't need to fail if cleanup fails
+		Remove-Item $script:PesterOutputPath -Recurse -erroraction silentlycontinue #clear test folder contents, doesn't need to fail if cleanup fails
 	}
 
 
