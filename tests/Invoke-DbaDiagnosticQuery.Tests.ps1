@@ -7,7 +7,7 @@ write-host "loaded constants"
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		$script:PesterOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
-        New-Item -Path $script:PesterOutputPath -ItemType Directory -Force
+		New-Item -Path $script:PesterOutputPath -ItemType Directory -Force
 
 		$database = "dbatoolsci_frk_$(Get-Random)"
 		$database2 = "dbatoolsci_frk_$(Get-Random)"
@@ -17,7 +17,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
 	}
 	AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $server -Databases @($database, $database2) | Remove-DbaDatabase -Confirm:$false
+		$null = Get-DbaDatabase -SqlInstance $server -Databases @($database, $database2) | Remove-DbaDatabase -Confirm:$false
 		Remove-Item $script:PesterOutputPath -recurse -erroraction silentlycontinue  #clear test folder contents
 
 	}
