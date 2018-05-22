@@ -7,7 +7,7 @@ write-host "loaded constants"
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		$script:PesterOutputPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
-		New-Item -Path $script:PesterOutputPath -ItemType Directory
+        New-Item -Path $script:PesterOutputPath -ItemType Directory -Force
 
 		$database = "dbatoolsci_frk_$(Get-Random)"
 		$database2 = "dbatoolsci_frk_$(Get-Random)"
@@ -17,17 +17,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
 	}
 	AfterAll {
-		$server.Query("ALTER DATABASE $database SET OFFLINE WITH ROLLBACK IMMEDIATE")
-		$server.Query("DROP DATABASE IF EXISTS $database")
-		$server.Query("ALTER DATABASE $database2 SET OFFLINE WITH ROLLBACK IMMEDIATE")
-		$server.Query("DROP DATABASE IF EXISTS $database2")
-
+        $null = Get-DbaDatabase -SqlInstance $server -Databases @($database, $database2) | Remove-DbaDatabase -Confirm:$false
 		Remove-Item $script:PesterOutputPath -recurse -erroraction silentlycontinue  #clear test folder contents
 
 	}
 	AfterEach {
-		Remove-Item "$script:PesterOutputPath\*" -Recurse -erroraction silentlycontinue #clear test folder contents, doesn't need to fail if cleanup fails
-
+		Remove-Item $script:PesterOutputPath  -Recurse -erroraction silentlycontinue #clear test folder contents, doesn't need to fail if cleanup fails
 	}
 
 
