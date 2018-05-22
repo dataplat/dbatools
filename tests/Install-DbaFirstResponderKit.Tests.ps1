@@ -3,26 +3,26 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Testing First Responder Kit installer" {
-        BeforeAll {
-            $database = "dbatoolsci_frk_$(Get-Random)"
-            $server = Connect-DbaInstance -SqlInstance $script:instance2
-            $server.Query("CREATE DATABASE $database")
-        }
-        AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $server -Database  $database | Remove-DbaDatabase -Confirm:$false
-        }
+	Context "Testing First Responder Kit installer" {
+		BeforeAll {
+			$database = "dbatoolsci_frk_$(Get-Random)"
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
+			$server.Query("CREATE DATABASE $database")
+		}
+		AfterAll {
+			$null = Get-DbaDatabase -SqlInstance $server -Database  $database | Remove-DbaDatabase -Confirm:$false
+		}
 
-        $results = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Branch master
+		$results = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Branch master
 
-        It "Installs to specified database: $database" {
-            $results[0].Database -eq $database | Should Be $true
-        }
-        It "Shows status of Installed" {
-            $results[0].Status -eq "Installed" | Should Be $true
-        }
-        It "At least installed sp_Blitz and sp_BlitzIndex" {
-            'sp_Blitz','sp_BlitzIndex' | Should BeIn $results.Name
-        }
-    }
+		It "Installs to specified database: $database" {
+			$results[0].Database -eq $database | Should Be $true
+		}
+		It "Shows status of Installed" {
+			$results[0].Status -eq "Installed" | Should Be $true
+		}
+		It "At least installed sp_Blitz and sp_BlitzIndex" {
+			'sp_Blitz','sp_BlitzIndex' | Should BeIn $results.Name
+		}
+	}
 }
