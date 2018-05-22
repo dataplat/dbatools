@@ -241,13 +241,13 @@ function Invoke-DbaDiagnosticQuery {
 			}
 
 			if (!$instanceOnly) {
-				if (@($DatabaseName).count -eq 0) {
-					$databases = $server.Query("Select name from sys.databases where name not in ('master', 'model', 'msdb', 'tempdb')")
+				if (-not $DatabaseName) {
+					$databases = Get-DbaDatabase -SqlInstance $SqlInstance -ExcludeAllSystemDb  | select-object Name
+					Write-Message -Level Debug -Message  "No Database Name Filtered: Pulled $(@($Databases).count)" -Verbose
 				}
 				else {
-					[string]$FilteredList = "'" + ($DatabaseName -join "','") + "'"
-					Write-Message -Level Verbose -Message  "Database Specific Filtered List: $FilteredList"
-					$databases = $server.Query("Select name from sys.databases where name in ($FilteredList)")
+					$databases = Get-DbaDatabase -SqlInstance $SqlInstance -ExcludeAllSystemDb -Database $DatabaseName | select-object Name
+					Write-Message -Level Debug -Message  "Filtered to databases: $(($Databases | select-object -ExpandProperty Name) -join ',')" -Verbose
 				}
 			}
 
@@ -277,7 +277,7 @@ function Invoke-DbaDiagnosticQuery {
 				if (($QueryName.Count -ne 0) -and ($QueryName -notcontains $scriptpart.QueryName)) { continue }
 				if (!$scriptpart.DBSpecific -and !$DatabaseSpecific) {
 					if ($ExportQueries) {
-						New-Item -Path $OutputPath -ItemType Directory -Force
+						New-Item -Path $OutputPath -ItemType Directory -Force *> $null
 						$FileName = Remove-InvalidFileNameChars ('{0}.sql' -f $Scriptpart.QueryName)
 						$FullName = ([io.path]::combine($OutputPath, $FileName))
 						Write-Message -Level Verbose -Message  "Creating file: $FullName" -Verbose
@@ -349,11 +349,9 @@ function Invoke-DbaDiagnosticQuery {
 				}
 				elseif ($scriptpart.DBSpecific -and !$instanceOnly) {
 					foreach ($currentdb in $databases) {
-						$dbname = $currentdb.name
-
 						if ($ExportQueries) {
-							New-Item -Path $OutputPath -ItemType Directory -Force
-							$FileName = Remove-InvalidFileNameChars ('{0}-{1}-{2}.sql' -f $server.DomainInstanceName, $dbname, $Scriptpart.QueryName)
+							New-Item -Path $OutputPath -ItemType Directory -Force *> $null
+							$FileName = Remove-InvalidFileNameChars ('{0}-{1}-{2}.sql' -f $server.DomainInstanceName, $currentdb.name, $Scriptpart.QueryName)
 							$FullName = ([io.path]::combine($OutputPath, $FileName))
 							Write-Message -Level Verbose -Message  "Creating file: $FullName" -Verbose
 							$scriptPart.Text | out-file -FilePath $FullName -encoding UTF8 -force
@@ -363,8 +361,8 @@ function Invoke-DbaDiagnosticQuery {
 
 						if ($PSCmdlet.ShouldProcess(('{0} ({1})' -f $instance, $currentdb.name), $scriptpart.QueryName)) {
 
-							if (-not $EnableException) { Write-Progress -Id $ProgressId -ParentId 0 -Activity "Collecting diagnostic query data from $dbname on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100) }
-							Write-Message -Level Verbose -Message "Collecting diagnostic query data from $dbname for $($scriptpart.QueryName) on $instance"
+							if (-not $EnableException) { Write-Progress -Id $ProgressId -ParentId 0 -Activity "Collecting diagnostic query data from $($currentdb.name) on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100) }
+							Write-Message -Level Verbose -Message "Collecting diagnostic query data from $($currentdb.name) for $($scriptpart.QueryName) on $instance"
 							try {
 								$result = $server.Query($scriptpart.Text, $currentdb.Name)
 								if (!$result) {
