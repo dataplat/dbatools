@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 4
+        $paramCount = 5
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaSqlInstanceProperty).Parameters.Keys
-        $knownParameters = 'Computer', 'SqlInstance', 'SqlCredential', 'Property', 'ExcludeProperty', 'Credential', 'EnableException'
+        $knownParameters = 'Computer', 'SqlInstance', 'SqlCredential', 'InstanceProperty', 'ExcludeInstanceProperty', 'Credential', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -36,8 +36,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Property filters work" {
-        $resultInclude = Get-DbaSqlInstanceProperty -SqlInstance $script:instance2 -Property DefaultFile
-        $resultExclude = Get-DbaSqlInstanceProperty -SqlInstance $script:instance2 -ExcludeProperty DefaultFile
+        $resultInclude = Get-DbaSqlInstanceProperty -SqlInstance $script:instance2 -InstanceProperty DefaultFile
+        $resultExclude = Get-DbaSqlInstanceProperty -SqlInstance $script:instance2 -ExcludeInstanceProperty DefaultFile
         It "Should only return DefaultFile property" {
             $resultInclude.Name | Should Be 'DefaultFile'
         }
