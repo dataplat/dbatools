@@ -13,6 +13,12 @@ function Get-DbaSqlInstanceProperty {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+        .PARAMETER Property
+            SQL Server instance property(ies) to include.
+
+        .PARAMETER ExcludeProperty
+            SQL Server instance property(ies) to exclude.
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -44,6 +50,16 @@ function Get-DbaSqlInstanceProperty {
             Returns SQL Instance properties on sql2 and sql4
 
         .EXAMPLE
+            Get-DbaSqlInstanceProperty -SqlInstance sql2,sql4 -Property DefaultFile
+
+            Returns SQL Server instance property DefaultFile on instance sql2 and sql4
+
+        .EXAMPLE
+            Get-DbaSqlInstanceProperty -SqlInstance sql2,sql4 -ExcludeProperty DefaultFile
+
+            Returns all SQL Server instance properties except DefaultFile on instance sql2 and sql4
+
+        .EXAMPLE
             $cred = Get-Credential sqladmin
             Get-DbaSqlInstanceProperty -SqlInstance sql2 -SqlCredential $cred
 
@@ -55,6 +71,8 @@ function Get-DbaSqlInstanceProperty {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [object[]]$Property,
+        [object[]]$ExcludeProperty,
         [Alias('Silent')]
         [switch]$EnableException
     )
