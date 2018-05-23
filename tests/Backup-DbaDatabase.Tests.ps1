@@ -7,10 +7,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Properly restores a database on the local drive using Path" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory C:\temp\backups
         It "Should return a database name, specifically master" {
-            ($results.DatabaseName -contains 'master') | Should Be $true
+            ($results.DatabaseName -contains 'master') | Should -Be $true
         }
         It "Should return successful restore" {
-            $results.ForEach{ $_.BackupComplete | Should Be $true }
+            $results.ForEach{ $_.BackupComplete | Should -Be $true }
         }
     }
     #>
@@ -34,85 +34,111 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Should not backup if database and exclude match" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master -Exclude master
         It "Should not return object" {
-            $results | Should Be $null
+            $results | Should -Be $null
         }
     }
 
     Context "Database should backup 1 database" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master
-        It "Database backup object count should be 1" {
-            $results.DatabaseName.Count | Should Be 1
-            $results.BackupComplete | Should Be $true
+        It "Database backup object count Should Be 1" {
+            $results.DatabaseName.Count | Should -Be 1
+            $results.BackupComplete | Should -Be $true
         }
     }
 
     Context "Database should backup 2 databases" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master, msdb
-        It "Database backup object count should be 2" {
-            $results.DatabaseName.Count | Should Be 2
-            $results.BackupComplete | Should Be @($true, $true)
+        It "Database backup object count Should Be 2" {
+            $results.DatabaseName.Count | Should -Be 2
+            $results.BackupComplete | Should -Be @($true, $true)
         }
     }
 
     Context "Should take path and filename" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master -BackupFileName 'PesterTest.bak'
-        It "Should report it has backed up to the path with the corrrect name"{
-            $results.Fullname | Should BeLike "$DestBackupDir*PesterTest.bak"
+        It "Should report it has backed up to the path with the correct name"{
+            $results.Fullname | Should -BeLike "$DestBackupDir*PesterTest.bak"
         }
-        It "Should have backed up to the path with the corrrect name"{
-            Test-Path "$DestBackupDir\PesterTest.bak" | Should Be $true
+        It "Should have backed up to the path with the correct name"{
+            Test-Path "$DestBackupDir\PesterTest.bak" | Should -Be $true
         }
     }
 
     Context "Handling backup paths that don't exist" {
-        $MissingPath = "$DestBackupDir\Missing1\Awol2\"
-        $null = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $MissingPath -WarningVariable warnvar
+        $MissingPathTrailing = "$DestBackupDir\Missing1\Awol2\"
+        $MissingPath = "$DestBackupDir\Missing1\Awol2"
+        $null = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $MissingPath -WarningVariable warnvar *>$null
         It "Should warn and fail if path doesn't exist and BuildPath not set" {
-            $warnvar | Should BeLike "*$MissingPath*"
+            $warnvar | Should -BeLike "*$MissingPath*"
         }
-        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $MissingPath -WarningVariable warnvar -BuildPath
+        # $MissingPathTrailing has a trailing slash but we normalize the path before doing the actual backup
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $MissingPathTrailing -WarningVariable warnvar -BuildPath
         It "Should have backed up to $MissingPath" {
-            $results.BackupFolder | Should Be "$MissingPath"
+            $results.BackupFolder | Should -Be "$MissingPath"
+
+            $results.Path | Should -Not -BeLike '*\\*'
         }
     }
 
     Context "CreateFolder switch should append the databasename to the backup path" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir -CreateFolder
         It "Should have appended master to the backup path" {
-            $results.BackupFolder | Should Be "$DestBackupDir\master"
+            $results.BackupFolder | Should -Be "$DestBackupDir\master"
         }
     }
+
+    Context "CreateFolder switch should append the databasename to the backup path even when striping" {
+        $backupPaths = "$DestBackupDir\stripewithdb1", "$DestBackupDir\stripewithdb2"
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $backupPaths -CreateFolder
+        It "Should have appended master to all backup paths" {
+            foreach($path in $results.BackupFolder) {
+                ($results.BackupFolder | Sort-Object) | Should -Be ($backupPaths | Sort-Object | ForEach-Object { [IO.Path]::Combine($_, 'master') })
+            }
+        }
+    }
+
+
     Context "A fully qualified path should override a backupfolder" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory c:\temp -BackupFileName "$DestBackupDir\PesterTest2.bak"
         It "Should report backed up to $DestBackupDir"  {
-            $results.FullName | Should BeLike "$DestBackupDir\PesterTest2.bak"
+            $results.FullName | Should -BeLike "$DestBackupDir\PesterTest2.bak"
             $results.BackupFolder | Should Not Be 'c:\temp'
         }
         It "Should have backuped up to $DestBackupDir\PesterTest2.bak" {
-            Test-Path "$DestBackupDir\PesterTest2.bak" | Should Be $true
+            Test-Path "$DestBackupDir\PesterTest2.bak" | Should -Be $true
         }
     }
 
     Context "Should stripe if multiple backupfolders specified" {
-        New-item -Path $DestBackupDir\stripe1 -ItemType Directory
-        New-item -Path $DestBackupDir\stripe2 -ItemType Directory
-        New-item -Path $DestBackupDir\stripe3 -ItemType Directory
-        
-        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir\stripe1,$DestBackupDir\stripe2, $DestBackupDir\stripe3
+        $backupPaths = "$DestBackupDir\stripe1", "$DestBackupDir\stripe2", "$DestBackupDir\stripe3"
+        $null = New-item -Path $backupPaths -ItemType Directory
+
+
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $backupPaths
         It "Should have created 3 backups" {
-            $results.BackupFilesCount | Should be 3
+            $results.BackupFilesCount | Should -Be 3
         }
         It "Should have written to all 3 folders" {
-            ("$DestBackupDir\stripe1","$DestBackupDir\stripe2", "$DestBackupDir\stripe3").ForEach{
-                $_ | Should BeIn ($results.BackupFolder)
+            $backupPaths | ForEach-Object {
+                $_ | Should -BeIn ($results.BackupFolder)
             }
+        }
+        It "Should have written files with extensions" {
+            foreach($path in $results.BackupFile) {
+                [IO.Path]::GetExtension($path) | Should -Be '.bak'
+            }
+        }
+        # Assure that striping logic favours -BackupDirectory and not -Filecount
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $backupPaths -FileCount 2
+        It "Should have created 3 backups, even when FileCount is different" {
+            $results.BackupFilesCount | Should -Be 3
         }
     }
 
     Context "Should stripe on filecount > 1" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir -FileCount 3
         It "Should have created 3 backups" {
-            $results.BackupFilesCount | Should be 3
+            $results.BackupFilesCount | Should -Be 3
         }
     }
 
@@ -120,10 +146,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName 'PesterTest.bak'
         $DefaultPath = (Get-DbaDefaultPath -SqlInstance $script:instance1).Backup
         It "Should report it has backed up to the path with the corrrect name"{
-            $results.Fullname | Should BeLike "$DefaultPath*PesterTest.bak"
+            $results.Fullname | Should -BeLike "$DefaultPath*PesterTest.bak"
         }
         It "Should have backed up to the path with the corrrect name"{
-            Test-Path "$DefaultPath\PesterTest.bak" | Should Be $true
+            Test-Path "$DefaultPath\PesterTest.bak" | Should -Be $true
         }
     }
 
@@ -131,27 +157,27 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = Restore-DbaDatabase -SqlServer $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName "dbatoolsci_singlerestore"
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database "dbatoolsci_singlerestore" | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName $DestDbRandom -TrustDbBackupHistory -ReplaceDbNameInFile
         It "Should return successful restore" {
-            $results.RestoreComplete | Should Be $true
+            $results.RestoreComplete | Should -Be $true
         }
     }
 
     Context "Should handle NUL as an input path" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName NUL
         It "Should return succesful backup" {
-            $results.BackupComplete | Should Be $true
+            $results.BackupComplete | Should -Be $true
         }
-        It "Should have backuped to NUL:" {
-            $results.FullName[0] | Should Be 'NUL:'
+        It "Should have backed up to NUL:" {
+            $results.FullName[0] | Should -Be 'NUL:'
         }
     }
 
     Context "Should only output a T-SQL String if OutputScriptOnly specified" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName c:\notexists\file.bak -OutputScriptOnly
         It "Should return a string" {
-            $results.GetType().ToString() | Should Be 'System.String'
+            $results.GetType().ToString() | Should -Be 'System.String'
         }
         it "Should return BACKUP DATABASE [master] TO  DISK = N'c:\notexists\file.bak' WITH NOFORMAT, NOINIT, NOSKIP, REWIND, NOUNLOAD,  STATS = 1" {
-            $results | Should Be "BACKUP DATABASE [master] TO  DISK = N'c:\notexists\file.bak' WITH NOFORMAT, NOINIT, NOSKIP, REWIND, NOUNLOAD,  STATS = 1"
+            $results | Should -Be "BACKUP DATABASE [master] TO  DISK = N'c:\notexists\file.bak' WITH NOFORMAT, NOINIT, NOSKIP, REWIND, NOUNLOAD,  STATS = 1"
         }
     }
 }
