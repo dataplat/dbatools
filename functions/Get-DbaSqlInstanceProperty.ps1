@@ -2,10 +2,10 @@
 function Get-DbaSqlInstanceProperty {
     <#
         .SYNOPSIS
-            Gets SQL Instance properties of one or more instance(s) of SQL Server.
+            Gets SQL Server instance properties of one or more instance(s) of SQL Server.
 
         .DESCRIPTION
-            The Get-DbaSqlInstanceProperty command gets SQL Instance properties from the SMO object sqlserver.
+            The Get-DbaSqlInstanceProperty command gets SQL Server instance properties from the SMO object sqlserver.
 
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -13,10 +13,10 @@ function Get-DbaSqlInstanceProperty {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Property
+        .PARAMETER InstanceProperty
             SQL Server instance property(ies) to include.
 
-        .PARAMETER ExcludeProperty
+        .PARAMETER ExcludeInstanceProperty
             SQL Server instance property(ies) to exclude.
 
         .PARAMETER EnableException
@@ -37,25 +37,25 @@ function Get-DbaSqlInstanceProperty {
         .EXAMPLE
             Get-DbaSqlInstanceProperty -SqlInstance localhost
 
-            Returns SQL Instance properties on the local default SQL Server instance
+            Returns SQL Server instance properties on the local default SQL Server instance
 
         .EXAMPLE
             Get-DbaSqlInstanceProperty -SqlInstance sql2, sql4\sqlexpress
 
-            Returns SQL Instance properties on default instance on sql2 and sqlexpress instance on sql4
+            Returns SQL Server instance properties on default instance on sql2 and sqlexpress instance on sql4
 
         .EXAMPLE
             'sql2','sql4' | Get-DbaSqlInstanceProperty
 
-            Returns SQL Instance properties on sql2 and sql4
+            Returns SQL Server instance properties on sql2 and sql4
 
         .EXAMPLE
-            Get-DbaSqlInstanceProperty -SqlInstance sql2,sql4 -Property DefaultFile
+            Get-DbaSqlInstanceProperty -SqlInstance sql2,sql4 -InstanceProperty DefaultFile
 
             Returns SQL Server instance property DefaultFile on instance sql2 and sql4
 
         .EXAMPLE
-            Get-DbaSqlInstanceProperty -SqlInstance sql2,sql4 -ExcludeProperty DefaultFile
+            Get-DbaSqlInstanceProperty -SqlInstance sql2,sql4 -ExcludeInstanceProperty DefaultFile
 
             Returns all SQL Server instance properties except DefaultFile on instance sql2 and sql4
 
@@ -63,16 +63,16 @@ function Get-DbaSqlInstanceProperty {
             $cred = Get-Credential sqladmin
             Get-DbaSqlInstanceProperty -SqlInstance sql2 -SqlCredential $cred
 
-            Connects using sqladmin credential and returns SQL Instance properties from sql2
-#>
+            Connects using sqladmin credential and returns SQL Server instance properties from sql2
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Property,
-        [object[]]$ExcludeProperty,
+        [object[]]$InstanceProperty,
+        [object[]]$ExcludeInstanceProperty,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -88,7 +88,15 @@ function Get-DbaSqlInstanceProperty {
             }
 
             try {
-                foreach ($prop in $server.Information.Properties) {
+                $infoProperties = $server.Information.Properties
+
+                if ($Property) {
+                    $infoProperties = $infoProperties | Where-Object Name -In $Property
+                }
+                if ($ExcludeProperty) {
+                    $infoProperties = $infoProperties | Where-Object Name -NotIn $ExcludeProperty
+                }
+                foreach ($prop in $infoProperties) {
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
@@ -101,7 +109,15 @@ function Get-DbaSqlInstanceProperty {
             }
 
             try {
-                foreach ($prop in $server.Useroptions.Properties) {
+                $userProperties = $server.UserOptions.Properties
+
+                if ($Property) {
+                    $userProperties = $userProperties | Where-Object Name -In $Property
+                }
+                if ($ExcludeProperty) {
+                    $userProperties = $userProperties | Where-Object Name -NotIn $ExcludeProperty
+                }
+                foreach ($prop in $userProperties) {
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
@@ -114,7 +130,15 @@ function Get-DbaSqlInstanceProperty {
             }
 
             try {
-                foreach ($prop in $server.Settings.Properties) {
+                $settingProperties = $server.Settings.Properties
+
+                if ($Property) {
+                    $settingProperties = $settingProperties | Where-Object Name -In $Property
+                }
+                if ($ExcludeProperty) {
+                    $settingProperties = $settingProperties | Where-Object Name -NotIn $ExcludeProperty
+                }
+                foreach ($prop in $settingProperties) {
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
