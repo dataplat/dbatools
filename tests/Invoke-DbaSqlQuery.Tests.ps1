@@ -94,62 +94,62 @@ SELECT @@servername as dbname
 '@
         $results = $script:instance1, $script:instance2 | Invoke-DbaSqlQuery -Database tempdb -Query $Query
         $results.dbname -contains 'tempdb' | Should Be $true
-	}
-	It "streams correctly 'messages' with Verbose" {
-		$query = @'
-		DECLARE @time char(19)
-		PRINT 'stmt_1|PRINT start|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
-		SET @time= CONVERT(VARCHAR(19), GETUTCDATE(), 126)
-		RAISERROR ('stmt_2|RAISERROR before WITHOUT NOWAIT|%s', 0, 1, @time)
-		WAITFOR DELAY '00:00:03'
-		PRINT 'stmt_3|PRINT after the first delay|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
-		SET @time= CONVERT(VARCHAR(19), GETUTCDATE(), 126)
-		RAISERROR ('stmt_4|RAISERROR with NOWAIT|%s', 0, 1, @time) WITH NOWAIT
-		WAITFOR DELAY '00:00:03'
-		PRINT 'stmt_5|PRINT after the second delay|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
-		SELECT 'hello' AS TestColumn
-		WAITFOR DELAY '00:00:03'
-		PRINT 'stmt_6|PRINT end|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
+    }
+    It "streams correctly 'messages' with Verbose" {
+        $query = @'
+        DECLARE @time char(19)
+        PRINT 'stmt_1|PRINT start|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
+        SET @time= CONVERT(VARCHAR(19), GETUTCDATE(), 126)
+        RAISERROR ('stmt_2|RAISERROR before WITHOUT NOWAIT|%s', 0, 1, @time)
+        WAITFOR DELAY '00:00:03'
+        PRINT 'stmt_3|PRINT after the first delay|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
+        SET @time= CONVERT(VARCHAR(19), GETUTCDATE(), 126)
+        RAISERROR ('stmt_4|RAISERROR with NOWAIT|%s', 0, 1, @time) WITH NOWAIT
+        WAITFOR DELAY '00:00:03'
+        PRINT 'stmt_5|PRINT after the second delay|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
+        SELECT 'hello' AS TestColumn
+        WAITFOR DELAY '00:00:03'
+        PRINT 'stmt_6|PRINT end|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
 '@
-		$results = @()
-		Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database tempdb -Query $query -Verbose 4>&1 | ForEach-Object {
-			$results += [pscustomobject]@{
-				FiredAt = (Get-Date).ToUniversalTime()
-				Out = $_
-			}
-		}
-		$results.Length | Should -Be 7  # 6 'messages' plus the actual resultset
-		($results  | ForEach-Object { Get-Date -Date $_.FiredAt -f s } | Get-Unique).Count  | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
-		#($results[0..3]  | ForEach-Object { Get-Date -Date $_.FiredAt -f s } | Get-Unique).Count | Should -Be 1 # everything before stmt_4 is fired at the same time
-		#$parsedstmt_1 = Get-Date -Date $results[0].Out.Message.split('|')[2]
-		#(Get-Date -Date (Get-Date -Date $parsedstmt_1).AddSeconds(3) -f s) | Should -Be (Get-Date -Date $results[0].FiredAt -f s) # stmt_1 is fired 3 seconds after the logged date
-		#$parsedstmt_4 = Get-Date -Date $results[3].Out.Message.split('|')[2]
-		#(Get-Date -Date (Get-Date -Date $parsedstmt_4) -f s) | Should -Be (Get-Date -Date $results[0].FiredAt -f s) # stmt_4 is fired at the same time the logged date is
-	}
-	It "streams correctly 'messages' with MessagesToOutput" {
-		$query = @'
-		DECLARE @time char(19)
-		PRINT 'stmt_1|PRINT start|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
-		SET @time= CONVERT(VARCHAR(19), GETUTCDATE(), 126)
-		RAISERROR ('stmt_2|RAISERROR before WITHOUT NOWAIT|%s', 0, 1, @time)
-		WAITFOR DELAY '00:00:03'
-		PRINT 'stmt_3|PRINT after the first delay|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
-		SET @time= CONVERT(VARCHAR(19), GETUTCDATE(), 126)
-		RAISERROR ('stmt_4|RAISERROR with NOWAIT|%s', 0, 1, @time) WITH NOWAIT
-		WAITFOR DELAY '00:00:03'
-		PRINT 'stmt_5|PRINT after the second delay|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
-		SELECT 'hello' AS TestColumn
-		WAITFOR DELAY '00:00:03'
-		PRINT 'stmt_6|PRINT end|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
+        $results = @()
+        Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database tempdb -Query $query -Verbose 4>&1 | ForEach-Object {
+            $results += [pscustomobject]@{
+                FiredAt = (Get-Date).ToUniversalTime()
+                Out = $_
+            }
+        }
+        $results.Length | Should -Be 7  # 6 'messages' plus the actual resultset
+        ($results  | ForEach-Object { Get-Date -Date $_.FiredAt -f s } | Get-Unique).Count  | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
+        #($results[0..3]  | ForEach-Object { Get-Date -Date $_.FiredAt -f s } | Get-Unique).Count | Should -Be 1 # everything before stmt_4 is fired at the same time
+        #$parsedstmt_1 = Get-Date -Date $results[0].Out.Message.split('|')[2]
+        #(Get-Date -Date (Get-Date -Date $parsedstmt_1).AddSeconds(3) -f s) | Should -Be (Get-Date -Date $results[0].FiredAt -f s) # stmt_1 is fired 3 seconds after the logged date
+        #$parsedstmt_4 = Get-Date -Date $results[3].Out.Message.split('|')[2]
+        #(Get-Date -Date (Get-Date -Date $parsedstmt_4) -f s) | Should -Be (Get-Date -Date $results[0].FiredAt -f s) # stmt_4 is fired at the same time the logged date is
+    }
+    It "streams correctly 'messages' with MessagesToOutput" {
+        $query = @'
+        DECLARE @time char(19)
+        PRINT 'stmt_1|PRINT start|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
+        SET @time= CONVERT(VARCHAR(19), GETUTCDATE(), 126)
+        RAISERROR ('stmt_2|RAISERROR before WITHOUT NOWAIT|%s', 0, 1, @time)
+        WAITFOR DELAY '00:00:03'
+        PRINT 'stmt_3|PRINT after the first delay|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
+        SET @time= CONVERT(VARCHAR(19), GETUTCDATE(), 126)
+        RAISERROR ('stmt_4|RAISERROR with NOWAIT|%s', 0, 1, @time) WITH NOWAIT
+        WAITFOR DELAY '00:00:03'
+        PRINT 'stmt_5|PRINT after the second delay|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
+        SELECT 'hello' AS TestColumn
+        WAITFOR DELAY '00:00:03'
+        PRINT 'stmt_6|PRINT end|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
 '@
-		$results = @()
-		Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database tempdb -Query $query -MessagesToOutput | ForEach-Object {
-			$results += [pscustomobject]@{
-				FiredAt = (Get-Date).ToUniversalTime()
-				Out = $_
-			}
-		}
-		$results.Length | Should -Be 7  # 6 'messages' plus the actual resultset
-		($results  | ForEach-Object { Get-Date -Date $_.FiredAt -f s } | Get-Unique).Count  | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
-	}
+        $results = @()
+        Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database tempdb -Query $query -MessagesToOutput | ForEach-Object {
+            $results += [pscustomobject]@{
+                FiredAt = (Get-Date).ToUniversalTime()
+                Out = $_
+            }
+        }
+        $results.Length | Should -Be 7  # 6 'messages' plus the actual resultset
+        ($results  | ForEach-Object { Get-Date -Date $_.FiredAt -f s } | Get-Unique).Count  | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
+    }
 }
