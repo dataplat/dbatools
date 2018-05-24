@@ -1188,6 +1188,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaConfigValue -Name \u0027System.MailServer\u0027\r\n\r\nReturns the configured value that was assigned to the key \u0027System.MailServer\u0027\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaConfigValue -Name \u0027Default.CoffeeMilk\u0027 -Fallback 0\r\n\r\nReturns the configured value for \u0027Default.CoffeeMilk\u0027. If no such value is configured, it returns \u00270\u0027 instead.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaConnection",
+        "Description":  "Returns a bunch of information from dm_exec_connections which, according to Microsoft:\n\"Returns information about the connections established to this instance of SQL Server and the details of each connection. Returns server wide connection information for SQL Server. Returns current database connection information for SQL Database.\"",
+        "Tags":  "Connection",
+        "Synopsis":  "Returns a bunch of information from dm_exec_connections.",
+        "Name":  "Get-DbaConnection",
+        "Links":  "https://dbatools.io/Get-DbaConnection",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaConnection -SqlInstance sql2016, sql2017\r\n\r\nReturns client connection information from sql2016 and sql2017\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaCpuUsage",
         "Description":  "\"If there are a lot of processes running on your instance and the CPU is very high,\nthen it\u0027s hard to find the exact process eating up your CPU using just the SQL Server\ntools. One way to correlate the data between what is running within SQL Server and at\nthe Windows level is to use SPID and KPID values to get the exact process.\"\n\nThis command automates that process.\n\nReferences: https://www.mssqltips.com/sqlservertip/2454/how-to-find-out-how-much-cpu-a-sql-server-process-is-really-using/\n\nNote: This command returns results from all SQL instances on the destionation server but the process\ncolumn is specific to -SqlInstance passed.",
         "Tags":  "CPU",
@@ -2578,12 +2587,12 @@
         "Description":  "Shrinks all files in a database. Databases should be shrunk only when completely necessary.\n\nMany awesome SQL people have written about why you should not shrink your data files. Paul Randal and Kalen Delaney wrote great posts about this topic:\n\n    http://www.sqlskills.com/blogs/paul/why-you-should-not-shrink-your-data-files\n    http://sqlmag.com/sql-server/shrinking-data-files\n\nHowever, there are some cases where a database will need to be shrunk. In the event that you must shrink your database:\n\n1. Ensure you have plenty of space for your T-Log to grow\n2. Understand that shrinks require a lot of CPU and disk resources\n3. Consider running DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE after the shrink is complete.",
         "Tags":  [
                      "Shrink",
-                     "Databases"
+                     "Database"
                  ],
         "Synopsis":  "Shrinks all files in a database. This is a command that should rarely be used.\n\n- Shrinks can cause severe index fragmentation (to the tune of 99%)\n- Shrinks can cause massive growth in the database\u0027s transaction log\n- Shrinks can require a lot of time and system resources to perform data movement",
         "Name":  "Invoke-DbaDatabaseShrink",
         "Links":  "https://dbatools.io/Invoke-DbaDatabaseShrink",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014\r\n\r\nShrinks Northwind, pubs and Adventureworks2014 to have as little free space as possible.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseShrink -SqlInstance sql2014 -Database Adventureworks2014 -PercentFreeSpace 50\r\n\r\nShrinks Adventureworks2014 to have 50% free space. So let\u0027s say Adventureworks2014 was 1GB and it\u0027s using 100MB space. \r\nThe database free space would be reduced to 50MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseShrink -SqlInstance sql2012 -AllUserDatabases\r\n\r\nShrinks all databases on SQL2012 (not ideal for production)\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014\r\n\r\nShrinks Northwind, pubs and Adventureworks2014 to have as little free space as possible.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50\r\n\r\nShrinks AdventureWorks2014 to have 50% free space. So let\u0027s say AdventureWorks2014 was 1GB and it\u0027s using 100MB space. \r\nThe database free space would be reduced to 50MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseShrink -SqlInstance sql2012 -AllUserDatabases\r\n\r\nShrinks all databases on SQL2012 (not ideal for production)\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Invoke-DbaDatabaseUpgrade",
