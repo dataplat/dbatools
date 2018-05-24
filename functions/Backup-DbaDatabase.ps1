@@ -84,7 +84,7 @@ function Backup-DbaDatabase {
 
             .PARAMETER BuildPath
                 By default this command won't attempt to create missing paths, this switch will change the behavious so that it wll
-            
+
             .PARAMETER IgnoreFileChecks
                 This switch stops the function from checking for the validity of paths. This can be useful if SQL Server only has read access to the backup area.
                 Note, that as we can't check the path you may well end up with errors.
@@ -127,6 +127,7 @@ function Backup-DbaDatabase {
                 Performs a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql credential "dbatoolscred" registered on the sql2016 instance.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
     param (
         [parameter(ParameterSetName = "Pipe", Mandatory = $true)]
         [DbaInstanceParameter]$SqlInstance,
@@ -172,22 +173,22 @@ function Backup-DbaDatabase {
             }
 
             if ($Database) {
-                $InputObject = $server.Databases | Where-Object { $_.Name -in $Database }
+                $InputObject = $server.Databases | Where-Object Name -in $Database
             }
             else {
-                $InputObject = $server.Databases | Where-object { $_.Name -ne 'tempdb' }
+                $InputObject = $server.Databases | Where-Object Name -ne 'tempdb'
             }
 
             if ($ExcludeDatabase) {
                 $InputObject = $InputObject | Where-Object Name -notin $ExcludeDatabase
             }
 
-            if ($BackupDirectory.count -gt 1) {
+            if ($BackupDirectory.Count -gt 1) {
                 Write-Message -Level Verbose -Message "Multiple Backup Directories, striping"
-                $Filecount = $BackupDirectory.count
+                $Filecount = $BackupDirectory.Count
             }
 
-            if ($InputObject.count -gt 1 -and $BackupFileName -ne '') {
+            if ($InputObject.Count -gt 1 -and $BackupFileName -ne '') {
                 Write-Message -Level Warning -Message "1 BackupFile specified, but more than 1 database."
                 break
             }
@@ -212,7 +213,7 @@ function Backup-DbaDatabase {
                 $BackupDirectory = $AzureBaseUrl
             }
 
-            if ($OutputScriptOnly){
+            if ($OutputScriptOnly) {
                 $IgnoreFileChecks = $true
             }
         }
@@ -224,11 +225,12 @@ function Backup-DbaDatabase {
             continue
         }
 
-        Write-Message -Level Verbose -Message "$($InputObject.count) database to backup"
+        Write-Message -Level Verbose -Message "$($InputObject.Count) database to backup"
 
-        ForEach ($Database in $InputObject) {
+        foreach ($Database in $InputObject) {
+            $ProgressId = Get-Random
             $failures = @()
-            $dbname = $Database.name
+            $dbname = $Database.Name
 
             if ($dbname -eq "tempdb") {
                 Write-Message -Level Warning -Message "Backing up tempdb not supported"
@@ -250,7 +252,7 @@ function Backup-DbaDatabase {
             Write-Message -Level Verbose -Message "Backup database $database"
 
             if ($null -eq $Database.RecoveryModel) {
-                $Database.RecoveryModel = $server.databases[$Database.Name].RecoveryModel
+                $Database.RecoveryModel = $server.Databases[$Database.Name].RecoveryModel
                 Write-Message -Level Verbose -Message "$dbname is in $($Database.RecoveryModel) recovery model"
             }
 
@@ -270,7 +272,7 @@ function Backup-DbaDatabase {
                 Write-Message -Level Warning -Message "$failreason"
             }
 
-            if ($CopyOnly -ne $True) {
+            if ($CopyOnly -ne $true) {
                 $CopyOnly = $false
             }
 
@@ -293,13 +295,13 @@ function Backup-DbaDatabase {
                 $backup.Checksum = $true
             }
 
-            if ($type -in 'diff', 'differential') {
+            if ($Type -in 'Diff', 'Differential') {
                 Write-Message -Level VeryVerbose -Message "Creating differential backup"
                 $SMOBackuptype = "Database"
                 $backup.Incremental = $true
                 $outputType = 'Differential'
             }
-            $Backup.NoRecovery = $False
+            $Backup.NoRecovery = $false
             if ($Type -eq "Log") {
                 Write-Message -Level VeryVerbose -Message "Creating log backup"
                 $Suffix = "trn"
@@ -308,7 +310,7 @@ function Backup-DbaDatabase {
                 $Backup.NoRecovery = $NoRecovery
             }
 
-            if ($type -in 'Full', 'Database') {
+            if ($Type -in 'Full', 'Database') {
                 Write-Message -Level VeryVerbose -Message "Creating full backup"
                 $SMOBackupType = "Database"
                 $OutputType = 'Full'
@@ -319,26 +321,22 @@ function Backup-DbaDatabase {
             if ('' -ne $AzureBaseUrl) {
                 $backup.CredentialName = $AzureCredential
             }
-            
+
             Write-Message -Level Verbose -Message "Building file name"
-            $SetDbName = ''
-            if ($CreateFolder) {
-                $SetDbName = "\$($dbname)"
-            }
 
             $BackupFinalName = ''
             $FinalBackupPath = @()
-            if ('NUL' -eq $BackupFileName){
+            if ('NUL' -eq $BackupFileName) {
                 $FinalBackupPath += 'NUL:'
                 $IgnoreFileChecks = $true
             }
-            elseif ('' -ne $BackupFileName){
+            elseif ('' -ne $BackupFileName) {
                 $File = New-Object System.IO.FileInfo($BackupFileName)
                 $BackupFinalName = $file.Name
                 $suffix = $file.extension
-                if ( '' -ne (Split-Path $BackupFileName)){
+                if ( '' -ne (Split-Path $BackupFileName)) {
                     Write-Message -Level Verbose -Message "Fully qualified path passed in"
-                    $FinalBackupPath += $file.DirectoryName
+                    $FinalBackupPath += [IO.Path]::GetFullPath($file.DirectoryName)
                 }
             }
             else {
@@ -348,35 +346,43 @@ function Backup-DbaDatabase {
             }
 
             Write-Message -Level Verbose -Message "Building backup path"
-            if ($FinalBackupPath.count -eq 0) {
+            if ($FinalBackupPath.Count -eq 0) {
                 $FinalBackupPath += $BackupDirectory
             }
-            
-            if ($BackupDirectory.count -eq 1 -and $filecount -gt 1){
-                For ($i=0; $i -lt ($filecount -1); $i++){
+
+            if ($BackupDirectory.Count -eq 1 -and $Filecount -gt 1) {
+                for ($i = 0; $i -lt ($Filecount - 1); $i++) {
                     $FinalBackupPath += $FinalBackupPath[0]
                 }
-
             }
 
             if ($FinalBackupPath.Count -gt 1) {
                 $File = New-Object System.IO.FileInfo($BackupFinalName)
-                For ($i =0; $i -lt $FinalbackupPath.count; $i++) {
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i]+"\"+$($File.BaseName)+"-$($i+1)-of-"+$($file.count)+$suffix
+                for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] + "\" + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
                 }
             }
             elseif ($FinalBackupPath[0] -ne 'NUL:') {
-                $FinalBackupPath[0] = $FinalBackupPath[0]+$SetDbName+"\"+$BackupFinalName
+                $FinalBackupPath[0] = $FinalBackupPath[0] + "\" + $BackupFinalName
             }
-            
-            if (-not $IgnoreFileChecks){
-                ForEach ($Path in $FinalBackupPath){
-                    if (-not (Test-DbaSqlPath -SqlInstance $server -Path (split-path $path))) {
+
+            if ($CreateFolder -and $FinalBackupPath[0] -ne 'NUL:') {
+                for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
+                    $parent = [IO.Path]::GetDirectoryName($FinalBackupPath[$i])
+                    $leaf = [IO.Path]::GetFileName($FinalBackupPath[$i])
+                    $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $dbname, $leaf)
+                }
+            }
+
+            if (-not $IgnoreFileChecks) {
+                $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
+                foreach ($parentPath in $parentPaths) {
+                    if (-not (Test-DbaSqlPath -SqlInstance $server -Path $parentPath)) {
                         if (($BuildPath -eq $true) -or ($CreateFolder -eq $True)) {
-                        $null = New-DbaSqlDirectory -SqlInstance $server -Path (split-path $path)
+                            $null = New-DbaSqlDirectory -SqlInstance $server -Path $parentPath
                         }
                         else {
-                            $failreason += "SQL Server cannot write to the location $(Split-Path $Path)"
+                            $failreason += "SQL Server cannot write to the location $parentPath"
                             $failures += $failreason
                             Write-Message -Level Warning -Message "$failreason"
                         }
@@ -385,32 +391,16 @@ function Backup-DbaDatabase {
             }
 
 
-            if ('' -eq $AzureBaseUrl) {
-               # $file = New-Object System.IO.FileInfo($FinalBackupPath[0])
+            if ('' -eq $AzureBaseUrl -and $BackupDirectory) {
+                $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
             }
-            if ($FileCount -gt 1 -and $FinalBackupPath.count -eq 1) {
-                Write-Message -Level Verbose -Message "Striping for Filecount of $filecount"
-                $stripes = $filecount
 
-                for ($i = 2; $i -lt $stripes + 1; $i++) {
-                    $FinalBackupPath += $FinalBackupPath[0].Replace("$suffix", "-$i-of-$stripes$($suffix)")
-                }
-                $FinalBackupPath[0] = $FinalBackupPath[0].Replace("$suffix", "-1-of-$stripes$($suffix)")
-
-            }
-            elseif ($FinalBackupPath.count -gt 1) {
-                Write-Message -Level Verbose -Message "String for Backup path count of $($FinalBackupPath.count)"
-                $stripes = $FinalbackupPath.count
-                for ($i = 1; $i -lt $stripes + 1; $i++) {
-                    $FinalBackupPath[($i - 1)] = $FinalBackupPath[($i - 1)].Replace($suffix, "-$i-of-$stripes$($suffix)")
-                }
-            }
 
             $script = $null
             $backupComplete = $false
 
             if (!$failures) {
-                $filecount = $FinalBackupPath.count
+                $Filecount = $FinalBackupPath.Count
 
                 foreach ($backupfile in $FinalBackupPath) {
                     $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
@@ -423,10 +413,10 @@ function Backup-DbaDatabase {
                     $device.Name = $backupfile
                     $backup.Devices.Add($device)
                 }
-
+                $humanBackupFile = $FinalBackupPath -Join ','
                 Write-Message -Level Verbose -Message "Devices added"
                 $percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-                    Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                    Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
                 }
                 $backup.add_PercentComplete($percent)
                 $backup.PercentCompleteNotification = 1
@@ -442,18 +432,18 @@ function Backup-DbaDatabase {
                     $backup.Blocksize = $BlockSize
                 }
 
-                Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                Write-Progress -id $ProgressId -activity "Backing up database $dbname to $humanBackupFile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 
                 try {
-                    if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $backupfile")) {
-                            if ($OutputScriptOnly -ne $True){
+                    if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $humanBackupFile")) {
+                        if ($OutputScriptOnly -ne $True) {
                             $Filelist = @()
                             $FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
                             $FileList += $server.Databases[$dbname].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
 
                             $backup.SqlBackup($server)
                             $script = $backup.Script($server)
-                            Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
+                            Write-Progress -id $ProgressId -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
                             $BackupComplete = $true
                             if ($server.VersionMajor -eq '8') {
                                 $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbname
@@ -467,8 +457,8 @@ function Backup-DbaDatabase {
                                     SqlInstance          = $server.name
                                     DatabaseName         = $dbname
                                     BackupComplete       = $BackupComplete
-                                    BackupFilesCount     = $FinalBackupPath.count
-                                    BackupFile           = (Split-Path $FinalBackupPath -leaf)
+                                    BackupFilesCount     = $FinalBackupPath.Count
+                                    BackupFile           = (Split-Path $FinalBackupPath -Leaf)
                                     BackupFolder         = (Split-Path $FinalBackupPath | Sort-Object -Unique)
                                     BackupPath           = ($FinalBackupPath | Sort-Object -Unique)
                                     Script               = $script
@@ -483,7 +473,7 @@ function Backup-DbaDatabase {
                                     LastLsn              = $HeaderInfo.LastLsn
                                     BackupSetId          = $HeaderInfo.BackupSetId
                                     LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
-                                } | Restore-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
+                                } | Restore-DbaDatabase -SqlInstance $server -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
                                 if ($verifiedResult[0] -eq "Verify successful") {
                                     $failures += $verifiedResult[0]
                                     $Verified = $true
@@ -494,9 +484,9 @@ function Backup-DbaDatabase {
                                 }
                             }
                             $HeaderInfo | Add-Member -Type NoteProperty -Name BackupComplete -Value $BackupComplete
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFile -Value (Split-Path $FinalBackupPath -leaf)
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFilesCount -Value $FinalBackupPath.count
-                            if ($FinalBackupPath[0] -eq 'NUL:'){
+                            $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFile -Value (Split-Path $FinalBackupPath -Leaf)
+                            $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFilesCount -Value $FinalBackupPath.Count
+                            if ($FinalBackupPath[0] -eq 'NUL:') {
                                 $pathresult = "NUL:"
                             }
                             else {
@@ -519,14 +509,14 @@ function Backup-DbaDatabase {
                         Write-Message -Message "Exception thrown by db going into restoring mode due to recovery" -Leve Verbose
                     }
                     else {
-                        Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
+                        Write-Progress -id $ProgressId -activity "Backup" -status "Failed" -completed
                         Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_
                         $BackupComplete = $false
                     }
                 }
             }
             $OutputExclude = 'FullName', 'FileList', 'SoftwareVersionMajor'
-            if ($failures.count -eq 0) {
+            if ($failures.Count -eq 0) {
                 $OutputExclude += ('Notes', 'FirstLsn', 'DatabaseBackupLsn', 'CheckpointLsn', 'LastLsn', 'BackupSetId', 'LastRecoveryForkGuid')
             }
             $headerinfo | Select-DefaultView -ExcludeProperty $OutputExclude
