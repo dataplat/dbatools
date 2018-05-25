@@ -5,7 +5,7 @@ function Invoke-DbaSqlQuery {
             A command to run explicit T-SQL commands or files.
 
         .DESCRIPTION
-            This function is a wrapper command around Invoke-SqlCmd2.
+            This function is a wrapper command around Invoke-DbaSqlAsync, which in turn is based on Invoke-SqlCmd2.
             It was designed to be more convenient to use in a pipeline and to behave in a way consistent with the rest of our functions.
 
         .PARAMETER SqlInstance
@@ -15,7 +15,7 @@ function Invoke-DbaSqlQuery {
             Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
         .PARAMETER Database
-        The database to select before running the query. This list is auto-populated from the server.
+            The database to select before running the query. This list is auto-populated from the server.
 
         .PARAMETER Query
             Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon or a GO
@@ -24,8 +24,11 @@ function Invoke-DbaSqlQuery {
 
             Consider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as "MyTable".
 
+        .PARAMETER QueryTimeout
+            Specifies the number of seconds before the queries time out.
+
         .PARAMETER File
-            Specifies the path to one or several files to be used as the query input to Invoke-Sqlcmd2. The file can contain Transact-SQL statements, XQuery statements, sqlcmd commands and scripting variables.
+            Specifies the path to one or several files to be used as the query input.
 
         .PARAMETER SqlObject
             Specify on or multiple SQL objects. Those will be converted to script and their scripts run on the target system(s).
@@ -40,6 +43,9 @@ function Invoke-DbaSqlQuery {
 
         .PARAMETER AppendServerInstance
             If this switch is enabled, the SQL Server instance will be appended to PSObject and DataRow output.
+
+        .PARAMETER MessagesToOutput
+            Use this switch to have on the output stream messages too (e.g. PRINT statements). Output will hold the resultset too. See examples for detail
 
         .PARAMETER InputObject
             A collection of databases (such as returned by Get-DbaDatabase)
@@ -97,6 +103,9 @@ function Invoke-DbaSqlQuery {
         [string]
         $Query,
 
+        [Int32]
+        $QueryTimeout = 600,
+
         [Parameter(Mandatory = $true, ParameterSetName = "File")]
         [object[]]
         $File,
@@ -115,6 +124,9 @@ function Invoke-DbaSqlQuery {
         [switch]
         $AppendServerInstance,
 
+        [switch]
+        $MessagesToOutput,
+
         [parameter(ValueFromPipeline = $true)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
 
@@ -127,19 +139,29 @@ function Invoke-DbaSqlQuery {
     begin {
         Write-Message -Level Debug -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
-        $splatInvokeSqlCmd2 = @{
-            As = $As
-            ParseGo = $true
+        $splatInvokeDbaSqlAsync = @{
+            As      = $As
         }
+
         if (Test-Bound -ParameterName "SqlParameters") {
-            $splatInvokeSqlCmd2["SqlParameters"] = $SqlParameters
+            $splatInvokeDbaSqlAsync["SqlParameters"] = $SqlParameters
         }
         if (Test-Bound -ParameterName "AppendServerInstance") {
-            $splatInvokeSqlCmd2["AppendServerInstance"] = $AppendServerInstance
+            $splatInvokeDbaSqlAsync["AppendServerInstance"] = $AppendServerInstance
         }
         if (Test-Bound -ParameterName "Query") {
-            $splatInvokeSqlCmd2["Query"] = $Query
+            $splatInvokeDbaSqlAsync["Query"] = $Query
         }
+        if (Test-Bound -ParameterName "QueryTimeout") {
+            $splatInvokeDbaSqlAsync["QueryTimeout"] = $QueryTimeout
+        }
+        if (Test-Bound -ParameterName "MessagesToOutput") {
+            $splatInvokeDbaSqlAsync["MessagesToOutput"] = $MessagesToOutput
+        }
+        if (Test-Bound -ParameterName "Verbose") {
+            $splatInvokeDbaSqlAsync["Verbose"] = $Verbose
+        }
+
 
         if (Test-Bound -ParameterName "File") {
             $files = @()
@@ -158,8 +180,8 @@ function Invoke-DbaSqlQuery {
                             Stop-Function -Message "Directory not found!" -Category ObjectNotFound
                             return
                         }
+                        $files += ($item.GetFiles() | Where-Object Extension -EQ ".sql").FullName
 
-                        $item.GetFiles() | Where-Object Extension -EQ ".sql" | ForEach-Object { $files += $_.FullName }
                     }
                     "System.IO.FileInfo" {
                         if (-not $item.Exists) {
@@ -254,7 +276,7 @@ function Invoke-DbaSqlQuery {
             return
         }
 
-        foreach($db in $InputObject) {
+        foreach ($db in $InputObject) {
             if (!$db.IsAccessible) {
                 Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
                 continue
@@ -268,10 +290,13 @@ function Invoke-DbaSqlQuery {
             try {
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
-                        Invoke-Sqlcmd2 -SQLConnection $conncontext.SqlConnectionObject @splatInvokeSqlCmd2 -InputFile $item
+                        if ($null -eq $item) {continue}
+                        $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
+                        $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
+                        Invoke-DbaSqlAsync -SQLConnection $conncontext.SqlConnectionObject @splatInvokeDbaSqlAsync -Query $QueryfromFile
                     }
                 }
-                else { Invoke-Sqlcmd2 -SQLConnection $conncontext.SqlConnectionObject @splatInvokeSqlCmd2 }
+                else { Invoke-DbaSqlAsync -SQLConnection $conncontext.SqlConnectionObject @splatInvokeDbaSqlAsync }
             }
             catch {
                 Stop-Function -Message "[$db] Failed during execution" -ErrorRecord $_ -Target $server -Continue
@@ -279,13 +304,11 @@ function Invoke-DbaSqlQuery {
         }
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance." -Target $instance
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
-            Write-Message -Level Verbose -Message "Executing Invoke-SqlCmd2 against $instance" -Target $instance
             $conncontext = $server.ConnectionContext
             try {
                 if ($Database -and $conncontext.DatabaseName -ne $Database) {
@@ -294,10 +317,15 @@ function Invoke-DbaSqlQuery {
                 }
                 if ($File -or $SqlObject) {
                     foreach ($item in $files) {
-                        Invoke-Sqlcmd2 -SQLConnection $conncontext.SqlConnectionObject @splatInvokeSqlCmd2 -InputFile $item
+                        if ($null -eq $item) {continue}
+                        $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
+                        $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
+                        Invoke-DbaSqlAsync -SQLConnection $conncontext.SqlConnectionObject @splatInvokeDbaSqlAsync -Query $QueryfromFile
                     }
                 }
-                else { Invoke-Sqlcmd2 -SQLConnection $conncontext.SqlConnectionObject @splatInvokeSqlCmd2 }
+                else {
+                    Invoke-DbaSqlAsync -SQLConnection $conncontext.SqlConnectionObject @splatInvokeDbaSqlAsync
+                }
             }
             catch {
                 Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
