@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $resultInclude = Get-DbaSqlInstanceProperty -SqlInstance $script:instance2 -InstanceProperty DefaultFile
         $resultExclude = Get-DbaSqlInstanceProperty -SqlInstance $script:instance2 -ExcludeInstanceProperty DefaultFile
         It "Should only return DefaultFile property" {
-            $resultInclude.Name | Should Be 'DefaultFile'
+            $resultInclude.Name | Should Contain 'DefaultFile'
         }
         It "Should not contain DefaultFile property" {
             $resultExclude.Name | Should Not Contain ([regex]::Escape("DefaultFile"))

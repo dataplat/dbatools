@@ -90,11 +90,11 @@ function Get-DbaSqlInstanceProperty {
             try {
                 $infoProperties = $server.Information.Properties
 
-                if ($Property) {
-                    $infoProperties = $infoProperties | Where-Object Name -In $Property
+                if ($InstanceProperty) {
+                    $infoProperties = $infoProperties | Where-Object Name -In $InstanceProperty
                 }
-                if ($ExcludeProperty) {
-                    $infoProperties = $infoProperties | Where-Object Name -NotIn $ExcludeProperty
+                if ($ExcludeInstanceProperty) {
+                    $infoProperties = $infoProperties | Where-Object Name -NotIn $ExcludeInstanceProperty
                 }
                 foreach ($prop in $infoProperties) {
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
@@ -111,11 +111,11 @@ function Get-DbaSqlInstanceProperty {
             try {
                 $userProperties = $server.UserOptions.Properties
 
-                if ($Property) {
-                    $userProperties = $userProperties | Where-Object Name -In $Property
+                if ($InstanceProperty) {
+                    $userProperties = $userProperties | Where-Object Name -In $InstanceProperty
                 }
-                if ($ExcludeProperty) {
-                    $userProperties = $userProperties | Where-Object Name -NotIn $ExcludeProperty
+                if ($ExcludeInstanceProperty) {
+                    $userProperties = $userProperties | Where-Object Name -NotIn $ExcludeInstanceProperty
                 }
                 foreach ($prop in $userProperties) {
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
@@ -132,11 +132,11 @@ function Get-DbaSqlInstanceProperty {
             try {
                 $settingProperties = $server.Settings.Properties
 
-                if ($Property) {
-                    $settingProperties = $settingProperties | Where-Object Name -In $Property
+                if ($InstanceProperty) {
+                    $settingProperties = $settingProperties | Where-Object Name -In $InstanceProperty
                 }
-                if ($ExcludeProperty) {
-                    $settingProperties = $settingProperties | Where-Object Name -NotIn $ExcludeProperty
+                if ($ExcludeInstanceProperty) {
+                    $settingProperties = $settingProperties | Where-Object Name -NotIn $ExcludeInstanceProperty
                 }
                 foreach ($prop in $settingProperties) {
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
