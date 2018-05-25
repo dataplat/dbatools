@@ -148,13 +148,13 @@ function Invoke-DbaDiagnosticQuery {
         [Switch]$NoPlanColumn,
         [Switch]$NoColumnParsing,
         [switch][Alias('Silent')]
-        $EnableException
-        , [string]$OutputPath
-        , [switch]$ExportQueries
+        [switch]$EnableException,
+        [string]$OutputPath,
+        [switch]$ExportQueries
     )
 
     begin {
-        [int]$ProgressId = Get-Random
+        $ProgressId = Get-Random
 
         function Invoke-DiagnosticQuerySelectionHelper {
             [CmdletBinding()]
@@ -214,6 +214,7 @@ function Invoke-DbaDiagnosticQuery {
 
     process {
         if (Test-FunctionInterrupt) { return }
+
         foreach ($instance in $SqlInstance) {
             $counter = 0
             try {
@@ -242,12 +243,12 @@ function Invoke-DbaDiagnosticQuery {
 
             if (!$instanceOnly) {
                 if (-not $DatabaseName) {
-                    $databases = Get-DbaDatabase -SqlInstance $SqlInstance -ExcludeAllSystemDb  | select-object Name
+                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb).Name
                     Write-Message -Level Debug -Message  "No Database Name Filtered: Pulled $(@($Databases).count)" -Verbose
                 }
                 else {
-                    $databases = Get-DbaDatabase -SqlInstance $SqlInstance -ExcludeAllSystemDb -Database $DatabaseName | select-object Name
-                    Write-Message -Level Debug -Message  "Filtered to databases: $(($Databases | select-object -ExpandProperty Name) -join ',')" -Verbose
+                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -Database $DatabaseName).Name
+                    Write-Message -Level Debug -Message  "Filtered to databases: $(($Databases.Name) -join ',')" -Verbose
                 }
             }
 
@@ -258,18 +259,34 @@ function Invoke-DbaDiagnosticQuery {
                 $QueryName = Invoke-DiagnosticQuerySelectionHelper $parsedscript
                 $first = $false
             }
+            #since some database level queries can take longer (such as fragmentation) calculate progress with database specific queries * count of databases to run against into context
+            $CountOfDatabases = ($databases).count
 
+
+            if ($QueryName.Count -ne 0) {
+                #if running all queries, then calculate total to run by instance queries count + (db specific count * databases to run each against)
+                $CountOfDatabaseSpecific = @($parsedscript | Where-Object {$_.QueryName -in $QueryName -and $_.DBSpecific -eq $true}).count
+                $CountOfInstanceSpecific = @($parsedscript | Where-Object {$_.QueryName -in $QueryName -and $_.DBSpecific -eq $false}).count
+            }
+            else {
+                #if narrowing queries to database specific, calculate total to process based on instance queries count + (db specific count * databases to run each against)
+                $CountOfDatabaseSpecific = @($parsedscript | Where-Object DBSpecific).count
+                $CountOfInstanceSpecific = @($parsedscript | Where-Object DBSpecific -eq $false).count
+
+            }
             if (!$instanceonly -and !$DatabaseSpecific -and !$QueryName) {
-                $scriptcount = $parsedscript.count
+                $scriptcount = $CountOfInstanceSpecific + ($CountOfDatabaseSpecific * $CountOfDatabases )
             }
             elseif ($instanceOnly) {
-                $scriptcount = ($parsedscript | Where-Object DBSpecific -eq $false).count
+                $scriptcount = $CountOfInstanceSpecific
             }
             elseif ($DatabaseSpecific) {
-                $scriptcount = ($parsedscript | Where-Object DBSpecific).count
+                $scriptcount = $CountOfDatabaseSpecific * $CountOfDatabases
             }
             elseif ($QueryName.Count -ne 0) {
-                $scriptcount = $QueryName.Count
+                $scriptcount = $CountOfInstanceSpecific + ($CountOfDatabaseSpecific * $CountOfDatabases )
+
+
             }
 
             foreach ($scriptpart in $parsedscript) {
@@ -277,17 +294,18 @@ function Invoke-DbaDiagnosticQuery {
                 if (($QueryName.Count -ne 0) -and ($QueryName -notcontains $scriptpart.QueryName)) { continue }
                 if (!$scriptpart.DBSpecific -and !$DatabaseSpecific) {
                     if ($ExportQueries) {
-                        New-Item -Path $OutputPath -ItemType Directory -Force *> $null
+                        $null = New-Item -Path $OutputPath -ItemType Directory -Force
                         $FileName = Remove-InvalidFileNameChars ('{0}.sql' -f $Scriptpart.QueryName)
-                        $FullName = ([io.path]::combine($OutputPath, $FileName))
-                        Write-Message -Level Verbose -Message  "Creating file: $FullName" -Verbose
-                        $scriptPart.Text | out-file -FilePath $FullName -encoding UTF8 -force
+                        $FullName = Join-Path $OutputPath $FileName
+                        Write-Message -Level Verbose -Message  "Creating file: $FullName"
+                        $scriptPart.Text | out-file -FilePath $FullName -Encoding UTF8 -force
                         continue
                     }
 
                     if ($PSCmdlet.ShouldProcess($instance, $scriptpart.QueryName)) {
-                        $counter++
+
                         if (-not $EnableException) {
+                            $Counter++
                             Write-Progress -Id $ProgressId -ParentId 0 -Activity "Collecting diagnostic query data from $instance" -Status "Processing $counter of $scriptcount" -CurrentOperation $scriptpart.QueryName -PercentComplete (($counter / $scriptcount) * 100)
                         }
 
@@ -348,23 +366,28 @@ function Invoke-DbaDiagnosticQuery {
 
                 }
                 elseif ($scriptpart.DBSpecific -and !$instanceOnly) {
+
                     foreach ($currentdb in $databases) {
                         if ($ExportQueries) {
-                            New-Item -Path $OutputPath -ItemType Directory -Force *> $null
-                            $FileName = Remove-InvalidFileNameChars ('{0}-{1}-{2}.sql' -f $server.DomainInstanceName, $currentdb.name, $Scriptpart.QueryName)
-                            $FullName = ([io.path]::combine($OutputPath, $FileName))
-                            Write-Message -Level Verbose -Message  "Creating file: $FullName" -Verbose
+                            $null = New-Item -Path $OutputPath -ItemType Directory -Force
+                            $FileName = Remove-InvalidFileNameChars ('{0}-{1}-{2}.sql' -f $server.DomainInstanceName, $currentDb, $Scriptpart.QueryName)
+                            $FullName = Join-Path $OutputPath $FileName
+                            Write-Message -Level Verbose -Message  "Creating file: $FullName"
                             $scriptPart.Text | out-file -FilePath $FullName -encoding UTF8 -force
                             continue
                         }
 
 
-                        if ($PSCmdlet.ShouldProcess(('{0} ({1})' -f $instance, $currentdb.name), $scriptpart.QueryName)) {
+                        if ($PSCmdlet.ShouldProcess(('{0} ({1})' -f $instance, $currentDb), $scriptpart.QueryName)) {
 
-                            if (-not $EnableException) { Write-Progress -Id $ProgressId -ParentId 0 -Activity "Collecting diagnostic query data from $($currentdb.name) on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100) }
-                            Write-Message -Level Verbose -Message "Collecting diagnostic query data from $($currentdb.name) for $($scriptpart.QueryName) on $instance"
+                            if (-not $EnableException) {
+                                $Counter++
+                                Write-Progress -Id $ProgressId -ParentId 0 -Activity "Collecting diagnostic query data from $($currentDb) on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100)
+                            }
+
+                            Write-Message -Level Verbose -Message "Collecting diagnostic query data from $($currentDb) for $($scriptpart.QueryName) on $instance"
                             try {
-                                $result = $server.Query($scriptpart.Text, $currentdb.Name)
+                                $result = $server.Query($scriptpart.Text, $currentDb)
                                 if (!$result) {
                                     [pscustomobject]@{
                                         ComputerName     = $server.NetName
@@ -382,7 +405,7 @@ function Invoke-DbaDiagnosticQuery {
                                 }
                             }
                             catch {
-                                Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $currentdb.Name) -Target $currentdb -ErrorRecord $_
+                                Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $currentDb) -Target $currentdb -ErrorRecord $_
                             }
 
                             [pscustomobject]@{
@@ -393,7 +416,7 @@ function Invoke-DbaDiagnosticQuery {
                                 Name             = $scriptpart.QueryName
                                 Description      = $scriptpart.Description
                                 DatabaseSpecific = $scriptpart.DBSpecific
-                                DatabaseName     = $currentdb.name
+                                DatabaseName     = $currentDb
                                 Notes            = $null
                                 Result           = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
                             }
