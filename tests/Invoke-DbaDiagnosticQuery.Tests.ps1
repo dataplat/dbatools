@@ -18,11 +18,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $server -Databases @($database, $database2) | Remove-DbaDatabase -Confirm:$false
-        Remove-Item $script:PesterOutputPath -recurse -erroraction silentlycontinue  #clear test folder contents
+        Remove-Item $script:PesterOutputPath -recurse -erroraction silentlycontinue
 
     }
     AfterEach {
-        Remove-Item $script:PesterOutputPath -Recurse -erroraction silentlycontinue #clear test folder contents, doesn't need to fail if cleanup fails
+        Remove-Item $script:PesterOutputPath -Recurse -erroraction silentlycontinue
     }
 
 
@@ -32,7 +32,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             @($results).Count | Should -Be 1
         }
         It "works with DatabaseSpecific" {
-            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -QueryName 'Database-scoped Configurations'
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific
             @($results).count | Should -BeGreaterThan 10
         }
     }
