@@ -2100,12 +2100,12 @@
     },
     {
         "CommandName":  "Get-DbaSqlInstanceProperty",
-        "Description":  "The Get-DbaSqlInstanceProperty command gets SQL Instance properties from the SMO object sqlserver.",
+        "Description":  "The Get-DbaSqlInstanceProperty command gets SQL Server instance properties from the SMO object sqlserver.",
         "Author":  "Klaas Vandenberghe (@powerdbaklaas)",
-        "Synopsis":  "Gets SQL Instance properties of one or more instance(s) of SQL Server.",
+        "Synopsis":  "Gets SQL Server instance properties of one or more instance(s) of SQL Server.",
         "Name":  "Get-DbaSqlInstanceProperty",
         "Links":  "https://dbatools.io/Get-DbaSqlInstanceProperty",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlInstanceProperty -SqlInstance localhost\r\n\r\nReturns SQL Instance properties on the local default SQL Server instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlInstanceProperty -SqlInstance sql2, sql4\\sqlexpress\r\n\r\nReturns SQL Instance properties on default instance on sql2 and sqlexpress instance on sql4\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql2\u0027,\u0027sql4\u0027 | Get-DbaSqlInstanceProperty\r\n\r\nReturns SQL Instance properties on sql2 and sql4\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$cred = Get-Credential sqladmin\r\n\r\nGet-DbaSqlInstanceProperty -SqlInstance sql2 -SqlCredential $cred\r\n\r\nConnects using sqladmin credential and returns SQL Instance properties from sql2\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlInstanceProperty -SqlInstance localhost\r\n\r\nReturns SQL Server instance properties on the local default SQL Server instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlInstanceProperty -SqlInstance sql2, sql4\\sqlexpress\r\n\r\nReturns SQL Server instance properties on default instance on sql2 and sqlexpress instance on sql4\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql2\u0027,\u0027sql4\u0027 | Get-DbaSqlInstanceProperty\r\n\r\nReturns SQL Server instance properties on sql2 and sql4\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlInstanceProperty -SqlInstance sql2,sql4 -InstanceProperty DefaultFile\r\n\r\nReturns SQL Server instance property DefaultFile on instance sql2 and sql4\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlInstanceProperty -SqlInstance sql2,sql4 -ExcludeInstanceProperty DefaultFile\r\n\r\nReturns all SQL Server instance properties except DefaultFile on instance sql2 and sql4\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e$cred = Get-Credential sqladmin\r\n\r\nGet-DbaSqlInstanceProperty -SqlInstance sql2 -SqlCredential $cred\r\n\r\nConnects using sqladmin credential and returns SQL Server instance properties from sql2\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaSqlInstanceUserOption",
@@ -2670,7 +2670,7 @@
     },
     {
         "CommandName":  "Invoke-DbaSqlQuery",
-        "Description":  "This function is a wrapper command around Invoke-SqlCmd2.\nIt was designed to be more convenient to use in a pipeline and to behave in a way consistent with the rest of our functions.",
+        "Description":  "This function is a wrapper command around Invoke-DbaSqlAsync, which in turn is based on Invoke-SqlCmd2.\nIt was designed to be more convenient to use in a pipeline and to behave in a way consistent with the rest of our functions.",
         "Tags":  [
                      "Database",
                      "Query"
