@@ -32,7 +32,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             @($results).Count | Should -Be 1
         }
         It "works with DatabaseSpecific" {
-            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -QueryName 'Database-scoped Configurations'
             @($results).count | Should -BeGreaterThan 10
         }
     }
@@ -41,51 +41,51 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         It "exports queries to sql files without running" {
             Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -QueryName 'Memory Clerk Usage' -OutputPath $script:PesterOutputPath
-            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql).Count | Should -be 1
+            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql).Count | Should -Be 1
         }
 
-        It "returns pscustomobject[] containing parsed queries" {
-            [System.Management.Automation.PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -whatif
-            @($results).count | Should -BeGreaterThan 10
+        It "verifies returns object with required properties when running with whatif" {
+            [System.Management.Automation.PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -WhatIf
 
-            #verifying the data types returned are consistent with an array of pscustom customobjects to allow working with the queries further if needed
-            #this also ensures that any "whatif" is not polluting the output stream with objects
-            # for better understanding on why I'm using write-output to validate  type, see: https://github.com/pester/Pester/issues/38
-
-            write-debug "Note that to match , results have to be declared as above, explicitly psobject, otherwise just Object[] array"
-            Write-Output -NoEnumerate $results | Should -BeOfType [System.Management.Automation.PSObject[]]
-            if ($DebugPreference -ne 'silentlycontinue') {  $results | foreach-object { write-debug "foreach-object in `$results - UnderlyingSystemType $($_.GetType().UnderlyingSystemType)" } }
-            $results | foreach-object {
-                Write-Output -NoEnumerate $_ | Should -BeOfType  [System.Management.Automation.PSCustomObject]
-            }
+            @($results).count                                                             | Should -BeGreaterThan 10
+            (($results).ComputerName     | Where-Object {$_ -eq $null}).count             | Should -Be 0
+            (($results).InstanceName     | Where-Object {$_ -eq $null}).count             | Should -Be 0
+            (($results).SqlInstance      | Where-Object {$_ -eq $null}).count             | Should -Be 0
+            (($results).Number           | Where-Object {$_ -eq $null}).count             | Should -Be 0
+            (($results).Name             | Where-Object {$_ -eq $null}).count             | Should -Be 0
+            (($results).Description      | Where-Object {$_ -eq $null}).count             | Should -Be 0
+            (($results).DatabaseSpecific | Where-Object {$_ -eq $null}).count             | Should -Be 0
+            (($results).DatabaseName).count                                               | Should -Be @($results).count
+            (($results).Notes).count                                                      | Should -Be @($results).count
+            (($results).Result).Count                                                     | Should -Be @($results).count
         }
 
         It "exports single database specific query against single database" {
-            Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -queryname 'Database-scoped Configurations' -databasename $database -OutputPath $script:PesterOutputPath
-            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | where {$_.FullName -match "($database)"}).Count | should -be 1
+            Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -databasename $database -OutputPath $script:PesterOutputPath
+            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)"}).Count | Should -Be 1
         }
 
         It "exports a database specific query foreach specific database provided" {
-            Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -queryname 'Database-scoped Configurations' -databasename @($database, $database2) -OutputPath $script:PesterOutputPath
-            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | where {$_.FullName -match "($database)|($database2)"}).Count | should -be 2
+            Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -databasename @($database, $database2) -OutputPath $script:PesterOutputPath
+            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)|($database2)"}).Count | Should -Be 2
         }
 
         It "exports database specific query when multiple specific databases are referenced" {
-            Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -DatabaseSpecific -queryname 'Database-scoped Configurations' -OutputPath $script:PesterOutputPath
-            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | where {$_.FullName -match "($database)|($database2)"}).Count | should -Be 2
+            Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -DatabaseSpecific -QueryName 'Database-scoped Configurations' -OutputPath $script:PesterOutputPath
+            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)|($database2)"}).Count | Should -Be 2
         }
 
     }
 
     context "verifying output when running database specific queries" {
         It "runs database specific queries against single database only when providing database name" {
-            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -queryname 'Database-scoped Configurations' -databasename $database
-            @($results).Count | should -be 1
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -QueryName 'Database-scoped Configurations' -databasename $database
+            @($results).Count | Should -Be 1
         }
 
         It "runs database specific queries against set of databases when provided with multiple database names" {
-            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -queryname 'Database-scoped Configurations' -databasename @($database, $database2)
-            @($results).Count |  should -be 2
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -QueryName 'Database-scoped Configurations' -databasename @($database, $database2)
+            @($results).Count |  Should -Be 2
         }
     }
 
