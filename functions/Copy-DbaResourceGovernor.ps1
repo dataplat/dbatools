@@ -89,13 +89,8 @@ function Copy-DbaResourceGovernor {
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-        if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
-            Stop-Function -Message "Resource Governor is only supported in SQL Server 2008 and above. Quitting."
-            return
-        }
-
-        $sourceClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential
-        $destClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $destServer -SqlCredential $DestinationSqlCredential
+        $sourceClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential -MinimumVersion 10
+        $destClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $destServer -SqlCredential $DestinationSqlCredential -MinimumVersion 10
 
         $source = $sourceServer.DomainInstanceName
         $destination = $destServer.DomainInstanceName

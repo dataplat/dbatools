@@ -19,5 +19,3 @@ msbuild.log
 
 # Local constant file
 tests/constants.local.ps1
-
-functions/Copy-DbaResourceGovernor_TEST.ps1
