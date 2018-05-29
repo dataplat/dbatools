@@ -135,7 +135,9 @@ function Invoke-DbaDiagnosticQuery {
         [DbaInstanceParameter[]]$SqlInstance,
 
         [Alias('Database')]
-        [string[]]$DatabaseName,
+        [object[]]$DatabaseName,
+
+        [object[]]$ExcludeDatabase,
 
         [Alias('Credential')]
         [PSCredential]$SqlCredential,
@@ -243,12 +245,10 @@ function Invoke-DbaDiagnosticQuery {
 
             if (!$instanceOnly) {
                 if (-not $DatabaseName) {
-                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb).Name
-                    Write-Message -Level Debug -Message  "No Database Name Filtered: Pulled $(@($Databases).count)" -Verbose
+                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -ExcludeDatabase $ExcludeDatabase).Name
                 }
                 else {
-                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -Database $DatabaseName).Name
-                    Write-Message -Level Debug -Message  "Filtered to databases: $(($Databases.Name) -join ',')" -Verbose
+                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -Database $DatabaseName -ExcludeDatabase $ExcludeDatabase).Name
                 }
             }
 
@@ -260,31 +260,31 @@ function Invoke-DbaDiagnosticQuery {
                 $first = $false
             }
             #since some database level queries can take longer (such as fragmentation) calculate progress with database specific queries * count of databases to run against into context
-            $CountOfDatabases = ($databases).count
+            $CountOfDatabases = ($databases).Count
 
 
             if ($QueryName.Count -ne 0) {
                 #if running all queries, then calculate total to run by instance queries count + (db specific count * databases to run each against)
-                $CountOfDatabaseSpecific = @($parsedscript | Where-Object {$_.QueryName -in $QueryName -and $_.DBSpecific -eq $true}).count
-                $CountOfInstanceSpecific = @($parsedscript | Where-Object {$_.QueryName -in $QueryName -and $_.DBSpecific -eq $false}).count
+                $countDBSpecific = @($parsedscript | Where-Object {$_.QueryName -in $QueryName -and $_.DBSpecific -eq $true}).Count
+                $countInstanceSpecific = @($parsedscript | Where-Object {$_.QueryName -in $QueryName -and $_.DBSpecific -eq $false}).Count
             }
             else {
                 #if narrowing queries to database specific, calculate total to process based on instance queries count + (db specific count * databases to run each against)
-                $CountOfDatabaseSpecific = @($parsedscript | Where-Object DBSpecific).count
-                $CountOfInstanceSpecific = @($parsedscript | Where-Object DBSpecific -eq $false).count
+                $countDBSpecific = @($parsedscript | Where-Object DBSpecific).Count
+                $countInstanceSpecific = @($parsedscript | Where-Object DBSpecific -eq $false).Count
 
             }
             if (!$instanceonly -and !$DatabaseSpecific -and !$QueryName) {
-                $scriptcount = $CountOfInstanceSpecific + ($CountOfDatabaseSpecific * $CountOfDatabases )
+                $scriptcount = $countInstanceSpecific + ($countDBSpecific * $CountOfDatabases )
             }
             elseif ($instanceOnly) {
-                $scriptcount = $CountOfInstanceSpecific
+                $scriptcount = $countInstanceSpecific
             }
             elseif ($DatabaseSpecific) {
-                $scriptcount = $CountOfDatabaseSpecific * $CountOfDatabases
+                $scriptcount = $countDBSpecific * $CountOfDatabases
             }
             elseif ($QueryName.Count -ne 0) {
-                $scriptcount = $CountOfInstanceSpecific + ($CountOfDatabaseSpecific * $CountOfDatabases )
+                $scriptcount = $countInstanceSpecific + ($countDBSpecific * $CountOfDatabases )
 
 
             }
@@ -342,7 +342,7 @@ function Invoke-DbaDiagnosticQuery {
                                 DatabaseSpecific = $scriptpart.DBSpecific
                                 DatabaseName     = $null
                                 Notes            = $null
-                                Result           = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
+                                Result           = Select-DefaultView -InputObject $result -Property *
                             }
 
                         }
@@ -418,7 +418,7 @@ function Invoke-DbaDiagnosticQuery {
                                 DatabaseSpecific = $scriptpart.DBSpecific
                                 DatabaseName     = $currentDb
                                 Notes            = $null
-                                Result           = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
+                                Result           = Select-DefaultView -InputObject $result -Property *
                             }
                         }
                         else {

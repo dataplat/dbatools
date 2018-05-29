@@ -1,8 +1,8 @@
 # test ouput directory to confirm creation of test files
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. (Join-path (($PSScriptRoot, '.\' -ne '')[0]) "constants.ps1")  #if running in interactive console, cd to folder and you can run this without error
-write-host "loaded constants"
+. "$PSScriptRoot\constants.ps1"
+
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
@@ -34,6 +34,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "works with DatabaseSpecific" {
             $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific
             @($results).count | Should -BeGreaterThan 10
+        }
+        It "works with Exclude Databases provided" {
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -ExcludeDatabase $database2
+            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database1)"}).Count | Should -BeGreaterThan 1
+            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database2)"}).Count | Should -Be 0
         }
     }
 
