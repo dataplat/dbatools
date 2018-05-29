@@ -12,8 +12,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $database = "dbatoolsci_frk_$(Get-Random)"
         $database2 = "dbatoolsci_frk_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $server.Query("CREATE DATABASE $database")
-        $server.Query("CREATE DATABASE $database2")
+        $server.Query("CREATE DATABASE [$database]")
+        $server.Query("CREATE DATABASE [$database2]")
 
     }
     AfterAll {
@@ -33,12 +33,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "works with DatabaseSpecific" {
             $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific
-            @($results).count | Should -BeGreaterThan 10
+            @($results).Count | Should -BeGreaterThan 10
         }
         It "works with Exclude Databases provided" {
             $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -ExcludeDatabase $database2
-            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database1)"}).Count | Should -BeGreaterThan 1
-            @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database2)"}).Count | Should -Be 0
+            @($results | Where-Object {$_.DatabaseName -eq $Database1}).Count | Should -BeGreaterThan 1
+            @($results | Where-Object {$_.DatabaseName -eq $Database2}).Count | Should -Be 0
         }
     }
 
