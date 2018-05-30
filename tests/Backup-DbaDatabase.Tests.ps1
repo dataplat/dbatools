@@ -142,6 +142,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
+    It "Should have 1 period in file extension" {
+        foreach($path in $results.BackupFile) {
+            [IO.Path]::GetExtension($path).ToCharArray() | Where-Object { $_ -eq '.' } | Measure-Object.Count | Should -Be 1
+        }
+    }
+
     Context "Should Backup to default path if none specified" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName 'PesterTest.bak'
         $DefaultPath = (Get-DbaDefaultPath -SqlInstance $script:instance1).Backup
