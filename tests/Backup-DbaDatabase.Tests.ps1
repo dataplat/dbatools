@@ -144,7 +144,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     It "Should have 1 period in file extension" {
         foreach($path in $results.BackupFile) {
-            [IO.Path]::GetExtension($path).ToCharArray() | Where-Object { $_ -eq '.' } | Measure-Object.Count | Should -Be 1
+            [IO.Path]::GetExtension($path) | Should -Not -BeLike '*..*'
         }
     }
 
