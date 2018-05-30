@@ -382,7 +382,7 @@ function Backup-DbaDatabase {
                             $null = New-DbaSqlDirectory -SqlInstance $server -Path $parentPath
                         }
                         else {
-                            $failreason += "SQL Server cannot write to the location $parentPath"
+                            $failreason += "SQL Server cannot check if $parentPath exists. You can try disabiling this check with -IgnoreFileChecks"
                             $failures += $failreason
                             Write-Message -Level Warning -Message "$failreason"
                         }
