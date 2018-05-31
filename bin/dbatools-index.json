@@ -2276,7 +2276,7 @@
     },
     {
         "CommandName":  "Get-DbaTrace",
-        "Description":  "This function returns a list of Traces on a SQL Server Instance and identify the default Trace File",
+        "Description":  "This function returns a list of traces on a SQL Server instance and identifies the default trace file",
         "Tags":  [
                      "Security",
                      "Trace"
@@ -3119,7 +3119,7 @@
                      "Security",
                      "Trace"
                  ],
-        "Synopsis":  "Reads a trace file from specified SQL Server Database",
+        "Synopsis":  "Reads SQL Server trace files",
         "Name":  "Read-DbaTraceFile",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\\traces\\big.trc\r\n\r\nReads the tracefile C:\\traces\\big.trc, stored on the sql2016 sql server. Filters only results that have master or \r\ntempdb as the DatabaseName.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaTraceFile -SqlInstance sql2016 -Database master, tempdb -Path C:\\traces\\big.trc -TextData \u0027EXEC \r\nSP_PROCOPTION\u0027\r\n\r\nReads the tracefile C:\\traces\\big.trc, stored on the sql2016 sql server.\r\nFilters only results that have master or tempdb as the DatabaseName and that have \u0027EXEC SP_PROCOPTION\u0027 somewhere in the \r\ntext.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nRead-DbaTraceFile -SqlInstance sql2016 -Path C:\\traces\\big.trc -Where \"LinkedServerName = \u0027myls\u0027 and StartTime \r\n\u003e\u00275/30/2017 4:27:52 PM\u0027\"\r\n\r\nReads the tracefile C:\\traces\\big.trc, stored on the sql2016 sql server.\r\nFilters only results where LinkServerName = myls and StartTime is greater than \u00275/30/2017 4:27:52 PM\u0027.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2014 | Read-DbaTraceFile\r\n\r\nReads every trace file on sql2014\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
@@ -3398,7 +3398,7 @@
         "Synopsis":  "Stops and closes the specified trace and deletes its definition from the server.",
         "Name":  "Remove-DbaTrace",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaTrace -SqlInstance sql2008\r\n\r\nStops all traces on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaTrace -SqlInstance sql2008 -Id 1\r\n\r\nStops all trace with ID 1 on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Remove-DbaTrace\r\n\r\nStops selected traces on sql2008\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaTrace -SqlInstance sql2008\r\n\r\nStops and removes all traces on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaTrace -SqlInstance sql2008 -Id 1\r\n\r\nStops and removes all trace with ID 1 on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Remove-DbaTrace\r\n\r\nStops and removes selected traces on sql2008\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-DbaXESession",
@@ -3913,12 +3913,12 @@
     },
     {
         "CommandName":  "Start-DbaTrace",
-        "Description":  "This command starts a trace on a SQL Server Instance",
+        "Description":  "Starts SQL Server traces",
         "Tags":  [
                      "Security",
                      "Trace"
                  ],
-        "Synopsis":  "Start a list of trace(s) from specified SQL Server Instance",
+        "Synopsis":  "Starts SQL Server traces",
         "Name":  "Start-DbaTrace",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaTrace -SqlInstance sql2008\r\n\r\nStarts all traces on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaTrace -SqlInstance sql2008 -Id 1\r\n\r\nStarts all trace with ID 1 on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Start-DbaTrace\r\n\r\nStarts selected traces on sql2008\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
@@ -3992,12 +3992,12 @@
     },
     {
         "CommandName":  "Stop-DbaTrace",
-        "Description":  "This command stops a trace on a SQL Server Instance",
+        "Description":  "Stops SQL Server traces",
         "Tags":  [
                      "Security",
                      "Trace"
                  ],
-        "Synopsis":  "Stop a list of trace(s) from specified SQL Server Instance",
+        "Synopsis":  "Stops SQL Server traces",
         "Name":  "Stop-DbaTrace",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaTrace -SqlInstance sql2008\r\n\r\nStops all traces on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaTrace -SqlInstance sql2008 -Id 1\r\n\r\nStops all trace with ID 1 on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Stop-DbaTrace\r\n\r\nStops selected traces on sql2008\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
