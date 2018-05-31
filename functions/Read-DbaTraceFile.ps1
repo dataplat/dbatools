@@ -1,7 +1,7 @@
 function Read-DbaTraceFile {
     <#
         .SYNOPSIS
-        Reads a trace file from specified SQL Server Database
+        Reads SQL Server trace files
 
         .DESCRIPTION
         Using the fn_trace_gettable function, a trace file is read and returned as a PowerShell object
@@ -9,10 +9,10 @@ function Read-DbaTraceFile {
         This function returns the whole of the trace file. The information is presented in the format that the trace subsystem uses.
 
         .PARAMETER SqlInstance
-        A SQL Server instance to connect to
+        The target SQL Server instance
 
         .PARAMETER SqlCredential
-        A credential to use to connect to the SQL instance rather than using Windows Authentication
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Path
         Path to the trace file. This path is relative to the SQL Server instance.
@@ -174,65 +174,65 @@ function Read-DbaTraceFile {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     begin {
         if ($where) {
             $Where = "where $where"
         }
-        elseif ($Database -or $Login -or $Spid) {
-            
+        elseif ($Database -or $Login -or $Spid -or $ApplicationName -or $EventClass -or $ObjectName -or $ObjectType -or $EventSequence -or $Error) {
+
             $tempwhere = @()
-            
+
             if ($Database) {
                 $where = $database -join "','"
                 $tempwhere += "databasename in ('$where')"
             }
-            
+
             if ($Login) {
                 $where = $Login -join "','"
                 $tempwhere += "LoginName in ('$where')"
             }
-            
+
             if ($Spid) {
                 $where = $Spid -join ","
                 $tempwhere += "Spid in ($where)"
             }
-            
+
             if ($EventClass) {
                 $where = $EventClass -join ","
                 $tempwhere += "EventClass in ($where)"
             }
-            
+
             if ($ObjectType) {
                 $where = $ObjectType -join ","
                 $tempwhere += "ObjectType in ($where)"
             }
-            
+
             if ($Error) {
                 $where = $Error -join ","
                 $tempwhere += "Error in ($where)"
             }
-            
+
             if ($EventSequence) {
                 $where = $EventSequence -join ","
                 $tempwhere += "EventSequence in ($where)"
             }
-            
+
             if ($TextData) {
                 $where = $TextData -join "%','%"
                 $tempwhere += "TextData like ('%$where%')"
             }
-            
+
             if ($ApplicationName) {
                 $where = $ApplicationName -join "%','%"
                 $tempwhere += "ApplicationName like ('%$where%')"
             }
-            
+
             if ($ObjectName) {
                 $where = $ObjectName -join "%','%"
                 $tempwhere += "ObjectName like ('%$where%')"
             }
-            
+
             $tempwhere = $tempwhere -join " and "
             $Where = "where $tempwhere"
         }

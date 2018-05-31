@@ -4,7 +4,7 @@ function Get-DbaTrace {
         Gets a list of trace(s) from specified SQL Server Instance
 
         .DESCRIPTION
-        This function returns a list of Traces on a SQL Server Instance and identify the default Trace File
+        This function returns a list of traces on a SQL Server instance and identifies the default trace file
 
         .PARAMETER SqlInstance
         A SQL Server instance to connect to
@@ -56,11 +56,11 @@ function Get-DbaTrace {
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaTraceFile
-        
+
         # A Microsoft.SqlServer.Management.Trace.TraceServer class exists but is buggy
         # and requires x86 PowerShell. So we'll go with T-SQL.
         $sql = "SELECT id, status, path, max_size, stop_time, max_files, is_rowset, is_rollover, is_shutdown, is_default, buffer_count, buffer_size, file_position, reader_spid, start_time, last_event_time, event_count, dropped_event_count FROM sys.traces"
-        
+
         if ($Id) {
             $idstring = $Id -join ","
             $sql = "$sql WHERE id in ($idstring)"
@@ -68,7 +68,7 @@ function Get-DbaTrace {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
@@ -76,18 +76,18 @@ function Get-DbaTrace {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 return
             }
-            
+
             try {
                 $results = $server.Query($sql)
             }
             catch {
                 Stop-Function -Message "Issue collecting trace data on $server" -Target $server -ErrorRecord $_
             }
-            
+
             if ($Default) {
                 $results = $results | Where-Object { $_.is_default }
             }
-            
+
             foreach ($row in $results) {
                 if ($row.Path.ToString().Length -gt 0) {
                     $remotefile = Join-AdminUnc -servername $server.NetName -filepath $row.path
@@ -95,7 +95,7 @@ function Get-DbaTrace {
                 else {
                     $remotefile = $null
                 }
-                
+
                 [PSCustomObject]@{
                     ComputerName             = $server.NetName
                     InstanceName             = $server.ServiceName
