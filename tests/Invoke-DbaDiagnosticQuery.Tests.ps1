@@ -45,38 +45,38 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     context "verifying output when exporting queries as files instead of running" {
 
         It "exports queries to sql files without running" {
-            Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -QueryName 'Memory Clerk Usage' -OutputPath $script:PesterOutputPath
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -QueryName 'Memory Clerk Usage' -OutputPath $script:PesterOutputPath
             @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql).Count | Should -Be 1
         }
 
         It "verifies returns object with required properties when running with whatif" {
             [System.Management.Automation.PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -WhatIf
 
-            @($results).count                                                             | Should -BeGreaterThan 10
-            (($results).ComputerName     | Where-Object {$_ -eq $null}).count             | Should -Be 0
-            (($results).InstanceName     | Where-Object {$_ -eq $null}).count             | Should -Be 0
-            (($results).SqlInstance      | Where-Object {$_ -eq $null}).count             | Should -Be 0
-            (($results).Number           | Where-Object {$_ -eq $null}).count             | Should -Be 0
-            (($results).Name             | Where-Object {$_ -eq $null}).count             | Should -Be 0
-            (($results).Description      | Where-Object {$_ -eq $null}).count             | Should -Be 0
-            (($results).DatabaseSpecific | Where-Object {$_ -eq $null}).count             | Should -Be 0
-            (($results).DatabaseName).count                                               | Should -Be @($results).count
-            (($results).Notes).count                                                      | Should -Be @($results).count
-            (($results).Result).Count                                                     | Should -Be @($results).count
+             $results.Count                                                             | Should -BeGreaterThan 10
+            ($results.ComputerName     | Where-Object {$_ -eq $null}).Count             | Should -Be 0
+            ($results.InstanceName     | Where-Object {$_ -eq $null}).Count             | Should -Be 0
+            ($results.SqlInstance      | Where-Object {$_ -eq $null}).Count             | Should -Be 0
+            ($results.Number           | Where-Object {$_ -eq $null}).Count             | Should -Be 0
+            ($results.Name             | Where-Object {$_ -eq $null}).Count             | Should -Be 0
+            ($results.Description      | Where-Object {$_ -eq $null}).Count             | Should -Be 0
+            ($results.DatabaseSpecific | Where-Object {$_ -eq $null}).Count             | Should -Be 0
+            $results.DatabaseName.Count                                                 | Should -Be $results.Count
+            $results.Notes.Count                                                        | Should -Be $results.Count
+            $results.Result.Count                                                       | Should -Be $results.Count
         }
 
         It "exports single database specific query against single database" {
-            Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -databasename $database -OutputPath $script:PesterOutputPath
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -databasename $database -OutputPath $script:PesterOutputPath
             @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)"}).Count | Should -Be 1
         }
 
         It "exports a database specific query foreach specific database provided" {
-            Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -databasename @($database, $database2) -OutputPath $script:PesterOutputPath
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -databasename @($database, $database2) -OutputPath $script:PesterOutputPath
             @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)|($database2)"}).Count | Should -Be 2
         }
 
         It "exports database specific query when multiple specific databases are referenced" {
-            Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -DatabaseSpecific -QueryName 'Database-scoped Configurations' -OutputPath $script:PesterOutputPath
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -DatabaseSpecific -QueryName 'Database-scoped Configurations' -OutputPath $script:PesterOutputPath
             @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)|($database2)"}).Count | Should -Be 2
         }
 
