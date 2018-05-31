@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 24, 2018
+-- Last Modified: May 30, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -847,6 +847,9 @@ ORDER BY [VLF Count] DESC  OPTION (RECOMPILE);
 
 -- Important change to VLF creation algorithm in SQL Server 2014
 -- https://bit.ly/2Hsjbg4
+
+-- SQL Server Transaction Log Architecture and Management Guide
+-- https://bit.ly/2JjmQRZ
 
 
 
