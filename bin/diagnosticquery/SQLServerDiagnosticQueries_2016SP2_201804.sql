@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 SP2 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 23, 2018
+-- Last Modified: May 31, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -65,6 +65,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- SQL Server 2016 Builds																		
 -- Build			Description			Release Date	URL to KB Article								
 -- 13.0.5026.0		SP2 RTM				4/24/2018		https://bit.ly/2FEvN2q 
+-- 13.0.5149.0		SP2 CU1				5/30/2018		https://support.microsoft.com/en-us/help/4135048/cumulative-update-1-for-sql-server-2016-sp2		
 
 		
 															
