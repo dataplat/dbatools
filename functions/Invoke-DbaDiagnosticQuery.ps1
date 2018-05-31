@@ -149,10 +149,12 @@ function Invoke-DbaDiagnosticQuery {
         [Switch]$NoQueryTextColumn,
         [Switch]$NoPlanColumn,
         [Switch]$NoColumnParsing,
-        [switch][Alias('Silent')]
-        [switch]$EnableException,
+
         [string]$OutputPath,
-        [switch]$ExportQueries
+        [switch]$ExportQueries,
+
+        [switch][Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
