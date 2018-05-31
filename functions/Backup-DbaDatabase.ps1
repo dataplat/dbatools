@@ -333,7 +333,7 @@ function Backup-DbaDatabase {
             elseif ('' -ne $BackupFileName) {
                 $File = New-Object System.IO.FileInfo($BackupFileName)
                 $BackupFinalName = $file.Name
-                $suffix = $file.extension
+                $suffix = $file.extension -Replace '^\.',''
                 if ( '' -ne (Split-Path $BackupFileName)) {
                     Write-Message -Level Verbose -Message "Fully qualified path passed in"
                     $FinalBackupPath += [IO.Path]::GetFullPath($file.DirectoryName)
