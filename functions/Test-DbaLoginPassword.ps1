@@ -22,6 +22,12 @@ function Test-DbaLoginPassword {
         .PARAMETER Dictionary
             Specifies a list of passwords to include in the test for weak passwords.
 
+        .PARAMETER Login
+            The login(s) to process.
+    
+        .PARAMETER InputObject
+            Allows piping from Get-DbaLogin.
+    
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -29,8 +35,7 @@ function Test-DbaLoginPassword {
 
         .NOTES
             Author: Peter Samuelsson
-
-            dWebsite: https://dbatools.io
+            Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
@@ -43,31 +48,48 @@ function Test-DbaLoginPassword {
             Test all SQL logins that the password is null or same as username on SQL server instance Dev01
 
         .EXAMPLE
+            Test-DbaLoginPassword -SqlInstance Dev01 -Login sqladmin
+
+            Test the 'sqladmin' SQL login that the password is null or same as username on SQL server instance Dev01
+
+        .EXAMPLE
             Test-DbaLoginPassword -SqlInstance Dev01 -Dictionary Test1,test2
 
             Test all SQL logins that the password is null, same as username or Test1,Test2 on SQL server instance Dev0
-    #>
 
+        .EXAMPLE
+            Get-DbaLogin -SqlInstance "sql2017","sql2016" | Test-DbaLoginPassword
+
+            Test all logins on sql2017 and sql2016
+
+        .EXAMPLE
+            $servers | Get-DbaLogin | Out-GridView -Passthru | Test-DbaLoginPassword
+
+            Test selected logins on all servers in the $servers variable
+    #>
     [CmdletBinding()]
     Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [String[]]$Login,
         [String[]]$Dictionary,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Login[]]$InputObject,
         [switch]$EnableException
     )
 
     begin {
         $CheckPasses = "''", "'@@Name'"
         if ($Dictionary) {
-            $Dictionary | ForEach-Object {$CheckPasses += "'" + $psitem + "'" }
+            $Dictionary | ForEach-Object { $CheckPasses += "'" + $psitem + "'" }
         }
 
         foreach ($CheckPass in $CheckPasses) {
             if ($CheckPasses.IndexOf($CheckPass) -eq 0) {
                 $checks = "SELECT " + $CheckPass
-            } else {
+            }
+            else {
                 $checks += "
         UNION SELECT " + $CheckPass
             }
@@ -80,9 +102,10 @@ function Test-DbaLoginPassword {
             $checks
 
             SELECT SERVERPROPERTY('MachineName') AS [ComputerName],
-                SERVERPROPERTY('InstanceName') AS [Instance],
+                ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
                 SERVERPROPERTY('ServerName') AS [SqlInstance],
                 SysLogins.name as SqlLogin,
+                WeakPassword = 'True',
                 REPLACE(WeakPassword.WeakPwd,'@@Name',SysLogins.name) As [Password],
                 SysLogins.is_disabled as Disabled,
                 SysLogins.create_date as CreatedDate,
@@ -97,14 +120,29 @@ function Test-DbaLoginPassword {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
                 Write-Message -Message "Connected to: $instance." -Level Verbose
-            } catch {
+            }
+            catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+            $InputObject += Get-DbaLogin -SqlInstance $server -Login $Login
+        }
+
+        $logins += $InputObject
+    }
+    end {
+        $servers = $logins | Select-Object -Unique -ExpandProperty Parent
+        $names = $logins | Select-Object -Unique -ExpandProperty Name
+
+        foreach ($serverinstance in $servers) {
             Write-Message -Level Debug -Message "Executing $sql"
             Write-Message -Level Verbose -Message "Testing: same username as Password"
             Write-Message -Level Verbose -Message "Testing: the following Passwords $CheckPasses"
-            $server.Query("$sql") | Select-DefaultView -Property ComputerName, Instance, SqlInstance, SqlLogin, Password, Disabled, CreatedDate, ModifiedDate, DefaultDatabase
+            try {
+                $serverinstance.Query("$sql") | Where-Object SqlLogin -in $names
+            }
+            catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $serverinstance -Continue
+            }
         }
     }
-    end {}
 }
