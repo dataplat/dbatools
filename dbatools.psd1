@@ -159,16 +159,16 @@
         'Get-DbaMaxMemory',
         'Set-DbaMaxMemory',
         'Test-DbaMaxMemory',
-        'Get-DbaDatabaseSnapshot',
-        'Remove-DbaDatabaseSnapshot',
+        'Get-DbaDbSnapshot',
+        'Remove-DbaDbSnapshot',
         'Get-DbaRoleMember',
         'Resolve-DbaNetworkName',
         'Test-DbaValidLogin',
         'Get-DbaMemoryUsage',
         'Export-DbaAvailabilityGroup',
         'Write-DbaDataTable',
-        'New-DbaDatabaseSnapshot',
-        'Restore-DbaFromDatabaseSnapshot',
+        'New-DbaDbSnapshot',
+        'Restore-DbaDbSnapshot',
         'Get-DbaTrigger',
         'Export-DbaUser',
         'Get-DbaDatabaseState',
@@ -568,7 +568,11 @@
     'Invoke-DbaSqlCmd',
     'Get-DbaClusterActiveNode',
     'Test-DbaVirtualLogFile',
-    'Test-DbaFullRecoveryModel'
+    'Test-DbaFullRecoveryModel',
+    'Get-DbaDatabaseSnapshot',
+    'New-DbaDatabaseSnapshot',
+    'Remove-DbaDatabaseSnapshot',
+    'Restore-DbaDatabaseSnapshot'
     
     # List of all modules packaged with this module
     ModuleList                = @()
