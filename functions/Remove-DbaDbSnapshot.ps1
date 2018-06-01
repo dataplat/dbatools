@@ -207,5 +207,7 @@ ON sn.source_database_id = dt.database_id
             }
         }
     }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaDatabaseSnapshot
+    }
 }
-
