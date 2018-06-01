@@ -374,13 +374,12 @@ After the work has been completed, we can push the original startup parameters b
                 $ParameterString += (($TraceFlags.split(',') | ForEach-Object { "-T$_" }) -join ';') + ";"
             }
         }
-        else {
+         else {
             if ('TraceFlags' -in $PsBoundParameters.keys) {
                 if ($null -eq $TraceFlags) { $TraceFlags = '' }
                 $oldflags = @($currentstartup.TraceFlags) -split ',' | Where-Object { $_ -ne 'None' }
                 $newflags = $TraceFlags
-                $newflags = $oldflags + $newflags
-                $newstartup.TraceFlags = ($oldFlags + $newflags | Sort-Object -Unique) -join ','
+                $newstartup.TraceFlags = (@($oldFlags) + @($newflags) | Sort-Object -Unique) -join ','
             }
             elseif ($TraceFlagsOverride) {
                 $newstartup.TraceFlags = ''
