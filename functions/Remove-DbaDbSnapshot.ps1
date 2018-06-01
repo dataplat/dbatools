@@ -1,5 +1,5 @@
 #ValidationTags#FlowControl#
-function Remove-DbaDatabaseSnapshot {
+function Remove-DbaDbSnapshot {
     <#
     .SYNOPSIS
         Removes database snapshots
@@ -51,30 +51,30 @@ function Remove-DbaDatabaseSnapshot {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-         https://dbatools.io/Remove-DbaDatabaseSnapshot
+         https://dbatools.io/Remove-DbaDbSnapshot
 
     .EXAMPLE
-        Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a
+        Remove-DbaDbSnapshot -SqlInstance sqlserver2014a
 
         Removes all database snapshots from sqlserver2014a
 
     .EXAMPLE
-        Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, HR_snap_20161101
+        Remove-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, HR_snap_20161101
 
         Removes database snapshots named HR_snap_20161201 and HR_snap_20161101
 
     .EXAMPLE
-        Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
+        Remove-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 
         Removes all database snapshots having HR and Accounting as base dbs
 
     .EXAMPLE
-        Remove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot
+        Remove-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot
 
         Removes HR_snapshot and Accounting_snapshot
 
     .EXAMPLE
-        Get-DbaDatabaseSnapshot -SqlInstance sql2016 | Where SnapshotOf -like '*dumpsterfire*' | Remove-DbaDatabaseSnapshot
+        Get-DbaDbSnapshot -SqlInstance sql2016 | Where SnapshotOf -like '*dumpsterfire*' | Remove-DbaDbSnapshot
 
         Removes all snapshots associated with databases that have dumpsterfire in the name
 
