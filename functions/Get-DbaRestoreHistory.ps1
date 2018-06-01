@@ -140,7 +140,8 @@ function Get-DbaRestoreHistory {
                     bs.last_lsn,
                     bs.checkpoint_lsn,
                     bs.database_backup_lsn,
-                    bs.backup_finish_date
+                    bs.backup_finish_date,
+                    bs.backup_finish_date AS BackupFinishDate
                     "
                 }
 
@@ -193,7 +194,7 @@ function Get-DbaRestoreHistory {
                     }
                     $results = $tmpres
                 }
-                $results | Select-DefaultView -ExcludeProperty first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn
+                $results | Select-DefaultView -ExcludeProperty first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, backup_finish_date
             }
             catch {
                 Stop-Function -Message "Failure" -Target $SqlInstance -Error $_ -Exception $_.Exception.InnerException -Continue
