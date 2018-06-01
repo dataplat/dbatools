@@ -31,7 +31,7 @@ function Test-DbaIdentityUsage {
 
         .NOTES
             Author: Brandon Abshire, netnerds.net
-            Tags: Identity
+            Tags: Identity, Table, Column
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
