@@ -1300,16 +1300,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabasePartitionScheme -SqlInstance sql2016\r\n\r\nGets all database Partition Schemes\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabasePartitionScheme -SqlInstance Server1 -Database db1\r\n\r\nGets the Partition Schemes for the db1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabasePartitionScheme -SqlInstance Server1 -ExcludeDatabase db1\r\n\r\nGets the Partition Schemes for all databases except db1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDatabasePartitionScheme\r\n\r\nGets the Partition Schemes for the databases on Sql1 and Sql2/sqlexpress\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Get-DbaDatabaseSnapshot",
-        "Description":  "Retrieves the list of database snapshot available, along with their base (the db they are the snapshot of) and creation time",
-        "Tags":  "Snapshot",
-        "Author":  "niphlod",
-        "Synopsis":  "Get database snapshots with details",
-        "Name":  "Get-DbaDatabaseSnapshot",
-        "Links":  "https://dbatools.io/Get-DbaDatabaseSnapshot",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseSnapshot -SqlInstance sqlserver2014a\r\n\r\nReturns a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting\r\n\r\nReturns information for database snapshots having HR and Accounting as base dbs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot\r\n\r\nReturns information for database snapshots HR_snapshot and Accounting_snapshot\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Get-DbaDatabaseSpace",
         "Description":  "This function returns database file space information for a SQL Instance or group of SQL Instances. Information is based on a query against sys.database_files and the FILEPROPERTY    function to query and return information.\n\nFile free space script borrowed and modified from Glenn Berry\u0027s DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)",
         "Author":  "Michael Fal (@Mike_Fal), http://mikefal.net",
@@ -1484,6 +1474,16 @@
         "Name":  "Get-DbaDbRole",
         "Links":  "https://dbatools.io/Get-DbaDbRole",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerA\r\n\r\nReturns a custom object displaying SQLServer, Database, Role for all DatabaseRoles on sql instance ServerA.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerA | Out-Gridview\r\n\r\nReturns a gridview displaying SQLServer, Database, Role for all DatabaseRoles on sql instance ServerA.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerB\\sql16 -ExcludeDatabase DBADB,TestDB\r\n\r\nReturns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\\sql16, except those in databases DBADB and \r\nTestDB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e\u0027ServerB\\sql16\u0027,\u0027ServerA\u0027 | Get-DbaDbRole\r\n\r\nReturns SQLServer, Database, Role for DatabaseRoles on sql instances ServerA and ServerB\\sql16.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerB\\sql16 -Database AccountingDB\r\n\r\nReturns SQLServer, Database, Role for DatabaseRoles in database AccountingDB on sql instance ServerB\\sql16.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerB\\sql16 -ExcludeFixedRoles\r\n\r\nReturns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\\sql16, but not the fixed roles.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaDbSnapshot",
+        "Description":  "Retrieves the list of database snapshot available, along with their base (the db they are the snapshot of) and creation time",
+        "Tags":  "Snapshot",
+        "Author":  "niphlod",
+        "Synopsis":  "Get database snapshots with details",
+        "Name":  "Get-DbaDbSnapshot",
+        "Links":  "https://dbatools.io/Get-DbaDbSnapshot",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbSnapshot -SqlInstance sqlserver2014a\r\n\r\nReturns a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting\r\n\r\nReturns information for database snapshots having HR and Accounting as base dbs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot\r\n\r\nReturns information for database snapshots HR_snapshot and Accounting_snapshot\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaDbStoredProcedure",
@@ -2865,7 +2865,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseMasterKey -SqlInstance Server1\r\n\r\nYou will be prompted to securely enter your password, then a master key will be created in the master database on \r\nserver1 if it does not exist.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false\r\n\r\nSuppresses all prompts to install but prompts to securely enter your password and creates a master key in the \u0027db1\u0027 \r\ndatabase\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "New-DbaDatabaseSnapshot",
+        "CommandName":  "New-DbaDbCertificate",
+        "Description":  "Creates a new database certificate. If no database is specified, the certificate will be created in master.",
+        "Tags":  "Certificate",
+        "Synopsis":  "Creates a new database certificate",
+        "Name":  "New-DbaDbCertificate",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDbCertificate -SqlInstance Server1\r\n\r\nYou will be prompted to securely enter your password, then a certificate will be created in the master database on \r\nserver1 if it does not exist.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDbCertificate -SqlInstance Server1 -Database db1 -Confirm:$false\r\n\r\nSuppresses all prompts to install but prompts to securely enter your password and creates a certificate in the \u0027db1\u0027 \r\ndatabase\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "New-DbaDbSnapshot",
         "Description":  "Creates database snapshots without hassles",
         "Tags":  [
                      "DisasterRecovery",
@@ -2875,18 +2884,9 @@
                  ],
         "Author":  "niphlod",
         "Synopsis":  "Creates database snapshots",
-        "Name":  "New-DbaDatabaseSnapshot",
-        "Links":  "https://dbatools.io/New-DbaDatabaseSnapshot",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting\r\n\r\nCreates snapshot for HR and Accounting, returning a custom object displaying Server, Database, DatabaseCreated, \r\nSnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Name HR_snap\r\n\r\nCreates snapshot named \"HR_snap\" for HR\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -NameSuffix \u0027fool_{0}_snap\u0027\r\n\r\nCreates snapshot named \"fool_HR_snap\" for HR\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting -Path F:\\snapshotpath\r\n\r\nCreates snapshots for HR and Accounting databases, storing files under the F:\\snapshotpath\\ dir\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "New-DbaDbCertificate",
-        "Description":  "Creates a new database certificate. If no database is specified, the certificate will be created in master.",
-        "Tags":  "Certificate",
-        "Synopsis":  "Creates a new database certificate",
-        "Name":  "New-DbaDbCertificate",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDbCertificate -SqlInstance Server1\r\n\r\nYou will be prompted to securely enter your password, then a certificate will be created in the master database on \r\nserver1 if it does not exist.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDbCertificate -SqlInstance Server1 -Database db1 -Confirm:$false\r\n\r\nSuppresses all prompts to install but prompts to securely enter your password and creates a certificate in the \u0027db1\u0027 \r\ndatabase\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Name":  "New-DbaDbSnapshot",
+        "Links":  "https://dbatools.io/New-DbaDbSnapshot",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting\r\n\r\nCreates snapshot for HR and Accounting, returning a custom object displaying Server, Database, DatabaseCreated, \r\nSnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -Name HR_snap\r\n\r\nCreates snapshot named \"HR_snap\" for HR\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -NameSuffix \u0027fool_{0}_snap\u0027\r\n\r\nCreates snapshot named \"fool_HR_snap\" for HR\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting -Path F:\\snapshotpath\r\n\r\nCreates snapshots for HR and Accounting databases, storing files under the F:\\snapshotpath\\ dir\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "New-DbaDbUser",
@@ -3292,19 +3292,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSafely -SqlInstance \u0027Fade2Black\u0027 -Database RideTheLightning -BackupFolder \r\n\u0027C:\\MSSQL\\Backup\\Rationalised - DO NOT DELETE\u0027\r\n\r\nPerforms a DBCC CHECKDB on database RideTheLightning on server Fade2Black. If there are no errors, the database is \r\nbackup to the folder C:\\MSSQL\\Backup\\Rationalised - DO NOT DELETE. Then, an Agent job to restore the database from that \r\nbackup is created. The database is then dropped, the Agent job to restore it run, a DBCC CHECKDB run against the \r\nrestored database, and then it is dropped again.\r\n\r\nAny DBCC errors will be written to your documents folder\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$Database = \u0027DemoNCIndex\u0027,\u0027RemoveTestDatabase\u0027\r\n\r\nRemove-DbaDatabaseSafely -SqlInstance \u0027Fade2Black\u0027 -Database $Database -BackupFolder \u0027C:\\MSSQL\\Backup\\Rationalised - DO \r\nNOT DELETE\u0027\r\n\r\nPerforms a DBCC CHECKDB on two databases, \u0027DemoNCIndex\u0027 and \u0027RemoveTestDatabase\u0027 on server Fade2Black. Then, an Agent \r\njob to restore each database from those backups is created. The databases are then dropped, the Agent jobs to restore \r\nthem run, a DBCC CHECKDB run against the restored databases, and then they are dropped again.\r\n\r\nAny DBCC errors will be written to your documents folder\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSafely -SqlInstance \u0027Fade2Black\u0027 -DestinationServer JusticeForAll -Database RideTheLightning \r\n-BackupFolder \u0027\\\\BACKUPSERVER\\BACKUPSHARE\\MSSQL\\Rationalised - DO NOT DELETE\u0027\r\n\r\nPerforms a DBCC CHECKDB on database RideTheLightning on server Fade2Black. If there are no errors, the database is \r\nbackup to the folder \\\\BACKUPSERVER\\BACKUPSHARE\\MSSQL\\Rationalised - DO NOT DELETE . Then, an Agent job is created on \r\nserver JusticeForAll to restore the database from that backup is created. The database is then dropped on Fade2Black, \r\nthe Agent job to restore it on JusticeForAll is run, a DBCC CHECKDB run against the restored database, and then it is \r\ndropped from JusticeForAll.\r\n\r\nAny DBCC errors will be written to your documents folder\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSafely -SqlInstance IronMaiden -Database $Database -DestinationServer TheWildHearts \r\n-BackupFolder Z:\\Backups -NoDbccCheckDb -UseDefaultFilePaths -JobOwner \u0027THEBEARD\\Rob\u0027\r\n\r\nFor the databases $Database on the server IronMaiden a DBCC CHECKDB will not be performed before backing up the \r\ndatabases to the folder Z:\\Backups. Then, an Agent job is created on server TheWildHearts with a Job Owner of \r\nTHEBEARD\\Rob to restore each database from that backup using the instance\u0027s default file paths. The database(s) is(are) \r\nthen dropped on IronMaiden, the Agent job(s) run, a DBCC CHECKDB run on the restored database(s), and then the \r\ndatabase(s) is(are) dropped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSafely -SqlInstance IronMaiden -Database $Database -DestinationServer TheWildHearts \r\n-BackupFolder Z:\\Backups -UseDefaultFilePaths -ContinueAfterDbccError\r\n\r\nThe databases $Database on the server IronMaiden will be backed up the to the folder Z:\\Backups. Then, an Agent job is \r\ncreated on server TheWildHearts with a Job Owner of THEBEARD\\Rob to restore each database from that backup using the \r\ninstance\u0027s default file paths. The database(s) is(are) then dropped on IronMaiden, the Agent job(s) run, a DBCC CHECKDB \r\nrun on the restored database(s), and then the database(s) is(are) dropped.\r\n\r\nIf there is a DBCC Error, the function  will continue to perform rest of the actions and will create an Agent job with \r\n\u0027DBCCERROR\u0027 in the name and a Backup file with \u0027DBCCError\u0027 in the name.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Remove-DbaDatabaseSnapshot",
-        "Description":  "Removes (drops) database snapshots from the server",
-        "Tags":  [
-                     "Snapshot",
-                     "Database"
-                 ],
-        "Author":  "niphlod",
-        "Synopsis":  "Removes database snapshots",
-        "Name":  "Remove-DbaDatabaseSnapshot",
-        "Links":  "https://dbatools.io/Remove-DbaDatabaseSnapshot",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a\r\n\r\nRemoves all database snapshots from sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, HR_snap_20161101\r\n\r\nRemoves database snapshots named HR_snap_20161201 and HR_snap_20161101\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting\r\n\r\nRemoves all database snapshots having HR and Accounting as base dbs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot\r\n\r\nRemoves HR_snapshot and Accounting_snapshot\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseSnapshot -SqlInstance sql2016 | Where SnapshotOf -like \u0027*dumpsterfire*\u0027 | \r\nRemove-DbaDatabaseSnapshot\r\n\r\nRemoves all snapshots associated with databases that have dumpsterfire in the name\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Remove-DbaDbCertificate",
         "Description":  "Deletes specified database certificate",
         "Tags":  "Certificate",
@@ -3312,6 +3299,19 @@
         "Name":  "Remove-DbaDbCertificate",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDbCertificate -SqlInstance Server1\r\n\r\nThe certificate in the master database on server1 will be removed if it exists.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDbCertificate -SqlInstance Server1 -Database db1 -Confirm:$false\r\n\r\nSuppresses all prompts to remove the certificate in the \u0027db1\u0027 database and drops the key.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Remove-DbaDbSnapshot",
+        "Description":  "Removes (drops) database snapshots from the server",
+        "Tags":  [
+                     "Snapshot",
+                     "Database"
+                 ],
+        "Author":  "niphlod",
+        "Synopsis":  "Removes database snapshots",
+        "Name":  "Remove-DbaDbSnapshot",
+        "Links":  "https://dbatools.io/Remove-DbaDbSnapshot",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sqlserver2014a\r\n\r\nRemoves all database snapshots from sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, HR_snap_20161101\r\n\r\nRemoves database snapshots named HR_snap_20161201 and HR_snap_20161101\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting\r\n\r\nRemoves all database snapshots having HR and Accounting as base dbs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot\r\n\r\nRemoves HR_snapshot and Accounting_snapshot\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbSnapshot -SqlInstance sql2016 | Where SnapshotOf -like \u0027*dumpsterfire*\u0027 | Remove-DbaDbSnapshot\r\n\r\nRemoves all snapshots associated with databases that have dumpsterfire in the name\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-DbaDbUser",
@@ -3537,7 +3537,7 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-DbaDbCertificate -SqlInstance Server1 -Path \\\\Server1\\Certificates -password (ConvertTo-SecureString \r\n-force -AsPlainText GoodPass1234!!)\r\n\r\nImports all the certificates in the specified path.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Restore-DbaFromDatabaseSnapshot",
+        "CommandName":  "Restore-DbaDbSnapshot",
         "Description":  "Restores the database from the snapshot, discarding every modification made to the database\nNB: Restoring to a snapshot will result in every other snapshot of the same database to be dropped\nIt also fixes some long-standing bugs in SQL Server when restoring from snapshots",
         "Tags":  [
                      "DisasterRecovery",
@@ -3548,9 +3548,9 @@
                  ],
         "Author":  "niphlod",
         "Synopsis":  "Restores databases from snapshots",
-        "Name":  "Restore-DbaFromDatabaseSnapshot",
-        "Links":  "https://dbatools.io/Restore-DbaFromDatabaseSnapshoT",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting\r\n\r\nRestores HR and Accounting databases using the latest snapshot available\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRestore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Force\r\n\r\nRestores HR database from latest snapshot and kills any active connections in the database on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRestore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, Accounting_snap_20161101\r\n\r\nRestores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Name":  "Restore-DbaDbSnapshot",
+        "Links":  "https://dbatools.io/Restore-DbaDbSnapshot",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting\r\n\r\nRestores HR and Accounting databases using the latest snapshot available\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRestore-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -Force\r\n\r\nRestores HR database from latest snapshot and kills any active connections in the database on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRestore-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, Accounting_snap_20161101\r\n\r\nRestores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Save-DbaDiagnosticQueryScript",
@@ -4179,7 +4179,11 @@
     {
         "CommandName":  "Test-DbaIdentityUsage",
         "Description":  "IDENTITY seeds have max values based off of their data type.  This module will locate identity columns and report the seed usage.",
-        "Tags":  "Identity",
+        "Tags":  [
+                     "Identity",
+                     "Table",
+                     "Column"
+                 ],
         "Author":  "Brandon Abshire, netnerds.net",
         "Synopsis":  "Displays information relating to IDENTITY seed usage.  Works on SQL Server 2008 and above.",
         "Name":  "Test-DbaIdentityUsage",
@@ -4222,6 +4226,15 @@
         "Name":  "Test-DbaLinkedServerConnection",
         "Links":  "https://dbatools.io/Test-DbaLinkedServerConnection",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLinkedServerConnection -SqlInstance DEV01\r\n\r\nTest all Linked Servers for the SQL Server instance DEV01\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLinkedServerConnection -SqlInstance sql2016 | Out-File C:\\temp\\results.txt\r\n\r\nTest all Linked Servers for the SQL Server instance sql2016 and output results to file\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLinkedServerConnection -SqlInstance sql2016, sql2014, sql2012\r\n\r\nTest all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$servers = \"sql2016\",\"sql2014\",\"sql2012\"\r\n\r\n$servers | Test-DbaLinkedServerConnection -SqlCredential (Get-Credential sqladmin)\r\n\r\nTest all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012 using SQL login credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$servers | Get-DbaLinkedServer | Test-DbaLinkedServerConnection\r\n\r\nTest all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Test-DbaLoginPassword",
+        "Description":  "The purpose of this function is to find SQL Server logins that have no password or the same password as login. You can add your own password to check for or add them to a csv file.\nBy default it will test for empty password and the same password as username.",
+        "Author":  "Peter Samuelsson",
+        "Synopsis":  "Test-DbaLoginPassword finds any logins on SQL instance that are SQL Logins and have a password that is either null or same as the login",
+        "Name":  "Test-DbaLoginPassword",
+        "Links":  "https://dbatools.io/Test-DbaLoginPassword",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLoginPassword -SqlInstance Dev01\r\n\r\nTest all SQL logins that the password is null or same as username on SQL server instance Dev01\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLoginPassword -SqlInstance Dev01 -Login sqladmin\r\n\r\nTest the \u0027sqladmin\u0027 SQL login that the password is null or same as username on SQL server instance Dev01\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaLoginPassword -SqlInstance Dev01 -Dictionary Test1,test2\r\n\r\nTest all SQL logins that the password is null, same as username or Test1,Test2 on SQL server instance Dev0\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLogin -SqlInstance \"sql2017\",\"sql2016\" | Test-DbaLoginPassword\r\n\r\nTest all logins on sql2017 and sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$servers | Get-DbaLogin | Out-GridView -Passthru | Test-DbaLoginPassword\r\n\r\nTest selected logins on all servers in the $servers variable\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaLogShippingStatus",
