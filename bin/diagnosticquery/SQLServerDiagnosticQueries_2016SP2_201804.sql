@@ -826,6 +826,9 @@ ORDER BY [VLF Count] DESC  OPTION (RECOMPILE);
 -- Important change to VLF creation algorithm in SQL Server 2014
 -- https://bit.ly/2Hsjbg4
 
+-- SQL Server Transaction Log Architecture and Management Guide
+-- https://bit.ly/2JjmQRZ
+
 
 
 -- Get CPU utilization by database (Query 35) (CPU Usage by Database)

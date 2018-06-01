@@ -1,5 +1,5 @@
 #ValidationTags#FlowControl#
-function Restore-DbaFromDatabaseSnapshot {
+function Restore-DbaDbSnapshot {
     <#
     .SYNOPSIS
         Restores databases from snapshots
@@ -49,20 +49,20 @@ function Restore-DbaFromDatabaseSnapshot {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Restore-DbaFromDatabaseSnapshoT
+        https://dbatools.io/Restore-DbaDbSnapshot
 
     .EXAMPLE
-        Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
+        Restore-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 
         Restores HR and Accounting databases using the latest snapshot available
 
     .EXAMPLE
-        Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Force
+        Restore-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -Force
 
         Restores HR database from latest snapshot and kills any active connections in the database on sqlserver2014a.
 
     .EXAMPLE
-        Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, Accounting_snap_20161101
+        Restore-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, Accounting_snap_20161101
 
         Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101
     #>
@@ -322,5 +322,8 @@ FROM sys.databases sn
                 }
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Restore-DbaFromDatabaseSnapshot
     }
 }
