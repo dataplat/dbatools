@@ -22,6 +22,12 @@ function Test-DbaLoginPassword {
         .PARAMETER Dictionary
             Specifies a list of passwords to include in the test for weak passwords.
 
+        .PARAMETER Login
+            The login(s) to process.
+    
+        .PARAMETER InputObject
+            Allows piping from Get-DbaLogin.
+    
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
