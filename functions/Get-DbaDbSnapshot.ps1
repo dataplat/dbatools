@@ -1,5 +1,5 @@
 #ValidationTags#FlowControl#
-function Get-DbaDatabaseSnapshot {
+function Get-DbaDbSnapshot {
     <#
     .SYNOPSIS
         Get database snapshots with details
@@ -40,20 +40,20 @@ function Get-DbaDatabaseSnapshot {
 
 
     .LINK
-         https://dbatools.io/Get-DbaDatabaseSnapshot
+         https://dbatools.io/Get-DbaDbSnapshot
 
     .EXAMPLE
-        Get-DbaDatabaseSnapshot -SqlInstance sqlserver2014a
+        Get-DbaDbSnapshot -SqlInstance sqlserver2014a
 
         Returns a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated
 
     .EXAMPLE
-        Get-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
+        Get-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 
         Returns information for database snapshots having HR and Accounting as base dbs
 
     .EXAMPLE
-        Get-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot
+        Get-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot
 
         Returns information for database snapshots HR_snapshot and Accounting_snapshot
 
@@ -126,6 +126,9 @@ WHERE sn.state <> 6
                 Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, Database, SnapshotOf, SizeMB, DatabaseCreated
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseSnapshot
     }
 }
 

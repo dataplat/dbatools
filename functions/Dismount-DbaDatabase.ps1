@@ -115,7 +115,7 @@ function Dismount-DbaDatabase {
             }
 
             # repeat because different servers could be piped in
-            $snapshots = (Get-DbaDatabaseSnapshot -SqlInstance $server).SnapshotOf
+            $snapshots = (Get-DbaDbSnapshot -SqlInstance $server).SnapshotOf
             Write-Message -Level Verbose -Message "Checking for snaps"
             if ($db.Name -in $snapshots) {
                 Write-Message -Level Warning -Message "Database $db has snapshots, you need to drop them before detaching. Skipping $db on $server."
