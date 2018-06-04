@@ -17,7 +17,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     }
     AfterAll {
-        $null = Get-DbaDatabase -SqlInstance $server -Databases @($database, $database2) | Remove-DbaDatabase -Confirm:$false
+        @($database, $database2) | Foreach-Object {
+            $db = $_
+            $server.Query("
+        IF DB_ID('$db') IS NOT NULL
+        begin
+            print 'Dropping $db'
+        	ALTER DATABASE [$db] SET SINGLE_USER WITH ROLLBACK immediate;
+        	DROP DATABASE [$db];
+        end
+        ")
+        }
+
         Remove-Item $script:PesterOutputPath -recurse -erroraction silentlycontinue
 
     }
@@ -52,7 +63,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "verifies returns object with required properties when running with whatif" {
             [System.Management.Automation.PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -WhatIf
 
-             $results.Count                                                             | Should -BeGreaterThan 10
+            $results.Count                                                             | Should -BeGreaterThan 10
             ($results.ComputerName     | Where-Object {$_ -eq $null}).Count             | Should -Be 0
             ($results.InstanceName     | Where-Object {$_ -eq $null}).Count             | Should -Be 0
             ($results.SqlInstance      | Where-Object {$_ -eq $null}).Count             | Should -Be 0
