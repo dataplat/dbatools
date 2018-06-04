@@ -134,8 +134,8 @@ function Invoke-DbaDiagnosticQuery {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
 
-        [Alias('Database')]
-        [object[]]$DatabaseName,
+        [Alias('DatabaseName')]
+        [object[]]$Database,
 
         [object[]]$ExcludeDatabase,
 
@@ -246,11 +246,11 @@ function Invoke-DbaDiagnosticQuery {
             }
 
             if (!$instanceOnly) {
-                if (-not $DatabaseName) {
+                if (-not $Database) {
                     $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -ExcludeDatabase $ExcludeDatabase).Name
                 }
                 else {
-                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -Database $DatabaseName -ExcludeDatabase $ExcludeDatabase).Name
+                    $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -Database $Database -ExcludeDatabase $ExcludeDatabase).Name
                 }
             }
 
@@ -323,7 +323,7 @@ function Invoke-DbaDiagnosticQuery {
                                     Name             = $scriptpart.QueryName
                                     Description      = $scriptpart.Description
                                     DatabaseSpecific = $scriptpart.DBSpecific
-                                    DatabaseName     = $null
+                                    Database         = $null
                                     Notes            = "Empty Result for this Query"
                                     Result           = $null
                                 }
@@ -342,7 +342,7 @@ function Invoke-DbaDiagnosticQuery {
                                 Name             = $scriptpart.QueryName
                                 Description      = $scriptpart.Description
                                 DatabaseSpecific = $scriptpart.DBSpecific
-                                DatabaseName     = $null
+                                Database         = $null
                                 Notes            = $null
                                 Result           = Select-DefaultView -InputObject $result -Property *
                             }
@@ -360,7 +360,7 @@ function Invoke-DbaDiagnosticQuery {
                             Name             = $scriptpart.QueryName
                             Description      = $scriptpart.Description
                             DatabaseSpecific = $scriptpart.DBSpecific
-                            DatabaseName     = $null
+                            Database         = $null
                             Notes            = "WhatIf - Bypassed Execution"
                             Result           = $null
                         }
@@ -372,7 +372,7 @@ function Invoke-DbaDiagnosticQuery {
                     foreach ($currentdb in $databases) {
                         if ($ExportQueries) {
                             $null = New-Item -Path $OutputPath -ItemType Directory -Force
-                            $FileName = Remove-InvalidFileNameChars ('{0}-{1}-{2}.sql' -f $server.DomainInstanceName, $currentDb, $Scriptpart.QueryName)
+                            $FileName = Remove-InvalidFileNameChars ('{0}-{1}-{2}.sql' -f $server.DomainInstanceName, $currentDb.Name, $Scriptpart.QueryName)
                             $FullName = Join-Path $OutputPath $FileName
                             Write-Message -Level Verbose -Message  "Creating file: $FullName"
                             $scriptPart.Text | out-file -FilePath $FullName -encoding UTF8 -force
@@ -380,16 +380,16 @@ function Invoke-DbaDiagnosticQuery {
                         }
 
 
-                        if ($PSCmdlet.ShouldProcess(('{0} ({1})' -f $instance, $currentDb), $scriptpart.QueryName)) {
+                        if ($PSCmdlet.ShouldProcess(('{0} ({1})' -f $instance, $currentDb.Name), $scriptpart.QueryName)) {
 
                             if (-not $EnableException) {
                                 $Counter++
-                                Write-Progress -Id $ProgressId -ParentId 0 -Activity "Collecting diagnostic query data from $($currentDb) on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100)
+                                Write-Progress -Id $ProgressId -ParentId 0 -Activity "Collecting diagnostic query data from $($currentDb.Name) on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100)
                             }
 
-                            Write-Message -Level Verbose -Message "Collecting diagnostic query data from $($currentDb) for $($scriptpart.QueryName) on $instance"
+                            Write-Message -Level Verbose -Message "Collecting diagnostic query data from $($currentDb.Name) for $($scriptpart.QueryName) on $instance"
                             try {
-                                $result = $server.Query($scriptpart.Text, $currentDb)
+                                $result = $server.Query($scriptpart.Text, $currentDb.Name)
                                 if (!$result) {
                                     [pscustomobject]@{
                                         ComputerName     = $server.NetName
@@ -399,7 +399,7 @@ function Invoke-DbaDiagnosticQuery {
                                         Name             = $scriptpart.QueryName
                                         Description      = $scriptpart.Description
                                         DatabaseSpecific = $scriptpart.DBSpecific
-                                        DatabaseName     = $null
+                                        Database         = $null
                                         Notes            = "Empty Result for this Query"
                                         Result           = $null
                                     }
@@ -407,7 +407,7 @@ function Invoke-DbaDiagnosticQuery {
                                 }
                             }
                             catch {
-                                Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $currentDb) -Target $currentdb -ErrorRecord $_
+                                Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $currentDb.Name) -Target $currentdb -ErrorRecord $_
                             }
 
                             [pscustomobject]@{
@@ -418,7 +418,7 @@ function Invoke-DbaDiagnosticQuery {
                                 Name             = $scriptpart.QueryName
                                 Description      = $scriptpart.Description
                                 DatabaseSpecific = $scriptpart.DBSpecific
-                                DatabaseName     = $currentDb
+                                Database         = $currentDb.Name
                                 Notes            = $null
                                 Result           = Select-DefaultView -InputObject $result -Property *
                             }
@@ -434,7 +434,7 @@ function Invoke-DbaDiagnosticQuery {
                                 Name             = $scriptpart.QueryName
                                 Description      = $scriptpart.Description
                                 DatabaseSpecific = $scriptpart.DBSpecific
-                                DatabaseName     = $null
+                                Database         = $null
                                 Notes            = "WhatIf - Bypassed Execution"
                                 Result           = $null
                             }
