@@ -80,9 +80,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "has the correct properties" {
             $results = Get-DbaRestoreHistory -SqlInstance $script:instance2 -Database $dbname1, $dbname2
             $result = $results[0]
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Username,RestoreType,Date,From,To,first_lsn,last_lsn,checkpoint_lsn,database_backup_lsn,backup_finish_date,RowError,RowState,Table,ItemArray,HasErrors'.Split(',')
+            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Username,RestoreType,Date,From,To,first_lsn,last_lsn,checkpoint_lsn,database_backup_lsn,backup_finish_date,BackupFinishDate,RowError,RowState,Table,ItemArray,HasErrors'.Split(',')
             ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-            $ExpectedPropsDefault = 'ComputerName,InstanceName,SqlInstance,Database,Username,RestoreType,Date,From,To,backup_finish_date'.Split(',')
+            $ExpectedPropsDefault = 'ComputerName,InstanceName,SqlInstance,Database,Username,RestoreType,Date,From,To,BackupFinishDate'.Split(',')
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
         }
     }

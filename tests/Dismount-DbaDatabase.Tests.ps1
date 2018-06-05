@@ -60,7 +60,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $db2 = "dbatoolsci_dbsetstate_detached_withSnap"
             
             $server.Query("CREATE DATABASE $db2")
-            $null = New-DbaDatabaseSnapshot -SqlInstance $script:instance3 -Database $db2
+            $null = New-DbaDbSnapshot -SqlInstance $script:instance3 -Database $db2
             $fileStructure = New-Object System.Collections.Specialized.StringCollection
             foreach ($file in (Get-DbaDatabaseFile -SqlInstance $script:instance3 -Database $db1).PhysicalName) {
                 $null = $fileStructure.Add($file)
@@ -68,7 +68,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             Stop-DbaProcess -SqlInstance $script:instance3 -Database $db1
         }
         AfterAll {
-            $null = Remove-DbaDatabaseSnapshot -SqlInstance $script:instance3 -Database $db2 -Force
+            $null = Remove-DbaDbSnapshot -SqlInstance $script:instance3 -Database $db2 -Force
             $null = Mount-DbaDatabase -SqlInstance $script:instance3 -Database $db1 -FileStructure $fileStructure
             $null = Get-DbaDatabase -SqlInstance $script:instance3 -Database $db1, $db2 | Remove-DbaDatabase -Confirm:$false
         }

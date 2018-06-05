@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 3
+        $paramCount = 5
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaSqlInstanceProperty).Parameters.Keys
-        $knownParameters = 'Computer', 'SqlInstance', 'SqlCredential', 'Credential', 'EnableException'
+        $knownParameters = 'Computer', 'SqlInstance', 'SqlCredential', 'InstanceProperty', 'ExcludeInstanceProperty', 'Credential', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -33,6 +33,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should get the correct DefaultFile location" {
             $defaultFiles = Get-DbaDefaultPath -SqlInstance $script:instance2
             ($results | Where-Object {$_.name -eq 'DefaultFile'}).Value | Should BeLike "$($defaultFiles.Data)*"
+        }
+    }
+    Context "Property filters work" {
+        $resultInclude = Get-DbaSqlInstanceProperty -SqlInstance $script:instance2 -InstanceProperty DefaultFile
+        $resultExclude = Get-DbaSqlInstanceProperty -SqlInstance $script:instance2 -ExcludeInstanceProperty DefaultFile
+        It "Should only return DefaultFile property" {
+            $resultInclude.Name | Should Contain 'DefaultFile'
+        }
+        It "Should not contain DefaultFile property" {
+            $resultExclude.Name | Should Not Contain ([regex]::Escape("DefaultFile"))
         }
     }
     Context "Command can handle multiple instances" {

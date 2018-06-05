@@ -3,7 +3,7 @@ function Select-DefaultView {
 
     This command enables us to send full on objects to the pipeline without the user seeing it
 
-    See it in action in Get-DbaSnapshot and Remove-DbaDatabaseSnapshot
+    See it in action in Get-DbaDbSnapshot and Remove-DbaDbSnapshot
 
     a lot of this is from boe, thanks boe!
     https://learn-powershell.net/2013/08/03/quick-hits-set-the-default-property-display-in-powershell-on-custom-objects/
