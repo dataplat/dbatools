@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 12, 2018
+-- Last Modified: May 30, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -74,6 +74,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3022.28		CU4					2/20/2018	    https://support.microsoft.com/en-us/help/4056498
 -- 14.0.3023.8		CU5					3/20/2018		https://support.microsoft.com/en-us/help/4092643
 -- 14.0.3025.34		CU6					4/17/2018	    https://support.microsoft.com/en-us/help/4101464
+-- 14.0.3026.27		CU7					5/23/2018		https://support.microsoft.com/en-us/help/4229789/cumulative-update-7-for-sql-server-2017
 		
 															
 
@@ -85,9 +86,6 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 -- Performance and Stability Fixes in SQL Server 2017 CU Builds
 -- https://bit.ly/2GV3CNM
-
--- Microsoft for the Modern Data Estate
--- https://bit.ly/2xAlFHa
 
 -- What's New in SQL Server 2017 (Database Engine)
 -- https://bit.ly/2HjSeyQ
@@ -259,7 +257,7 @@ FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
 -- SQL Server Services information (Query 8) (SQL Server Services Info)
 SELECT servicename, process_id, startup_type_desc, status_desc, 
 last_startup_time, service_account, is_clustered, cluster_nodename, [filename], 
-instant_file_initialization_enabled 
+instant_file_initialization_enabled
 FROM sys.dm_server_services WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
@@ -807,10 +805,14 @@ ORDER BY db.[name] OPTION (RECOMPILE);
 
 
 -- Missing Indexes for all databases by Index Advantage  (Query 34) (Missing Indexes All Databases)
-SELECT CONVERT(decimal(18,2), user_seeks * avg_total_user_cost * (avg_user_impact * 0.01)) AS [index_advantage], 
-migs.last_user_seek, mid.[statement] AS [Database.Schema.Table],
+SELECT CONVERT(decimal(18,2), user_seeks * avg_total_user_cost * (avg_user_impact * 0.01)) AS [index_advantage],
+FORMAT(migs.last_user_seek, 'yyyy-MM-dd HH:mm:ss') AS [last_user_seek], 
+mid.[statement] AS [Database.Schema.Table],
+COUNT(1) OVER(PARTITION BY mid.[statement]) AS [missing_indexes_for_table],
+COUNT(1) OVER(PARTITION BY mid.[statement], equality_columns) AS [similar_missing_indexes_for_table],
 mid.equality_columns, mid.inequality_columns, mid.included_columns,
-migs.unique_compiles, migs.user_seeks, migs.avg_total_user_cost, migs.avg_user_impact
+migs.unique_compiles, migs.user_seeks, 
+CONVERT(decimal(18,2), migs.avg_total_user_cost) AS [avg_total_user_cost], migs.avg_user_impact 
 FROM sys.dm_db_missing_index_group_stats AS migs WITH (NOLOCK)
 INNER JOIN sys.dm_db_missing_index_groups AS mig WITH (NOLOCK)
 ON migs.group_handle = mig.index_group_handle
@@ -845,6 +847,9 @@ ORDER BY [VLF Count] DESC  OPTION (RECOMPILE);
 
 -- Important change to VLF creation algorithm in SQL Server 2014
 -- https://bit.ly/2Hsjbg4
+
+-- SQL Server Transaction Log Architecture and Management Guide
+-- https://bit.ly/2JjmQRZ
 
 
 

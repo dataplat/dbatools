@@ -7,17 +7,17 @@
         Stops and closes the specified trace and deletes its definition from the server.
 
         .PARAMETER SqlInstance
-        A SQL Server instance to connect to
+        The target SQL Server instance
 
         .PARAMETER SqlCredential
-        A credential to use to connect to the SQL Instance rather than using Windows Authentication
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Id
         A list of trace ids
-    
+
         .PARAMETER InputObject
         Internal parameter for piping
-    
+
         .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -32,17 +32,17 @@
        .EXAMPLE
         Remove-DbaTrace -SqlInstance sql2008
 
-        Stops all traces on sql2008
-    
+        Stops and removes all traces on sql2008
+
         .EXAMPLE
         Remove-DbaTrace -SqlInstance sql2008 -Id 1
 
-        Stops all trace with ID 1 on sql2008
-    
+        Stops and removes all trace with ID 1 on sql2008
+
         .EXAMPLE
         Get-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Remove-DbaTrace
 
-        Stops selected traces on sql2008
+        Stops and removes selected traces on sql2008
 
 #>
     [CmdletBinding()]
@@ -59,24 +59,24 @@
         if (-not $InputObject -and $SqlInstance) {
             $InputObject = Get-DbaTrace -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Id $Id
         }
-        
+
         foreach ($trace in $InputObject) {
             if (-not $trace.id -and -not $trace.Parent) {
                 Stop-Function -Message "Input is of the wrong type. Use Get-DbaTrace." -Continue
                 return
             }
-            
+
             $server = $trace.Parent
             $traceid = $trace.id
             $default = Get-DbaTrace -SqlInstance $server -Default
-            
+
             if ($default.id -eq $traceid) {
                 Stop-Function -Message "The default trace on $server cannot be stopped. Use Set-DbaSpConfigure to turn it off." -Continue
             }
-            
+
             $stopsql = "sp_trace_setstatus $traceid, 0"
             $removesql = "sp_trace_setstatus $traceid, 2"
-            
+
             try {
                 $server.Query($stopsql)
                 if (Get-DbaTrace -SqlInstance $server -Id $traceid) {

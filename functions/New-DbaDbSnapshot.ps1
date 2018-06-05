@@ -1,5 +1,5 @@
 #ValidationTags#FlowControl#
-function New-DbaDatabaseSnapshot {
+function New-DbaDbSnapshot {
     <#
     .SYNOPSIS
         Creates database snapshots
@@ -60,25 +60,25 @@ function New-DbaDatabaseSnapshot {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-         https://dbatools.io/New-DbaDatabaseSnapshot
+         https://dbatools.io/New-DbaDbSnapshot
 
     .EXAMPLE
-        New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
+        New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 
         Creates snapshot for HR and Accounting, returning a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes
 
     .EXAMPLE
-        New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Name HR_snap
+        New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -Name HR_snap
 
         Creates snapshot named "HR_snap" for HR
 
     .EXAMPLE
-        New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -NameSuffix 'fool_{0}_snap'
+        New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -NameSuffix 'fool_{0}_snap'
 
         Creates snapshot named "fool_HR_snap" for HR
 
     .EXAMPLE
-        New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting -Path F:\snapshotpath
+        New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting -Path F:\snapshotpath
 
         Creates snapshots for HR and Accounting databases, storing files under the F:\snapshotpath\ dir
 
@@ -344,6 +344,9 @@ function New-DbaDatabaseSnapshot {
                 }
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias New-DbaDatabaseSnapshot
     }
 }
 
