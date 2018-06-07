@@ -332,7 +332,7 @@
         'Get-DbaAgDatabase',
         'Get-DbaSqlModule',
         'Get-DbaRegisteredServersStore',
-        'Sync-DbaSqlLoginPermission',
+        'Sync-DbaLoginPermission',
         'Invoke-Sqlcmd2',
         'New-DbaCredential',
         'Get-DbaFile',
@@ -573,7 +573,8 @@
     'Get-DbaDatabaseSnapshot',
     'New-DbaDatabaseSnapshot',
     'Remove-DbaDatabaseSnapshot',
-    'Restore-DbaDatabaseSnapshot'
+    'Restore-DbaDatabaseSnapshot',
+    'Sync-DbaSqlLoginPermission'
     
     # List of all modules packaged with this module
     ModuleList                = @()

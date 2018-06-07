@@ -1,7 +1,7 @@
-function Sync-DbaSqlLoginPermission {
+function Sync-DbaLoginPermission {
     <#
         .SYNOPSIS
-            Copies SQL login permission from one server to another.
+            Copies SQL login permissions from one server to another.
 
         .DESCRIPTION
             Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins. If a matching login does not exist on the destination, the login will be skipped. Credential removal is not currently supported for this operation.
@@ -46,20 +46,20 @@ function Sync-DbaSqlLoginPermission {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Sync-DbaSqlLoginPermission
+            https://dbatools.io/Sync-DbaLoginPermission
 
         .EXAMPLE
-            Sync-DbaSqlLoginPermission -Source sqlserver2014a -Destination sqlcluster
+            Sync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster
 
             Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. To copy logins and their permissions, use Copy-SqlLogin.
 
         .EXAMPLE
-            Sync-DbaSqlLoginPermission -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
+            Sync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
 
             Copies all login permissions except for realcajun using SQL Authentication to connect to each server. If a login already exists on the destination, the permissions will not be migrated.
 
         .EXAMPLE
-            Sync-DbaSqlLoginPermission -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds
+            Sync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds
 
             Copies permissions ONLY for logins netnerds and realcajun.
     #>
@@ -127,22 +127,21 @@ function Sync-DbaSqlLoginPermission {
                 Update-SqlPermissions -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin
             }
         }
-
+    }
+    process {
+        
         if ($source -eq $destination) {
             Stop-Function -Message "Source and Destination SQL Servers are the same. Quitting."
             return
         }
-
+        
         Write-Message -Level Verbose -Message "Attempting to connect to SQL Servers."
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 8
         $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -MinimumVersion 8
-
+        
         $source = $sourceServer.DomainInstanceName
         $destination = $destServer.DomainInstanceName
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
-
+        
         if (!$Login) {
             $login = $sourceServer.Logins.Name
         }
@@ -151,5 +150,6 @@ function Sync-DbaSqlLoginPermission {
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-SqlLoginPermissions
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-SqlLoginPermission
     }
 }
