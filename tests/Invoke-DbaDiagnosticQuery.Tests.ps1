@@ -61,7 +61,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "verifies returns object with required properties when running with whatif" {
-            [System.Management.Automation.PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -WhatIf
+            [System.Management.Automation.PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -WhatIf *>$null
 
             $results.Count                                                             | Should -BeGreaterThan 10
             ($results.ComputerName     | Where-Object {$_ -eq $null}).Count             | Should -Be 0

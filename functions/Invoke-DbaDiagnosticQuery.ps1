@@ -21,7 +21,7 @@ function Invoke-DbaDiagnosticQuery {
     .PARAMETER Path
     Alternate path for the diagnostic scripts
 
-    .PARAMETER DatabaseName
+    .PARAMETER Database
     The database(s) to process. If unspecified, all databases will be processed
 
     .PARAMETER ExcludeDatabase
