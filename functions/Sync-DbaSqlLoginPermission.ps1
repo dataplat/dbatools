@@ -144,10 +144,10 @@ function Sync-DbaSqlLoginPermission {
         if (Test-FunctionInterrupt) { return }
 
         if (!$Login) {
-            $logins = $sourceServer.Logins.Name
+            $login = $sourceServer.Logins.Name
         }
 
-        Sync-Only -SourceServer $sourceServer -DestServer $destServer -Logins $logins -Exclude $ExcludeLogin
+        Sync-Only -SourceServer $sourceServer -DestServer $destServer -Logins $login -Exclude $ExcludeLogin
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-SqlLoginPermissions
