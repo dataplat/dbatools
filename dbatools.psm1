@@ -430,7 +430,11 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"    = "Sync-SqlLoginPermissions"
-        "Definition"   = "Sync-DbaSqlLoginPermission"
+        "Definition"   = "Sync-DbaLoginPermission"
+    },
+    @{
+        "AliasName"     = "Sync-DbaSqlLoginPermission"
+        "Definition"    = "Sync-DbaLoginPermission"
     },
     @{
         "AliasName"    = "Test-SqlConnection"
