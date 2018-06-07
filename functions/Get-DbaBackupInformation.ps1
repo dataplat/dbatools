@@ -61,6 +61,9 @@ function Get-DbaBackupInformation {
         This switch only works with the MaintenanceSolution switch. With an Ola Hallengren style backup we can be sure that the LOG folder contains only log backups and skip it.
         For all other scenarios we need to read the file headers to be sure.
 
+    .PARAMETER AzureCredential
+        The name of the SQL Server credential to be used if restoring from an Azure hosted backup
+    
     .PARAMETER Import
         When specified along with a path the command will import a previously exported BackupHistory object from an xml file.
 
@@ -131,6 +134,7 @@ function Get-DbaBackupInformation {
         [switch]$MaintenanceSolution,
         [switch]$IgnoreLogBackup,
         [string]$ExportPath,
+        [string]$AzureCredential,
         [parameter(ParameterSetName = "Import")]
         [switch]$Import,
         [switch][Alias('Anonymize')]$Anonymise,
@@ -196,6 +200,7 @@ function Get-DbaBackupInformation {
         else {
             $Files = @()
             $groupResults = @()
+            if ($Path[0] -match 'http') { $NoXpDirTree = $true }
             if ($NoXpDirTree -ne $true) {
                 foreach ($f in $path) {
                     if ([System.IO.Path]::GetExtension($f).Length -gt 1) {
@@ -272,7 +277,7 @@ function Get-DbaBackupInformation {
             }
 
             Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
-            $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files
+            $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential
 
             $groupdetails = $FileDetails | group-object -Property BackupSetGUID
 

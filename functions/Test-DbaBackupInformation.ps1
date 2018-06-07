@@ -114,7 +114,7 @@ function Test-DbaBackupInformation {
             Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
             If ($VerifyOnly -ne $true) {
                 if ($null -ne $DbCheck -and ($WithReplace -ne $true -and $Continue -ne $true)) {
-                    Write-Message -Message "Database $Database exists and WithReplace not specified, stopping" -Level Warning
+                    Stop-Function -Message "Database $Database exists and WithReplace not specified, stopping" -Target $database
                     $VerificationErrors++
                 }
 
