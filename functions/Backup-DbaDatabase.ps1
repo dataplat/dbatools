@@ -374,7 +374,7 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if (-not $IgnoreFileChecks) {
+            if (-not $IgnoreFileChecks -and -not $AzureBaseUrl) {
                 $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
                 foreach ($parentPath in $parentPaths) {
                     if (-not (Test-DbaSqlPath -SqlInstance $server -Path $parentPath)) {
