@@ -538,7 +538,7 @@ function Restore-DbaDatabase {
                     }
                 }
                 Write-Message -Level Verbose -Message "Unverified input, full scans - $($files -join ';')"
-                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup
+                $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (-not (Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {
@@ -632,9 +632,15 @@ function Restore-DbaDatabase {
             if ($StopAfterFormatBackupInformation) {
                 return
             }
-            Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
-            $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance  -WithReplace:$WithReplace -Continue:$Continue -VerifyOnly:$VerifyOnly
-
+            
+            try {
+                Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
+                $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance -WithReplace:$WithReplace -Continue:$Continue -VerifyOnly:$VerifyOnly -EnableException:$true
+            }
+            catch {
+                Stop-Function -ErrorRecord $_ -Message "Failure" -Continue
+            }
+            
             if ( Test-Bound -ParameterName TestBackupInformation) {
                 Set-Variable -Name $TestBackupInformation -Value $FilteredBackupHistory -Scope Global
             }
@@ -650,7 +656,7 @@ function Restore-DbaDatabase {
                     Write-Message -Message "$DbUnverified failed testing, AllowContinue set" -Level Verbose
                 }
                 else {
-                    Stop-Function -Message "$DbUnverified failed testing, AllowContinue not set, exiting"
+                    Stop-Function -Message "Database $DbUnverified failed testing, AllowContinue not set, exiting"
                     return
                 }
             }
