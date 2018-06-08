@@ -48,8 +48,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "works with Exclude Databases provided" {
             $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -ExcludeDatabase $database2
-            @($results | Where-Object {$_.DatabaseName -eq $Database1}).Count | Should -BeGreaterThan 1
-            @($results | Where-Object {$_.DatabaseName -eq $Database2}).Count | Should -Be 0
+            @($results | Where-Object {$_.Database -eq $Database1}).Count | Should -BeGreaterThan 1
+            @($results | Where-Object {$_.Database -eq $Database2}).Count | Should -Be 0
         }
     }
 
@@ -61,7 +61,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "verifies returns object with required properties when running with whatif" {
-            [System.Management.Automation.PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -WhatIf *>$null
+            [System.Management.Automation.PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -WhatIf
 
             $results.Count                                                             | Should -BeGreaterThan 10
             ($results.ComputerName     | Where-Object {$_ -eq $null}).Count             | Should -Be 0
@@ -71,23 +71,23 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($results.Name             | Where-Object {$_ -eq $null}).Count             | Should -Be 0
             ($results.Description      | Where-Object {$_ -eq $null}).Count             | Should -Be 0
             ($results.DatabaseSpecific | Where-Object {$_ -eq $null}).Count             | Should -Be 0
-            $results.DatabaseName.Count                                                 | Should -Be $results.Count
+            $results.Database.Count                                                     | Should -Be $results.Count
             $results.Notes.Count                                                        | Should -Be $results.Count
             $results.Result.Count                                                       | Should -Be $results.Count
         }
 
         It "exports single database specific query against single database" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -databasename $database -OutputPath $script:PesterOutputPath
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database $database -OutputPath $script:PesterOutputPath
             @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)"}).Count | Should -Be 1
         }
 
         It "exports a database specific query foreach specific database provided" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -databasename @($database, $database2) -OutputPath $script:PesterOutputPath
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database @($database, $database2) -OutputPath $script:PesterOutputPath
             @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)|($database2)"}).Count | Should -Be 2
         }
 
         It "exports database specific query when multiple specific databases are referenced" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -DatabaseSpecific -QueryName 'Database-scoped Configurations' -OutputPath $script:PesterOutputPath
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExportQueries -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database @($database, $database2) -OutputPath $script:PesterOutputPath
             @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)|($database2)"}).Count | Should -Be 2
         }
 
@@ -95,12 +95,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     context "verifying output when running database specific queries" {
         It "runs database specific queries against single database only when providing database name" {
-            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -QueryName 'Database-scoped Configurations' -databasename $database
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database $database
             @($results).Count | Should -Be 1
         }
 
         It "runs database specific queries against set of databases when provided with multiple database names" {
-            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -QueryName 'Database-scoped Configurations' -databasename @($database, $database2)
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database @($database, $database2)
             @($results).Count |  Should -Be 2
         }
     }
