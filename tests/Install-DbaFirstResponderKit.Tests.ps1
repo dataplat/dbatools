@@ -7,7 +7,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $database = "dbatoolsci_frk_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $script:instance2
-            $server.Query("CREATE DATABASE $database")
+            $server.Query("CREATE DATABASE [$database]")
         }
         AfterAll {
             $server.Query("
