@@ -1,96 +1,96 @@
 function Format-DbaBackupInformation {
     <#
-    .SYNOPSIS
-        Transforms the data in a dbatools backuphistory object for a restore
+        .SYNOPSIS
+            Transforms the data in a dbatools backuphistory object for a restore
 
-    .DESCRIPTION
-       Performs various mapping on Backup History, ready restoring
-       Options include changing restore paths, backup paths, database name and many others
+        .DESCRIPTION
+            Performs various mapping on Backup History, ready restoring
+            Options include changing restore paths, backup paths, database name and many others
 
-    .PARAMETER BackupHistory
-        A dbatools backupHistory object, normally this will have been created using Select-DbaBackupInformation
+        .PARAMETER BackupHistory
+            A dbatools backupHistory object, normally this will have been created using Select-DbaBackupInformation
 
-    .PARAMETER ReplaceDatabaseName
-        If a single value is provided, this will be replaced do all occurences a database name
-        If a Hashtable is passed in, each database name mention will be replaced as specified. If a database's name does not apper it will not be replace
-        DatabaseName will also be replaced where it  occurs in the file paths of data and log files.
-        Please note, that this won't change the Logical Names of datafiles, that has to be done with a seperate Alter DB call
+        .PARAMETER ReplaceDatabaseName
+            If a single value is provided, this will be replaced do all occurences a database name
+            If a Hashtable is passed in, each database name mention will be replaced as specified. If a database's name does not apper it will not be replace
+            DatabaseName will also be replaced where it  occurs in the file paths of data and log files.
+            Please note, that this won't change the Logical Names of datafiles, that has to be done with a seperate Alter DB call
 
-    .PARAMETER DatabaseNamePrefix
-        This string will be prefixed to all restored database's name
+        .PARAMETER DatabaseNamePrefix
+            This string will be prefixed to all restored database's name
 
-    .PARAMETER DataFileDirectory
-        This will move ALL restored files to this location during the restore
+        .PARAMETER DataFileDirectory
+            This will move ALL restored files to this location during the restore
 
-    .PARAMETER LogFileDirectory
-        This will move all log files to this location, overriding DataFileDirectory
+        .PARAMETER LogFileDirectory
+            This will move all log files to this location, overriding DataFileDirectory
 
-    .PARAMETER DestinationFileStreamDirectory
-        This move the FileStream folder and contents to the new location, overriding DataFileDirectory
+        .PARAMETER DestinationFileStreamDirectory
+            This move the FileStream folder and contents to the new location, overriding DataFileDirectory
 
-    .PARAMETER FileNamePrefix
-        This string will  be prefixed to all restored files (Data and Log)
+        .PARAMETER FileNamePrefix
+            This string will  be prefixed to all restored files (Data and Log)
 
-    .PARAMETER RebaseBackupFolder
-        Use this to rebase where your backups are stored.
+        .PARAMETER RebaseBackupFolder
+            Use this to rebase where your backups are stored.
 
-    .PARAMETER Continue
-        Indicates that this is a continuing restore
+        .PARAMETER Continue
+            Indicates that this is a continuing restore
 
-    .PARAMETER DatabaseFilePrefix
-        A string that will be prefixed to every file restored
+        .PARAMETER DatabaseFilePrefix
+            A string that will be prefixed to every file restored
 
-    .PARAMETER DatabaseFileSuffix
-        A string that will be suffixed to every file restored
+        .PARAMETER DatabaseFileSuffix
+            A string that will be suffixed to every file restored
 
-    .PARAMETER ReplaceDbNameInFile
-        If set, will replace the old databasename with the new name if it occurs in the file name
+        .PARAMETER ReplaceDbNameInFile
+            If set, will replace the old databasename with the new name if it occurs in the file name
 
-    .PARAMETER FileMapping
-        A hashtable that can be used to move specific files to a location.
-        $FileMapping = @{'DataFile1'='c:\restoredfiles\Datafile1.mdf';'DataFile3'='d:\DataFile3.mdf'}
-        And files not specified in the mapping will be restored to their original location
-        This Parameter is exclusive with DestinationDataDirectory
-        If specified, this will override any other file renaming/relocation options.
+        .PARAMETER FileMapping
+            A hashtable that can be used to move specific files to a location.
+            $FileMapping = @{'DataFile1'='c:\restoredfiles\Datafile1.mdf';'DataFile3'='d:\DataFile3.mdf'}
+            And files not specified in the mapping will be restored to their original location
+            This Parameter is exclusive with DestinationDataDirectory
+            If specified, this will override any other file renaming/relocation options.
 
-    .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 
-    .NOTES
-    Author:Stuart Moore (@napalmgram stuart-moore.com )
-    DisasterRecovery, Backup, Restore
+        .NOTES
+            Tags: DisasterRecovery, Backup, Restore
+            Author:Stuart Moore (@napalmgram stuart-moore.com )
 
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: MIT https://opensource.org/licenses/MIT
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    .LINK
-    https://dbatools.io/Format-DbaBackupInformation
+        .LINK
+            https://dbatools.io/Format-DbaBackupInformation
 
-    .EXAMPLE
-        $History | Format-DbaBackupInformation -ReplaceDatabaseName NewDb
+        .EXAMPLE
+            $History | Format-DbaBackupInformation -ReplaceDatabaseName NewDb
 
-        Changes as databasename references to NewDb, both in the database name and any restore paths. Note, this will fail if the BackupHistory object contains backups for more than 1 database
+            Changes as databasename references to NewDb, both in the database name and any restore paths. Note, this will fail if the BackupHistory object contains backups for more than 1 database
 
-    .EXAMPLE
-        $History | Format-DbaBackupInformation -ReplaceDatabaseName @{'OldB'='NewDb';'ProdHr'='DevHr'}
+        .EXAMPLE
+            $History | Format-DbaBackupInformation -ReplaceDatabaseName @{'OldB'='NewDb';'ProdHr'='DevHr'}
 
-        Will change all occurences of original database name in the backup history (names and restore paths) using the mapping in the hashtable.
-        In this example any occurance of OldDb will be replaced with NewDb and ProdHr with DevPR
+            Will change all occurences of original database name in the backup history (names and restore paths) using the mapping in the hashtable.
+            In this example any occurance of OldDb will be replaced with NewDb and ProdHr with DevPR
 
-    .EXAMPLE
-        $History | Format-DbaBackupInformation -DataFileDirectory 'D:\DataFiles\' -LogFileDirectory 'E:\LogFiles\
+        .EXAMPLE
+            $History | Format-DbaBackupInformation -DataFileDirectory 'D:\DataFiles\' -LogFileDirectory 'E:\LogFiles\
 
-        This example with change the restore path for all datafiles (everything that is not a log file) to d:\datafiles
-        And all Transaction Log files will be restored to E:\Logfiles
+            This example with change the restore path for all datafiles (everything that is not a log file) to d:\datafiles
+            And all Transaction Log files will be restored to E:\Logfiles
 
-    .EXAMPLE
-        $History | Formate-DbaBackupInformation -RebaseBackupFolder f:\backups
+        .EXAMPLE
+            $History | Formate-DbaBackupInformation -RebaseBackupFolder f:\backups
 
-        This example changes the location that SQL Server will look for the backups. This is useful if you've moved the backups to a different location
+            This example changes the location that SQL Server will look for the backups. This is useful if you've moved the backups to a different location
     #>
     [CmdletBinding()]
     param (
