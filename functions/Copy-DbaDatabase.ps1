@@ -68,7 +68,7 @@ function Copy-DbaDatabase {
             To reuse Destination folder structure, use the  -WithReplace switch.
 
         .PARAMETER IncludeSupportDbs
-            If this switch is enabled, ReportServer, ReportServerTempDb, SSISDB, and distribution databases will be copied if they exist on Source. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory.
+            If this switch is enabled, ReportServer, ReportServerTempDb, SSISDB, and distribution databases will be copied if they exist on Source. A log file named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory.
 
             Use of this switch requires -BackupRestore or -DetachAttach as well.
 
@@ -102,6 +102,7 @@ function Copy-DbaDatabase {
         .NOTES
             Tags: Migration, DisasterRecovery, Backup, Restore
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Requires: sysadmin access on SQL Servers
             Limitations: Doesn't cover what it doesn't cover (replication, certificates, etc)
 
