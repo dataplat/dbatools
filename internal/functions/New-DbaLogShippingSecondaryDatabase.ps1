@@ -1,96 +1,93 @@
 function New-DbaLogShippingSecondaryDatabase {
     <#
-.SYNOPSIS
-New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping.
+        .SYNOPSIS
+            New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping.
 
-.DESCRIPTION
-New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping.
-This is executed on the secondary server.
+        .DESCRIPTION
+            New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping.
+            This is executed on the secondary server.
 
-.PARAMETER SqlInstance
-SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        .PARAMETER SqlInstance
+            SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER BufferCount
-The total number of buffers used by the backup or restore operation.
-The default is -1.
+        .PARAMETER BufferCount
+            The total number of buffers used by the backup or restore operation.
+            The default is -1.
 
-.PARAMETER BlockSize
-The size, in bytes, that is used as the block size for the backup device.
-The default is -1.
+        .PARAMETER BlockSize
+            The size, in bytes, that is used as the block size for the backup device.
+            The default is -1.
 
-.PARAMETER DisconnectUsers
-If set to 1, users are disconnected from the secondary database when a restore operation is performed.
-Te default is 0.
+        .PARAMETER DisconnectUsers
+            If set to 1, users are disconnected from the secondary database when a restore operation is performed.
+            Te default is 0.
 
-.PARAMETER HistoryRetention
-Is the length of time in minutes in which the history is retained.
-The default is 14420.
+        .PARAMETER HistoryRetention
+            Is the length of time in minutes in which the history is retained.
+            The default is 14420.
 
-.PARAMETER MaxTransferSize
-The size, in bytes, of the maximum input or output request which is issued by SQL Server to the backup device.
+        .PARAMETER MaxTransferSize
+            The size, in bytes, of the maximum input or output request which is issued by SQL Server to the backup device.
 
-.PARAMETER PrimaryServer
-The name of the primary instance of the Microsoft SQL Server Database Engine in the log shipping configuration.
+        .PARAMETER PrimaryServer
+            The name of the primary instance of the Microsoft SQL Server Database Engine in the log shipping configuration.
 
-.PARAMETER PrimaryDatabase
-Is the name of the database on the primary server.
+        .PARAMETER PrimaryDatabase
+            Is the name of the database on the primary server.
 
-.PARAMETER RestoreAll
-If set to 1, the secondary server restores all available transaction log backups when the restore job runs.
-The default is 1.
+        .PARAMETER RestoreAll
+            If set to 1, the secondary server restores all available transaction log backups when the restore job runs.
+            The default is 1.
 
-.PARAMETER RestoreDelay
-The amount of time, in minutes, that the secondary server waits before restoring a given backup file.
-The default is 0.
+        .PARAMETER RestoreDelay
+            The amount of time, in minutes, that the secondary server waits before restoring a given backup file.
+            The default is 0.
 
-.PARAMETER RestoreMode
-The restore mode for the secondary database. The default is 0.
-0 = Restore log with NORECOVERY.
-1 = Restore log with STANDBY.
+        .PARAMETER RestoreMode
+            The restore mode for the secondary database. The default is 0.
+            0 = Restore log with NORECOVERY.
+            1 = Restore log with STANDBY.
 
-.PARAMETER RestoreThreshold
-The number of minutes allowed to elapse between restore operations before an alert is generated.
+        .PARAMETER RestoreThreshold
+            The number of minutes allowed to elapse between restore operations before an alert is generated.
 
-.PARAMETER SecondaryDatabase
-Is the name of the secondary database.
+        .PARAMETER SecondaryDatabase
+            Is the name of the secondary database.
 
-.PARAMETER ThresholdAlert
-Is the alert to be raised when the backup threshold is exceeded.
-The default is 14420.
+        .PARAMETER ThresholdAlert
+            Is the alert to be raised when the backup threshold is exceeded.
+            The default is 14420.
 
-.PARAMETER ThresholdAlertEnabled
-Specifies whether an alert is raised when backup_threshold is exceeded.
+        .PARAMETER ThresholdAlertEnabled
+            Specifies whether an alert is raised when backup_threshold is exceeded.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER Force
-The force parameter will ignore some errors in the parameters and assume defaults.
-It will also remove the any present schedules with the same name for the specific job.
+        .PARAMETER Force
+            The force parameter will ignore some errors in the parameters and assume defaults.
+            It will also remove the any present schedules with the same name for the specific job.
 
-.NOTES
-Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Log shippin, secondary database
+        .NOTES
+            Author: Sander Stad (@sqlstad, sqlstad.nl)
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
-
-.EXAMPLE
-New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR -PrimaryServer sql1 -PrimaryDatabase DB1 -RestoreDelay 0 -RestoreMode standby -DisconnectUsers -RestoreThreshold 45 -ThresholdAlertEnabled -HistoryRetention 14420
-
-#>
+        .EXAMPLE
+            New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR -PrimaryServer sql1 -PrimaryDatabase DB1 -RestoreDelay 0 -RestoreMode standby -DisconnectUsers -RestoreThreshold 45 -ThresholdAlertEnabled -HistoryRetention 14420
+    #>
 
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
