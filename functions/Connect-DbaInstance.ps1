@@ -122,7 +122,7 @@ function Connect-DbaInstance {
         Instead of returning a rich SMO server object, this command will only return a SqlConnection object when setting this switch.
 
     .NOTES
-        dbatools PowerShell module (https://dbatools.io)
+        Tags: Connect, Connection
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: MIT https://opensource.org/licenses/MIT
