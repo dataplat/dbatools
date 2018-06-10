@@ -122,7 +122,7 @@ function Copy-DbaResourceGovernor {
                     }
                     else {
                         $fullyQualifiedFunctionName = $sourceClassifierFunction.Schema + "." + $sourceClassifierFunction.Name
-                        
+
                         if (!$destClassifierFunction) {
                             $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
                             $destFunction = $destServer.Databases["master"].UserDefinedFunctions[$sourceClassifierFunction.Name]
@@ -150,7 +150,7 @@ function Copy-DbaResourceGovernor {
                                 $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             }
                             else {
-                                
+
                                 $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL);"
                                 Write-Message -Level Debug -Message $sql
                                 Write-Message -Level Verbose -Message "Disabling the Resource Governor."
@@ -229,7 +229,7 @@ function Copy-DbaResourceGovernor {
                     if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $poolName")) {
                         Write-Message -Level Verbose -Message "Pool '$poolName' exists on $destination."
                         Write-Message -Level Verbose -Message "Force specified. Dropping $poolName."
-                        
+
                         try {
                             $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
                             $destPool = $destServer.ResourceGovernor.ResourcePools[$poolName]
@@ -313,8 +313,8 @@ function Copy-DbaResourceGovernor {
                 } catch {
                     $altermsg = $_.Exception
                 }
-                
-                
+
+
                 $copyResourceGovReconfig = [pscustomobject]@{
                     SourceServer       = $sourceServer.Name
                     DestinationServer  = $destServer.Name
