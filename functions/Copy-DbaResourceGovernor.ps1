@@ -122,10 +122,10 @@ function Copy-DbaResourceGovernor {
                     }
                     else {
                         $fullyQualifiedFunctionName = $sourceClassifierFunction.Schema + "." + $sourceClassifierFunction.Name
-
+                        
                         if (!$destClassifierFunction) {
+                            $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
                             $destFunction = $destServer.Databases["master"].UserDefinedFunctions[$sourceClassifierFunction.Name]
-
                             if ($destFunction) {
                                 Write-Message -Level Verbose -Message "Dropping the function with the source classifier function name."
                                 $destFunction.Drop()
@@ -150,6 +150,7 @@ function Copy-DbaResourceGovernor {
                                 $copyResourceGovClassifierFunc | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             }
                             else {
+                                
                                 $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL);"
                                 Write-Message -Level Debug -Message $sql
                                 Write-Message -Level Verbose -Message "Disabling the Resource Governor."
@@ -161,6 +162,8 @@ function Copy-DbaResourceGovernor {
                                 $destServer.Query($sql)
 
                                 Write-Message -Level Verbose -Message "Dropping the destination classifier function."
+                                $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+                                $destFunction = $destServer.Databases["master"].UserDefinedFunctions[$sourceClassifierFunction.Name]
                                 $destClassifierFunction.Drop()
 
                                 Write-Message -Level Verbose -Message "Re-creating the Resource Governor classifier function."
@@ -226,8 +229,9 @@ function Copy-DbaResourceGovernor {
                     if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $poolName")) {
                         Write-Message -Level Verbose -Message "Pool '$poolName' exists on $destination."
                         Write-Message -Level Verbose -Message "Force specified. Dropping $poolName."
-
+                        
                         try {
+                            $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
                             $destPool = $destServer.ResourceGovernor.ResourcePools[$poolName]
                             $workloadGroups = $destPool.WorkloadGroups
                             foreach ($workloadGroup in $workloadGroups) {
@@ -241,7 +245,7 @@ function Copy-DbaResourceGovernor {
                             $copyResourceGovPool.Notes = $_.Exception
                             $copyResourceGovPool | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-                            Stop-Function -Message "Unable to drop: $_  Moving on." -Target $destPool -ErrorRecord $_ -Continue
+                            Stop-Function -Message "Unable to drop: $_ Moving on." -Target $destPool -ErrorRecord $_ -Continue
                         }
                     }
                 }
@@ -297,23 +301,27 @@ function Copy-DbaResourceGovernor {
             else {
 
                 Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
-
-                if (!$sourceServer.ResourceGovernor.Enabled) {
-                    $sql = "ALTER RESOURCE GOVERNOR DISABLE"
-                    $destServer.Query($sql)
+                try {
+                    if (!$sourceServer.ResourceGovernor.Enabled) {
+                        $sql = "ALTER RESOURCE GOVERNOR DISABLE"
+                        $destServer.Query($sql)
+                    }
+                    else {
+                        $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
+                        $destServer.Query($sql)
+                    }
+                } catch {
+                    $altermsg = $_.Exception
                 }
-                else {
-                    $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
-                    $destServer.Query($sql)
-                }
-
+                
+                
                 $copyResourceGovReconfig = [pscustomobject]@{
                     SourceServer       = $sourceServer.Name
                     DestinationServer  = $destServer.Name
                     Type               = "Reconfigure Resource Governor"
                     Name               = "Reconfigure Resource Governor"
                     Status             = "Successful"
-                    Notes              = $null
+                    Notes              = $altermsg
                     DateTime           = [DbaDateTime](Get-Date)
                 }
                 $copyResourceGovReconfig | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
