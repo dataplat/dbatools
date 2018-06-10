@@ -45,7 +45,7 @@ function Remove-DbaOrphanUser {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Orphan, Databases
+            Tags: Orphan, Database, Security, Login
             Author: Claudio Silva (@ClaudioESSilva)
             Editor: Simone Bizzotto (@niphlod)
             Website: https://dbatools.io

@@ -34,14 +34,20 @@ function Get-DbaDependency {
         .PARAMETER IncludeScript
             Setting this switch will cause the function to also retrieve the creation script of the dependency.
 
+        .NOTES
+            Tags: Database, Dependent, Dependency, Object
+            dbatools PowerShell module (https://dbatools.io)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: MIT https://opensource.org/licenses/MIT
+
+        .LINK
+            https://dbatools.io/Get-DbaDependency
+
         .EXAMPLE
             $table = (Get-DbaDatabase -SqlInstance sql2012 -Database Northwind).tables | Where Name -eq Customers
             $table | Get-DbaDependency
 
             Returns everything that depends on the "Customers" table
-
-        .LINK
-            https://dbatools.io/Get-DbaDependency
     #>
     [CmdletBinding()]
     Param (

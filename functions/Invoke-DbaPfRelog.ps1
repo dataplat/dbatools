@@ -71,6 +71,7 @@
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Performance, DataCollector, PerfCounter, Relog
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -137,7 +138,6 @@
             Get-DbaPfDataCollector -Collector DataCollector01 | Invoke-DbaPfRelog -AllowClobber -AllTime
 
             Relogs all the log files from the DataCollector01 on the local computer and allows overwrite.
-
     #>
     [CmdletBinding()]
     param (
@@ -244,12 +244,12 @@
     # Gotta collect all the paths first then process them otherwise there may be duplicates
     end {
         $allpaths = $allpaths | Where-Object { $_ -match '.blg' } | Select-Object -Unique
-        
+
         if (-not $allpaths) {
             Stop-Function -Message "Could not find matching .blg files" -Target $file -Continue
             return
         }
-        
+
         $scriptblock = {
             if ($args) {
                 $file = $args

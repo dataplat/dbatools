@@ -36,7 +36,7 @@ function Get-DbaRestoreHistory {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: DisasterRecovery, Backup, Restore, Databases
+            Tags: DisasterRecovery, Backup, Restore
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

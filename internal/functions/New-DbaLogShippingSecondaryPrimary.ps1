@@ -1,93 +1,88 @@
 function New-DbaLogShippingSecondaryPrimary {
     <#
-    .SYNOPSIS
-    New-DbaLogShippingPrimarySecondary sets up the primary information for the primary database.
+        .SYNOPSIS
+            New-DbaLogShippingPrimarySecondary sets up the primary information for the primary database.
 
-    .DESCRIPTION
-    New-DbaLogShippingPrimarySecondary sets up the primary information, adds local and remote monitor links,
-    and creates copy and restore jobs for the specified primary database.
-    This is executed on the secondary server.
+        .DESCRIPTION
+            New-DbaLogShippingPrimarySecondary sets up the primary information, adds local and remote monitor links,
+            and creates copy and restore jobs for the specified primary database.
+            This is executed on the secondary server.
 
-    .PARAMETER SqlInstance
-    SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        .PARAMETER SqlInstance
+            SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-    .PARAMETER SqlCredential
-    Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER BackupSourceDirectory
-    The directory where transaction log backup files from the primary server are stored.
+        .PARAMETER BackupSourceDirectory
+            The directory where transaction log backup files from the primary server are stored.
 
-    .PARAMETER BackupDestinationDirectory
-    The directory on the secondary server where backup files are copied to.
+        .PARAMETER BackupDestinationDirectory
+            The directory on the secondary server where backup files are copied to.
 
-    .PARAMETER CopyJob
-    The name to use for the SQL Server Agent job being created to copy transaction log backups to the secondary server.
+        .PARAMETER CopyJob
+            The name to use for the SQL Server Agent job being created to copy transaction log backups to the secondary server.
 
-    .PARAMETER CopyJobID
-    The UID associated with the copy job on the secondary server.
+        .PARAMETER CopyJobID
+            The UID associated with the copy job on the secondary server.
 
-    .PARAMETER FileRetentionPeriod
-    The length of time, in minutes, that a backup file is retained on the secondary server in the path specified by the BackupDestinationDirectory parameter before being deleted.
-    The default is 14420.
+        .PARAMETER FileRetentionPeriod
+            The length of time, in minutes, that a backup file is retained on the secondary server in the path specified by the BackupDestinationDirectory parameter before being deleted.
+            The default is 14420.
 
-    .PARAMETER MonitorServer
-    Is the name of the monitor server. The default is the secondary server.
+        .PARAMETER MonitorServer
+            Is the name of the monitor server. The default is the secondary server.
 
-    .PARAMETER MonitorServerLogin
-    Is the username of the account used to access the monitor server.
+        .PARAMETER MonitorServerLogin
+            Is the username of the account used to access the monitor server.
 
-    .PARAMETER MonitorServerPassword
-    Is the password of the account used to access the monitor server.
+        .PARAMETER MonitorServerPassword
+            Is the password of the account used to access the monitor server.
 
-    .PARAMETER MonitorServerSecurityMode
-    The security mode used to connect to the monitor server. Allowed values are 0, "sqlserver", 1, "windows"
-    The default is 1 or Windows.
+        .PARAMETER MonitorServerSecurityMode
+            The security mode used to connect to the monitor server. Allowed values are 0, "sqlserver", 1, "windows"
+            The default is 1 or Windows.
 
-    .PARAMETER PrimaryServer
-    The name of the primary instance of the Microsoft SQL Server Database Engine in the log shipping configuration.
+        .PARAMETER PrimaryServer
+            The name of the primary instance of the Microsoft SQL Server Database Engine in the log shipping configuration.
 
-    .PARAMETER PrimaryDatabase
-    Is the name of the database on the primary server.
+        .PARAMETER PrimaryDatabase
+            Is the name of the database on the primary server.
 
-    .PARAMETER RestoreJob
-    Is the name of the SQL Server Agent job on the secondary server that restores the backups to the secondary database.
+        .PARAMETER RestoreJob
+            Is the name of the SQL Server Agent job on the secondary server that restores the backups to the secondary database.
 
-    .PARAMETER RestoreJobID
-    The UID associated with the restore job on the secondary server.
+        .PARAMETER RestoreJobID
+            The UID associated with the restore job on the secondary server.
 
-    .PARAMETER WhatIf
-    Shows what would happen if the command were to run. No actions are actually performed.
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
 
-    .PARAMETER Confirm
-    Prompts you for confirmation before executing any changing operations within the command.
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
-    .PARAMETER EnableException
+        .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .PARAMETER Force
-    The force parameter will ignore some errors in the parameters and assume defaults.
-    It will also remove the any present schedules with the same name for the specific job.
+        .PARAMETER Force
+            The force parameter will ignore some errors in the parameters and assume defaults.
+            It will also remove the any present schedules with the same name for the specific job.
 
-    .NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
-    Tags: Log shippin, primary database, secondary database
+        .NOTES
+            Author: Sander Stad (@sqlstad, sqlstad.nl)
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: MIT https://opensource.org/licenses/MIT
+        .LINK
+            https://dbatools.io/New-DbaLogShippingPrimarySecondary
 
-    .LINK
-    https://dbatools.io/New-DbaLogShippingPrimarySecondary
-
-    .EXAMPLE
-    New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\sql1\logshipping\DB1" -BackupDestinationDirectory D:\Data\logshippingdestination\DB1_DR -CopyJob LSCopy_sql2_DB1_DR -FileRetentionPeriod 4320 -MonitorServer sql2 -MonitorServerSecurityMode 'Windows' -PrimaryServer sql1 -PrimaryDatabase DB1 -RestoreJob LSRestore_sql2_DB1_DR
-
-#>
-
+        .EXAMPLE
+            New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\sql1\logshipping\DB1" -BackupDestinationDirectory D:\Data\logshippingdestination\DB1_DR -CopyJob LSCopy_sql2_DB1_DR -FileRetentionPeriod 4320 -MonitorServer sql2 -MonitorServerSecurityMode 'Windows' -PrimaryServer sql1 -PrimaryDatabase DB1 -RestoreJob LSRestore_sql2_DB1_DR
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-
     param (
         [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
