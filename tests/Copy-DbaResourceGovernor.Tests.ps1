@@ -1,8 +1,6 @@
 ﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-$script:instance2 = "sql2014"
-$script:instance3 = "sql2017"
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $sql = "CREATE RESOURCE POOL dbatoolsci_prod
