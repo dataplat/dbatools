@@ -1,99 +1,103 @@
 function Get-DbaSsisEnvironmentVariable {
     <#
-.SYNOPSIS
-This command gets specified SSIS Environment and all its variables
+        .SYNOPSIS
+            This command gets specified SSIS Environment and all its variables
 
-.DESCRIPTION
-This command gets all variables from specified environment from SSIS Catalog. All sensitive values are decrypted.
-The function communicates directly with SSISDB database, "SQL Server Integration Services" service isn't queried there.
-Each parameter (besides SqlInstance and SqlCredential) acts as the filter to only include or exclude particular element
+        .DESCRIPTION
+            This command gets all variables from specified environment from SSIS Catalog. All sensitive values are decrypted.
+            The function communicates directly with SSISDB database, "SQL Server Integration Services" service isn't queried there.
+            Each parameter (besides SqlInstance and SqlCredential) acts as the filter to only include or exclude particular element
 
-.PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to.
-This can be a collection and receive pipeline input to allow the function
-to be executed against multiple SQL Server instances.
+        .PARAMETER SqlInstance
+            SQL Server name or SMO object representing the SQL Server to connect to.
+            This can be a collection and receive pipeline input to allow the function
+            to be executed against multiple SQL Server instances.
 
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER Environment
-The SSIS Environments names that we want to get variables from
+        .PARAMETER Environment
+            The SSIS Environments names that we want to get variables from
 
-.PARAMETER EnvironmentExclude
-The SSIS Environments to exclude. Acts as a filter for environments, best used without 'Environment' parameter
-to get variables for all environments but excluded ones
+        .PARAMETER EnvironmentExclude
+            The SSIS Environments to exclude. Acts as a filter for environments, best used without 'Environment' parameter
+            to get variables for all environments but excluded ones
 
-.PARAMETER Folder
-The Folders names that contain the environments
+        .PARAMETER Folder
+            The Folders names that contain the environments
 
-.PARAMETER FolderExclude
-The Folders names to exclude. Acts as a filter for folders containing environments, best user without 'Folder' parameter
-to get variables for all folders but excluded ones
+        .PARAMETER FolderExclude
+            The Folders names to exclude. Acts as a filter for folders containing environments, best user without 'Folder' parameter
+            to get variables for all folders but excluded ones
 
-.PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.EXAMPLE
-Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL
+        .NOTES
+            Tags: SSIS, SSISDB, Variable
+            Author: Bartosz Ratajczyk ( @b_ratajczyk )
 
-Gets variables of 'DEV' environment located in 'DWH_ETL' folder on 'localhost' Server
+            dbatools PowerShell module (https://dbatools.io)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE
-Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL, DEV2, QA
+        .LINK
+            https://dbatools.io/Get-DbaSsisEnvironmentVariable
 
-Gets variables of 'DEV' environment(s) located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
+        .EXAMPLE
+            Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL
 
-.EXAMPLE
-Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -FolderExclude DWH_ETL, DEV2, QA
+            Gets variables of 'DEV' environment located in 'DWH_ETL' folder on 'localhost' Server
 
-Gets variables of 'DEV' environments located in folders other than 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
+        .EXAMPLE
+            Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL, DEV2, QA
 
-.EXAMPLE
-Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV, PROD -Folder DWH_ETL, DEV2, QA
+            Gets variables of 'DEV' environment(s) located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
-Gets variables of 'DEV' and 'PROD' environment(s) located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
+        .EXAMPLE
+            Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -FolderExclude DWH_ETL, DEV2, QA
 
-.EXAMPLE
-Get-DbaSsisEnvironmentVariable -SqlInstance localhost -EnvironmentExclude DEV, PROD -Folder DWH_ETL, DEV2, QA
+            Gets variables of 'DEV' environments located in folders other than 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
-Gets variables of environments other than 'DEV' and 'PROD' located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
+        .EXAMPLE
+            Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV, PROD -Folder DWH_ETL, DEV2, QA
 
-.EXAMPLE
-Get-DbaSsisEnvironmentVariable -SqlInstance localhost -EnvironmentExclude DEV, PROD -FolderExclude DWH_ETL, DEV2, QA
+            Gets variables of 'DEV' and 'PROD' environment(s) located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
-Gets variables of environments other than 'DEV' and 'PROD' located in folders other than 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
+        .EXAMPLE
+            Get-DbaSsisEnvironmentVariable -SqlInstance localhost -EnvironmentExclude DEV, PROD -Folder DWH_ETL, DEV2, QA
 
-.EXAMPLE
-'localhost' | Get-DbaSsisEnvironmentVariable -EnvironmentExclude DEV, PROD
+            Gets variables of environments other than 'DEV' and 'PROD' located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
-Gets all SSIS environments except 'DEV' and 'PROD' from 'localhost' server. The server name comes from pipeline
+        .EXAMPLE
+            Get-DbaSsisEnvironmentVariable -SqlInstance localhost -EnvironmentExclude DEV, PROD -FolderExclude DWH_ETL, DEV2, QA
 
-.EXAMPLE
-'SRV1', 'SRV3' | Get-DbaSsisEnvironmentVariable
+            Gets variables of environments other than 'DEV' and 'PROD' located in folders other than 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
-Gets all SSIS environments from 'SRV1' and 'SRV3' servers. The server's names come from pipeline
+        .EXAMPLE
+            'localhost' | Get-DbaSsisEnvironmentVariable -EnvironmentExclude DEV, PROD
 
-.EXAMPLE
-'SRV1', 'SRV2' | Get-DbaSsisEnvironmentVariable DEV | Out-GridView
+            Gets all SSIS environments except 'DEV' and 'PROD' from 'localhost' server. The server name comes from pipeline
 
-Gets all variables from 'DEV' Environment(s) on servers 'SRV1' and 'SRV2' and outputs it as the GridView.
-The server names come from the pipeline.
+        .EXAMPLE
+            'SRV1', 'SRV3' | Get-DbaSsisEnvironmentVariable
 
-.EXAMPLE
-'localhost' | Get-DbaSsisEnvironmentVariable -EnvironmentExclude DEV, PROD | Select-Object -Property Name, Value | Where-Object {$_.Name -match '^a'} | Out-GridView
+            Gets all SSIS environments from 'SRV1' and 'SRV3' servers. The server's names come from pipeline
 
-Gets all variables from Environments other than 'DEV' and 'PROD' on 'localhost' server,
-selects Name and Value properties for variables that names start with letter 'a' and outputs it as the GridView
+        .EXAMPLE
+            'SRV1', 'SRV2' | Get-DbaSsisEnvironmentVariable DEV | Out-GridView
 
-.NOTES
-Tags:
-Author: Bartosz Ratajczyk ( @b_ratajczyk )
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-License: MIT https://opensource.org/licenses/MIT
-#>
+            Gets all variables from 'DEV' Environment(s) on servers 'SRV1' and 'SRV2' and outputs it as the GridView.
+            The server names come from the pipeline.
+
+        .EXAMPLE
+            'localhost' | Get-DbaSsisEnvironmentVariable -EnvironmentExclude DEV, PROD | Select-Object -Property Name, Value | Where-Object {$_.Name -match '^a'} | Out-GridView
+
+            Gets all variables from Environments other than 'DEV' and 'PROD' on 'localhost' server,
+            selects Name and Value properties for variables that names start with letter 'a' and outputs it as the GridView
+    #>
     [CmdletBinding()]
     Param (
         [parameter(Mandatory, ValueFromPipeline)]

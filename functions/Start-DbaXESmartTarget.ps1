@@ -40,7 +40,7 @@
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: ExtendedEvent, XE, Xevent
+            Tags: ExtendedEvent, XE, XEvent
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -151,7 +151,7 @@
                     }
                     catch {
                         $message = $_.Exception.InnerException.InnerException | Out-String
-                        
+
                         if ($message) {
                             Stop-Function -Message $message -Target "XESmartTarget" -Continue
                         }
@@ -207,7 +207,7 @@
                     }
                     $params["Responder"] += $newResponder
                 }
-                
+
                 Start-DbaXESmartTarget @params -NotAsJob -FailOnProcessingError
             } | Select-Object -Property ID, Name, State
         }

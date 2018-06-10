@@ -160,7 +160,7 @@ function Start-DbaMigration {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Migration, DisasterRecovery, Backup, Restore
+            Tags: Migration
             Author: Chrissy LeMaire
             Limitations:     Doesn't cover what it doesn't cover (certificates, etc)
                             SQL Server 2000 login migrations have some limitations (server perms aren't migrated)

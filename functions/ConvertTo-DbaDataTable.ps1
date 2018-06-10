@@ -31,6 +31,18 @@ function ConvertTo-DbaDataTable {
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+        .NOTES
+            Tags: DataTable, Table, Data
+            Website: https://dbatools.io/
+            Copyright: (C) 2016 Chrissy LeMaire
+            License: MIT https://opensource.org/licenses/MIT
+
+        .LINK
+            https://dbatools.io/ConvertTo-DbaDataTable
+
+        .OUTPUTS
+            System.Object[]
+
         .EXAMPLE
             Get-Service | ConvertTo-DbaDataTable
 
@@ -50,19 +62,6 @@ function ConvertTo-DbaDataTable {
             Get-Process | ConvertTo-DbaDataTable -TimeSpanType TotalSeconds
 
             Creates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.
-
-        .OUTPUTS
-            System.Object[]
-
-        .NOTES
-            Tags:
-            Website: https://dbatools.io/
-            dbatools PowerShell module (https://dbatools.io)
-            Copyright: (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/ConvertTo-DbaDataTable
     #>
     [CmdletBinding()]
     [OutputType([System.Object[]])]

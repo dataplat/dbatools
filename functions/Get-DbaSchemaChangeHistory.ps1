@@ -32,7 +32,7 @@ function Get-DbaSchemaChangeHistory {
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-    Tags: Migration, Backup, Databases
+    Tags: Migration, Backup, Database
     Author: Stuart Moore (@napalmgram - http://stuart-moore.com)
 
     Website: https://dbatools.io
