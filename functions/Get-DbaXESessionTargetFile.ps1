@@ -5,7 +5,7 @@
 
         .DESCRIPTION
             Get a file system object from the Extended Events Session Target Files.
-    
+
             Note: this performs a Get-ChildItem on remote servers if the specified target SQL Server is remote.
 
         .PARAMETER SqlInstance
@@ -29,7 +29,7 @@
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: ExtendedEvent, XE, Xevent
+            Tags: ExtendedEvent, XE, XEvent
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -59,14 +59,14 @@
         [Microsoft.SqlServer.Management.XEvent.Target[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaXESessionTarget -SqlInstance $instance -SqlCredential $SqlCredential -Session $Session -Target $Target | Where-Object File -ne $null
         }
-        
+
         foreach ($object in $InputObject) {
             $computer = [dbainstance]$object.ComputerName
             try {

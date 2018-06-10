@@ -33,10 +33,11 @@ function Test-DbaValidLogin {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Login, Security
             Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
             Author: Chrissy LeMaire (@cl), netnerds.net
 
-            dWebsite: https://dbatools.io
+            Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
@@ -114,7 +115,8 @@ function Test-DbaValidLogin {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
                 Write-Message -Message "Connected to: $instance." -Level Verbose
-            } catch {
+            }
+            catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
@@ -167,7 +169,8 @@ function Test-DbaValidLogin {
                         Write-Message -Message "SID mismatch detected for $adLogin (MSSQL: $loginSid, AD: $foundSid)." -Level Debug
                         $exists = $false
                     }
-                } catch {
+                }
+                catch {
                     Write-Message -Message "AD Searcher Error for $username." -Level Warning
                 }
 
@@ -246,7 +249,8 @@ function Test-DbaValidLogin {
                         Write-Message -Message "SID mismatch detected for $adLogin (MSSQL: $loginSid, AD: $foundSid)." -Level Debug
                         $exists = $false
                     }
-                } catch {
+                }
+                catch {
                     Write-Message -Message "AD Searcher Error for $groupName on $server" -Level Warning
                 }
                 $rtn = [PSCustomObject]@{

@@ -22,7 +22,7 @@ function Export-DbaSpConfigure {
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
         .NOTES
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Tags: SpConfig, Configure, Configuration
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT

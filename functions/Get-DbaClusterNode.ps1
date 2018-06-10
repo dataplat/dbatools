@@ -26,9 +26,9 @@ function Get-DbaClusterNode {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags:
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
+            Tags: Cluster, WSFC, FCI
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -69,30 +69,30 @@ function Get-DbaClusterNode {
 
         # If the -ActiveNode switch is selected only the primary node is returned.
         if ($ActiveNode) {
-            try{
-                    $sql = "SELECT * FROM sys.dm_os_cluster_nodes where is_current_owner = 1"
-                    $datatable = $server.query($sql)
+            try {
+                $sql = "SELECT * FROM sys.dm_os_cluster_nodes where is_current_owner = 1"
+                $datatable = $server.query($sql)
 
-                        [PSCustomObject]@{
-                            ComputerName      = $datatable.nodename
-                            InstanceName      = $server.ServiceName
-                            SqlInstance       = $server.DomainInstanceName
-                            Status            = $datatable.Status
-                            StatusDescription = $datatable.StatusDescription
-                            CurrentOwner      = $datatable.is_current_owner
-                        } | Select-DefaultView -Property ComputerName
+                [PSCustomObject]@{
+                    ComputerName      = $datatable.nodename
+                    InstanceName      = $server.ServiceName
+                    SqlInstance       = $server.DomainInstanceName
+                    Status            = $datatable.Status
+                    StatusDescription = $datatable.StatusDescription
+                    CurrentOwner      = $datatable.is_current_owner
+                } | Select-DefaultView -Property ComputerName
             }
-            catch{
+            catch {
                 Stop-Function -Message "Unable to query sys.dm_os_cluster_nodes on $server." -ErrorRecord $_ -Target $SqlInstance -Continue
             }
         }
         #Default Execution of this function
         else {
-            try{
+            try {
                 $sql = "SELECT * FROM sys.dm_os_cluster_nodes"
                 $datatable = $server.query($sql)
 
-                foreach($data in $datatable){
+                foreach ($data in $datatable) {
                     [PSCustomObject]@{
                         ComputerName      = $data.nodename
                         InstanceName      = $server.ServiceName
@@ -103,7 +103,7 @@ function Get-DbaClusterNode {
                     } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, StatusDescription, CurrentOwner
                 }
             }
-            catch{
+            catch {
                 Stop-Function -Message "Unable to query sys.dm_os_cluster_nodes on $server." -ErrorRecord $_ -Target $SqlInstance -Continue
             }
         }

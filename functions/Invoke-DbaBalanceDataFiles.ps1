@@ -1,23 +1,22 @@
 function Invoke-DbaBalanceDataFiles {
     <#
+        .SYNOPSIS
+            Re-balance data between data files
 
-    .SYNOPSIS
-        Re-balance data between data files
+        .DESCRIPTION
+            When you have a large database with a single data file and add another file, SQL Server will only use the new file until it's about the same size.
+            You may want to balance the data between all the data files.
 
-    .DESCRIPTION
-        When you have a large database with a single data file and add another file, SQL Server will only use the new file until it's about the same size.
-        You may want to balance the data between all the data files.
+            The function will check the server version and edition to see if the it allows for online index rebuilds.
+            If the server does support it, it will try to rebuild the index online.
+            If the server doesn't support it, it will rebuild the index offline. Be carefull though, this can cause downtime
 
-        The function will check the server version and edition to see if the it allows for online index rebuilds.
-        If the server does support it, it will try to rebuild the index online.
-        If the server doesn't support it, it will rebuild the index offline. Be carefull though, this can cause downtime
+            The tables must have a clustered index to be able to balance out the data.
+            The function does NOT yet support heaps.
 
-        The tables must have a clustered index to be able to balance out the data.
-        The function does NOT yet support heaps.
-
-        The function will also check if the file groups are subject to balance out.
-        A file group whould have at least have 2 data files and should be writable.
-        If a table is within such a file group it will be subject for processing. If not the table will be skipped.
+            The function will also check if the file groups are subject to balance out.
+            A file group whould have at least have 2 data files and should be writable.
+            If a table is within such a file group it will be subject for processing. If not the table will be skipped.
 
         .PARAMETER SqlInstance
             The target SQL Server instance or instances.
@@ -25,65 +24,64 @@ function Invoke-DbaBalanceDataFiles {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER Database
-        The database(s) to process.
+        .PARAMETER Database
+            The database(s) to process.
 
-    .PARAMETER Table
-        The tables(s) of the database to process. If unspecified, all tables will be processed.
+        .PARAMETER Table
+            The tables(s) of the database to process. If unspecified, all tables will be processed.
 
-    .PARAMETER RebuildOffline
-        Will set all the indexes to rebuild offline.
-        This option is also needed when the server version is below 2005.
+        .PARAMETER RebuildOffline
+            Will set all the indexes to rebuild offline.
+            This option is also needed when the server version is below 2005.
 
-    .PARAMETER WhatIf
-        Shows what would happen if the command were to run
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run
 
-    .PARAMETER Confirm
-        Prompts for confirmation of every step. For example:
+        .PARAMETER Confirm
+            Prompts for confirmation of every step. For example:
 
-        The server does not support online rebuilds of indexes.
-        Do you want to rebuild the indexes offline?
-        [Y] Yes  [N] No   [?] Help (default is "Y"):
+            The server does not support online rebuilds of indexes.
+            Do you want to rebuild the indexes offline?
+            [Y] Yes  [N] No   [?] Help (default is "Y"):
 
-    .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .PARAMETER Force
-        This will disable the check for enough disk space for the action to be successful.
-        Use this with caution!!
+        .PARAMETER Force
+            This will disable the check for enough disk space for the action to be successful.
+            Use this with caution!!
 
-    .NOTES
-        Original Author: Sander Stad (@sqlstad, sqlstad.nl)
-        Tags: Database, File management, data management
+        .NOTES
+            Tags: Database, FileManagement, File, Space
+            Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MIT
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    .EXAMPLE
-    Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1
+        .EXAMPLE
+            Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1
 
-    This command will distribute the data in database db1 on instance sql1
+            This command will distribute the data in database db1 on instance sql1
 
-    .EXAMPLE
-    Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1 | Select-Object -ExpandProperty DataFilesEnd
+        .EXAMPLE
+            Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1 | Select-Object -ExpandProperty DataFilesEnd
 
-    This command will distribute the data in database db1 on instance sql1
+            This command will distribute the data in database db1 on instance sql1
 
-    .EXAMPLE
-    Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1 -Table table1,table2,table5
+        .EXAMPLE
+            Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1 -Table table1,table2,table5
 
-    This command will distribute the data for only the tables table1,table2 and table5
+            This command will distribute the data for only the tables table1,table2 and table5
 
-    .EXAMPLE
-    Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1 -RebuildOffline
+        .EXAMPLE
+            Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1 -RebuildOffline
 
-    This command will consider the fact that there might be a SQL Server edition that does not support online rebuilds of indexes.
-    By supplying this parameter you give permission to do the rebuilds offline if the edition does not support it.
-
-#>
+            This command will consider the fact that there might be a SQL Server edition that does not support online rebuilds of indexes.
+            By supplying this parameter you give permission to do the rebuilds offline if the edition does not support it.
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(ParameterSetName = "Pipe", Mandatory = $true)]

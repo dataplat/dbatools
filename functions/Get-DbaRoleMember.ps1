@@ -30,7 +30,7 @@ Excludes all members of fixed roles.
 Credential object used to connect to the SQL Server as a different user.
 
 .NOTES
-Tags: Roles, Databases
+Tags: Role, Database, Security, Login
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
 Website: https://dbatools.io
