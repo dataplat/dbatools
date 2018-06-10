@@ -22,6 +22,7 @@ function Show-DbaDatabaseList {
             Specify a database to have selected when the window appears.
 
         .NOTES
+            Tags: Database
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -38,14 +39,13 @@ function Show-DbaDatabaseList {
             Show-DbaDatabaseList -Source sqlserver2014a -SqlCredential $cred
 
             Shows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected database.
-
     #>
     [CmdletBinding()]
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [object]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [string]$Title = "Select Database",
         [string]$Header = "Select the database:",
         [string]$DefaultDb
