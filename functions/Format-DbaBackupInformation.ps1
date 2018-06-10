@@ -11,10 +11,10 @@ function Format-DbaBackupInformation {
             A dbatools backupHistory object, normally this will have been created using Select-DbaBackupInformation
 
         .PARAMETER ReplaceDatabaseName
-            If a single value is provided, this will be replaced do all occurences a database name
-            If a Hashtable is passed in, each database name mention will be replaced as specified. If a database's name does not apper it will not be replace
+            If a single value is provided, this will be replaced do all occurrences a database name
+            If a Hashtable is passed in, each database name mention will be replaced as specified. If a database's name does not appear it will not be replace
             DatabaseName will also be replaced where it  occurs in the file paths of data and log files.
-            Please note, that this won't change the Logical Names of datafiles, that has to be done with a seperate Alter DB call
+            Please note, that this won't change the Logical Names of datafiles, that has to be done with a separate Alter DB call
 
         .PARAMETER DatabaseNamePrefix
             This string will be prefixed to all restored database's name
@@ -57,7 +57,6 @@ function Format-DbaBackupInformation {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
 
         .NOTES
             Tags: DisasterRecovery, Backup, Restore
