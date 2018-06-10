@@ -1,76 +1,76 @@
 function Get-DbaSqlService {
     <#
-    .SYNOPSIS
-    Gets the SQL Server related services on a computer.
+        .SYNOPSIS
+            Gets the SQL Server related services on a computer.
 
-    .DESCRIPTION
-    Gets the SQL Server related services on one or more computers.
+        .DESCRIPTION
+            Gets the SQL Server related services on one or more computers.
 
-    Requires Local Admin rights on destination computer(s).
+        .PARAMETER ComputerName
+            The SQL Server (or server in general) that you're connecting to. This command handles named instances.
 
-    .PARAMETER ComputerName
-    The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+        .PARAMETER InstanceName
+            Only returns services that belong to the specific instances.
 
-    .PARAMETER InstanceName
-    Only returns services that belong to the specific instances.
+        .PARAMETER Credential
+            Credential object used to connect to the computer as a different user.
 
-    .PARAMETER Credential
-    Credential object used to connect to the computer as a different user.
+        .PARAMETER Type
+            Use -Type to collect only services of the desired SqlServiceType.
+            Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
 
-    .PARAMETER Type
-    Use -Type to collect only services of the desired SqlServiceType.
-    Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
+        .PARAMETER ServiceName
+            Can be used to specify service names explicitly, without looking for service types/instances.
 
-    .PARAMETER ServiceName
-    Can be used to specify service names explicitly, without looking for service types/instances.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .NOTES
+            Tags: Service, SqlServer, Instance, Connect
+            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
-    .NOTES
-    Tags:
-    Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+            Requires Local Admin rights on destination computer(s).
 
-    dbatools PowerShell module (https://dbatools.io)
-    Copyright (C) 2016 Chrissy LeMaire
-    License: MIT https://opensource.org/licenses/MIT
+            dbatools PowerShell module (https://dbatools.io)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: MIT https://opensource.org/licenses/MIT
 
-    .LINK
-    https://dbatools.io/Get-DbaSqlService
+        .LINK
+            https://dbatools.io/Get-DbaSqlService
 
-    .EXAMPLE
-    Get-DbaSqlService -ComputerName sqlserver2014a
+        .EXAMPLE
+            Get-DbaSqlService -ComputerName sqlserver2014a
 
-    Gets the SQL Server related services on computer sqlserver2014a.
+            Gets the SQL Server related services on computer sqlserver2014a.
 
-    .EXAMPLE
-    'sql1','sql2','sql3' | Get-DbaSqlService
+        .EXAMPLE
+            'sql1','sql2','sql3' | Get-DbaSqlService
 
-    Gets the SQL Server related services on computers sql1, sql2 and sql3.
+            Gets the SQL Server related services on computers sql1, sql2 and sql3.
 
-    .EXAMPLE
-    Get-DbaSqlService -ComputerName sql1,sql2 | Out-Gridview
+        .EXAMPLE
+            Get-DbaSqlService -ComputerName sql1,sql2 | Out-GridView
 
-    Gets the SQL Server related services on computers sql1 and sql2, and shows them in a grid view.
+            Gets the SQL Server related services on computers sql1 and sql2, and shows them in a grid view.
 
-    .EXAMPLE
-    Get-DbaSqlService -ComputerName $MyServers -Type SSRS
+        .EXAMPLE
+            Get-DbaSqlService -ComputerName $MyServers -Type SSRS
 
-    Gets the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
+            Gets the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
 
-    .EXAMPLE
-    $services = Get-DbaSqlService -ComputerName sql1 -Type Agent,Engine
-    $services.ChangeStartMode('Manual')
+        .EXAMPLE
+            $services = Get-DbaSqlService -ComputerName sql1 -Type Agent,Engine
+            $services.ChangeStartMode('Manual')
 
-    Gets the SQL Server related services of types Sql Agent and DB Engine on computer sql1 and changes their startup mode to 'Manual'.
+            Gets the SQL Server related services of types Sql Agent and DB Engine on computer sql1 and changes their startup mode to 'Manual'.
 
-    .EXAMPLE
-    (Get-DbaSqlService sql1 -Type Engine).Restart($true)
+        .EXAMPLE
+            (Get-DbaSqlService sql1 -Type Engine).Restart($true)
 
-    Calls a Restart method for each Engine service on computer sql1 with -Force option.
-#>
+            Calls a Restart method for each Engine service on computer sql1 with -Force option.
+    #>
     [CmdletBinding(DefaultParameterSetName = "Search")]
     Param (
         [parameter(ValueFromPipeline = $true, Position = 1)]
