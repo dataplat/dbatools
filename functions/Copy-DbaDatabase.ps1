@@ -100,7 +100,7 @@ function Copy-DbaDatabase {
             If this switch is enabled, existing databases on Destination with matching names from Source will be dropped. If using -DetachReattach, mirrors will be broken and the database(s) dropped from Availability Groups.
 
         .NOTES
-            Tags: Migration, DisasterRecovery, Backup, Restore
+            Tags: Migration, Backup, Restore
             Author: Chrissy LeMaire (@cl), netnerds.net
 
             Requires: sysadmin access on SQL Servers
