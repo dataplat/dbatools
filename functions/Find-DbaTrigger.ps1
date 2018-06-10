@@ -1,74 +1,74 @@
 function Find-DbaTrigger {
     <#
-.SYNOPSIS
-Returns all triggers that contain a specific case-insensitive string or regex pattern.
+        .SYNOPSIS
+            Returns all triggers that contain a specific case-insensitive string or regex pattern.
 
-.DESCRIPTION
-This function search on Instance, Database and Object level.
-If you specify one or more databases, search on Server level will not be preformed.
+        .DESCRIPTION
+            This function search on Instance, Database and Object level.
+            If you specify one or more databases, search on Server level will not be preformed.
 
-.PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+        .PARAMETER SqlInstance
+            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
 
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        .PARAMETER Database
+            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+        .PARAMETER ExcludeDatabase
+            The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER Pattern
-String pattern that you want to search for in the trigger textbody
+        .PARAMETER Pattern
+            String pattern that you want to search for in the trigger textbody
 
-.PARAMETER TriggerLevel
-Allows specify the trigger level that you want to search. By default is All (Server, Database, Object).
+        .PARAMETER TriggerLevel
+            Allows specify the trigger level that you want to search. By default is All (Server, Database, Object).
 
-.PARAMETER IncludeSystemObjects
-By default, system triggers are ignored but you can include them within the search using this parameter.
+        .PARAMETER IncludeSystemObjects
+            By default, system triggers are ignored but you can include them within the search using this parameter.
 
-Warning - this will likely make it super slow if you run it on all databases.
+            Warning - this will likely make it super slow if you run it on all databases.
 
-.PARAMETER IncludeSystemDatabases
-By default system databases are ignored but you can include them within the search using this parameter
+        .PARAMETER IncludeSystemDatabases
+            By default system databases are ignored but you can include them within the search using this parameter
 
-.PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Author: Cláudio Silva, @ClaudioESSilva
+        .NOTES
+            Tags: Trigger
+            Author: Cláudio Silva, @ClaudioESSilva
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Find-DbaTrigger
+        .LINK
+            https://dbatools.io/Find-DbaTrigger
 
-.EXAMPLE
-Find-DbaTrigger -SqlInstance DEV01 -Pattern whatever
+        .EXAMPLE
+            Find-DbaTrigger -SqlInstance DEV01 -Pattern whatever
 
-Searches all user databases triggers for "whatever" in the textbody
+            Searches all user databases triggers for "whatever" in the textbody
 
-.EXAMPLE
-Find-DbaTrigger -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
+        .EXAMPLE
+            Find-DbaTrigger -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
 
-Searches all databases for all triggers that contain a valid email pattern in the textbody
+            Searches all databases for all triggers that contain a valid email pattern in the textbody
 
-.EXAMPLE
-Find-DbaTrigger -SqlInstance DEV01 -Database MyDB -Pattern 'some string' -Verbose
+        .EXAMPLE
+            Find-DbaTrigger -SqlInstance DEV01 -Database MyDB -Pattern 'some string' -Verbose
 
-Searches in "mydb" database triggers for "some string" in the textbody
+            Searches in "mydb" database triggers for "some string" in the textbody
 
-.EXAMPLE
-Find-DbaTrigger -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects
+        .EXAMPLE
+            Find-DbaTrigger -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects
 
-Searches in "mydb" database triggers for "runtime" in the textbody
-
-#>
+            Searches in "mydb" database triggers for "runtime" in the textbody
+    #>
     [CmdletBinding()]
     Param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
