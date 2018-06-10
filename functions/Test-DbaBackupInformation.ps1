@@ -47,7 +47,6 @@ function Test-DbaBackupInformation {
         .NOTES
             Tags: Backup, Restore, DisasterRecovery
             Author: Stuart Moore (@napalmgram stuart-moore.com )
-            DisasterRecovery, Backup, Restore
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

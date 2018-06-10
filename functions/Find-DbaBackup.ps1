@@ -41,7 +41,7 @@ function Find-DbaBackup {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Storage, DisasterRecovery, Backup
+            Tags: Backup
             Author: Chris Sommer, @cjsommer, www.cjsommer.com
 
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
