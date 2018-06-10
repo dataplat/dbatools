@@ -4,7 +4,7 @@ function Select-DbaBackupInformation {
             Select a subset of backups from a dbatools backup history object
 
         .DESCRIPTION
-            Set-DbaAgentJob updates a job in the SQL Server Agent with parameters supplied.
+        Select-DbaBackupInformation filters out a subset of backups from the dbatools backup history object with parameters supplied.
 
         .PARAMETER BackupHistory
             A dbatools.BackupHistory object containing backup history records
