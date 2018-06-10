@@ -3827,7 +3827,7 @@
     },
     {
         "CommandName":  "Select-DbaBackupInformation",
-        "Description":  "Set-DbaAgentJob updates a job in the SQL Server Agent with parameters supplied.",
+        "Description":  "Select-DbaBackupInformation filters out a subset of backups from the dbatools backup history object with parameters supplied.",
         "Tags":  [
                      "Backup",
                      "Restore"
