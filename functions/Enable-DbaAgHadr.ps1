@@ -29,7 +29,7 @@ function Enable-DbaAgHadr {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: DisasterRecovery, AG, AvailabilityGroup
+            Tags: Hadr, AG, AvailabilityGroup
             Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
 
             Website: https://dbatools.io
@@ -106,7 +106,7 @@ function Enable-DbaAgHadr {
             )
             process {
                 foreach ($instance in $SqlInstance) {
-                    
+
                     try {
                         $computer = $computerName = $instance.ComputerName
                         $instanceName = $instance.InstanceName
@@ -117,7 +117,7 @@ function Enable-DbaAgHadr {
                         Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance
                         return
                     }
-                    
+
                     if ($null -eq $currentState.IsHadrEnabled) {
                         $isenabled = $false
                     }
@@ -142,12 +142,12 @@ function Enable-DbaAgHadr {
                 return
             }
             $noChange = $false
-            
+
             switch ($instance.InstanceName) {
                 'MSSQLSERVER' { $agentName = 'SQLSERVERAGENT' }
                 default { $agentName = "SQLAgent`$$instanceName" }
             }
-            
+
             try {
                 Write-Message -Level Verbose -Message "Checking current Hadr setting for $computer"
                 $currentState = GetDbaAgHadr -SqlInstance $instance -Credential $Credential
@@ -157,7 +157,7 @@ function Enable-DbaAgHadr {
             }
             $isHadrEnabled = $currentState.IsHadrEnabled
             Write-Message -Level InternalComment -Message "$instance Hadr current value: $isHadrEnabled"
-            
+
             # hadr results from sql wmi can be iffy, skip the check
             <#
             if ($isHadrEnabled) {
@@ -166,13 +166,13 @@ function Enable-DbaAgHadr {
                 continue
             }
             #>
-            
+
             $scriptblock = {
                 $instance = $args[0]
                 $sqlService = $wmi.Services | Where-Object DisplayName -eq "SQL Server ($instance)"
                 $sqlService.ChangeHadrServiceSetting(1)
             }
-            
+
             if ($noChange -eq $false) {
                 if ($PSCmdlet.ShouldProcess($instance, "Changing Hadr from $isHadrEnabled to 1 for $instance")) {
                     try {
@@ -183,7 +183,7 @@ function Enable-DbaAgHadr {
                     }
                 }
             }
-            
+
             if (Test-Bound -ParameterName Force) {
                 if ($PSCmdlet.ShouldProcess($instance, "Force provided, restarting Engine and Agent service for $instance on $computerFullName")) {
                     try {
@@ -196,11 +196,11 @@ function Enable-DbaAgHadr {
                 }
             }
             $newState = GetDbaAgHadr -SqlInstance $instance -Credential $Credential
-            
+
             if (Test-Bound -Not -ParameterName Force) {
                 Write-Message -Level Warning -Message "You must restart the SQL Server for it to take effect."
             }
-            
+
             [PSCustomObject]@{
                 ComputerName    = $newState.ComputerName
                 InstanceName    = $newState.InstanceName
