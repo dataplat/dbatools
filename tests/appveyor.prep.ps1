@@ -9,7 +9,7 @@ choco install codecov | Out-Null
 
 #Get PSScriptAnalyzer (to check warnings)
 Write-Host -Object "appveyor.prep: Install PSScriptAnalyzer" -ForegroundColor DarkGreen
-Install-Module -Name PSScriptAnalyzer | Out-Null
+Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck | Out-Null
 
 #Get Pester (to run tests)
 Write-Host -Object "appveyor.prep: Install Pester" -ForegroundColor DarkGreen

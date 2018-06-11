@@ -85,8 +85,8 @@ function Copy-DbaResourceGovernor {
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-        $sourceClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $sourceServer
-        $destClassifierFunction = Get-DbaResourceGovernorClassiferFunction -SqlInstance $destServer
+        $sourceClassifierFunction = Get-DbaResourceGovernorClassifierFunction -SqlInstance $sourceServer
+        $destClassifierFunction = Get-DbaResourceGovernorClassifierFunction -SqlInstance $destServer
 
         $copyResourceGovSetting = [pscustomobject]@{
             SourceServer       = $sourceServer.Name
