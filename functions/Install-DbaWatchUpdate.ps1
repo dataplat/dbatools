@@ -6,6 +6,15 @@ function Install-DbaWatchUpdate {
         .DESCRIPTION
             Adds the scheduled task to support Watch-DbaUpdate.
 
+        .PARAMETER TaskName
+            Provide custom name for the Scheduled Task
+
+        .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -24,6 +33,11 @@ function Install-DbaWatchUpdate {
             Install-DbaWatchUpdate
 
             Adds the scheduled task needed by Watch-DbaUpdate
+
+        .EXAMPLE
+            Install-DbaWatchUpdate -TaskName MyScheduledTask
+
+            Will create the scheduled task as the name MyScheduledTask
     #>
     [cmdletbinding(SupportsShouldProcess)]
     param(
