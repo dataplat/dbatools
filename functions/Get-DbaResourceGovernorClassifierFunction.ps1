@@ -1,4 +1,4 @@
-function Get-DbaResourceGovernorClassiferFunction {
+function Get-DbaResourceGovernorClassifierFunction {
 <#
 .SYNOPSIS
 Gets the Resource Governor custom classifier Function
@@ -24,13 +24,16 @@ Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: MIT https://opensource.org/licenses/MIT
 
+.LINK
+https://dbatools.io/Get-DbaResourceGovernorClassifierFunction
+
 .EXAMPLE
-Get-DbaResourceGovernorClassiferFunction -SqlInstance sql2016
+Get-DbaResourceGovernorClassifierFunction -SqlInstance sql2016
 
 Gets the classifier function object of the SqlInstance sql2016
 
 .EXAMPLE
-'Sql1','Sql2/sqlexpress' | Get-DbaResourceGovernorClassiferFunction
+'Sql1','Sql2/sqlexpress' | Get-DbaResourceGovernorClassifierFunction
 
 Gets the classifier function object on Sql1 and Sql2/sqlexpress instances
 
