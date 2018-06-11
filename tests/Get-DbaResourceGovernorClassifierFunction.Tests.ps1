@@ -2,7 +2,7 @@
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $sql = "CREATE FUNCTION dbatoolsci_fnRG()
                 RETURNS sysname
@@ -22,7 +22,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command works" {
         It "returns the proper classifier function" {
-            $results = Get-DbaResourceGovernorClassiferFunction -SqlInstance $script:instance2
+            $results = Get-DbaResourceGovernorClassifierFunction -SqlInstance $script:instance2
             $results.Name | Should -Be 'dbatoolsci_fnRG'
         }
     }
