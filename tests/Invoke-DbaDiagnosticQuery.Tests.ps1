@@ -3,39 +3,31 @@ $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $script:PesterOutputPath = "TestDrive:$commandName"
-
-
         $database = "dbatoolsci_frk_$(Get-Random)"
         $database2 = "dbatoolsci_frk_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server.Query("CREATE DATABASE [$database]")
         $server.Query("CREATE DATABASE [$database2]")
-
     }
     AfterAll {
         @($database, $database2) | Foreach-Object {
             $db = $_
-            $server.Query("
-        IF DB_ID('$db') IS NOT NULL
-        begin
-            print 'Dropping $db'
-        	ALTER DATABASE [$db] SET SINGLE_USER WITH ROLLBACK immediate;
-        	DROP DATABASE [$db];
-        end
-        ")
+            $server.Query("IF DB_ID('$db') IS NOT NULL
+                begin
+                    print 'Dropping $db'
+                    ALTER DATABASE [$db] SET SINGLE_USER WITH ROLLBACK immediate;
+                    DROP DATABASE [$db];
+                end")
         }
 
-        Remove-Item $script:PesterOutputPath -recurse -erroraction silentlycontinue
-
+        Remove-Item $script:PesterOutputPath -Recurse -ErrorAction SilentlyContinue
     }
     AfterEach {
-        Remove-Item $script:PesterOutputPath -Recurse -erroraction silentlycontinue
+        Remove-Item $script:PesterOutputPath -Recurse -ErrorAction SilentlyContinue
     }
-
 
     Context "verifying output when running queries" {
         It "runs a specific query" {
@@ -61,7 +53,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "verifies returns object with required properties when running with whatif" {
-            [System.Management.Automation.PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -WhatIf
+            [System.Management.Automation.PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -WhatIf | Out-Null
 
             $results.Count                                                             | Should -BeGreaterThan 10
             ($results.ComputerName     | Where-Object {$_ -eq $null}).Count             | Should -Be 0
@@ -104,6 +96,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             @($results).Count |  Should -Be 2
         }
     }
-
-
 }
