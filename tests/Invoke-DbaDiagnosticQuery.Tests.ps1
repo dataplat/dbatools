@@ -52,22 +52,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql).Count | Should -Be 1
         }
 
-        It "verifies returns object with required properties when running with whatif" {
-            [System.Management.Automation.PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -WhatIf | Out-Null
-
-            $results.Count                                                             | Should -BeGreaterThan 10
-            ($results.ComputerName     | Where-Object {$_ -eq $null}).Count             | Should -Be 0
-            ($results.InstanceName     | Where-Object {$_ -eq $null}).Count             | Should -Be 0
-            ($results.SqlInstance      | Where-Object {$_ -eq $null}).Count             | Should -Be 0
-            ($results.Number           | Where-Object {$_ -eq $null}).Count             | Should -Be 0
-            ($results.Name             | Where-Object {$_ -eq $null}).Count             | Should -Be 0
-            ($results.Description      | Where-Object {$_ -eq $null}).Count             | Should -Be 0
-            ($results.DatabaseSpecific | Where-Object {$_ -eq $null}).Count             | Should -Be 0
-            $results.Database.Count                                                     | Should -Be $results.Count
-            $results.Notes.Count                                                        | Should -Be $results.Count
-            $results.Result.Count                                                       | Should -Be $results.Count
-        }
-
         It "exports single database specific query against single database" {
             $null = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2  -ExportQueries  -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database $database -OutputPath $script:PesterOutputPath
             @(Get-ChildItem -path $script:PesterOutputPath -filter *.sql | Where-Object {$_.FullName -match "($database)"}).Count | Should -Be 1
