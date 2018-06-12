@@ -2099,7 +2099,7 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServersStore -SqlInstance sqlserver2014a\r\n\r\nReturns a SQL Server Registered Server Store Object from sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServersStore -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)\r\n\r\nReturns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Get-DbaResourceGovernorClassiferFunction",
+        "CommandName":  "Get-DbaResourceGovernorClassifierFunction",
         "Description":  "Gets the Resource Governor custom classifier Function which is used for customize the workload groups usage",
         "Tags":  [
                      "Migration",
@@ -2107,9 +2107,9 @@
                  ],
         "Author":  "Alessandro Alpi (@suxstellino), alessandroalpi.blog",
         "Synopsis":  "Gets the Resource Governor custom classifier Function",
-        "Name":  "Get-DbaResourceGovernorClassiferFunction",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaResourceGovernorClassiferFunction -SqlInstance sql2016\r\n\r\nGets the classifier function object of the SqlInstance sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaResourceGovernorClassiferFunction\r\n\r\nGets the classifier function object on Sql1 and Sql2/sqlexpress instances\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Name":  "Get-DbaResourceGovernorClassifierFunction",
+        "Links":  "https://dbatools.io/Get-DbaResourceGovernorClassifierFunction",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaResourceGovernorClassifierFunction -SqlInstance sql2016\r\n\r\nGets the classifier function object of the SqlInstance sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaResourceGovernorClassifierFunction\r\n\r\nGets the classifier function object on Sql1 and Sql2/sqlexpress instances\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaRestoreHistory",
@@ -2734,14 +2734,11 @@
     {
         "CommandName":  "Install-DbaWatchUpdate",
         "Description":  "Adds the scheduled task to support Watch-DbaUpdate.",
-        "Tags":  [
-                     "JustForFun",
-                     "Module"
-                 ],
+        "Tags":  "Module",
         "Synopsis":  "Adds the scheduled task to support Watch-DbaUpdate.",
         "Name":  "Install-DbaWatchUpdate",
         "Links":  "https://dbatools.io/Install-DbaWatchUpdate",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWatchUpdate\r\n\r\nAdds the scheduled task needed by Watch-DbaUpdate\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWatchUpdate\r\n\r\nAdds the scheduled task needed by Watch-DbaUpdate\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWatchUpdate -TaskName MyScheduledTask\r\n\r\nWill create the scheduled task as the name MyScheduledTask\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Install-DbaWhoIsActive",
