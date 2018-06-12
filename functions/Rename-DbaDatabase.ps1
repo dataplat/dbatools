@@ -243,6 +243,15 @@ function Rename-DbaDatabase {
             }
             return $obj -Join "`n"
         }
+
+
+        function Get-DbaKeyByValue($hashtable, $Value) {
+            ($hashtable.GetEnumerator() | Where-Object Value -eq $Value).Name
+        }
+
+        if ((Test-Bound -ParameterName SetOffline) -and (-not(Test-Bound -ParameterName FileName))) {
+            Stop-Function -Category InvalidArgument -Message "-SetOffline is only useful when -FileName is passed. Quitting."
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -381,7 +390,7 @@ function Rename-DbaDatabase {
                     $Orig_Placeholder = $Orig_FGName
                     if ($ReplaceBefore) {
                         # at Filegroup level, we need to worry about database name
-                        $Orig_Placeholder = $Orig_Placeholder.Replace($Entities_Before['DBN'][$db.Name], '')
+                        $Orig_Placeholder = $Orig_Placeholder.Replace($Entities_Before['DBN'][$Orig_DBName], '')
                     }
                     $NewFGName = $FileGroupName.Replace('<DBN>', $Entities_Before['DBN'][$db.Name]).Replace('<DATE>', $CurrentDate).Replace('<FGN>', $Orig_Placeholder)
                     $FinalFGName = $NewFGName
@@ -451,9 +460,10 @@ function Rename-DbaDatabase {
                         $Orig_Placeholder = $Orig_LGName
                         if ($ReplaceBefore) {
                             # at Logical Name level, we need to worry about database name and filegroup name
-                            $Orig_Placeholder = $Orig_Placeholder.Replace($Entities_Before['DBN'][$db.Name], '').Replace($Entities_Before['FGN'][$fg.Name], '')
+                            $Orig_Placeholder = $Orig_Placeholder.Replace((Get-DbaKeyByValue -HashTable $Entities_Before['DBN'] -Value $db.Name), '').Replace(
+                                (Get-DbaKeyByValue -HashTable $Entities_Before['FGN'] -Value $fg.Name), '')
                         }
-                        $NewLGName = $LogicalName.Replace('<DBN>', $Entities_Before['DBN'][$db.Name]).Replace('<DATE>', $CurrentDate).Replace('<FGN>', $Entities_Before['FGN'][$fg.Name]).Replace(
+                        $NewLGName = $LogicalName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', $fg.Name).Replace(
                             '<FT>', $FileType).Replace('<LGN>', $Orig_Placeholder)
                         $FinalLGName = $NewLGName
                         while ($logical.Name -ne $FinalLGName) {
@@ -496,9 +506,10 @@ function Rename-DbaDatabase {
                         $Orig_Placeholder = $Orig_LGName
                         if ($ReplaceBefore) {
                             # at Logical Name level, we need to worry about database name and filegroup name, but for logfiles filegroup is not there
-                            $Orig_Placeholder = $Orig_Placeholder.Replace($Entities_Before['DBN'][$db.Name], '').Replace($Entities_Before['FGN'][$fg.Name], '')
+                            $Orig_Placeholder = $Orig_Placeholder.Replace((Get-DbaKeyByValue -HashTable $Entities_Before['DBN'] -Value $db.Name), '').Replace(
+                                (Get-DbaKeyByValue -HashTable $Entities_Before['FGN'] -Value $fg.Name), '')
                         }
-                        $NewLGName = $LogicalName.Replace('<DBN>', $Entities_Before['DBN'][$db.Name]).Replace('<DATE>', $CurrentDate).Replace('<FGN>', '').Replace(
+                        $NewLGName = $LogicalName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', '').Replace(
                             '<FT>', 'LOG').Replace('<LGN>', $Orig_Placeholder)
                         $FinalLGName = $NewLGName
                         if ($FinalLGName.Length -eq 0) {
@@ -594,11 +605,12 @@ function Rename-DbaDatabase {
                         $Orig_Placeholder = $Orig_FNNameLeaf
                         if ($ReplaceBefore) {
                             # at Filename level, we need to worry about database name, filegroup name and logical file name
-                            $Orig_Placeholder = $Orig_Placeholder.Replace($Entities_Before['DBN'][$db.Name], '').Replace(
-                                $Entities_Before['FGN'][$fg.Name], '').Replace($Entities_Before['LGN'][$logical.Name], '')
+                            $Orig_Placeholder = $Orig_Placeholder.Replace((Get-DbaKeyByValue -HashTable $Entities_Before['DBN'] -Value $db.Name), '').Replace(
+                                (Get-DbaKeyByValue -HashTable $Entities_Before['FGN'] -Value $fg.Name), '').Replace(
+                                (Get-DbaKeyByValue -HashTable $Entities_Before['LGN'] -Value $logical.Name), '')
                         }
-                        $NewFNName = $FileName.Replace('<DBN>', $Entities_Before['DBN'][$db.Name]).Replace('<DATE>', $CurrentDate).Replace('<FGN>', $Entities_Before['FGN'][$fg.Name]).Replace(
-                            '<FT>', $FileType).Replace('<LGN>', $Entities_Before['LGN'][$logical.Name]).Replace('<FNN>', $Orig_Placeholder)
+                        $NewFNName = $FileName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', $fg.Name).Replace(
+                            '<FT>', $FileType).Replace('<LGN>', $logical.Name).Replace('<FNN>', $Orig_Placeholder)
                         $FinalFNName = [IO.Path]::Combine($FNNameDir, "$NewFNName$([IO.Path]::GetExtension($FNName))")
 
                         while ($logical.FileName -ne $FinalFNName) {
@@ -646,11 +658,12 @@ function Rename-DbaDatabase {
                             $Orig_Placeholder = $Orig_FNNameLeaf
                             if ($ReplaceBefore) {
                                 # at Filename level, we need to worry about database name, filegroup name and logical file name
-                                $Orig_Placeholder = $Orig_Placeholder.Replace($Entities_Before['DBN'][$db.Name], '').Replace(
-                                    $Entities_Before['FGN'][$fg.Name], '').Replace($Entities_Before['LGN'][$logical.Name], '')
+                                $Orig_Placeholder = $Orig_Placeholder.Replace((Get-DbaKeyByValue -HashTable $Entities_Before['DBN'] -Value $db.Name), '').Replace(
+                                    (Get-DbaKeyByValue -HashTable $Entities_Before['FGN'] -Value $fg.Name), '').Replace(
+                                    (Get-DbaKeyByValue -HashTable $Entities_Before['LGN'] -Value $logical.Name), '')
                             }
-                            $NewFNName = $FileName.Replace('<DBN>', $Entities_Before['DBN'][$db.Name]).Replace('<DATE>', $CurrentDate).Replace('<FGN>', '').Replace(
-                                '<FT>', 'LOG').Replace('<LGN>', $Entities_Before['LGN'][$logical.Name]).Replace('<FNN>', $Orig_Placeholder)
+                            $NewFNName = $FileName.Replace('<DBN>', $db.Name).Replace('<DATE>', $CurrentDate).Replace('<FGN>', '').Replace(
+                                '<FT>', 'LOG').Replace('<LGN>', $logical.Name).Replace('<FNN>', $Orig_Placeholder)
                             $FinalFNName = [IO.Path]::Combine($FNNameDir, "$NewFNName$([IO.Path]::GetExtension($FNName))")
                             while ($logical.FileName -ne $FinalFNName) {
                                 if ($InstanceFiles[$Server_Id][$FNNameDir].ContainsKey($FinalFNName)) {
