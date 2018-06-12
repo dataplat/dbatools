@@ -60,7 +60,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results.Name | Should -Contain 'dbatoolsci_prod'
         }
         It "returns the proper classifier function" {
-            $results = Get-DbaResourceGovernorClassiferFunction -SqlInstance $script:instance3
+            $results = Get-DbaResourceGovernorClassifierFunction -SqlInstance $script:instance3
             $results.Name | Should -Be 'dbatoolsci_fnRG'
         }
     }
