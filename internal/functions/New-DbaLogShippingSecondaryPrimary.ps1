@@ -87,44 +87,29 @@ function New-DbaLogShippingSecondaryPrimary {
         [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
-
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
-
+        [PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$BackupSourceDirectory,
-
         [Parameter(Mandatory = $false)]
         [string]$BackupDestinationDirectory,
-
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$CopyJob,
-
         [int]$FileRetentionPeriod = 14420,
-
         [string]$MonitorServer,
-
-        [System.Management.Automation.PSCredential]
-        $MonitorCredential,
-
+        [PSCredential]$MonitorCredential,
         [Parameter(Mandatory = $true)]
         [ValidateSet(0, "sqlserver", 1, "windows")]
         [object]$MonitorServerSecurityMode = 1,
-
         [object]$PrimaryServer,
-
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$PrimarySqlCredential,
+        [PSCredential]$PrimarySqlCredential,
         [object]$PrimaryDatabase,
-
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$RestoreJob,
-
         [Alias('Silent')]
         [switch]$EnableException,
-
         [switch]$Force
     )
 
