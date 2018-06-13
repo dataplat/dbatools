@@ -58,8 +58,7 @@ function Get-DbaPolicy {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [string[]]$Policy,
         [string[]]$Category,
         [switch]$IncludeSystemObject,
