@@ -134,7 +134,7 @@ function Get-DbaBackupInformation {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(ParameterSetName = "Create")]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [string[]]$DatabaseName,
         [string[]]$SourceInstance,
         [parameter(ParameterSetName = "Create")]
