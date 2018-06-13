@@ -58,8 +58,7 @@ function Get-DbaAgDatabase {
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [parameter(ValueFromPipeline = $true)]
         [object[]]$AvailabilityGroup,
         [object[]]$Database,
