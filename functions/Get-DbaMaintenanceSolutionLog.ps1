@@ -74,8 +74,7 @@ function Get-DbaMaintenanceSolutionLog {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [ValidateSet('IndexOptimize', 'DatabaseBackup', 'DatabaseIntegrityCheck')]
         [string[]]$LogType = 'IndexOptimize',
         [datetime]$Since,
