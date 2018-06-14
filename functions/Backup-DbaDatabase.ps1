@@ -90,7 +90,7 @@ function Backup-DbaDatabase {
                 Note, that as we can't check the path you may well end up with errors.
 
             .PARAMETER OutputScriptOnly
-                Switch causes only the T-SQL script for the backup to be generated. Will not create any paths if they do now exist
+                Switch causes only the T-SQL script for the backup to be generated. Will not create any paths if they do not exist
 
             .PARAMETER EnableException
                 By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
