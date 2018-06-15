@@ -127,7 +127,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [object[]]$Job,
