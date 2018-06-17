@@ -471,7 +471,9 @@
         'Get-DbaDbPageInfo',
         'Get-DbaConnection',
         'Test-DbaLoginPassword',
-        'Get-DbaResourceGovernorClassifierFunction'
+        'Get-DbaResourceGovernorClassifierFunction',
+        'Get-DbaSqlLogConfig',
+        'Set-DbaSqlLog'
     )
 
     # Cmdlets to export from this module
