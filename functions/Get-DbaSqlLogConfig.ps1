@@ -1,6 +1,7 @@
 function Get-DbaSqlLogConfig {
     [cmdletbinding()]
     param(
+        [Parameter(ValueFromPipelineByPropertyName)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$EnableException
