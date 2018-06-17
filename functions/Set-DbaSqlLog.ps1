@@ -1,4 +1,54 @@
 function Set-DbaSqlLog {
+    <#
+        .SYNOPSIS
+            Set the configuration for the ErrorLog on a given SQL Server instance
+        .DESCRIPTION
+            Set the configuration for the ErrorLog on a given SQL Server instance.
+            Includes setting the number of log files configured and/or size in KB (SQL Server 2012+ only)
+
+        .PARAMETER SqlInstance
+            The target SQL Server instance(s)
+
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+
+        .PARAMETER NumberOfLog
+            Integer value between 6 and 99 for setting the number of error log files to keep for SQL Server instance.
+
+        .PARAMETER SizeInKb
+            Integer value for the size in KB that you want the error log file to grow. This is feature only in SQL Server 2012 and higher. When the file reaches that limit SQL Server will roll the error log over.
+
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+        .NOTES
+            Tags: Configure, Instance, ErrorLog
+            Author: Shawn Melton (@wsmelton)
+
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
+        .LINK
+            https://dbatools.io/Set-DbaSqlLogConfig
+
+       .EXAMPLE
+            Set-DbaSqlLogConfig -SqlInstance server2017,server2014 -NumberOfLog 25
+
+            Sets the number of error log files to 25 on server2017 and server2014
+
+        .EXAMPLE
+            Set-DbaSqlLogConfig -SqlInstance server2014 -SizeInKb 1024
+
+            Sets the size of the error log file, before it rolls over, to 1024KB (1GB) on server2014
+
+        .EXAMPLE
+            Set-DbaSqlLogConfig -SqlInstance server2012 -NumberOfLog 25 -SizeInKb 500
+
+            Sets the number of error log files to 25 and size before it will roll over to 500KB on server2012
+    #>
     [cmdletbinding(SupportsShouldProcess)]
     param(
         [Parameter(ValueFromPipelineByPropertyName)]
