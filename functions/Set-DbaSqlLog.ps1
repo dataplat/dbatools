@@ -99,9 +99,7 @@ function Set-DbaSqlLog {
                 }
 
                 if ($NumberOfLog -eq $currentNumLogs) {
-                    if ($PSCmdlet.ShouldProcess($server, "Provide warning that NumberOfLog value already matches the configured value")) {
-                        Write-Message -Level Warning -Message "The provided value for NumberOfLog is already set" -Continue
-                    }
+                    Write-Message -Level Warning -Message "The provided value for NumberOfLog is already set" -Continue
                 }
                 else {
                     if ($PSCmdlet.ShouldProcess($server, "Setting number of logs from [$currentNumLogs] to [$NumberOfLog]")) {
@@ -134,9 +132,7 @@ function Set-DbaSqlLog {
                 }
 
                 if ($SizeInKb -eq $currentSizeInKb) {
-                    if ($PSCmdlet.ShouldProcess($server, "Provide warning that SizeInKb value already matches the configured value")) {
-                        Write-Message -Level Warning -Message "The provided value for SizeInKb is already set" -Continue
-                    }
+                    Write-Message -Level Warning -Message "The provided value for SizeInKb is already set" -Continue
                 }
                 else {
                     if ($PSCmdlet.ShouldProcess($server, "Setting number of logs from [$currentSizeInKb] to [$SizeInKb]")) {
