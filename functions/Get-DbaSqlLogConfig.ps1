@@ -51,12 +51,13 @@ function Get-DbaSqlLogConfig {
             }
 
             $numLogs = $server.NumberOfLogFiles
-            if ($server.VersionMajor -ge 11) {
-                $logSize = $server.ErrorLogSizeKb
-            }
-            else {
-                $null
-            }
+            $logSize =
+                if ($server.VersionMajor -ge 11) {
+                    $server.ErrorLogSizeKb
+                }
+                else {
+                    $null
+                }
 
             [PSCustomObject]@{
                 ComputerName    = $server.NetName
