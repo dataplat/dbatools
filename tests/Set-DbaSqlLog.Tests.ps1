@@ -19,27 +19,27 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $currentNumLogFilesINSTANCE1 = $server.NumberOfLogFiles
-        $currentErrorLogSizeKbINSTANCE1 = $server.ErrorLogSizeKb
+        $server = Connect-DbaInstance -SqlInstance $script:instance3
+        $currentNumLogFilesINSTANCE3 = $server.NumberOfLogFiles
+        $currentErrorLogSizeKbINSTANCE3 = $server.ErrorLogSizeKb
 
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $currentNumLogFilesINSTANCE2 = $server.NumberOfLogFiles
         $currentErrorLogSizeKbINSTANCE2 = $server.ErrorLogSizeKb
     }
     AfterAll {
-        $server = Connect-DbaInstance -SqlInstance $script:instance1
-        $server.NumberOfLogFiles = $currentNumLogFilesINSTANCE1 =
-        $server.ErrorLogSizeKb = $currentErrorLogSizeKbINSTANCE1
-        $server.Alter()
-
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server.NumberOfLogFiles = $currentNumLogFilesINSTANCE2
         $server.ErrorLogSizeKb = $currentErrorLogSizeKbINSTANCE2
         $server.Alter()
+
+        $server = Connect-DbaInstance -SqlInstance $script:instance3
+        $server.NumberOfLogFiles = $currentNumLogFilesINSTANCE3
+        $server.ErrorLogSizeKb = $currentErrorLogSizeKbINSTANCE3
+        $server.Alter()
     }
     Context "Apply NumberOfLog to multiple instances" {
-        $results = Set-DbaSqlLog -SqlInstance $script:instance1, $script:instance2 -NumberOfLog 8
+        $results = Set-DbaSqlLog -SqlInstance $script:instance3, $script:instance2 -NumberOfLog 8
         foreach ($result in $results) {
             It 'Returns NumberOfLog set to 3 for each instance' {
                 $result.CurrentNumberErrorLogs | Should Be 8
@@ -47,7 +47,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     Context "Apply SizeInKb to multiple instances" {
-        $results = Set-DbaSqlLog -SqlInstance $script:instance1, $script:instance2 -SizeInKb 100
+        $results = Set-DbaSqlLog -SqlInstance $script:instance3, $script:instance2 -SizeInKb 100
         foreach ($result in $results) {
             It 'Returns SizeInKb set to 100 for each instance' {
                 $result.CurrentErrorLogSizeKb | Should Be 100
