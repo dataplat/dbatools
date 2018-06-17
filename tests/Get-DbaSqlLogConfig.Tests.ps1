@@ -20,7 +20,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Get NumberErrorLog for multiple instances" {
-        $results = Get-DbaSqlLogConfig -SqlInstance $script:instance1, $script:instance2
+        $results = Get-DbaSqlLogConfig -SqlInstance $script:instance3, $script:instance2
         foreach ($result in $results) {
             It 'Returns NumberErrorLog value' {
                 $result.NumberErrorLogs | Should -Not -Be $null
@@ -29,7 +29,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Get SizeInKb for multiple instances" {
-        $results = Get-DbaSqlLogConfig -SqlInstance $script:instance1, $script:instance2
+        $results = Get-DbaSqlLogConfig -SqlInstance $script:instance3, $script:instance2
         foreach ($result in $results) {
             It 'Returns SizeInKb value' {
                 $result.ErrorLogSizeKb | Should -Not -Be $null
