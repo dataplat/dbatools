@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 $base = (Get-Module -Name dbatools).ModuleBase
 
-Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XE.Core.dll"
-Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.Configuration.dll"
-Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.dll"
-Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.Linq.dll"
+# Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XE.Core.dll"
+# Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.Configuration.dll"
+# Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.dll"
+# Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.Linq.dll"
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying command output" {
