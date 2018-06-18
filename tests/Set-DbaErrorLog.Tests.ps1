@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
     Context "Validate parameters" {
         $paramCount = 5
         $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Set-DbaSqlLog).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Set-DbaErrorLog).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'SizeInKb', 'NumberOfLog', 'EnableException'
         It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $server.Alter()
     }
     Context "Apply NumberOfLog to multiple instances" {
-        $results = Set-DbaSqlLog -SqlInstance $script:instance3, $script:instance2 -NumberOfLog 8
+        $results = Set-DbaErrorLog -SqlInstance $script:instance3, $script:instance2 -NumberOfLog 8
         foreach ($result in $results) {
             It 'Returns NumberOfLog set to 3 for each instance' {
                 $result.CurrentNumberErrorLogs | Should Be 8
@@ -47,7 +47,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     Context "Apply SizeInKb to multiple instances" {
-        $results = Set-DbaSqlLog -SqlInstance $script:instance3, $script:instance2 -SizeInKb 100
+        $results = Set-DbaErrorLog -SqlInstance $script:instance3, $script:instance2 -SizeInKb 100
         foreach ($result in $results) {
             It 'Returns SizeInKb set to 100 for each instance' {
                 $result.CurrentErrorLogSizeKb | Should Be 100
