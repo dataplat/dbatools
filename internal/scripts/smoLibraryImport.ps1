@@ -48,6 +48,7 @@
         'Microsoft.SqlServer.Management.Utility',
         'Microsoft.SqlServer.Management.UtilityEnum',
         'Microsoft.SqlServer.Management.HadrDMF',
+        'Microsoft.SqlServer.VulnerabilityAssessment.Model',
 
         'Microsoft.SqlServer.BatchParser',
         'Microsoft.SqlServer.BatchParserClient',
