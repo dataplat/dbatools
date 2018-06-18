@@ -1,4 +1,4 @@
-function Get-DbaSqlLogConfig {
+function Get-DbaErrorLogConfig {
     <#
         .SYNOPSIS
             Pulls the configuration for the ErrorLog on a given SQL Server instance
@@ -18,7 +18,7 @@ function Get-DbaSqlLogConfig {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Configure, Instance, ErrorLog
+            Tags: Instance, ErrorLog
             Author: Shawn Melton (@wsmelton)
 
             Website: https://dbatools.io
@@ -26,10 +26,10 @@ function Get-DbaSqlLogConfig {
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
         .LINK
-            https://dbatools.io/Get-DbaSqlLogConfig
+            https://dbatools.io/Get-DbaErrorLogConfig
 
        .EXAMPLE
-            Get-DbaSqlLogConfig -SqlInstance server2017,server2014
+            Get-DbaErrorLogConfig -SqlInstance server2017,server2014
 
             Returns error log configuration for server2017 and server2014
     #>
