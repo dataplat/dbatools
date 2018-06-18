@@ -313,7 +313,7 @@
         'Invoke-DbaDatabaseUpgrade',
         'Get-DbaDatabaseUser',
         'Get-DbaWindowsLog',
-        'Get-DbaSqlLog',
+        'Get-DbaErrorLog',
         'Get-DbaAgentLog',
         'Get-DbaDbMailLog',
         'Get-DbaDbMailHistory',
@@ -472,8 +472,8 @@
         'Get-DbaConnection',
         'Test-DbaLoginPassword',
         'Get-DbaResourceGovernorClassifierFunction',
-        'Get-DbaSqlLogConfig',
-        'Set-DbaSqlLog'
+        'Get-DbaErrorLogConfig',
+        'Set-DbaErrorLog'
     )
 
     # Cmdlets to export from this module
@@ -577,7 +577,8 @@
     'New-DbaDatabaseSnapshot',
     'Remove-DbaDatabaseSnapshot',
     'Restore-DbaDatabaseSnapshot',
-    'Sync-DbaSqlLoginPermission'
+    'Sync-DbaSqlLoginPermission',
+    'Get-DbaSqlLog'
 
     # List of all modules packaged with this module
     ModuleList                = @()
