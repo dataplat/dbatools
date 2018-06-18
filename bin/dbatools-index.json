@@ -2314,6 +2314,20 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlLog -SqlInstance sql01\\sharepoint\r\n\r\nReturns every log entry from sql01\\sharepoint SQL Server instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlLog -SqlInstance sql01\\sharepoint -LogNumber 3, 6\r\n\r\nReturns all log entries for log number 3 and 6 on sql01\\sharepoint SQL Server instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlLog -SqlInstance sql01\\sharepoint -Source Logon\r\n\r\nReturns every log entry, with a source of Logon, from sql01\\sharepoint SQL Server instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlLog -SqlInstance sql01\\sharepoint -LogNumber 3 -Text \"login failed\"\r\n\r\nReturns every log entry for log number 3, with \"login failed\" in the text, from sql01\\sharepoint SQL Server instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\r\n\r\n$servers | Get-DbaSqlLog -LogNumber 0\r\n\r\nReturns the most recent SQL Server error logs for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlLog -SqlInstance sql01\\sharepoint -After \u002711/14/2006 00:00\u0027\r\n\r\nReturns every log entry found after the date 11/14/2006 00:00 from sql101\\sharepoint SQL Server instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlLog -SqlInstance sql01\\sharepoint -Before \u002708/16/2016 00:00\u0027\r\n\r\nReturns every log entry found before the date 08/16/2016 00:00 from sql101\\sharepoint SQL Server instance.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaSqlLogConfig",
+        "Description":  "Pulls the configuration for the ErrorLog on a given SQL Server instance.\nIncludes number of log files configured and size in KB (SQL Server 2012+ only)",
+        "Tags":  [
+                     "Configure",
+                     "Instance",
+                     "ErrorLog"
+                 ],
+        "Author":  "Shawn Melton (@wsmelton)",
+        "Synopsis":  "Pulls the configuration for the ErrorLog on a given SQL Server instance",
+        "Name":  "Get-DbaSqlLogConfig",
+        "Links":  "https://dbatools.io/Get-DbaSqlLogConfig",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlLogConfig -SqlInstance server2017,server2014\r\n\r\nReturns error log configuration for server2017 and server2014\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaSqlManagementObject",
         "Description":  "The Get-DbaSqlManagementObject returns an object with the Version and the\nAdd-Type Load Template for each version on the server.",
         "Tags":  "SMO",
@@ -4109,6 +4123,20 @@
         "Name":  "Set-DbaSpn",
         "Links":  "https://dbatools.io/Set-DbaSpn",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account\r\n\r\nConnects to Active Directory and adds a provided SPN to the given account.\r\n\r\nSet-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -EnableException\r\n\r\nConnects to Active Directory and adds a provided SPN to the given account, suppressing all error messages and throw \r\nexceptions that can be caught instead\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -Credential (Get-Credential)\r\n\r\nConnects to Active Directory and adds a provided SPN to the given account. Uses alternative account to connect to AD.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -NoDelegation\r\n\r\nConnects to Active Directory and adds a provided SPN to the given account, without the delegation.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn\r\n\r\nSets all missing SPNs for sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn -WhatIf\r\n\r\nDisplays what would happen trying to set all missing SPNs for sql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Set-DbaSqlLog",
+        "Description":  "Set the configuration for the ErrorLog on a given SQL Server instance.\nIncludes setting the number of log files configured and/or size in KB (SQL Server 2012+ only)",
+        "Tags":  [
+                     "Configure",
+                     "Instance",
+                     "ErrorLog"
+                 ],
+        "Author":  "Shawn Melton (@wsmelton)",
+        "Synopsis":  "Set the configuration for the ErrorLog on a given SQL Server instance",
+        "Name":  "Set-DbaSqlLog",
+        "Links":  "https://dbatools.io/Set-DbaSqlLogConfig",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaSqlLogConfig -SqlInstance server2017,server2014 -NumberOfLog 25\r\n\r\nSets the number of error log files to 25 on server2017 and server2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaSqlLogConfig -SqlInstance server2014 -SizeInKb 1024\r\n\r\nSets the size of the error log file, before it rolls over, to 1024KB (1GB) on server2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaSqlLogConfig -SqlInstance server2012 -NumberOfLog 25 -SizeInKb 500\r\n\r\nSets the number of error log files to 25 and size before it will roll over to 500KB on server2012\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaStartupParameter",
