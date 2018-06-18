@@ -20,8 +20,8 @@ function Set-DbaPowerPlan {
 
         .PARAMETER CustomPowerPlan
             Specifies the name of a custom Power Plan to use.
-        
-            
+
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -34,6 +34,7 @@ function Set-DbaPowerPlan {
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
         .NOTES
+            Tags: PowerPlan, OS, Configure
             Requires: WMI access to servers
 
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

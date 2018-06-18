@@ -1,81 +1,83 @@
 function Update-DbaSqlServiceAccount {
     <#
-    .SYNOPSIS
-    Changes service account (or just its password) of the SQL Server service.
+        .SYNOPSIS
+            Changes service account (or just its password) of the SQL Server service.
 
-    .DESCRIPTION
-    Reconfigures service account or updates password of the specified SQL Server service. The service will be restarted in the event of changing the account.
+        .DESCRIPTION
+            Reconfigure the service account or update the password of the specified SQL Server service. The service will be restarted in the event of changing the account.
 
-    .PARAMETER ComputerName
-    The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+        .PARAMETER ComputerName
+            The SQL Server (or server in general) that you're connecting to. This command handles named instances.
 
-    .PARAMETER Credential
-    Windows Credential with permission to log on to the server running the SQL instance
+        .PARAMETER Credential
+            Windows Credential with permission to log on to the server running the SQL instance
 
-    .PARAMETER InputObject
-    A collection of services. Basically, any object that has ComputerName and ServiceName properties. Can be piped from Get-DbaSqlService.
+        .PARAMETER InputObject
+            A collection of services. Basically, any object that has ComputerName and ServiceName properties. Can be piped from Get-DbaSqlService.
 
-    .PARAMETER ServiceName
-    A name of the service on which the action is performed. E.g. MSSQLSERVER or SqlAgent$INSTANCENAME
+        .PARAMETER ServiceName
+            A name of the service on which the action is performed. E.g. MSSQLSERVER or SqlAgent$INSTANCENAME
 
-    .PARAMETER ServiceCredential
-    Windows Credential object under which the service will be setup to run. Cannot be used with -Username. For local service accounts use one of the following usernames with empty password:
-    LOCALSERVICE
-    NETWORKSERVICE
-    LOCALSYSTEM
+        .PARAMETER ServiceCredential
+            Windows Credential object under which the service will be setup to run. Cannot be used with -Username. For local service accounts use one of the following usernames with empty password:
+            LOCALSERVICE
+            NETWORKSERVICE
+            LOCALSYSTEM
 
-    .PARAMETER OldPassword
-    An old password of the service account. Optional when run under local admin privileges.
+        .PARAMETER OldPassword
+            An old password of the service account. Optional when run under local admin privileges.
 
-    .PARAMETER NewPassword
-    New password of the service account. The function will ask for a password if not specified. MSAs and local system accounts will ignore the password.
+        .PARAMETER NewPassword
+            New password of the service account. The function will ask for a password if not specified. MSAs and local system accounts will ignore the password.
 
-    .PARAMETER Username
-    Username of the service account. Cannot be used with -ServiceCredential. For local service accounts use one of the following usernames omitting the -Password parameter:
-    LOCALSERVICE
-    NETWORKSERVICE
-    LOCALSYSTEM
+        .PARAMETER Username
+            Username of the service account. Cannot be used with -ServiceCredential. For local service accounts use one of the following usernames omitting the -Password parameter:
+            LOCALSERVICE
+            NETWORKSERVICE
+            LOCALSYSTEM
 
-    .PARAMETER WhatIf
-    Shows what would happen if the command were to run. No actions are actually performed.
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
 
-    .PARAMETER Confirm
-    Prompts you for confirmation before executing any changing operations within the command.
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .NOTES
-    Author: Kirill Kravtsov (@nvarscar)
-    Tags:
-    dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-    Copyright (C) 2017 Chrissy LeMaire
-    License: MIT https://opensource.org/licenses/MIT
+        .NOTES
+            Tags: Service, SqlServer, Instance, Connect
+            Author: Kirill Kravtsov (@nvarscar)
 
-    .EXAMPLE
-    $NewPassword = ConvertTo-SecureString 'Qwerty1234' -AsPlainText -Force
-    Update-DbaSqlServiceAccount -ComputerName sql1 -ServiceName 'MSSQL$MYINSTANCE' -Password $NewPassword
+            Requires Local Admin rights on destination computer(s).
 
-    Changes the current service account's password of the service MSSQL$MYINSTANCE to 'Qwerty1234'
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    .EXAMPLE
-    $cred = Get-Credential
-    Get-DbaSqlService sql1 -Type Engine,Agent -Instance MYINSTANCE | Update-DbaSqlServiceAccount -ServiceCredential $cred
+        .EXAMPLE
+            $NewPassword = ConvertTo-SecureString 'Qwerty1234' -AsPlainText -Force
+            Update-DbaSqlServiceAccount -ComputerName sql1 -ServiceName 'MSSQL$MYINSTANCE' -Password $NewPassword
 
-    Requests credentials from the user and configures them as a service account for the SQL Server engine and agent services of the instance sql1\MYINSTANCE
+            Changes the current service account's password of the service MSSQL$MYINSTANCE to 'Qwerty1234'
 
-    .EXAMPLE
-    Update-DbaSqlServiceAccount -ComputerName sql1,sql2 -ServiceName 'MSSQLSERVER','SQLSERVERAGENT' -Username NETWORKSERVICE
+        .EXAMPLE
+            $cred = Get-Credential
+            Get-DbaSqlService sql1 -Type Engine,Agent -Instance MYINSTANCE | Update-DbaSqlServiceAccount -ServiceCredential $cred
 
-    Configures SQL Server engine and agent services on the machines sql1 and sql2 to run under Network Service system user.
+            Requests credentials from the user and configures them as a service account for the SQL Server engine and agent services of the instance sql1\MYINSTANCE
 
-    .EXAMPLE
-    Get-DbaSqlService sql1 -Type Engine -Instance MSSQLSERVER | Update-DbaSqlServiceAccount -Username 'MyDomain\sqluser1'
+        .EXAMPLE
+            Update-DbaSqlServiceAccount -ComputerName sql1,sql2 -ServiceName 'MSSQLSERVER','SQLSERVERAGENT' -Username NETWORKSERVICE
 
-    Configures SQL Server engine service on the machine sql1 to run under 'MyDomain\sqluser1'. Will request user to input the account password.
+            Configures SQL Server engine and agent services on the machines sql1 and sql2 to run under Network Service system user.
 
+        .EXAMPLE
+            Get-DbaSqlService sql1 -Type Engine -Instance MSSQLSERVER | Update-DbaSqlServiceAccount -Username 'MyDomain\sqluser1'
+
+            Configures SQL Server engine service on the machine sql1 to run under 'MyDomain\sqluser1'. Will request user to input the account password.
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "ServiceName" )]
     param (

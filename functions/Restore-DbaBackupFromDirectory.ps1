@@ -35,7 +35,7 @@ function Restore-DbaBackupFromDirectory {
         .NOTES
             Tags: DisasterRecovery, Backup, Restore
             Requires: sysadmin access on destination SQL Server.
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT

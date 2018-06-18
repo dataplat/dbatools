@@ -34,6 +34,7 @@ function Get-DbaSqlFeature {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Feature, Component
             Author: Chrissy LeMaire (@cl)
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -68,8 +69,8 @@ function Get-DbaSqlFeature {
     begin {
         $scriptblock = {
             $setup = Get-ChildItem -Recurse -Include setup.exe -Path "$env:ProgramFiles\Microsoft SQL Server" -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -match 'Setup Bootstrap\\SQL' -or $_.FullName -match 'Bootstrap\\Release\\Setup.exe' -or $_.FullName -match 'Bootstrap\\Setup.exe' } |
-            Sort-Object FullName -Descending | Select-Object -First 1
+                Where-Object { $_.FullName -match 'Setup Bootstrap\\SQL' -or $_.FullName -match 'Bootstrap\\Release\\Setup.exe' -or $_.FullName -match 'Bootstrap\\Setup.exe' } |
+                Sort-Object FullName -Descending | Select-Object -First 1
             if ($setup) {
                 $null = Start-Process -FilePath $setup.FullName -ArgumentList "/Action=RunDiscovery /q" -Wait
                 $parent = Split-Path (Split-Path $setup.Fullname)
@@ -94,16 +95,16 @@ function Get-DbaSqlFeature {
 
                 foreach ($result in $results) {
                     [pscustomobject]@{
-                        ComputerName      = $computer
-                        Product           = $result.Product
-                        Instance          = $result.Instance
-                        InstanceID        = $result.InstanceID
-                        Feature           = $result.Feature
-                        Language          = $result.Language
-                        Edition           = $result.Edition
-                        Version           = $result.Version
-                        Clustered         = $result.Clustered
-                        Configured        = $result.Configured
+                        ComputerName = $computer
+                        Product      = $result.Product
+                        Instance     = $result.Instance
+                        InstanceID   = $result.InstanceID
+                        Feature      = $result.Feature
+                        Language     = $result.Language
+                        Edition      = $result.Edition
+                        Version      = $result.Version
+                        Clustered    = $result.Clustered
+                        Configured   = $result.Configured
                     }
                 }
             }

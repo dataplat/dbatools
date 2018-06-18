@@ -27,7 +27,7 @@ function Get-DbaDbForeignKey {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Databases
+            Tags: Database,ForeignKey, Table
             Author: Cláudio Silva ( @ClaudioESSilva | https://claudioessilva.eu)
 
             Website: https://dbatools.io

@@ -95,7 +95,7 @@ The force parameter will ignore some errors in the parameters and assume default
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
-Tags: Agent, Job, Job Step
+Tags: Agent, Job, JobStep
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 
 Website: https://dbatools.io

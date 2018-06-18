@@ -89,7 +89,7 @@ It will also remove the any present schedules with the same name for the specifi
 
 .NOTES
 Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job, Job Step
+Tags: Agent, Job, JobStep
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -127,7 +127,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [object[]]$Job,

@@ -32,7 +32,7 @@ Credential object used to connect to the SQL Server as a different user.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
-Tags: Roles, Databases
+Tags: Roles, Database, Security
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
 Website: https://dbatools.io
