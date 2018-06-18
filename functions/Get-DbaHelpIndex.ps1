@@ -56,7 +56,7 @@ function Get-DbaHelpIndex {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Indexes
+            Tags: Index
             Author: Nic Cain, https://sirsql.net/
 
             Website: https://dbatools.io

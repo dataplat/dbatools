@@ -1,121 +1,120 @@
 #ValidationTags#Messaging,FlowControl,Pipeline#
 function Set-DbaDatabaseState {
     <#
-.SYNOPSIS
-Sets various options for databases, hereby called "states"
+        .SYNOPSIS
+            Sets various options for databases, hereby called "states"
 
-.DESCRIPTION
-Sets some common "states" on databases:
- - "RW" options (ReadOnly, ReadWrite)
- - "Status" options (Online, Offline, Emergency, plus a special "Detached")
- - "Access" options (SingleUser, RestrictedUser, MultiUser)
+        .DESCRIPTION
+            Sets some common "states" on databases:
+            - "RW" options (ReadOnly, ReadWrite)
+            - "Status" options (Online, Offline, Emergency, plus a special "Detached")
+            - "Access" options (SingleUser, RestrictedUser, MultiUser)
 
-Returns an object with SqlInstance, Database, RW, Status, Access, Notes
+            Returns an object with SqlInstance, Database, RW, Status, Access, Notes
 
-Notes gets filled when something went wrong setting the state
+            Notes gets filled when something went wrong setting the state
 
-.PARAMETER SqlInstance
-The SQL Server that you're connecting to
+        .PARAMETER SqlInstance
+            The SQL Server that you're connecting to
 
-.PARAMETER SqlCredential
-Credential object used to connect to the SQL Server as a different user
+        .PARAMETER SqlCredential
+            Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. if unspecified, all databases will be processed.
+        .PARAMETER Database
+            The database(s) to process - this list is auto-populated from the server. if unspecified, all databases will be processed.
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+        .PARAMETER ExcludeDatabase
+            The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER AllDatabases
-This is a parameter that was included for safety, so you don't accidentally set options on all databases without specifying
+        .PARAMETER AllDatabases
+            This is a parameter that was included for safety, so you don't accidentally set options on all databases without specifying
 
-.PARAMETER ReadOnly
-RW Option : Sets the database as READ_ONLY
+        .PARAMETER ReadOnly
+            RW Option : Sets the database as READ_ONLY
 
-.PARAMETER ReadWrite
-RW Option : Sets the database as READ_WRITE
+        .PARAMETER ReadWrite
+            RW Option : Sets the database as READ_WRITE
 
-.PARAMETER Online
-Status Option : Sets the database as ONLINE
+        .PARAMETER Online
+            Status Option : Sets the database as ONLINE
 
-.PARAMETER Offline
-Status Option : Sets the database as OFFLINE
+        .PARAMETER Offline
+            Status Option : Sets the database as OFFLINE
 
-.PARAMETER Emergency
-Status Option : Sets the database as EMERGENCY
+        .PARAMETER Emergency
+            Status Option : Sets the database as EMERGENCY
 
-.PARAMETER Detached
-Status Option : Detaches the database
+        .PARAMETER Detached
+            Status Option : Detaches the database
 
-.PARAMETER SingleUser
-Access Option : Sets the database as SINGLE_USER
+        .PARAMETER SingleUser
+            Access Option : Sets the database as SINGLE_USER
 
-.PARAMETER RestrictedUser
-Access Option : Sets the database as RESTRICTED_USER
+        .PARAMETER RestrictedUser
+            Access Option : Sets the database as RESTRICTED_USER
 
-.PARAMETER MultiUser
-Access Option : Sets the database as MULTI_USER
+        .PARAMETER MultiUser
+            Access Option : Sets the database as MULTI_USER
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Force
-For most options, this translates to istantly rolling back any open transactions
-that may be stopping the process.
-For -Detached it is required to break mirroring and Availability Groups
+        .PARAMETER Force
+            For most options, this translates to instantly rolling back any open transactions
+            that may be stopping the process.
+            For -Detached it is required to break mirroring and Availability Groups
 
-.PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER InputObject
-Accepts piped database objects
+        .PARAMETER InputObject
+            Accepts piped database objects
 
-.NOTES
-Author: niphlod
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        .NOTES
+            Tags: Database, State
+            Author: niphlod
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Set-DbaDatabaseState
+        .LINK
+            https://dbatools.io/Set-DbaDatabaseState
 
-.EXAMPLE
-Set-DbaDatabaseState -SqlInstance sqlserver2014a -Database HR -Offline
+        .EXAMPLE
+            Set-DbaDatabaseState -SqlInstance sqlserver2014a -Database HR -Offline
 
-Sets the HR database as OFFLINE
+            Sets the HR database as OFFLINE
 
-.EXAMPLE
-Set-DbaDatabaseState -SqlInstance sqlserver2014a -AllDatabases -Exclude HR -Readonly -Force
+        .EXAMPLE
+            Set-DbaDatabaseState -SqlInstance sqlserver2014a -AllDatabases -Exclude HR -Readonly -Force
 
-Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
+            Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 
-.EXAMPLE
-Get-DbaDatabaseState -SqlInstance sql2016 | Where-Object Status -eq 'Offline' | Set-DbaDatabaseState -Online
+        .EXAMPLE
+            Get-DbaDatabaseState -SqlInstance sql2016 | Where-Object Status -eq 'Offline' | Set-DbaDatabaseState -Online
 
-Finds all offline databases and sets them to online
+            Finds all offline databases and sets them to online
 
-.EXAMPLE
-Set-DbaDatabaseState -SqlInstance sqlserver2014a -Database HR -SingleUser
+        .EXAMPLE
+            Set-DbaDatabaseState -SqlInstance sqlserver2014a -Database HR -SingleUser
 
-Sets the HR database as SINGLE_USER
+            Sets the HR database as SINGLE_USER
 
-.EXAMPLE
-Set-DbaDatabaseState -SqlInstance sqlserver2014a -Database HR -SingleUser -Force
+        .EXAMPLE
+            Set-DbaDatabaseState -SqlInstance sqlserver2014a -Database HR -SingleUser -Force
 
-Sets the HR database as SINGLE_USER, dropping all other connections (and rolling back open transactions)
+            Sets the HR database as SINGLE_USER, dropping all other connections (and rolling back open transactions)
 
-.EXAMPLE
-Get-DbaDatabase -SqlInstance sqlserver2014a -Database HR | Set-DbaDatabaseState -SingleUser -Force
+        .EXAMPLE
+            Get-DbaDatabase -SqlInstance sqlserver2014a -Database HR | Set-DbaDatabaseState -SingleUser -Force
 
-Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping all other connections (and rolling back open transactions)
-
-
-#>
+            Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping all other connections (and rolling back open transactions)
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     Param (
         [parameter(Mandatory = $true, ValueFromPipelineByPropertyName, ParameterSetName = "Server")]

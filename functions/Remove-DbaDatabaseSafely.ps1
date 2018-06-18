@@ -64,7 +64,7 @@ function Remove-DbaDatabaseSafely {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: DisasterRecovery, Backup, Restore, Databases
+            Tags: Database, Remove
             Author: Rob Sewell @SQLDBAWithBeard, sqldbawithabeard.com
 
             Website: https://dbatools.io
@@ -389,7 +389,7 @@ function Remove-DbaDatabaseSafely {
             Stop-Function -Message "Failure starting SQL Agent" -ErrorRecord $_
             return
         }
-        
+
         $start = Get-Date
         Write-Message -Level Verbose -Message "Starting Rationalisation Script at $start."
 
@@ -686,7 +686,7 @@ function Remove-DbaDatabaseSafely {
             }
         }
     }
-    
+
     end {
         if (Test-FunctionInterrupt) {
             return

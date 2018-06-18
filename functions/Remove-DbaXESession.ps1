@@ -26,14 +26,14 @@
 
         .PARAMETER Confirm
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-            
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: ExtendedEvent, XE, Xevent
+            Tags: ExtendedEvent, XE, XEvent
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -50,7 +50,7 @@
             Remove-DbaXESession -SqlInstance sql2012 -Session xesession1,xesession2
 
             Removes the xesession1 and xesession2 Extended Event sessions.
-        
+
         .EXAMPLE
             Get-DbaXESession -SqlInstance sql2017 | Remove-DbaXESession -Confirm:$false
 
@@ -85,11 +85,11 @@
         function Remove-XESessions {
             [CmdletBinding()]
             param ([Microsoft.SqlServer.Management.XEvent.Session[]]$xeSessions)
-            
+
             foreach ($xe in $xeSessions) {
                 $instance = $xe.Parent.Name
                 $session = $xe.Name
-                
+
                 if ($Pscmdlet.ShouldProcess("$instance", "Removing XEvent Session $session")) {
                     try {
                         $xe.Drop()
@@ -108,7 +108,7 @@
             }
         }
     }
-    
+
     process {
         if ($InputObject) {
             # avoid the collection issue

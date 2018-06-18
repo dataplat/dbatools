@@ -23,6 +23,10 @@
         .PARAMETER Force
             Overrides the default behavior and also displays hidden configuration values.
 
+        .NOTES
+            Tags: Config, Module
+            Author: Friedrich Weinmann
+
         .EXAMPLE
             PS C:\> Get-DbaConfig 'Mail.To'
 
@@ -32,10 +36,6 @@
             PS C:\> Get-DbaConfig -Force
 
             Retrieve all configuration elements from all modules, even hidden ones.
-
-        .NOTES
-            Author: Friedrich Weinmann
-            Tags: Config
     #>
     [CmdletBinding(DefaultParameterSetName = "FullName")]
     Param (

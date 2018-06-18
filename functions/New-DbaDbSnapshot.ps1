@@ -55,7 +55,7 @@ function New-DbaDbSnapshot {
                 Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: DisasterRecovery, Snapshot, Restore, Databases
+        Tags: Snapshot, Restore, Database
         Author: niphlod
 
         Website: https://dbatools.io

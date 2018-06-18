@@ -1,118 +1,129 @@
 function Set-DbaCmConnection {
     <#
-    .SYNOPSIS
-        Configures a connection object for use in remote computer management.
+        .SYNOPSIS
+            Configures a connection object for use in remote computer management.
 
-    .DESCRIPTION
-        Configures a connection object for use in remote computer management.
-        This function will either create new records for computers that have no connection registered so far, or it will configure existing connections if already present.
+        .DESCRIPTION
+            Configures a connection object for use in remote computer management.
+            This function will either create new records for computers that have no connection registered so far, or it will configure existing connections if already present.
 
-        As such it can be handy in making bulk-edits on connections or manually adjusting some settings.
+            As such it can be handy in making bulk-edits on connections or manually adjusting some settings.
 
-    .PARAMETER ComputerName
-        The computer to build the connection object for.
+        .PARAMETER ComputerName
+            The computer to build the connection object for.
 
-    .PARAMETER Credential
-        The credential to register.
+        .PARAMETER Credential
+            The credential to register.
 
-    .PARAMETER UseWindowsCredentials
-        Whether using the default windows credentials is legit.
-        Not setting this will not exclude using windows credentials, but only not pre-confirm them as working.
+        .PARAMETER UseWindowsCredentials
+            Whether using the default windows credentials is legit.
+            Not setting this will not exclude using windows credentials, but only not pre-confirm them as working.
 
-    .PARAMETER OverrideExplicitCredential
-        Setting this will enable the credential override.
-        The override will cause the system to ignore explicitly specified credentials, so long as known, good credentials are available.
+        .PARAMETER OverrideExplicitCredential
+            Setting this will enable the credential override.
+            The override will cause the system to ignore explicitly specified credentials, so long as known, good credentials are available.
 
-    .PARAMETER OverrideConnectionPolicy
-        Setting this will configure the connection policy override.
-        By default, global configurations enforce, which connection type is available at all and which is disabled.
+        .PARAMETER OverrideConnectionPolicy
+            Setting this will configure the connection policy override.
+            By default, global configurations enforce, which connection type is available at all and which is disabled.
 
-    .PARAMETER DisabledConnectionTypes
-        Exlicitly disable connection types.
-        These types will then not be used for connecting to the computer.
+        .PARAMETER DisabledConnectionTypes
+            Exlicitly disable connection types.
+            These types will then not be used for connecting to the computer.
 
-    .PARAMETER DisableBadCredentialCache
-        Will prevent the caching of credentials if set to true.
+        .PARAMETER DisableBadCredentialCache
+            Will prevent the caching of credentials if set to true.
 
-    .PARAMETER DisableCimPersistence
-        Will prevent Cim-Sessions to be reused.
+        .PARAMETER DisableCimPersistence
+            Will prevent Cim-Sessions to be reused.
 
-    .PARAMETER DisableCredentialAutoRegister
-        Will prevent working credentials from being automatically cached
+        .PARAMETER DisableCredentialAutoRegister
+            Will prevent working credentials from being automatically cached
 
-    .PARAMETER EnableCredentialFailover
-        Will enable automatic failing over to known to work credentials, when using bad credentials.
-        By default, passing bad credentials will cause the Computer Management functions to interrupt with a warning (Or exception if in silent mode).
+        .PARAMETER EnableCredentialFailover
+            Will enable automatic failing over to known to work credentials, when using bad credentials.
+            By default, passing bad credentials will cause the Computer Management functions to interrupt with a warning (Or exception if in silent mode).
 
-    .PARAMETER WindowsCredentialsAreBad
-        Will prevent the windows credentials of the currently logged on user from being used for the remote connection.
+        .PARAMETER WindowsCredentialsAreBad
+            Will prevent the windows credentials of the currently logged on user from being used for the remote connection.
 
-    .PARAMETER CimWinRMOptions
-        Specify a set of options to use when connecting to the target computer using CIM over WinRM.
-        Use 'New-CimSessionOption' to create such an object.
+        .PARAMETER CimWinRMOptions
+            Specify a set of options to use when connecting to the target computer using CIM over WinRM.
+            Use 'New-CimSessionOption' to create such an object.
 
-    .PARAMETER CimDCOMOptions
-        Specify a set of options to use when connecting to the target computer using CIM over DCOM.
-        Use 'New-CimSessionOption' to create such an object.
+        .PARAMETER CimDCOMOptions
+            Specify a set of options to use when connecting to the target computer using CIM over DCOM.
+            Use 'New-CimSessionOption' to create such an object.
 
-    .PARAMETER AddBadCredential
-        Adds credentials to the bad credential cache.
-        These credentials will not be used when connecting to the target remote computer.
+        .PARAMETER AddBadCredential
+            Adds credentials to the bad credential cache.
+            These credentials will not be used when connecting to the target remote computer.
 
-    .PARAMETER RemoveBadCredential
-        Removes credentials from the bad credential cache.
+        .PARAMETER RemoveBadCredential
+            Removes credentials from the bad credential cache.
 
-    .PARAMETER ClearBadCredential
-        Clears the cache of credentials that didn't worked.
-        Will be applied before adding entries to the credential cache.
+        .PARAMETER ClearBadCredential
+            Clears the cache of credentials that didn't worked.
+            Will be applied before adding entries to the credential cache.
 
-    .PARAMETER ClearCredential
-        Clears the cache of credentials that worked.
-        Will be applied before adding entries to the credential cache.
+        .PARAMETER ClearCredential
+            Clears the cache of credentials that worked.
+            Will be applied before adding entries to the credential cache.
 
-    .PARAMETER ResetCredential
-        Resets all credential-related caches:
-        - Clears bad credential cache
-        - Removes last working credential
-        - Un-Confirms the windows credentials as working
-        - Un-Confirms the windows credentials as not working
+        .PARAMETER ResetCredential
+            Resets all credential-related caches:
+            - Clears bad credential cache
+            - Removes last working credential
+            - Un-Confirms the windows credentials as working
+            - Un-Confirms the windows credentials as not working
 
-        Automatically implies the parameters -ClearCredential and -ClearBadCredential. Using them together is redundant.
-        Will be applied before adding entries to the credential cache.
+            Automatically implies the parameters -ClearCredential and -ClearBadCredential. Using them together is redundant.
+            Will be applied before adding entries to the credential cache.
 
-    .PARAMETER ResetConnectionStatus
-        Restores all connection stati to default, as if no connection protocol had ever been tested.
+        .PARAMETER ResetConnectionStatus
+            Restores all connection stati to default, as if no connection protocol had ever been tested.
 
-    .PARAMETER ResetConfiguration
-        Restores the configuration back to system default.
-        Configuration elements are the basic behavior controlling settings, such as whether to cache bad credentials, etc.
-        These can be configured globally using the dbatools configuration system and overridden locally on a per-connection basis.
-        For a list of all available settings, use "Get-DbaConfig -Module ComputerManagement".
+        .PARAMETER ResetConfiguration
+            Restores the configuration back to system default.
+            Configuration elements are the basic behavior controlling settings, such as whether to cache bad credentials, etc.
+            These can be configured globally using the dbatools configuration system and overridden locally on a per-connection basis.
+            For a list of all available settings, use "Get-DbaConfig -Module ComputerManagement".
 
-    .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .EXAMPLE
-        Get-DbaCmConnection sql2014 | Set-DbaCmConnection -ClearBadCredential -UseWindowsCredentials
+        .NOTES
+            Author: Fred Winmann (@FredWeinmann)
+            Tags: ComputerManagement, CIM
 
-        Retrieves the already existing connection to sql2014, removes the list of not working credentials and configures it to default to the credentials of the logged on user.
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    .EXAMPLE
-        Get-DbaCmConnection | Set-DbaCmConnection -RemoveBadCredential $cred
-        Removes the credentials stored in $cred from all connections' list of "known to not work" credentials.
-        Handy to update changes in privilege.
+        .LINK
+            https://dbatools.io/set-DbaCmConnection
 
-    .EXAMPLE
-        Get-DbaCmConnection | Export-Clixml .\connections.xml
-        Import-Clixml .\connections.xml | Set-DbaCmConnection -ResetConfiguration
+        .EXAMPLE
+            Get-DbaCmConnection sql2014 | Set-DbaCmConnection -ClearBadCredential -UseWindowsCredentials
 
-        At first, the current cached connections are stored in an xml file. At a later time - possibly in the profile when starting the console again - those connections are imported again and applied again to the connection cache.
+            Retrieves the already existing connection to sql2014, removes the list of not working credentials and configures it to default to the credentials of the logged on user.
 
-        In this example, the configuration settings will also be reset, since after reimport those will be set to explicit, rather than deriving them from the global settings.
-        In many cases, using the default settings is desirable. For specific settings, use New-DbaCmConnection as part of the profile in order to explicitly configure a connection.
-#>
+        .EXAMPLE
+            Get-DbaCmConnection | Set-DbaCmConnection -RemoveBadCredential $cred
+            Removes the credentials stored in $cred from all connections' list of "known to not work" credentials.
+            Handy to update changes in privilege.
+
+        .EXAMPLE
+            Get-DbaCmConnection | Export-Clixml .\connections.xml
+            Import-Clixml .\connections.xml | Set-DbaCmConnection -ResetConfiguration
+
+            At first, the current cached connections are stored in an xml file. At a later time - possibly in the profile when starting the console again - those connections are imported again and applied again to the connection cache.
+
+            In this example, the configuration settings will also be reset, since after reimport those will be set to explicit, rather than deriving them from the global settings.
+            In many cases, using the default settings is desirable. For specific settings, use New-DbaCmConnection as part of the profile in order to explicitly configure a connection.
+    #>
     [CmdletBinding(DefaultParameterSetName = 'Credential')]
     param (
         [Parameter(ValueFromPipeline = $true)]

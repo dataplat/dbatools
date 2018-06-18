@@ -47,6 +47,7 @@ function Install-DbaMaintenanceSolution {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Ola, Maintenance
             Author: Viorel Ciucu, viorel.ciucu@gmail.com, cviorel.com
 
             Website: https://dbatools.io
@@ -62,9 +63,6 @@ function Install-DbaMaintenanceSolution {
             Installs Ola Hallengren's Solution objects on RES14224 in the DBA database.
             Backups will default to the default Backup Directory.
             If the Maintenance Solution already exists, the script will be halted.
-
-        .EXAMPLE
-            Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -ReplaceExisting -CleanupTime 72 -LogToTable -Solution "Backup" -BackupLocation "Z:\SQLBackup" -InstallJobs
 
         .EXAMPLE
             Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72

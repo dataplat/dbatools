@@ -36,7 +36,7 @@ function Get-DbaRestoreHistory {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: DisasterRecovery, Backup, Restore, Databases
+            Tags: DisasterRecovery, Backup, Restore
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -140,7 +140,8 @@ function Get-DbaRestoreHistory {
                     bs.last_lsn,
                     bs.checkpoint_lsn,
                     bs.database_backup_lsn,
-                    bs.backup_finish_date
+                    bs.backup_finish_date,
+                    bs.backup_finish_date AS BackupFinishDate
                     "
                 }
 
@@ -193,7 +194,7 @@ function Get-DbaRestoreHistory {
                     }
                     $results = $tmpres
                 }
-                $results | Select-DefaultView -ExcludeProperty first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn
+                $results | Select-DefaultView -ExcludeProperty first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, backup_finish_date
             }
             catch {
                 Stop-Function -Message "Failure" -Target $SqlInstance -Error $_ -Exception $_.Exception.InnerException -Continue

@@ -7,11 +7,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $database = "dbatoolsci_frk_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $script:instance2
-            $server.Query("CREATE DATABASE $database")
+            $server.Query("CREATE DATABASE [$database]")
         }
         AfterAll {
-            $server.Query("ALTER DATABASE $database SET OFFLINE WITH ROLLBACK IMMEDIATE")
-            $server.Query("DROP DATABASE IF EXISTS $database")
+            $server.Query("
+        IF DB_ID('$database') IS NOT NULL
+        begin
+            print 'Dropping $database'
+        	ALTER DATABASE [$database] SET SINGLE_USER WITH ROLLBACK immediate;
+        	DROP DATABASE [$database];
+        end
+        ")
+
         }
 
         $results = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Branch master
@@ -23,7 +30,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results[0].Status -eq "Installed" | Should Be $true
         }
         It "At least installed sp_Blitz and sp_BlitzIndex" {
-            'sp_Blitz','sp_BlitzIndex' | Should BeIn $results.Name
+            'sp_Blitz', 'sp_BlitzIndex' | Should BeIn $results.Name
         }
     }
 }
