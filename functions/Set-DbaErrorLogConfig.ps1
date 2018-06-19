@@ -1,9 +1,9 @@
-function Set-DbaErrorLog {
+function Set-DbaErrorLogConfig {
     <#
         .SYNOPSIS
             Set the configuration for the ErrorLog on a given SQL Server instance
-    
-        .DESCRIPTION    
+
+        .DESCRIPTION
             Sets the number of log files configured and/or size in KB in SQL Server 2012+ and above
 
         .PARAMETER SqlInstance
@@ -38,20 +38,20 @@ function Set-DbaErrorLog {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Set-DbaErrorLog
+            https://dbatools.io/Set-DbaErrorLogConfig
 
        .EXAMPLE
-            Set-DbaErrorLog -SqlInstance sql2017,sql2014 -LogCount 25
+            Set-DbaErrorLogConfig -SqlInstance sql2017,sql2014 -LogCount 25
 
             Sets the number of error log files to 25 on sql2017 and sql2014
 
         .EXAMPLE
-            Set-DbaErrorLog -SqlInstance sql2014 -LogSize 102400
+            Set-DbaErrorLogConfig -SqlInstance sql2014 -LogSize 102400
 
             Sets the size of the error log file, before it rolls over, to 102400 KB (100 MB) on sql2014
 
         .EXAMPLE
-            Set-DbaErrorLog -SqlInstance sql2012 -LogCount 25 -LogSize 500
+            Set-DbaErrorLogConfig -SqlInstance sql2012 -LogCount 25 -LogSize 500
 
             Sets the number of error log files to 25 and size before it will roll over to 500 KB on sql2012
     #>
@@ -69,15 +69,15 @@ function Set-DbaErrorLog {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $currentNumLogs = $server.NumberOfLogFiles
             $currentLogSize = $server.ErrorLogSizeKb
-            
+
             $collection = [PSCustomObject]@{
                 ComputerName              = $server.NetName
                 InstanceName              = $server.ServiceName
@@ -85,7 +85,30 @@ function Set-DbaErrorLog {
                 LogCount                  = $currentNumLogs
                 LogSize                   = [dbasize]($currentLogSize * 1024)
             }
-            
+            if (Test-Bound -ParameterName 'LogSize') {
+                if ($server.VersionMajor -lt 11) {
+                    Stop-Function -Message "Size is cannot be set on $instance. SQL Server 2008 R2 and below not supported." -Continue
+                }
+                if ($LogSize -eq $currentLogSize) {
+                    Write-Message -Level Warning -Message "The provided value for LogSize is already set to $LogSize KB on $instance"
+                }
+                else {
+                    if ($PSCmdlet.ShouldProcess($server, "Updating log size from [$currentLogSize] to [$LogSize]")) {
+                        try {
+                            $server.ErrorLogSizeKb = $LogSize
+                            $server.Alter()
+                        }
+                        catch {
+                            Stop-Function -Message "Issue setting number of log files on $instance" -Target $instance -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
+                        }
+                    }
+                    if ($PSCmdlet.ShouldProcess($server, "Output final results of setting error log size")) {
+                        $server.Refresh()
+                        $collection.LogSize = [dbasize]($server.ErrorLogSizeKb * 1024)
+                    }
+                }
+            }
+
             if (Test-Bound -ParameterName 'LogCount') {
                 if ($LogCount -eq $currentNumLogs) {
                     Write-Message -Level Warning -Message "The provided value for LogCount is already set to $LogCount on $instance"
@@ -103,26 +126,6 @@ function Set-DbaErrorLog {
                     if ($PSCmdlet.ShouldProcess($server, "Output final results of setting number of log files")) {
                         $server.Refresh()
                         $collection.LogCount = $server.NumberOfLogFiles
-                    }
-                }
-            }
-            if (Test-Bound -ParameterName 'LogSize') {
-                if ($LogSize -eq $currentLogSize) {
-                   Write-Message -Level Warning -Message "The provided value for LogSize is already set to $LogSize KB on $instance"
-                }
-                else {
-                    if ($PSCmdlet.ShouldProcess($server, "Updating log size from [$currentLogSize] to [$LogSize]")) {
-                        try {
-                            $server.ErrorLogSizeKb = $LogSize
-                            $server.Alter()
-                        }
-                        catch {
-                            Stop-Function -Message "Issue setting number of log files on $instance" -Target $instance -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
-                        }
-                    }
-                    if ($PSCmdlet.ShouldProcess($server, "Output final results of setting error log size")) {
-                        $server.Refresh()
-                        $collection.LogSize = [dbasize]($server.ErrorLogSizeKb * 1024)
                     }
                 }
             }

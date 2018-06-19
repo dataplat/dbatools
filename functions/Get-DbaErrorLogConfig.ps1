@@ -4,7 +4,8 @@ function Get-DbaErrorLogConfig {
             Pulls the configuration for the ErrorLog on a given SQL Server instance
         .DESCRIPTION
             Pulls the configuration for the ErrorLog on a given SQL Server instance.
-            Includes number of log files configured and size in KB (SQL Server 2012+ only)
+
+            Includes number of log files configured and size (SQL Server 2012+ only)
 
         .PARAMETER SqlInstance
             The target SQL Server instance(s)
@@ -34,7 +35,7 @@ function Get-DbaErrorLogConfig {
             Returns error log configuration for server2017 and server2014
     #>
     [cmdletbinding()]
-    param(
+    param (
         [Parameter(ValueFromPipelineByPropertyName)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -52,19 +53,20 @@ function Get-DbaErrorLogConfig {
 
             $numLogs = $server.NumberOfLogFiles
             $logSize =
-                if ($server.VersionMajor -ge 11) {
-                    $server.ErrorLogSizeKb
-                }
-                else {
-                    $null
-                }
+            if ($server.VersionMajor -ge 11) {
+                [dbasize]($server.ErrorLogSizeKb * 1024)
+            }
+            else {
+                $null
+            }
 
             [PSCustomObject]@{
-                ComputerName    = $server.NetName
-                InstanceName    = $server.ServiceName
-                SqlInstance     = $server.DomainInstanceName
-                NumberErrorLogs = $numLogs
-                ErrorLogSizeKb  = $logSize
+                ComputerName       = $server.NetName
+                InstanceName       = $server.ServiceName
+                SqlInstance        = $server.DomainInstanceName
+                LogCount           = $numLogs
+                LogSize            = $logSize
+                LogPath            = $server.ErrorLogPath
             }
         }
     }
