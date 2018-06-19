@@ -99,18 +99,20 @@ function Install-DbaFirstResponderKit {
 
         $null = New-Item -ItemType Directory -Path $zipfolder -ErrorAction SilentlyContinue
 
-        Write-Message -Level Verbose -Message "Downloading and unzipping the First Responder Kit zip file."
+        Write-Message -Level Output -Message "Downloading and unzipping the First Responder Kit zip file."
 
         try {
             $oldSslSettings = [System.Net.ServicePointManager]::SecurityProtocol
             [System.Net.ServicePointManager]::SecurityProtocol = "Tls12"
             try {
-                Invoke-WebRequest $url -OutFile $zipfile
+                $wc = New-Object System.Net.WebClient
+                $wc.DownloadFile($url, $zipfile)
             }
             catch {
                 # Try with default proxy and usersettings
-                (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                Invoke-WebRequest $url -OutFile $zipfile
+                $wc = New-Object System.Net.WebClient
+                $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                $wc.DownloadFile($url, $zipfile)
             }
             [System.Net.ServicePointManager]::SecurityProtocol = $oldSslSettings
 

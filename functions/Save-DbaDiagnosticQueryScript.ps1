@@ -92,7 +92,7 @@ If Path is not specified, the "My Documents" location will be used.
             Write-Message -Level Output -Message "Downloading $($doc.URL)"
             $page = Invoke-WebRequest -Uri $doc.URL -ErrorAction Stop
             $filename = "{0}\SQLServerDiagnosticQueries_{1}_{2}.sql" -f $Path, $doc.SQLVersion, "$($doc.FileYear)$($doc.FileMonth)"
-            [io.file]::WriteAllBytes($filename, $page.content)
+            [io.file]::WriteAllText($filename, $page.content)
         }
         catch {
             Stop-Function -Message "Requesting and writing file failed: $_" -Target $filename -ErrorRecord $_
