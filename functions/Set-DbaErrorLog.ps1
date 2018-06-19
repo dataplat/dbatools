@@ -2,6 +2,7 @@ function Set-DbaErrorLog {
     <#
         .SYNOPSIS
             Set the configuration for the ErrorLog on a given SQL Server instance
+    
         .DESCRIPTION
             Set the configuration for the ErrorLog on a given SQL Server instance.
             Includes setting the number of log files configured and/or size in KB (SQL Server 2012+ only)
@@ -12,10 +13,10 @@ function Set-DbaErrorLog {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER NumberOfLog
+        .PARAMETER LogCount
             Integer value between 6 and 99 for setting the number of error log files to keep for SQL Server instance.
 
-        .PARAMETER SizeInKb
+        .PARAMETER LogSize
             Integer value for the size in KB that you want the error log file to grow. This is feature only in SQL Server 2012 and higher. When the file reaches that limit SQL Server will roll the error log over.
 
         .PARAMETER WhatIf
@@ -35,130 +36,98 @@ function Set-DbaErrorLog {
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Set-DbaErrorLog
 
        .EXAMPLE
-            Set-DbaErrorLog -SqlInstance server2017,server2014 -NumberOfLog 25
+            Set-DbaErrorLog -SqlInstance sql2017,sql2014 -LogCount 25
 
-            Sets the number of error log files to 25 on server2017 and server2014
-
-        .EXAMPLE
-            Set-DbaErrorLog -SqlInstance server2014 -SizeInKb 1024
-
-            Sets the size of the error log file, before it rolls over, to 1024KB (1GB) on server2014
+            Sets the number of error log files to 25 on sql2017 and sql2014
 
         .EXAMPLE
-            Set-DbaErrorLog -SqlInstance server2012 -NumberOfLog 25 -SizeInKb 500
+            Set-DbaErrorLog -SqlInstance sql2014 -LogSize 1024
 
-            Sets the number of error log files to 25 and size before it will roll over to 500KB on server2012
+            Sets the size of the error log file, before it rolls over, to 1024KB (1MB) on sql2014
+
+        .EXAMPLE
+            Set-DbaErrorLog -SqlInstance sql2012 -LogCount 25 -LogSize 500
+
+            Sets the number of error log files to 25 and size before it will roll over to 500KB on sql2012
     #>
     [cmdletbinding(SupportsShouldProcess)]
     param(
-        [Parameter(ValueFromPipelineByPropertyName)]
+        [Parameter(ValueFromPipelineByPropertyName, Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [DbaValidatePattern('^[6-9][0-9]?$', ErrorMessage = "Error processing {0} - input must be an integer between 6 and 99")]
-        [int]$NumberOfLog,
-        [int]$SizeInKb,
+        [ValidateRange(6, 99)]
+        [int]$LogCount,
+        [int]$LogSize,
         [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            $collectionNumberLog = [PSCustomObject]@{
-                ComputerName            = $server.NetName
-                InstanceName            = $server.ServiceName
-                SqlInstance             = $server.DomainInstanceName
-                Setting                 = 'NumberOfLogFiles'
-                OriginalNumberErrorLogs = $null
-                CurrentNumberErrorLogs  = $null
-                Status                  = $null
+            
+            $currentNumLogs = $server.NumberOfLogFiles
+            $currentLogSize = $server.ErrorLogSizeKb
+            
+            $collection = [PSCustomObject]@{
+                ComputerName              = $server.NetName
+                InstanceName              = $server.ServiceName
+                SqlInstance               = $server.DomainInstanceName
+                LogCount                  = $currentNumLogs
+                LogSize                   = $currentLogSize
             }
-            $collectionErrorLogSize = [PSCustomObject]@{
-                ComputerName           = $server.NetName
-                InstanceName           = $server.ServiceName
-                SqlInstance            = $server.DomainInstanceName
-                Setting                = 'ErrorLogSizeKb'
-                OriginalErrorLogSizeKb = $null
-                CurrentErrorLogSizeKb  = $null
-                Status                 = $null
-            }
-            if (Test-Bound 'NumberOfLog') {
-                try {
-                    $currentNumLogs = $server.NumberOfLogFiles
-                    $collectionNumberLog.OriginalNumberErrorLogs = $currentNumLogs
-                }
-                catch {
-                    $collectionNumberLog.Status = "Failed collection"
-                    $collectionNumberLog
-                    Stop-Function -Message "Issue collecting current value for number of error logs" -Target $server -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
-                }
-
-                if ($NumberOfLog -eq $currentNumLogs) {
-                    Write-Message -Level Warning -Message "The provided value for NumberOfLog is already set" -Continue
+            
+            if (Test-Bound -ParameterName 'LogCount') {
+                if ($LogCount -eq $currentNumLogs) {
+                    Stop-Function -Message "The provided value for LogCount is already set on $instance" -Continue -Target $instance
                 }
                 else {
-                    if ($PSCmdlet.ShouldProcess($server, "Setting number of logs from [$currentNumLogs] to [$NumberOfLog]")) {
+                    if ($PSCmdlet.ShouldProcess($server, "Setting number of logs from [$currentNumLogs] to [$LogCount]")) {
                         try {
-                            $server.NumberOfLogFiles = $NumberOfLog
+                            $server.NumberOfLogFiles = $LogCount
                             $server.Alter()
                         }
                         catch {
-                            $collectionNumberLog.Status = "Failed update"
-                            $collectionNumberLog
-                            Stop-Function -Message "Issue setting number of log files" -Target $instance -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
+                            Stop-Function -Message "Issue setting number of log files on $instance" -Target $instance -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
                         }
                     }
                     if ($PSCmdlet.ShouldProcess($server, "Output final results of setting number of log files")) {
                         $server.Refresh()
-                        $collectionNumberLog.CurrentNumberErrorLogs = $server.NumberOfLogFiles
-                        $collectionNumberLog
+                        $collection.LogCount = $server.NumberOfLogFiles
                     }
                 }
             }
-            if (Test-Bound 'SizeInKb') {
-                try {
-                    $currentSizeInKb = $server.ErrorInSizeKb
-                    $collectionErrorLogSize.OriginalErrorLogSizeKb = $currentSizeInKb
-                }
-                catch {
-                    $collectionErrorLogSize.Status = "Failed collection"
-                    $collectionErrorLogSize
-                    Stop-Function -Message "Issue collecting current value for number of error logs" -Target $server -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
-                }
-
-                if ($SizeInKb -eq $currentSizeInKb) {
-                    Write-Message -Level Warning -Message "The provided value for SizeInKb is already set" -Continue
+            if (Test-Bound -ParameterName 'LogSize') {
+                if ($LogSize -eq $currentLogSize) {
+                    Stop-Function -Message "The provided value for LogSize is already set on $instance" -Target $server -Continue
                 }
                 else {
-                    if ($PSCmdlet.ShouldProcess($server, "Setting number of logs from [$currentSizeInKb] to [$SizeInKb]")) {
+                    if ($PSCmdlet.ShouldProcess($server, "Updating log size from [$currentLogSize] to [$LogSize]")) {
                         try {
-                            $server.ErrorLogSizeKb = $SizeInKb
+                            $server.ErrorLogSizeKb = $LogSize
                             $server.Alter()
                         }
                         catch {
-                            $collectionErrorLogSize.Status = "Failed update"
-                            $collectionErrorLogSize
-                            Stop-Function -Message "Issue setting number of log files" -Target $instance -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
+                            Stop-Function -Message "Issue setting number of log files on $instance" -Target $instance -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
                         }
                     }
                     if ($PSCmdlet.ShouldProcess($server, "Output final results of setting error log size")) {
                         $server.Refresh()
-                        $collectionErrorLogSize.CurrentErrorLogSizeKb = $server.ErrorLogSizeKb
-                        $collectionErrorLogSize
+                        $collection.LogSize = $server.ErrorLogSizeKb
                     }
                 }
             }
+            $collection
         }
     }
 }
