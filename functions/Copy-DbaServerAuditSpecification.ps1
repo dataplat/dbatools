@@ -157,7 +157,7 @@ function Copy-DbaServerAuditSpecification {
                         }
                         catch {
                             $copyAuditSpecStatus.Status = "Failed"
-                            $copyAuditSpecStatus.Notes = $_.Exception
+                            $copyAuditSpecStatus.Notes = (Get-ErrorMessage -Record $_)
                             $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Stop-Function -Message "Issue dropping audit spec" -Target $auditSpecName -ErrorRecord $_ -Continue
@@ -177,7 +177,7 @@ function Copy-DbaServerAuditSpecification {
                 }
                 catch {
                     $copyAuditSpecStatus.Status = "Failed"
-                    $copyAuditSpecStatus.Notes = $_.Exception
+                    $copyAuditSpecStatus.Notes = (Get-ErrorMessage -Record $_)
                     $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                     Stop-Function -Message "Issue creating audit spec on destination" -Target $auditSpecName -ErrorRecord $_

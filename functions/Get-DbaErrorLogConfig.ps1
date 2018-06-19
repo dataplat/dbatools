@@ -37,7 +37,7 @@ function Get-DbaErrorLogConfig {
     #>
     [cmdletbinding()]
     param (
-        [Parameter(ValueFromPipelineByPropertyName, Mandatory)]
+        [Parameter(ValueFromPipeline, Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$EnableException
