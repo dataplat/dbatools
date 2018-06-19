@@ -96,8 +96,10 @@ function Get-DbaErrorLog {
         [Alias('Silent')]
         [switch]$EnableException
     )
+    begin {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaSqlLog
+    }
     process {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaErrorLog
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 
