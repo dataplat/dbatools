@@ -1,19 +1,20 @@
 ﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 $base = (Get-Module -Name dbatools).ModuleBase
 
-Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XE.Core.dll"
-Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.Configuration.dll"
-Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.dll"
-Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.Linq.dll"
+# Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XE.Core.dll"
+# Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.Configuration.dll"
+# Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.dll"
+# Add-Type -Path "$base\bin\smo\Microsoft.SqlServer.XEvent.Linq.dll"
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $path = $server.ErrorLogPath
         $sql = "CREATE SERVER AUDIT LoginAudit
-                TO FILE (FILEPATH = N'C:\temp',MAXSIZE = 10 MB,MAX_ROLLOVER_FILES = 1,RESERVE_DISK_SPACE = OFF)
+                TO FILE (FILEPATH = N'$path',MAXSIZE = 10 MB,MAX_ROLLOVER_FILES = 1,RESERVE_DISK_SPACE = OFF)
                 WITH (QUEUE_DELAY = 1000, ON_FAILURE = CONTINUE)
 
                 CREATE SERVER AUDIT SPECIFICATION TrackAllLogins
