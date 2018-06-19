@@ -2,10 +2,11 @@ function Get-DbaErrorLogConfig {
     <#
         .SYNOPSIS
             Pulls the configuration for the ErrorLog on a given SQL Server instance
+    
         .DESCRIPTION
             Pulls the configuration for the ErrorLog on a given SQL Server instance.
 
-            Includes number of log files configured and size (SQL Server 2012+ only)
+            Includes error log path, number of log files configured and size (SQL Server 2012+ only)
 
         .PARAMETER SqlInstance
             The target SQL Server instance(s)

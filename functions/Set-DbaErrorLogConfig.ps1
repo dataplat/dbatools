@@ -4,7 +4,10 @@ function Set-DbaErrorLogConfig {
             Set the configuration for the ErrorLog on a given SQL Server instance
 
         .DESCRIPTION
-            Sets the number of log files configured and/or size in KB in SQL Server 2012+ and above
+            Sets the number of log files configured on all versions, and size in KB in SQL Server 2012+ and above.
+
+            To set the Path to the ErrorLog, use Set-DbaStartupParameter -ErrorLog. Note that this command requires
+            remote, administrative access to the Windows/WMI server, similar to SQL Configuration Manager.
 
         .PARAMETER SqlInstance
             The target SQL Server instance(s)
