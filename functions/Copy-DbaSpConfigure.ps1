@@ -150,7 +150,7 @@ function Copy-DbaSpConfigure {
                     }
                     else {
                         $copySpConfigStatus.Status = "Failed"
-                        $copySpConfigStatus.Notes = $_.Exception
+                        $copySpConfigStatus.Notes = (Get-ErrorMessage -Record $_)
                     }
                     $copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
