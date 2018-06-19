@@ -127,11 +127,11 @@ ORDER BY db.[name] OPTION (RECOMPILE);
 
 
 -- Get VLF Counts for all databases on the instance (Query 7) (VLF Counts)
-SELECT [name] AS [Database Name], [VLF Count] 
-FROM sys.databases AS db WITH (NOLOCK)
-CROSS APPLY (SELECT file_id, COUNT(*) AS [VLF Count] 
+SELECTÂ [name] AS [Database Name],Â [VLF Count] 
+FROMÂ sys.databasesÂ AS db WITH (NOLOCK)
+CROSS APPLYÂ (SELECTÂ file_id, COUNT(*)Â AS [VLF Count]Â 
 			 FROM sys.dm_db_log_info(db.database_id) 
-             GROUP BY file_id) AS li
+Â Â Â Â Â Â Â Â Â Â    GROUP BYÂ file_id)Â AS li
 ORDER BY [VLF Count] DESC  OPTION (RECOMPILE);
 ------
 
@@ -262,7 +262,7 @@ AND counter_name = N'Page life expectancy' OPTION (RECOMPILE);
 -- Higher PLE is better. Watch the trend over time, not the absolute value
 -- This will only return one row for non-NUMA systems
 
--- Page Life Expectancy isn’t what you think…
+-- Page Life Expectancy isnÂ’t what you thinkÂ…
 -- https://bit.ly/2EgynLa
 
 
