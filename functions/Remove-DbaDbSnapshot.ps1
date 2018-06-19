@@ -34,8 +34,8 @@ function Remove-DbaDbSnapshot {
     .PARAMETER Confirm
         Prompts for confirmation of every step.
 
-    .PARAMETER PipelineSnapshot
-        Internal parameter
+    .PARAMETER InputObject
+        Enables input from Get-DbaDbSnapshot
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -81,9 +81,10 @@ function Remove-DbaDbSnapshot {
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $false, ValueFromPipeline = $true)]
+        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
+        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
         [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
@@ -92,7 +93,7 @@ function Remove-DbaDbSnapshot {
         [object[]]$ExcludeDatabase,
         [object[]]$Snapshot,
         [parameter(ValueFromPipeline = $true)]
-        [object]$PipelineSnapshot,
+        [object]$InputObject,
         [switch]$AllSnapshots,
         [switch]$Force,
         [Alias('Silent')]
@@ -100,25 +101,25 @@ function Remove-DbaDbSnapshot {
     )
 
     process {
-        if (!$Snapshot -and !$Database -and !$AllSnapshots -and $null -eq $PipelineSnapshot -and !$ExcludeDatabase) {
+        if (!$Snapshot -and !$Database -and !$AllSnapshots -and $null -eq $InputObject -and !$ExcludeDatabase) {
             Stop-Function -Message "You must specify -Snapshot, -Database, -Exclude or -AllSnapshots"
             return
         }
         # handle the database object passed by the pipeline
         # do we need a specialized type back ?
-        if ($null -ne $PipelineSnapshot -and $PipelineSnapshot.getType().Name -eq 'pscustomobject') {
-            if ($Pscmdlet.ShouldProcess($PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName, "Remove db snapshot $($PipelineSnapshot.SnapshotDb.Name)")) {
+        if ($null -ne $InputObject -and $InputObject.getType().Name -eq 'pscustomobject') {
+            if ($Pscmdlet.ShouldProcess($InputObject.SnapshotDb.Parent.DomainInstanceName, "Remove db snapshot $($InputObject.SnapshotDb.Name)")) {
                 try {
-                    $server = $PipelineSnapshot.SnapshotDb.Parent
+                    $server = $InputObject.SnapshotDb.Parent
                 }
                 catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
                 try {
                     if ($Force) {
-                        $server.KillAllProcesses($PipelineSnapshot.SnapshotDb.Name)
+                        $server.KillAllProcesses($InputObject.SnapshotDb.Name)
                     }
-                    $null = $server.Query("drop database [$($PipelineSnapshot.SnapshotDb.Name)]")
+                    $null = $server.Query("drop database [$($InputObject.SnapshotDb.Name)]")
                     $status = "Dropped"
                 }
                 catch {
@@ -127,11 +128,11 @@ function Remove-DbaDbSnapshot {
                 }
 
                 [PSCustomObject]@{
-                    ComputerName = $PipelineSnapshot.SnapshotDb.Parent.NetName
-                    InstanceName = $PipelineSnapshot.SnapshotDb.Parent.ServiceName
-                    SqlInstance  = $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName
-                    Database     = $PipelineSnapshot.Database
-                    SnapshotOf   = $PipelineSnapshot.SnapshotOf
+                    ComputerName = $InputObject.SnapshotDb.Parent.NetName
+                    InstanceName = $InputObject.SnapshotDb.Parent.ServiceName
+                    SqlInstance  = $InputObject.SnapshotDb.Parent.DomainInstanceName
+                    Database     = $InputObject.Database
+                    SnapshotOf   = $InputObject.SnapshotOf
                     Status       = $status
                 }
             }
