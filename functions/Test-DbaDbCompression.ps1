@@ -181,36 +181,36 @@ DECLARE @sqlVersion int
 SELECT @sqlVersion = substring(CONVERT(VARCHAR,SERVERPROPERTY('ProductVersion')),0,CHARINDEX('.',(CONVERT(VARCHAR,SERVERPROPERTY('ProductVersion')))))
 IF @sqlVersion >= '12'
     BEGIN
-		-- remove memory optimized tables
-		DELETE tdc
-		FROM ##testdbacompression tdc
-		INNER JOIN sys.tables t
-			ON SCHEMA_NAME(t.schema_id) = tdc.[Schema]
-			AND t.name = tdc.TableName
-		WHERE t.is_memory_optimized = 1
-	END
+        -- remove memory optimized tables
+        DELETE tdc
+        FROM ##testdbacompression tdc
+        INNER JOIN sys.tables t
+            ON SCHEMA_NAME(t.schema_id) = tdc.[Schema]
+            AND t.name = tdc.TableName
+        WHERE t.is_memory_optimized = 1
+    END
 IF @sqlVersion >= '13'
     BEGIN
-		-- remove tables with encrypted columns
-		DELETE tdc
-		FROM ##testdbacompression tdc
-		INNER JOIN sys.tables t
-			ON SCHEMA_NAME(t.schema_id) = tdc.[Schema]
-			AND t.name = tdc.TableName
-		INNER JOIN sys.columns c
-			ON t.object_id = c.object_id
-		WHERE encryption_type IS NOT NULL
+        -- remove tables with encrypted columns
+        DELETE tdc
+        FROM ##testdbacompression tdc
+        INNER JOIN sys.tables t
+            ON SCHEMA_NAME(t.schema_id) = tdc.[Schema]
+            AND t.name = tdc.TableName
+        INNER JOIN sys.columns c
+            ON t.object_id = c.object_id
+        WHERE encryption_type IS NOT NULL
     END
 IF @sqlVersion >= '14'
-	BEGIN
-		-- remove graph (node/edge) tables
-		DELETE tdc
-		FROM ##testdbacompression tdc
-		INNER JOIN sys.tables t
-			ON tdc.[Schema] = SCHEMA_NAME(t.schema_id)
-			AND tdc.TableName = t.name
-		WHERE (is_node = 1 OR is_edge = 1)
-	END
+    BEGIN
+        -- remove graph (node/edge) tables
+        DELETE tdc
+        FROM ##testdbacompression tdc
+        INNER JOIN sys.tables t
+            ON tdc.[Schema] = SCHEMA_NAME(t.schema_id)
+            AND tdc.TableName = t.name
+        WHERE (is_node = 1 OR is_edge = 1)
+    END
 
 DECLARE @schema SYSNAME
     ,@tbname SYSNAME
