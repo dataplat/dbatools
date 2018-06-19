@@ -1697,7 +1697,7 @@
     },
     {
         "CommandName":  "Get-DbaErrorLogConfig",
-        "Description":  "Pulls the configuration for the ErrorLog on a given SQL Server instance.\nIncludes number of log files configured and size in KB (SQL Server 2012+ only)",
+        "Description":  "Pulls the configuration for the ErrorLog on a given SQL Server instance.\n\nIncludes error log path, number of log files configured and size (SQL Server 2012+ only)",
         "Tags":  [
                      "Instance",
                      "ErrorLog"
@@ -4028,17 +4028,17 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Database model -Confirm:$true -Verbose\r\n\r\nSets the Recovery Model to BulkLogged for database [model] on SQL Server instance sql2014. User is requested to confirm \r\nthe action.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2014 -Database TestDB | Set-DbaDbRecoveryModel -RecoveryModel Simple  \r\n-Confirm:$false\r\n\r\nSets the Recovery Model to Simple for database [TestDB] on SQL Server instance sql2014. Confirmation is not required.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel Simple -Database TestDB -Confirm:$false\r\n\r\nSets the Recovery Model to Simple for database [TestDB] on SQL Server instance sql2014. Confirmation is not required.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel Simple -AllDatabases -Confirm:$false\r\n\r\nSets the Recovery Model to Simple for ALL uses databases MODEL database on SQL Server instance sql2014. Runs without \r\nasking for confirmation.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Database TestDB1, TestDB2 -Confirm:$false \r\n-Verbose\r\n\r\nSets the Recovery Model to BulkLogged for [TestDB1] and [TestDB2] databases on SQL Server instance sql2014. Runs \r\nwithout asking for confirmation.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Set-DbaErrorLog",
-        "Description":  "Set the configuration for the ErrorLog on a given SQL Server instance.\nIncludes setting the number of log files configured and/or size in KB (SQL Server 2012+ only)",
+        "CommandName":  "Set-DbaErrorLogConfig",
+        "Description":  "Sets the number of log files configured on all versions, and size in KB in SQL Server 2012+ and above.\n\nTo set the Path to the ErrorLog, use Set-DbaStartupParameter -ErrorLog. Note that this command requires\nremote, administrative access to the Windows/WMI server, similar to SQL Configuration Manager.",
         "Tags":  [
                      "Instance",
                      "ErrorLog"
                  ],
         "Author":  "Shawn Melton (@wsmelton)",
         "Synopsis":  "Set the configuration for the ErrorLog on a given SQL Server instance",
-        "Name":  "Set-DbaErrorLog",
-        "Links":  "https://dbatools.io/Set-DbaErrorLog",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaErrorLog -SqlInstance server2017,server2014 -NumberOfLog 25\r\n\r\nSets the number of error log files to 25 on server2017 and server2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaErrorLog -SqlInstance server2014 -SizeInKb 1024\r\n\r\nSets the size of the error log file, before it rolls over, to 1024KB (1GB) on server2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaErrorLog -SqlInstance server2012 -NumberOfLog 25 -SizeInKb 500\r\n\r\nSets the number of error log files to 25 and size before it will roll over to 500KB on server2012\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Name":  "Set-DbaErrorLogConfig",
+        "Links":  "https://dbatools.io/Set-DbaErrorLogConfig",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaErrorLogConfig -SqlInstance sql2017,sql2014 -LogCount 25\r\n\r\nSets the number of error log files to 25 on sql2017 and sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaErrorLogConfig -SqlInstance sql2014 -LogSize 102400\r\n\r\nSets the size of the error log file, before it rolls over, to 102400 KB (100 MB) on sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaErrorLogConfig -SqlInstance sql2012 -LogCount 25 -LogSize 500\r\n\r\nSets the number of error log files to 25 and size before it will roll over to 500 KB on sql2012\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaJobOwner",
