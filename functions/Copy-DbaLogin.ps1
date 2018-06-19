@@ -522,7 +522,7 @@ function Copy-DbaLogin {
         }
         
         if ($SyncOnly) {
-            Sync-DbaSqlPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
+            Sync-DbaLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
             return
         }
 
