@@ -143,8 +143,18 @@ function Stop-Function {
     if ($ErrorRecord -or $Exception) {
         if ($ErrorRecord) {
             foreach ($record in $ErrorRecord) {
-                if (-not $Exception) { $newException = New-Object System.Exception($record.Exception.Message, $record.Exception) }
-                else { $newException = $Exception }
+                if (-not $Exception) {
+                    $innermessage = $record.Exception.InnerException.InnerException.InnerException.InnerException.InnerException.Message
+                    if (-not $innermessage) { $innermessage = $record.Exception.InnerException.InnerException.InnerException.InnerException.Message }
+                    if (-not $innermessage) { $innermessage = $record.Exception.InnerException.InnerException.InnerException.Message }
+                    if (-not $innermessage) { $innermessage = $record.Exception.InnerException.InnerException.Message }
+                    if (-not $innermessage) { $innermessage = $record.Exception.InnerException.Message }
+                    if (-not $innermessage) { $innermessage = $record.Exception.Message }
+                    $newException = New-Object System.Exception($innermessage, $record.Exception)
+                }
+                else {
+                    $newException = $Exception
+                }
                 if ($record.CategoryInfo.Category) { $Category = $record.CategoryInfo.Category }
                 $records += New-Object System.Management.Automation.ErrorRecord($newException, "dbatools_$FunctionName", $Category, $targetToAdd)
             }
