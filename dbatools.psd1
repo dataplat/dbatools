@@ -472,7 +472,7 @@
         'Test-DbaLoginPassword',
         'Get-DbaResourceGovernorClassifierFunction',
         'Get-DbaErrorLogConfig',
-        'Set-DbaErrorLog'
+        'Set-DbaErrorLogConfig'
     )
 
     # Cmdlets to export from this module
