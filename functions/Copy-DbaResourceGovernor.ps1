@@ -183,7 +183,7 @@ function Copy-DbaResourceGovernor {
                 }
                 catch {
                     $copyResourceGovSetting.Status = "Failed"
-                    $copyResourceGovSetting.Notes = $_.Exception
+                    $copyResourceGovSetting.Notes = (Get-ErrorMessage -Record $_)
                     $copyResourceGovSetting | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                     Stop-Function -Message "Not able to update settings." -Target $destServer -ErrorRecord $_
@@ -242,7 +242,7 @@ function Copy-DbaResourceGovernor {
                         }
                         catch {
                             $copyResourceGovPool.Status = "Failed to drop from Destination"
-                            $copyResourceGovPool.Notes = $_.Exception
+                            $copyResourceGovPool.Notes = (Get-ErrorMessage -Record $_)
                             $copyResourceGovPool | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Stop-Function -Message "Unable to drop: $_ Moving on." -Target $destPool -ErrorRecord $_ -Continue
@@ -285,10 +285,11 @@ function Copy-DbaResourceGovernor {
                     }
                 }
                 catch {
-                    $copyResourceGovWorkGroup.Status = "Failed"
-                    $copyResourceGovWorkGroup.Notes = $_.Exception
-                    $copyResourceGovWorkGroup | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
+                    if ($copyResourceGovWorkGroup) {
+                        $copyResourceGovWorkGroup.Status = "Failed"
+                        $copyResourceGovWorkGroup.Notes = (Get-ErrorMessage -Record $_)
+                        $copyResourceGovWorkGroup | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
                     Stop-Function -Message "Unable to migrate pool." -Target $pool -ErrorRecord $_
                 }
             }

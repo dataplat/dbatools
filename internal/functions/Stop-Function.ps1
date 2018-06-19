@@ -144,12 +144,7 @@ function Stop-Function {
         if ($ErrorRecord) {
             foreach ($record in $ErrorRecord) {
                 if (-not $Exception) {
-                    $innermessage = $record.Exception.InnerException.InnerException.InnerException.InnerException.InnerException.Message
-                    if (-not $innermessage) { $innermessage = $record.Exception.InnerException.InnerException.InnerException.InnerException.Message }
-                    if (-not $innermessage) { $innermessage = $record.Exception.InnerException.InnerException.InnerException.Message }
-                    if (-not $innermessage) { $innermessage = $record.Exception.InnerException.InnerException.Message }
-                    if (-not $innermessage) { $innermessage = $record.Exception.InnerException.Message }
-                    if (-not $innermessage) { $innermessage = $record.Exception.Message }
+                    $innermessage = Get-ErrorMessage -Record $record
                     $newException = New-Object System.Exception($innermessage, $record.Exception)
                 }
                 else {
