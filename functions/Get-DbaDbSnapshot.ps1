@@ -93,7 +93,6 @@ ON sn.source_database_id = dt.database_id
 WHERE sn.state <> 6
 "@
             $dbs = $server.Query($alldbq)
-            #$dbs = $server.Databases | Where-Object IsAccessible
 
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
@@ -110,20 +109,12 @@ WHERE sn.state <> 6
             if ($ExcludeSnapshot) {
                 $dbs = $dbs | Where-Object { $ExcludeSnapshot -notcontains $_.Name }
             }
-
+            
             foreach ($db in $dbs) {
-                $object = [PSCustomObject]@{
-                    ComputerName    = $server.NetName
-                    InstanceName    = $server.ServiceName
-                    SqlInstance     = $server.DomainInstanceName
-                    Database        = $db.Name
-                    SnapshotOf      = $db.DatabaseSnapshotBaseName
-                    SizeMB          = [Math]::Round($db.Size, 2) ##FIXME, should use the stats for sparse files
-                    DatabaseCreated = [dbadatetime]$db.createDate
-                    SnapshotDb      = $server.Databases[$db.Name]
-                }
-
-                Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, Database, SnapshotOf, SizeMB, DatabaseCreated
+                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Select-DefaultView -InputObject $db -Property ComputerName, InstanceName, SqlInstance, 'Name as Database', 'DatabaseSnapshotBaseName as SnapshotOf', CreateDate
             }
         }
     }
@@ -131,4 +122,3 @@ WHERE sn.state <> 6
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseSnapshot
     }
 }
-

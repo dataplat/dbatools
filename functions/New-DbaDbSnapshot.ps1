@@ -276,35 +276,20 @@ function New-DbaDbSnapshot {
                 $sql = $SnapDB.Script()
                 try {
                     $SnapDB.Create()
-                    
-                    [PSCustomObject]@{
-                        ComputerName      = $server.NetName
-                        InstanceName      = $server.ServiceName
-                        SqlInstance       = $server.DomainInstanceName
-                        Database          = $SnapDB.Name
-                        SnapshotOf        = $SnapDB.DatabaseSnapshotBaseName
-                        SizeMB            = [Math]::Round($SnapDB.Size, 2) ##FIXME, should use the stats for sparse files
-                        DatabaseCreated   = [dbadatetime]$SnapDB.createDate
-                        PrimaryFilePath   = $SnapDB.PrimaryFilePath
-                        Status            = 'Created'
-                        Notes             = $null
-                        SnapshotDb        = $SnapDB
-                    } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status
+                    $server.Databases.Refresh()
+                    Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname | Select-DefaultView -ExcludeProperty SqlCredential
                 }
                 catch {
-                    $Status = 'Created'
-                    # here we manage issues we DO know about, hoping that the first command
-                    # is always the one creating the snapshot, and give an helpful hint
                     try {
                         $server.Databases.Refresh()
                         if ($SnapName -notin $server.Databases.Name) {
                             # previous creation failed completely, snapshot is not there already
                             $null = $server.Query($sql[0])
                             $server.Databases.Refresh()
-                            $SnapDB = $server.Databases[$Snapname]
+                            $SnapDB = Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
                         }
                         else {
-                            $SnapDB = $server.Databases[$Snapname]
+                            $SnapDB = Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
                         }
                         $Notes = @()
                         if ($db.ReadOnly -eq $true) {
@@ -322,19 +307,7 @@ function New-DbaDbSnapshot {
                         }
                         Write-Message -Level Debug -Message ($hints -Join "`n")
                         
-                        [PSCustomObject]@{
-                            ComputerName      = $server.NetName
-                            InstanceName      = $server.ServiceName
-                            SqlInstance       = $server.DomainInstanceName
-                            Database          = $SnapDB.Name
-                            SnapshotOf        = $SnapDB.DatabaseSnapshotBaseName
-                            SizeMB            = [Math]::Round($SnapDB.Size, 2) ##FIXME, should use the stats for sparse files
-                            DatabaseCreated   = [dbadatetime]$SnapDB.createDate
-                            PrimaryFilePath   = $SnapDB.PrimaryFilePath
-                            Status            = $Status
-                            Notes             = $Notes
-                            SnapshotDb        = $SnapDB
-                        } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes
+                        $SnapDB | Select-DefaultView -ExcludeProperty SqlCredential
                     }
                     catch {
                         # we end up here when even the first issued command didn't create
