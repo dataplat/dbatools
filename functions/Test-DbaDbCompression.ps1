@@ -200,6 +200,16 @@ IF @sqlVersion >= '13'
 		INNER JOIN sys.columns c
 			ON t.object_id = c.object_id
 		WHERE encryption_type IS NOT NULL
+    END
+IF @sqlVersion >= '14'
+	BEGIN
+		-- remove graph (node/edge) tables
+		DELETE tdc
+		FROM ##testdbacompression tdc
+		INNER JOIN sys.tables t
+			ON tdc.[Schema] = SCHEMA_NAME(t.schema_id)
+			AND tdc.TableName = t.name
+		WHERE (is_node = 1 OR is_edge = 1)
 	END
 
 DECLARE @schema SYSNAME
