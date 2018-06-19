@@ -356,7 +356,7 @@ function Backup-DbaDatabase {
                 }
             }
             
-            if ($AzureBaseUrl) {
+            if ($AzureBaseUrl -or $AzureCredential) {
                 $slash = "/"
             }
             else {
