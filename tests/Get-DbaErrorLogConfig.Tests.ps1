@@ -18,23 +18,14 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 }
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-
     Context "Get NumberErrorLog for multiple instances" {
         $results = Get-DbaErrorLogConfig -SqlInstance $script:instance3, $script:instance2
         foreach ($result in $results) {
-            It 'Returns NumberErrorLog value' {
-                $result.NumberErrorLogs | Should -Not -Be $null
+            It 'returns 3 values' {
+                $result.LogCount | Should -Not -Be $null
+                $result.LogSize | Should -Not -Be $null
+                $result.LogPath | Should -Not -Be $null
             }
         }
     }
-
-    Context "Get SizeInKb for multiple instances" {
-        $results = Get-DbaErrorLogConfig -SqlInstance $script:instance3, $script:instance2
-        foreach ($result in $results) {
-            It 'Returns SizeInKb value' {
-                $result.ErrorLogSizeKb | Should -Not -Be $null
-            }
-        }
-    }
-
 }
