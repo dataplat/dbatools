@@ -355,15 +355,21 @@ function Backup-DbaDatabase {
                     $FinalBackupPath += $FinalBackupPath[0]
                 }
             }
-
+            
+            if ($AzureBaseUrl) {
+                $slash = "/"
+            }
+            else {
+                $slash = "\"
+            }
             if ($FinalBackupPath.Count -gt 1) {
                 $File = New-Object System.IO.FileInfo($BackupFinalName)
                 for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] + "\" + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] + $slash + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
                 }
             }
             elseif ($FinalBackupPath[0] -ne 'NUL:') {
-                $FinalBackupPath[0] = $FinalBackupPath[0] + "\" + $BackupFinalName
+                $FinalBackupPath[0] = $FinalBackupPath[0] + $slash + $BackupFinalName
             }
 
             if ($CreateFolder -and $FinalBackupPath[0] -ne 'NUL:') {
