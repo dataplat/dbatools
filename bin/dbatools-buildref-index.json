@@ -1,5 +1,5 @@
 {
-    "LastUpdated": "2018-06-19T00:00:00",
+    "LastUpdated": "2018-06-20T00:00:00",
     "Data": [
     {
         "Version":  "8.0.47",
@@ -3135,7 +3135,7 @@
     {
         "SP":  "SP3",
         "Version":  "11.0.6020",
-        "SupportedUntil":  "2018-09-10T00:00:00",
+        "SupportedUntil":  "2018-10-09T00:00:00",
         "KBList":  "3072779"
     },
     {
@@ -3718,7 +3718,7 @@
     {
         "SP":  "SP1",
         "Version":  "13.0.4001",
-        "SupportedUntil":  "2026-07-14T00:00:00",
+        "SupportedUntil":  "2019-09-07T00:00:00",
         "KBList":  "3182545"
     },
     {
