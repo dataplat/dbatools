@@ -43,44 +43,44 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         AfterEach {
             Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1, $db2 -Confirm:$false -ErrorAction SilentlyContinue
         }
-        
+
         It "Honors the Database parameter, restoring only snapshots of that database" {
             $result = Restore-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db2 -Confirm:$false -EnableException -Force
             $result.Status | Should Be "Normal"
             $result.Name | Should Be $db2
-            
+
             $server.Query("INSERT INTO [$db1].[dbo].[Example] values ('sample2')")
             $result = Restore-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1 -Confirm:$false -Force
             $result.Name | Should Be $db1
-            
+
             # the other snapshot has been dropped
             $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1
             $result.Count | Should Be 1
-            
+
             # the query doesn't return records inserted before the restore
             $result = Invoke-SqlCmd2 -ServerInstance $script:instance2 -Query "SELECT * FROM [$db1].[dbo].[Example]" -QueryTimeout 10 -ConnectionTimeout 10
             $result.id | Should Be 1
         }
-        
+
         It "Honors the Snapshot parameter" {
             $result = Restore-DbaDbSnapshot -SqlInstance $script:instance2 -Snapshot $db1_snap1 -Confirm:$false -EnableException -Force
             $result.Name | Should Be $db1
             $result.Status | Should Be "Normal"
-            
+
             # the other snapshot has been dropped
             $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1
             $result.SnapshotOf | Should Be $db1
             $result.Database.Name | Should Be $db1_snap
-            
+
             # the log size has been restored to the correct size
             $server.databases[$db1].Logfiles.Size | Should Be 13312
         }
-        
+
         It "Stops if multiple snapshot for the same db are passed" {
             $result = Restore-DbaDbSnapshot -SqlInstance $script:instance2 -Snapshot $db1_snap1, $db1_snap2 -Confirm:$false *> $null
             $result | Should Be $null
         }
-        
+
         It "has the correct default properties" {
             $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db2
             $ExpectedPropsDefault = 'ComputerName', 'CreateDate', 'InstanceName', 'Name', 'SnapshotOf', 'SqlInstance'

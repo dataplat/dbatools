@@ -12,13 +12,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             { New-DbaDbSnapshot -SqlInstance $script:instance2 *> $null } | Should Not Throw "You must specify"
         }
     }
-    
+
     Context "Operations on not supported databases" {
         It "Doesn't support model, master or tempdb" {
             $result = New-DbaDbSnapshot -SqlInstance $script:instance2 -EnableException -Database model, master, tempdb
             $result | Should Be $null
         }
-        
+
     }
     Context "Operations on databases" {
         BeforeAll {
@@ -35,7 +35,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1, $db2, $db3 -Confirm:$false
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2, $db3
         }
-        
+
         if (-not $env:appveyor) {
             It "Skips over offline databases nicely" {
                 $server.Query("ALTER DATABASE $db3 SET OFFLINE WITH ROLLBACK IMMEDIATE")
