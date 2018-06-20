@@ -101,7 +101,7 @@ function Remove-DbaDbSnapshot {
             Stop-Function -Message "You must pipe in a snapshot or specify -Snapshot, -Database, -Exclude or -AllSnapshots"
             return
         }
-        
+
         # if piped value either doesn't exist or is not the proper type
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -111,10 +111,10 @@ function Remove-DbaDbSnapshot {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $InputObject += Get-DbaDbSnapshot -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase -Snapshot $Snapshot
         }
-        
+
         foreach ($db in $InputObject) {
             try {
                 $server = $db.Parent
@@ -130,7 +130,7 @@ function Remove-DbaDbSnapshot {
                     if ($Pscmdlet.ShouldProcess("$db on $server", "SMO drop")) {
                         $db.Drop()
                         $server.Refresh()
-                        
+
                         [pscustomobject]@{
                             ComputerName   = $server.NetName
                             InstanceName   = $server.ServiceName
@@ -142,7 +142,7 @@ function Remove-DbaDbSnapshot {
                 }
                 catch {
                     Write-Message -Level Verbose -Message "Could not drop database $db on $server"
-                    
+
                     [pscustomobject]@{
                         ComputerName   = $server.NetName
                         InstanceName   = $server.ServiceName

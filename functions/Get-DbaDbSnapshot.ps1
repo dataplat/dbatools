@@ -84,7 +84,7 @@ function Get-DbaDbSnapshot {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $dbs = $server.Databases | Where-Object DatabaseSnapshotBaseName
 
             if ($Database) {
@@ -102,7 +102,7 @@ function Get-DbaDbSnapshot {
             if ($ExcludeSnapshot) {
                 $dbs = $dbs | Where-Object { $ExcludeSnapshot -notcontains $_.Name }
             }
-            
+
             foreach ($db in $dbs) {
                 Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
                 Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName

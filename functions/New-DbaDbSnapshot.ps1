@@ -41,7 +41,7 @@ function New-DbaDbSnapshot {
 
     .PARAMETER InputObject
        Allows Piping from Get-DbaDatabase
-    
+
     .PARAMETER Force
         Databases with Filestream FG can be snapshotted, but the Filestream FG is marked offline
         in the snapshot. To create a "partial" snapshot, you need to pass -Force explicitely
@@ -86,7 +86,7 @@ function New-DbaDbSnapshot {
         Creates snapshots for HR and Accounting databases, storing files under the F:\snapshotpath\ dir
 
 #>
-    
+
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -106,9 +106,9 @@ function New-DbaDbSnapshot {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     begin {
-        
+
         $NoSupportForSnap = @('model', 'master', 'tempdb')
         # Evaluate the default suffix here for naming consistency
         $DefaultSuffix = (Get-Date -Format "yyyyMMdd_HHmmss")
@@ -121,7 +121,7 @@ function New-DbaDbSnapshot {
                 Stop-Function -Message "NameSuffix parameter must be a template only containing one parameter {0}" -ErrorRecord $_
             }
         }
-        
+
         function Resolve-SnapshotError($server) {
             $errhelp = ''
             $CurrentEdition = $server.Edition.toLower()
@@ -149,7 +149,7 @@ function New-DbaDbSnapshot {
             Stop-Function -Message "You must specify a -AllDatabases or -Database to continue" -EnableException $EnableException
             return
         }
-        
+
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
@@ -164,21 +164,21 @@ function New-DbaDbSnapshot {
                     Stop-Function -Message "$instance cannot access the directory $Path" -ErrorRecord $_ -Target $instance -Continue -EnableException $EnableException
                 }
             }
-            
+
             if ($AllDatabases) {
                 $dbs = $server.Databases
             }
-            
+
             if ($Database) {
                 $dbs = $server.Databases | Where-Object { $Database -contains $_.Name }
             }
-            
+
             if ($ExcludeDatabase) {
                 $dbs = $server.Databases | Where-Object { $ExcludeDatabase -notcontains $_.Name }
             }
-            
+
             $sourcedbs = @()
-            
+
             ## double check for gotchas
             foreach ($db in $dbs) {
                 if ($db.IsDatabaseSnapshot) {
@@ -194,12 +194,12 @@ function New-DbaDbSnapshot {
                     $InputObject += $db
                 }
             }
-            
+
             if ($InputObject.Length -gt 1 -and $Name) {
                 Stop-Function -Message "You passed the Name parameter that is fixed but selected multiple databases to snapshot: use the NameSuffix parameter" -Continue -EnableException $EnableException
             }
         }
-        
+
         foreach ($db in $InputObject) {
             $server = $db.Parent
             if ($NameSuffix.Length -gt 0) {
@@ -258,10 +258,10 @@ function New-DbaDbSnapshot {
                         $CustomFileStructure[$fg.Name] += @{ 'name' = $file.name; 'filename' = $fname }
                     }
                 }
-                
+
                 $SnapDB = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database -ArgumentList $server, $Snapname
                 $SnapDB.DatabaseSnapshotBaseName = $db.Name
-                
+
                 foreach ($fg in $CustomFileStructure.Keys) {
                     $SnapFG = New-Object -TypeName Microsoft.SqlServer.Management.Smo.FileGroup $SnapDB, $fg
                     $SnapDB.FileGroups.Add($SnapFG)
@@ -270,13 +270,13 @@ function New-DbaDbSnapshot {
                         $SnapDB.FileGroups[$fg].Files.Add($SnapFile)
                     }
                 }
-                
+
                 # we're ready to issue a Create, but SMO is a little uncooperative here
                 # there are cases we can manage and others we can't, and we need all the
                 # info we can get both from testers and from users
-                
+
                 $sql = $SnapDB.Script()
-                
+
                 try {
                     $SnapDB.Create()
                     $server.Databases.Refresh()
@@ -294,7 +294,7 @@ function New-DbaDbSnapshot {
                         else {
                             $SnapDB = Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
                         }
-                        
+
                         $Notes = @()
                         if ($db.ReadOnly -eq $true) {
                             $Notes += 'SMO is probably trying to set a property on a read-only snapshot, run with -Debug to find out and report back'
@@ -304,14 +304,14 @@ function New-DbaDbSnapshot {
                             $Notes += 'Filestream groups are not viable for snapshot'
                         }
                         $Notes = $Notes -Join ';'
-                        
+
                         $hints = @("Executing these commands led to a partial failure")
                         foreach ($stmt in $sql) {
                             $hints += $stmt
                         }
-                        
+
                         Write-Message -Level Debug -Message ($hints -Join "`n")
-                        
+
                         $SnapDB
                     }
                     catch {
