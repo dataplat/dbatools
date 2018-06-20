@@ -25,7 +25,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue -Confirm:$false
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
         }
-        
+
         It "Gets all snapshots by default" {
             $results = Get-DbaDbSnapshot -SqlInstance $script:instance2
             ($results | Where-Object Name -Like 'dbatoolsci_GetSnap*').Count | Should Be 3
