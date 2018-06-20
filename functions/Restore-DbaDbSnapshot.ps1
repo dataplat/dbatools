@@ -65,6 +65,16 @@ function Restore-DbaDbSnapshot {
         Restores HR database from latest snapshot and kills any active connections in the database on sqlserver2014a.
 
     .EXAMPLE
+        Get-DbaDbSnapshot -SqlInstance sql2016 -Database HR | Restore-DbaDbSnapshot -Force
+
+        Restores HR database from latest snapshot and kills any active connections in the database on sql2016.
+    
+    .EXAMPLE
+        Get-DbaDbSnapshot -SqlInstance sql2016 | Out-GridView -Passthru | Restore-DbaDbSnapshot
+
+        Allows the selection of snapshots on sql2016 to restore
+
+    .EXAMPLE
         Restore-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, Accounting_snap_20161101
 
         Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101
