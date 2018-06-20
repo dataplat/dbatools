@@ -6,23 +6,16 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Operations on snapshots" {
         BeforeAll {
-            if ($env:appveyor) {
-                Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2016)' } | Restart-Service -Force
-
-                do {
-                    Start-Sleep 1
-                    $null = (& sqlcmd -S $script:instance2 -b -Q "select 1" -d master)
-                }
-                while ($lastexitcode -ne 0 -and $s++ -lt 10)
-            }
+            
             $server = Connect-DbaInstance -SqlInstance $script:instance2
             $db1 = "dbatoolsci_GetSnap"
             $db1_snap1 = "dbatoolsci_GetSnap_snapshotted1"
             $db1_snap2 = "dbatoolsci_GetSnap_snapshotted2"
             $db2 = "dbatoolsci_GetSnap2"
             $db2_snap1 = "dbatoolsci_GetSnap2_snapshotted"
-            Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1, $db2 -Force
+            Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1, $db2 -Confirm:$false
             Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2 | Remove-DbaDatabase -Confirm:$false
+            Get-DbaProcess -SqlInstance $script:instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
             $server.Query("CREATE DATABASE $db1")
             $server.Query("CREATE DATABASE $db2")
             $setupright = $true
@@ -38,14 +31,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
         AfterAll {
-            Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1, $db2 -Force -ErrorAction SilentlyContinue
+            Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue -Confirm:$false
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
         }
 
         if ($setupright) {
             It "Gets all snapshots by default" {
                 $results = Get-DbaDbSnapshot -SqlInstance $script:instance2
-                ($results | Where-Object Database -Like 'dbatoolsci_GetSnap*').Count | Should Be 3
+                ($results | Where-Object Name -Like 'dbatoolsci_GetSnap*').Count | Should Be 3
             }
             It "Honors the Database parameter, returning only snapshots of that database" {
                 $results = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1
@@ -60,22 +53,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
             It "Honors the Snapshot parameter" {
                 $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Snapshot $db1_snap1
-                $result.Database | Should Be $db1_snap1
+                $result.Name | Should Be $db1_snap1
                 $result.SnapshotOf | Should Be $db1
             }
             It "Honors the ExcludeSnapshot parameter" {
                 $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -ExcludeSnapshot $db1_snap1 -Database $db1
-                $result.Database | Should Be $db1_snap2
+                $result.Name | Should Be $db1_snap2
             }
             It "has the correct properties" {
                 $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db2
-                $ExpectedProps = 'ComputerName,Database,DatabaseCreated,InstanceName,SizeMB,SnapshotDb,SnapshotOf,SqlInstance'.Split(',')
-                ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-                $ExpectedPropsDefault = 'ComputerName,Database,DatabaseCreated,InstanceName,SizeMB,SnapshotOf,SqlInstance'.Split(',')
+                $ExpectedPropsDefault = 'ComputerName', 'CreateDate', 'InstanceName', 'Name', 'SnapshotOf', 'SqlInstance'
                 ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
             }
         }
     }
 }
-
-
