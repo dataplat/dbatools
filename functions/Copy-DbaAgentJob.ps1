@@ -234,7 +234,7 @@ function Copy-DbaAgentJob {
                 }
                 catch {
                     $copyJobStatus.Status = "Failed"
-                    $copyJobStatus.Notes = (($_.Exception.InnerException.InnerException.Innerexception.InnerException).ToString().Split("`n"))[0]
+                    $copyJobStatus.Notes = (Get-ErrorMessage -Record $_)
                     $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     Stop-Function -Message "Issue copying job" -Target $jobName -ErrorRecord $_ -Continue
                 }
