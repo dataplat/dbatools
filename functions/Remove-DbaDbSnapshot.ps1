@@ -86,9 +86,9 @@ function Remove-DbaDbSnapshot {
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
-        [object[]]$Snapshot,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
+        [string[]]$Snapshot,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$AllSnapshots,
@@ -96,6 +96,9 @@ function Remove-DbaDbSnapshot {
         [Alias('Silent')]
         [switch]$EnableException
     )
+    begin {
+        $defaultprops = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database as Name', 'Status'
+    }
     process {
         if (!$Snapshot -and !$Database -and !$AllSnapshots -and $null -eq $InputObject -and !$ExcludeDatabase) {
             Stop-Function -Message "You must pipe in a snapshot or specify -Snapshot, -Database, -Exclude or -AllSnapshots"
@@ -114,7 +117,7 @@ function Remove-DbaDbSnapshot {
 
             $InputObject += Get-DbaDbSnapshot -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase -Snapshot $Snapshot
         }
-
+        
         foreach ($db in $InputObject) {
             try {
                 $server = $db.Parent
@@ -123,7 +126,7 @@ function Remove-DbaDbSnapshot {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             if ($Force) {
-                $db | Remove-DbaDatabase -Confirm:$confirm
+                $db | Remove-DbaDatabase -Confirm:$confirm | Select-DefaultView -Property $defaultprops
             }
             else {
                 try {
@@ -137,7 +140,7 @@ function Remove-DbaDbSnapshot {
                             SqlInstance    = $server.DomainInstanceName
                             Database       = $db.name
                             Status         = "Dropped"
-                        }
+                        } | Select-DefaultView -Property $defaultprops
                     }
                 }
                 catch {
@@ -149,7 +152,7 @@ function Remove-DbaDbSnapshot {
                         SqlInstance    = $server.DomainInstanceName
                         Database       = $db.name
                         Status         = (Get-ErrorMessage -Record $_)
-                    }
+                    } | Select-DefaultView -Property $defaultprops
                 }
             }
         }
