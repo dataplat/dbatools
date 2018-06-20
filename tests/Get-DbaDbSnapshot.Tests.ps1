@@ -60,7 +60,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -ExcludeSnapshot $db1_snap1 -Database $db1
                 $result.Name | Should Be $db1_snap2
             }
-            It "has the correct properties" {
+            It "has the correct default properties" {
                 $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db2
                 $ExpectedPropsDefault = 'ComputerName', 'CreateDate', 'InstanceName', 'Name', 'SnapshotOf', 'SqlInstance'
                 ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
