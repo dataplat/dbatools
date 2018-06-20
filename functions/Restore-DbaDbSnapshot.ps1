@@ -23,7 +23,7 @@ function Restore-DbaDbSnapshot {
 
     .PARAMETER Snapshot
         Restores databases from snapshots with this names only. You can pass either Databases or Snapshots
-    
+
     .PARAMETER InputObject
         Allows piping from other Snapshot commands
 
@@ -85,12 +85,12 @@ function Restore-DbaDbSnapshot {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     process {
         if (-not $Snapshot -and -not $Database -and -not $ExcludeDatabase -and -not $InputObject) {
             Stop-Function -Message "You must specify either -Snapshot (to restore from) or -Database/-ExcludeDatabase (to restore to) or pipe in a snapshot"
         }
-        
+
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
@@ -99,9 +99,9 @@ function Restore-DbaDbSnapshot {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $InputObject += Get-DbaDbSnapshot -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase -Snapshot $Snapshot
-            
+
             if ($Snapshot) {
                 # Restore databases from these snapshots
                 Write-Message -Level Verbose -Message "Selected only snapshots"
@@ -112,15 +112,15 @@ function Restore-DbaDbSnapshot {
                 }
             }
         }
-        
+
         $opsHash = @{ }
         foreach ($db in $InputObject) {
             $server = $db.Parent
-            
+
             if (-not $db.IsDatabaseSnapshot) {
-                Stop-Function -Continue -Message "$db on $server is not a valid snapshot"    
+                Stop-Function -Continue -Message "$db on $server is not a valid snapshot"
             }
-            
+
             if (-not ($db.IsAccessible)) {
                 Stop-Function -Message "Database $db is not accessible on $($db.Parent)." -Continue
             }
@@ -171,7 +171,7 @@ function Restore-DbaDbSnapshot {
             $orig_logproperties = $server.Databases[$op['to']].LogFiles | Select-Object Id, Size, Growth, GrowthType
             # Drop what needs to be dropped
             $opError = $false
-            
+
             if ($op['drop'].Count -gt 1 -and $Force -eq $false) {
                 $warnMsg = @()
                 $warnMsg += "The restore process for $($op['to']) from $($op['from']) needs to drop the following:"
@@ -203,7 +203,7 @@ function Restore-DbaDbSnapshot {
             if ($opError) {
                 Stop-Function -Message "Errors trying to restore $($op['to']) from $($op['from']). Failed to drop some snapshots." -Continue
             }
-            
+
             # Need a proper restore now
             if ($Pscmdlet.ShouldProcess($server.DomainInstanceName, "Restore db $($op['to']) from $($op['from'])")) {
                 $query = "USE master; RESTORE DATABASE [$($op['to'])] FROM DATABASE_SNAPSHOT='$($op['from'])'"
