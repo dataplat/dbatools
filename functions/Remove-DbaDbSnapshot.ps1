@@ -69,6 +69,11 @@ function Remove-DbaDbSnapshot {
         Removes all database snapshots having HR and Accounting as base dbs
 
     .EXAMPLE
+        Get-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting | Remove-DbaDbSnapshot
+
+        Removes all database snapshots having HR and Accounting as base dbs
+    
+    .EXAMPLE
         Remove-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot
 
         Removes HR_snapshot and Accounting_snapshot
@@ -78,6 +83,10 @@ function Remove-DbaDbSnapshot {
 
         Removes all snapshots associated with databases that have dumpsterfire in the name
 
+    .EXAMPLE
+        Get-DbaDbSnapshot -SqlInstance sql2016 | Out-GridView -Passthru | Remove-DbaDbSnapshot
+
+        Allows the selection of snapshots on sql2016 to remove
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param (

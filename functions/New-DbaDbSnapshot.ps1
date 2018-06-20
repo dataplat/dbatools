@@ -85,6 +85,10 @@ function New-DbaDbSnapshot {
 
         Creates snapshots for HR and Accounting databases, storing files under the F:\snapshotpath\ dir
 
+    .EXAMPLE
+        Get-DbaDatabase -SqlInstance sql2016 -Database df | New-DbaDbSnapshot
+    
+        Creates a snapshot for the database df on sql2016
 #>
 
     [CmdletBinding(SupportsShouldProcess)]
