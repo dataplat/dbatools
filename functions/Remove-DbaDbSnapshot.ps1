@@ -117,7 +117,7 @@ function Remove-DbaDbSnapshot {
 
             $InputObject += Get-DbaDbSnapshot -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase -Snapshot $Snapshot
         }
-        
+
         foreach ($db in $InputObject) {
             try {
                 $server = $db.Parent
