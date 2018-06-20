@@ -84,15 +84,8 @@ function Get-DbaDbSnapshot {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $alldbq = @"
-SELECT sn.name as Name, dt.name as DatabaseSnapshotBaseName, sn.create_date as CreateDate,
-CASE WHEN sn.source_database_id IS NOT NULL THEN 1 ELSE 0 END as IsDatabaseSnapshot
-FROM sys.databases sn
-LEFT JOIN sys.databases dt
-ON sn.source_database_id = dt.database_id
-WHERE sn.state <> 6
-"@
-            $dbs = $server.Query($alldbq)
+            
+            $dbs = $server.Databases | Where-Object DatabaseSnapshotBaseName
 
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
@@ -114,7 +107,7 @@ WHERE sn.state <> 6
                 Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
                 Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Select-DefaultView -InputObject $db -Property ComputerName, InstanceName, SqlInstance, 'Name as Database', 'DatabaseSnapshotBaseName as SnapshotOf', CreateDate
+                Select-DefaultView -InputObject $db -Property ComputerName, InstanceName, SqlInstance, Name, 'DatabaseSnapshotBaseName as SnapshotOf', CreateDate
             }
         }
     }

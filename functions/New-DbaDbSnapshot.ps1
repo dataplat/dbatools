@@ -258,8 +258,10 @@ function New-DbaDbSnapshot {
                         $CustomFileStructure[$fg.Name] += @{ 'name' = $file.name; 'filename' = $fname }
                     }
                 }
+                
                 $SnapDB = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database -ArgumentList $server, $Snapname
                 $SnapDB.DatabaseSnapshotBaseName = $db.Name
+                
                 foreach ($fg in $CustomFileStructure.Keys) {
                     $SnapFG = New-Object -TypeName Microsoft.SqlServer.Management.Smo.FileGroup $SnapDB, $fg
                     $SnapDB.FileGroups.Add($SnapFG)
@@ -274,10 +276,11 @@ function New-DbaDbSnapshot {
                 # info we can get both from testers and from users
                 
                 $sql = $SnapDB.Script()
+                
                 try {
                     $SnapDB.Create()
                     $server.Databases.Refresh()
-                    Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname | Select-DefaultView -ExcludeProperty SqlCredential
+                    Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
                 }
                 catch {
                     try {
@@ -291,6 +294,7 @@ function New-DbaDbSnapshot {
                         else {
                             $SnapDB = Get-DbaDbSnapshot -SqlInstance $server -Snapshot $Snapname
                         }
+                        
                         $Notes = @()
                         if ($db.ReadOnly -eq $true) {
                             $Notes += 'SMO is probably trying to set a property on a read-only snapshot, run with -Debug to find out and report back'
@@ -305,9 +309,10 @@ function New-DbaDbSnapshot {
                         foreach ($stmt in $sql) {
                             $hints += $stmt
                         }
+                        
                         Write-Message -Level Debug -Message ($hints -Join "`n")
                         
-                        $SnapDB | Select-DefaultView -ExcludeProperty SqlCredential
+                        $SnapDB
                     }
                     catch {
                         # we end up here when even the first issued command didn't create
