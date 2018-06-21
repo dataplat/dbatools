@@ -74,7 +74,7 @@ function Get-DbaOrphanUser {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
-                Write-Message -Level Warning -Message "Failed to connect to: $SqlInstance."
+                Write-Message -Level Warning -Message "Failed to connect to: $instance."
                 continue
             }
             $DatabaseCollection = $server.Databases | Where-Object IsAccessible
