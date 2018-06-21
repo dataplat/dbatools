@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaSchemaChangeHistory {
     <#
     .SYNOPSIS
@@ -107,7 +108,7 @@ function Get-DbaSchemaChangeHistory {
 
             foreach ($db in $Databases) {
                 if ($db.IsAccessible -eq $false) {
-                    Stop-Function -Message "$db on $server is inaccessible" -Continue
+                    Write-Message -Level Verbose -Message "$($db.name) is not accessible, skipping"
                 }
 
                 $sql = "select SERVERPROPERTY('MachineName') AS ComputerName,
@@ -144,7 +145,7 @@ function Get-DbaSchemaChangeHistory {
                 Write-Message -Level Verbose -Message "Querying Database $db on $instance"
                 Write-Message -Level Debug -Message "SQL: $sql"
 
-                $db.Query($sql)  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, DateModified, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
+                $db.Query($sql) | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, DateModified, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
             }
         }
     }
