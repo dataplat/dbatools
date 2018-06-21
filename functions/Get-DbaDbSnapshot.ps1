@@ -1,4 +1,4 @@
-#ValidationTags#FlowControl#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbSnapshot {
     <#
     .SYNOPSIS
