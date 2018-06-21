@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaHelpIndex {
     <#
         .SYNOPSIS
@@ -47,6 +48,9 @@ function Get-DbaHelpIndex {
         .PARAMETER IncludeDataTypes
             If this switch is enabled, the output will include the data type of each column that makes up a part of the index definition (key and include columns).
 
+        .PARAMETER InputObject
+           Allows piping from Get-DbaDatabase
+   
         .PARAMETER Raw
             If this switch is enabled, results may be less user-readable but more suitable for processing by other code.
 
@@ -105,18 +109,23 @@ function Get-DbaHelpIndex {
             Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -IncludeFragmentation
 
             Returns the index information for all indexes in the MyDB database as well as their fragmentation
+    
+        .EXAMPLE
+            Get-DbaDatabase -SqlInstance sql2017 -Database MyDB | Get-DbaHelpIndex
+
+            Returns the index information for all indexes in the MyDB database
   #>
-    [CmdletBinding(SupportsShouldProcess = $false)]
+    [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
-        [PSCredential]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [string]$ObjectName,
         [switch]$IncludeStats,
         [switch]$IncludeDataTypes,
@@ -125,9 +134,9 @@ function Get-DbaHelpIndex {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    
     begin {
-
+        
         #Add the table predicate to the query
         if (!$ObjectName) {
             $TablePredicate = "DECLARE @TableName NVARCHAR(256);";
@@ -135,7 +144,7 @@ function Get-DbaHelpIndex {
         else {
             $TablePredicate = "DECLARE @TableName NVARCHAR(256); SET @TableName = '$ObjectName';";
         }
-
+        
         #Add Fragmentation info if requested
         $FragSelectColumn = ", NULL as avg_fragmentation_in_percent"
         $FragJoin = ''
@@ -156,7 +165,7 @@ function Get-DbaHelpIndex {
         else {
             $IncludeStatsPredicate = "WHERE IndexType != 'STATISTICS'";
         }
-
+        
         #Data types being returns with the results?
         if ($IncludeDataTypes) {
             $IncludeDataTypesPredicate = 'DECLARE @IncludeDataTypes BIT; SET @IncludeDataTypes = 1';
@@ -164,7 +173,7 @@ function Get-DbaHelpIndex {
         else {
             $IncludeDataTypesPredicate = 'DECLARE @IncludeDataTypes BIT; SET @IncludeDataTypes = 0';
         }
-
+        
         #region SizesQuery
         $SizesQuery = "
             SET NOCOUNT ON;
@@ -531,8 +540,8 @@ function Get-DbaHelpIndex {
         OPTION  ( RECOMPILE );
         "
         #endRegion SizesQuery
-
-
+        
+        
         #region sizesQuery2005
         $SizesQuery2005 = "
         SET NOCOUNT ON;
@@ -980,118 +989,112 @@ function Get-DbaHelpIndex {
                 StatsLastUpdated ,
                 IndexFragInPercent
         FROM @AllResults;"
-
+        
         #endregion sizesQuery2005
-        $server = Connect-SqlInstance -SqlInstance $sqlinstance -SqlCredential $SqlCredential
     }
     process {
         Write-Message -Level Debug -Message $SizesQuery
         Write-Message -Level Debug -Message $SizesQuery2005
-        #Need to check the version of SQL
-        if ($server.versionMajor -ge 10) {
-            $indexesQuery = $SizesQuery
-        }
-
-        elseif ($server.Information.Version.Major -eq 9) {
-            $indexesQuery = $SizesQuery2005
-        }
-
-        else {
-            Write-Warning "This function does not support versions lower than SQL Server 2005 (v9)."
-            continue
-        }
-
-        if ($pipedatabase.Length -gt 0) {
-            $databases = $pipedatabase.name
-        }
-
-        $databases = $server.Databases
-
-        if ($Database) {
-            $databases = $databases | Where-Object Name -In $Database
-        }
-
-        if ($ExcludeDatabase) {
-            $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-        }
-
-        foreach ($db in $databases) {
-            if (!$db.IsAccessible) {
-                Write-Message -Level Warning -Message "$db is not accessible. Skipping."
-                continue
+        
+        foreach ($instance in $SqlInstance) {
+            
+            Write-Message -Level Verbose -Message "Connecting to $instance"
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+            
+            $InputObject += Get-DbaDatabase -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
+        
+        foreach ($db in $InputObject) {
+            $server = $db.Parent
+            
+            #Need to check the version of SQL
+            if ($server.versionMajor -ge 10) {
+                $indexesQuery = $SizesQuery
+            }
+            else {
+                $indexesQuery = $SizesQuery2005
+            }
+            
+            if (!$db.IsAccessible) {
+                Stop-Function -Message "$db is not accessible. Skipping." -Continue
+            }
+            
             Write-Message -Level Debug -Message "$indexesQuery"
             try {
-                $IndexDetails = ($server.Databases[$db.Name].ExecuteWithResults($indexesQuery)).Tables[0];
-
+                $IndexDetails = $db.Query($indexesQuery)
+                
                 if (!$Raw) {
                     foreach ($detail in $IndexDetails) {
                         $recentlyused = [datetime]$detail.MostRecentlyUsed
-
+                        
                         if ($recentlyused.year -eq 1900) {
                             $recentlyused = $null
                         }
-
+                        
                         [pscustomobject]@{
-                            DatabaseName       = $db.Name
-                            ObjectName         = $detail.FullObjectName
-                            IndexName          = $detail.IndexName
-                            IndexType          = $detail.IndexType
-                            KeyColumns         = $detail.KeyColumns
-                            IncludeColumns     = $detail.IncludeColumns
-                            FilterDefinition   = $detail.FilterDefinition
-                            DataCompression    = $detail.DataCompression
-                            IndexReads         = "{0:N0}" -f $detail.IndexReads
-                            IndexUpdates       = "{0:N0}" -f $detail.IndexUpdates
-                            SizeKB             = "{0:N0}" -f $detail.SizeKB
-                            IndexRows          = "{0:N0}" -f $detail.IndexRows
-                            IndexLookups       = "{0:N0}" -f $detail.IndexLookups
-                            MostRecentlyUsed   = $recentlyused
-                            StatsSampleRows    = "{0:N0}" -f $detail.StatsSampleRows
-                            StatsRowMods       = "{0:N0}" -f $detail.StatsRowMods
-                            HistogramSteps     = $detail.HistogramSteps
-                            StatsLastUpdated   = $detail.StatsLastUpdated
-                            IndexFragInPercent = "{0:F2}" -f $detail.IndexFragInPercent
+                            DatabaseName          = $db.Name
+                            ObjectName            = $detail.FullObjectName
+                            IndexName             = $detail.IndexName
+                            IndexType             = $detail.IndexType
+                            KeyColumns            = $detail.KeyColumns
+                            IncludeColumns        = $detail.IncludeColumns
+                            FilterDefinition      = $detail.FilterDefinition
+                            DataCompression       = $detail.DataCompression
+                            IndexReads            = "{0:N0}" -f $detail.IndexReads
+                            IndexUpdates          = "{0:N0}" -f $detail.IndexUpdates
+                            SizeKB                = "{0:N0}" -f $detail.SizeKB
+                            IndexRows             = "{0:N0}" -f $detail.IndexRows
+                            IndexLookups          = "{0:N0}" -f $detail.IndexLookups
+                            MostRecentlyUsed      = $recentlyused
+                            StatsSampleRows       = "{0:N0}" -f $detail.StatsSampleRows
+                            StatsRowMods          = "{0:N0}" -f $detail.StatsRowMods
+                            HistogramSteps        = $detail.HistogramSteps
+                            StatsLastUpdated      = $detail.StatsLastUpdated
+                            IndexFragInPercent    = "{0:F2}" -f $detail.IndexFragInPercent
                         } | Select-DefaultView -Property $OutputProperties
                     }
                 }
-
+                
                 else {
                     foreach ($detail in $IndexDetails) {
                         $recentlyused = [datetime]$detail.MostRecentlyUsed
-
+                        
                         if ($recentlyused.year -eq 1900) {
                             $recentlyused = $null
                         }
-
+                        
                         [pscustomobject]@{
-                            DatabaseName       = $db.Name
-                            ObjectName         = $detail.FullObjectName
-                            IndexName          = $detail.IndexName
-                            IndexType          = $detail.IndexType
-                            KeyColumns         = $detail.KeyColumns
-                            IncludeColumns     = $detail.IncludeColumns
-                            FilterDefinition   = $detail.FilterDefinition
-                            DataCompression    = $detail.DataCompression
-                            IndexReads         = $detail.IndexReads
-                            IndexUpdates       = $detail.IndexUpdates
-                            SizeKB             = $detail.SizeKB
-                            IndexRows          = $detail.IndexRows
-                            IndexLookups       = $detail.IndexLookups
-                            MostRecentlyUsed   = $recentlyused
-                            StatsSampleRows    = $detail.StatsSampleRows
-                            StatsRowMods       = $detail.StatsRowMods
-                            HistogramSteps     = $detail.HistogramSteps
-                            StatsLastUpdated   = $detail.StatsLastUpdated
-                            IndexFragInPercent = $detail.IndexFragInPercent
+                            DatabaseName          = $db.Name
+                            ObjectName            = $detail.FullObjectName
+                            IndexName             = $detail.IndexName
+                            IndexType             = $detail.IndexType
+                            KeyColumns            = $detail.KeyColumns
+                            IncludeColumns        = $detail.IncludeColumns
+                            FilterDefinition      = $detail.FilterDefinition
+                            DataCompression       = $detail.DataCompression
+                            IndexReads            = $detail.IndexReads
+                            IndexUpdates          = $detail.IndexUpdates
+                            SizeKB                = $detail.SizeKB
+                            IndexRows             = $detail.IndexRows
+                            IndexLookups          = $detail.IndexLookups
+                            MostRecentlyUsed      = $recentlyused
+                            StatsSampleRows       = $detail.StatsSampleRows
+                            StatsRowMods          = $detail.StatsRowMods
+                            HistogramSteps        = $detail.HistogramSteps
+                            StatsLastUpdated      = $detail.StatsLastUpdated
+                            IndexFragInPercent    = $detail.IndexFragInPercent
                         } | Select-DefaultView -Property $OutputProperties
                     }
                 }
             }
             catch {
-                Write-Warning "Cannot process $db on $server."
+                Stop-Function -Continue -ErrorRecord $_ -Message "Cannot process $db on $server"
             }
         }
     }
 }
-
