@@ -1,7 +1,8 @@
-function Test-DbaValidLogin {
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Test-DbaWindowsLogin {
     <#
         .SYNOPSIS
-            Test-DbaValidLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist
+            Test-DbaWindowsLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist
 
         .DESCRIPTION
             The purpose of this function is to find SQL Server logins that are used by active directory users that are either disabled or removed from the domain. It allows you to keep your logins accurate and up to date by removing accounts that are no longer needed.
@@ -42,20 +43,20 @@ function Test-DbaValidLogin {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Test-DbaValidLogin
+            https://dbatools.io/Test-DbaWindowsLogin
 
         .EXAMPLE
-            Test-DbaValidLogin -SqlInstance Dev01
+            Test-DbaWindowsLogin -SqlInstance Dev01
 
             Tests all logins in the current Active Directory domain that are either disabled or do not exist on the SQL Server instance Dev01
 
         .EXAMPLE
-            Test-DbaValidLogin -SqlInstance Dev01 -FilterBy GroupsOnly | Select-Object -Property *
+            Test-DbaWindowsLogin -SqlInstance Dev01 -FilterBy GroupsOnly | Select-Object -Property *
 
             Tests all Active Directory groups that have logins on Dev01, and shows all information for those logins
 
         .EXAMPLE
-            Test-DbaValidLogin -SqlInstance Dev01 -IgnoreDomains testdomain
+            Test-DbaWindowsLogin -SqlInstance Dev01 -IgnoreDomains testdomain
 
             Tests all Domain logins excluding any that are from the testdomain
 
@@ -277,5 +278,8 @@ function Test-DbaValidLogin {
 
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-DbaValidLogin
     }
 }
