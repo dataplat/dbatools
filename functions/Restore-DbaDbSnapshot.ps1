@@ -150,7 +150,7 @@ function Restore-DbaDbSnapshot {
                     Stop-Function -Message "The restore process for $db from $snap needs to drop other snapshots on $db. Use -Force if you want to drop these snapshots" -Continue
                 }
 
-                if ($Pscmdlet.ShouldProcess($server.name, "Remove other db snapshots for $db")) {
+                if ($Pscmdlet.ShouldProcess($server, "Remove other db snapshots for $db")) {
                     try {
                         $null = $othersnaps | Remove-DbaDatabase -Confirm:$false -EnableException
                     }
@@ -160,7 +160,7 @@ function Restore-DbaDbSnapshot {
                 }
 
                 # Need a proper restore now
-                if ($Pscmdlet.ShouldProcess($server.DomainInstanceName, "Restore db $db from $snap")) {
+                if ($Pscmdlet.ShouldProcess($server, "Restore db $db from $snap")) {
                     try {
                         if ($Force) {
                             $null = Stop-DbaProcess -SqlInstance $server -Database $db.Name, $snap.Name -WarningAction SilentlyContinue
