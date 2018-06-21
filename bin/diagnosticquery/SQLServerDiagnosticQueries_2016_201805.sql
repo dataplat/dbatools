@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: June 5, 2018
+-- Last Modified: June 19, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -102,7 +102,10 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- https://bit.ly/2IGHbfY
 
 -- Performance and Stability Related Fixes in Post-SQL Server 2016 SP1 Builds
--- https://bit.ly/2gr7k9L			
+-- https://bit.ly/2gr7k9L
+
+-- Performance and Stability Related Fixes in Post-SQL Server 2016 SP2 Builds
+-- https://bit.ly/2K3LoPf			
 
 -- Announcing updates to the SQL Server Incremental Servicing Model (ISM)
 -- https://bit.ly/1RzYITz
