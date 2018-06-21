@@ -148,7 +148,7 @@ function Get-DbaHelpIndex {
         #Add Fragmentation info if requested
         $FragSelectColumn = ", NULL as avg_fragmentation_in_percent"
         $FragJoin = ''
-        $OutputProperties = 'DatabaseName,ObjectName,IndexName,IndexType,KeyColumns,IncludeColumns,FilterDefinition,DataCompression,IndexReads,IndexUpdates,SizeKB,IndexRows,IndexLookups,MostRecentlyUsed,StatsSampleRows,StatsRowMods,HistogramSteps,StatsLastUpdated'
+        $OutputProperties = 'ComputerName,InstanceName,SqlInstance,DatabaseName,ObjectName,IndexName,IndexType,KeyColumns,IncludeColumns,FilterDefinition,DataCompression,IndexReads,IndexUpdates,SizeKB,IndexRows,IndexLookups,MostRecentlyUsed,StatsSampleRows,StatsRowMods,HistogramSteps,StatsLastUpdated'
         if ($IncludeFragmentation) {
             $FragSelectColumn = ', pstat.avg_fragmentation_in_percent'
             $FragJoin = "LEFT JOIN sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL , 'DETAILED') pstat
@@ -1037,25 +1037,28 @@ function Get-DbaHelpIndex {
                         }
                         
                         [pscustomobject]@{
-                            DatabaseName          = $db.Name
-                            ObjectName            = $detail.FullObjectName
-                            IndexName             = $detail.IndexName
-                            IndexType             = $detail.IndexType
-                            KeyColumns            = $detail.KeyColumns
-                            IncludeColumns        = $detail.IncludeColumns
-                            FilterDefinition      = $detail.FilterDefinition
-                            DataCompression       = $detail.DataCompression
-                            IndexReads            = "{0:N0}" -f $detail.IndexReads
-                            IndexUpdates          = "{0:N0}" -f $detail.IndexUpdates
-                            SizeKB                = "{0:N0}" -f $detail.SizeKB
-                            IndexRows             = "{0:N0}" -f $detail.IndexRows
-                            IndexLookups          = "{0:N0}" -f $detail.IndexLookups
-                            MostRecentlyUsed      = $recentlyused
-                            StatsSampleRows       = "{0:N0}" -f $detail.StatsSampleRows
-                            StatsRowMods          = "{0:N0}" -f $detail.StatsRowMods
-                            HistogramSteps        = $detail.HistogramSteps
-                            StatsLastUpdated      = $detail.StatsLastUpdated
-                            IndexFragInPercent    = "{0:F2}" -f $detail.IndexFragInPercent
+                            ComputerName   = $server.NetName
+                            InstanceName   = $server.ServiceName
+                            SqlInstance    = $server.DomainInstanceName
+                            Database       = $db.Name
+                            Object         = $detail.FullObjectName
+                            Index          = $detail.IndexName
+                            IndexType      = $detail.IndexType
+                            KeyColumns     = $detail.KeyColumns
+                            IncludeColumns = $detail.IncludeColumns
+                            FilterDefinition = $detail.FilterDefinition
+                            DataCompression = $detail.DataCompression
+                            IndexReads     = "{0:N0}" -f $detail.IndexReads
+                            IndexUpdates   = "{0:N0}" -f $detail.IndexUpdates
+                            SizeKB         = "{0:N0}" -f $detail.SizeKB
+                            IndexRows      = "{0:N0}" -f $detail.IndexRows
+                            IndexLookups   = "{0:N0}" -f $detail.IndexLookups
+                            MostRecentlyUsed = $recentlyused
+                            StatsSampleRows = "{0:N0}" -f $detail.StatsSampleRows
+                            StatsRowMods   = "{0:N0}" -f $detail.StatsRowMods
+                            HistogramSteps = $detail.HistogramSteps
+                            StatsLastUpdated = $detail.StatsLastUpdated
+                            IndexFragInPercent = "{0:F2}" -f $detail.IndexFragInPercent
                         } | Select-DefaultView -Property $OutputProperties
                     }
                 }
@@ -1069,25 +1072,28 @@ function Get-DbaHelpIndex {
                         }
                         
                         [pscustomobject]@{
-                            DatabaseName          = $db.Name
-                            ObjectName            = $detail.FullObjectName
-                            IndexName             = $detail.IndexName
-                            IndexType             = $detail.IndexType
-                            KeyColumns            = $detail.KeyColumns
-                            IncludeColumns        = $detail.IncludeColumns
-                            FilterDefinition      = $detail.FilterDefinition
-                            DataCompression       = $detail.DataCompression
-                            IndexReads            = $detail.IndexReads
-                            IndexUpdates          = $detail.IndexUpdates
-                            SizeKB                = $detail.SizeKB
-                            IndexRows             = $detail.IndexRows
-                            IndexLookups          = $detail.IndexLookups
-                            MostRecentlyUsed      = $recentlyused
-                            StatsSampleRows       = $detail.StatsSampleRows
-                            StatsRowMods          = $detail.StatsRowMods
-                            HistogramSteps        = $detail.HistogramSteps
-                            StatsLastUpdated      = $detail.StatsLastUpdated
-                            IndexFragInPercent    = $detail.IndexFragInPercent
+                            ComputerName    = $server.NetName
+                            InstanceName    = $server.ServiceName
+                            SqlInstance     = $server.DomainInstanceName
+                            Database        = $db.Name
+                            Object          = $detail.FullObjectName
+                            Index           = $detail.IndexName
+                            IndexType       = $detail.IndexType
+                            KeyColumns      = $detail.KeyColumns
+                            IncludeColumns  = $detail.IncludeColumns
+                            FilterDefinition = $detail.FilterDefinition
+                            DataCompression = $detail.DataCompression
+                            IndexReads      = $detail.IndexReads
+                            IndexUpdates    = $detail.IndexUpdates
+                            SizeKB          = $detail.SizeKB
+                            IndexRows       = $detail.IndexRows
+                            IndexLookups    = $detail.IndexLookups
+                            MostRecentlyUsed = $recentlyused
+                            StatsSampleRows = $detail.StatsSampleRows
+                            StatsRowMods    = $detail.StatsRowMods
+                            HistogramSteps  = $detail.HistogramSteps
+                            StatsLastUpdated = $detail.StatsLastUpdated
+                            IndexFragInPercent = $detail.IndexFragInPercent
                         } | Select-DefaultView -Property $OutputProperties
                     }
                 }
