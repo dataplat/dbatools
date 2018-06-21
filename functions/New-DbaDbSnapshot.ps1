@@ -1,4 +1,4 @@
-#ValidationTags#FlowControl#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaDbSnapshot {
     <#
     .SYNOPSIS
@@ -162,13 +162,13 @@ function New-DbaDbSnapshot {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            #Checks for path existence
+            #Checks for path existence, left the length test because test-bound wasn't working for some reason
             if ($Path.Length -gt 0) {
                 if (!(Test-DbaSqlPath -SqlInstance $instance -Path $Path)) {
                     Stop-Function -Message "$instance cannot access the directory $Path" -ErrorRecord $_ -Target $instance -Continue -EnableException $EnableException
                 }
             }
-
+                        
             if ($AllDatabases) {
                 $dbs = $server.Databases
             }
@@ -180,8 +180,6 @@ function New-DbaDbSnapshot {
             if ($ExcludeDatabase) {
                 $dbs = $server.Databases | Where-Object { $ExcludeDatabase -notcontains $_.Name }
             }
-
-            $sourcedbs = @()
 
             ## double check for gotchas
             foreach ($db in $dbs) {
@@ -319,15 +317,15 @@ function New-DbaDbSnapshot {
                         $SnapDB
                     }
                     catch {
-                        # we end up here when even the first issued command didn't create
-                        # a valid snapshot
-                        Write-Message -Level Warning -Message 'SMO failed to create the snapshot, run with -Debug to find out and report back' -ErrorRecord $_
+                        Resolve-SnapshotError $server
+                        
                         $hints = @("Executing these commands led to a failure")
                         foreach ($stmt in $sql) {
                             $hints += $stmt
                         }
                         Write-Message -Level Debug -Message ($hints -Join "`n")
-                        Resolve-SnapshotError $server
+                        
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $SnapDB -Continue
                     }
                 }
             }
