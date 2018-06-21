@@ -90,19 +90,9 @@ function Copy-DbaAgentJob {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
-    begin {
-
+    process {
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-
-        $source = $sourceServer.DomainInstanceName
-        $destination = $destServer.DomainInstanceName
-
-    }
-    process {
-
-        if (Test-FunctionInterrupt) { return }
 
         $serverJobs = $sourceServer.JobServer.Jobs
         $destJobs = $destServer.JobServer.Jobs
@@ -231,10 +221,12 @@ function Copy-DbaAgentJob {
                     $destServer.Query($sql)
 
                     $destServer.JobServer.Jobs.Refresh()
+                    $destServer.JobServer.Jobs[$serverJob.name].IsEnabled = $sourceServer.JobServer.Jobs[$serverJob.name].IsEnabled
+                    $destServer.JobServer.Jobs[$serverJob.name].Alter()
                 }
                 catch {
                     $copyJobStatus.Status = "Failed"
-                    $copyJobStatus.Notes = (($_.Exception.InnerException.InnerException.Innerexception.InnerException).ToString().Split("`n"))[0]
+                    $copyJobStatus.Notes = (Get-ErrorMessage -Record $_)
                     $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     Stop-Function -Message "Issue copying job" -Target $jobName -ErrorRecord $_ -Continue
                 }
