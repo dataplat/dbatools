@@ -57,6 +57,9 @@ function Get-DbaBackupInformation {
         .PARAMETER MaintenanceSolution
             This switch tells the function that the folder is the root of a Ola Hallengren backup folder
 
+        .PARAMETER RestoreSince
+            This parameter ONLY works with the MaintenanceSolution switch
+            If both are specified we will pre filter the files before reading the headers. This is not guaranteed to always work if you've moved files, or they contain multiple backups or you've altered any of the default naming rules in Ola's scripts
         .PARAMETER IgnoreLogBackup
             This switch only works with the MaintenanceSolution switch. With an Ola Hallengren style backup we can be sure that the LOG folder contains only log backups and skip it.
             For all other scenarios we need to read the file headers to be sure.
@@ -126,7 +129,7 @@ function Get-DbaBackupInformation {
 
             As we know we are dealing with an Ola Hallengren style backup folder from the MaintenanceSolution switch, when IgnoreLogBackup is also included we can ignore the LOG folder to skip any scanning of log backups. Note this also means then WON'T be restored
     #>
-    [CmdletBinding( DefaultParameterSetName = "Create")]
+    [CmdletBinding( DefaultParameterSetName = "Create", SupportsShouldProcess = $false, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$Path,
@@ -143,6 +146,7 @@ function Get-DbaBackupInformation {
         [switch]$DirectoryRecurse,
         [switch]$EnableException,
         [switch]$MaintenanceSolution,
+        [DateTime]$RestoreSince,
         [switch]$IgnoreLogBackup,
         [string]$ExportPath,
         [string]$AzureCredential,
@@ -246,7 +250,7 @@ function Get-DbaBackupInformation {
             }
             else {
                 ForEach ($f in $path) {
-                    Write-Message -Level VeryVerbose -Message "Not using sql for $f"
+                    Write-Message -Level VeryVerbose -Message "Not using sql for $f - $($f.GetType().ToString())"
                     if ($f -is [System.IO.FileSystemInfo]) {
                         if ($f.PsIsContainer -eq $true -and $true -ne $MaintenanceSolution) {
                             Write-Message -Level VeryVerbose -Message "folder $($f.fullname)"
@@ -270,9 +274,9 @@ function Get-DbaBackupInformation {
                     }
                     else {
                         if ($true -eq $MaintenanceSolution) {
-                            $Files += Get-XpDirTreeRestoreFile -Path $f\FULL -SqlInstance $server -NoRecurse
-                            $Files += Get-XpDirTreeRestoreFile -Path $f\DIFF -SqlInstance $server -NoRecurse
-                            $Files += Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse
+                            $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server 
+                           # $Files += Get-XpDirTreeRestoreFile -Path $f\DIFF -SqlInstance $server -NoRecurse
+                           # $Files += Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse
                         }
                         else {
                             Write-Message -Level VeryVerbose -Message "File"
@@ -285,6 +289,25 @@ function Get-DbaBackupInformation {
             if ($True -eq $MaintenanceSolution -and $True -eq $IgnoreLogBackup) {
                 Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
                 $Files = $Files | Where-Object {$_.FullName -notlike '*\LOG\*'}
+            }
+            if($True -eq $MaintenanceSolution -and $null -ne $RestoreSince){
+                Write-Message -Level Warning -Message "Attempting to filter on filename. This may not always work"
+                $tmpFiles = @()
+                Foreach ($file in $files){
+                    $null=$file.fullname -match '[A-z]*_(?<date>[0-9]*_[0-9]*).[A-z]{3}'
+                    $FileDate = Get-Date -year $matches.date.Substring(0,4) -Month $matches.date.Substring(4,2) -Day $matches.date.Substring(6,2) -Hour $matches.date.Substring(9,2) -Minute $matches.date.Substring(11,2) -Second $matches.date.Substring(13,2)  
+                    Write-Verbose "$fileDate - $RestoreSince"
+                    if ($FileDate -gt $RestoreSince){
+                        $tmpFiles += $file
+                    }
+                }
+                if ($tmpfiles.count -gt 0){
+                    $files = $tmpfiles
+                }
+                else{
+                    Stop-Function -Message "No backup files found after filtering with RestoreSince, exiting" -Category InvalidResult 
+                    return
+                }
             }
 
             Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
