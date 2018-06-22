@@ -333,7 +333,7 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName = "Restore")]
         [switch]$MaintenanceSolutionBackup,
         [parameter(ParameterSetName = "Restore")]
-        [DateTime]$RestoreSince,
+        [DateTime]$RestoreSince = (Get-Date).AddDays(1),
         [parameter(ParameterSetName = "Restore")]
         [hashtable]$FileMapping,
         [parameter(ParameterSetName = "Restore")]
