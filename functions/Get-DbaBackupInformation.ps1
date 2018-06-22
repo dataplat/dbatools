@@ -250,7 +250,7 @@ function Get-DbaBackupInformation {
             }
             else {
                 ForEach ($f in $path) {
-                    Write-Message -Level VeryVerbose -Message "Not using sql for $f - $($f.GetType().ToString())"
+                    Write-Message -Level VeryVerbose -Message "Not using sql for $f"
                     if ($f -is [System.IO.FileSystemInfo]) {
                         if ($f.PsIsContainer -eq $true -and $true -ne $MaintenanceSolution) {
                             Write-Message -Level VeryVerbose -Message "folder $($f.fullname)"
