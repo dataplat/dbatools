@@ -288,7 +288,7 @@ function Get-DbaBackupInformation {
                 Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
                 $Files = $Files | Where-Object {$_.FullName -notlike '*\LOG\*'}
             }
-            if($True -eq $MaintenanceSolution -and $null -ne $RestoreSince){
+            if($True -eq $MaintenanceSolution -and $null -ne $RestoreSince -and $RestoreSince -lt (Get-Date)){
                 Write-Message -Level Warning -Message "Attempting to filter on filename. This may not always work"
                 $tmpFiles = @()
                 Foreach ($file in $files){
