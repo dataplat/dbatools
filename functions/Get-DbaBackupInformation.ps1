@@ -288,11 +288,13 @@ function Get-DbaBackupInformation {
                 Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
                 $Files = $Files | Where-Object {$_.FullName -notlike '*\LOG\*'}
             }
+            <#
+            Pre niphlod discussion
             if($True -eq $MaintenanceSolution -and $null -ne $RestoreSince -and $RestoreSince -lt (Get-Date)){
-                Write-Message -Level Warning -Message "Attempting to filter on filename. This may not always work"
+                Write-Message -Level Verbose -Message "Attempting to filter on filename. This may not always work"
                 $tmpFiles = @()
                 Foreach ($file in $files){
-                    $null=$file.fullname -match '[A-z]*_(?<date>[0-9]*_[0-9]*)*.[A-z]{3}'
+                    $null=$file.fullname -match '[A-z]*_(?<date>[0-9]*_[0-9]*)[_0-9]*.[A-z]{3}'
                     $FileDate = Get-Date -year $matches.date.Substring(0,4) -Month $matches.date.Substring(4,2) -Day $matches.date.Substring(6,2) -Hour $matches.date.Substring(9,2) -Minute $matches.date.Substring(11,2) -Second $matches.date.Substring(13,2)
                     if ($FileDate -gt $RestoreSince){
                         $tmpFiles += $file
@@ -306,7 +308,37 @@ function Get-DbaBackupInformation {
                     return
                 }
             }
+            #>
+            if($True -eq $MaintenanceSolution -and $null -ne $RestoreSince -and $RestoreSince -lt (Get-Date)){
+                Foreach ($file in $files){
+                    $null=$file.fullname -match '[A-z]*_(?<date>[0-9]*_[0-9]*)[_0-9]*.[A-z]{3}'
+                    $FileDate = Get-Date -year $matches.date.Substring(0,4) -Month $matches.date.Substring(4,2) -Day $matches.date.Substring(6,2) -Hour $matches.date.Substring(9,2) -Minute $matches.date.Substring(11,2) -Second $matches.date.Substring(13,2)
+                    $File | Add-Member -Type NoteProperty -Name CreateDate -Value $FileDate
+                }
+                #Get Full
+                $Full = @()
+                $Full += $Files | Where-object {$_.FullName -like '*FULL*' -and $_.CreateDate -lt $RestoreSince} | Sort-object -Property CreateDate -Descending | Select-Object -First 1
+                #Get Stripe set
+                $FullCreateDate = $Full.CreateDate
+                $Full += $Files | Where-Object ($_.FullName -like '*FULL*' -and $_.CreateDate -eq $FullCreateDate)
+                $Full = $Full | Sort-Object -Property FullName -Unique
+                #return $files
+                $Diff = @()
+                $Diff += $Files | Where-Object {$_.FullName -like '*DIFF*' -and $_.CreateDate -gt $FullCreateDate -and $_.CreateDate -lt $RestoreSince} | Sort-Object -Property CreateDate -Descending | Select-Object -First 1
+                if ($diff.count -eq 0){
+                    $DiffCreateDate = ($Full | Sort-Object -property CreateDate -Descending | select -First 1).CreateDate
+                }
+                else{
 
+                    $DiffCreateDate = $Diff.CreateDate
+                    $Diff += $Files  | where-Object {$_.Fullname -like '*DIFF*' -and $_.CreateDate -eq $DiffCreateDate}
+                }
+                $Log = $Files | Where-Object {$_.FullName -like '*LOG*' -and $_.CreateDate -gt $DiffCreateDate -and $_.CreateDate -lt $RestoreSince}
+                $Files = @()
+                $Files += $Full | SELECT FullName
+                $files += $Diff | sELECT  FullName
+                $files += $Log | sELECT FullName
+            }
             Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
             $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential
 
