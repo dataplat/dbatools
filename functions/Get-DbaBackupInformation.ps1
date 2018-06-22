@@ -274,9 +274,7 @@ function Get-DbaBackupInformation {
                     }
                     else {
                         if ($true -eq $MaintenanceSolution) {
-                            $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server 
-                           # $Files += Get-XpDirTreeRestoreFile -Path $f\DIFF -SqlInstance $server -NoRecurse
-                           # $Files += Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse
+                            $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
                         }
                         else {
                             Write-Message -Level VeryVerbose -Message "File"
@@ -295,7 +293,7 @@ function Get-DbaBackupInformation {
                 $tmpFiles = @()
                 Foreach ($file in $files){
                     $null=$file.fullname -match '[A-z]*_(?<date>[0-9]*_[0-9]*)*.[A-z]{3}'
-                    $FileDate = Get-Date -year $matches.date.Substring(0,4) -Month $matches.date.Substring(4,2) -Day $matches.date.Substring(6,2) -Hour $matches.date.Substring(9,2) -Minute $matches.date.Substring(11,2) -Second $matches.date.Substring(13,2)  
+                    $FileDate = Get-Date -year $matches.date.Substring(0,4) -Month $matches.date.Substring(4,2) -Day $matches.date.Substring(6,2) -Hour $matches.date.Substring(9,2) -Minute $matches.date.Substring(11,2) -Second $matches.date.Substring(13,2)
                     if ($FileDate -gt $RestoreSince){
                         $tmpFiles += $file
                     }
@@ -304,7 +302,7 @@ function Get-DbaBackupInformation {
                     $files = $tmpfiles
                 }
                 else{
-                    Stop-Function -Message "No backup files found after filtering with RestoreSince, exiting" -Category InvalidResult 
+                    Stop-Function -Message "No backup files found after filtering with RestoreSince, exiting" -Category InvalidResult
                     return
                 }
             }
