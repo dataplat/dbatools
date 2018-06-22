@@ -335,8 +335,8 @@ function Invoke-DbaAdvancedRestore {
                                 CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { ($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum } else { $null }
                                 Script                 = $script
                                 BackupFileRaw          = ($backups.Fullname)
-                                FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date)-$FileRestoreStartTime).Seconds
-                                DatabaseRestoreTime    = New-TimeSpan -Seconds ((Get-Date)-$DatabaseRestoreStartTime).Seconds
+                                FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date)-$FileRestoreStartTime).TotalSeconds
+                                DatabaseRestoreTime    = New-TimeSpan -Seconds ((Get-Date)-$DatabaseRestoreStartTime).TotalSeconds
                                 ExitError              = $ExitError
                             } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw, RestoredFileFull
                         }
