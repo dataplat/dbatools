@@ -83,7 +83,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
 
         It "has the correct default properties" {
             $result = Get-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db2
-            $ExpectedPropsDefault = 'ComputerName', 'CreateDate', 'InstanceName', 'Name', 'SnapshotOf', 'SqlInstance'
+            $ExpectedPropsDefault = 'ComputerName', 'CreateDate', 'InstanceName', 'Name', 'SnapshotOf', 'SqlInstance', 'DiskUsage'
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
         }
     }

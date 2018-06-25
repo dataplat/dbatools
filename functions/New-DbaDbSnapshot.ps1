@@ -317,8 +317,7 @@ function New-DbaDbSnapshot {
                         $SnapDB
                     }
                     catch {
-                        Resolve-SnapshotError $server
-                        
+                        # Resolve-SnapshotError $server
                         $hints = @("Executing these commands led to a failure")
                         foreach ($stmt in $sql) {
                             $hints += $stmt
