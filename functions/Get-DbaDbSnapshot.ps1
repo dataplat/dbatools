@@ -102,12 +102,15 @@ function Get-DbaDbSnapshot {
             if ($ExcludeSnapshot) {
                 $dbs = $dbs | Where-Object { $ExcludeSnapshot -notcontains $_.Name }
             }
-
+            
             foreach ($db in $dbs) {
+                $BytesOnDisk = $db.Query("select top 1 BytesOnDisk from fn_virtualfilestats(db_id('$($db.Name)'),null) S JOIN dbo.sysdatabases D on D.dbid = S.dbid")
+                
                 Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
                 Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Select-DefaultView -InputObject $db -Property ComputerName, InstanceName, SqlInstance, Name, 'DatabaseSnapshotBaseName as SnapshotOf', CreateDate
+                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name DiskUsage -value ([dbasize]($BytesOnDisk.BytesOnDisk))
+                Select-DefaultView -InputObject $db -Property ComputerName, InstanceName, SqlInstance, Name, 'DatabaseSnapshotBaseName as SnapshotOf', CreateDate, DiskUsage
             }
         }
     }
