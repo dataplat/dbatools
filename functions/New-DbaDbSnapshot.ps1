@@ -237,7 +237,7 @@ function New-DbaDbSnapshot {
             if ($has_FSD) {
                 $snaptype = "partial db snapshot"
             }
-            If ($Pscmdlet.ShouldProcess($instance, "Create $snaptype $SnapName of $($db.Name)")) {
+            If ($Pscmdlet.ShouldProcess($server, "Create $snaptype $SnapName of $($db.Name)")) {
                 $CustomFileStructure = @{ }
                 $counter = 0
                 foreach ($fg in $db.FileGroups) {

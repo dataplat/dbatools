@@ -1,3 +1,4 @@
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Install-DbaFirstResponderKit {
     <#
         .SYNOPSIS
@@ -5,7 +6,7 @@ function Install-DbaFirstResponderKit {
 
         .DESCRIPTION
             Downloads, extracts and installs the First Responder Kit stored procedures:
-            sp_Blitz, sp_BlitzWho, sp_BlitzFirst, sp_BlitzIndex, sp_BlitzCache and sp_BlitzTrace.
+            sp_Blitz, sp_BlitzWho, sp_BlitzFirst, sp_BlitzIndex, sp_BlitzCache and sp_BlitzTrace, etc.
 
             First Responder Kit links:
             http://FirstResponderKit.org
@@ -22,6 +23,12 @@ function Install-DbaFirstResponderKit {
 
         .PARAMETER Branch
             Specifies an alternate branch of the First Responder Kit to install. (master or dev)
+
+        .PARAMETER Confirm
+            Prompts to confirm actions
+
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -69,7 +76,7 @@ function Install-DbaFirstResponderKit {
 
             Installs the dev branch version of the FRK in the master database on sql2016 instance.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -99,7 +106,7 @@ function Install-DbaFirstResponderKit {
 
         $null = New-Item -ItemType Directory -Path $zipfolder -ErrorAction SilentlyContinue
 
-        Write-Message -Level Output -Message "Downloading and unzipping the First Responder Kit zip file."
+        Write-Message -Level Verbose -Message "Downloading and unzipping the First Responder Kit zip file."
 
         try {
             $oldSslSettings = [System.Net.ServicePointManager]::SecurityProtocol
@@ -119,13 +126,7 @@ function Install-DbaFirstResponderKit {
             # Unblock if there's a block
             Unblock-File $zipfile -ErrorAction SilentlyContinue
 
-            # Unzip the files
-            $shell = New-Object -ComObject Shell.Application
-            $zip = $shell.NameSpace($zipfile)
-
-            foreach ($item in $zip.items()) {
-                $shell.Namespace($temp).CopyHere($item)
-            }
+            Expand-Archive -Path $zipfile -DestinationPath $zipfolder -Force
 
             Remove-Item -Path $zipfile
         }
@@ -149,47 +150,45 @@ function Install-DbaFirstResponderKit {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            Write-Message -Level Output -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."
+            Write-Message -Level Verbose -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."
             $allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
             $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
             # Install/Update each FRK stored procedure
-            foreach ($script in (Get-ChildItem $zipfolder -Filter sp_Blitz*.sql)) {
+            foreach ($script in (Get-ChildItem $zipfolder -Recurse -Filter "sp_*.sql")) {
                 $scriptname = $script.Name
+                $scriptError = $false
                 if ($scriptname -ne "sp_BlitzRS.sql") {
-                    $sql = [IO.File]::ReadAllText($script.FullName)
 
                     if ($scriptname -eq "sp_BlitzQueryStore.sql") {
                         if ($server.VersionMajor -lt 13) { continue }
                     }
-
-                    foreach ($query in ($sql -Split "\nGO\b")) {
-                        $query = $query.Trim()
-                        if ($query) {
-                            try {
-                                $null = $server.Query($query, $Database)
-                            }
-                            catch {
-                                Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_
-                            }
+                    if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptname in $database.")) {
+                        try {
+                            Invoke-DbaSqlQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
+                        } catch {
+                            Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_
+                            $scriptError = $true
                         }
+                        $baseres = @{
+                            ComputerName = $server.NetName
+                            InstanceName = $server.ServiceName
+                            SqlInstance  = $server.DomainInstanceName
+                            Database     = $Database
+                            Name         = $script.BaseName
+                        }
+                        if ($scriptError) {
+                            $baseres['Status'] = 'Error'
+                        } elseif ($script.BaseName -in $allprocedures) {
+                            $baseres['Status'] = 'Updated'
+                        }
+                        else {
+                            $baseres['Status'] = 'Installed'
+                        }
+                        [PSCustomObject]$baseres
                     }
                 }
-                $baseres = @{
-                    ComputerName = $server.NetName
-                    InstanceName = $server.ServiceName
-                    SqlInstance  = $server.DomainInstanceName
-                    Database     = $Database
-                    Name         = $scriptname.TrimEnd('.sql')
-                }
-                if ($scriptname.TrimEnd('.sql') -in $allprocedures) {
-                    $baseres['Status'] = 'Updated'
-                }
-                else {
-                    $baseres['Status'] = 'Installed'
-                }
-                [PSCustomObject]$baseres
             }
-            Write-Message -Level Output -Message "Finished installing/updating the First Responder Kit stored procedures in $database on $instance."
+            Write-Message -Level Verbose -Message "Finished installing/updating the First Responder Kit stored procedures in $database on $instance."
         }
     }
 }

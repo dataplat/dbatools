@@ -54,27 +54,22 @@ function Remove-DbaDbSnapshot {
          https://dbatools.io/Remove-DbaDbSnapshot
 
     .EXAMPLE
-        Remove-DbaDbSnapshot -SqlInstance sqlserver2014a
-
-        Removes all database snapshots from sqlserver2014a
-
-    .EXAMPLE
-        Remove-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, HR_snap_20161101
+        Remove-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snap_20161201, HR_snap_20161101
 
         Removes database snapshots named HR_snap_20161201 and HR_snap_20161101
 
     .EXAMPLE
-        Remove-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
+        Remove-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting
 
         Removes all database snapshots having HR and Accounting as base dbs
 
     .EXAMPLE
-        Get-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting | Remove-DbaDbSnapshot
+        Get-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting | Remove-DbaDbSnapshot
 
         Removes all database snapshots having HR and Accounting as base dbs
-    
+
     .EXAMPLE
-        Remove-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot
+        Remove-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snapshot, Accounting_snapshot
 
         Removes HR_snapshot and Accounting_snapshot
 
@@ -87,6 +82,16 @@ function Remove-DbaDbSnapshot {
         Get-DbaDbSnapshot -SqlInstance sql2016 | Out-GridView -Passthru | Remove-DbaDbSnapshot
 
         Allows the selection of snapshots on sql2016 to remove
+
+    .EXAMPLE
+        Remove-DbaDbSnapshot -SqlInstance sql2014 -AllSnapshots
+
+        Removes all database snapshots from sql2014
+
+    .EXAMPLE
+        Remove-DbaDbSnapshot -SqlInstance sql2014 -AllSnapshots -Confirm
+
+        Removes all database snapshots from sql2014 and prompts for each database
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -110,7 +115,7 @@ function Remove-DbaDbSnapshot {
     }
     process {
         if (!$Snapshot -and !$Database -and !$AllSnapshots -and $null -eq $InputObject -and !$ExcludeDatabase) {
-            Stop-Function -Message "You must pipe in a snapshot or specify -Snapshot, -Database, -Exclude or -AllSnapshots"
+            Stop-Function -Message "You must pipe in a snapshot or specify -Snapshot, -Database, -ExcludeDatabase or -AllSnapshots"
             return
         }
 
@@ -128,18 +133,18 @@ function Remove-DbaDbSnapshot {
         }
 
         foreach ($db in $InputObject) {
-            try {
-                $server = $db.Parent
+            $server = $db.Parent
+
+            if (-not $db.DatabaseSnapshotBaseName) {
+                Stop-Function -Message "$db on $server is not a database snapshot" -Continue
             }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
+
             if ($Force) {
                 $db | Remove-DbaDatabase -Confirm:$confirm | Select-DefaultView -Property $defaultprops
             }
             else {
                 try {
-                    if ($Pscmdlet.ShouldProcess("$db on $server", "SMO drop")) {
+                    if ($Pscmdlet.ShouldProcess("$db on $server", "Drop snapshot")) {
                         $db.Drop()
                         $server.Refresh()
 
