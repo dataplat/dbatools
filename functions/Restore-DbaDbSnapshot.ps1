@@ -55,27 +55,27 @@ function Restore-DbaDbSnapshot {
         https://dbatools.io/Restore-DbaDbSnapshot
 
     .EXAMPLE
-        Restore-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
+        Restore-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting
 
         Restores HR and Accounting databases using the latest snapshot available
 
     .EXAMPLE
-        Restore-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -Force
+        Restore-DbaDbSnapshot -SqlInstance sql2014 -Database HR -Force
 
-        Restores HR database from latest snapshot and kills any active connections in the database on sqlserver2014a.
+        Restores HR database from latest snapshot and kills any active connections in the database on sql2014.
 
     .EXAMPLE
         Get-DbaDbSnapshot -SqlInstance sql2016 -Database HR | Restore-DbaDbSnapshot -Force
 
         Restores HR database from latest snapshot and kills any active connections in the database on sql2016.
-    
+
     .EXAMPLE
         Get-DbaDbSnapshot -SqlInstance sql2016 | Out-GridView -Passthru | Restore-DbaDbSnapshot
 
         Allows the selection of snapshots on sql2016 to restore
 
     .EXAMPLE
-        Restore-DbaDbSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, Accounting_snap_20161101
+        Restore-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snap_20161201, Accounting_snap_20161101
 
         Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101
     #>
@@ -150,7 +150,7 @@ function Restore-DbaDbSnapshot {
                     Stop-Function -Message "The restore process for $db from $snap needs to drop other snapshots on $db. Use -Force if you want to drop these snapshots" -Continue
                 }
 
-                if ($Pscmdlet.ShouldProcess($server.name, "Remove other db snapshots for $db")) {
+                if ($Pscmdlet.ShouldProcess($server, "Remove other db snapshots for $db")) {
                     try {
                         $null = $othersnaps | Remove-DbaDatabase -Confirm:$false -EnableException
                     }
@@ -160,7 +160,7 @@ function Restore-DbaDbSnapshot {
                 }
 
                 # Need a proper restore now
-                if ($Pscmdlet.ShouldProcess($server.DomainInstanceName, "Restore db $db from $snap")) {
+                if ($Pscmdlet.ShouldProcess($server, "Restore db $db from $snap")) {
                     try {
                         if ($Force) {
                             $null = Stop-DbaProcess -SqlInstance $server -Database $db.Name, $snap.Name -WarningAction SilentlyContinue

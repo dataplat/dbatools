@@ -74,8 +74,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3022.28		CU4					2/20/2018	    https://support.microsoft.com/en-us/help/4056498
 -- 14.0.3023.8		CU5					3/20/2018		https://support.microsoft.com/en-us/help/4092643
 -- 14.0.3025.34		CU6					4/17/2018	    https://support.microsoft.com/en-us/help/4101464
--- 14.0.3026.27		CU7					5/23/2018		https://support.microsoft.com/en-us/help/4229789/cumulative-update-7-for-sql-server-2017
--- 14.0.3029.16		CU8					6/20/2018
+-- 14.0.3026.27		CU7					5/23/2018		https://support.microsoft.com/en-us/help/4229789
+-- 14.0.3029.16		CU8					6/19/2018		https://support.microsoft.com/en-us/help/4338363 
 		
 															
 
