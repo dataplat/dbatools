@@ -154,6 +154,7 @@ function Invoke-DbaAdvancedRestore {
         if (Test-FunctionInterrupt) { return }
         $Databases = $InternalHistory.Database | Select-Object -Unique
         foreach ($Database in $Databases) {
+            $DatabaseRestoreStartTime = Get-Date
             if ($Database -in $Server.Databases.Name) {
                 if (-not $OutputScriptOnly -and -not $VerifyOnly) {
                     if ($Pscmdlet.ShouldProcess("Killing processes in $Database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
@@ -177,6 +178,7 @@ function Invoke-DbaAdvancedRestore {
             $backups = @($InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
             foreach ($backup in $backups) {
+                $FileRestoreStartTime = Get-Date
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
                 if (($backup -ne $backups[-1]) -or $true -eq $NoRecovery) {
                     $Restore.NoRecovery = $True
@@ -333,6 +335,8 @@ function Invoke-DbaAdvancedRestore {
                                 CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { ($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum } else { $null }
                                 Script                 = $script
                                 BackupFileRaw          = ($backups.Fullname)
+                                FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date)-$FileRestoreStartTime).TotalSeconds
+                                DatabaseRestoreTime    = New-TimeSpan -Seconds ((Get-Date)-$DatabaseRestoreStartTime).TotalSeconds
                                 ExitError              = $ExitError
                             } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw, RestoredFileFull
                         }
