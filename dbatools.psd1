@@ -11,7 +11,7 @@
     RootModule                = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion             = '0.9.359'
+    ModuleVersion             = '0.9.360'
 
     # ID used to uniquely identify this module
     GUID                      = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -163,7 +163,7 @@
         'Remove-DbaDbSnapshot',
         'Get-DbaRoleMember',
         'Resolve-DbaNetworkName',
-        'Test-DbaValidLogin',
+        'Test-DbaWindowsLogin',
         'Get-DbaMemoryUsage',
         'Export-DbaAvailabilityGroup',
         'Write-DbaDataTable',
@@ -577,7 +577,8 @@
     'Remove-DbaDatabaseSnapshot',
     'Restore-DbaDatabaseSnapshot',
     'Sync-DbaSqlLoginPermission',
-    'Get-DbaSqlLog'
+    'Get-DbaSqlLog',
+    'Test-DbaValidLogin'
 
     # List of all modules packaged with this module
     ModuleList                = @()
