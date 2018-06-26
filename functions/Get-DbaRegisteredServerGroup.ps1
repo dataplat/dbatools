@@ -17,6 +17,9 @@ function Get-DbaRegisteredServerGroup {
 
         .PARAMETER ExcludeGroup
             Specifies one or more Central Management Server groups to exclude.
+    
+        .PARAMETER Id
+            Get group by Id(s)
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -64,6 +67,7 @@ function Get-DbaRegisteredServerGroup {
         [PSCredential]$SqlCredential,
         [object[]]$Group,
         [object[]]$ExcludeGroup,
+        [int[]]$Id,
         [switch]$EnableException
     )
     begin {
@@ -96,23 +100,15 @@ function Get-DbaRegisteredServerGroup {
             return $results
         }
     }
-
     process {
-
-        if (Test-FunctionInterrupt) {
-            return
-        }
-
-        $groups = @()
         foreach ($instance in $SqlInstance) {
-
             try {
                 $cmsStore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
             }
             catch {
                 Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
             }
-
+            $groups = @()
             if ($group) {
                 foreach ($currentGroup in $group) {
                     $cms = Find-CmsGroup -CmsGrp $cmsStore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
@@ -130,7 +126,11 @@ function Get-DbaRegisteredServerGroup {
             if (Test-Bound -ParameterName ExcludeGroup) {
                 $groups = $groups | Where-Object Name -notin $ExcludeGroup
             }
-
+            
+            if (Test-Bound -ParameterName Id) {
+                $groups = $groups | Where-Object Id -in $Id
+            }
+            
             # Close the connection, otherwise using it with the ServersStore will keep it open
             $cmsStore.ServerConnection.Disconnect()
             
