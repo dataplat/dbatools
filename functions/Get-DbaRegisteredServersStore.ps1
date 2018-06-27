@@ -37,9 +37,9 @@ function Get-DbaRegisteredServersStore {
 
             Returns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default")]
+    [CmdletBinding()]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -47,7 +47,7 @@ function Get-DbaRegisteredServersStore {
         [switch]$EnableException
     )
     process {
-        foreach ($Instance in $SqlInstance) {
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
