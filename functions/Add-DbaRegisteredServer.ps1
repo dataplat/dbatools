@@ -86,14 +86,11 @@ function Add-DbaRegisteredServer {
         }
         
         foreach ($reggroup in $InputObject) {
-            $parentserver = $regservergroup
+            $parentserver = Get-RegServerParent -InputObject $reggroup
             
-            do {
-                if ($null -ne $parentserver.Parent) {
-                    $parentserver = $parentserver.Parent
-                }
+            if ($null -eq $parentserver) {
+                Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
             }
-            until ($null -ne $parentserver.ComputerName)
             
             $server = $parentserver.ServerConnection
             
@@ -104,10 +101,10 @@ function Add-DbaRegisteredServer {
                     $newserver.Description = $Description
                     $newserver.Create()
                     
-                    Get-DbaRegisteredServer -SqlInstance $server -Name $Name -ServerName $ServerName -Group $InputObject.Name
+                    Get-DbaRegisteredServer -SqlInstance $server.SqlConnectionObject -Name $Name -ServerName $ServerName
                 }
                 catch {
-                    Stop-Function -Message "Failed to add $reggroup on $server" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to add $ServerName on $($parentserver.SqlInstance)" -ErrorRecord $_ -Continue
                 }
             }
         }

@@ -143,19 +143,19 @@ function Get-DbaRegisteredServer {
         $servers = @()
         foreach ($instance in $SqlInstance) {
             try {
-                $cmsStore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
+                $serverstore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
             }
             catch {
                 Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
             }
 
             if (Test-Bound -ParameterName ExcludeGroup) {
-                $Group = ($cmsStore.DatabaseEngineServerGroup.ServerGroups | Where-Object Name -notin $ExcludeGroup).Name
+                $Group = ($serverstore.DatabaseEngineServerGroup.ServerGroups | Where-Object Name -notin $ExcludeGroup).Name
             }
 
             if ($Group) {
                 foreach ($currentGroup in $Group) {
-                    $cms = Find-CmsGroup -CmsGrp $cmsStore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
+                    $cms = Find-CmsGroup -CmsGrp $serverstore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
                     if ($null -eq $cms) {
                         Write-Message -Level Output -Message "No groups found matching that name on instance '$instance'."
                         continue
@@ -164,16 +164,16 @@ function Get-DbaRegisteredServer {
                 }
             }
             else {
-                $cms = $cmsStore.DatabaseEngineServerGroup
+                $cms = $serverstore.DatabaseEngineServerGroup
                 $servers += ($cms.GetDescendantRegisteredServers())
             }
             if ($Group -and (Test-Bound -ParameterName Group -Not)) {
                 #add root ones
-                $servers += ($cmsstore.DatabaseEngineServerGroup.RegisteredServers)
+                $servers += ($serverstore.DatabaseEngineServerGroup.RegisteredServers)
             }
 
             # Close the connection, otherwise using it with the ServersStore will keep it open
-            $cmsStore.ServerConnection.Disconnect()
+            $serverstore.ServerConnection.Disconnect()
         }
         
         
@@ -188,7 +188,9 @@ function Get-DbaRegisteredServer {
         }
         
         foreach ($server in $servers) {
-            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $null
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name SqlInstance -value $serverstore.SqlInstance
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $null
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null
 

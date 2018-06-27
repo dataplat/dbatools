@@ -85,16 +85,11 @@ function Add-DbaRegisteredServerGroup {
         }
         
         foreach ($reggroup in $InputObject) {
-            $parentserver = $reggroup
+            $parentserver = Get-RegServerParent -InputObject $reggroup
             
-            do {
-                if ($null -ne $parentserver.Parent) {
-                    $parentserver = $parentserver.Parent
-                }
+            if ($null -eq $parentserver) {
+                Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
             }
-            until ($null -ne $parentserver.ComputerName)
-            
-            $server = $parentserver.ServerConnection
             
             if ($Pscmdlet.ShouldProcess($parentserver.SqlInstance, "Adding $Name")) {
                 try {
@@ -102,10 +97,10 @@ function Add-DbaRegisteredServerGroup {
                     $newgroup.Description = $Description
                     $newgroup.Create()
                     
-                    #Get-DbaRegisteredServerGroup -SqlInstance $server -Group $Name
+                    Get-DbaRegisteredServerGroup -SqlInstance $parentserver.ServerConnection.SqlConnectionObject | Where-Object Id -eq $newgroup.id
                 }
                 catch {
-                    Stop-Function -Message "Failed to add $reggroup on $($server.ServerInstance)" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to add $reggroup on $($parentserver.ServerConnection.ServerInstance)" -ErrorRecord $_ -Continue
                 }
             }
         }
