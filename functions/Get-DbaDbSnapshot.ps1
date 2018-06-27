@@ -73,7 +73,7 @@ function Get-DbaDbSnapshot {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -83,9 +83,9 @@ function Get-DbaDbSnapshot {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $dbs = $server.Databases | Where-Object DatabaseSnapshotBaseName
-            
+
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
             }
@@ -101,7 +101,7 @@ function Get-DbaDbSnapshot {
             if ($ExcludeSnapshot) {
                 $dbs = $dbs | Where-Object { $ExcludeSnapshot -notcontains $_.Name }
             }
-            
+
             foreach ($db in $dbs) {
                 try {
                     if ($db.Parent.VersionMajor -ge 10) {
