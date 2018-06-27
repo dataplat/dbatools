@@ -64,7 +64,7 @@
         ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
         SERVERPROPERTY('ServerName') AS SqlInstance, db_name(a.database_id) AS [Database]
         , CAST(((a.size_on_disk_bytes/1024)/1024.0)/1024 AS DECIMAL(10,2)) AS [SizeGB]
-        , b.name AS [FileName]
+        , RIGHT(b.physical_name, CHARINDEX('\', REVERSE(b.physical_name)) -1) AS [FileName]
         , a.file_id AS [FileID]
         , CASE WHEN a.file_id = 2 THEN 'Log' ELSE 'Data' END AS [FileType]
         , UPPER(SUBSTRING(b.physical_name, 1, 2)) AS [DiskLocation]
