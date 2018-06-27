@@ -36,7 +36,7 @@ function Remove-DbaRegisteredServer {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Author: Bryan Hamby (@galador)
+            Author: Chrissy LeMaire (@cl)
             Tags: RegisteredServer, CMS
 
             Website: https://dbatools.io
@@ -70,10 +70,9 @@ function Remove-DbaRegisteredServer {
         [PSCredential]$SqlCredential,
         [string[]]$Name,
         [string[]]$ServerName,
-        [Alias("Groups")]
         [string[]]$Group,
         [string[]]$ExcludeGroup,
-        [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
+        [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer[]]$InputObject,
         [switch]$EnableException
     )
     
