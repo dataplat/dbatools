@@ -13,6 +13,12 @@ function Get-DbaRegisteredServer {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+        .PARAMETER Name
+            Specifies one or more names to include. Name is the visible name in SSMS CMS interface (labeled Registered Server Name)
+
+        .PARAMETER ServerName
+            Specifies one or more server names to include. Server Name is the actual instance name (labeled Server Name)
+    
         .PARAMETER Group
             Specifies one or more groups to include from SQL Server Central Management Server.
 
@@ -22,6 +28,9 @@ function Get-DbaRegisteredServer {
         .PARAMETER ExcludeCmsServer
             Deprecated, now follows the Microsoft convention of not including it by default. If you'd like to include the CMS Server, use -IncludeSelf
 
+        .PARAMETER Id
+            Get server by Id(s)
+    
         .PARAMETER IncludeSelf
             If this switch is enabled, the CMS server itself will be included in the results, along with all other Registered Servers.
 
@@ -77,9 +86,12 @@ function Get-DbaRegisteredServer {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [string[]]$Name,
+        [string[]]$ServerName,
         [Alias("Groups")]
         [object[]]$Group,
         [object[]]$ExcludeGroup,
+        [int[]]$Id,
         [switch]$IncludeSelf,
         [switch]$ExcludeCmsServer,
         [switch]$ResolveNetworkName,
@@ -163,7 +175,18 @@ function Get-DbaRegisteredServer {
             # Close the connection, otherwise using it with the ServersStore will keep it open
             $cmsStore.ServerConnection.Disconnect()
         }
-
+        
+        
+        if ($Name) {
+            $servers = $servers | Where-Object Name -in $Name
+        }
+        if ($ServerName) {
+            $servers = $servers | Where-Object ServerName -in $ServerName
+        }
+        if ($Id) {
+            $servers = $servers | Where-Object Id -in $Id
+        }
+        
         foreach ($server in $servers) {
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $null
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $null
