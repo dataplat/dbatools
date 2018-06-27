@@ -204,6 +204,12 @@ function New-DbaDbSnapshot {
 
         foreach ($db in $InputObject) {
             $server = $db.Parent
+            
+            # In case stuff is piped in
+            if ($server.MinimumVersion -lt 9) {
+                Stop-Function -Message "SQL Server version 9 required - $server not supported" -Continue
+            }
+            
             if ($NameSuffix.Length -gt 0) {
                 $SnapName = $NameSuffix -f $db.Name
                 if ($SnapName -eq $NameSuffix) {
