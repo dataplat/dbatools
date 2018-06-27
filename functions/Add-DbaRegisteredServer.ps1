@@ -13,12 +13,12 @@ function Add-DbaRegisteredServer {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Name
-            Specifies one or more names to include. Name is the visible name in SSMS CMS interface (labeled Registered Server Name)
-
         .PARAMETER ServerName
             Specifies one or more server names to include. Server Name is the actual instance name (labeled Server Name)
     
+        .PARAMETER Name
+            Specifies one or more names to include. Name is the visible name in SSMS CMS interface (labeled Registered Server Name)
+
         .PARAMETER Group
             Specifies one or more groups to include from SQL Server Central Management Server.
 
@@ -36,7 +36,7 @@ function Add-DbaRegisteredServer {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Author: Bryan Hamby (@galador)
+            Author: Chrissy LeMaire (@cl)
             Tags: RegisteredServer, CMS
 
             Website: https://dbatools.io
@@ -62,15 +62,15 @@ function Add-DbaRegisteredServer {
             Adds all registered servers on sql2012 and turns off all prompting
     #>
     
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$Name,
         [parameter(Mandatory)]
         [string]$ServerName,
+        [string]$Name = $ServerName,
         [string]$Description,
         [string]$Group,
         [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
@@ -79,36 +79,28 @@ function Add-DbaRegisteredServer {
     
     process {
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
-        }
-        
-        if (-not $InputObject) {
-            $InputObject = (Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential | Select-Object -ExpandProperty DatabaseEngineServerGroup | Where-Object Id -eq 1)
-        }
-        
-        foreach ($regserver in $InputObject) {
-            $server = $regserver.Parent
-            
-            if (-not $Name) {
-                $Name = $ServerName
+            if ((Test-Bound -ParameterName Group)) {
+                $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
             }
+            else {
+                $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
+            }
+        }
+        
+        foreach ($reggroup in $InputObject) {
+            $server = $reggroup.Parent
             
-            if ($Pscmdlet.ShouldProcess($regserver.Parent, "Adding $regserver")) {
+            if ($Pscmdlet.ShouldProcess($reggroup.Parent, "Adding $reggroup")) {
                 try {
-                    $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer
-                    $newserver.Parent = $server
+                    $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($reggroup, $Name)
                     $newserver.ServerName = $ServerName
-                    #$newserver.Name = $Name
-                    $newserver.Description = $instance.Description
+                    $newserver.Description = $Description
                     $newserver.Create()
-                    $newserver.Rename($Name)
-                    $newserver.Alter()
-                    $newserver.Refresh()
                     
-                    Get-DbaRegisteredServer -SqlInstance $server -Id $newserver.Id
+                    $newserver | Select-DefaultView -Property 'Name', 'ServerName', 'Description', 'ServerType', 'SecureConnectionString'
                 }
                 catch {
-                    Stop-Function -Message "Failed to add $regserver on $server" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to add $reggroup on $server" -ErrorRecord $_ -Continue
                 }
             }
         }
