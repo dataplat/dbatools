@@ -87,7 +87,7 @@ function New-DbaDbSnapshot {
 
     .EXAMPLE
         Get-DbaDatabase -SqlInstance sql2016 -Database df | New-DbaDbSnapshot
-    
+
         Creates a snapshot for the database df on sql2016
 #>
 
@@ -168,7 +168,7 @@ function New-DbaDbSnapshot {
                     Stop-Function -Message "$instance cannot access the directory $Path" -ErrorRecord $_ -Target $instance -Continue -EnableException $EnableException
                 }
             }
-                        
+
             if ($AllDatabases) {
                 $dbs = $server.Databases
             }
@@ -204,12 +204,12 @@ function New-DbaDbSnapshot {
 
         foreach ($db in $InputObject) {
             $server = $db.Parent
-            
+
             # In case stuff is piped in
             if ($server.MinimumVersion -lt 9) {
                 Stop-Function -Message "SQL Server version 9 required - $server not supported" -Continue
             }
-            
+
             if ($NameSuffix.Length -gt 0) {
                 $SnapName = $NameSuffix -f $db.Name
                 if ($SnapName -eq $NameSuffix) {
@@ -329,7 +329,7 @@ function New-DbaDbSnapshot {
                             $hints += $stmt
                         }
                         Write-Message -Level Debug -Message ($hints -Join "`n")
-                        
+
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $SnapDB -Continue
                     }
                 }
