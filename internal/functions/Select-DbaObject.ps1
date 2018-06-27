@@ -1,5 +1,4 @@
-﻿function Select-DbaObject
-{
+﻿function Select-DbaObject {
 <#
 	.SYNOPSIS
 		Wrapper around Select-Object, extends property parameter.
@@ -52,116 +51,103 @@
 	.PARAMETER Index
 		Specifies an array of objects based on their index values. Enter the indexes in a comma-separated list.
 #>
-	[CmdletBinding(DefaultParameterSetName = 'DefaultParameter', RemotingCapability = 'None')]
-	param (
-		[Parameter(ValueFromPipeline = $true)]
-		[psobject]
-		$InputObject,
-		
-		[Parameter(ParameterSetName = 'DefaultParameter', Position = 0)]
-		[Parameter(ParameterSetName = 'SkipLastParameter', Position = 0)]
-		[SqlCollaborative.Dbatools.Parameter.DbaSelectParameter[]]
-		$Property,
-		
-		[Parameter(ParameterSetName = 'SkipLastParameter')]
-		[Parameter(ParameterSetName = 'DefaultParameter')]
-		[string[]]
-		$ExcludeProperty,
-		
-		[Parameter(ParameterSetName = 'DefaultParameter')]
-		[Parameter(ParameterSetName = 'SkipLastParameter')]
-		[string]
-		$ExpandProperty,
-		
-		[switch]
-		$Unique,
-		
-		[Parameter(ParameterSetName = 'DefaultParameter')]
-		[ValidateRange(0, 2147483647)]
-		[int]
-		$Last,
-		
-		[Parameter(ParameterSetName = 'DefaultParameter')]
-		[ValidateRange(0, 2147483647)]
-		[int]
-		$First,
-		
-		[Parameter(ParameterSetName = 'DefaultParameter')]
-		[ValidateRange(0, 2147483647)]
-		[int]
-		$Skip,
-		
-		[Parameter(ParameterSetName = 'SkipLastParameter')]
-		[ValidateRange(0, 2147483647)]
-		[int]
-		$SkipLast,
-		
-		[Parameter(ParameterSetName = 'IndexParameter')]
-		[Parameter(ParameterSetName = 'DefaultParameter')]
-		[switch]
-		$Wait,
-		
-		[Parameter(ParameterSetName = 'IndexParameter')]
-		[ValidateRange(0, 2147483647)]
-		[int[]]
-		$Index
-	)
-	
-	begin
-	{
-		try
-		{
-			$outBuffer = $null
-			if ($PSBoundParameters.TryGetValue('OutBuffer', [ref]$outBuffer))
-			{
-				$PSBoundParameters['OutBuffer'] = 1
-			}
-			
-			$clonedParameters = @{ }
-			foreach ($key in $PSBoundParameters.Keys)
-			{
-				if ($key -ne "Property")
-				{
-					$clonedParameters[$key] = $PSBoundParameters[$key]
-				}
-			}
-			if (Test-PSFParameterBinding -ParameterName 'Property')
-			{
-				$clonedParameters['Property'] = $Property.Value
-			}
-			
-			$wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('Microsoft.PowerShell.Utility\Select-Object', [System.Management.Automation.CommandTypes]::Cmdlet)
-			$scriptCmd = { & $wrappedCmd @clonedParameters }
-			$steppablePipeline = $scriptCmd.GetSteppablePipeline($myInvocation.CommandOrigin)
-			$steppablePipeline.Begin($PSCmdlet)
-		}
-		catch
-		{
-			throw
-		}
-	}
-	
-	process
-	{
-		try
-		{
-			$steppablePipeline.Process($_)
-		}
-		catch
-		{
-			throw
-		}
-	}
-	
-	end
-	{
-		try
-		{
-			$steppablePipeline.End()
-		}
-		catch
-		{
-			throw
-		}
-	}
+    [CmdletBinding(DefaultParameterSetName = 'DefaultParameter', RemotingCapability = 'None')]
+    param (
+        [Parameter(ValueFromPipeline = $true)]
+        [psobject]
+        $InputObject,
+        
+        [Parameter(ParameterSetName = 'DefaultParameter', Position = 0)]
+        [Parameter(ParameterSetName = 'SkipLastParameter', Position = 0)]
+        [SqlCollaborative.Dbatools.Parameter.DbaSelectParameter[]]
+        $Property,
+        
+        [Parameter(ParameterSetName = 'SkipLastParameter')]
+        [Parameter(ParameterSetName = 'DefaultParameter')]
+        [string[]]
+        $ExcludeProperty,
+        
+        [Parameter(ParameterSetName = 'DefaultParameter')]
+        [Parameter(ParameterSetName = 'SkipLastParameter')]
+        [string]
+        $ExpandProperty,
+        
+        [switch]
+        $Unique,
+        
+        [Parameter(ParameterSetName = 'DefaultParameter')]
+        [ValidateRange(0, 2147483647)]
+        [int]
+        $Last,
+        
+        [Parameter(ParameterSetName = 'DefaultParameter')]
+        [ValidateRange(0, 2147483647)]
+        [int]
+        $First,
+        
+        [Parameter(ParameterSetName = 'DefaultParameter')]
+        [ValidateRange(0, 2147483647)]
+        [int]
+        $Skip,
+        
+        [Parameter(ParameterSetName = 'SkipLastParameter')]
+        [ValidateRange(0, 2147483647)]
+        [int]
+        $SkipLast,
+        
+        [Parameter(ParameterSetName = 'IndexParameter')]
+        [Parameter(ParameterSetName = 'DefaultParameter')]
+        [switch]
+        $Wait,
+        
+        [Parameter(ParameterSetName = 'IndexParameter')]
+        [ValidateRange(0, 2147483647)]
+        [int[]]
+        $Index
+    )
+    
+    begin {
+        try {
+            $outBuffer = $null
+            if ($PSBoundParameters.TryGetValue('OutBuffer', [ref]$outBuffer)) {
+                $PSBoundParameters['OutBuffer'] = 1
+            }
+            
+            $clonedParameters = @{ }
+            foreach ($key in $PSBoundParameters.Keys) {
+                if ($key -ne "Property") {
+                    $clonedParameters[$key] = $PSBoundParameters[$key]
+                }
+            }
+            if (Test-Bound -ParameterName 'Property') {
+                $clonedParameters['Property'] = $Property.Value
+            }
+            
+            $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('Microsoft.PowerShell.Utility\Select-Object', [System.Management.Automation.CommandTypes]::Cmdlet)
+            $scriptCmd = { & $wrappedCmd @clonedParameters }
+            $steppablePipeline = $scriptCmd.GetSteppablePipeline($myInvocation.CommandOrigin)
+            $steppablePipeline.Begin($PSCmdlet)
+        }
+        catch {
+            throw
+        }
+    }
+    
+    process {
+        try {
+            $steppablePipeline.Process($_)
+        }
+        catch {
+            throw
+        }
+    }
+    
+    end {
+        try {
+            $steppablePipeline.End()
+        }
+        catch {
+            throw
+        }
+    }
 }
