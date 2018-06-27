@@ -64,8 +64,7 @@ function Get-DbaDbSnapshot {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
-        [PSCredential]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
@@ -79,7 +78,7 @@ function Get-DbaDbSnapshot {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -102,15 +101,24 @@ function Get-DbaDbSnapshot {
             if ($ExcludeSnapshot) {
                 $dbs = $dbs | Where-Object { $ExcludeSnapshot -notcontains $_.Name }
             }
-            
+
             foreach ($db in $dbs) {
-                $BytesOnDisk = $db.Query("select top 1 BytesOnDisk from fn_virtualfilestats(db_id('$($db.Name)'),null) S JOIN dbo.sysdatabases D on D.dbid = S.dbid")
-                
-                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
-                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name DiskUsage -value ([dbasize]($BytesOnDisk.BytesOnDisk))
-                Select-DefaultView -InputObject $db -Property ComputerName, InstanceName, SqlInstance, Name, 'DatabaseSnapshotBaseName as SnapshotOf', CreateDate, DiskUsage
+                try {
+                    if ($db.Parent.VersionMajor -ge 10) {
+                        $BytesOnDisk = $db.Query("select top 1 BytesOnDisk from fn_virtualfilestats(db_id('$($db.Name)'),null) S JOIN dbo.sysdatabases D on D.dbid = S.dbid")
+                    }
+                    else {
+                        $BytesOnDisk = $db.Query("select top 1 BytesOnDisk from fn_virtualfilestats(db_id('$($db.Name)'),null) S JOIN sys.databases D on D.database_id = S.dbid")
+                    }
+                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name DiskUsage -value ([dbasize]($BytesOnDisk.BytesOnDisk))
+                    Select-DefaultView -InputObject $db -Property ComputerName, InstanceName, SqlInstance, Name, 'DatabaseSnapshotBaseName as SnapshotOf', CreateDate, DiskUsage
+                }
+                catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $db -Continue
+                }
             }
         }
     }
