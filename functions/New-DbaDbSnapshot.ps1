@@ -206,7 +206,7 @@ function New-DbaDbSnapshot {
             $server = $db.Parent
 
             # In case stuff is piped in
-            if ($server.MinimumVersion -lt 9) {
+            if ($server.VersionMajor -lt 9) {
                 Stop-Function -Message "SQL Server version 9 required - $server not supported" -Continue
             }
 
