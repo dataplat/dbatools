@@ -1,4 +1,5 @@
-﻿function Remove-DbaRegisteredServerGroup {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Remove-DbaRegisteredServerGroup {
     <#
         .SYNOPSIS
             Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
@@ -76,15 +77,12 @@
         }
         
         foreach ($regservergroup in $InputObject) {
-            $parentserver = $regservergroup
+            $parentserver = Get-RegServerParent -InputObject $regservergroup
             
-            do {
-                if ($null -ne $parentserver.Parent) {
-                    $parentserver = $parentserver.Parent
-                }
+            if ($null -eq $parentserver) {
+                Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
             }
-            until ($null -ne $parentserver.ComputerName)
-
+            
             if ($Pscmdlet.ShouldProcess($parentserver.DomainInstanceName, "Removing $($regservergroup.Name) CMS Group")) {
                 try {
                     $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptDrop().GetScript())

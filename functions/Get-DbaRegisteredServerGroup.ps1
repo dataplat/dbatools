@@ -45,17 +45,17 @@ function Get-DbaRegisteredServerGroup {
             Gets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential
+            Get-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential
 
             Gets the top level groups from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting
+            Get-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting
 
             Gets the HR and Accounting groups from the CMS on sqlserver2014a.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\Development
+            Get-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -Group HR\Development
 
             Returns the sub-group Development of the HR group from the CMS on sqlserver2014a.
     #>
@@ -103,7 +103,7 @@ function Get-DbaRegisteredServerGroup {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $cmsStore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
+                $server = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
             }
             catch {
                 Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
@@ -111,7 +111,7 @@ function Get-DbaRegisteredServerGroup {
             $groups = @()
             if ($group) {
                 foreach ($currentGroup in $group) {
-                    $cms = Find-CmsGroup -CmsGrp $cmsStore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
+                    $cms = Find-CmsGroup -CmsGrp $server.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
                     if ($null -eq $cms) {
                         Write-Message -Level Output -Message "No groups found matching '$($currentGroup)' on instance '$instance'."
                         continue
@@ -120,7 +120,7 @@ function Get-DbaRegisteredServerGroup {
                 }
             }
             else {
-                $groups = $cmsStore.DatabaseEngineServerGroup.ServerGroups
+                $groups = $server.DatabaseEngineServerGroup.ServerGroups
             }
 
             if (Test-Bound -ParameterName ExcludeGroup) {
@@ -128,13 +128,19 @@ function Get-DbaRegisteredServerGroup {
             }
             
             if (Test-Bound -ParameterName Id) {
-                $groups = $cmsStore.DatabaseEngineServerGroup| Where-Object Id -in $Id
+                $groups = $server.DatabaseEngineServerGroup| Where-Object Id -in $Id
             }
             
             # Close the connection, otherwise using it with the ServersStore will keep it open
-            $cmsStore.ServerConnection.Disconnect()
+            $server.ServerConnection.Disconnect()
             
-            $groups | Select-DefaultView -ExcludeProperty IsLocal, IsSystemServerGroup, IsDropped, Urn, Properties, Metadata, DuplicateFound, PropertyMetadataChanged, PropertyChanged
+            foreach ($groupobject in $groups) {
+                
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $server.InstanceName
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -value $server.SqlInstance
+                Select-DefaultView -InputObject $groupobject -ExcludeProperty IsLocal, IsSystemServerGroup, IsDropped, Urn, Properties, Metadata, DuplicateFound, PropertyMetadataChanged, PropertyChanged
+            }
         }
     }
 }
