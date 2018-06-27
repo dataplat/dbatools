@@ -132,7 +132,7 @@ function Get-DbaRegisteredServerGroup {
             }
             
             # Close the connection, otherwise using it with the ServersStore will keep it open
-            # $cmsStore.ServerConnection.Disconnect()
+            $cmsStore.ServerConnection.Disconnect()
             
             $groups | Select-DefaultView -ExcludeProperty IsLocal, IsSystemServerGroup, IsDropped, Urn, Properties, Metadata, DuplicateFound, PropertyMetadataChanged, PropertyChanged
         }
