@@ -128,7 +128,7 @@ function Get-DbaRegisteredServerGroup {
             }
             
             if (Test-Bound -ParameterName Id) {
-                $groups = $groups | Where-Object Id -in $Id
+                $groups = $cmsStore.DatabaseEngineServerGroup| Where-Object Id -in $Id
             }
             
             # Close the connection, otherwise using it with the ServersStore will keep it open
