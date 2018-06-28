@@ -3852,6 +3852,14 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\\\server1\\backups$\r\n\r\n$FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1)\r\n\r\nReturns all backups needed to restore all the backups in \\\\server1\\backups$ to 1 hour ago\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\\\server1\\backups$\r\n\r\n$FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1) -DatabaseName ProdFinance\r\n\r\nReturns all the backups needed to restore Database ProdFinance to an hour ago\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\\\server1\\backups$\r\n\r\n$FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1) -IgnoreLogs\r\n\r\nReturns all the backups in \\\\server1\\backups$ to restore to as close prior to 1 hour ago as can be managed with only \r\nfull and differential backups\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\\\server1\\backups$\r\n\r\n$FilteredBackups = $Backups | Select-DbaBackupInformation -RestoreTime (Get-Date).AddHours(-1) -IgnoreDiffs\r\n\r\nReturns all the backups in \\\\server1\\backups$ to restore to 1 hour ago using only Full and Diff backups.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Select-DbaObject",
+        "Description":  "Wrapper around Select-Object, extends property parameter.\n\nThis function allows specifying in-line transformation of the properties specified without needing to use complex hashtables.\nWithout removing the ability to specify just those hashtables.\n\nSee the description of the Property parameter for an exhaustive list of legal notations.",
+        "Synopsis":  "Wrapper around Select-Object, extends property parameter.",
+        "Name":  "Select-DbaObject",
+        "Links":  null,
+        "Examples":  ""
+    },
+    {
         "CommandName":  "Set-DbaAgentAlert",
         "Description":  "Set-DbaAgentAlert updates an alert in the SQL Server Agent with parameters supplied.",
         "Tags":  [
@@ -4753,17 +4761,17 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaTempDbConfiguration -SqlInstance localhost\r\n\r\nChecks tempdb on the localhost machine.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaTempDbConfiguration -SqlInstance localhost | Select-Object *\r\n\r\nChecks tempdb on the localhost machine. All rest results are shown.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Test-DbaValidLogin",
+        "CommandName":  "Test-DbaWindowsLogin",
         "Description":  "The purpose of this function is to find SQL Server logins that are used by active directory users that are either disabled or removed from the domain. It allows you to keep your logins accurate and up to date by removing accounts that are no longer needed.",
         "Tags":  [
                      "Login",
                      "Security"
                  ],
         "Author":  "Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/",
-        "Synopsis":  "Test-DbaValidLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist",
-        "Name":  "Test-DbaValidLogin",
-        "Links":  "https://dbatools.io/Test-DbaValidLogin",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaValidLogin -SqlInstance Dev01\r\n\r\nTests all logins in the current Active Directory domain that are either disabled or do not exist on the SQL Server \r\ninstance Dev01\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaValidLogin -SqlInstance Dev01 -FilterBy GroupsOnly | Select-Object -Property *\r\n\r\nTests all Active Directory groups that have logins on Dev01, and shows all information for those logins\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaValidLogin -SqlInstance Dev01 -IgnoreDomains testdomain\r\n\r\nTests all Domain logins excluding any that are from the testdomain\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Synopsis":  "Test-DbaWindowsLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist",
+        "Name":  "Test-DbaWindowsLogin",
+        "Links":  "https://dbatools.io/Test-DbaWindowsLogin",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaWindowsLogin -SqlInstance Dev01\r\n\r\nTests all logins in the current Active Directory domain that are either disabled or do not exist on the SQL Server \r\ninstance Dev01\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaWindowsLogin -SqlInstance Dev01 -FilterBy GroupsOnly | Select-Object -Property *\r\n\r\nTests all Active Directory groups that have logins on Dev01, and shows all information for those logins\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaWindowsLogin -SqlInstance Dev01 -IgnoreDomains testdomain\r\n\r\nTests all Domain logins excluding any that are from the testdomain\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Uninstall-DbaWatchUpdate",
