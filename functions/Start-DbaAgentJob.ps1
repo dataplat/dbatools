@@ -108,6 +108,11 @@ function Start-DbaAgentJob {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            # Check the job parameters
+            if((-not $AllJobs) -and (-not $Job)){
+                Stop-Function -Message "Please use one of the job parameters, either -Job or -AllJobs" -Target $instance -Continue
+            }
+
             # Check if all the jobs need to included
             if ($AllJobs) {
                 $InputObject = $server.JobServer.Jobs
