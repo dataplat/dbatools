@@ -83,10 +83,18 @@ function Import-DbaRegisteredServer {
                 
                 foreach ($object in $InputObject) {
                     if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
-                        Add-DbaRegisteredServer -SqlInstance $server
+                        $parentserver = Get-RegServerParent -InputObject $reggroup
+                        
+                        if ($null -eq $parentserver) {
+                            Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
+                        }
+                        
+                        $server = $parentserver.ServerConnection
+                        
+                        Add-DbaRegisteredServer -SqlInstance $server -Name $object.Name -ServerName $object.ServerName -Description $object.Description
                     }
                     elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
-                        
+                        Add-DbaRegisteredServerGroup
                     }
                     else {
                         
