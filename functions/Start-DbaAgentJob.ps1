@@ -97,6 +97,13 @@ function Start-DbaAgentJob {
         [switch]$EnableException
     )
 
+    begin{
+        # Check the job parameters
+        if((-not $AllJobs) -and (-not $Job)){
+            Stop-Function -Message "Please use one of the job parameters, either -Job or -AllJobs" -Target $instance -Continue
+        }
+    }
+
     process {
         # Loop through each of the instances
         foreach ($instance in $SqlInstance) {
@@ -106,11 +113,6 @@ function Start-DbaAgentJob {
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            # Check the job parameters
-            if((-not $AllJobs) -and (-not $Job)){
-                Stop-Function -Message "Please use one of the job parameters, either -Job or -AllJobs" -Target $instance -Continue
             }
 
             # Check if all the jobs need to included
