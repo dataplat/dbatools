@@ -1,5 +1,5 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Remove-DbaRegisteredServer {
+function Move-DbaRegisteredServer {
     <#
         .SYNOPSIS
             Removes registered servers found in SQL Server Central Management Server (CMS).
@@ -19,11 +19,8 @@ function Remove-DbaRegisteredServer {
         .PARAMETER ServerName
             Specifies one or more server names to include. Server Name is the actual instance name (labeled Server Name)
     
-        .PARAMETER Group
+        .PARAMETER NewGroup
             Specifies one or more groups to include from SQL Server Central Management Server.
-
-        .PARAMETER ExcludeGroup
-            Specifies one or more Central Management Server groups to exclude.
 
         .PARAMETER InputObjects
             Allows results from Get-DbaRegisteredServer to be piped in
@@ -44,57 +41,71 @@ function Remove-DbaRegisteredServer {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Remove-DbaRegisteredServer
+            https://dbatools.io/Move-DbaRegisteredServer
 
         .EXAMPLE
-            Remove-DbaRegisteredServer -SqlInstance sql2012 -Group HR, Accounting
+            Move-DbaRegisteredServer -SqlInstance sql2012 -Group HR, Accounting
 
             Removes all servers from the HR and Accounting groups on sql2012
 
         .EXAMPLE
-            Remove-DbaRegisteredServer -SqlInstance sql2012 -Group HR\Development
+            Move-DbaRegisteredServer -SqlInstance sql2012 -Group HR\Development
 
             Removes all servers from the HR and sub-group Development from the CMS on sql2012.
     
         .EXAMPLE
-            Remove-DbaRegisteredServer -SqlInstance sql2012 -Confirm:$false
+            Move-DbaRegisteredServer -SqlInstance sql2012 -Confirm:$false
 
             Removes all registered servers on sql2012 and turns off all prompting
     #>
     
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Name,
         [string[]]$ServerName,
-        [string[]]$Group,
+        [string]$NewGroup,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer[]]$InputObject,
         [switch]$EnableException
     )
     
+    begin {
+        if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Name) -and (Test-Bound -Not -ParameterName ServerName)) {
+            Stop-Function -Message "Name or ServerName must be specified when using -SqlInstance"
+        }
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
+        
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException -Group $Group -ExcludeGroup $ExcludeGroup -Name $Name -ServerName $ServerName
+            $InputObject += Get-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $Name -ServerName $ServerName
+            
         }
         
         foreach ($regserver in $InputObject) {
-            $server = $regserver.Parent
-            if ($Pscmdlet.ShouldProcess($regserver.Parent, "Removing $regserver")) {
+            $parentserver = Get-RegServerParent -InputObject $regserver
+            
+            if ($null -eq $parentserver) {
+                Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
+            }
+            
+            $server = $parentserver.ServerConnection.SqlConnectionObject
+            $group = Get-DbaRegisteredServerGroup -SqlInstance $server -Group $NewGroup
+            
+            if (-not $group) {
+                Stop-Function -Message "$NewGroup not found on $server" -Continue
+            }
+            
+            if ($Pscmdlet.ShouldProcess($regserver.SqlInstance, "Moving $($regserver.Name) to $group")) {
                 try {
-                    $regserver.Drop()
-                    [pscustomobject]@{
-                        ComputerName     = $server.ComputerName
-                        InstanceName     = $server.InstanceName
-                        SqlInstance      = $server.SqlInstance
-                        RegisteredServer = $regserver.name
-                        Status           = "Dropped"
-                    }
+                    $null = $parentserver.ServerConnection.ExecuteNonQuery($regserver.ScriptMove($group).GetScript())
+                    Get-DbaRegisteredServer -SqlInstance $server -Name $regserver.Name -ServerName $regserver.ServerName
                 }
                 catch {
-                    Stop-Function -Message "Failed to drop $regserver on $server" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to move $($regserver.Name) to $NewGroup on $($regserver.SqlInstance)" -ErrorRecord $_ -Continue
                 }
             }
         }

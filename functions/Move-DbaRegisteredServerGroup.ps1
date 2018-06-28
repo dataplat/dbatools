@@ -1,5 +1,5 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Remove-DbaRegisteredServerGroup {
+function Move-DbaRegisteredServerGroup {
     <#
         .SYNOPSIS
             Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
@@ -38,10 +38,10 @@ function Remove-DbaRegisteredServerGroup {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Remove-DbaRegisteredServerGroup
+            https://dbatools.io/Move-DbaRegisteredServerGroup
 
         .EXAMPLE
-            Remove-DbaRegisteredServerGroup -SqlInstance sqlserver2014a
+            Move-DbaRegisteredServerGroup -SqlInstance sqlserver2014a
 
             Gets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.
 
@@ -60,19 +60,28 @@ function Remove-DbaRegisteredServerGroup {
 
             Returns the sub-group Development of the HR group from the CMS on sqlserver2014a.
     #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Group,
+        [parameter(Mandatory)]
+        [string]$NewGroup,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
         [switch]$EnableException
     )
+    begin {
+        if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Group)) {
+            Stop-Function -Message "Group must be specified when using -SqlInstance"
+        }
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
+        
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -EnableException -Group $Group -ExcludeGroup $ExcludeGroup
+            $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -EnableException -Group $Group
         }
         
         foreach ($regservergroup in $InputObject) {
@@ -82,19 +91,26 @@ function Remove-DbaRegisteredServerGroup {
                 Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
             }
             
-            if ($Pscmdlet.ShouldProcess($parentserver.DomainInstanceName, "Removing $($regservergroup.Name) CMS Group")) {
+            $server = $parentserver.ServerConnection.SqlConnectionObject
+            
+            if ($NewGroup -eq 'Default') {
+                $groupobject = Get-DbaRegisteredServerGroup -SqlInstance $server -Id 1
+            }
+            else {
+                $groupobject = Get-DbaRegisteredServerGroup -SqlInstance $server -Group $NewGroup
+            }
+            
+            if (-not $groupobject) {
+                Stop-Function -Message "Group '$NewGroup' not found on $server" -Continue
+            }
+            
+            if ($Pscmdlet.ShouldProcess($regserver.SqlInstance, "Moving $($regservergroup.Name) to $groupobject")) {
                 try {
-                    $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptDrop().GetScript())
-                    [pscustomobject]@{
-                        ComputerName            = $parentserver.ComputerName
-                        InstanceName            = $parentserver.InstanceName
-                        SqlInstance             = $parentserver.SqlInstance
-                        Name                    = $regservergroup.Name
-                        Status                  = "Dropped"
-                    }
+                    $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptMove($groupobject).GetScript())
+                    Get-DbaRegisteredServerGroup -SqlInstance $server -Group $group
                 }
                 catch {
-                    Stop-Function -Message "Failed to drop $regservergroup on $parentserver" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to move $($regserver.Name) to $NewGroup on $($regserver.SqlInstance)" -ErrorRecord $_ -Continue
                 }
             }
         }
