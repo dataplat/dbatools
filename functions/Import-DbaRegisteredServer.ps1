@@ -14,8 +14,13 @@ function Import-DbaRegisteredServer {
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Group
-            Specifies one or more groups to include from SQL Server Central Management Server.
-
+            Imports to specific group
+    
+        .PARAMETER InputObject
+            Enables piping from Get-DbaRegisteredServer, Get-DbaRegisteredServerGroup, CSVs and other objects.
+    
+            If importing from CSV or other object, a column named ServerName is required. Optional columns include Name, Description and Group.
+    
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -67,38 +72,26 @@ function Import-DbaRegisteredServer {
         [PSCredential]$SqlCredential,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
+        [string]$Group,
         [switch]$EnableException
     )
-    
-    begin {        
-        process {
-            foreach ($instance in $SqlInstance) {
-                try {
-                    Write-Message -Level Verbose -Message "Connecting to $instance"
-                    $server = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $sqlcredential
+    process {
+        foreach ($instance in $SqlInstance) {
+            foreach ($object in $InputObject) {
+                if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
+                    Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $Group
                 }
-                catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                    foreach ($regserver in $object.RegisteredServers) {
+                        Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $regserver.Name -ServerName $regserver.ServerName -Description $regserver.Description #-Group $object.Name
+                    }
                 }
-                
-                foreach ($object in $InputObject) {
-                    if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
-                        $parentserver = Get-RegServerParent -InputObject $reggroup
-                        
-                        if ($null -eq $parentserver) {
-                            Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
-                        }
-                        
-                        $server = $parentserver.ServerConnection
-                        
-                        Add-DbaRegisteredServer -SqlInstance $server -Name $object.Name -ServerName $object.ServerName -Description $object.Description
+                else {
+                    if (-not $object.ServerName) {
+                        Stop-Function -Message "Property 'ServerName' not found in InputObject. No servers added." -Continue
                     }
-                    elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
-                        Add-DbaRegisteredServerGroup
-                    }
-                    else {
-                        
-                    }
+                    
+                    Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $Group
                 }
             }
         }
