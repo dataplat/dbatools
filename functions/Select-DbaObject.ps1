@@ -24,6 +24,10 @@
         - Supports selecting properties from objects in other variables: "ComputerName from VarName" (Will insert the property 'ComputerName' from variable $VarName)
         - Supports filtering when selecting from outside objects: "ComputerName from VarName where ObjectId = Id" (Will insert the property 'ComputerName' from the object in variable $VarName, whose ObjectId property is equal to the inputs Id property)
     
+        Important:
+        When using this command from another module (not script-files, those are fine), you do not have access to the variables in the calling module.
+        In order to select from other variables using the 'from' call, you need to declare the variable global.
+    
     .PARAMETER ExcludeProperty
         Properties to not list.
     
