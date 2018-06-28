@@ -92,7 +92,7 @@ function Add-DbaRegisteredServer {
                 Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
             }
             
-            $server = $parentserver.ServerConnection
+            $server = $parentserver.ServerConnection.SqlConnectionObject
             
             if ($Pscmdlet.ShouldProcess($reggroup.Parent, "Adding $reggroup")) {
                 try {
@@ -101,7 +101,7 @@ function Add-DbaRegisteredServer {
                     $newserver.Description = $Description
                     $newserver.Create()
                     
-                    Get-DbaRegisteredServer -SqlInstance $server.SqlConnectionObject -Name $Name -ServerName $ServerName
+                    Get-DbaRegisteredServer -SqlInstance $server -Name $Name -ServerName $ServerName
                 }
                 catch {
                     Stop-Function -Message "Failed to add $ServerName on $($parentserver.SqlInstance)" -ErrorRecord $_ -Continue
