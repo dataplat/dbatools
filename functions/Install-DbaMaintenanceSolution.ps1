@@ -216,8 +216,8 @@ function Install-DbaMaintenanceSolution {
 
             # Backup location
             if ($BackupLocation) {
-                $findBKP = 'C:\Backup'
-                $replaceBKP = $BackupLocation
+                $findBKP = 'SET @BackupDirectory     = NULL'
+                $replaceBKP = 'SET @BackupDirectory     = N''' + $BackupLocation + ''''
                 foreach ($file in $listOfFiles) {
                     (Get-Content -Path $file -Raw).Replace($findBKP, $replaceBKP) | Set-Content -Path $file
                 }
