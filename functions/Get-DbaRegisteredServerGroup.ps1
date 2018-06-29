@@ -103,10 +103,10 @@ function Get-DbaRegisteredServerGroup {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
+                $server = Get-DbaRegisteredServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
             }
             catch {
-                Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
+                Stop-Function -Message "Cannot access Central Management Server '$instance'" -ErrorRecord $_ -Continue
             }
             $groups = @()
             if ($group) {

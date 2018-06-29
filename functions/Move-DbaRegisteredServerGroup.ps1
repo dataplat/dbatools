@@ -81,7 +81,7 @@ function Move-DbaRegisteredServerGroup {
         if (Test-FunctionInterrupt) { return }
         
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -EnableException -Group $Group
+            $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
         }
         
         foreach ($regservergroup in $InputObject) {

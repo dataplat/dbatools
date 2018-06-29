@@ -66,33 +66,65 @@ function Export-DbaRegisteredServer {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
-        [string]$Group,
+        [string]$Path,
+        [ValidateSet("None", "PersistLoginName", "PersistLoginNameAndPassword")]
+        [string]$CredentialPersistenceType = "None",
         [switch]$EnableException
     )
+    begin {
+        if ((Test-Bound -ParameterName Path)) {
+            if ($Path -notmatch '\\') {
+                $Path = ".\$Path"
+            }
+            
+            $directory = Split-Path $Path
+            if (-not (Test-Path $directory)) {
+                New-Item -Path $directory -ItemType Directory
+            }
+        }
+        else {
+            $timeNow = (Get-Date -uformat "%m%d%Y%H%M%S")
+        }
+    }
     process {
         foreach ($instance in $SqlInstance) {
-            foreach ($object in $InputObject) {
+            $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
+        }
+        
+        foreach ($object in $InputObject) {
+            try {
+                if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]) {
+                    $object = Get-DbaRegisteredServerGroup -SqlInstance $object.ServerConnection.SqlConnectionObject -Id 1
+                }
+                
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
-                    Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $Group
+                    if ((Test-Bound -ParameterName Path -Not)) {
+                        $servername = $object.SqlInstance
+                        $regservername = $object.Name.Replace('\','$')
+                        $Path = "$serverName-regserver-$regservername-$timeNow.xml"
+                    }
+                    $object.Export($Path, 0)
                 }
                 elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
-                    foreach ($regserver in $object.RegisteredServers) {
-                        Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $regserver.Name -ServerName $regserver.ServerName -Description $regserver.Description #-Group $object.Name
+                    if ((Test-Bound -ParameterName Path -Not)) {
+                        $servername = $object.SqlInstance
+                        $regservergroup = $object.Name.Replace('\', '$')
+                        $Path = "$serverName-reggroup-$regservergroup-$timeNow.xml"
                     }
+                    $object.Export($Path, 0)
                 }
                 else {
-                    if (-not $object.ServerName) {
-                        Stop-Function -Message "Property 'ServerName' not found in InputObject. No servers added." -Continue
-                    }
-                    
-                    Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $Group
+                    Stop-Function -Message "InputObject is not a registered server or server group" -Continue
                 }
+                Get-ChildItem $Path
+            }
+            catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
     }
