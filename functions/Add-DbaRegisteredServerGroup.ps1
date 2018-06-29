@@ -2,10 +2,10 @@
 function Add-DbaRegisteredServerGroup {
     <#
         .SYNOPSIS
-            Adds registered server groups to SQL Server Central Management Server (CMS).
+            Adds registered server groups to SQL Server Central Management Server (CMS)
 
         .DESCRIPTION
-            Adds registered server groups to SQL Server Central Management Server (CMS).
+            Adds registered server groups to SQL Server Central Management Server (CMS)
 
         .PARAMETER SqlInstance
             The target SQL Server instance
@@ -14,16 +14,19 @@ function Add-DbaRegisteredServerGroup {
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Name
-            The Group Name
+            The Group name
 
         .PARAMETER Description
-            Optional description
+            Adds a description for the registered server group
     
         .PARAMETER Group
             The SQL Server Central Management Server group. If no groups are specified, the new group will be created at the root.
 
         .PARAMETER InputObjects
             Allows results from Get-DbaRegisteredServerGroup to be piped in
+
+        .PARAMETER IncludeRegisteredServers
+            When a piping a group from another server, also create the registered server
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -44,20 +47,14 @@ function Add-DbaRegisteredServerGroup {
             https://dbatools.io/Add-DbaRegisteredServerGroup
 
         .EXAMPLE
-           Add-DbaRegisteredServerGroup -SqlInstance sql2008 -ServerName sql01 -Name "The 2008 Clustered Instance" -Description "HR's Dedicated SharePoint instance"
+            Add-DbaRegisteredServerGroup -SqlInstance sql2012, sql2014 -Name subfolder -Group HR
 
-           Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, "The 2008 Clustered Instance" will be visible.
-           Clearly this is hard to explain ;) 
-
-        .EXAMPLE
-            Add-DbaRegisteredServerGroup -SqlInstance sql2012, sql2014 -Group HR -ServerName sql01
-
-            Creates a registered server on sql2012 and sql2014's CMS for sql01, nicknamed sql01, with no description
+            Creates a registered server group on sql2012 and sql2014 called subfolder within the HR group
     
         .EXAMPLE
-            Get-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR | Add-DbaRegisteredServerGroup -ServerName sql01
+            Get-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR | Add-DbaRegisteredServerGroup -SqlInstance sql01
 
-            Creates a registered server on sql2012's CMS for sql01, nicknamed sql01
+            Creates a registered server group on sql01's CMS
     #>
     
     [CmdletBinding(SupportsShouldProcess)]
@@ -70,6 +67,7 @@ function Add-DbaRegisteredServerGroup {
         [string]$Name,
         [string]$Description,
         [string]$Group,
+        [switch]$IncludeRegisteredServers,
         [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
         [switch]$EnableException
     )
@@ -86,6 +84,7 @@ function Add-DbaRegisteredServerGroup {
         
         foreach ($reggroup in $InputObject) {
             $parentserver = Get-RegServerParent -InputObject $reggroup
+            $server = $parentserver.ServerConnection.ServerInstance.SqlConnectionObject
             
             if ($null -eq $parentserver) {
                 Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
@@ -97,10 +96,14 @@ function Add-DbaRegisteredServerGroup {
                     $newgroup.Description = $Description
                     $newgroup.Create()
                     
+                    if ($IncludeRegisteredServers) {
+                        Add-DbaRegisteredServer -SqlInstance $server -InputObject $reggroup.RegisteredServers -Group $newgroup
+                    }
+                    
                     Get-DbaRegisteredServerGroup -SqlInstance $parentserver.ServerConnection.SqlConnectionObject | Where-Object Id -eq $newgroup.id
                 }
                 catch {
-                    Stop-Function -Message "Failed to add $reggroup on $($parentserver.ServerConnection.ServerInstance)" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to add $reggroup on $server" -ErrorRecord $_ -Continue
                 }
             }
         }

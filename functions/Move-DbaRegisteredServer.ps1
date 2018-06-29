@@ -2,10 +2,10 @@
 function Move-DbaRegisteredServer {
     <#
         .SYNOPSIS
-            Removes registered servers found in SQL Server Central Management Server (CMS).
+            Moves registered servers around SQL Server Central Management Server (CMS)
 
         .DESCRIPTION
-            Removes registered servers found in SQL Server Central Management Server (CMS).
+            Moves registered servers around SQL Server Central Management Server (CMS)
 
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to.
@@ -14,13 +14,13 @@ function Move-DbaRegisteredServer {
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Name
-            Specifies one or more names to include. Name is the visible name in SSMS CMS interface (labeled Registered Server Name)
+            Specifies one or more reg servers to move. Name is the visible name in SSMS CMS interface (labeled Registered Server Name)
 
         .PARAMETER ServerName
-            Specifies one or more server names to include. Server Name is the actual instance name (labeled Server Name)
+            Specifies one or more reg servers to move. Server Name is the actual instance name (labeled Server Name)
     
         .PARAMETER NewGroup
-            Specifies one or more groups to include from SQL Server Central Management Server.
+            The new group. If no new group is specified, the default root will used
 
         .PARAMETER InputObjects
             Allows results from Get-DbaRegisteredServer to be piped in
@@ -93,10 +93,16 @@ function Move-DbaRegisteredServer {
             }
             
             $server = $parentserver.ServerConnection.SqlConnectionObject
-            $group = Get-DbaRegisteredServerGroup -SqlInstance $server -Group $NewGroup
             
-            if (-not $group) {
-                Stop-Function -Message "$NewGroup not found on $server" -Continue
+            if ((Test-Bound -ParameterName NewGroup)) {
+                $group = Get-DbaRegisteredServerGroup -SqlInstance $server -Group $NewGroup
+                
+                if (-not $group) {
+                    Stop-Function -Message "$NewGroup not found on $server" -Continue
+                }
+            }
+            else {
+                $group = Get-DbaRegisteredServerGroup -SqlInstance $server -Id 1
             }
             
             if ($Pscmdlet.ShouldProcess($regserver.SqlInstance, "Moving $($regserver.Name) to $group")) {

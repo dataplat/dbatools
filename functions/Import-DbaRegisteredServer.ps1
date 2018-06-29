@@ -2,10 +2,10 @@
 function Import-DbaRegisteredServer {
     <#
         .SYNOPSIS
-            Imports stuff
+            Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)
 
         .DESCRIPTION
-            Imports stuff
+            Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)
 
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to.
@@ -15,6 +15,9 @@ function Import-DbaRegisteredServer {
 
         .PARAMETER Group
             Imports to specific group
+    
+        .PARAMETER Path
+            Optional path to exported reg server XML
     
         .PARAMETER InputObject
             Enables piping from Get-DbaRegisteredServer, Get-DbaRegisteredServerGroup, CSVs and other objects.
