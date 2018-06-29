@@ -16,9 +16,9 @@ function Move-DbaRegisteredServerGroup {
         .PARAMETER Group
             Specifies one or more groups to include from SQL Server Central Management Server.
 
-        .PARAMETER ExcludeGroup
-            Specifies one or more Central Management Server groups to exclude.
-    
+        .PARAMETER InputObject
+            Allows results from Get-DbaRegisteredServerGroup to be piped in
+
         .PARAMETER Id
             Get group by Id(s)
 
