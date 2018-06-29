@@ -22,7 +22,7 @@ function Move-DbaRegisteredServer {
         .PARAMETER NewGroup
             The new group. If no new group is specified, the default root will used
 
-        .PARAMETER InputObjects
+        .PARAMETER InputObject
             Allows results from Get-DbaRegisteredServer to be piped in
 
         .PARAMETER EnableException
