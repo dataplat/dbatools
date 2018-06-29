@@ -2,10 +2,10 @@
 function Add-DbaRegisteredServer {
     <#
         .SYNOPSIS
-            Adds registered servers to SQL Server Central Management Server (CMS).
+            Adds registered servers to SQL Server Central Management Server (CMS)
 
         .DESCRIPTION
-            Adds registered servers to SQL Server Central Management Server (CMS).
+            Adds registered servers to SQL Server Central Management Server (CMS)
 
         .PARAMETER SqlInstance
             The target SQL Server instance
@@ -14,16 +14,19 @@ function Add-DbaRegisteredServer {
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER ServerName
-            Specifies one or more server names to include. Server Name is the actual SQL instance name (labeled Server Name)
+            Server Name is the actual SQL instance name (labeled Server Name)
     
         .PARAMETER Name
-            Specifies one or more names to include. Name is basically the nickname in SSMS CMS interface (labeled Registered Server Name)
+            Name is basically the nickname in SSMS CMS interface (labeled Registered Server Name)
 
+        .PARAMETER Description
+            Adds a description for the registered server
+    
         .PARAMETER Group
-            Specifies one or more groups to include from SQL Server Central Management Server.
+            Adds the registered server to a specific group
 
-        .PARAMETER InputObjects
-            Allows results from Get-DbaRegisteredServer to be piped in
+        .PARAMETER InputObject
+            Allows results from Get-DbaRegisteredServer or Get-DbaRegisteredServerGroup to be piped in
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -50,14 +53,14 @@ function Add-DbaRegisteredServer {
            Clearly this is hard to explain ;) 
 
         .EXAMPLE
-            Add-DbaRegisteredServer -SqlInstance sql2012, sql2014 -Group HR -ServerName sql01
+            Get-DbaRegisteredServer -SqlInstance sql2008 | Add-DbaRegisteredServer -SqlInstance sql2012, sql2014 -Confirm:$false
 
-            Creates a registered server on sql2012 and sql2014's CMS for sql01, nicknamed sql01, with no description
+            Adds all registered servers from sql2008 to sql2012 and sql2014 without prompting for confirmation
     
         .EXAMPLE
             Get-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR | Add-DbaRegisteredServer -ServerName sql01
 
-            Creates a registered server on sql2012's CMS for sql01, nicknamed sql01
+            Adds all registered servers from the HR group on sql2012 to sql01
     #>
     
     [CmdletBinding(SupportsShouldProcess)]
