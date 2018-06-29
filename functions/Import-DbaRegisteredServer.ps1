@@ -70,28 +70,74 @@ function Import-DbaRegisteredServer {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [Alias("FullName")]
+        [string[]]$Path,
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
-        [string]$Group,
+        [object]$Group,
         [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
+            # Prep to import from file
+            if ((Test-Bound -ParameterName Path)) {
+                $InputObject += Get-ChildItem -Path $Path
+            }
+            
+            if ((Test-Bound -ParameterName Group) -and (Test-Bound -Not -ParameterName Path)) {
+                if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                    $groupobject = $Group
+                }
+                else {
+                    $groupobject = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
+                }
+                if (-not $groupobject) {
+                    Stop-Function -Message "Group $Group cannot be found on $instance" -Target $instance -Continue
+                }
+            }
+            
             foreach ($object in $InputObject) {
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
-                    Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $Group
+                    Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $groupobject
                 }
                 elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                     foreach ($regserver in $object.RegisteredServers) {
-                        Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $regserver.Name -ServerName $regserver.ServerName -Description $regserver.Description #-Group $object.Name
+                        Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $regserver.Name -ServerName $regserver.ServerName -Description $regserver.Description -Group $groupobject
+                    }
+                }
+                elseif ($object -is [System.IO.FileInfo]) {
+                    if ((Test-Bound -ParameterName Group)) {
+                        if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                            $reggroups = $Group
+                        }
+                        else {
+                            $reggroups = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
+                        }
+                    }
+                    else {
+                        $reggroups = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
+                    }
+                    
+                    foreach ($file in $object) {
+                        if (-not (Test-Path -Path $file)) {
+                            Stop-Function -Message "$file cannot be found" -Target $file -Continue
+                        }
+                        
+                        foreach ($reggroup in $reggroups) {
+                            try {
+                                $reggroup.Import($file.FullName)
+                            }
+                            catch {
+                                Stop-Function -Message "Failure attempting to import $file to $instance" -ErrorRecord $_ -Continue
+                            }
+                        }
                     }
                 }
                 else {
                     if (-not $object.ServerName) {
                         Stop-Function -Message "Property 'ServerName' not found in InputObject. No servers added." -Continue
                     }
-                    
-                    Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $Group
+                    Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $groupobject
                 }
             }
         }

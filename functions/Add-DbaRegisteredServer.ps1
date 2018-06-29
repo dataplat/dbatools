@@ -70,7 +70,7 @@ function Add-DbaRegisteredServer {
         [string]$ServerName,
         [string]$Name = $ServerName,
         [string]$Description,
-        [string]$Group,
+        [object]$Group,
         [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
         [switch]$EnableException
     )
@@ -78,7 +78,12 @@ function Add-DbaRegisteredServer {
     process {
         foreach ($instance in $SqlInstance) {
             if ((Test-Bound -ParameterName Group)) {
-                $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
+                if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                    $InputObject += $Group
+                }
+                else {
+                    $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
+                }
             }
             else {
                 $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1

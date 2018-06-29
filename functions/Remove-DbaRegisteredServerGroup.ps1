@@ -72,7 +72,7 @@ function Remove-DbaRegisteredServerGroup {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -EnableException -Group $Group -ExcludeGroup $ExcludeGroup
+            $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
         }
         
         foreach ($regservergroup in $InputObject) {
