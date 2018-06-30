@@ -139,7 +139,7 @@ function Get-DbaRegisteredServerGroup {
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $server.InstanceName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -value $server.SqlInstance
-                Select-DefaultView -InputObject $groupobject -ExcludeProperty IsLocal, IsSystemServerGroup, IsDropped, Urn, Properties, Metadata, DuplicateFound, PropertyMetadataChanged, PropertyChanged
+                Select-DefaultView -InputObject $groupobject -ExcludeProperty Parent, IdentityKey, ServerType, IsLocal, IsSystemServerGroup, IsDropped, Urn, Properties, Metadata, DuplicateFound, PropertyMetadataChanged, PropertyChanged
             }
         }
     }

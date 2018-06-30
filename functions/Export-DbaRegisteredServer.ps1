@@ -110,15 +110,15 @@ function Export-DbaRegisteredServer {
 
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
                     if ((Test-Bound -ParameterName Path -Not)) {
-                        $servername = $object.SqlInstance
-                        $regservername = $object.Name.Replace('\','$')
+                        $servername = $object.SqlInstance.Replace('\', '$')
+                        $regservername = $object.Name.Replace('\', '$')
                         $Path = "$serverName-regserver-$regservername-$timeNow.xml"
                     }
                     $object.Export($Path, 0)
                 }
                 elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                     if ((Test-Bound -ParameterName Path -Not)) {
-                        $servername = $object.SqlInstance
+                        $servername = $object.SqlInstance.Replace('\', '$')
                         $regservergroup = $object.Name.Replace('\', '$')
                         $Path = "$serverName-reggroup-$regservergroup-$timeNow.xml"
                     }
