@@ -92,7 +92,8 @@ function Remove-DbaRegisteredServer {
                         ComputerName = $regserver.ComputerName
                         InstanceName = $regserver.InstanceName
                         SqlInstance  = $regserver.SqlInstance
-                        Name         = $regserver.name
+                        Name         = $regserver.Name
+                        ServerName   = $regserver.ServerName
                         Status       = "Dropped"
                     }
                 }

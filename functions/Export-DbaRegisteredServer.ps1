@@ -127,7 +127,7 @@ function Export-DbaRegisteredServer {
                 else {
                     Stop-Function -Message "InputObject is not a registered server or server group" -Continue
                 }
-                Get-ChildItem $Path
+                Get-ChildItem $Path -ErrorAction Stop
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
