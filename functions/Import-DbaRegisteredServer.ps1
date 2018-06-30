@@ -15,15 +15,15 @@ function Import-DbaRegisteredServer {
 
         .PARAMETER Group
             Imports to specific group
-    
+
         .PARAMETER Path
             Optional path to exported reg server XML
-    
+
         .PARAMETER InputObject
             Enables piping from Get-DbaRegisteredServer, Get-DbaRegisteredServerGroup, CSVs and other objects.
-    
+
             If importing from CSV or other object, a column named ServerName is required. Optional columns include Name, Description and Group.
-    
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -86,7 +86,7 @@ function Import-DbaRegisteredServer {
             if ((Test-Bound -ParameterName Path)) {
                 $InputObject += Get-ChildItem -Path $Path
             }
-            
+
             if ((Test-Bound -ParameterName Group) -and (Test-Bound -Not -ParameterName Path)) {
                 if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                     $groupobject = $Group
@@ -98,7 +98,7 @@ function Import-DbaRegisteredServer {
                     Stop-Function -Message "Group $Group cannot be found on $instance" -Target $instance -Continue
                 }
             }
-            
+
             foreach ($object in $InputObject) {
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
                     Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $groupobject
@@ -120,12 +120,12 @@ function Import-DbaRegisteredServer {
                     else {
                         $reggroups = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
                     }
-                    
+
                     foreach ($file in $object) {
                         if (-not (Test-Path -Path $file)) {
                             Stop-Function -Message "$file cannot be found" -Target $file -Continue
                         }
-                        
+
                         foreach ($reggroup in $reggroups) {
                             try {
                                 $reggroup.Import($file.FullName)

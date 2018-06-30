@@ -2,10 +2,9 @@
 function Export-DbaRegisteredServer {
     <#
         .SYNOPSIS
-            Imports stuff
-
+            Exports registered servers and registered server groups to file
         .DESCRIPTION
-            Imports stuff
+            Exports registered servers and registered server groups to file
 
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to.
@@ -15,12 +14,18 @@ function Export-DbaRegisteredServer {
 
         .PARAMETER Group
             Imports to specific group
+
+        .PARAMETER CredentialPersistenceType 
+            Used to specify how the login and passwords are persisted. Valid values include None, PersistLoginName and PersistLoginNameAndPassword.
+            
+        .PARAMETER Path
+            The path to the exported file. If no path is specified, one will be created.
     
         .PARAMETER InputObject
             Enables piping from Get-DbaRegisteredServer, Get-DbaRegisteredServerGroup, CSVs and other objects.
-    
+
             If importing from CSV or other object, a column named ServerName is required. Optional columns include Name, Description and Group.
-    
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -81,7 +86,7 @@ function Export-DbaRegisteredServer {
             if ($Path -notmatch '\\') {
                 $Path = ".\$Path"
             }
-            
+
             $directory = Split-Path $Path
             if (-not (Test-Path $directory)) {
                 New-Item -Path $directory -ItemType Directory
@@ -95,13 +100,13 @@ function Export-DbaRegisteredServer {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
         }
-        
+
         foreach ($object in $InputObject) {
             try {
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]) {
                     $object = Get-DbaRegisteredServerGroup -SqlInstance $object.ServerConnection.SqlConnectionObject -Id 1
                 }
-                
+
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
                     if ((Test-Bound -ParameterName Path -Not)) {
                         $servername = $object.SqlInstance

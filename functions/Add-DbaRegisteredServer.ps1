@@ -15,18 +15,24 @@ function Add-DbaRegisteredServer {
 
         .PARAMETER ServerName
             Server Name is the actual SQL instance name (labeled Server Name)
-    
+
         .PARAMETER Name
             Name is basically the nickname in SSMS CMS interface (labeled Registered Server Name)
 
         .PARAMETER Description
             Adds a description for the registered server
-    
+
         .PARAMETER Group
             Adds the registered server to a specific group
 
         .PARAMETER InputObject
             Allows results from Get-DbaRegisteredServer or Get-DbaRegisteredServerGroup to be piped in
+
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -50,19 +56,19 @@ function Add-DbaRegisteredServer {
            Add-DbaRegisteredServer -SqlInstance sql2008 -ServerName sql01 -Name "The 2008 Clustered Instance" -Description "HR's Dedicated SharePoint instance"
 
            Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, "The 2008 Clustered Instance" will be visible.
-           Clearly this is hard to explain ;) 
+           Clearly this is hard to explain ;)
 
         .EXAMPLE
             Get-DbaRegisteredServer -SqlInstance sql2008 | Add-DbaRegisteredServer -SqlInstance sql2012, sql2014 -Confirm:$false
 
             Adds all registered servers from sql2008 to sql2012 and sql2014 without prompting for confirmation
-    
+
         .EXAMPLE
             Get-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR | Add-DbaRegisteredServer -ServerName sql01
 
             Adds all registered servers from the HR group on sql2012 to sql01
     #>
-    
+
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(ValueFromPipeline)]
@@ -77,7 +83,7 @@ function Add-DbaRegisteredServer {
         [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             if ((Test-Bound -ParameterName Group)) {
@@ -92,23 +98,23 @@ function Add-DbaRegisteredServer {
                 $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
             }
         }
-        
+
         foreach ($reggroup in $InputObject) {
             $parentserver = Get-RegServerParent -InputObject $reggroup
-            
+
             if ($null -eq $parentserver) {
                 Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
             }
-            
+
             $server = $parentserver.ServerConnection.SqlConnectionObject
-            
+
             if ($Pscmdlet.ShouldProcess($reggroup.Parent, "Adding $reggroup")) {
                 try {
                     $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($reggroup, $Name)
                     $newserver.ServerName = $ServerName
                     $newserver.Description = $Description
                     $newserver.Create()
-                    
+
                     Get-DbaRegisteredServer -SqlInstance $server -Name $Name -ServerName $ServerName
                 }
                 catch {

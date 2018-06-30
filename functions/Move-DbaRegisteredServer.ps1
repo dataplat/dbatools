@@ -18,12 +18,18 @@ function Move-DbaRegisteredServer {
 
         .PARAMETER ServerName
             Specifies one or more reg servers to move. Server Name is the actual instance name (labeled Server Name)
-    
+
         .PARAMETER NewGroup
             The new group. If no new group is specified, the default root will used
 
         .PARAMETER InputObject
             Allows results from Get-DbaRegisteredServer to be piped in
+
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -52,13 +58,13 @@ function Move-DbaRegisteredServer {
             Move-DbaRegisteredServer -SqlInstance sql2012 -Group HR\Development
 
             Removes all servers from the HR and sub-group Development from the CMS on sql2012.
-    
+
         .EXAMPLE
             Move-DbaRegisteredServer -SqlInstance sql2012 -Confirm:$false
 
             Removes all registered servers on sql2012 and turns off all prompting
     #>
-    
+
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -71,7 +77,7 @@ function Move-DbaRegisteredServer {
         [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     begin {
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Name) -and (Test-Bound -Not -ParameterName ServerName)) {
             Stop-Function -Message "Name or ServerName must be specified when using -SqlInstance"
@@ -79,24 +85,24 @@ function Move-DbaRegisteredServer {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $Name -ServerName $ServerName
-            
+
         }
-        
+
         foreach ($regserver in $InputObject) {
             $parentserver = Get-RegServerParent -InputObject $regserver
-            
+
             if ($null -eq $parentserver) {
                 Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
             }
-            
+
             $server = $parentserver.ServerConnection.SqlConnectionObject
-            
+
             if ((Test-Bound -ParameterName NewGroup)) {
                 $group = Get-DbaRegisteredServerGroup -SqlInstance $server -Group $NewGroup
-                
+
                 if (-not $group) {
                     Stop-Function -Message "$NewGroup not found on $server" -Continue
                 }
@@ -104,7 +110,7 @@ function Move-DbaRegisteredServer {
             else {
                 $group = Get-DbaRegisteredServerGroup -SqlInstance $server -Id 1
             }
-            
+
             if ($Pscmdlet.ShouldProcess($regserver.SqlInstance, "Moving $($regserver.Name) to $group")) {
                 try {
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regserver.ScriptMove($group).GetScript())
