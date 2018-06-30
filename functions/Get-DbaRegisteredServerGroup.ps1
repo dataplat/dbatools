@@ -113,7 +113,7 @@ function Get-DbaRegisteredServerGroup {
                 foreach ($currentGroup in $group) {
                     $cms = Find-CmsGroup -CmsGrp $server.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
                     if ($null -eq $cms) {
-                        Write-Message -Level Output -Message "No groups found matching '$($currentGroup)' on instance '$instance'."
+                        Write-Message -Level Verbose -Message "No groups found matching that name on instance '$instance'."
                         continue
                     }
                     $groups += $cms
@@ -122,20 +122,23 @@ function Get-DbaRegisteredServerGroup {
             else {
                 $groups = $server.DatabaseEngineServerGroup.ServerGroups
             }
-
+            
+            if ($Group -eq 'DatabaseEngineServerGroup') {
+                $groups = $server.DatabaseEngineServerGroup
+            }
+            
             if (Test-Bound -ParameterName ExcludeGroup) {
                 $groups = $groups | Where-Object Name -notin $ExcludeGroup
             }
 
             if (Test-Bound -ParameterName Id) {
-                $groups = $server.DatabaseEngineServerGroup| Where-Object Id -in $Id
+                $groups = $server.DatabaseEngineServerGroup | Where-Object Id -in $Id
             }
-
+            
             # Close the connection, otherwise using it with the ServersStore will keep it open
-            $server.ServerConnection.Disconnect()
+            # $server.ServerConnection.Disconnect()
 
             foreach ($groupobject in $groups) {
-
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $server.InstanceName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -value $server.SqlInstance

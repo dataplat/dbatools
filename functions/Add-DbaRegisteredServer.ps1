@@ -88,7 +88,7 @@ function Add-DbaRegisteredServer {
         foreach ($instance in $SqlInstance) {
             if ((Test-Bound -ParameterName Group)) {
                 if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
-                    $InputObject += $Group
+                    $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group.Name
                 }
                 else {
                     $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group

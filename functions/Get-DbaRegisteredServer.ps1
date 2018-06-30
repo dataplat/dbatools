@@ -148,7 +148,7 @@ function Get-DbaRegisteredServer {
             catch {
                 Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
             }
-
+            
             if (Test-Bound -ParameterName ExcludeGroup) {
                 $Group = ($serverstore.DatabaseEngineServerGroup.ServerGroups | Where-Object Name -notin $ExcludeGroup).Name
             }
@@ -157,7 +157,7 @@ function Get-DbaRegisteredServer {
                 foreach ($currentGroup in $Group) {
                     $cms = Find-CmsGroup -CmsGrp $serverstore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
                     if ($null -eq $cms) {
-                        Write-Message -Level Output -Message "No groups found matching that name on instance '$instance'."
+                        Write-Message -Level Verbose -Message "No groups found matching that name on instance '$instance'."
                         continue
                     }
                     $servers += ($cms.GetDescendantRegisteredServers())
@@ -165,7 +165,7 @@ function Get-DbaRegisteredServer {
             }
             else {
                 $cms = $serverstore.DatabaseEngineServerGroup
-                $servers += ($cms.GetDescendantRegisteredServers())
+                $servers += ($serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers())
             }
             if ($Group -and (Test-Bound -ParameterName Group -Not)) {
                 #add root ones
@@ -173,7 +173,7 @@ function Get-DbaRegisteredServer {
             }
 
             # Close the connection, otherwise using it with the ServersStore will keep it open
-            $serverstore.ServerConnection.Disconnect()
+            # $serverstore.ServerConnection.Disconnect()
         }
 
 

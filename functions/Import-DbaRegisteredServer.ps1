@@ -98,14 +98,23 @@ function Import-DbaRegisteredServer {
                     Stop-Function -Message "Group $Group cannot be found on $instance" -Target $instance -Continue
                 }
             }
-
+            
             foreach ($object in $InputObject) {
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
-                    Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $groupobject
+                    
+                    $groupexists = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $object.Parent.Name
+                    if (-not $groupexists) {
+                        $groupexists = Add-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Parent.Name
+                    }
+                    Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $groupexists
                 }
                 elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                     foreach ($regserver in $object.RegisteredServers) {
-                        Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $regserver.Name -ServerName $regserver.ServerName -Description $regserver.Description -Group $groupobject
+                        $groupexists = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $regserver.Parent.Name
+                        if (-not $groupexists) {
+                            $groupexists = Add-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $regserver.Parent.Name
+                        }
+                        Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $regserver.Name -ServerName $regserver.ServerName -Description $regserver.Description -Group $groupexists
                     }
                 }
                 elseif ($object -is [System.IO.FileInfo]) {
