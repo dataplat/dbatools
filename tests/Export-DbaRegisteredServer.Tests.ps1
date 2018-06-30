@@ -33,7 +33,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results, $results2, $results3 | Remove-Item -ErrorAction Ignore
     }
     
-    It "should create an xml file" {
+    It -Skip "should create an xml file" {
         $results = $newServer | Export-DbaRegisteredServer
         $results -is [System.IO.FileInfo] | Should -Be $true
         $results.Extension -eq '.xml' | Should -Be $true
