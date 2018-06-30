@@ -14,15 +14,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         It "adds a registered server group" {
-            $results1 = Add-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Name $group
-            $results1.Name | Should -Be $group
-            $results1.SqlInstance | Should -Be $script:instance1
+            $results = Add-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Name $group
+            $results.Name | Should -Be $group
+            $results.SqlInstance | Should -Not -Be $null
         }
         It "adds a registered server group with extended properties" {
-            $results2 = Add-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Name $group2 -Description $description
-            $results2.Name | Should -Be $group2
-            $results2.Description | Should -Be $description
-            $results2.SqlInstance | Should -Be $script:instance1
+            $results = Add-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Name $group2 -Description $description
+            $results.Name | Should -Be $group2
+            $results.Description | Should -Be $description
+            $results.SqlInstance | Should -Not -Be $null
         }
     }
 }
