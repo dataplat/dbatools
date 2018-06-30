@@ -15,12 +15,12 @@ function Export-DbaRegisteredServer {
         .PARAMETER Group
             Imports to specific group
 
-        .PARAMETER CredentialPersistenceType 
+        .PARAMETER CredentialPersistenceType
             Used to specify how the login and passwords are persisted. Valid values include None, PersistLoginName and PersistLoginNameAndPassword.
-            
+
         .PARAMETER Path
             The path to the exported file. If no path is specified, one will be created.
-    
+
         .PARAMETER InputObject
             Enables piping from Get-DbaRegisteredServer, Get-DbaRegisteredServerGroup, CSVs and other objects.
 
