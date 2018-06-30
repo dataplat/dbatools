@@ -22,14 +22,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results1 = Add-DbaRegisteredServer -SqlInstance $script:instance1 -ServerName $srvName
             $results1.Name | Should -Be $srvName
             $results1.ServerName | Should -Be $srvName
-            $results1.SqlInstance | Should -Be $script:instance1
+            $results1.SqlInstance | Should -Not -Be $null
         }
         It "adds a registered server with extended properties" {
             $results2 = Add-DbaRegisteredServer -SqlInstance $script:instance1 -ServerName $RegsrvName -Name $srvName -Group $groupobject -Description $regSrvDesc
             $results2.ServerName | Should -Be $regSrvName
             $results2.Description | Should -Be $regSrvDesc
             $results2.Name | Should -Be $srvName
-            $results2.SqlInstance | Should -Be $script:instance1
+            $results2.SqlInstance | Should -Not -Be $null
         }
     }
 }
