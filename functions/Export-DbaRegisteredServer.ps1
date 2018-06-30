@@ -3,6 +3,7 @@ function Export-DbaRegisteredServer {
     <#
         .SYNOPSIS
             Exports registered servers and registered server groups to file
+
         .DESCRIPTION
             Exports registered servers and registered server groups to file
 
