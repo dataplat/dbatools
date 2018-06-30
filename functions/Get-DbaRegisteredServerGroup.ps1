@@ -71,33 +71,16 @@ function Get-DbaRegisteredServerGroup {
         [switch]$EnableException
     )
     begin {
-        function Find-CmsGroup {
-            [OutputType([object[]])]
-            [cmdletbinding()]
-            param(
-                $CmsGrp,
-                $Base = $null,
-                $Stopat
-            )
-            $results = @()
-
-                foreach ($el in $CmsGrp) {
-                if ($null -eq $Base -or [string]::IsNullOrWhiteSpace($Base) ) {
-                    $partial = $el.name
-                }
-                else {
-                    $partial = "$Base\$($el.name)"
-                }
-                if ($partial -eq $Stopat) {
-                    return $el
-                }
-                else {
-                    foreach ($elg in $el.ServerGroups) {
-                        $results += Find-CmsGroup -CmsGrp $elg -Base $partial -Stopat $Stopat
-                    }
-                }
+        function Get-ReverseParse ($object) {
+            $name = @()
+            do {
+                $name += $object.Name
+                $object = $object.Parent
             }
-            return $results
+            until ($object.Name -eq 'DatabaseEngineServerGroup')
+            
+            [array]::Reverse($name)
+            $name -join '\'
         }
     }
     process {
@@ -110,13 +93,31 @@ function Get-DbaRegisteredServerGroup {
             }
             $groups = @()
             if ($group) {
-                foreach ($currentGroup in $group) {
-                    $cms = Find-CmsGroup -CmsGrp $server.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
-                    if ($null -eq $cms) {
-                        Write-Message -Level Verbose -Message "No groups found matching that name on instance '$instance'."
-                        continue
+                foreach ($currentgroup in $Group) {
+                    if ($currentgroup -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                        $currentgroup = Get-ReverseParse -object $currentgroup
                     }
-                    $groups += $cms
+                    
+                    if ($currentgroup -match '\\') {
+                        $split = $currentgroup.Split('\\')
+                        $i = 0
+                        $groupobject = $server.DatabaseEngineServerGroup
+                        do {
+                            if ($groupobject) {
+                                $groupobject = $groupobject.ServerGroups[$split[$i]]
+                            }
+                        }
+                        until ($i++ -eq $split.GetUpperBound(0))
+                        if ($groupobject) {
+                            $groups += $groupobject
+                        }
+                    }
+                    else {
+                        $thisgroup = $server.DatabaseEngineServerGroup.ServerGroups[$currentgroup]
+                        if ($thisgroup) {
+                            $groups += $server.DatabaseEngineServerGroup.ServerGroups[$currentgroup]
+                        }
+                    }
                 }
             }
             else {
@@ -130,14 +131,14 @@ function Get-DbaRegisteredServerGroup {
             if (Test-Bound -ParameterName ExcludeGroup) {
                 $groups = $groups | Where-Object Name -notin $ExcludeGroup
             }
-
+            
             if (Test-Bound -ParameterName Id) {
                 $groups = $server.DatabaseEngineServerGroup | Where-Object Id -in $Id
             }
             
             # Close the connection, otherwise using it with the ServersStore will keep it open
             # $server.ServerConnection.Disconnect()
-
+            
             foreach ($groupobject in $groups) {
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $server.InstanceName
