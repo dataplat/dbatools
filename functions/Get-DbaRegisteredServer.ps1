@@ -18,7 +18,7 @@ function Get-DbaRegisteredServer {
 
         .PARAMETER ServerName
             Specifies one or more server names to include. Server Name is the actual instance name (labeled Server Name)
-    
+
         .PARAMETER Group
             Specifies one or more groups to include from SQL Server Central Management Server.
 
@@ -30,7 +30,7 @@ function Get-DbaRegisteredServer {
 
         .PARAMETER Id
             Get server by Id(s)
-    
+
         .PARAMETER IncludeSelf
             If this switch is enabled, the CMS server itself will be included in the results, along with all other Registered Servers.
 
@@ -175,8 +175,8 @@ function Get-DbaRegisteredServer {
             # Close the connection, otherwise using it with the ServersStore will keep it open
             $serverstore.ServerConnection.Disconnect()
         }
-        
-        
+
+
         if ($Name) {
             $servers = $servers | Where-Object Name -in $Name
         }
@@ -186,7 +186,7 @@ function Get-DbaRegisteredServer {
         if ($Id) {
             $servers = $servers | Where-Object Id -in $Id
         }
-        
+
         foreach ($server in $servers) {
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName

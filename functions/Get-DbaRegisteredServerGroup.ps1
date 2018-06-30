@@ -17,7 +17,7 @@ function Get-DbaRegisteredServerGroup {
 
         .PARAMETER ExcludeGroup
             Specifies one or more Central Management Server groups to exclude.
-    
+
         .PARAMETER Id
             Get group by Id(s)
 
@@ -126,16 +126,16 @@ function Get-DbaRegisteredServerGroup {
             if (Test-Bound -ParameterName ExcludeGroup) {
                 $groups = $groups | Where-Object Name -notin $ExcludeGroup
             }
-            
+
             if (Test-Bound -ParameterName Id) {
                 $groups = $server.DatabaseEngineServerGroup| Where-Object Id -in $Id
             }
-            
+
             # Close the connection, otherwise using it with the ServersStore will keep it open
             $server.ServerConnection.Disconnect()
-            
+
             foreach ($groupobject in $groups) {
-                
+
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $server.InstanceName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -value $server.SqlInstance

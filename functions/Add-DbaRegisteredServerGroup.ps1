@@ -18,15 +18,21 @@ function Add-DbaRegisteredServerGroup {
 
         .PARAMETER Description
             Adds a description for the registered server group
-    
+
         .PARAMETER Group
             The SQL Server Central Management Server group. If no groups are specified, the new group will be created at the root.
 
-        .PARAMETER InputObjects
+        .PARAMETER InputObject
             Allows results from Get-DbaRegisteredServerGroup to be piped in
 
         .PARAMETER IncludeRegisteredServers
             When a piping a group from another server, also create the registered server
+
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -50,13 +56,13 @@ function Add-DbaRegisteredServerGroup {
             Add-DbaRegisteredServerGroup -SqlInstance sql2012, sql2014 -Name subfolder -Group HR
 
             Creates a registered server group on sql2012 and sql2014 called subfolder within the HR group
-    
+
         .EXAMPLE
             Get-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR | Add-DbaRegisteredServerGroup -SqlInstance sql01
 
             Creates a registered server group on sql01's CMS
     #>
-    
+
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(ValueFromPipeline)]
@@ -71,7 +77,7 @@ function Add-DbaRegisteredServerGroup {
         [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             if ((Test-Bound -ParameterName Group)) {
@@ -81,25 +87,25 @@ function Add-DbaRegisteredServerGroup {
                 $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
             }
         }
-        
+
         foreach ($reggroup in $InputObject) {
             $parentserver = Get-RegServerParent -InputObject $reggroup
             $server = $parentserver.ServerConnection.ServerInstance.SqlConnectionObject
-            
+
             if ($null -eq $parentserver) {
                 Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
             }
-            
+
             if ($Pscmdlet.ShouldProcess($parentserver.SqlInstance, "Adding $Name")) {
                 try {
                     $newgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($reggroup, $Name)
                     $newgroup.Description = $Description
                     $newgroup.Create()
-                    
+
                     if ($IncludeRegisteredServers) {
                         Add-DbaRegisteredServer -SqlInstance $server -InputObject $reggroup.RegisteredServers -Group $newgroup
                     }
-                    
+
                     Get-DbaRegisteredServerGroup -SqlInstance $parentserver.ServerConnection.SqlConnectionObject | Where-Object Id -eq $newgroup.id
                 }
                 catch {

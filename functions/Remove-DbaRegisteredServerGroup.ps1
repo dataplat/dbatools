@@ -18,9 +18,15 @@ function Remove-DbaRegisteredServerGroup {
 
         .PARAMETER InputObject
             Allows results from Get-DbaRegisteredServerGroup to be piped in
-    
+
         .PARAMETER Id
             Get group by Id(s)
+
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -74,14 +80,14 @@ function Remove-DbaRegisteredServerGroup {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
         }
-        
+
         foreach ($regservergroup in $InputObject) {
             $parentserver = Get-RegServerParent -InputObject $regservergroup
-            
+
             if ($null -eq $parentserver) {
                 Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
             }
-            
+
             if ($Pscmdlet.ShouldProcess($parentserver.DomainInstanceName, "Removing $($regservergroup.Name) CMS Group")) {
                 try {
                     $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptDrop().GetScript())

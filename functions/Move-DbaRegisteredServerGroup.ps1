@@ -22,6 +22,15 @@ function Move-DbaRegisteredServerGroup {
         .PARAMETER Id
             Get group by Id(s)
 
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER NewGroup
+            The new location.
+    
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -79,31 +88,31 @@ function Move-DbaRegisteredServerGroup {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
         }
-        
+
         foreach ($regservergroup in $InputObject) {
             $parentserver = Get-RegServerParent -InputObject $regservergroup
-            
+
             if ($null -eq $parentserver) {
                 Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
             }
-            
+
             $server = $parentserver.ServerConnection.SqlConnectionObject
-            
+
             if ($NewGroup -eq 'Default') {
                 $groupobject = Get-DbaRegisteredServerGroup -SqlInstance $server -Id 1
             }
             else {
                 $groupobject = Get-DbaRegisteredServerGroup -SqlInstance $server -Group $NewGroup
             }
-            
+
             if (-not $groupobject) {
                 Stop-Function -Message "Group '$NewGroup' not found on $server" -Continue
             }
-            
+
             if ($Pscmdlet.ShouldProcess($regserver.SqlInstance, "Moving $($regservergroup.Name) to $groupobject")) {
                 try {
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptMove($groupobject).GetScript())

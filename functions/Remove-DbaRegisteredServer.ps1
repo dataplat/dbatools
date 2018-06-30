@@ -18,12 +18,18 @@ function Remove-DbaRegisteredServer {
 
         .PARAMETER ServerName
             Specifies one or more server names to include. Server Name is the actual instance name (labeled Server Name)
-    
+
         .PARAMETER Group
             Specifies one or more groups to include from SQL Server Central Management Server.
 
         .PARAMETER InputObject
             Allows results from Get-DbaRegisteredServer to be piped in
+
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -52,13 +58,13 @@ function Remove-DbaRegisteredServer {
             Remove-DbaRegisteredServer -SqlInstance sql2012 -Group HR\Development
 
             Removes all servers from the HR and sub-group Development from the CMS on sql2012.
-    
+
         .EXAMPLE
             Remove-DbaRegisteredServer -SqlInstance sql2012 -Confirm:$false
 
             Removes all registered servers on sql2012 and turns off all prompting
     #>
-    
+
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -71,12 +77,12 @@ function Remove-DbaRegisteredServer {
         [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException -Group $Group -ExcludeGroup $ExcludeGroup -Name $Name -ServerName $ServerName
         }
-        
+
         foreach ($regserver in $InputObject) {
             $server = $regserver.Parent
             if ($Pscmdlet.ShouldProcess($regserver.Parent, "Removing $regserver")) {
