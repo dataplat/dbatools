@@ -86,12 +86,12 @@ function Remove-DbaRegisteredServer {
         foreach ($regserver in $InputObject) {
             $server = $regserver.Parent
             if ($Pscmdlet.ShouldProcess($regserver.Parent, "Removing $regserver")) {
+                $regserver.Drop()
                 try {
-                    $regserver.Drop()
                     [pscustomobject]@{
-                        ComputerName     = $server.ComputerName
-                        InstanceName     = $server.InstanceName
-                        SqlInstance      = $server.SqlInstance
+                        ComputerName     = $regserver.ComputerName
+                        InstanceName     = $regserver.InstanceName
+                        SqlInstance      = $regserver.SqlInstance
                         RegisteredServer = $regserver.name
                         Status           = "Dropped"
                     }

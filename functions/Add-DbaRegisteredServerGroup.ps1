@@ -103,7 +103,7 @@ function Add-DbaRegisteredServerGroup {
                     $newgroup.Create()
 
                     if ($IncludeRegisteredServers) {
-                        Add-DbaRegisteredServer -SqlInstance $server -InputObject $reggroup.RegisteredServers -Group $newgroup
+                        $null = Add-DbaRegisteredServer -SqlInstance $server -InputObject $reggroup.RegisteredServers -Group $newgroup
                     }
 
                     Get-DbaRegisteredServerGroup -SqlInstance $parentserver.ServerConnection.SqlConnectionObject | Where-Object Id -eq $newgroup.id
