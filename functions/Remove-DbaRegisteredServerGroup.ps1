@@ -13,7 +13,7 @@ function Remove-DbaRegisteredServerGroup {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Group
+        .PARAMETER Name
             Specifies one or more groups to include from SQL Server Central Management Server.
 
         .PARAMETER InputObject
