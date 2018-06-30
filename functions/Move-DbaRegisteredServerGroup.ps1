@@ -112,11 +112,11 @@ function Move-DbaRegisteredServerGroup {
             if (-not $groupobject) {
                 Stop-Function -Message "Group '$NewGroup' not found on $server" -Continue
             }
-
-            if ($Pscmdlet.ShouldProcess($regserver.SqlInstance, "Moving $($regservergroup.Name) to $groupobject")) {
+            
+            if ($Pscmdlet.ShouldProcess($regservergroup.SqlInstance, "Moving $($regservergroup.Name) to $($groupobject.Name)")) {
                 try {
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptMove($groupobject).GetScript())
-                    Get-DbaRegisteredServerGroup -SqlInstance $server -Group $group
+                    Get-DbaRegisteredServerGroup -SqlInstance $server -Group $regservergroup
                 }
                 catch {
                     Stop-Function -Message "Failed to move $($regserver.Name) to $NewGroup on $($regserver.SqlInstance)" -ErrorRecord $_ -Continue
