@@ -14,7 +14,7 @@ function Export-DbaRegisteredServer {
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Group
-            Imports to specific group
+            Exports a specific group.
 
         .PARAMETER CredentialPersistenceType
             Used to specify how the login and passwords are persisted. Valid values include None, PersistLoginName and PersistLoginNameAndPassword.
@@ -68,7 +68,7 @@ function Export-DbaRegisteredServer {
         .EXAMPLE
             Export-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\Development
 
-            Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.
+            Expots a list of servers in theDevelopment subgroup within the HR group from the CMS on sqlserver2014a.
     #>
     [CmdletBinding()]
     param (
