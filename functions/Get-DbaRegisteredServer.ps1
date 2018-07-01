@@ -99,94 +99,48 @@ function Get-DbaRegisteredServer {
         [switch]$EnableException
     )
     begin {
-        function Find-CmsGroup {
-            [OutputType([object[]])]
-            [cmdletbinding()]
-            param(
-                $CmsGrp,
-                $Base = $null,
-                $Stopat
-            )
-            $results = @()
-            foreach ($el in $CmsGrp) {
-                if ($null -eq $Base -or [string]::IsNullOrWhiteSpace($Base) ) {
-                    $partial = $el.name
-                }
-                else {
-                    $partial = "$Base\$($el.name)"
-                }
-                if ($partial -eq $Stopat) {
-                    return $el
-                }
-                else {
-                    foreach ($elg in $el.ServerGroups) {
-                        $results += Find-CmsGroup -CmsGrp $elg -Base $partial -Stopat $Stopat
-                    }
-                }
-            }
-            return $results
-        }
-
-        $defaults = @()
         if ($ResolveNetworkName) {
-            $defaults += 'ComputerName', 'FQDN', 'IPAddress'
+            $defaults = 'ComputerName', 'FQDN', 'IPAddress'
         }
-        $defaults += 'Name', 'ServerName', 'Description', 'ServerType', 'SecureConnectionString'
-
+        $defaults = 'Name', 'ServerName', 'Description', 'ServerType', 'SecureConnectionString'
     }
-
     process {
-        if (Test-FunctionInterrupt) {
-            return
-        }
-
         $servers = @()
         foreach ($instance in $SqlInstance) {
-            try {
-                $serverstore = Get-DbaRegisteredServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
-            }
-            catch {
-                Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
-            }
-            
-            if (Test-Bound -ParameterName ExcludeGroup) {
-                $Group = ($serverstore.DatabaseEngineServerGroup.ServerGroups | Where-Object Name -notin $ExcludeGroup).Name
-            }
-
             if ($Group) {
-                foreach ($currentGroup in $Group) {
-                    $cms = Find-CmsGroup -CmsGrp $serverstore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
-                    if ($null -eq $cms) {
-                        Write-Message -Level Verbose -Message "No groups found matching that name on instance '$instance'."
-                        continue
-                    }
-                    $servers += ($cms.GetDescendantRegisteredServers())
+                Write-Message -Level Verbose -Message "Connecting to $instance to search for $group"
+                $groupservers = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
+                if ($groupservers) {
+                    $servers += $groupservers.GetDescendantRegisteredServers()
                 }
             }
             else {
-                $cms = $serverstore.DatabaseEngineServerGroup
+                Write-Message -Level Verbose -Message "Connecting to $instance"
+                try {
+                    $serverstore = Get-DbaRegisteredServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
+                }
+                catch {
+                    Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
+                }
                 $servers += ($serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers())
             }
-            if ($Group -and (Test-Bound -ParameterName Group -Not)) {
-                #add root ones
-                $servers += ($serverstore.DatabaseEngineServerGroup.RegisteredServers)
-            }
-
-            # Close the connection, otherwise using it with the ServersStore will keep it open
-            # $serverstore.ServerConnection.Disconnect()
         }
-
-
+        
         if ($Name) {
+            Write-Message -Level Verbose -Message "Filtering by name for $name"
             $servers = $servers | Where-Object Name -in $Name
         }
+        
         if ($ServerName) {
+            Write-Message -Level Verbose -Message "Filtering by servername for $servername"
             $servers = $servers | Where-Object ServerName -in $ServerName
         }
+        
         if ($Id) {
+            Write-Message -Level Verbose -Message "Filtering by id for $Id (1 = default/root)"
             $servers = $servers | Where-Object Id -in $Id
         }
-
+        
         foreach ($server in $servers) {
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName
@@ -197,26 +151,26 @@ function Get-DbaRegisteredServer {
             if ($ResolveNetworkName) {
                 try {
                     $lookup = Resolve-DbaNetworkName $server.ServerName -Turbo
-                    Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
-                    Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $lookup.FQDN
-                    Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress
+                    $server.ComputerName = $lookup.ComputerName
+                    $server.FQDN = $lookup.FQDN
+                    $server.IPAddress = $lookup.IPAddress
                 }
                 catch {
                     try {
                         $lookup = Resolve-DbaNetworkName $server.ServerName
-                        Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
-                        Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $lookup.FQDN
-                        Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress
+                        $server.ComputerName = $lookup.ComputerName
+                        $server.FQDN = $lookup.FQDN
+                        $server.IPAddress = $lookup.IPAddress
                     }
                     catch {}
                 }
             }
-
             Add-Member -Force -InputObject $server -MemberType ScriptMethod -Name ToString -Value { $this.ServerName }
             Select-DefaultView -InputObject $server -Property $defaults
         }
-
+        
         if ($IncludeSelf -and $servers) {
+            Write-Message -Level Verbose -Message "Adding CMS instance"
             $self = $servers[0].PsObject.Copy()
             $self | Add-Member -MemberType NoteProperty -Name Name -Value "CMS Instance" -Force
             $self.ServerName = $instance

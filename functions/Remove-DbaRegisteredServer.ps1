@@ -80,7 +80,7 @@ function Remove-DbaRegisteredServer {
     
     process {
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException -Group $Group -ExcludeGroup $ExcludeGroup -Name $Name -ServerName $ServerName
+            $InputObject += Get-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup -Name $Name -ServerName $ServerName
         }
         
         foreach ($regserver in $InputObject) {

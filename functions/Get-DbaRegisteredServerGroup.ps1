@@ -70,33 +70,26 @@ function Get-DbaRegisteredServerGroup {
         [int[]]$Id,
         [switch]$EnableException
     )
-    begin {
-        function Get-ReverseParse ($object) {
-            $name = @()
-            do {
-                $name += $object.Name
-                $object = $object.Parent
-            }
-            until ($object.Name -eq 'DatabaseEngineServerGroup')
-            
-            [array]::Reverse($name)
-            $name -join '\'
-        }
-    }
     process {
         foreach ($instance in $SqlInstance) {
             try {
+                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Get-DbaRegisteredServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
             }
             catch {
                 Stop-Function -Message "Cannot access Central Management Server '$instance'" -ErrorRecord $_ -Continue
             }
+            
             $groups = @()
+            
             if ($group) {
                 foreach ($currentgroup in $Group) {
+                    Write-Message -Level Verbose -Message "Processing $currentgroup"
                     if ($currentgroup -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
-                        $currentgroup = Get-ReverseParse -object $currentgroup
+                        $currentgroup = Get-RegServerGroupReverseParse -object $currentgroup
                     }
+                    
+                    $currentgroup = $currentgroup.Replace('DatabaseEngineServerGroup\', '')
                     
                     if ($currentgroup -match '\\') {
                         $split = $currentgroup.Split('\\')
@@ -105,6 +98,7 @@ function Get-DbaRegisteredServerGroup {
                         do {
                             if ($groupobject) {
                                 $groupobject = $groupobject.ServerGroups[$split[$i]]
+                                Write-Message -Level Verbose -Message "Parsed $($groupobject.Name)"
                             }
                         }
                         until ($i++ -eq $split.GetUpperBound(0))
@@ -113,31 +107,35 @@ function Get-DbaRegisteredServerGroup {
                         }
                     }
                     else {
-                        $thisgroup = $server.DatabaseEngineServerGroup.ServerGroups[$currentgroup]
-                        if ($thisgroup) {
-                            $groups += $server.DatabaseEngineServerGroup.ServerGroups[$currentgroup]
-                        }
+                        try {
+                            $thisgroup = $server.DatabaseEngineServerGroup.ServerGroups[$currentgroup]
+                            if ($thisgroup) {
+                                Write-Message -Level Verbose -Message "Added $($thisgroup.Name)"
+                                $groups += $thisgroup
+                            }
+                        } catch {}
                     }
                 }
             }
             else {
+                Write-Message -Level Verbose -Message "Added all root server groups"
                 $groups = $server.DatabaseEngineServerGroup.ServerGroups
             }
             
             if ($Group -eq 'DatabaseEngineServerGroup') {
+                Write-Message -Level Verbose -Message "Added root group"
                 $groups = $server.DatabaseEngineServerGroup
             }
             
-            if (Test-Bound -ParameterName ExcludeGroup) {
+            if ($ExcludeGroup) {
+                Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
                 $groups = $groups | Where-Object Name -notin $ExcludeGroup
             }
             
-            if (Test-Bound -ParameterName Id) {
+            if ($Id) {
+                Write-Message -Level Verbose -Message "Filtering for id $Id. Id 1 = default."
                 $groups = $server.DatabaseEngineServerGroup | Where-Object Id -in $Id
             }
-            
-            # Close the connection, otherwise using it with the ServersStore will keep it open
-            # $server.ServerConnection.Disconnect()
             
             foreach ($groupobject in $groups) {
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
