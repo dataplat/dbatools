@@ -10,9 +10,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $description = "group description"
         }
         AfterAll {
-            Remove-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Group $group, $group2 -Confirm:$false
+            Get-DbaRegisteredServerGroup -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServerGroup -Confirm:$false
         }
-
+        
         It "adds a registered server group" {
             $results = Add-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Name $group
             $results.Name | Should -Be $group
