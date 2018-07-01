@@ -25,9 +25,6 @@ function Add-DbaRegisteredServer {
         .PARAMETER Group
             Adds the registered server to a specific group.
 
-        .PARAMETER InputObject
-            Allows results from Get-DbaRegisteredServer or Get-DbaRegisteredServerGroup to be piped in
-
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -57,22 +54,12 @@ function Add-DbaRegisteredServer {
 
            Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, "The 2008 Clustered Instance" will be visible.
            Clearly this is hard to explain ;)
-
-        .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sql2008 | Add-DbaRegisteredServer -SqlInstance sql2012, sql2014 -Confirm:$false
-
-            Adds all registered servers from sql2008 to sql2012 and sql2014 without prompting for confirmation
-
-        .EXAMPLE
-            Get-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR | Add-DbaRegisteredServer -ServerName sql01
-
-            Adds all registered servers from the HR group on sql2012 to sql01
     #>
-
+    
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
+        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
@@ -80,10 +67,11 @@ function Add-DbaRegisteredServer {
         [string]$Name = $ServerName,
         [string]$Description,
         [object]$Group,
-        [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
         [switch]$EnableException
     )
-
+    begin {
+        $InputObject = @()
+    }
     process {
         foreach ($instance in $SqlInstance) {
             if ((Test-Bound -ParameterName Group)) {
@@ -97,28 +85,28 @@ function Add-DbaRegisteredServer {
             else {
                 $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
             }
-        }
-
-        foreach ($reggroup in $InputObject) {
-            $parentserver = Get-RegServerParent -InputObject $reggroup
-
-            if ($null -eq $parentserver) {
-                Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
-            }
-
-            $server = $parentserver.ServerConnection.SqlConnectionObject
-
-            if ($Pscmdlet.ShouldProcess($reggroup.Parent, "Adding $reggroup")) {
-                try {
-                    $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($reggroup, $Name)
-                    $newserver.ServerName = $ServerName
-                    $newserver.Description = $Description
-                    $newserver.Create()
-
-                    Get-DbaRegisteredServer -SqlInstance $server -Name $Name -ServerName $ServerName
+            
+            foreach ($reggroup in $InputObject) {
+                $parentserver = Get-RegServerParent -InputObject $reggroup
+                
+                if ($null -eq $parentserver) {
+                    Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
                 }
-                catch {
-                    Stop-Function -Message "Failed to add $ServerName on $($parentserver.SqlInstance)" -ErrorRecord $_ -Continue
+                
+                $server = $parentserver.ServerConnection.SqlConnectionObject
+                
+                if ($Pscmdlet.ShouldProcess($reggroup.Parent, "Adding $reggroup")) {
+                    try {
+                        $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($reggroup, $Name)
+                        $newserver.ServerName = $ServerName
+                        $newserver.Description = $Description
+                        $newserver.Create()
+                        
+                        Get-DbaRegisteredServer -SqlInstance $server -Name $Name -ServerName $ServerName
+                    }
+                    catch {
+                        Stop-Function -Message "Failed to add $ServerName on $($parentserver.SqlInstance)" -ErrorRecord $_ -Continue
+                    }
                 }
             }
         }
