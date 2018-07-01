@@ -70,7 +70,14 @@ function Get-DbaRegisteredServerGroup {
         [int[]]$Id,
         [switch]$EnableException
     )
+    begin {
+        if ($ExcludeGroup -match '\\') {
+            Stop-Function "Backslash in ExcludeGroup detected. ExcludeGroup does not allow passing subgroups."
+        }
+    }
     process {
+        if (Test-FunctionInterrupt) { return }
+        
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -113,7 +120,8 @@ function Get-DbaRegisteredServerGroup {
                                 Write-Message -Level Verbose -Message "Added $($thisgroup.Name)"
                                 $groups += $thisgroup
                             }
-                        } catch {}
+                        }
+                        catch { }
                     }
                 }
             }
