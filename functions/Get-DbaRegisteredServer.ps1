@@ -103,8 +103,14 @@ function Get-DbaRegisteredServer {
             $defaults = 'ComputerName', 'FQDN', 'IPAddress'
         }
         $defaults = 'Name', 'ServerName', 'Description', 'ServerType', 'SecureConnectionString'
+        
+        if ($ExcludeGroup -match '\\') {
+            Stop-Function "Backslash in ExcludeGroup detected. ExcludeGroup does not allow passing subgroups."
+        }
     }
     process {
+        if (Test-FunctionInterrupt) { return }
+        
         $servers = @()
         foreach ($instance in $SqlInstance) {
             if ($Group) {
@@ -139,6 +145,11 @@ function Get-DbaRegisteredServer {
         if ($Id) {
             Write-Message -Level Verbose -Message "Filtering by id for $Id (1 = default/root)"
             $servers = $servers | Where-Object Id -in $Id
+        }
+        
+        if ($ExcludeGroup) {
+            Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
+            $servers = $servers | Where-Object { $_.Parent.Name -notin $ExcludeGroup }
         }
         
         foreach ($server in $servers) {
