@@ -56,16 +56,10 @@ function Add-DbaRegisteredServerGroup {
             Add-DbaRegisteredServerGroup -SqlInstance sql2012, sql2014 -Name subfolder -Group HR
 
             Creates a registered server group on sql2012 and sql2014 called subfolder within the HR group
-
-        .EXAMPLE
-            Get-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR | Add-DbaRegisteredServerGroup -SqlInstance sql01
-
-            Creates a registered server group on sql01's CMS
     #>
-
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -73,11 +67,11 @@ function Add-DbaRegisteredServerGroup {
         [string]$Name,
         [string]$Description,
         [string]$Group,
-        [switch]$IncludeRegisteredServers,
-        [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
         [switch]$EnableException
     )
-
+    begin {
+        $InputObject = @()
+    }
     process {
         foreach ($instance in $SqlInstance) {
             if ((Test-Bound -ParameterName Group)) {
@@ -101,11 +95,7 @@ function Add-DbaRegisteredServerGroup {
                     $newgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($reggroup, $Name)
                     $newgroup.Description = $Description
                     $newgroup.Create()
-
-                    if ($IncludeRegisteredServers) {
-                        $null = Add-DbaRegisteredServer -SqlInstance $server -InputObject $reggroup.RegisteredServers -Group $newgroup
-                    }
-
+                    
                     Get-DbaRegisteredServerGroup -SqlInstance $parentserver.ServerConnection.SqlConnectionObject | Where-Object Id -eq $newgroup.id
                 }
                 catch {
