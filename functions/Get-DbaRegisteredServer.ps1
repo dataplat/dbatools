@@ -103,14 +103,8 @@ function Get-DbaRegisteredServer {
             $defaults = 'ComputerName', 'FQDN', 'IPAddress'
         }
         $defaults = 'Name', 'ServerName', 'Description', 'ServerType', 'SecureConnectionString'
-        
-        if ($ExcludeGroup -match '\\') {
-            Stop-Function "Backslash in ExcludeGroup detected. ExcludeGroup does not allow passing subgroups."
-        }
     }
     process {
-        if (Test-FunctionInterrupt) { return }
-        
         $servers = @()
         foreach ($instance in $SqlInstance) {
             if ($Group) {
@@ -148,8 +142,9 @@ function Get-DbaRegisteredServer {
         }
         
         if ($ExcludeGroup) {
+            $excluded = Get-DbaRegisteredServer $serverstore.ServerConnection.SqlConnectionObject -Group $ExcludeGroup
             Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
-            $servers = $servers | Where-Object { $_.Parent.Name -notin $ExcludeGroup }
+            $servers = $servers | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
         }
         
         foreach ($server in $servers) {
@@ -158,7 +153,7 @@ function Get-DbaRegisteredServer {
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name SqlInstance -value $serverstore.SqlInstance
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $null
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null
-
+            
             if ($ResolveNetworkName) {
                 try {
                     $lookup = Resolve-DbaNetworkName $server.ServerName -Turbo
@@ -173,7 +168,7 @@ function Get-DbaRegisteredServer {
                         $server.FQDN = $lookup.FQDN
                         $server.IPAddress = $lookup.IPAddress
                     }
-                    catch {}
+                    catch { }
                 }
             }
             Add-Member -Force -InputObject $server -MemberType ScriptMethod -Name ToString -Value { $this.ServerName }
