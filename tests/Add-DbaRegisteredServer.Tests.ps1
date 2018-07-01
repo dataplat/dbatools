@@ -12,10 +12,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $groupobject = Add-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Name $group
         }
         AfterAll {
-            Remove-DbaRegisteredServer -SqlInstance $script:instance1 -ServerName $srvName, $regSrvName -Confirm:$false
-            Remove-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Group $group -Confirm:$false
-            $results1, $results2 | Remove-DbaRegisteredServer -Confirm:$false -WarningAction SilentlyContinue
-            Remove-DbaRegisteredServer -SqlInstance $script:instance1 -Name $srvName, $regSrvName -Confirm:$false
+            Get-DbaRegisteredServer -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServer -Confirm:$false
+            Get-DbaRegisteredServerGroup -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServerGroup -Confirm:$false
         }
 
         It "adds a registered server" {

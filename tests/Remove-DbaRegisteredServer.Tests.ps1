@@ -16,8 +16,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newServer2 = Add-DbaRegisteredServer -SqlInstance $script:instance1 -ServerName $srvName2 -Name $regSrvName2 -Description $regSrvDesc2
         }
         AfterAll {
-            Get-DbaRegisteredServer -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServer -Confirm:$false
+            Get-DbaRegisteredServer -SqlInstance $script:instance1 -Name $regSrvName, $regSrvName2, $regSrvName3 | Remove-DbaRegisteredServer -Confirm:$false
         }
+        
         It "supports dropping via the pipeline" {
             $results = $newServer | Remove-DbaRegisteredServer -Confirm:$false
             $results.Name | Should -Be $regSrvName
