@@ -24,6 +24,10 @@
         - Supports selecting properties from objects in other variables: "ComputerName from VarName" (Will insert the property 'ComputerName' from variable $VarName)
         - Supports filtering when selecting from outside objects: "ComputerName from VarName where ObjectId = Id" (Will insert the property 'ComputerName' from the object in variable $VarName, whose ObjectId property is equal to the inputs Id property)
     
+        Important:
+        When using this command from another module (not script-files, those are fine), you do not have access to the variables in the calling module.
+        In order to select from other variables using the 'from' call, you need to declare the variable global.
+    
     .PARAMETER ExcludeProperty
         Properties to not list.
     
@@ -50,6 +54,33 @@
     
     .PARAMETER Index
         Specifies an array of objects based on their index values. Enter the indexes in a comma-separated list.
+    
+    .EXAMPLE
+        PS C:\> Get-ChildItem | Select-DbaObject Name, "Length as Size"
+    
+        Selects the properties Name and Length, renaming Length to Size in the process.
+    
+    .EXAMPLE
+        PS C:\> Import-Csv .\file.csv | Select-DbaObject Name, "Length as Size to DbaSize"
+    
+        Selects the properties Name and Length, renaming Length to Size and converting it to [DbaSize] (a userfriendly representation of size numbers)
+    
+    .EXAMPLE
+        PS C:\> $obj = [PSCustomObject]@{ Name = "Foo" }
+        PS C:\> Get-ChildItem | Select-DbaObject FullName, Length, "Name from obj"
+    
+        Selects the properties FullName and Length from the input and the Name property from the object stored in $obj
+    
+    .EXAMPLE
+        PS C:\> $list = @()
+        PS C:\> $list += [PSCustomObject]@{ Type = "Foo"; ID = 1 }
+        PS C:\> $list += [PSCustomObject]@{ Type = "Bar"; ID = 2 }
+        PS C:\> $obj | Select-DbaObject Name, "ID from list WHERE Type = Name"
+    
+        This allows you to LEFT JOIN contents of another variable.
+        Note that it can only do simple property-matching at this point.
+    
+        It will select Name from the objects stored in $obj, and for each of those the ID Property on any object in $list that has a Type property of equal value as Name on the input.
 #>
     [CmdletBinding(DefaultParameterSetName = 'DefaultParameter', RemotingCapability = 'None')]
     param (
