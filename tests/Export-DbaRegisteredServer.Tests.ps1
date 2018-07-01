@@ -27,9 +27,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $newServer3 = Add-DbaRegisteredServer -SqlInstance $script:instance1 -ServerName $srvName3 -Name $regSrvName3 -Description $regSrvDesc3
     }
     AfterAll {
-        $newServer, $newServer2, $newServer3, $results4 | Remove-DbaRegisteredServer -Confirm:$false
-        Remove-DbaRegisteredServer -Confirm:$false -SqlInstance $script:instance2 -ServerName dbatoolsci-server3
-        $newGroup, $newGroup2 | Remove-DbaRegisteredServerGroup -Confirm:$false
+        Get-DbaRegisteredServer -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServer -Confirm:$false
+        Get-DbaRegisteredServerGroup -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServerGroup -Confirm:$false
         $results, $results2, $results3 | Remove-Item -ErrorAction Ignore
     }
     
