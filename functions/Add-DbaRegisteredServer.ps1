@@ -23,7 +23,7 @@ function Add-DbaRegisteredServer {
             Adds a description for the registered server
 
         .PARAMETER Group
-            Adds the registered server to a specific group
+            Adds the registered server to a specific group.
 
         .PARAMETER InputObject
             Allows results from Get-DbaRegisteredServer or Get-DbaRegisteredServerGroup to be piped in
