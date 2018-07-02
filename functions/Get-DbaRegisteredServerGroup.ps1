@@ -19,7 +19,7 @@ function Get-DbaRegisteredServerGroup {
             Specifies one or more Central Management Server groups to exclude.
 
         .PARAMETER Id
-            Get group by Id(s)
+            Get group by Id(s). This parameter only works if the group has a registered server in it.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -136,7 +136,12 @@ function Get-DbaRegisteredServerGroup {
 
             if ($Id) {
                 Write-Message -Level Verbose -Message "Filtering for id $Id. Id 1 = default."
-                $groups = $server.DatabaseEngineServerGroup | Where-Object Id -in $Id
+                if ($Id -eq 1) {
+                    $groups = $server.DatabaseEngineServerGroup | Where-Object Id -in $Id
+                }
+                else {
+                    $groups = $server.DatabaseEngineServerGroup.GetDescendantRegisteredServers().Parent | Where-Object Id -in $Id
+                }
             }
 
             foreach ($groupobject in $groups) {
