@@ -5,7 +5,8 @@ function Add-DbaRegisteredServerGroup {
             Adds registered server groups to SQL Server Central Management Server (CMS)
 
         .DESCRIPTION
-            Adds registered server groups to SQL Server Central Management Server (CMS)
+            Adds registered server groups to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaRegisteredServer which
+            accepts multiple kinds of input and allows you to add reg servers and groups from different CMSes.
 
         .PARAMETER SqlInstance
             The target SQL Server instance
@@ -14,10 +15,10 @@ function Add-DbaRegisteredServerGroup {
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Name
-            The Group name
+            The name of the registered server group
 
         .PARAMETER Description
-            Adds a description for the registered server group
+            The description for the registered server group
 
         .PARAMETER Group
             The SQL Server Central Management Server group. If no groups are specified, the new group will be created at the root.
@@ -26,7 +27,10 @@ function Add-DbaRegisteredServerGroup {
             Allows results from Get-DbaRegisteredServerGroup to be piped in
 
         .PARAMETER IncludeRegisteredServers
-            When a piping a group from another server, also create the registered server
+            Create the registered servers within the group, too
+
+        .PARAMETER InputObject
+            Allows results from Get-DbaRegisteredServerGroup to be piped in
 
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
@@ -53,13 +57,22 @@ function Add-DbaRegisteredServerGroup {
             https://dbatools.io/Add-DbaRegisteredServerGroup
 
         .EXAMPLE
+            Add-DbaRegisteredServerGroup -SqlInstance sql2012 -Name HR
+
+            Creates a registered server group called HR, in the root of sql2012's CMS
+
+        .EXAMPLE
             Add-DbaRegisteredServerGroup -SqlInstance sql2012, sql2014 -Name subfolder -Group HR
 
             Creates a registered server group on sql2012 and sql2014 called subfolder within the HR group
+
+    .EXAMPLE
+            Get-DbaRegisteredServerGroup -SqlInstance sql2012, sql2014 -Group HR | Add-DbaRegisteredServerGroup -Name subfolder
+
+            Creates a registered server group on sql2012 and sql2014 called subfolder within the HR group of each server
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -67,12 +80,15 @@ function Add-DbaRegisteredServerGroup {
         [string]$Name,
         [string]$Description,
         [string]$Group,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
         [switch]$EnableException
     )
-    begin {
-        $InputObject = @()
-    }
     process {
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must either pipe in a registered server group or specify a sqlinstance"
+            return
+        }
         foreach ($instance in $SqlInstance) {
             if ((Test-Bound -ParameterName Group)) {
                 $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
@@ -95,7 +111,7 @@ function Add-DbaRegisteredServerGroup {
                     $newgroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($reggroup, $Name)
                     $newgroup.Description = $Description
                     $newgroup.Create()
-                    
+
                     Get-DbaRegisteredServerGroup -SqlInstance $parentserver.ServerConnection.SqlConnectionObject | Where-Object Id -eq $newgroup.id
                 }
                 catch {

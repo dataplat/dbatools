@@ -50,19 +50,19 @@ function Move-DbaRegisteredServer {
             https://dbatools.io/Move-DbaRegisteredServer
 
         .EXAMPLE
-            Move-DbaRegisteredServer -SqlInstance sql2012 -Group HR, Accounting
+            Move-DbaRegisteredServer -SqlInstance sql2012 -Name 'Web SQL Cluster' -NewGroup HR\Prod
 
-            Removes all servers from the HR and Accounting groups on sql2012
-
-        .EXAMPLE
-            Move-DbaRegisteredServer -SqlInstance sql2012 -Group HR\Development
-
-            Removes all servers from the HR and sub-group Development from the CMS on sql2012.
+            Moves the registered server on sql2012 titled 'Web SQL Cluster' to the Prod group within the HR group
 
         .EXAMPLE
-            Move-DbaRegisteredServer -SqlInstance sql2012 -Confirm:$false
+            Move-DbaRegisteredServer -SqlInstance sql2012 -Group HR\Development -NewGroup HR\Prod
 
-            Removes all registered servers on sql2012 and turns off all prompting
+            Moves all servers from the HR and sub-group Development to HR Prod
+
+        .EXAMPLE
+            Get-DbaRegisteredServer -SqlInstance sql2017 -Name 'Web SQL Cluster' | Move-DbaRegisteredServer -NewGroup Web
+
+            Moves the registered server 'Web SQL Cluster' on sql2017 to the Web group, also on sql2017
     #>
 
     [CmdletBinding(SupportsShouldProcess)]

@@ -46,29 +46,24 @@ function Export-DbaRegisteredServer {
             https://dbatools.io/Export-DbaRegisteredServer
 
         .EXAMPLE
-            Export-DbaRegisteredServer -SqlInstance sqlserver2014a
+           Export-DbaRegisteredServer -SqlInstance sql2008
 
-            Gets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.
-
-        .EXAMPLE
-            Export-DbaRegisteredServer -SqlInstance sqlserver2014a -IncludeSelf
-
-            Gets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.
+           Exports all Registered Server and Registered Server Groups on sql2008 to an automatically generated file name in the current directory
 
         .EXAMPLE
-            Export-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
+           Export-DbaRegisteredServer -SqlInstance sql2008 -Group hr\Seattle -Path C:\temp\Seattle.xml
 
-            Returns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
-
-        .EXAMPLE
-            Export-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting
-
-            Gets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.
+           Exports all Registered Server and Registered Server Groups with the Seattle group within the HR group on sql2008 to C:\temp\Seattle.xml
 
         .EXAMPLE
-            Export-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\Development
+           Get-DbaRegisteredServer -SqlInstance sql2008, sql2012 | Export-DbaRegisteredServer
 
-            Expots a list of servers in theDevelopment subgroup within the HR group from the CMS on sqlserver2014a.
+           Exports all registered servers on sql2008 and sql2012. Warning - each one will have its own individual file. Consider piping groups.
+
+        .EXAMPLE
+           Get-DbaRegisteredServerGroup -SqlInstance sql2008, sql2012 | Export-DbaRegisteredServer
+
+           Exports all registered servers on sql2008 and sql2012, organized by group.
     #>
     [CmdletBinding()]
     param (
@@ -114,7 +109,7 @@ function Export-DbaRegisteredServer {
                         $regservername = $object.Name.Replace('\', '$')
                         $Path = "$serverName-regserver-$regservername-$timeNow.xml"
                     }
-                    $object.Export($Path, 0)
+                    $object.Export($Path, $CredentialPersistenceType)
                 }
                 elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                     if ((Test-Bound -ParameterName Path -Not)) {
@@ -122,7 +117,7 @@ function Export-DbaRegisteredServer {
                         $regservergroup = $object.Name.Replace('\', '$')
                         $Path = "$serverName-reggroup-$regservergroup-$timeNow.xml"
                     }
-                    $object.Export($Path, 0)
+                    $object.Export($Path, $CredentialPersistenceType)
                 }
                 else {
                     Stop-Function -Message "InputObject is not a registered server or server group" -Continue

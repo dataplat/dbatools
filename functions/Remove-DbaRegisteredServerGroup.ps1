@@ -47,24 +47,15 @@ function Remove-DbaRegisteredServerGroup {
             https://dbatools.io/Remove-DbaRegisteredServerGroup
 
         .EXAMPLE
-            Remove-DbaRegisteredServerGroup -SqlInstance sqlserver2014a
+            Remove-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR, Accounting
 
-            Gets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.
-
-        .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential
-
-            Gets the top level groups from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
+            Removes the HR and Accounting groups on sql2012
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting
+            Remove-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR\Development -Confirm:$false
 
-            Gets the HR and Accounting groups from the CMS on sqlserver2014a.
+            Removes the Development subgroup within the HR group on sql2012 and turns off all prompting
 
-        .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\Development
-
-            Returns the sub-group Development of the HR group from the CMS on sqlserver2014a.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (

@@ -27,7 +27,7 @@ function Move-DbaRegisteredServerGroup {
 
         .PARAMETER NewGroup
             The new location.
-    
+
         .PARAMETER Confirm
             Prompts you for confirmation before executing any changing operations within the command.
 
@@ -50,24 +50,14 @@ function Move-DbaRegisteredServerGroup {
             https://dbatools.io/Move-DbaRegisteredServerGroup
 
         .EXAMPLE
-            Move-DbaRegisteredServerGroup -SqlInstance sqlserver2014a
+            Move-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR\Development -NewGroup AD\Prod
 
-            Gets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.
-
-        .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential
-
-            Gets the top level groups from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
+            Moves the Development group within HR to the Prod group within AD
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting
+            Get-DbaRegisteredServerGroup -SqlInstance sql2017 -Group HR\Development| Move-DbaRegisteredServer -NewGroup Web
 
-            Gets the HR and Accounting groups from the CMS on sqlserver2014a.
-
-        .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\Development
-
-            Returns the sub-group Development of the HR group from the CMS on sqlserver2014a.
+            Moves the Development group within HR to the Web group
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -88,34 +78,34 @@ function Move-DbaRegisteredServerGroup {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance to search for $group"
             $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
         }
-        
+
         foreach ($regservergroup in $InputObject) {
             $parentserver = Get-RegServerParent -InputObject $regservergroup
-            
+
             if ($null -eq $parentserver) {
                 Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
             }
-            
+
             $server = $parentserver.ServerConnection.SqlConnectionObject
-            
+
             if ($NewGroup -eq 'Default') {
                 $groupobject = Get-DbaRegisteredServerGroup -SqlInstance $server -Id 1
             }
             else {
                 $groupobject = Get-DbaRegisteredServerGroup -SqlInstance $server -Group $NewGroup
             }
-            
+
             Write-Message -Level Verbose -Message "Found $($groupobject.Name) on $($parentserver.ServerConnection.ServerName)"
-            
+
             if (-not $groupobject) {
                 Stop-Function -Message "Group '$NewGroup' not found on $server" -Continue
             }
-            
+
             if ($Pscmdlet.ShouldProcess($regservergroup.SqlInstance, "Moving $($regservergroup.Name) to $($groupobject.Name)")) {
                 try {
                     Write-Message -Level Verbose -Message "Parsing $groupobject"

@@ -64,7 +64,7 @@ function Remove-DbaRegisteredServer {
 
             Removes all registered servers on sql2012 and turns off all prompting
     #>
-    
+
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -77,12 +77,12 @@ function Remove-DbaRegisteredServer {
         [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup -Name $Name -ServerName $ServerName
         }
-        
+
         foreach ($regserver in $InputObject) {
             $server = $regserver.Parent
             if ($Pscmdlet.ShouldProcess($regserver.Parent, "Removing $regserver")) {

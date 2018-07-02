@@ -43,29 +43,25 @@ function Import-DbaRegisteredServer {
             https://dbatools.io/Import-DbaRegisteredServer
 
         .EXAMPLE
-            Import-DbaRegisteredServer -SqlInstance sqlserver2014a
+           Import-DbaRegisteredServer -SqlInstance sql2012 -Path C:\temp\corp-regservers.xml
 
-            Gets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.
-
-        .EXAMPLE
-            Import-DbaRegisteredServer -SqlInstance sqlserver2014a -IncludeSelf
-
-            Gets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.
+           Imports C:\temp\corp-regservers.xml to the CMS on sql2012
 
         .EXAMPLE
-            Import-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
+           Import-DbaRegisteredServer -SqlInstance sql2008 -Group hr\Seattle -Path C:\temp\Seattle.xml
 
-            Returns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
-
-        .EXAMPLE
-            Import-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting
-
-            Gets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.
+           Imports C:\temp\Seattle.xml to Seattle subgroup within the hr group on sql2008
 
         .EXAMPLE
-            Import-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\Development
+           Get-DbaRegisteredServer -SqlInstance sql2008, sql2012 | Import-DbaRegisteredServer -SqlInstance sql2017
 
-            Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.
+           Imports all registered servers from sql2008 and sql2012 to sql2017
+
+        .EXAMPLE
+           Get-DbaRegisteredServerGroup -SqlInstance sql2008 -Group hr\Seattle | Import-DbaRegisteredServer -SqlInstance sql2017 -Group Seattle
+
+           Imports all registered servers from the hr\Seattle group on sql2008 to the Seattle group on sql2017
+
     #>
     [CmdletBinding()]
     param (
@@ -98,10 +94,10 @@ function Import-DbaRegisteredServer {
                     Stop-Function -Message "Group $Group cannot be found on $instance" -Target $instance -Continue
                 }
             }
-            
+
             foreach ($object in $InputObject) {
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
-                    
+
                     $groupexists = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $object.Parent.Name
                     if (-not $groupexists) {
                         $groupexists = Add-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Parent.Name
