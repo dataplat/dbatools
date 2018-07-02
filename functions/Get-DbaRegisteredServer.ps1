@@ -100,9 +100,9 @@ function Get-DbaRegisteredServer {
     )
     begin {
         if ($ResolveNetworkName) {
-            $defaults = 'ComputerName', 'FQDN', 'IPAddress'
+            $defaults = 'ComputerName', 'FQDN', 'IPAddress', 'Name', 'ServerName', 'Group', 'Description'
         }
-        $defaults = 'Name', 'ServerName', 'Description', 'ServerType', 'SecureConnectionString'
+        $defaults = 'Name', 'ServerName', 'Group', 'Description'
     }
     process {
         $servers = @()
@@ -125,35 +125,47 @@ function Get-DbaRegisteredServer {
                 $servers += ($serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers())
             }
         }
-        
+
         if ($Name) {
             Write-Message -Level Verbose -Message "Filtering by name for $name"
             $servers = $servers | Where-Object Name -in $Name
         }
-        
+
         if ($ServerName) {
             Write-Message -Level Verbose -Message "Filtering by servername for $servername"
             $servers = $servers | Where-Object ServerName -in $ServerName
         }
-        
+
         if ($Id) {
             Write-Message -Level Verbose -Message "Filtering by id for $Id (1 = default/root)"
             $servers = $servers | Where-Object Id -in $Id
         }
-        
+
         if ($ExcludeGroup) {
             $excluded = Get-DbaRegisteredServer $serverstore.ServerConnection.SqlConnectionObject -Group $ExcludeGroup
             Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
             $servers = $servers | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
         }
-        
+
         foreach ($server in $servers) {
+            $groupname = Get-RegServerGroupReverseParse $server
+            if ($groupname -eq $server.Name) {
+                $groupname = $null
+            }
+            else {
+                $groupname = ($groupname).Split("\")
+                $groupname = $groupname[0 .. ($groupname.Count - 2)]
+                $groupname = ($groupname -join "\")
+            }
+
+
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $serverstore.ComputerName
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name InstanceName -value $serverstore.InstanceName
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name SqlInstance -value $serverstore.SqlInstance
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name Group -value $groupname
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $null
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null
-            
+
             if ($ResolveNetworkName) {
                 try {
                     $lookup = Resolve-DbaNetworkName $server.ServerName -Turbo
@@ -174,7 +186,7 @@ function Get-DbaRegisteredServer {
             Add-Member -Force -InputObject $server -MemberType ScriptMethod -Name ToString -Value { $this.ServerName }
             Select-DefaultView -InputObject $server -Property $defaults
         }
-        
+
         if ($IncludeSelf -and $servers) {
             Write-Message -Level Verbose -Message "Adding CMS instance"
             $self = $servers[0].PsObject.Copy()

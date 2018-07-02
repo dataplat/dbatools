@@ -47,7 +47,7 @@ function Get-DbaRegisteredServerGroup {
         .EXAMPLE
             Get-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential
 
-            Gets the top level groups from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
+            Gets the top level groups from the CMS on sqlserver2014a, using alternative credentials to authenticate to the server.
 
         .EXAMPLE
             Get-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting
@@ -79,18 +79,18 @@ function Get-DbaRegisteredServerGroup {
             catch {
                 Stop-Function -Message "Cannot access Central Management Server '$instance'" -ErrorRecord $_ -Continue
             }
-            
+
             $groups = @()
-            
+
             if ($group) {
                 foreach ($currentgroup in $Group) {
                     Write-Message -Level Verbose -Message "Processing $currentgroup"
                     if ($currentgroup -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                         $currentgroup = Get-RegServerGroupReverseParse -object $currentgroup
                     }
-                    
+
                     $currentgroup = $currentgroup.Replace('DatabaseEngineServerGroup\', '')
-                    
+
                     if ($currentgroup -match '\\') {
                         $split = $currentgroup.Split('\\')
                         $i = 0
@@ -122,28 +122,29 @@ function Get-DbaRegisteredServerGroup {
                 Write-Message -Level Verbose -Message "Added all root server groups"
                 $groups = $server.DatabaseEngineServerGroup.ServerGroups
             }
-            
+
             if ($Group -eq 'DatabaseEngineServerGroup') {
                 Write-Message -Level Verbose -Message "Added root group"
                 $groups = $server.DatabaseEngineServerGroup
             }
-            
+
             if ($ExcludeGroup) {
                 $excluded = Get-DbaRegisteredServer $server -Group $ExcludeGroup
                 Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
                 $groups = $groups | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
             }
-            
+
             if ($Id) {
                 Write-Message -Level Verbose -Message "Filtering for id $Id. Id 1 = default."
                 $groups = $server.DatabaseEngineServerGroup | Where-Object Id -in $Id
             }
-            
+
             foreach ($groupobject in $groups) {
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $server.InstanceName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -value $server.SqlInstance
-                Select-DefaultView -InputObject $groupobject -ExcludeProperty Parent, IdentityKey, ServerType, IsLocal, IsSystemServerGroup, IsDropped, Urn, Properties, Metadata, DuplicateFound, PropertyMetadataChanged, PropertyChanged
+
+                Select-DefaultView -InputObject $groupobject -Property ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, ServerGroups, RegisteredServers
             }
         }
     }

@@ -5,7 +5,8 @@ function Add-DbaRegisteredServer {
             Adds registered servers to SQL Server Central Management Server (CMS)
 
         .DESCRIPTION
-            Adds registered servers to SQL Server Central Management Server (CMS)
+            Adds registered servers to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaRegisteredServer which
+            accepts multiple kinds of input and allows you to add reg servers from different CMSes.
 
         .PARAMETER SqlInstance
             The target SQL Server instance
@@ -24,6 +25,9 @@ function Add-DbaRegisteredServer {
 
         .PARAMETER Group
             Adds the registered server to a specific group.
+
+        .PARAMETER InputObject
+            Allows the piping of a registered server group
 
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
@@ -50,16 +54,29 @@ function Add-DbaRegisteredServer {
             https://dbatools.io/Add-DbaRegisteredServer
 
         .EXAMPLE
+           Add-DbaRegisteredServer -SqlInstance sql2008 -ServerName sql01
+
+           Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible.
+
+        .EXAMPLE
            Add-DbaRegisteredServer -SqlInstance sql2008 -ServerName sql01 -Name "The 2008 Clustered Instance" -Description "HR's Dedicated SharePoint instance"
 
            Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, "The 2008 Clustered Instance" will be visible.
            Clearly this is hard to explain ;)
+
+        .EXAMPLE
+           Add-DbaRegisteredServer -SqlInstance sql2008 -ServerName sql01 -Group hr\Seattle
+
+           Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible within the Seattle group which is in the hr group.
+
+        .EXAMPLE
+           Get-DbaRegisteredServerGroup -SqlInstance sql2008 -Group hr\Seattle | Add-DbaRegisteredServer -ServerName sql01111
+
+           Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible within the Seattle group which is in the hr group.
     #>
-    
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
-        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
@@ -67,12 +84,16 @@ function Add-DbaRegisteredServer {
         [string]$Name = $ServerName,
         [string]$Description,
         [object]$Group,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup[]]$InputObject,
         [switch]$EnableException
     )
-    begin {
-        $InputObject = @()
-    }
     process {
+        if (-not $InputObject -and -not $SqlInstance) {
+            Stop-Function -Message "You must either pipe in a registered server group or specify a sqlinstance"
+            return
+        }
+
         foreach ($instance in $SqlInstance) {
             if ((Test-Bound -ParameterName Group)) {
                 if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
@@ -85,28 +106,32 @@ function Add-DbaRegisteredServer {
             else {
                 $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
             }
-            
-            foreach ($reggroup in $InputObject) {
-                $parentserver = Get-RegServerParent -InputObject $reggroup
-                
-                if ($null -eq $parentserver) {
-                    Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
+
+            if (-not $InputObject) {
+                Stop-Function -Message "No matching groups found on $instance" -Continue
+            }
+        }
+
+        foreach ($reggroup in $InputObject) {
+            $parentserver = Get-RegServerParent -InputObject $reggroup
+
+            if ($null -eq $parentserver) {
+                Stop-Function -Message "Something went wrong and it's hard to explain, sorry. This basically shouldn't happen." -Continue
+            }
+
+            $server = $parentserver.ServerConnection.SqlConnectionObject
+
+            if ($Pscmdlet.ShouldProcess($parentserver.SqlInstance, "Adding $ServerName")) {
+                try {
+                    $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($reggroup, $Name)
+                    $newserver.ServerName = $ServerName
+                    $newserver.Description = $Description
+                    $newserver.Create()
+
+                    Get-DbaRegisteredServer -SqlInstance $server -Name $Name -ServerName $ServerName
                 }
-                
-                $server = $parentserver.ServerConnection.SqlConnectionObject
-                
-                if ($Pscmdlet.ShouldProcess($reggroup.Parent, "Adding $reggroup")) {
-                    try {
-                        $newserver = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($reggroup, $Name)
-                        $newserver.ServerName = $ServerName
-                        $newserver.Description = $Description
-                        $newserver.Create()
-                        
-                        Get-DbaRegisteredServer -SqlInstance $server -Name $Name -ServerName $ServerName
-                    }
-                    catch {
-                        Stop-Function -Message "Failed to add $ServerName on $($parentserver.SqlInstance)" -ErrorRecord $_ -Continue
-                    }
+                catch {
+                    Stop-Function -Message "Failed to add $ServerName on $($parentserver.SqlInstance)" -ErrorRecord $_ -Continue
                 }
             }
         }
