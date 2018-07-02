@@ -142,7 +142,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.count | Should Be 2
         }
         It "Should have returned 2 specific files"{
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\Simple\test_LOG_20160629_141330.trn".\test
+            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\Simple\test_LOG_20160629_141330.trn"
             $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\Simple\test_FULL_20160629_141320.bak"
         }
     }
@@ -182,15 +182,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Check complex filtering to point in time without diff"{
         #Doing the date this way to avoid any locality issues.
-        $date = Get-date -Day 29 -Month 6 -Year 2016 -hour 14 -Minute 20 -Second 30
+        $date = Get-date -Day 29 -Month 6 -Year 2016 -hour 14 -Minute 15
         $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\OlaMsFilter\Complex -MaintenanceSolution -RestoreTime $Date
         It "Should return 3 results" {
             $results.count | Should Be 3
         }
         It "Should retun 3 specific files" {
             $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Full\test_FULL_20160629_141300.bak"
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Log\test_LOG_20160629_142000.trn"
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Diff\test_DIFF_20160629_141900.bak"
+            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Log\test_LOG_20160629_141400.trn"
+            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Log\test_LOG_20160629_141500.trn"
         }
     }
 
