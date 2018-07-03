@@ -28,8 +28,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newServer3 = Add-DbaRegisteredServer -SqlInstance $script:instance1 -ServerName $srvName3 -Name $regSrvName3 -Description $regSrvDesc3
         }
         AfterAll {
-            Get-DbaRegisteredServer -SqlInstance $script:instance1, $script:instance2 -Name $regSrvName, $regSrvName2, $regSrvName3 | Remove-DbaRegisteredServer -Confirm:$false
-            Get-DbaRegisteredServerGroup -SqlInstance $script:instance1, $script:instance2 -Group $group, $group2 | Remove-DbaRegisteredServerGroup -Confirm:$false
+            Get-DbaRegisteredServer -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServer -Confirm:$false
+            Get-DbaRegisteredServerGroup -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServerGroup -Confirm:$false
         }
         
         It "imports group objects" {
@@ -50,6 +50,22 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results4 = Import-DbaRegisteredServer -SqlInstance $script:instance2 -Path $results3
             $results4.ServerName | Should -Be $newServer3.ServerName
             $results4.Description | Should -Be $newServer3.Description
+        }
+        It "imports from a random object so long as it has ServerName" {
+            $object = [pscustomobject]@{
+                ServerName = 'dbatoolsci-randobject'
+            }
+            $results = $object | Import-DbaRegisteredServer -SqlInstance $script:instance2
+            $results.ServerName | Should -Be 'dbatoolsci-randobject'
+            $results.Name | Should -Be 'dbatoolsci-randobject'
+        }
+        It "does not import object if ServerName does not exist" {
+            $object = [pscustomobject]@{
+                Name = 'dbatoolsci-randobject'
+            }
+            $results = $object | Import-DbaRegisteredServer -SqlInstance $script:instance2 -WarningAction SilentlyContinue -WarningVariable warn
+            $results | Should -Be $null
+            $warn | Should -Match 'No servers added'
         }
     }
 }
