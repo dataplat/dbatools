@@ -192,13 +192,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should -Be "BACKUP DATABASE [master] TO  DISK = N'c:\notexists\file.bak' WITH NOFORMAT, NOINIT, NOSKIP, REWIND, NOUNLOAD,  STATS = 1"
         }
     }
-    
-    Context "Should only output a T-SQL String if OutputScriptOnly specified" {
-        It "backs up to Azure properly" {
-            $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl https://dbatools.blob.core.windows.net/sql -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure.bak -WithFormat
-            $results.Database | Should -Be 'dbatoolsci_azure'
-            $results.DeviceType | Should -Be 'URL'
-            $results.BackupFile | Should -Be 'dbatoolsci_azure.bak'
+    if ($env:azurepasswd) {
+        Context "Azure works" {
+            It "backs up to Azure properly" {
+                $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl https://dbatools.blob.core.windows.net/sql -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure.bak -WithFormat
+                $results.Database | Should -Be 'dbatoolsci_azure'
+                $results.DeviceType | Should -Be 'URL'
+                $results.BackupFile | Should -Be 'dbatoolsci_azure.bak'
+            }
         }
     }
 }

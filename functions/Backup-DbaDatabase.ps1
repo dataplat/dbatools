@@ -430,6 +430,7 @@ function Backup-DbaDatabase {
                     }
                     
                     if ($WithFormat) {
+                        Write-Message -Message "WithFormat specified. Ensuring Initialize and SkipTapeHeader are set to true." -Level Verbose
                         $Initialize = $true
                         $SkipTapeHeader = $true
                     }
