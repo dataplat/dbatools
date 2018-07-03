@@ -117,7 +117,7 @@ function Invoke-DbaLogShippingRecovery {
                 $instancename = "MSSQLSERVER"
             }
 
-            Write-Message -Message "Attempting to connect to Sql Server" -Level Output
+            Write-Message -Message "Connecting to Sql Server" -Level Output
             try {
                 $server = Connect-SqlInstance -SqlInstance $sqlinstance -SqlCredential $SqlCredential
             }

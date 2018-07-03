@@ -94,73 +94,53 @@ function New-DbaLogShippingSecondaryDatabase {
     param (
         [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [object]$SqlInstance,
-
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
-
+        [DbaInstanceParmeter]$SqlInstance,
+        [PSCredential]$SqlCredential,
         [int]$BufferCount = -1,
-
         [int]$BlockSize = -1,
-
         [switch]$DisconnectUsers,
-
         [int]$HistoryRetention = 14420,
-
         [int]$MaxTransferSize,
-
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [object]$PrimaryServer,
-
-        [System.Management.Automation.PSCredential]
-        $PrimarySqlCredential,
-
+        [DbaInstanceParameter]$PrimaryServer,
+        [PSCredential]$PrimarySqlCredential,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [object]$PrimaryDatabase,
-
         [int]$RestoreAll = 1,
-
         [int]$RestoreDelay = 0,
-
         [ValidateSet(0, 'NoRecovery', 1, 'Standby')]
         [object]$RestoreMode = 0,
-
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [int]$RestoreThreshold,
-
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [object]$SecondaryDatabase,
-
         [int]$ThresholdAlert = 14420,
-
         [switch]$ThresholdAlertEnabled,
-
         [Alias('Silent')]
         [switch]$EnableException,
-
         [switch]$Force
     )
 
     # Try connecting to the instance
-    Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
+    Write-Message -Message "Connecting to $SqlInstance" -Level Verbose
     try {
         $ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
     catch {
-        Stop-Function -Message "Could not connect to Sql Server instance $SqlInstance.`n$_" -Target $SqlInstance -Continue
+        Stop-Function -Message "Failure" -Category ConnectionError -Target $SqlInstance -ErrorRecord $_ -Continue
     }
 
     # Try connecting to the instance
-    Write-Message -Message "Attempting to connect to $PrimaryServer" -Level Verbose
+    Write-Message -Message "Connecting to $PrimaryServer" -Level Verbose
     try {
         $ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
     }
     catch {
-        Stop-Function -Message "Could not connect to Sql Server instance $PrimaryServer.`n$_" -Target $PrimaryServer -Continue
+        Stop-Function -Message "Failure" -Category ConnectionError -Target $PrimaryServer -ErrorRecord $_ -Continue
     }
 
     # Check if the database is present on the primary sql server

@@ -64,7 +64,7 @@ function Get-DbaStartupParameter {
 
                 $computerName = (Resolve-DbaNetworkName -ComputerName $computerName).FullComputerName
 
-                Write-Message -Level Verbose -message "Attempting to connect to $computerName"
+                Write-Message -Level Verbose -message "Connecting to $computerName"
 
                 if ($instanceName.Length -eq 0) { $instanceName = "MSSQLSERVER" }
 

@@ -50,7 +50,7 @@ function Get-DbaOperatingSystem {
     )
     process {
         foreach ($computer in $ComputerName) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $computer"
+            Write-Message -Level Verbose -Message "Connecting to $computer"
             $server = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential
 
             $computerResolved = $server.FullComputerName

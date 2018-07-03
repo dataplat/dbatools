@@ -115,13 +115,13 @@ function Copy-DbaLogin {
             Copy-DbaLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
 
             Copies OldUser and then renames it to newlogin.
-    
+
         .EXAMPLE
             Get-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017
 
             Displays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.
     #>
-    
+
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     Param (
         [parameter(ParameterSetName = "SqlInstance", Mandatory)]
@@ -492,35 +492,35 @@ function Copy-DbaLogin {
             } #end for each $sourceLogin
         } #end function Copy-Login
     }
-    
+
     process {
-        
+
         if (Test-Bound -ParameterName InputObject) {
             $Source = $InputObject[0].Parent.Name
             $Sourceserver = $InputObject[0].Parent
             $Login = $InputObject.Name
         }
         else {
-            Write-Message -Level Verbose -Message "Attempting to connect to SQL Servers."
+            Write-Message -Level Verbose -Message "Connecting to SQL Servers."
             $sourceServer = Connect-SqlInstance -RegularUser -SqlInstance $Source -SqlCredential $SourceSqlCredential
             $source = $sourceServer.DomainInstanceName
         }
-        
+
         if ($Destination) {
             $destServer = Connect-SqlInstance -RegularUser -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
             $Destination = $destServer.DomainInstanceName
-            
+
             $sourceVersionMajor = $sourceServer.VersionMajor
             $destVersionMajor = $destServer.VersionMajor
             if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
                 Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
-            
+
             if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
                 Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
         }
-        
+
         if ($SyncOnly) {
             Sync-DbaLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
             return
