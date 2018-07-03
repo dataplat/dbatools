@@ -53,32 +53,24 @@ function New-DbaLogShippingPrimarySecondary {
     param (
         [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [object]$SqlInstance,
-
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
-
+        [DbaInstanceParameter]$SqlInstance,
+        [PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [object]$PrimaryDatabase,
-
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [object]$SecondaryDatabase,
-
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [object]$SecondaryServer,
-
-        [System.Management.Automation.PSCredential]
-        $SecondarySqlCredential,
-
+        [DBAInstanceParameter]$SecondaryServer,
+        [PSCredential]$SecondarySqlCredential,
         [Alias('Silent')]
         [switch]$EnableException
     )
 
     # Try connecting to the instance
-    Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
+    Write-Message -Message "Connecting to $SqlInstance" -Level Verbose
     try {
         $ServerPrimary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
@@ -87,7 +79,7 @@ function New-DbaLogShippingPrimarySecondary {
     }
 
     # Try connecting to the instance
-    Write-Message -Message "Attempting to connect to $SecondaryServer" -Level Verbose
+    Write-Message -Message "Connecting to $SecondaryServer" -Level Verbose
     try {
         $ServerSecondary = Connect-SqlInstance -SqlInstance $SecondaryServer -SqlCredential $SecondarySqlCredential
     }

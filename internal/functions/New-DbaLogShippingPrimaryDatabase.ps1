@@ -142,7 +142,7 @@ function New-DbaLogShippingPrimaryDatabase {
     )
 
     # Try connecting to the instance
-    Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
+    Write-Message -Message "Connecting to $SqlInstance" -Level Verbose
     try {
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
