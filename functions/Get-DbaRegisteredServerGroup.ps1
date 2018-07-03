@@ -88,9 +88,11 @@ function Get-DbaRegisteredServerGroup {
                     if ($currentgroup -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                         $currentgroup = Get-RegServerGroupReverseParse -object $currentgroup
                     }
-
-                    $currentgroup = $currentgroup.Replace('DatabaseEngineServerGroup\', '')
-
+                    
+                    if ($currentgroup -match 'DatabaseEngineServerGroup\\') {
+                        $currentgroup = $currentgroup.Replace('DatabaseEngineServerGroup\', '')
+                    }
+                    
                     if ($currentgroup -match '\\') {
                         $split = $currentgroup.Split('\\')
                         $i = 0

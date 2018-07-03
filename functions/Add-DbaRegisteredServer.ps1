@@ -93,9 +93,14 @@ function Add-DbaRegisteredServer {
             Stop-Function -Message "You must either pipe in a registered server group or specify a sqlinstance"
             return
         }
-
+        
+        # double check in case a null name was bound
+        if (-not $Name) {
+            $Name = $ServerName
+        }
+        
         foreach ($instance in $SqlInstance) {
-            if ((Test-Bound -ParameterName Group)) {
+            if (($Group)) {
                 if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                     $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group.Name
                 }
