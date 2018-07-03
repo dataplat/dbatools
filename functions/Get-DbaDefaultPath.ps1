@@ -60,6 +60,11 @@ function Get-DbaDefaultPath {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            # Check to see if the SQL Server targeted is Azure SQLDB as the paths cannot be collected.
+            if($server.EngineEdition -eq "SqlDatabase") {
+                Stop-Function -Message "Get-DbaDefaultPath not supported with Azure SQLDB. $instance skipped." -Target $instance -Continue
+            }
+
             $datapath = $server.DefaultFile
 
             if ($datapath.Length -eq 0) {
