@@ -10,6 +10,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             
             $group2 = "dbatoolsci-group1a"
             $newGroup2 = Add-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Name $group2
+            
+            $hellagroup = Get-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Id 1 | Add-DbaRegisteredServerGroup -Name dbatoolsci-first | Add-DbaRegisteredServerGroup -Name dbatoolsci-second | Add-DbaRegisteredServerGroup -Name dbatoolsci-third | Add-DbaRegisteredServer -ServerName dbatoolsci-test -Description ridiculous
+        }
+        AfterAll {
+            Get-DbaRegisteredServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServerGroup -Confirm:$false
         }
         
         It "supports dropping via the pipeline" {
@@ -22,6 +27,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results = Remove-DbaRegisteredServerGroup -Confirm:$false -SqlInstance $script:instance1 -Name $group2
             $results.Name | Should -Be $group2
             $results.Status | Should -Be 'Dropped'
+        }
+        
+        It "supports hella long group name" {
+            $results = Get-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Group $hellagroup.Group
+            $results.Name | Should -Be 'dbatoolsci-third'
         }
     }
 }

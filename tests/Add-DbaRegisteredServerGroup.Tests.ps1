@@ -10,7 +10,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $description = "group description"
         }
         AfterAll {
-            Get-DbaRegisteredServerGroup -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServerGroup -Confirm:$false
+            Get-DbaRegisteredServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServerGroup -Confirm:$false
         }
         
         It "adds a registered server group" {
@@ -23,6 +23,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.Name | Should -Be $group2
             $results.Description | Should -Be $description
             $results.SqlInstance | Should -Not -Be $null
+        }
+        It "supports hella pipe" {
+            $results = Get-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Id 1 | Add-DbaRegisteredServerGroup -Name dbatoolsci-first | Add-DbaRegisteredServerGroup -Name dbatoolsci-second | Add-DbaRegisteredServerGroup -Name dbatoolsci-third | Add-DbaRegisteredServer -ServerName dbatoolsci-test -Description ridiculous
+            $results.Group | Should -Be 'dbatoolsci-first\dbatoolsci-second\dbatoolsci-third'
         }
     }
 }
