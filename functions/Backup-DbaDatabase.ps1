@@ -165,7 +165,7 @@ function Backup-DbaDatabase {
         if ($SqlInstance.length -ne 0) {
             Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
             try {
-                $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
             }
             catch {
                 Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
@@ -355,7 +355,7 @@ function Backup-DbaDatabase {
                     $FinalBackupPath += $FinalBackupPath[0]
                 }
             }
-            
+
             if ($AzureBaseUrl -or $AzureCredential) {
                 $slash = "/"
             }
