@@ -23,6 +23,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         Get-DbaDatabase -SqlInstance $script:instance1 -Database "dbatoolsci_singlerestore" | Remove-DbaDatabase -Confirm:$false
         Get-DbaDatabase -SqlInstance $script:instance2 -Database $DestDbRandom | Remove-DbaDatabase -Confirm:$false
+        $server = Connect-DbaInstance -SqlInstance $script:instance2
+        $sql = "CREATE CREDENTIAL [https://dbatools.blob.core.windows.net/sql] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
+        $server.Query($sql)
+        $server.Query("CREATE DATABASE dbatoolsci_azure")
     }
     AfterAll {
         Get-DbaDatabase -SqlInstance $script:instance1 -Database "dbatoolsci_singlerestore" | Remove-DbaDatabase -Confirm:$false
@@ -184,6 +188,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         it "Should return BACKUP DATABASE [master] TO  DISK = N'c:\notexists\file.bak' WITH NOFORMAT, NOINIT, NOSKIP, REWIND, NOUNLOAD,  STATS = 1" {
             $results | Should -Be "BACKUP DATABASE [master] TO  DISK = N'c:\notexists\file.bak' WITH NOFORMAT, NOINIT, NOSKIP, REWIND, NOUNLOAD,  STATS = 1"
+        }
+    }
+    
+    Context "Should only output a T-SQL String if OutputScriptOnly specified" {
+        It -Skip "backs up to Azure properly" {
+            $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl https://dbatools.blob.core.windows.net/sql -Database dbatoolsci_azure
+            $results.Database | Should -Be 'dbatoolsci_azure'
+            $results.DeviceType | Should -Be 'URL'
         }
     }
 }

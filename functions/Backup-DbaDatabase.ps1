@@ -68,6 +68,12 @@ function Backup-DbaDatabase {
             .PARAMETER Verify
                 If this switch is enabled, the backup will be verified by running a RESTORE VERIFYONLY against the SqlInstance
 
+            .PARAMETER WithFormat
+                 Formats the media as the first step of the backup operation.
+
+            .PARAMETER Initialize
+                 Initializes the media as part of the backup operation.
+
             .PARAMETER InputObject
                 Internal parameter
 
@@ -154,6 +160,8 @@ function Backup-DbaDatabase {
         [string]$AzureCredential,
         [switch]$NoRecovery,
         [switch]$BuildPath,
+        [switch]$WithFormat,
+        [switch]$Initialize,
         [switch]$IgnoreFileChecks,
         [switch]$OutputScriptOnly,
         [Alias('Silent')]
@@ -416,7 +424,13 @@ function Backup-DbaDatabase {
                     else {
                         $device.DeviceType = "File"
                     }
+                    if ($WithFormat) {
+                        $Initialize = $true
+                    }
+                    $backup.FormatMedia = $WithFormat
+                    $backup.Initialize = $Initialize
                     $device.Name = $backupfile
+                    write-warning $backup.Initialize
                     $backup.Devices.Add($device)
                 }
                 $humanBackupFile = $FinalBackupPath -Join ','
