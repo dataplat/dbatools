@@ -114,21 +114,21 @@ function New-DbaLogShippingSecondaryPrimary {
     )
 
     # Try connecting to the instance
-    Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
+    Write-Message -Message "Connecting to $SqlInstance" -Level Verbose
     try {
         $ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
     catch {
-        Stop-Function -Message "Could not connect to Sql Server instance"  -ErrorRecord $_ -Target $SqlInstance -Continue
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
     }
 
     # Try connecting to the instance
-    Write-Message -Message "Attempting to connect to $PrimaryServer" -Level Verbose
+    Write-Message -Message "Connecting to $PrimaryServer" -Level Verbose
     try {
         $ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
     }
     catch {
-        Stop-Function -Message "Could not connect to Sql Server instance"  -ErrorRecord $_ -Target $PrimaryServer -Continue
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $PrimaryServer -Continue
     }
 
     # Check if the backup UNC path is correct and reachable

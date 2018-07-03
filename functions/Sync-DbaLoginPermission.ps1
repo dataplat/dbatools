@@ -129,19 +129,19 @@ function Sync-DbaLoginPermission {
         }
     }
     process {
-        
+
         if ($source -eq $destination) {
             Stop-Function -Message "Source and Destination SQL Servers are the same. Quitting."
             return
         }
-        
-        Write-Message -Level Verbose -Message "Attempting to connect to SQL Servers."
+
+        Write-Message -Level Verbose -Message "Connecting to SQL Servers."
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 8
         $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -MinimumVersion 8
-        
+
         $source = $sourceServer.DomainInstanceName
         $destination = $destServer.DomainInstanceName
-        
+
         if (!$Login) {
             $login = $sourceServer.Logins.Name
         }

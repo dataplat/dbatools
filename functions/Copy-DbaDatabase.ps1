@@ -665,7 +665,7 @@ function Copy-DbaDatabase {
             return
         }
 
-        Write-Message -Level Verbose -Message "Attempting to connect to SQL Servers."
+        Write-Message -Level Verbose -Message "Connecting to SQL Servers."
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 

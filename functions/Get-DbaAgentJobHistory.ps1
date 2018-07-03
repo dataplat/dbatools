@@ -245,7 +245,7 @@ function Get-DbaAgentJobHistory {
                         2 { "Retry" }
                         3 { "Canceled" }
                     }
-                    
+
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name ComputerName -value $server.NetName
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
@@ -294,7 +294,7 @@ function Get-DbaAgentJobHistory {
         }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

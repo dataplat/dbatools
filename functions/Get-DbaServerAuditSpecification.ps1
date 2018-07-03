@@ -50,7 +50,7 @@ function Get-DbaServerAuditSpecification {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Verbose "Attempting to connect to $instance"
+            Write-Verbose "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

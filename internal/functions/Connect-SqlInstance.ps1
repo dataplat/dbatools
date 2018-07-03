@@ -224,7 +224,7 @@ function Connect-SqlInstance {
     }
 
     if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
-        throw "SQL Azure DB not supported :("
+        throw "Azure SQL Database not supported"
     }
 
     if (-not $RegularUser) {

@@ -172,7 +172,7 @@ function Measure-DbaDiskSpaceRequirement {
         }
     }
     process {
-        Write-Message -Level Verbose -Message "Attempting to connect to SQL Servers."
+        Write-Message -Level Verbose -Message "Connecting to SQL Servers."
         try {
             Write-Message -Level Verbose -Message "Connecting to $Source."
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
