@@ -92,7 +92,7 @@ function Get-DbaProcess {
     process {
         foreach ($instance in $sqlinstance) {
 
-            Write-Message -Message "Attempting to connect to $instance." -Level Verbose
+            Write-Message -Message "Connecting to $instance." -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
