@@ -82,7 +82,6 @@ function Import-DbaRegisteredServer {
             if ((Test-Bound -ParameterName Path)) {
                 $InputObject += Get-ChildItem -Path $Path
             }
-
             if ((Test-Bound -ParameterName Group) -and (Test-Bound -Not -ParameterName Path)) {
                 if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                     $groupobject = $Group
