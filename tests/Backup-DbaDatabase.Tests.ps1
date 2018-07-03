@@ -34,6 +34,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         if (Test-Path $DestBackupDir) {
             Remove-Item "$DestBackupDir\*" -Force -Recurse
         }
+        Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
+        $server.Query("DROP CREDENTIAL [https://dbatools.blob.core.windows.net/sql]")
     }
     Context "Should not backup if database and exclude match" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master -Exclude master
@@ -192,10 +194,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     
     Context "Should only output a T-SQL String if OutputScriptOnly specified" {
-        It -Skip "backs up to Azure properly" {
-            $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl https://dbatools.blob.core.windows.net/sql -Database dbatoolsci_azure
+        It "backs up to Azure properly" {
+            $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl https://dbatools.blob.core.windows.net/sql -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure.bak -WithFormat
             $results.Database | Should -Be 'dbatoolsci_azure'
             $results.DeviceType | Should -Be 'URL'
+            $results.BackupFile | Should -Be 'dbatoolsci_azure.bak'
         }
     }
 }
