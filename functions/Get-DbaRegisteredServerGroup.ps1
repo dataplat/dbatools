@@ -18,6 +18,9 @@ function Get-DbaRegisteredServerGroup {
         .PARAMETER ExcludeGroup
             Specifies one or more Central Management Server groups to exclude.
 
+        .PARAMETER Id
+            Get group by Id(s). This parameter only works if the group has a registered server in it.
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
@@ -42,17 +45,17 @@ function Get-DbaRegisteredServerGroup {
             Gets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential
+            Get-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential
 
-            Gets the top level groups from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
+            Gets the top level groups from the CMS on sqlserver2014a, using alternative credentials to authenticate to the server.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting
+            Get-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting
 
             Gets the HR and Accounting groups from the CMS on sqlserver2014a.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\Development
+            Get-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -Group HR\Development
 
             Returns the sub-group Development of the HR group from the CMS on sqlserver2014a.
     #>
@@ -64,77 +67,92 @@ function Get-DbaRegisteredServerGroup {
         [PSCredential]$SqlCredential,
         [object[]]$Group,
         [object[]]$ExcludeGroup,
+        [int[]]$Id,
         [switch]$EnableException
     )
-    begin {
-        function Find-CmsGroup {
-            [OutputType([object[]])]
-            [cmdletbinding()]
-            param(
-                $CmsGrp,
-                $Base = $null,
-                $Stopat
-            )
-            $results = @()
-
-                foreach ($el in $CmsGrp) {
-                if ($null -eq $Base -or [string]::IsNullOrWhiteSpace($Base) ) {
-                    $partial = $el.name
-                }
-                else {
-                    $partial = "$Base\$($el.name)"
-                }
-                if ($partial -eq $Stopat) {
-                    return $el
-                }
-                else {
-                    foreach ($elg in $el.ServerGroups) {
-                        $results += Find-CmsGroup -CmsGrp $elg -Base $partial -Stopat $Stopat
-                    }
-                }
-            }
-            return $results
-        }
-    }
-
     process {
-
-        if (Test-FunctionInterrupt) {
-            return
-        }
-
-        $groups = @()
         foreach ($instance in $SqlInstance) {
-
             try {
-                $cmsStore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
+                Write-Message -Level Verbose -Message "Connecting to $instance"
+                $server = Get-DbaRegisteredServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
             }
             catch {
-                Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
+                Stop-Function -Message "Cannot access Central Management Server '$instance'" -ErrorRecord $_ -Continue
             }
 
+            $groups = @()
+
             if ($group) {
-                foreach ($currentGroup in $group) {
-                    $cms = Find-CmsGroup -CmsGrp $cmsStore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
-                    if ($null -eq $cms) {
-                        Write-Message -Level Output -Message "No groups found matching '$($currentGroup)' on instance '$instance'."
-                        continue
+                foreach ($currentgroup in $Group) {
+                    Write-Message -Level Verbose -Message "Processing $currentgroup"
+                    if ($currentgroup -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
+                        $currentgroup = Get-RegServerGroupReverseParse -object $currentgroup
                     }
-                    $groups += $cms
+                    
+                    if ($currentgroup -match 'DatabaseEngineServerGroup\\') {
+                        $currentgroup = $currentgroup.Replace('DatabaseEngineServerGroup\', '')
+                    }
+                    
+                    if ($currentgroup -match '\\') {
+                        $split = $currentgroup.Split('\\')
+                        $i = 0
+                        $groupobject = $server.DatabaseEngineServerGroup
+                        do {
+                            if ($groupobject) {
+                                $groupobject = $groupobject.ServerGroups[$split[$i]]
+                                Write-Message -Level Verbose -Message "Parsed $($groupobject.Name)"
+                            }
+                        }
+                        until ($i++ -eq $split.GetUpperBound(0))
+                        if ($groupobject) {
+                            $groups += $groupobject
+                        }
+                    }
+                    else {
+                        try {
+                            $thisgroup = $server.DatabaseEngineServerGroup.ServerGroups[$currentgroup]
+                            if ($thisgroup) {
+                                Write-Message -Level Verbose -Message "Added $($thisgroup.Name)"
+                                $groups += $thisgroup
+                            }
+                        }
+                        catch { }
+                    }
                 }
             }
             else {
-                $groups = $cmsStore.DatabaseEngineServerGroup.ServerGroups
+                Write-Message -Level Verbose -Message "Added all root server groups"
+                $groups = $server.DatabaseEngineServerGroup.ServerGroups
             }
 
-            if (Test-Bound -ParameterName ExcludeGroup) {
-                $groups = $groups | Where-Object Name -notin $ExcludeGroup
+            if ($Group -eq 'DatabaseEngineServerGroup') {
+                Write-Message -Level Verbose -Message "Added root group"
+                $groups = $server.DatabaseEngineServerGroup
             }
 
-            # Close the connection, otherwise using it with the ServersStore will keep it open
-            $cmsStore.ServerConnection.Disconnect()
-            
-            $groups | Select-DefaultView -ExcludeProperty IsLocal, IsSystemServerGroup, IsDropped, Urn, Properties, Metadata, DuplicateFound, PropertyMetadataChanged, PropertyChanged
+            if ($ExcludeGroup) {
+                $excluded = Get-DbaRegisteredServer $server -Group $ExcludeGroup
+                Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
+                $groups = $groups | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
+            }
+
+            if ($Id) {
+                Write-Message -Level Verbose -Message "Filtering for id $Id. Id 1 = default."
+                if ($Id -eq 1) {
+                    $groups = $server.DatabaseEngineServerGroup | Where-Object Id -in $Id
+                }
+                else {
+                    $groups = $server.DatabaseEngineServerGroup.GetDescendantRegisteredServers().Parent | Where-Object Id -in $Id
+                }
+            }
+
+            foreach ($groupobject in $groups) {
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $server.InstanceName
+                Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name SqlInstance -value $server.SqlInstance
+
+                Select-DefaultView -InputObject $groupobject -Property ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, ServerGroups, RegisteredServers
+            }
         }
     }
 }
