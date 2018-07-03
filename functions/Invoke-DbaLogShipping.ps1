@@ -655,7 +655,7 @@ function Invoke-DbaLogShipping {
         Write-Message -Message "Started log shipping for $SourceSqlInstance to $DestinationSqlInstance" -Level Output
 
         # Try connecting to the instance
-        Write-Message -Message "Attempting to connect to source Sql Server $SourceSqlInstance.." -Level Output
+        Write-Message -Message "Connecting to source Sql Server $SourceSqlInstance.." -Level Output
         try {
             $SourceServer = Connect-SqlInstance -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
         }
@@ -665,7 +665,7 @@ function Invoke-DbaLogShipping {
         }
 
         # Try connecting to the instance
-        Write-Message -Message "Attempting to connect to destination Sql Server $DestinationSqlInstance.." -Level Output
+        Write-Message -Message "Connecting to destination Sql Server $DestinationSqlInstance.." -Level Output
         try {
             $DestinationServer = Connect-SqlInstance -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential
         }
