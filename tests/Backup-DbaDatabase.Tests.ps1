@@ -193,6 +193,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     if ($env:azurepasswd) {
+        Write-Warning 'azure password works, testing'
         Context "Azure works" {
             It "backs up to Azure properly" {
                 $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl https://dbatools.blob.core.windows.net/sql -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure.bak -WithFormat
