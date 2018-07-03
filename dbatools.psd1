@@ -330,7 +330,7 @@
         'Get-DbaAgReplica',
         'Get-DbaAgDatabase',
         'Get-DbaSqlModule',
-        'Get-DbaRegisteredServersStore',
+        'Get-DbaRegisteredServerStore',
         'Sync-DbaLoginPermission',
         'Invoke-Sqlcmd2',
         'New-DbaCredential',

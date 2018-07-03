@@ -1,4 +1,4 @@
-function Get-DbaRegisteredServersStore {
+function Get-DbaRegisteredServerStore {
     <#
         .SYNOPSIS
             Returns a SQL Server Registered Server Store Object
@@ -25,21 +25,21 @@ function Get-DbaRegisteredServersStore {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Get-DbaRegisteredServersStore
+            https://dbatools.io/Get-DbaRegisteredServerStore
 
         .EXAMPLE
-            Get-DbaRegisteredServersStore -SqlInstance sqlserver2014a
+            Get-DbaRegisteredServerStore -SqlInstance sqlserver2014a
 
             Returns a SQL Server Registered Server Store Object from sqlserver2014a
 
         .EXAMPLE
-            Get-DbaRegisteredServersStore -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)
+            Get-DbaRegisteredServerStore -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)
 
             Returns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default")]
+    [CmdletBinding()]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -47,7 +47,7 @@ function Get-DbaRegisteredServersStore {
         [switch]$EnableException
     )
     process {
-        foreach ($Instance in $SqlInstance) {
+        foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
@@ -59,7 +59,7 @@ function Get-DbaRegisteredServersStore {
                 $store = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
             }
             catch {
-                Stop-Function -Message "Cannot access Central Management Server on $instance." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Cannot access Central Management Server on $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             Add-Member -Force -InputObject $store -MemberType NoteProperty -Name ComputerName -value $server.NetName
