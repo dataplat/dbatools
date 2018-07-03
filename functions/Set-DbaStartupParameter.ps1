@@ -393,7 +393,7 @@ function Set-DbaStartupParameter {
 
         $instance = $SqlInstance.ComputerName
         $instancename = $SqlInstance.InstanceName
-        Write-Message -Level Verbose -Message "Attempting to connect to $instancename on $instance"
+        Write-Message -Level Verbose -Message "Connecting to $instancename on $instance"
 
         if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
 
