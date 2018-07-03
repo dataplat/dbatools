@@ -18,6 +18,32 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaPfDataCollectorCounter -ComputerName sql2017 -CollectorSet \u0027System Correlation\u0027 -Collector \r\nDataCollector01  -Counter \u0027\\LogicalDisk(*)\\Avg. Disk Queue Length\u0027\r\n\r\nAdds the \u0027\\LogicalDisk(*)\\Avg. Disk Queue Length\u0027 counter within the DataCollector01 collector within the System \r\nCorrelation collector set on sql2017.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollector | Out-GridView -PassThru | Add-DbaPfDataCollectorCounter -Counter \u0027\\LogicalDisk(*)\\Avg. \r\nDisk Queue Length\u0027 -Confirm\r\n\r\nAllows you to select which Data Collector you\u0027d like to add the counter \u0027\\LogicalDisk(*)\\Avg. Disk Queue Length\u0027 on \r\nlocalhost and prompts for confirmation.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Add-DbaRegisteredServer",
+        "Description":  "Adds registered servers to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaRegisteredServer which\naccepts multiple kinds of input and allows you to add reg servers from different CMSes.",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Author":  "Chrissy LeMaire (@cl)",
+        "Synopsis":  "Adds registered servers to SQL Server Central Management Server (CMS)",
+        "Name":  "Add-DbaRegisteredServer",
+        "Links":  "https://dbatools.io/Add-DbaRegisteredServer",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaRegisteredServer -SqlInstance sql2008 -ServerName sql01\r\n\r\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \r\n\"sql01\" will be visible.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaRegisteredServer -SqlInstance sql2008 -ServerName sql01 -Name \"The 2008 Clustered Instance\" -Description \r\n\"HR\u0027s Dedicated SharePoint instance\"\r\n\r\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, \"The 2008 \r\nClustered Instance\" will be visible.\r\nClearly this is hard to explain ;)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaRegisteredServer -SqlInstance sql2008 -ServerName sql01 -Group hr\\Seattle\r\n\r\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \r\n\"sql01\" will be visible within the Seattle group which is in the hr group.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sql2008 -Group hr\\Seattle | Add-DbaRegisteredServer -ServerName \r\nsql01111\r\n\r\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \r\n\"sql01\" will be visible within the Seattle group which is in the hr group.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Add-DbaRegisteredServerGroup",
+        "Description":  "Adds registered server groups to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaRegisteredServer which\naccepts multiple kinds of input and allows you to add reg servers and groups from different CMSes.",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Author":  "Chrissy LeMaire (@cl)",
+        "Synopsis":  "Adds registered server groups to SQL Server Central Management Server (CMS)",
+        "Name":  "Add-DbaRegisteredServerGroup",
+        "Links":  "https://dbatools.io/Add-DbaRegisteredServerGroup",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaRegisteredServerGroup -SqlInstance sql2012 -Name HR\r\n\r\nCreates a registered server group called HR, in the root of sql2012\u0027s CMS\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaRegisteredServerGroup -SqlInstance sql2012, sql2014 -Name subfolder -Group HR\r\n\r\nCreates a registered server group on sql2012 and sql2014 called subfolder within the HR group\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sql2012, sql2014 -Group HR | Add-DbaRegisteredServerGroup -Name \r\nsubfolder\r\n\r\nCreates a registered server group on sql2012 and sql2014 called subfolder within the HR group of each server\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Backup-DbaDatabase",
         "Description":  "Performs a backup of a specified type of 1 or more databases on a single SQL Server Instance. These backups may be Full, Differential or Transaction log backups.",
         "Tags":  [
@@ -653,6 +679,19 @@
         "Name":  "Export-DbaPfDataCollectorSetTemplate",
         "Links":  "https://dbatools.io/Export-DbaPfDataCollectorSetTemplate",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Path C:\\temp\\pf\r\n\r\nExports all data collector sets from to the C:\\temp\\pf folder.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet ComputerName sql2017 -CollectorSet \u0027System Correlation\u0027 | \r\nExport-DbaPfDataCollectorSetTemplate -Path C:\\temp\r\n\r\nExports the \u0027System Correlation\u0027 data collector set from sql2017 to C:\\temp.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Export-DbaRegisteredServer",
+        "Description":  "Exports registered servers and registered server groups to file",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Author":  "Chrissy LeMaire (@cl)",
+        "Synopsis":  "Exports registered servers and registered server groups to file",
+        "Name":  "Export-DbaRegisteredServer",
+        "Links":  "https://dbatools.io/Export-DbaRegisteredServer",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaRegisteredServer -SqlInstance sql2008\r\n\r\nExports all Registered Server and Registered Server Groups on sql2008 to an automatically generated file name in the \r\ncurrent directory\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaRegisteredServer -SqlInstance sql2008 -Group hr\\Seattle -Path C:\\temp\\Seattle.xml\r\n\r\nExports all Registered Server and Registered Server Groups with the Seattle group within the HR group on sql2008 to \r\nC:\\temp\\Seattle.xml\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2008, sql2012 | Export-DbaRegisteredServer\r\n\r\nExports all registered servers on sql2008 and sql2012. Warning - each one will have its own individual file. Consider \r\npiping groups.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sql2008, sql2012 | Export-DbaRegisteredServer\r\n\r\nExports all registered servers on sql2008 and sql2012, organized by group.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Export-DbaScript",
@@ -2109,19 +2148,19 @@
         "Synopsis":  "Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).",
         "Name":  "Get-DbaRegisteredServerGroup",
         "Links":  "https://dbatools.io/Get-DbaRegisteredServerGroup",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sqlserver2014a\r\n\r\nGets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential\r\n\r\nGets the top level groups from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting\r\n\r\nGets the HR and Accounting groups from the CMS on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\\Development\r\n\r\nReturns the sub-group Development of the HR group from the CMS on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sqlserver2014a\r\n\r\nGets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential\r\n\r\nGets the top level groups from the CMS on sqlserver2014a, using alternative credentials to authenticate to the server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting\r\n\r\nGets the HR and Accounting groups from the CMS on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -Group HR\\Development\r\n\r\nReturns the sub-group Development of the HR group from the CMS on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Get-DbaRegisteredServersStore",
+        "CommandName":  "Get-DbaRegisteredServerStore",
         "Description":  "Returns a SQL Server Registered Server Store object - useful for working with Central Management Store",
         "Tags":  [
                      "RegisteredServer",
                      "CMS"
                  ],
         "Synopsis":  "Returns a SQL Server Registered Server Store Object",
-        "Name":  "Get-DbaRegisteredServersStore",
-        "Links":  "https://dbatools.io/Get-DbaRegisteredServersStore",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServersStore -SqlInstance sqlserver2014a\r\n\r\nReturns a SQL Server Registered Server Store Object from sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServersStore -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)\r\n\r\nReturns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Name":  "Get-DbaRegisteredServerStore",
+        "Links":  "https://dbatools.io/Get-DbaRegisteredServerStore",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerStore -SqlInstance sqlserver2014a\r\n\r\nReturns a SQL Server Registered Server Store Object from sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerStore -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)\r\n\r\nReturns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaResourceGovernorClassifierFunction",
@@ -2700,6 +2739,19 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template \u0027Long Running Query\u0027\r\n\r\nCreates a new data collector set named \u0027Long Running Query\u0027 from the dbatools repository on the SQL Server sql2017.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template \u0027Long Running Query\u0027 -DisplayName \u0027New Long \r\nrunning query\u0027 -Confirm\r\n\r\nCreates a new data collector set named \"New Long Running Query\" using the \u0027Long Running Query\u0027 template. Forces a \r\nconfirmation if the template exists.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -SqlInstance sql2017 -Session db_ola_health | Remove-DbaData collector set\r\n\r\nImport-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaData collector set\r\n\r\nImports a session if it exists, then recreates it using a template.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -SqlInstance \r\nsql2017\r\n\r\nAllows you to select a Session template then import to an instance named sql2017.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaPfDataCollectorSetTemplate -SqlInstance sql2017 -Template \u0027Long Running Query\u0027 -Instance SHAREPOINT\r\n\r\nCreates a new data collector set named \u0027Long Running Query\u0027 from the dbatools repository on the SQL Server sql2017 for \r\nboth the default and the SHAREPOINT instance.\r\n\r\nIf you\u0027d like to remove counters for the default instance, use Remove-DbaPfDataCollectorCounter.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Import-DbaRegisteredServer",
+        "Description":  "Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Author":  "Chrissy LeMaire (@cl)",
+        "Synopsis":  "Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)",
+        "Name":  "Import-DbaRegisteredServer",
+        "Links":  "https://dbatools.io/Import-DbaRegisteredServer",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaRegisteredServer -SqlInstance sql2012 -Path C:\\temp\\corp-regservers.xml\r\n\r\nImports C:\\temp\\corp-regservers.xml to the CMS on sql2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaRegisteredServer -SqlInstance sql2008 -Group hr\\Seattle -Path C:\\temp\\Seattle.xml\r\n\r\nImports C:\\temp\\Seattle.xml to Seattle subgroup within the hr group on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2008, sql2012 | Import-DbaRegisteredServer -SqlInstance sql2017\r\n\r\nImports all registered servers from sql2008 and sql2012 to sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sql2008 -Group hr\\Seattle | Import-DbaRegisteredServer -SqlInstance \r\nsql2017 -Group Seattle\r\n\r\nImports all registered servers from the hr\\Seattle group on sql2008 to the Seattle group on sql2017\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Import-DbaSpConfigure",
         "Description":  "Updates sp_configure settings on destination server.",
         "Synopsis":  "Updates sp_configure settings on destination server.",
@@ -2986,6 +3038,32 @@
         "Name":  "Mount-DbaDatabase",
         "Links":  "https://dbatools.io/Mount-DbaDatabase",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$fileStructure = New-Object System.Collections.Specialized.StringCollection\r\n\r\n$fileStructure.Add(\"E:\\archive\\example.mdf\")\r\n$filestructure.Add(\"E:\\archive\\example.ldf\")\r\n$filestructure.Add(\"E:\\archive\\example.ndf\")\r\nMount-DbaDatabase -SqlInstance sql2016 -Database example -FileStructure $fileStructure\r\n\r\nAttaches a database named \"example\" to sql2016 with the files \"E:\\archive\\example.mdf\", \"E:\\archive\\example.ldf\" and \r\n\"E:\\archive\\example.ndf\". The database owner will be set to sa and the attach option is None.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eMount-DbaDatabase -SqlInstance sql2016 -Database example\r\n\r\nSince the FileStructure was not provided, this command will attempt to determine it based on backup history. If found, \r\na database named example will be attached to sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eMount-DbaDatabase -SqlInstance sql2016 -Database example -WhatIf\r\n\r\nShows what would happen if the command were executed (without actually performing the command)\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Move-DbaRegisteredServer",
+        "Description":  "Moves registered servers around SQL Server Central Management Server (CMS)",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Author":  "Chrissy LeMaire (@cl)",
+        "Synopsis":  "Moves registered servers around SQL Server Central Management Server (CMS)",
+        "Name":  "Move-DbaRegisteredServer",
+        "Links":  "https://dbatools.io/Move-DbaRegisteredServer",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eMove-DbaRegisteredServer -SqlInstance sql2012 -Name \u0027Web SQL Cluster\u0027 -NewGroup HR\\Prod\r\n\r\nMoves the registered server on sql2012 titled \u0027Web SQL Cluster\u0027 to the Prod group within the HR group\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eMove-DbaRegisteredServer -SqlInstance sql2012 -Group HR\\Development -NewGroup HR\\Prod\r\n\r\nMoves all servers from the HR and sub-group Development to HR Prod\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2017 -Name \u0027Web SQL Cluster\u0027 | Move-DbaRegisteredServer -NewGroup Web\r\n\r\nMoves the registered server \u0027Web SQL Cluster\u0027 on sql2017 to the Web group, also on sql2017\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Move-DbaRegisteredServerGroup",
+        "Description":  "Returns an array of Server Groups found in the CMS.",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Author":  "Chrissy LeMaire (@cl)",
+        "Synopsis":  "Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).",
+        "Name":  "Move-DbaRegisteredServerGroup",
+        "Links":  "https://dbatools.io/Move-DbaRegisteredServerGroup",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eMove-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR\\Development -NewGroup AD\\Prod\r\n\r\nMoves the Development group within HR to the Prod group within AD\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sql2017 -Group HR\\Development| Move-DbaRegisteredServer -NewGroup Web\r\n\r\nMoves the Development group within HR to the Web group\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "New-DbaAgentJob",
@@ -3640,6 +3718,32 @@
         "Name":  "Remove-DbaPfDataCollectorSet",
         "Links":  "https://dbatools.io/Remove-DbaPfDataCollectorSet",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaPfDataCollectorSet\r\n\r\nPrompts for confirmation then removes all ready Collectors on localhost.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaPfDataCollectorSet -ComputerName sql2017 -Confirm:$false\r\n\r\nAttempts to remove all ready Collectors on localhost and does not prompt to confirm.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet \u0027System \r\nCorrelation\u0027\r\n\r\nPrompts for confirmation then removes the \u0027System Correlation\u0027 Collector on sql2017 and sql2016 using alternative \r\ncredentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Remove-DbaPfDataCollectorSet\r\n\r\nRemoves the \u0027System Correlation\u0027 Collector.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaPfDataCollectorSet -CollectorSet \u0027System Correlation\u0027 | Stop-DbaPfDataCollectorSet | \r\nRemove-DbaPfDataCollectorSet\r\n\r\nStops and removes the \u0027System Correlation\u0027 Collector.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Remove-DbaRegisteredServer",
+        "Description":  "Removes registered servers found in SQL Server Central Management Server (CMS).",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Author":  "Chrissy LeMaire (@cl)",
+        "Synopsis":  "Removes registered servers found in SQL Server Central Management Server (CMS).",
+        "Name":  "Remove-DbaRegisteredServer",
+        "Links":  "https://dbatools.io/Remove-DbaRegisteredServer",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaRegisteredServer -SqlInstance sql2012 -Group HR, Accounting\r\n\r\nRemoves all servers from the HR and Accounting groups on sql2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaRegisteredServer -SqlInstance sql2012 -Group HR\\Development\r\n\r\nRemoves all servers from the HR and sub-group Development from the CMS on sql2012.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaRegisteredServer -SqlInstance sql2012 -Confirm:$false\r\n\r\nRemoves all registered servers on sql2012 and turns off all prompting\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Remove-DbaRegisteredServerGroup",
+        "Description":  "Returns an array of Server Groups found in the CMS.",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Author":  "Chrissy LeMaire (@cl)",
+        "Synopsis":  "Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).",
+        "Name":  "Remove-DbaRegisteredServerGroup",
+        "Links":  "https://dbatools.io/Remove-DbaRegisteredServerGroup",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR, Accounting\r\n\r\nRemoves the HR and Accounting groups on sql2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR\\Development -Confirm:$false\r\n\r\nRemoves the Development subgroup within the HR group on sql2012 and turns off all prompting\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-DbaSpn",
