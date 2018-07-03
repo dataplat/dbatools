@@ -42,8 +42,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $newServer2.Create()
         }
         AfterAll {
-            <# The top level group is all that is needed to be dropped #>
-            $newGroup.Drop()
+            Get-DbaRegisteredServer -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServer -Confirm:$false
+            Get-DbaRegisteredServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServerGroup -Confirm:$false
         }
         
         It "Should return one group" {
