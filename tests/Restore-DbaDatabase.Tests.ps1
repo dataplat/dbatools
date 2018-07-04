@@ -693,7 +693,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             It "supports legacy credential setups" {
                 $results = Restore-DbaDatabase -SqlInstance $script:instance2 -WithReplace -DatabaseName dbatoolsci_azure -Path https://dbatools.blob.core.windows.net/legacy/dbatoolsci_azure.bak -AzureCredential dbatools_ci
                 $results.BackupFile | Should -Be 'https://dbatools.blob.core.windows.net/legacy/dbatoolsci_azure.bak'
-                $results.Script -match 'CREDENTIAL'
+                $results.Script -match 'CREDENTIAL' | Should -Be $true
             }
         }
     }
