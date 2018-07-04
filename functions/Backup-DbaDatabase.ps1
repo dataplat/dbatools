@@ -68,6 +68,15 @@ function Backup-DbaDatabase {
             .PARAMETER Verify
                 If this switch is enabled, the backup will be verified by running a RESTORE VERIFYONLY against the SqlInstance
 
+            .PARAMETER WithFormat
+                 Formats the media as the first step of the backup operation. NOTE: This will set Initialize and SkipTapeHeader to $true.
+
+            .PARAMETER Initialize
+                 Initializes the media as part of the backup operation.
+
+            .PARAMETER SkipTapeHeader
+                 Initializes the media as part of the backup operation.
+
             .PARAMETER InputObject
                 Internal parameter
 
@@ -154,6 +163,9 @@ function Backup-DbaDatabase {
         [string]$AzureCredential,
         [switch]$NoRecovery,
         [switch]$BuildPath,
+        [switch]$WithFormat,
+        [switch]$Initialize,
+        [switch]$SkipTapeHeader,
         [switch]$IgnoreFileChecks,
         [switch]$OutputScriptOnly,
         [Alias('Silent')]
@@ -416,6 +428,16 @@ function Backup-DbaDatabase {
                     else {
                         $device.DeviceType = "File"
                     }
+                    
+                    if ($WithFormat) {
+                        Write-Message -Message "WithFormat specified. Ensuring Initialize and SkipTapeHeader are set to true." -Level Verbose
+                        $Initialize = $true
+                        $SkipTapeHeader = $true
+                    }
+                    
+                    $backup.FormatMedia = $WithFormat
+                    $backup.Initialize = $Initialize
+                    $backup.SkipTapeHeader = $SkipTapeHeader
                     $device.Name = $backupfile
                     $backup.Devices.Add($device)
                 }
