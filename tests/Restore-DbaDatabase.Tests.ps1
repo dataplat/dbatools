@@ -671,8 +671,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $server.Query("DROP CREDENTIAL [https://dbatools.blob.core.windows.net/sql]")
                 Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
             }
-            It "Should backup and restore cleanly" {
-                $results = Restore-DbaDatabase -SqlInstance $script:instance2 -Path https://dbatools.blob.core.windows.net/sql/dbatoolsci_azure.bak -WithReplace
+            It "Should restore cleanly" {
+                $results = Restore-DbaDatabase -SqlInstance $script:instance2 -WithReplace -DatabaseName dbatoolsci_azure -Path https://dbatools.blob.core.windows.net/sql/dbatoolsci_azure.bak
                 $results.BackupFile | Should -Be 'https://dbatools.blob.core.windows.net/sql/dbatoolsci_azure.bak'
             }
         }
