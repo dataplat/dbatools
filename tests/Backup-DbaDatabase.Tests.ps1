@@ -23,12 +23,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         Get-DbaDatabase -SqlInstance $script:instance1 -Database "dbatoolsci_singlerestore" | Remove-DbaDatabase -Confirm:$false
         Get-DbaDatabase -SqlInstance $script:instance2 -Database $DestDbRandom | Remove-DbaDatabase -Confirm:$false
-        $server = Connect-DbaInstance -SqlInstance $script:instance2
-        $sql = "CREATE CREDENTIAL [https://dbatools.blob.core.windows.net/sql] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
-        $server.Query($sql)
-        $server.Query("CREATE DATABASE dbatoolsci_azure")
-        $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'dbatools', SECRET = N'$env:azurelegacypasswd'"
-        $server.Query($sql)
     }
     AfterAll {
         Get-DbaDatabase -SqlInstance $script:instance1 -Database "dbatoolsci_singlerestore" | Remove-DbaDatabase -Confirm:$false
@@ -36,9 +30,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         if (Test-Path $DestBackupDir) {
             Remove-Item "$DestBackupDir\*" -Force -Recurse
         }
-        Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
-        $server.Query("DROP CREDENTIAL [https://dbatools.blob.core.windows.net/sql]")
-        $server.Query("DROP CREDENTIAL dbatools_ci")
     }
     Context "Should not backup if database and exclude match" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master -Exclude master
@@ -197,6 +188,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     if ($env:azurepasswd) {
         Context "Azure works" {
+            BeforeAll {
+                $server = Connect-DbaInstance -SqlInstance $script:instance2
+                $sql = "CREATE CREDENTIAL [https://dbatools.blob.core.windows.net/sql] WITH IDENTITY = N'SHARED ACCESS SIGNATURE', SECRET = N'$env:azurepasswd'"
+                $server.Query($sql)
+                $server.Query("CREATE DATABASE dbatoolsci_azure")
+                $sql = "CREATE CREDENTIAL [dbatools_ci] WITH IDENTITY = N'dbatools', SECRET = N'$env:azurelegacypasswd'"
+                $server.Query($sql)
+            }
+            AfterAll {
+                Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
+                $server.Query("DROP CREDENTIAL [https://dbatools.blob.core.windows.net/sql]")
+                $server.Query("DROP CREDENTIAL dbatools_ci")
+            }
             It "backs up to Azure properly using SHARED ACCESS SIGNATURE" {
                 $results = Backup-DbaDatabase -SqlInstance $script:instance2 -AzureBaseUrl https://dbatools.blob.core.windows.net/sql -Database dbatoolsci_azure -BackupFileName dbatoolsci_azure.bak -WithFormat
                 $results.Database | Should -Be 'dbatoolsci_azure'
