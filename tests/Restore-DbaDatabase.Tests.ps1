@@ -660,7 +660,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     
     if ($env:azurepasswd) {
-        Write-Warning "runs first azure check"
         Context "Restores to Azure" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -680,7 +679,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     
     if ($env:azurelegacypasswd) {
-        Write-Warning "runs second azure check"
         Context "Restores to Azure" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -692,10 +690,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $server.Query("DROP CREDENTIAL dbatools_ci")
                 Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_azure" | Remove-DbaDatabase -Confirm:$false
             }
-            it "supports legacy credential setups" {
+            It "supports legacy credential setups" {
                 $results = Restore-DbaDatabase -SqlInstance $script:instance2 -WithReplace -DatabaseName dbatoolsci_azure -Path https://dbatools.blob.core.windows.net/legacy/dbatoolsci_azure.bak -AzureCredential dbatools_ci
                 $results.BackupFile | Should -Be 'https://dbatools.blob.core.windows.net/legacy/dbatoolsci_azure.bak'
-                $results.Script -match 'WITH CREDENTIAL'
+                $results.Script -match 'CREDENTIAL'
             }
         }
     }
