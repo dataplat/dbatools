@@ -288,8 +288,13 @@ function Get-DbaBackupInformation {
             }
 
             Write-Message -Level Verbose -Message "Reading backup headers of $($Files.Count) files"
-            $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential
-
+            try {
+                $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -AzureCredential $AzureCredential -EnableException
+            }
+            catch {
+                Stop-Function -Message "Failure reading backup header" -ErrorRecord $_ -Target $server -Continue
+            }
+            
             $groupdetails = $FileDetails | group-object -Property BackupSetGUID
 
             foreach ($Group in $GroupDetails) {
