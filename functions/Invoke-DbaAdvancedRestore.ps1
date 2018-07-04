@@ -234,7 +234,7 @@ function Invoke-DbaAdvancedRestore {
                     Write-Message -Message "Adding device $file" -Level Debug
                     $Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
                     $Device.Name = $file
-                    if ($file -match 'http') {
+                    if ($file.StartsWith("http")) {
                         $Device.devicetype = "URL"
                     }
                     else {
