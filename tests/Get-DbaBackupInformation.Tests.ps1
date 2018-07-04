@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-<#
+
     BeforeAll {
         $DestBackupDir = 'C:\Temp\GetBackups'
         if (-Not(Test-Path $DestBackupDir)) {
@@ -49,7 +49,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $db3 | Backup-DbaDatabase -Type Full -BackupDirectory "$DestBackupDirOla\FULL"
         $db3 | Backup-DbaDatabase -Type Differential -BackupDirectory "$DestBackupDirOla\Diff"
         $db3 | Backup-DbaDatabase -Type Log -BackupDirectory "$DestBackupDirOla\LOG"
-
     }
 
     AfterAll {
@@ -130,68 +129,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $resultsSanLog.count | Should Be 3
         }
 
-    }
-#>
-    Context "Check Simple Maintenance Solution Filtering works" {
-        $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\OlaMsFilter\Simple
-        It "Should return 4 records without filtering"{
-            $results.count | Should Be 4
-        }
-        $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\OlaMsFilter\Simple -MaintenanceSolution -RestoreTime (Get-Date)
-        It "Should return 2 records with filtering" {
-            $results.count | Should Be 2
-        }
-        It "Should have returned 2 specific files"{
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\Simple\test_LOG_20160629_141330.trn"
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\Simple\test_FULL_20160629_141320.bak"
-        }
-    }
-
-    Context "Check it doesn't filter without the maintenancesolution switch" {
-        $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\OlaMsFilter\Simple -RestoreTime (Get-Date)
-        It "Should return 4 records as no filtering" {
-            $results.count | Should Be 4
-        }
-    }
-
-    Context "Check complex filtering to latest point in time"{
-        $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\OlaMsFilter\Complex -MaintenanceSolution -RestoreTime (Get-Date).adddays(1)
-        It "Should return 4 results" {
-            $results.count | Should Be 4
-        }
-        It "Should retun 4 specific files" {
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Log\test_LOG_20160629_143000.trn"
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Log\test_LOG_20160629_142900.trn"
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Diff\test_DIFF_20160629_142800.bak"
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Full\test_FULL_20160629_142200.bak"
-        }
-    }
-
-    Context "Check complex filtering to point in time with diff"{
-        #Doing the date this way to avoid any locality issues.
-        $date = Get-date -Day 29 -Month 6 -Year 2016 -hour 14 -Minute 20 -Second 30
-        $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\OlaMsFilter\Complex -MaintenanceSolution -RestoreTime $Date
-        It "Should return 3 results" {
-            $results.count | Should Be 3
-        }
-        It "Should retun 3 specific files" {
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Full\test_FULL_20160629_141300.bak"
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Log\test_LOG_20160629_142000.trn"
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Diff\test_DIFF_20160629_141900.bak"
-        }
-    }
-    Context "Check complex filtering to point in time without diff"{
-        #Doing the date this way to avoid any locality issues.
-        $date = Get-date -Day 29 -Month 6 -Year 2016 -hour 14 -Minute 15
-        $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\OlaMsFilter\Complex -MaintenanceSolution -RestoreTime $Date
-        It "Should return 3 results" {
-            $results.count | Should Be 3
-        }
-        It "Should retun 3 specific files" {
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Full\test_FULL_20160629_141300.bak"
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Log\test_LOG_20160629_141400.trn"
-            $results.fullname | Should Contain "$script:appveyorlabrepo\OlaMsFilter\complex\Log\test_LOG_20160629_141500.trn"
-        }
     }
 
 }
