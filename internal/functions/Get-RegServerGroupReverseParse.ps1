@@ -5,7 +5,7 @@
     else {
         $name = @()
         do {
-            $name += $object.Name
+            $name += $object.Name.Split("\")[0]
             $object = $object.Parent
         }
         until ($object.Name -eq 'DatabaseEngineServerGroup')
