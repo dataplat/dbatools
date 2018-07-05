@@ -23,7 +23,7 @@
         Also supports toggling on Unit descriptors by adding another element: "Length size GB:2:1"
         - Supports selecting properties from objects in other variables: "ComputerName from VarName" (Will insert the property 'ComputerName' from variable $VarName)
         - Supports filtering when selecting from outside objects: "ComputerName from VarName where ObjectId = Id" (Will insert the property 'ComputerName' from the object in variable $VarName, whose ObjectId property is equal to the inputs Id property)
-    
+        
         Important:
         When using this command from another module (not script-files, those are fine), you do not have access to the variables in the calling module.
         In order to select from other variables using the 'from' call, you need to declare the variable global.
@@ -55,20 +55,32 @@
     .PARAMETER Index
         Specifies an array of objects based on their index values. Enter the indexes in a comma-separated list.
     
+    .PARAMETER ShowProperty
+        Only the specified properties will be shown by default.
+        Supersedes ShowExcludeProperty.
+    
+    .PARAMETER ShowExcludeProperty
+        Hides the specified properties from the default display style of the output object.
+        Is ignored if used together with ShowProperty.
+    
+    .PARAMETER TypeName
+        Adds a typename to the selected object.
+        Will automatically prefix the module.
+    
     .EXAMPLE
         PS C:\> Get-ChildItem | Select-DbaObject Name, "Length as Size"
-    
+        
         Selects the properties Name and Length, renaming Length to Size in the process.
     
     .EXAMPLE
         PS C:\> Import-Csv .\file.csv | Select-DbaObject Name, "Length as Size to DbaSize"
-    
+        
         Selects the properties Name and Length, renaming Length to Size and converting it to [DbaSize] (a userfriendly representation of size numbers)
     
     .EXAMPLE
         PS C:\> $obj = [PSCustomObject]@{ Name = "Foo" }
         PS C:\> Get-ChildItem | Select-DbaObject FullName, Length, "Name from obj"
-    
+        
         Selects the properties FullName and Length from the input and the Name property from the object stored in $obj
     
     .EXAMPLE
@@ -76,10 +88,10 @@
         PS C:\> $list += [PSCustomObject]@{ Type = "Foo"; ID = 1 }
         PS C:\> $list += [PSCustomObject]@{ Type = "Bar"; ID = 2 }
         PS C:\> $obj | Select-DbaObject Name, "ID from list WHERE Type = Name"
-    
+        
         This allows you to LEFT JOIN contents of another variable.
         Note that it can only do simple property-matching at this point.
-    
+        
         It will select Name from the objects stored in $obj, and for each of those the ID Property on any object in $list that has a Type property of equal value as Name on the input.
 #>
     [CmdletBinding(DefaultParameterSetName = 'DefaultParameter', RemotingCapability = 'None')]
@@ -134,7 +146,16 @@
         [Parameter(ParameterSetName = 'IndexParameter')]
         [ValidateRange(0, 2147483647)]
         [int[]]
-        $Index
+        $Index,
+        
+        [string[]]
+        $ShowProperty,
+        
+        [string[]]
+        $ShowExcludeProperty,
+        
+        [string]
+        $TypeName
     )
     
     begin {
@@ -146,12 +167,28 @@
             
             $clonedParameters = @{ }
             foreach ($key in $PSBoundParameters.Keys) {
-                if ($key -ne "Property") {
+                if (($key -ne "Property") -and ($key -ne "ShowExcludeProperty") -and ($key -ne "ShowProperty") -and ($key -ne "TypeName")) {
                     $clonedParameters[$key] = $PSBoundParameters[$key]
                 }
             }
             if (Test-Bound -ParameterName 'Property') {
                 $clonedParameters['Property'] = $Property.Value
+            }
+            
+            if (-not ($ShowExcludeProperty -or $ShowProperty -or $TypeName)) {
+                $__noAdjustment = $true
+            }
+            else {
+                $__noAdjustment = $false
+                if ($ShowProperty) {
+                    $__defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', $ShowProperty)
+                    $__standardmembers = [System.Management.Automation.PSMemberInfo[]]@($__defaultset)
+                }
+                if ($TypeName) {
+                    $__callerModule = (Get-PSCallStack)[1].InvocationInfo.MyCommand.ModuleName
+                    $__typeName = $TypeName
+                    if ($__callerModule) { $__typeName = "$($__callerModule).$($TypeName)" }
+                }
             }
             
             $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('Microsoft.PowerShell.Utility\Select-Object', [System.Management.Automation.CommandTypes]::Cmdlet)
@@ -166,7 +203,31 @@
     
     process {
         try {
-            $steppablePipeline.Process($_)
+            if ($__noAdjustment) {
+                $steppablePipeline.Process($_)
+            }
+            else {
+                $__item = $steppablePipeline.Process($_)
+                if ($ShowProperty) {
+                    $__item | Add-Member -Force -MemberType MemberSet -Name PSStandardMembers -Value $__standardmembers -ErrorAction SilentlyContinue
+                }
+                elseif ($ShowExcludeProperty) {
+                    $__propertiesToShow = @()
+                    foreach ($prop in $__item.PSObject.Properties.Name) {
+                        if ($prop -notin $ShowExcludeProperty) {
+                            $__propertiesToShow += $prop
+                        }
+                    }
+                    $__defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', $__propertiesToShow)
+                    $__standardmembers = [System.Management.Automation.PSMemberInfo[]]@($__defaultset)
+                    $__item | Add-Member -Force -MemberType MemberSet -Name PSStandardMembers -Value $__standardmembers -ErrorAction SilentlyContinue
+                }
+                if ($TypeName) {
+                    $__item.PSObject.TypeNames.Insert(0, $__typeName)
+                }
+                
+                $__item
+            }
         }
         catch {
             throw
