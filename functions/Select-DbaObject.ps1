@@ -194,7 +194,10 @@
             $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('Microsoft.PowerShell.Utility\Select-Object', [System.Management.Automation.CommandTypes]::Cmdlet)
             $scriptCmd = { & $wrappedCmd @clonedParameters }
             $steppablePipeline = $scriptCmd.GetSteppablePipeline($myInvocation.CommandOrigin)
-            $steppablePipeline.Begin($PSCmdlet)
+            # If no adjustment is necessary, run as integrated command (better performance)
+            if ($__noAdjustment) { $steppablePipeline.Begin($PSCmdlet) }
+            # If Adjustments are necessary, run as addon, allowing us to capture output
+            else { $steppablePipeline.Begin($true) }
         }
         catch {
             throw
@@ -204,10 +207,10 @@
     process {
         try {
             if ($__noAdjustment) {
-                $steppablePipeline.Process($_)
+                $steppablePipeline.Process($InputObject)
             }
             else {
-                $__item = $steppablePipeline.Process($_)
+                $__item = $steppablePipeline.Process($InputObject)[0]
                 if ($ShowProperty) {
                     $__item | Add-Member -Force -MemberType MemberSet -Name PSStandardMembers -Value $__standardmembers -ErrorAction SilentlyContinue
                 }
@@ -225,7 +228,6 @@
                 if ($TypeName) {
                     $__item.PSObject.TypeNames.Insert(0, $__typeName)
                 }
-                
                 $__item
             }
         }
