@@ -2727,9 +2727,9 @@
         </member>
         <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter.ToString">
             <summary>
-            Overrides the regular tostring to show something pleasant and useful
+            Overrides the regular <c>ToString()</c> to show something pleasant and useful
             </summary>
-            <returns>The full SMO name</returns>
+            <returns>The <see cref="P:Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter.FullSmoName"/></returns>
         </member>
         <member name="T:Sqlcollaborative.Dbatools.Parameter.ParameterContractAttribute">
             <summary>
