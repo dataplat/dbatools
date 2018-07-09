@@ -11,13 +11,10 @@
             Note: This command returns results from all SQL server instances on the destination server but the process column is specific to -SqlInstance passed.
     
         .PARAMETER SqlInstance
-            Allows you to specify a comma separated list of servers to query.
-    
+            The SQL Server instance. Server version must be SQL Server version XXXX or higher.
+
         .PARAMETER SqlCredential
-            Allows you to login to the SQL instance using alternative credentials.
-    
-        .PARAMETER Threshold
-            Memory used threshold.
+           Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
     
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -48,7 +45,7 @@
         .EXAMPLE
             Get-DbaPlanCache -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin) 
     
-            Returns the single use plan cashe usage information for SQL Server instance 2017 using login 'admin'
+            Returns the single use plan cashe usage information for SQL Server instance 2017 using login 'sqladmin'
     #>
         [CmdletBinding()]
         Param (
@@ -62,7 +59,7 @@
         begin {
             $Sql = "SELECT MB = sum(cast((CASE WHEN usecounts = 1 AND objtype IN ('Adhoc', 'Prepared') THEN size_in_bytes ELSE 0 END) as decimal(12, 2))) / 1024 / 1024, 
                     UseCount = sum(CASE WHEN usecounts = 1 AND objtype IN ('Adhoc', 'Prepared') THEN 1 ELSE 0 END) 
-                FROM sys.dm_exec_cached_plans"
+                FROM sys.dm_exec_cached_plans;"
         }
     
         process {

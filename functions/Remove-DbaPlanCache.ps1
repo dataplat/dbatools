@@ -16,17 +16,20 @@
             server but the process column is specific to -SqlInstance passed.
     
         .PARAMETER SqlInstance
-            Allows you to specify a comma separated list of servers to remove the plans.
-    
+            The SQL Server instance. Server version must be SQL Server version XXXX or higher.
+
         .PARAMETER SqlCredential
-            Allows you to login to the SQL instance using alternative credentials.
+           Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
     
         .PARAMETER Threshold
-            Memoery used threshold.
+            Memory used threshold.
     
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
     
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -76,12 +79,11 @@
                 $results = Get-DbaQueryPlan -SqlInstance $instance -SqlCredential $SqlCredential -Threshold $Threshold
                
                 if ($results.MB -ge $Threshold) {
-                    if ($Pscmdlet.ShouldProcess) {
+                    if ($Pscmdlet.ShouldProcess("$server", "Cleared SQL Plans plan cache")) {
                         $server.Query("DBCC FREESYSTEMCACHE('SQL Plans')")
-                        Write-Message -Level Verbose -Message "Plan Cache was cleared on $($server)"
                     }
                     else {
-                        Write-Message -Level Verbose -Message "Plan Cache would be cleared on $($server)"
+                        Write-Message -Level Verbose -Message "Threshold [$Threshold] below $server plan cache size of [$($results.MB)]"
                     }
                 }
             }
