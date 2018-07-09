@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Management.Automation;
 
-namespace Sqlcollaborative.Dbatools.dbaSystem
+namespace Sqlcollaborative.Dbatools.Message
 {
     /// <summary>
     /// Wrapper class that can emulate any exception for purpose of serialization without blowing up the storage space consumed
@@ -121,6 +121,11 @@ namespace Sqlcollaborative.Dbatools.dbaSystem
         /// The runspace the error occured on.
         /// </summary>
         public Guid Runspace;
+
+        /// <summary>
+        /// The computer the error occured on.
+        /// </summary>
+        public string ComputerName;
         #endregion ErrRecord Data
         #endregion Properties & Fields
 
@@ -187,34 +192,38 @@ namespace Sqlcollaborative.Dbatools.dbaSystem
         }
 
         /// <summary>
-        /// Creates a new exception object with rich meta information from the Dbatools runtime.
+        /// Creates a new exception object with rich meta information from the PowerShell runtime.
         /// </summary>
         /// <param name="Except">The exception thrown</param>
         /// <param name="FunctionName">The name of the function in which the error occured</param>
         /// <param name="Timestamp">When did the error occur</param>
         /// <param name="Message">The message to add to the exception</param>
         /// <param name="Runspace">The ID of the runspace from which the exception was thrown. Useful in multi-runspace scenarios.</param>
-        public DbatoolsException(Exception Except, string FunctionName, DateTime Timestamp, string Message, Guid Runspace)
+        /// <param name="ComputerName">The computer the error occured on.</param>
+        public DbatoolsException(Exception Except, string FunctionName, DateTime Timestamp, string Message, Guid Runspace, string ComputerName)
             : this(Except)
         {
             this.Runspace = Runspace;
+            this.ComputerName = ComputerName;
             this.FunctionName = FunctionName;
             this.Timestamp = Timestamp;
             this.Message = Message;
         }
 
         /// <summary>
-        /// Creates a new exception object with rich meta information from the Dbatools runtime.
+        /// Creates a new exception object with rich meta information from the PowerShell runtime.
         /// </summary>
         /// <param name="Record">The error record written</param>
         /// <param name="FunctionName">The name of the function in which the error occured</param>
         /// <param name="Timestamp">When did the error occur</param>
         /// <param name="Message">The message to add to the exception</param>
         /// <param name="Runspace">The ID of the runspace from which the exception was thrown. Useful in multi-runspace scenarios.</param>
-        public DbatoolsException(ErrorRecord Record, string FunctionName, DateTime Timestamp, string Message, Guid Runspace)
+        /// <param name="ComputerName">The computer the error occured on.</param>
+        public DbatoolsException(ErrorRecord Record, string FunctionName, DateTime Timestamp, string Message, Guid Runspace, string ComputerName)
             : this(Record)
         {
             this.Runspace = Runspace;
+            this.ComputerName = ComputerName;
             this.FunctionName = FunctionName;
             this.Timestamp = Timestamp;
             this.Message = Message;

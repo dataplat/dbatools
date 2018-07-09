@@ -98,7 +98,7 @@ function Get-DbaSqlBuildReference {
             $writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
 
             if (-not (Test-Path $orig_idxfile)) {
-                Write-Message -Level Warning -EnableException $EnableException -Message "Unable to read local SQL build reference file. Check your module integrity!"
+                Write-Message -Level Warning -Message "Unable to read local SQL build reference file. Check your module integrity!"
             }
 
             if ((-not (Test-Path $orig_idxfile)) -and (-not (Test-Path $writable_idxfile))) {
@@ -150,7 +150,7 @@ function Get-DbaSqlBuildReference {
 
             $LastUpdated = Get-Date -Date $result.LastUpdated
             if ($LastUpdated -lt (Get-Date).AddDays(-45)) {
-                Write-Message -Level Warning -EnableException $EnableException -Message "Index is stale, last update on: $(Get-Date -Date $LastUpdated -Format s), try the -Update parameter to fetch the most up to date index"
+                Write-Message -Level Warning -Message "Index is stale, last update on: $(Get-Date -Date $LastUpdated -Format s), try the -Update parameter to fetch the most up to date index"
             }
 
             $result.Data | Select-Object @{ Name = "VersionObject"; Expression = { [version]$_.Version } }, *
@@ -168,12 +168,12 @@ function Get-DbaSqlBuildReference {
             }
             catch {
                 try {
-                    Write-Message -Level Verbose -EnableException $EnableException -Message "Probably using a proxy for internet access, trying default proxy settings"
+                    Write-Message -Level Verbose -Message "Probably using a proxy for internet access, trying default proxy settings"
                     (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
                     $WebContent = Invoke-WebRequest $url -ErrorAction Stop
                 }
                 catch {
-                    Write-Message -Level Warning -EnableException $EnableException -Message "Couldn't download updated index from $url"
+                    Write-Message -Level Warning -Message "Couldn't download updated index from $url"
                     return
                 }
             }
@@ -194,14 +194,14 @@ function Get-DbaSqlBuildReference {
                 $EnableException
             )
 
-            Write-Message -Level Verbose -EnableException $EnableException -Message "Looking for $Build"
+            Write-Message -Level Verbose -Message "Looking for $Build"
 
             $IdxVersion = $Data | Where-Object Version -like "$($Build.Major).$($Build.Minor).*"
             $Detected = @{ }
             $Detected.MatchType = 'Approximate'
-            Write-Message -Level Verbose -EnableException $EnableException -Message "We have $($IdxVersion.Length) builds in store for this Release"
+            Write-Message -Level Verbose -Message "We have $($IdxVersion.Length) builds in store for this Release"
             If ($IdxVersion.Length -eq 0) {
-                Write-Message -Level Warning -EnableException $EnableException -Message "No info in store for this Release"
+                Write-Message -Level Warning -Message "No info in store for this Release"
                 $Detected.Warning = "No info in store for this Release"
             }
             else {

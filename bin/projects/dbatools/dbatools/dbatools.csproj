@@ -76,6 +76,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\WriteMessageCommand.cs" />
     <Compile Include="Computer\DiskSpace.cs" />
     <Compile Include="Computer\DriveType.cs" />
     <Compile Include="Computer\PageFileSetting.cs" />
@@ -100,6 +101,13 @@
     <Compile Include="Maintenance\MaintenanceHost.cs" />
     <Compile Include="Maintenance\MaintenancePriority.cs" />
     <Compile Include="Maintenance\MaintenanceTask.cs" />
+    <Compile Include="Message\LogHost.cs" />
+    <Compile Include="Message\MessageEventSubscription.cs" />
+    <Compile Include="Message\MessageLevelModifier.cs" />
+    <Compile Include="Message\TransformCondition.cs" />
+    <Compile Include="Message\TransformError.cs" />
+    <Compile Include="Message\TransformList.cs" />
+    <Compile Include="Message\TransformType.cs" />
     <Compile Include="Parameter\DbaCredentialParameter.cs" />
     <Compile Include="Parameter\DbaDatabaseParameter.cs" />
     <Compile Include="Parameter\DbaDatabaseSmoParameter.cs" />
@@ -128,17 +136,17 @@
     <Compile Include="Parameter\DbaInstanceInputType.cs" />
     <Compile Include="Parameter\DbaInstanceParameter.cs" />
     <Compile Include="dbaSystem\DbaErrorRecord.cs" />
-    <Compile Include="dbaSystem\DbatoolsException.cs" />
-    <Compile Include="dbaSystem\DbatoolsExceptionRecord.cs" />
+    <Compile Include="Message\DbatoolsException.cs" />
+    <Compile Include="Message\DbatoolsExceptionRecord.cs" />
     <Compile Include="dbaSystem\DebugHost.cs" />
     <Compile Include="General\ExecutionMode.cs" />
     <Compile Include="Connection\ManagementConnection.cs" />
     <Compile Include="Connection\ManagementConnectionProtocolState.cs" />
     <Compile Include="Connection\ManagementConnectionType.cs" />
-    <Compile Include="dbaSystem\LogEntry.cs" />
-    <Compile Include="dbaSystem\LogEntryType.cs" />
-    <Compile Include="dbaSystem\MessageHost.cs" />
-    <Compile Include="dbaSystem\MessageLevel.cs" />
+    <Compile Include="Message\LogEntry.cs" />
+    <Compile Include="Message\LogEntryType.cs" />
+    <Compile Include="Message\MessageHost.cs" />
+    <Compile Include="Message\MessageLevel.cs" />
     <Compile Include="Parameter\ParameterContractAttribute.cs" />
     <Compile Include="Parameter\ParameterContractBehavior.cs" />
     <Compile Include="Parameter\ParameterContractType.cs" />

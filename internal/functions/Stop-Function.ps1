@@ -1,4 +1,4 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Stop-Function {
     <#
@@ -159,14 +159,14 @@ function Stop-Function {
         }
 
         # Manage Debugging
-        Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $targetToAdd -ErrorRecord $records -OverrideExceptionMessage:$OverrideExceptionMessage
+        Write-Message -Level Warning -Message $Message -EnableException $EnableException.ToBool() -FunctionName $FunctionName -Target $targetToAdd -ErrorRecord $records -OverrideExceptionMessage:$OverrideExceptionMessage
     }
     else {
         $exception = New-Object System.Exception($Message)
         $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $targetToAdd)
 
         # Manage Debugging
-        Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $targetToAdd -ErrorRecord $records -OverrideExceptionMessage:$true
+        Write-Message -Level Warning -Message $Message -EnableException $EnableException.ToBool() -FunctionName $FunctionName -Target $targetToAdd -ErrorRecord $records -OverrideExceptionMessage:$true
     }
 
 
@@ -181,11 +181,6 @@ function Stop-Function {
 
         # Extra insurance that it'll stop
         Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true
-
-        # Removed the bottom below because it should be up to the developer to tell the user if its continuing or what
-        # It also seems like it's terminating the function as a whole, even if it continues on to the next server
-        # Write-Message -Message "Terminating function!" -Level 9 -EnableException $EnableException -FunctionName $FunctionName
-
 
         throw $records[0]
     }
@@ -206,9 +201,6 @@ function Stop-Function {
             # Make sure the function knows it should be stopping
             Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true
 
-            # Removed the bottom below because it should be up to the developer to tell the user if its continuing or what
-            # It also seems like it's terminating the function as a whole, even if it continues on to the next server
-            # Write-Message -Message "Terminating function!" -Warning -EnableException $EnableException -FunctionName $FunctionName
             return
         }
     }
