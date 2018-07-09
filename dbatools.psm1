@@ -111,6 +111,15 @@ if ($dbatools_serialimport) { $script:serialImport = $true }
 if ($dbatoolsSystemSystemNode.SerialImport) { $script:serialImport = $true }
 if ($dbatoolsSystemUserNode.SerialImport) { $script:serialImport = $true }
 #endregion Serial Import
+
+#region Multi File Import
+$script:multiFileImport = $false
+if ($dbatools_serialimport) { $script:multiFileImport = $true }
+if ($dbatoolsSystemSystemNode.MultiFileImport) { $script:multiFileImport = $true }
+if ($dbatoolsSystemUserNode.MultiFileImport) { $script:multiFileImport = $true }
+if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $true }
+#endregion Multi File Import
+
 Write-ImportTime -Text "Validated defines"
 #endregion Import Defines
 
@@ -157,16 +166,19 @@ if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
     . Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
     Write-ImportTime -Text "Configuration System"
 }
-if (-not ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath)) {
-    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
+if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
+    [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
 }
 
-if ((Test-Path -Path "$script:PSModuleRoot\.git")) {
+if ($script:multiFileImport) {
     # All internal functions privately available within the toolset
     foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\functions\*.ps1")) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Internal Commands"
+    
+    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    Write-ImportTime -Text "Registering cmdlets"
     
     # All exported functions
     foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
@@ -178,6 +190,9 @@ if ((Test-Path -Path "$script:PSModuleRoot\.git")) {
 else {
     . "$script:PSModuleRoot\allcommands.ps1"
     Write-ImportTime -Text "Loading Public and Private Commands"
+    
+    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    Write-ImportTime -Text "Registering cmdlets"
 }
 
 # Run all optional code
