@@ -540,7 +540,7 @@ else { Write-HostColor -String $string -DefaultColor ([Sqlcollaborative.Dbatools
 
             if (MessageHost.TargetTransforms.ContainsKey(lowTypeName))
             {
-                try { return InvokeCommand.InvokeScript(false, ScriptBlock.Create(MessageHost.TargetTransforms[lowTypeName].ToString()), null, null); }
+                try { return InvokeCommand.InvokeScript(false, ScriptBlock.Create(MessageHost.TargetTransforms[lowTypeName].ToString()), null, Item); }
                 catch (Exception e)
                 {
                     MessageHost.WriteTransformError(new ErrorRecord(e, "Write-Message", ErrorCategory.OperationStopped, null), FunctionName, ModuleName, Item, TransformType.Target, System.Management.Automation.Runspaces.Runspace.DefaultRunspace.InstanceId);
@@ -551,7 +551,7 @@ else { Write-HostColor -String $string -DefaultColor ([Sqlcollaborative.Dbatools
             TransformCondition transform = MessageHost.TargetTransformlist.Get(lowTypeName, ModuleName, FunctionName);
             if (transform != null)
             {
-                try { return InvokeCommand.InvokeScript(false, ScriptBlock.Create(transform.ScriptBlock.ToString()), null, null); }
+                try { return InvokeCommand.InvokeScript(false, ScriptBlock.Create(transform.ScriptBlock.ToString()), null, Item); }
                 catch (Exception e)
                 {
                     MessageHost.WriteTransformError(new ErrorRecord(e, "Write-Message", ErrorCategory.OperationStopped, null), FunctionName, ModuleName, Item, TransformType.Target, System.Management.Automation.Runspaces.Runspace.DefaultRunspace.InstanceId);
@@ -576,7 +576,7 @@ else { Write-HostColor -String $string -DefaultColor ([Sqlcollaborative.Dbatools
 
             if (MessageHost.ExceptionTransforms.ContainsKey(lowTypeName))
             {
-                try { return (Exception)InvokeCommand.InvokeScript(false, ScriptBlock.Create(MessageHost.ExceptionTransforms[lowTypeName].ToString()), null, null)[0].BaseObject; }
+                try { return (Exception)InvokeCommand.InvokeScript(false, ScriptBlock.Create(MessageHost.ExceptionTransforms[lowTypeName].ToString()), null, Item)[0].BaseObject; }
                 catch (Exception e)
                 {
                     MessageHost.WriteTransformError(new ErrorRecord(e, "Write-Message", ErrorCategory.OperationStopped, null), FunctionName, ModuleName, Item, TransformType.Exception, System.Management.Automation.Runspaces.Runspace.DefaultRunspace.InstanceId);
@@ -587,7 +587,7 @@ else { Write-HostColor -String $string -DefaultColor ([Sqlcollaborative.Dbatools
             TransformCondition transform = MessageHost.ExceptionTransformList.Get(lowTypeName, ModuleName, FunctionName);
             if (transform != null)
             {
-                try { return (Exception)InvokeCommand.InvokeScript(false, ScriptBlock.Create(transform.ScriptBlock.ToString()), null, null)[0].BaseObject; }
+                try { return (Exception)InvokeCommand.InvokeScript(false, ScriptBlock.Create(transform.ScriptBlock.ToString()), null, Item)[0].BaseObject; }
                 catch (Exception e)
                 {
                     MessageHost.WriteTransformError(new ErrorRecord(e, "Write-Message", ErrorCategory.OperationStopped, null), FunctionName, ModuleName, Item, TransformType.Exception, System.Management.Automation.Runspaces.Runspace.DefaultRunspace.InstanceId);
