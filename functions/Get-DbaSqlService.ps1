@@ -151,14 +151,14 @@ function Get-DbaSqlService {
                             }
                         }
                         catch {
-                            Write-Message -Level Verbose -EnableException $EnableException -Message "Failed to acquire services from namespace $($namespace.Name)." -Target $Computer
+                            Write-Message -Level Verbose -EnableException $EnableException.ToBool() -Message "Failed to acquire services from namespace $($namespace.Name)." -Target $Computer -ErrorRecord $_
                         }
                     }
 
                     $services = ($servicesTemp | Group-Object Name | ForEach-Object { $_.Group | Sort-Object Namespace -Descending | Select-Object -First 1 }).Service
 
                     if ($services) {
-                        Write-Message -Level Verbose -EnableException $EnableException -Message "Creating output objects"
+                        Write-Message -Level Verbose -Message "Creating output objects"
                         ForEach ($service in $services) {
                             Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service.HostName
                             Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value ($ServiceIdMap | Where-Object { $_.Id -contains $service.SQLServiceType }).Name
