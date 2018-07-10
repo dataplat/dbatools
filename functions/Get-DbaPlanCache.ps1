@@ -53,7 +53,6 @@
             [Alias("ServerInstance", "SqlServer", "SqlServers")]
             [DbaInstanceParameter[]]$SqlInstance,
             [PSCredential]$SqlCredential,
-            [int]$Threshold = 100,
             [switch]$EnableException
         )
         begin {
