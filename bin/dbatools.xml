@@ -4,6 +4,262 @@
         <name>dbatools</name>
     </assembly>
     <members>
+        <member name="T:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand">
+            <summary>
+            Implements the Write-Message command, performing message handling and loggin
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Level">
+            <summary>
+            This parameter represents the verbosity of the message. The lower the number, the more important it is for a human user to read the message.
+            By default, the levels are distributed like this:
+            - 1-3 Direct verbose output to the user (using Write-Host)
+            - 4-6 Output only visible when requesting extra verbosity (using Write-Verbose)
+            - 1-9 Debugging information, written using Write-Debug
+            
+            In addition, it is possible to select the level "Warning" which moves the message out of the configurable range:
+            The user will always be shown this message, unless he silences the entire verbosity.
+            
+            Possible levels:
+            Critical (1), Important / Output / Host (2), Significant (3), VeryVerbose (4), Verbose (5), SomewhatVerbose (6), System (7), Debug (8), InternalComment (9), Warning (666)
+            Either one of the strings or its respective number will do as input.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Message">
+            <summary>
+            The message to write/log. The function name and timestamp will automatically be prepended.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Tag">
+            <summary>
+            Tags to add to the message written.
+            This allows filtering and grouping by category of message, targeting specific messages.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.FunctionName">
+            <summary>
+            The name of the calling function.
+            Will be automatically set, but can be overridden when necessary.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.ModuleName">
+            <summary>
+            The name of the module, the calling function is part of.
+            Will be automatically set, but can be overridden when necessary.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.File">
+            <summary>
+            The file in which Write-Message was called.
+            Will be automatically set, but can be overridden when necessary.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Line">
+            <summary>
+            The line on which Write-Message was called.
+            Will be automatically set, but can be overridden when necessary.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.ErrorRecord">
+            <summary>
+            If an error record should be noted with the message, add the full record here.
+            Especially designed for use with Warning-mode, it can legally be used in either mode.
+            The error will be added to the $Error variable and enqued in the logging/debugging system.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Exception">
+            <summary>
+            Allows specifying an inner exception as input object. This will be passed on to the logging and used for messages.
+            When specifying both ErrorRecord AND Exception, Exception wins, but ErrorRecord is still used for record metadata.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Once">
+            <summary>
+            Setting this parameter will cause this function to write the message only once per session.
+            The string passed here and the calling function's name are used to create a unique ID, which is then used to register the action in the configuration system.
+            Thus will the lockout only be written if called once and not burden the system unduly.
+            This lockout will be written as a hidden value, to see it use Get-DbaConfig -Force.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.OverrideExceptionMessage">
+            <summary>
+            Disables automatic appending of exception messages.
+            Use in cases where you already have a speaking message interpretation and do not need the original message.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Target">
+            <summary>
+            Add the object the message is all about, in order to simplify debugging / troubleshooting.
+            For example, when calling this from a function targeting a remote computer, the computername could be specified here, allowing all messages to easily be correlated to the object processed.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.EnableException">
+            <summary>
+            This parameters disables user-friendly warnings and enables the throwing of exceptions.
+            This is less user friendly, but allows catching exceptions in calling scripts.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.Breakpoint">
+            <summary>
+            Enables breakpoints on the current message. By default, setting '-Debug' will NOT cause an interrupt on the current position.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._timestamp">
+            <summary>
+            The start time of the cmdlet
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._silent">
+            <summary>
+            Whether this cmdlet is run in silent mode
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._fromStopFunction">
+            <summary>
+            Whether this cmdlet was called by Stop-Function
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._callStack">
+            <summary>
+            The current callstack
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._stackDepth">
+            <summary>
+            How many items exist on the callstack
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._message">
+            <summary>
+            The message to write
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._messageSimple">
+            <summary>
+            The message simplified without timestamps. Used for logging.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._messageColor">
+            <summary>
+            The message to write in color
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._messageDeveloper">
+            <summary>
+            Non-colored version of developermode
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._messageDeveloperColor">
+            <summary>
+            Colored version of developermode
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._writeHostScript">
+            <summary>
+            Scriptblock that writes the host messages
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._Tags">
+            <summary>
+            List of tags to process
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._isDebug">
+            <summary>
+            Whether debug mode is enabled
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._errorQualifiedMessage">
+            <summary>
+            The input message with the error content included if desired
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._MessageSystem">
+            <summary>
+            The final message to use for internal logging
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._MessageStreams">
+            <summary>
+            The final message to use for writing to streams, such as verbose or warning
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._MessageHost">
+            <summary>
+            The final message to use for host messages (write using Write-HostColor)
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._BreadCrumbsString">
+            <summary>
+            Provide breadcrumb queue of the callstack
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand._BreadCrumbsStringColored">
+            <summary>
+            Provide a breadcrumb queue of the callstack in color tags
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.BeginProcessing">
+            <summary>
+            Processes the begin phase of the cmdlet
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.ProcessRecord">
+            <summary>
+            Processes the process phase of the cmdlet
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.ResolveTarget(System.Object)">
+            <summary>
+            Processes the target transform rules on an input object
+            </summary>
+            <param name="Item">The item to transform</param>
+            <returns>The transformed object</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.ResolveException(System.Exception)">
+            <summary>
+            Processes the specified exception specified
+            </summary>
+            <param name="Item">The exception to process</param>
+            <returns>The transformed exception</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.ResolveLevel(Sqlcollaborative.Dbatools.Message.MessageLevel)">
+            <summary>
+            Processs the input level and apply policy and rules
+            </summary>
+            <param name="Level">The original level of the message</param>
+            <returns>The processed level</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.GetMessage">
+            <summary>
+            Builds the message item for display of Verbose, Warning and Debug streams
+            </summary>
+            <returns>The message to return</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.GetMessageSimple">
+            <summary>
+            Builds the base message for internal system use.
+            </summary>
+            <returns>The message to return</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.GetMessageColor">
+            <summary>
+            Builds the message item if needed and returns it
+            </summary>
+            <returns>The message to return</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.GetMessageDeveloper">
+            <summary>
+            Non-host output in developermode
+            </summary>
+            <returns>The string to write on messages that don't go straight to Write-HostColor</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand.GetMessageDeveloperColor">
+            <summary>
+            Host output in developermode
+            </summary>
+            <returns>The string to write on messages that go straight to Write-HostColor</returns>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Computer.DiskSpace">
             <summary>
             Data Container for the output of Get-DbaDiskSpace
@@ -1226,333 +1482,10 @@
             <param name="Message">What message was passed when writing the error</param>
             <param name="Runspace">The ID of the runspace writing the error. Used to separate output between different runspaces in the same process.</param>
         </member>
-        <member name="T:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException">
-            <summary>
-            Wrapper class that can emulate any exception for purpose of serialization without blowing up the storage space consumed
-            </summary>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.GetException">
-            <summary>
-            Returns the original exception object that we interpreted. This is on purpose not a property, as we want to avoid messing with serialization size.
-            </summary>
-            <returns>The original exception that got thrown</returns>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.Message">
-            <summary>
-            The actual Exception Message
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.Source">
-            <summary>
-            The original source of the Exception
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.StackTrace">
-            <summary>
-            Where on the callstack did the exception occur?
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.TargetSite">
-            <summary>
-            What was the target site on the code that caused it. This property has been altered to avoid export issues, if a string representation is not sufficient, access the original exception using GetException()
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.HResult">
-            <summary>
-            The HResult of the exception. Useful in debugging native code errors.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.HelpLink">
-            <summary>
-            Link to a proper help article.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.Data">
-            <summary>
-            Additional data that has been appended
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.InnerException">
-            <summary>
-            The inner exception in a chain of exceptions.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.ExceptionTypeName">
-            <summary>
-            The full namespace name of the exception that has been wrapped.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.ExceptionData">
-            <summary>
-            Contains additional properties other exceptions might contain.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.CategoryInfo">
-            <summary>
-            The category of the error
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.ErrorDetails">
-            <summary>
-            The details on the error
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.FullyQualifiedErrorId">
-            <summary>
-            The specific error identity, used to identify the target
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.InvocationInfo">
-            <summary>
-            The details of how this was called.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.ScriptStackTrace">
-            <summary>
-            The script's stacktrace
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.TargetObject">
-            <summary>
-            The object being processed
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.FunctionName">
-            <summary>
-            The name of the function throwing the error
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.Timestamp">
-            <summary>
-            When was the error thrown
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.Runspace">
-            <summary>
-            The runspace the error occured on.
-            </summary>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.#ctor">
-            <summary>
-            Creates an empty exception object. Mostly for serialization support
-            </summary>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.#ctor(System.Exception)">
-            <summary>
-            Creates an exception based on an original exception object
-            </summary>
-            <param name="Except">The exception to wrap around</param>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.#ctor(System.Management.Automation.ErrorRecord)">
-            <summary>
-            Creates a rich information exception object based on a full error record as recorded by PowerShell
-            </summary>
-            <param name="Record">The error record to copy from</param>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.#ctor(System.Exception,System.String,System.DateTime,System.String,System.Guid)">
-            <summary>
-            Creates a new exception object with rich meta information from the Dbatools runtime.
-            </summary>
-            <param name="Except">The exception thrown</param>
-            <param name="FunctionName">The name of the function in which the error occured</param>
-            <param name="Timestamp">When did the error occur</param>
-            <param name="Message">The message to add to the exception</param>
-            <param name="Runspace">The ID of the runspace from which the exception was thrown. Useful in multi-runspace scenarios.</param>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.#ctor(System.Management.Automation.ErrorRecord,System.String,System.DateTime,System.String,System.Guid)">
-            <summary>
-            Creates a new exception object with rich meta information from the Dbatools runtime.
-            </summary>
-            <param name="Record">The error record written</param>
-            <param name="FunctionName">The name of the function in which the error occured</param>
-            <param name="Timestamp">When did the error occur</param>
-            <param name="Message">The message to add to the exception</param>
-            <param name="Runspace">The ID of the runspace from which the exception was thrown. Useful in multi-runspace scenarios.</param>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException.ToString">
-            <summary>
-            Returns a string representation of the exception.
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="T:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord">
-            <summary>
-            Carrier class, designed to hold an arbitrary number of exceptions. Used for exporting to XML in nice per-incident packages.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord.Runspace">
-            <summary>
-            Runspace where shit happened.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord.Timestamp">
-            <summary>
-            When did things go bad?
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord.FunctionName">
-            <summary>
-            Name of the function, where fail happened.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord.Message">
-            <summary>
-            The message the poor user was shown.
-            </summary>
-        </member>
-        <member name="P:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord.ExceptionType">
-            <summary>
-            Displays the name of the exception, the make scanning exceptions easier.
-            </summary>
-        </member>
-        <member name="P:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord.TargetObject">
-            <summary>
-            The target object of the first exception in the list, if any
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord.Exceptions">
-            <summary>
-            List of Exceptions that are part of the incident (usually - but not always - only one).
-            </summary>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord.#ctor">
-            <summary>
-            Creates an empty container. Ideal for the homeworker who loves doing it all himself.
-            </summary>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord.#ctor(Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException)">
-            <summary>
-            Creates a container filled with the first exception.
-            </summary>
-            <param name="Exception"></param>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord.#ctor(System.Guid,System.DateTime,System.String,System.String)">
-            <summary>
-            Creates a container filled with the meta information but untouched by exceptions
-            </summary>
-            <param name="Runspace">The runspace where it all happened</param>
-            <param name="Timestamp">When did it happen?</param>
-            <param name="FunctionName">Where did it happen?</param>
-            <param name="Message">What did the witness have to say?</param>
-        </member>
         <member name="T:Sqlcollaborative.Dbatools.dbaSystem.DebugHost">
             <summary>
             Hosts static debugging values and methods
             </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.MaxErrorCount">
-            <summary>
-            The maximum numbers of error records maintained in-memory.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.MaxMessageCount">
-            <summary>
-            The maximum number of messages that can be maintained in the in-memory message queue
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.MaxMessagefileBytes">
-            <summary>
-            The maximum size of a given logfile. When reaching this limit, the file will be abandoned and a new log created. Set to 0 to not limit the size.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.MaxMessagefileCount">
-            <summary>
-            The maximum number of logfiles maintained at a time. Exceeding this number will cause the oldest to be culled. Set to 0 to disable the limit.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.MaxErrorFileBytes">
-            <summary>
-            The maximum size all error files combined may have. When this number is exceeded, the oldest entry is culled.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.MaxTotalFolderSize">
-            <summary>
-            This is the upper limit of length all items in the log folder may have combined across all processes.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.LoggingPath">
-            <summary>
-            Path to where the logfiles live.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.MaxLogFileAge">
-            <summary>
-            Any logfile older than this will automatically be cleansed
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.MessageLogFileEnabled">
-            <summary>
-            Governs, whether a log file for the system messages is written
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.MessageLogEnabled">
-            <summary>
-            Governs, whether a log of recent messages is kept in memory
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.ErrorLogFileEnabled">
-            <summary>
-            Governs, whether log files for errors are written
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.ErrorLogEnabled">
-            <summary>
-            Governs, whether a log of recent errors is kept in memory
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.DeveloperMode">
-            <summary>
-            Enables the developer mode. In this additional information and logs are written, in order to make it easier to troubleshoot issues.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.DevelopmentBranch">
-            <summary>
-            Returns whether the module is currently in a development branch. Some warnings will only be shown in development branch, but hidden in master / public releases
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.OutQueueError">
-            <summary>
-            The outbound queue for errors. These will be processed and written to xml
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.OutQueueLog">
-            <summary>
-            The outbound queue for logs. These will be processed and written to logfile
-            </summary>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.GetErrors">
-            <summary>
-            Retrieves a copy of the Error stack
-            </summary>
-            <returns>All errors thrown by dbatools functions</returns>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.GetLog">
-            <summary>
-            Retrieves a copy of the message log
-            </summary>
-            <returns>All messages logged this session.</returns>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.WriteErrorEntry(System.Management.Automation.ErrorRecord[],System.String,System.DateTime,System.String,System.Guid)">
-            <summary>
-            Write an error record to the log
-            </summary>
-            <param name="Record">The actual error record as powershell wrote it</param>
-            <param name="FunctionName">The name of the function writing the error</param>
-            <param name="Timestamp">When was the error written</param>
-            <param name="Message">What message was passed to the user</param>
-            <param name="Runspace">The runspace the message was written from</param>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.WriteLogEntry(System.String,Sqlcollaborative.Dbatools.dbaSystem.LogEntryType,System.DateTime,System.String,Sqlcollaborative.Dbatools.dbaSystem.MessageLevel,System.Guid,System.Object)">
-            <summary>
-            Write a new entry to the log
-            </summary>
-            <param name="Message">The message to log</param>
-            <param name="Type">The type of the message logged</param>
-            <param name="Timestamp">When was the message generated</param>
-            <param name="FunctionName">What function wrote the message</param>
-            <param name="Level">At what level was the function written</param>
-            <param name="Runspace">The runspace the message is coming from</param>
-            <param name="TargetObject">The object associated with a given message.</param>
         </member>
         <member name="F:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.ImportTimeEntries">
             <summary>
@@ -1562,208 +1495,6 @@
         <member name="P:Sqlcollaborative.Dbatools.dbaSystem.DebugHost.ImportTime">
             <summary>
             Returns the calculated time each phase took during the last import of dbatool.
-            </summary>
-        </member>
-        <member name="T:Sqlcollaborative.Dbatools.dbaSystem.LogEntry">
-            <summary>
-            An individual entry for the message log
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.LogEntry.Message">
-            <summary>
-            The message logged
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.LogEntry.Type">
-            <summary>
-            What kind of entry was this?
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.LogEntry.Timestamp">
-            <summary>
-            When was the message logged?
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.LogEntry.FunctionName">
-            <summary>
-            What function wrote the message
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.LogEntry.Level">
-            <summary>
-            What level was the message?
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.LogEntry.Runspace">
-            <summary>
-            What runspace was the message written from?
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.LogEntry.TargetObject">
-            <summary>
-            The object that was the focus of this message.
-            </summary>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.LogEntry.#ctor">
-            <summary>
-            Creates an empty log entry
-            </summary>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.LogEntry.#ctor(System.String,Sqlcollaborative.Dbatools.dbaSystem.LogEntryType,System.DateTime,System.String,Sqlcollaborative.Dbatools.dbaSystem.MessageLevel)">
-            <summary>
-            Creates a filled out log entry
-            </summary>
-            <param name="Message">The message that was logged</param>
-            <param name="Type">The type(s) of message written</param>
-            <param name="Timestamp">When was the message logged</param>
-            <param name="FunctionName">What function wrote the message</param>
-            <param name="Level">What level was the message written at.</param>
-        </member>
-        <member name="M:Sqlcollaborative.Dbatools.dbaSystem.LogEntry.#ctor(System.String,Sqlcollaborative.Dbatools.dbaSystem.LogEntryType,System.DateTime,System.String,Sqlcollaborative.Dbatools.dbaSystem.MessageLevel,System.Guid,System.Object)">
-            <summary>
-            Creates a filled out log entry
-            </summary>
-            <param name="Message">The message that was logged</param>
-            <param name="Type">The type(s) of message written</param>
-            <param name="Timestamp">When was the message logged</param>
-            <param name="FunctionName">What function wrote the message</param>
-            <param name="Level">What level was the message written at.</param>
-            <param name="Runspace">The ID of the runspace that wrote the message.</param>
-            <param name="TargetObject">The object this message was all about.</param>
-        </member>
-        <member name="T:Sqlcollaborative.Dbatools.dbaSystem.LogEntryType">
-            <summary>
-            The kind of information the logged entry was.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.LogEntryType.None">
-            <summary>
-            This entry wasn't written to any stream
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.LogEntryType.Information">
-            <summary>
-            A message that was written to the current host equivalent, if available also to the information stream
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.LogEntryType.Verbose">
-            <summary>
-            A message that was written to the verbose stream
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.LogEntryType.Debug">
-            <summary>
-            A message that was written to the Debug stream
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.LogEntryType.Warning">
-            <summary>
-            A message written to the warning stream
-            </summary>
-        </member>
-        <member name="T:Sqlcollaborative.Dbatools.dbaSystem.MessageHost">
-            <summary>
-            Provides static resources to the messaging subsystem
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageHost.MaximumInformation">
-            <summary>
-            The maximum message level to still display to the user directly.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageHost.MaximumVerbose">
-            <summary>
-            The maxium message level where verbose information is still written.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageHost.MaximumDebug">
-            <summary>
-            The maximum message level where debug information is still written.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageHost.MinimumInformation">
-            <summary>
-            The minimum required message level for messages that will be shown to the user.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageHost.MinimumVerbose">
-            <summary>
-            The minimum required message level where verbose information is written.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageHost.MinimumDebug">
-            <summary>
-            The minimum required message level where debug information is written.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageHost.InfoColor">
-            <summary>
-            The color stuff gets written to the console in
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageHost.DeveloperColor">
-            <summary>
-            The color stuff gets written to the console in, when developer mode is enabled and the message would not have been written after all
-            </summary>
-        </member>
-        <member name="T:Sqlcollaborative.Dbatools.dbaSystem.MessageLevel">
-            <summary>
-            The various levels of verbosity available.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageLevel.Critical">
-            <summary>
-            Very important message, should be shown to the user as a high priority
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageLevel.Important">
-            <summary>
-            Important message, the user should read this
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageLevel.Output">
-            <summary>
-            Important message, the user should read this
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageLevel.Significant">
-            <summary>
-            Message relevant to the user.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageLevel.VeryVerbose">
-            <summary>
-            Not important to the regular user, still of some interest to the curious
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageLevel.Verbose">
-            <summary>
-            Background process information, in case the user wants some detailed information on what is currently happening.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageLevel.SomewhatVerbose">
-            <summary>
-            A footnote in current processing, rarely of interest to the user
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageLevel.System">
-            <summary>
-            A message of some interest from an internal system persepctive, but largely irrelevant to the user.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageLevel.Debug">
-            <summary>
-            Something only of interest to a debugger
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageLevel.InternalComment">
-            <summary>
-            This message barely made the cut from being culled. Of purely development internal interest, and even there is 'interest' a strong word for it.
-            </summary>
-        </member>
-        <member name="F:Sqlcollaborative.Dbatools.dbaSystem.MessageLevel.Warning">
-            <summary>
-            This message is a warning, sure sign something went badly wrong
             </summary>
         </member>
         <member name="T:Sqlcollaborative.Dbatools.Discovery.DbaBrowserReply">
@@ -2203,6 +1934,1024 @@
         <member name="P:Sqlcollaborative.Dbatools.Maintenance.MaintenanceTask.IsDue">
             <summary>
             Whether the task is due and should be executed
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.LogHost">
+            <summary>
+            Provides static information storage for logging related settings, as well as housing the logging queues.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.MaxErrorCount">
+            <summary>
+            The maximum numbers of error records maintained in-memory.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.MaxMessageCount">
+            <summary>
+            The maximum number of messages that can be maintained in the in-memory message queue
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.MaxMessagefileBytes">
+            <summary>
+            The maximum size of a given logfile. When reaching this limit, the file will be abandoned and a new log created. Set to 0 to not limit the size.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.MaxMessagefileCount">
+            <summary>
+            The maximum number of logfiles maintained at a time. Exceeding this number will cause the oldest to be culled. Set to 0 to disable the limit.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.MaxErrorFileBytes">
+            <summary>
+            The maximum size all error files combined may have. When this number is exceeded, the oldest entry is culled.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.MaxTotalFolderSize">
+            <summary>
+            This is the upper limit of length all items in the log folder may have combined across all processes.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.LoggingPath">
+            <summary>
+            Path to where the logfiles live.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.MaxLogFileAge">
+            <summary>
+            Any logfile older than this will automatically be cleansed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.MessageLogFileEnabled">
+            <summary>
+            Governs, whether a log file for the system messages is written
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.MessageLogEnabled">
+            <summary>
+            Governs, whether a log of recent messages is kept in memory
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.ErrorLogFileEnabled">
+            <summary>
+            Governs, whether log files for errors are written
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.ErrorLogEnabled">
+            <summary>
+            Governs, whether a log of recent errors is kept in memory
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.OutQueueError">
+            <summary>
+            The outbound queue for errors. These will be processed and written to xml
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogHost.OutQueueLog">
+            <summary>
+            The outbound queue for logs. These will be processed and written to logfile
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.LogHost.GetErrors">
+            <summary>
+            Retrieves a copy of the Error stack
+            </summary>
+            <returns>All errors thrown by functions using the message or flowcontrol system</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.LogHost.GetLog">
+            <summary>
+            Retrieves a copy of the message log
+            </summary>
+            <returns>All messages logged this session.</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.LogHost.WriteErrorEntry(System.Management.Automation.ErrorRecord[],System.String,System.String,System.Collections.Generic.List{System.String},System.DateTime,System.String,System.Guid,System.String)">
+            <summary>
+            Write an error record to the log
+            </summary>
+            <param name="Record">The actual error record as powershell wrote it</param>
+            <param name="FunctionName">The name of the function writing the error</param>
+            <param name="ModuleName">The name of the module the function writing the error came from</param>
+            <param name="Tags">The tags that were assigned to the error event</param>
+            <param name="Timestamp">When was the error written</param>
+            <param name="Message">What message was passed to the user</param>
+            <param name="Runspace">The runspace the message was written from</param>
+            <param name="ComputerName">The computer the error was written on</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.LogHost.WriteLogEntry(System.String,Sqlcollaborative.Dbatools.Message.LogEntryType,System.DateTime,System.String,System.String,System.Collections.Generic.List{System.String},Sqlcollaborative.Dbatools.Message.MessageLevel,System.Guid,System.String,System.String,System.Int32,System.Collections.Generic.IEnumerable{System.Management.Automation.CallStackFrame},System.String,System.Object)">
+            <summary>
+            Write a new entry to the log
+            </summary>
+            <param name="Message">The message to log</param>
+            <param name="Type">The type of the message logged</param>
+            <param name="Timestamp">When was the message generated</param>
+            <param name="FunctionName">What function wrote the message</param>
+            <param name="ModuleName">What module did the function writing this message come from?</param>
+            <param name="Tags">The tags that were applied to the message</param>
+            <param name="Level">At what level was the function written</param>
+            <param name="Runspace">The runspace the message is coming from</param>
+            <param name="ComputerName">The computer the message was generated on</param>
+            <param name="File">The file from which the message was written</param>
+            <param name="Line">The line on which the message was written</param>
+            <param name="TargetObject">The object associated with a given message.</param>
+            <param name="CallStack">The callstack at the moment the message was written.</param>
+            <param name="Username">The name of the user under which the code being executed</param>
+            <returns>The entry that is being written</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.MessageEventSubscription">
+            <summary>
+            Condition and logic to be executed on message events
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.Name">
+            <summary>
+            Name of the event subscription, must be unique.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.ScriptBlock">
+            <summary>
+            Scriptblock to execute if the condition is met
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageEventSubscription._MessageFilter">
+            <summary>
+            The internally stored filter value for Message
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.MessageFilter">
+            <summary>
+            The value the Message is filtered by
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.MessageFilterSet">
+            <summary>
+            Whether filtering by Message was enabled
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageEventSubscription._ModuleNameFilter">
+            <summary>
+            The internally stored filter value for ModuleName
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.ModuleNameFilter">
+            <summary>
+            The value the ModuleName is filtered by
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.ModuleNameFilterSet">
+            <summary>
+            Whether filtering by ModuleName was enabled
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageEventSubscription._FunctionNameFilter">
+            <summary>
+            The internally stored filter value for FunctionName
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.FunctionNameFilter">
+            <summary>
+            The value the FunctionName is filtered by
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.FunctionNameFilterSet">
+            <summary>
+            Whether filtering by FunctionName was enabled
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageEventSubscription._TargetFilter">
+            <summary>
+            The internally stored filter value for Target
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.TargetFilter">
+            <summary>
+            The value the Target is filtered by
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.TargetFilterSet">
+            <summary>
+            Whether filtering by Target was enabled
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageEventSubscription._LevelFilter">
+            <summary>
+            The internally stored filter value for Level
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.LevelFilter">
+            <summary>
+            The value the Level is filtered by
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.LevelFilterSet">
+            <summary>
+            Whether filtering by Level was enabled
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageEventSubscription._TagFilter">
+            <summary>
+            The internally stored filter value for Tag
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.TagFilter">
+            <summary>
+            The value the Tag is filtered by
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.TagFilterSet">
+            <summary>
+            Whether filtering by Tag was enabled
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageEventSubscription._RunspaceFilter">
+            <summary>
+            The internally stored filter value for Runspace
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.RunspaceFilter">
+            <summary>
+            The value the Runspace is filtered by
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.RunspaceFilterSet">
+            <summary>
+            Whether filtering by Runspace was enabled
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.MessageEventSubscription.Applies(Sqlcollaborative.Dbatools.Message.LogEntry)">
+            <summary>
+            Checks, whether a given entry matches the filter defined in this subscription
+            </summary>
+            <param name="Entry">The entry to validate</param>
+            <returns>Whether the subscription should react to this entry</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.MessageLevelModifier">
+            <summary>
+            A modification to a given message's level
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevelModifier.Name">
+            <summary>
+            Name of the modifier. Prevents duplication in a multi-runspace scenario.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevelModifier.Modifier">
+            <summary>
+            The amount to modify the level by
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevelModifier.IncludeFunctionName">
+            <summary>
+            Apply modifier only to messages from this function.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevelModifier.ExcludeFunctionName">
+            <summary>
+            Apply modifier not when the message is written by this function.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevelModifier.IncludeModuleName">
+            <summary>
+            Apply modifier only to messages from this module
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevelModifier.ExcludeModuleName">
+            <summary>
+            Do not apply modifier to messages from this module
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevelModifier.IncludeTags">
+            <summary>
+            Only apply this modifier to a message that includes at least one of these tags
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevelModifier.ExcludeTags">
+            <summary>
+            Do not apply this modifier to a message that includes any of the following tags
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.MessageLevelModifier.AppliesTo(System.String,System.String,System.Collections.Generic.List{System.String})">
+            <summary>
+            Tests, whether a message a message should be modified by this modiier
+            </summary>
+            <param name="FunctionName">The name of the function writing the message</param>
+            <param name="ModuleName">The name of the module, the function writing this message comes from</param>
+            <param name="Tags">The tags of the message written</param>
+            <returns>Whether the message applies</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.TransformCondition">
+            <summary>
+            A condition, under which the object shall be transaformed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformCondition.TypeName">
+            <summary>
+            Name of the type. All similar types (as determined by the '-like' operator) will be transformed.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformCondition.ModuleName">
+            <summary>
+            The name of the module to consider, using the -Like operator
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformCondition.FunctionName">
+            <summary>
+            The name of the function name to consider, using the -Like operator
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformCondition.ScriptBlock">
+            <summary>
+            The scriptblock that performs the transformation
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformCondition.Type">
+            <summary>
+            What kind of transformation is being performed?
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.TransformCondition.#ctor(System.String,System.String,System.String,System.Management.Automation.ScriptBlock,Sqlcollaborative.Dbatools.Message.TransformType)">
+            <summary>
+            Initializes a transform condition
+            </summary>
+            <param name="TypeName">Only objects of similar name will be transformed</param>
+            <param name="ModuleName">Only objects coming from similar modules will be considered</param>
+            <param name="FunctionName">Only objects coming from similar functions will be considered</param>
+            <param name="ScriptBlock">The scriptblock used for the transformation</param>
+            <param name="Type">What kind of transformation this is</param>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.TransformError">
+            <summary>
+            An error occured during a message transformation
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformError.Record">
+            <summary>
+            The error record of what went wrong
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformError.FunctionName">
+            <summary>
+            The name of the function writing the message that failed to transform
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformError.ModuleName">
+            <summary>
+            The name of the module the command writing the message came from
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformError.Timestamp">
+            <summary>
+            When did it all happen?
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformError.Object">
+            <summary>
+            The object that was supposed to be transformed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformError.Type">
+            <summary>
+            The kind of transform that failed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformError.Runspace">
+            <summary>
+            The runspace it all happened on
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.TransformError.#ctor(System.Management.Automation.ErrorRecord,System.String,System.String,System.Object,Sqlcollaborative.Dbatools.Message.TransformType,System.Guid)">
+            <summary>
+            Creates a new transform error
+            </summary>
+            <param name="Record">The record of what went wrong</param>
+            <param name="FunctionName">The name of the function writing the transformed message</param>
+            <param name="ModuleName">The module the function writing the transformed message is part of</param>
+            <param name="Object">The object that should have been transformed</param>
+            <param name="Type">The type of transform that was attempted</param>
+            <param name="Runspace">The runspace it all happened on</param>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.TransformList">
+            <summary>
+            List engine, managing the lists for a message transformation type
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.TransformList.GetAll">
+            <summary>
+            Returns all entries in the list.
+            </summary>
+            <returns>The list of transforms contained within</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.TransformList.IsListed(Sqlcollaborative.Dbatools.Message.TransformCondition)">
+            <summary>
+            Returns whether the actual object is part of the list
+            </summary>
+            <param name="Condition">The object to test for list membership</param>
+            <returns>Whether the object is listed</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.TransformList.IsContained(Sqlcollaborative.Dbatools.Message.TransformCondition)">
+            <summary>
+            Returns whether a condition with equal conditions already exists
+            </summary>
+            <param name="Condition">The condition to test</param>
+            <returns>Whether the referenced condition is already listed</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.TransformList.Add(Sqlcollaborative.Dbatools.Message.TransformCondition)">
+            <summary>
+            Adds a condition to the list, if there is no equivalent condition present.
+            </summary>
+            <param name="Condition">The condition to add</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.TransformList.Remove(Sqlcollaborative.Dbatools.Message.TransformCondition)">
+            <summary>
+            Removes a condition from the lsit of conditional transforms
+            </summary>
+            <param name="Condition">The condition to remove</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.TransformList.Get(System.String,System.String,System.String)">
+            <summary>
+            Returns the first transform whose filter is similar enough to work out.
+            </summary>
+            <param name="TypeName">The name of the type to check for a transform</param>
+            <param name="ModuleName">The module of the command that wrote the message with the transformable object</param>
+            <param name="Functionname">The command that wrote the message with the transformable object</param>
+            <returns>Either a transform or null, if no fitting transform was found</returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.TransformType">
+            <summary>
+            The messaging system provides these kinds of transformations for input.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformType.Target">
+            <summary>
+            A target transform can transform the target object specified. Used for live-state objects that should not be serialized on a second thread.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.TransformType.Exception">
+            <summary>
+            An exception transform allows automatic transformation of exceptions. Primarily used to unwrap exceptions from an API that wraps all exceptions.
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.DbatoolsException">
+            <summary>
+            Wrapper class that can emulate any exception for purpose of serialization without blowing up the storage space consumed
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.DbatoolsException.GetException">
+            <summary>
+            Returns the original exception object that we interpreted. This is on purpose not a property, as we want to avoid messing with serialization size.
+            </summary>
+            <returns>The original exception that got thrown</returns>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.Message">
+            <summary>
+            The actual Exception Message
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.Source">
+            <summary>
+            The original source of the Exception
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.StackTrace">
+            <summary>
+            Where on the callstack did the exception occur?
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.TargetSite">
+            <summary>
+            What was the target site on the code that caused it. This property has been altered to avoid export issues, if a string representation is not sufficient, access the original exception using GetException()
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.HResult">
+            <summary>
+            The HResult of the exception. Useful in debugging native code errors.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.HelpLink">
+            <summary>
+            Link to a proper help article.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.Data">
+            <summary>
+            Additional data that has been appended
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.InnerException">
+            <summary>
+            The inner exception in a chain of exceptions.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.ExceptionTypeName">
+            <summary>
+            The full namespace name of the exception that has been wrapped.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.ExceptionData">
+            <summary>
+            Contains additional properties other exceptions might contain.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.CategoryInfo">
+            <summary>
+            The category of the error
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.ErrorDetails">
+            <summary>
+            The details on the error
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.FullyQualifiedErrorId">
+            <summary>
+            The specific error identity, used to identify the target
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.InvocationInfo">
+            <summary>
+            The details of how this was called.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.ScriptStackTrace">
+            <summary>
+            The script's stacktrace
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.TargetObject">
+            <summary>
+            The object being processed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.FunctionName">
+            <summary>
+            The name of the function throwing the error
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.Timestamp">
+            <summary>
+            When was the error thrown
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.Runspace">
+            <summary>
+            The runspace the error occured on.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsException.ComputerName">
+            <summary>
+            The computer the error occured on.
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.DbatoolsException.#ctor">
+            <summary>
+            Creates an empty exception object. Mostly for serialization support
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.DbatoolsException.#ctor(System.Exception)">
+            <summary>
+            Creates an exception based on an original exception object
+            </summary>
+            <param name="Except">The exception to wrap around</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.DbatoolsException.#ctor(System.Management.Automation.ErrorRecord)">
+            <summary>
+            Creates a rich information exception object based on a full error record as recorded by PowerShell
+            </summary>
+            <param name="Record">The error record to copy from</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.DbatoolsException.#ctor(System.Exception,System.String,System.DateTime,System.String,System.Guid,System.String)">
+            <summary>
+            Creates a new exception object with rich meta information from the PowerShell runtime.
+            </summary>
+            <param name="Except">The exception thrown</param>
+            <param name="FunctionName">The name of the function in which the error occured</param>
+            <param name="Timestamp">When did the error occur</param>
+            <param name="Message">The message to add to the exception</param>
+            <param name="Runspace">The ID of the runspace from which the exception was thrown. Useful in multi-runspace scenarios.</param>
+            <param name="ComputerName">The computer the error occured on.</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.DbatoolsException.#ctor(System.Management.Automation.ErrorRecord,System.String,System.DateTime,System.String,System.Guid,System.String)">
+            <summary>
+            Creates a new exception object with rich meta information from the PowerShell runtime.
+            </summary>
+            <param name="Record">The error record written</param>
+            <param name="FunctionName">The name of the function in which the error occured</param>
+            <param name="Timestamp">When did the error occur</param>
+            <param name="Message">The message to add to the exception</param>
+            <param name="Runspace">The ID of the runspace from which the exception was thrown. Useful in multi-runspace scenarios.</param>
+            <param name="ComputerName">The computer the error occured on.</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.DbatoolsException.ToString">
+            <summary>
+            Returns a string representation of the exception.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord">
+            <summary>
+            Carrier class, designed to hold an arbitrary number of exceptions. Used for exporting to XML in nice per-incident packages.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord.Runspace">
+            <summary>
+            Runspace where shit happened.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord.ComputerName">
+            <summary>
+            The computer name the exception was written on
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord.Timestamp">
+            <summary>
+            When did things go bad?
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord.FunctionName">
+            <summary>
+            Name of the function, where fail happened.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord.ModuleName">
+            <summary>
+            The module of the function where fail happened
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord.Tags">
+            <summary>
+            The tags that were applied to the failure
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord.Message">
+            <summary>
+            The message the poor user was shown.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord.ExceptionType">
+            <summary>
+            Displays the name of the exception, the make scanning exceptions easier.
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord.TargetObject">
+            <summary>
+            The target object of the first exception in the list, if any
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord.Exceptions">
+            <summary>
+            List of Exceptions that are part of the incident (usually - but not always - only one).
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord.#ctor">
+            <summary>
+            Creates an empty container. Ideal for the homeworker who loves doing it all himself.
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord.#ctor(Sqlcollaborative.Dbatools.Message.DbatoolsException)">
+            <summary>
+            Creates a container filled with the first exception.
+            </summary>
+            <param name="Exception"></param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.DbatoolsExceptionRecord.#ctor(System.Guid,System.String,System.DateTime,System.String,System.String,System.Collections.Generic.List{System.String},System.String)">
+            <summary>
+            Creates a container filled with the meta information but untouched by exceptions
+            </summary>
+            <param name="Runspace">The runspace where it all happened</param>
+            <param name="ComputerName">The computer the error was recorded</param>
+            <param name="Timestamp">When did it happen?</param>
+            <param name="FunctionName">Where did it happen?</param>
+            <param name="ModuleName">The name of the module where fail happened</param>
+            <param name="Tags">The tags that were assigned to the failure</param>
+            <param name="Message">What did the witness have to say?</param>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.LogEntry">
+            <summary>
+            An individual entry for the message log
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.Message">
+            <summary>
+            The message logged
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.Type">
+            <summary>
+            What kind of entry was this?
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.Timestamp">
+            <summary>
+            When was the message logged?
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.FunctionName">
+            <summary>
+            What function wrote the message
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.ModuleName">
+            <summary>
+            The name of the module of the function that wrote the message
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.Tags">
+            <summary>
+            The tags applied to the message
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.Level">
+            <summary>
+            What level was the message?
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.Runspace">
+            <summary>
+            What runspace was the message written from?
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.ComputerName">
+            <summary>
+            The computer the message was generated on
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.TargetObject">
+            <summary>
+            The object that was the focus of this message.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.File">
+            <summary>
+            The file from which the message was written.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.Line">
+            <summary>
+            The line on which the message was written.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.CallStack">
+            <summary>
+            The callstack when the message was written.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntry.Username">
+            <summary>
+            The user that did the writing.
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.LogEntry.#ctor">
+            <summary>
+            Creates an empty log entry
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.LogEntry.#ctor(System.String,Sqlcollaborative.Dbatools.Message.LogEntryType,System.DateTime,System.String,System.String,System.Collections.Generic.List{System.String},Sqlcollaborative.Dbatools.Message.MessageLevel,System.Guid,System.String,System.Object,System.String,System.Int32,System.Collections.Generic.IEnumerable{System.Management.Automation.CallStackFrame},System.String)">
+            <summary>
+            Creates a filled out log entry
+            </summary>
+            <param name="Message">The message that was logged</param>
+            <param name="Type">The type(s) of message written</param>
+            <param name="Timestamp">When was the message logged</param>
+            <param name="FunctionName">What function wrote the message</param>
+            <param name="ModuleName">Name of the module the function writing this message came from</param>
+            <param name="Tags">Tags that were applied to the message</param>
+            <param name="Level">What level was the message written at.</param>
+            <param name="Runspace">The ID of the runspace that wrote the message.</param>
+            <param name="ComputerName">The computer the message was generated on.</param>
+            <param name="TargetObject">The object this message was all about.</param>
+            <param name="File">The file of the code that wrote the message.</param>
+            <param name="Line">The line on which the message was written.</param>
+            <param name="CallStack">The callstack that triggered the write.</param>
+            <param name="Username">The user responsible for running the code that is writing the message.</param>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.LogEntryType">
+            <summary>
+            The kind of information the logged entry was.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntryType.None">
+            <summary>
+            This entry wasn't written to any stream
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntryType.Information">
+            <summary>
+            A message that was written to the current host equivalent, if available also to the information stream
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntryType.Verbose">
+            <summary>
+            A message that was written to the verbose stream
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntryType.Debug">
+            <summary>
+            A message that was written to the Debug stream
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.LogEntryType.Warning">
+            <summary>
+            A message written to the warning stream
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.MessageHost">
+            <summary>
+            Provides static resources to the messaging subsystem
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.MaximumInformation">
+            <summary>
+            The maximum message level to still display to the user directly.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.MaximumVerbose">
+            <summary>
+            The maxium message level where verbose information is still written.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.MaximumDebug">
+            <summary>
+            The maximum message level where debug information is still written.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.MinimumInformation">
+            <summary>
+            The minimum required message level for messages that will be shown to the user.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.MinimumVerbose">
+            <summary>
+            The minimum required message level where verbose information is written.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.MinimumDebug">
+            <summary>
+            The minimum required message level where debug information is written.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.InfoColor">
+            <summary>
+            The color stuff gets written to the console in
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.InfoColorEmphasis">
+            <summary>
+            The color important stuff gets written to the console in
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.InfoColorSubtle">
+            <summary>
+            The color background stuff gets written to the console in
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.DeveloperColor">
+            <summary>
+            The color stuff gets written to the console in, when developer mode is enabled and the message would not have been written after all
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.DeveloperMode">
+            <summary>
+            Enables the developer mode. In this all messages are written to the console, in order to make it easier to troubleshoot issues.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.NestedLevelDecrement">
+            <summary>
+            Message levels can decrease by nested level. This causes messages to have an increasingly reduced level as the size of the callstack increases. 
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.DisableVerbosity">
+            <summary>
+            Globally override all verbosity
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.EnableMessageTimestamp">
+            <summary>
+            Include message timestamps in verbose message output
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.EnableMessageDisplayCommand">
+            <summary>
+            Include the message display command in the verbose message output
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.EnableMessageBreadcrumbs">
+            <summary>
+            Include the entire callstack in the verbose message output
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.TransformErrorQueueSize">
+            <summary>
+            The size of the transform error queue. When adding more than this, the oldest entry will be discarded
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.ExceptionTransforms">
+            <summary>
+            Provides the option to transform exceptions based on the original exception type
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.TargetTransforms">
+            <summary>
+            Provides the option to transform target objects based on type. This is sometimes important when working with live state objects that should not be serialized.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.TransformErrors">
+            <summary>
+            The list of transformation errors that occured.
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.MessageHost.GetTransformErrors">
+            <summary>
+            Returns the current queue of failed transformations
+            </summary>
+            <returns>The list of transformations that failed</returns>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Message.MessageHost.WriteTransformError(System.Management.Automation.ErrorRecord,System.String,System.String,System.Object,Sqlcollaborative.Dbatools.Message.TransformType,System.Guid)">
+            <summary>
+            Writes a new transform error
+            </summary>
+            <param name="Record">The record of what went wrong</param>
+            <param name="FunctionName">The name of the function writing the transformed message</param>
+            <param name="ModuleName">The module the function writing the transformed message is part of</param>
+            <param name="Object">The object that should have been transformed</param>
+            <param name="Type">The type of transform that was attempted</param>
+            <param name="Runspace">The runspace it all happened on</param>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.ExceptionTransformList">
+            <summary>
+            List of custom transforms for exceptions
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.TargetTransformlist">
+            <summary>
+            List of custom transforms for targets
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.MessageLevelModifiers">
+            <summary>
+            List of all modifiers that apply to message levels
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageHost.Events">
+            <summary>
+            List of events that subscribe to messages being written
+            </summary>
+        </member>
+        <member name="T:Sqlcollaborative.Dbatools.Message.MessageLevel">
+            <summary>
+            The various levels of verbosity available.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevel.Critical">
+            <summary>
+            Very important message, should be shown to the user as a high priority
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevel.Important">
+            <summary>
+            Important message, the user should read this
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevel.Output">
+            <summary>
+            Important message, the user should read this
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevel.Significant">
+            <summary>
+            Message relevant to the user.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevel.VeryVerbose">
+            <summary>
+            Not important to the regular user, still of some interest to the curious
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevel.Verbose">
+            <summary>
+            Background process information, in case the user wants some detailed information on what is currently happening.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevel.SomewhatVerbose">
+            <summary>
+            A footnote in current processing, rarely of interest to the user
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevel.System">
+            <summary>
+            A message of some interest from an internal system persepctive, but largely irrelevant to the user.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevel.Debug">
+            <summary>
+            Something only of interest to a debugger
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevel.InternalComment">
+            <summary>
+            This message barely made the cut from being culled. Of purely development internal interest, and even there is 'interest' a strong word for it.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Message.MessageLevel.Warning">
+            <summary>
+            This message is a warning, sure sign something went badly wrong
             </summary>
         </member>
         <member name="T:Sqlcollaborative.Dbatools.Parameter.DbaCredentialParameter">

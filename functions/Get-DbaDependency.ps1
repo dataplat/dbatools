@@ -216,7 +216,7 @@ function Get-DbaDependency {
     }
     Process {
         foreach ($Item in $InputObject) {
-            Write-Message -EnableException $EnableException -Level 5 -Message "Processing: $Item"
+            Write-Message -EnableException $EnableException -Level Verbose -Message "Processing: $Item"
             if ($null -eq $Item.urn) {
                 Stop-Function -Message "$Item is not a valid SMO object" -EnableException $EnableException -Category InvalidData -Continue -Target $Item
             }
@@ -237,7 +237,7 @@ function Get-DbaDependency {
             $limitCount = 2
             if ($IncludeSelf) { $limitCount = 1 }
             if ($tree.Count -lt $limitCount) {
-                Write-Message -Message "No dependencies detected for $($Item)" -Level 2 -EnableException $EnableException
+                Write-Message -Message "No dependencies detected for $($Item)" -Level Host
                 continue
             }
 
