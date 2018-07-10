@@ -1,19 +1,16 @@
 ﻿function Remove-DbaPlanCache {
     <#
         .SYNOPSIS
-            Removes adhoc and prepared plan caches is single use plans are over defined 
-            threshold
+            Removes adhoc and prepared plan caches is single use plans are over defined threshold.
     
         .DESCRIPTION
-            "Checks ahoc and prepared plan cache for each database, if over 100 MBs 
-            removes from the cache."
+            Checks ahoc and prepared plan cache for each database, if over 100 MBs removes from the cache.
     
             This command automates that process.
     
             References: https://www.sqlskills.com/blogs/kimberly/plan-cache-adhoc-workloads-and-clearing-the-single-use-plan-cache-bloat/
     
-            Note: This command removes the plans from all SQL instances on the destionation 
-            server but the process column is specific to -SqlInstance passed.
+            Note: This command removes the plans from all SQL instances on the destionation server but the process column is specific to -SqlInstance passed.
     
         .PARAMETER SqlInstance
             The SQL Server instance. Server version must be SQL Server version XXXX or higher.
