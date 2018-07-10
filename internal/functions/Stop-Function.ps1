@@ -159,14 +159,14 @@ function Stop-Function {
         }
 
         # Manage Debugging
-        Write-Message -Level Warning -Message $Message -EnableException $EnableException.ToBool() -FunctionName $FunctionName -Target $targetToAdd -ErrorRecord $records -OverrideExceptionMessage:$OverrideExceptionMessage
+        Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $targetToAdd -ErrorRecord $records -OverrideExceptionMessage:$OverrideExceptionMessage
     }
     else {
         $exception = New-Object System.Exception($Message)
         $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $targetToAdd)
 
         # Manage Debugging
-        Write-Message -Level Warning -Message $Message -EnableException $EnableException.ToBool() -FunctionName $FunctionName -Target $targetToAdd -ErrorRecord $records -OverrideExceptionMessage:$true
+        Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $targetToAdd -ErrorRecord $records -OverrideExceptionMessage:$true
     }
 
 
