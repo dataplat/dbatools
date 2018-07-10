@@ -1,69 +1,69 @@
 ﻿function Get-DbatoolsLog {
     
-	<#
-		.SYNOPSIS
-			Returns log entries for dbatools
-		
-		.DESCRIPTION
-			Returns log entries for dbatools. Handy when debugging or developing a script using it.
-		
-		.PARAMETER FunctionName
-			Default: "*"
-			Only messages written by similar functions will be returned.
-		
-		.PARAMETER ModuleName
-			Default: "*"
-			Only messages written by commands from similar modules will be returned.
-		
-		.PARAMETER Target
-			Only messags handling the specified target will be returned.
-		
-		.PARAMETER Tag
-			Only messages containing one of these tags will be returned.
-		
-		.PARAMETER Last
-			Only messages written by the last X executions will be returned.
-			Uses Get-History to determine execution. Ignores Get-message commands.
-			By default, this will also include messages from other runspaces. If your command executes in parallel, that's useful.
-			If it doesn't and you were offloading executions to other runspaces, consider also filtering by runspace using '-Runspace'
-		
-		.PARAMETER Skip
-			How many executions to skip when specifying '-Last'.
-			Has no effect without the '-Last' parameter.
-		
-		.PARAMETER Runspace
-			The guid of the runspace to return messages from.
-			By default, messages from all runspaces are returned.
-			Run the following line to see the list of guids:
-	
-			Get-Runspace | ft Id, Name, InstanceId -Autosize
-	
-		.PARAMETER Level
-			Limit the message selection by level.
-			Message levels have a numeric value, making it easier to select a range:
-			
-			  -Level (1..6)
-	
-			Will select the first 6 levels (Critical - SomewhatVerbose).
-		
-		.PARAMETER Errors
-			Instead of log entries, the error entries will be retrieved
-		
-		.EXAMPLE
-			Get-DbatoolsLog
-			
-			Returns all log entries currently in memory.
-	
-		.EXAMPLE
-			Get-DbatoolsLog -Target "a" -Last 1 -Skip 1
-	
-			Returns all log entries that targeted the object "a" in the second last execution sent.
-	
-		.EXAMPLE
-			Get-DbatoolsLog -Tag "fail" -Last 5
-	
-			Returns all log entries within the last 5 executions that contained the tag "fail"
-	#>
+<#
+    .SYNOPSIS
+        Returns log entries for dbatools
+    
+    .DESCRIPTION
+        Returns log entries for dbatools. Handy when debugging or developing a script using it.
+    
+    .PARAMETER FunctionName
+        Default: "*"
+        Only messages written by similar functions will be returned.
+    
+    .PARAMETER ModuleName
+        Default: "*"
+        Only messages written by commands from similar modules will be returned.
+    
+    .PARAMETER Target
+        Only messags handling the specified target will be returned.
+    
+    .PARAMETER Tag
+        Only messages containing one of these tags will be returned.
+    
+    .PARAMETER Last
+        Only messages written by the last X executions will be returned.
+        Uses Get-History to determine execution. Ignores Get-message commands.
+        By default, this will also include messages from other runspaces. If your command executes in parallel, that's useful.
+        If it doesn't and you were offloading executions to other runspaces, consider also filtering by runspace using '-Runspace'
+    
+    .PARAMETER Skip
+        How many executions to skip when specifying '-Last'.
+        Has no effect without the '-Last' parameter.
+    
+    .PARAMETER Runspace
+        The guid of the runspace to return messages from.
+        By default, messages from all runspaces are returned.
+        Run the following line to see the list of guids:
+        
+        Get-Runspace | ft Id, Name, InstanceId -Autosize
+    
+    .PARAMETER Level
+        Limit the message selection by level.
+        Message levels have a numeric value, making it easier to select a range:
+        
+        -Level (1..6)
+        
+        Will select the first 6 levels (Critical - SomewhatVerbose).
+    
+    .PARAMETER Errors
+        Instead of log entries, the error entries will be retrieved
+    
+    .EXAMPLE
+        Get-DbatoolsLog
+        
+        Returns all log entries currently in memory.
+    
+    .EXAMPLE
+        Get-DbatoolsLog -Target "a" -Last 1 -Skip 1
+        
+        Returns all log entries that targeted the object "a" in the second last execution sent.
+    
+    .EXAMPLE
+        Get-DbatoolsLog -Tag "fail" -Last 5
+        
+        Returns all log entries within the last 5 executions that contained the tag "fail"
+#>
     [CmdletBinding()]
     param (
         [string]
