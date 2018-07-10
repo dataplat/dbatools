@@ -200,7 +200,7 @@ function Stop-Function {
     }
     else {
         $exception = New-Object System.Exception($Message)
-        $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $targetToAdd)
+        $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
 
         # Manage Debugging
         Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $Target -ErrorRecord $records -Tag $Tag -ModuleName $ModuleName -OverrideExceptionMessage:$true -File $File -Line $Line
@@ -212,7 +212,7 @@ function Stop-Function {
     #region EnableException Mode
     if ($EnableException) {
         if ($SilentlyContinue) {
-            foreach ($record in $records) { Write-Error -Message $record -Category $Category -TargetObject $targetToAdd -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
+            foreach ($record in $records) { Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
             if ($ContinueLabel) { continue $ContinueLabel }
             else { Continue }
         }
@@ -228,7 +228,7 @@ function Stop-Function {
     else {
         # This ensures that the error is stored in the $error variable AND has its Stacktrace (simply adding the record would lack the stacktrace)
         foreach ($record in $records) {
-            $null = Write-Error -Message $record -Category $Category -TargetObject $targetToAdd -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1
+            $null = Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1
         }
 
         if ($Continue) {
