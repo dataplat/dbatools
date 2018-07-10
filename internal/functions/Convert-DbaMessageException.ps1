@@ -1,27 +1,27 @@
 function Convert-DbaMessageException {
-	<#
-		.SYNOPSIS
-			Transforms the Exception input to the message system.
-		
-		.DESCRIPTION
-			Transforms the Exception input to the message system.
-		
-			If there is an exception running a transformation scriptblock, it will log the error in the transform error queue and return the original object instead.
-		
-		.PARAMETER Exception
-			The input Exception object, that might have to be transformed (may not either)
-		
-		.PARAMETER FunctionName
-			The function writing the message
-		
-		.PARAMETER ModuleName
-			The module, that the function writing the message is part of
-		
-		.EXAMPLE
-			PS C:\> Convert-DbaMessageException -Exception $Exception -FunctionName 'Get-Test' -ModuleName 'MyModule'
-		
-			Checks internal storage for definitions that require a Exception transform, and either returns the original object or the transformed object.
-	#>
+<#
+    .SYNOPSIS
+        Transforms the Exception input to the message system.
+    
+    .DESCRIPTION
+        Transforms the Exception input to the message system.
+        
+        If there is an exception running a transformation scriptblock, it will log the error in the transform error queue and return the original object instead.
+    
+    .PARAMETER Exception
+        The input Exception object, that might have to be transformed (may not either)
+    
+    .PARAMETER FunctionName
+        The function writing the message
+    
+    .PARAMETER ModuleName
+        The module, that the function writing the message is part of
+    
+    .EXAMPLE
+        PS C:\> Convert-DbaMessageException -Exception $Exception -FunctionName 'Get-Test' -ModuleName 'MyModule'
+        
+        Checks internal storage for definitions that require a Exception transform, and either returns the original object or the transformed object.
+#>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
