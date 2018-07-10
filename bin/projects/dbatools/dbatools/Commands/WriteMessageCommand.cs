@@ -430,6 +430,7 @@ else { Write-HostColor -String $string -DefaultColor ([Sqlcollaborative.Dbatools
                             cfg.Name = String.Format("{0}.{1}", FunctionName, Once).ToLower();
                             cfg.Hidden = true;
                             cfg.Description = "Locking setting that disables further display of the specified message";
+                            cfg.Value = true;
 
                             Configuration.ConfigurationHost.Configurations[onceName] = cfg;
                         }
@@ -463,6 +464,7 @@ else { Write-HostColor -String $string -DefaultColor ([Sqlcollaborative.Dbatools
                             cfg.Name = String.Format("{0}.{1}", FunctionName, Once).ToLower();
                             cfg.Hidden = true;
                             cfg.Description = "Locking setting that disables further display of the specified message";
+                            cfg.Value = true;
 
                             Configuration.ConfigurationHost.Configurations[onceName] = cfg;
                         }
