@@ -48,6 +48,7 @@ function Get-DbaLogin {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Login, Security
             Author: Mitchell Hamann (@SirCaptainMitch)
             Author: Klaas Vandenberghe (@powerdbaklaas)
             Author: Robert Corrigan (@rjcorrig)
@@ -152,7 +153,7 @@ function Get-DbaLogin {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential

@@ -143,7 +143,7 @@ function Copy-DbaServerTrigger {
                         }
                         catch {
                             $copyTriggerStatus.Status = "Failed"
-                            $copyTriggerStatus.Notes = $_.Exception
+                            $copyTriggerStatus.Notes = (Get-ErrorMessage -Record $_)
                             $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Stop-Function -Message "Issue dropping trigger on destination" -Target $triggerName -ErrorRecord $_ -Continue
@@ -169,7 +169,7 @@ function Copy-DbaServerTrigger {
                 }
                 catch {
                     $copyTriggerStatus.Status = "Failed"
-                    $copyTriggerStatus.Notes = $_.Exception
+                    $copyTriggerStatus.Notes = (Get-ErrorMessage -Record $_)
                     $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                     Stop-Function -Message "Issue creating trigger on destination" -Target $triggerName -ErrorRecord $_

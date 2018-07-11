@@ -30,7 +30,7 @@ Switch to indicate that you wish to bypass the recommended limits of the functio
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
-Tags: Databases, Logs
+Tags: Database, Log, LogFile
 Author: Stuart Moore (@napalmgram), stuart-moore.com
 
 Website: https://dbatools.io

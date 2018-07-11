@@ -19,7 +19,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         #>
         $paramCount = 8
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaValidLogin).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Test-DbaWindowsLogin).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'ExcludeLogin', 'FilterBy', 'IgnoreDomains', 'EnableException', 'Detailed'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -33,7 +33,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Did not include these tests yet as I was unsure if AppVeyor was capable of testing domain logins. Included these for future use.
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        $results = Test-DbaValidLogin -SqlInstance $script:instance2
+        $results = Test-DbaWindowsLogin -SqlInstance $script:instance2
         It "Should return correct properties" {
             $ExpectedProps = 'AccountNotDelegated,AllowReversiblePasswordEncryption,CannotChangePassword,DisabledInSQLServer,Domain,Enabled,Found,LockedOut,Login,PasswordExpired,PasswordNeverExpires,PasswordNotRequired,Server,SmartcardLogonRequired,TrustedForDelegation,Type,UserAccountControl'.Split(',')
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)

@@ -27,7 +27,7 @@ function Get-DbaXESessionTarget {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: ExtendedEvent, XE, Xevent
+            Tags: ExtendedEvent, XE, XEvent
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -63,7 +63,7 @@ function Get-DbaXESessionTarget {
         [switch][Alias('Silent')]
         $EnableException
     )
-    
+
     begin {
         function Get-Target {
             [CmdletBinding()]
@@ -73,24 +73,24 @@ function Get-DbaXESessionTarget {
                 $Server,
                 $Target
             )
-            
+
             foreach ($xsession in $Sessions) {
-                
+
                 if ($null -eq $server) {
                     $server = $xsession.Parent
                 }
-                
+
                 if ($Session -and $xsession.Name -notin $Session) { continue }
                 $status = switch ($xsession.IsRunning) { $true { "Running" } $false { "Stopped" } }
                 $sessionname = $xsession.Name
-                
+
                 foreach ($xtarget in $xsession.Targets) {
                     if ($Target -and $xtarget.Name -notin $Target) { continue }
-                    
+
                     $files = $xtarget.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
-                    
+
                     $filecollection = $remotefile = @()
-                    
+
                     if ($files) {
                         foreach ($file in $files) {
                             if ($file -notmatch ':\\' -and $file -notmatch '\\\\') {
@@ -101,7 +101,7 @@ function Get-DbaXESessionTarget {
                             $remotefile += Join-AdminUnc -servername $server.netName -filepath $file
                         }
                     }
-                    
+
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name ComputerName -Value $server.NetName
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
@@ -109,16 +109,16 @@ function Get-DbaXESessionTarget {
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name SessionStatus -Value $status
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name TargetFile -Value $filecollection
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name RemoteTargetFile -Value $remotefile
-                    
+
                     Select-DefaultView -InputObject $xtarget -Property ComputerName, InstanceName, SqlInstance, Session, SessionStatus, Name, ID, 'TargetFields as Field', PackageName, 'TargetFile as File', Description, ScriptName
                 }
             }
         }
     }
-    
+
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential -Session $Session
         }

@@ -68,6 +68,15 @@ function Backup-DbaDatabase {
             .PARAMETER Verify
                 If this switch is enabled, the backup will be verified by running a RESTORE VERIFYONLY against the SqlInstance
 
+            .PARAMETER WithFormat
+                 Formats the media as the first step of the backup operation. NOTE: This will set Initialize and SkipTapeHeader to $true.
+
+            .PARAMETER Initialize
+                 Initializes the media as part of the backup operation.
+
+            .PARAMETER SkipTapeHeader
+                 Initializes the media as part of the backup operation.
+
             .PARAMETER InputObject
                 Internal parameter
 
@@ -90,7 +99,7 @@ function Backup-DbaDatabase {
                 Note, that as we can't check the path you may well end up with errors.
 
             .PARAMETER OutputScriptOnly
-                Switch causes only the T-SQL script for the backup to be generated. Will not create any paths if they do now exist
+                Switch causes only the T-SQL script for the backup to be generated. Will not create any paths if they do not exist
 
             .PARAMETER EnableException
                 By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -154,6 +163,9 @@ function Backup-DbaDatabase {
         [string]$AzureCredential,
         [switch]$NoRecovery,
         [switch]$BuildPath,
+        [switch]$WithFormat,
+        [switch]$Initialize,
+        [switch]$SkipTapeHeader,
         [switch]$IgnoreFileChecks,
         [switch]$OutputScriptOnly,
         [Alias('Silent')]
@@ -165,7 +177,7 @@ function Backup-DbaDatabase {
         if ($SqlInstance.length -ne 0) {
             Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
             try {
-                $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
             }
             catch {
                 Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
@@ -356,14 +368,20 @@ function Backup-DbaDatabase {
                 }
             }
 
+            if ($AzureBaseUrl -or $AzureCredential) {
+                $slash = "/"
+            }
+            else {
+                $slash = "\"
+            }
             if ($FinalBackupPath.Count -gt 1) {
                 $File = New-Object System.IO.FileInfo($BackupFinalName)
                 for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] + "\" + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] + $slash + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
                 }
             }
             elseif ($FinalBackupPath[0] -ne 'NUL:') {
-                $FinalBackupPath[0] = $FinalBackupPath[0] + "\" + $BackupFinalName
+                $FinalBackupPath[0] = $FinalBackupPath[0] + $slash + $BackupFinalName
             }
 
             if ($CreateFolder -and $FinalBackupPath[0] -ne 'NUL:') {
@@ -410,6 +428,16 @@ function Backup-DbaDatabase {
                     else {
                         $device.DeviceType = "File"
                     }
+                    
+                    if ($WithFormat) {
+                        Write-Message -Message "WithFormat specified. Ensuring Initialize and SkipTapeHeader are set to true." -Level Verbose
+                        $Initialize = $true
+                        $SkipTapeHeader = $true
+                    }
+                    
+                    $backup.FormatMedia = $WithFormat
+                    $backup.Initialize = $Initialize
+                    $backup.SkipTapeHeader = $SkipTapeHeader
                     $device.Name = $backupfile
                     $backup.Devices.Add($device)
                 }

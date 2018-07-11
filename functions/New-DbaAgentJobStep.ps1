@@ -95,7 +95,7 @@ The force parameter will ignore some errors in the parameters and assume default
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
-Tags: Agent, Job, Job Step
+Tags: Agent, Job, JobStep
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 
 Website: https://dbatools.io
@@ -199,7 +199,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

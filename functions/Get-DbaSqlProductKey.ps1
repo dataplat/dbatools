@@ -159,7 +159,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
                     else { $SqlInstance = "$clustername\$instance" }
                 }
 
-                Write-Verbose "Attempting to connect to $SqlInstance"
+                Write-Verbose "Connecting to $SqlInstance"
                 try { $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential }
                 catch { Write-Warning "Can't connect to $SqlInstance or access denied. Skipping."; continue }
 

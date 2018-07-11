@@ -67,13 +67,13 @@ function Get-DbaClientProtocol {
             $server = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
             if ( $server.FullComputerName ) {
                 $computer = $server.FullComputerName
-                Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer" -EnableException $EnableException
+                Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer"
                 $namespace = Get-DbaCmObject -ComputerName $computer -Namespace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name LIke 'ComputerManagement%'" -ErrorAction SilentlyContinue |
                     Where-Object {(Get-DbaCmObject -ComputerName $computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0} |
                     Sort-Object Name -Descending | Select-Object -First 1
 
                 if ( $namespace.Name ) {
-                    Write-Message -Level Verbose -Message "Getting Cim class ClientNetworkProtocol in Namespace $($namespace.Name) on $computer" -EnableException $EnableException
+                    Write-Message -Level Verbose -Message "Getting Cim class ClientNetworkProtocol in Namespace $($namespace.Name) on $computer"
                     try {
                         $prot = Get-DbaCmObject -ComputerName $computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue
 
@@ -86,11 +86,11 @@ function Get-DbaClientProtocol {
                         }
                     }
                     catch {
-                        Write-Message -Level Warning -Message "No Sql ClientNetworkProtocol found on $computer" -EnableException $EnableException
+                        Write-Message -Level Warning -Message "No Sql ClientNetworkProtocol found on $computer"
                     }
                 } #if namespace
                 else {
-                    Write-Message -Level Warning -Message "No ComputerManagement Namespace on $computer. Please note that this function is available from SQL 2005 up." -EnableException $EnableException
+                    Write-Message -Level Warning -Message "No ComputerManagement Namespace on $computer. Please note that this function is available from SQL 2005 up."
                 } #else no namespace
             } #if computername
             else {

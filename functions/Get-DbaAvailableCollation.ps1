@@ -19,6 +19,7 @@ function Get-DbaAvailableCollation {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Collation, Configuration
             Author: Bryan Hamby (@galador)
 
             Website: https://dbatools.io
@@ -32,7 +33,6 @@ function Get-DbaAvailableCollation {
             Get-DbaAvailableCollation -SqlInstance sql2016
 
             Gets all the collations from server sql2016 using NT authentication
-
     #>
     [CmdletBinding()]
     Param (

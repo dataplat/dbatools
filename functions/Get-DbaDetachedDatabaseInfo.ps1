@@ -22,8 +22,8 @@ function Get-DbaDetachedDatabaseInfo {
             Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which the SQL Server service account has access.
 
         .NOTES
-            Tags: DisasterRecovery
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Tags: Database, Detach
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT

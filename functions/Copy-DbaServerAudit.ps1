@@ -199,7 +199,7 @@ function Copy-DbaServerAudit {
                 }
                 catch {
                     $copyAuditStatus.Status = "Failed"
-                    $copyAuditStatus.Notes = $_.Exception
+                    $copyAuditStatus.Notes = (Get-ErrorMessage -Record $_)
                     $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                     Stop-Function -Message "Issue creating audit." -Target $auditName -ErrorRecord $_

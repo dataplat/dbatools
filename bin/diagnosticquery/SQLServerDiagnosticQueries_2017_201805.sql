@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: June 5, 2018
+-- Last Modified: June 20, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -74,7 +74,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3022.28		CU4					2/20/2018	    https://support.microsoft.com/en-us/help/4056498
 -- 14.0.3023.8		CU5					3/20/2018		https://support.microsoft.com/en-us/help/4092643
 -- 14.0.3025.34		CU6					4/17/2018	    https://support.microsoft.com/en-us/help/4101464
--- 14.0.3026.27		CU7					5/23/2018		https://support.microsoft.com/en-us/help/4229789/cumulative-update-7-for-sql-server-2017
+-- 14.0.3026.27		CU7					5/23/2018		https://support.microsoft.com/en-us/help/4229789
+-- 14.0.3029.16		CU8					6/19/2018		https://support.microsoft.com/en-us/help/4338363 
 		
 															
 
@@ -203,7 +204,7 @@ DBCC TRACESTATUS (-1);
 --           https://bit.ly/2HrQUpU         
 
 -- The behavior of TF 1117, 1118 are enabled for tempdb in SQL Server 2016 by default
--- SQL 2016 – It Just Runs Faster: -T1117 and -T1118 changes for TEMPDB and user databases
+-- SQL 2016 Â– It Just Runs Faster: -T1117 and -T1118 changes for TEMPDB and user databases
 -- https://bit.ly/2lbNWxK           
 
 -- The behavior of TF 2371 is enabled by default in SQL Server 2016 and newer (in compat level 130 and higher)
@@ -450,7 +451,7 @@ ORDER BY ag.name, ar.replica_server_name, adc.[database_name] OPTION (RECOMPILE)
 
 -- You will see no results if your instance is not using AlwaysOn AGs
 
--- SQL Server 2016 – It Just Runs Faster: Always On Availability Groups Turbocharged
+-- SQL Server 2016 Â– It Just Runs Faster: Always On Availability Groups Turbocharged
 -- https://bit.ly/2dn1H6r
 
 
@@ -833,11 +834,11 @@ ORDER BY index_advantage DESC OPTION (RECOMPILE);
 
 
 -- Get VLF Counts for all databases on the instance (Query 35) (VLF Counts)
-SELECT [name] AS [Database Name], [VLF Count] 
-FROM sys.databases AS db WITH (NOLOCK)
-CROSS APPLY (SELECT file_id, COUNT(*) AS [VLF Count] 
+SELECTÂ [name] AS [Database Name],Â [VLF Count] 
+FROMÂ sys.databasesÂ AS db WITH (NOLOCK)
+CROSS APPLYÂ (SELECTÂ file_id, COUNT(*)Â AS [VLF Count]Â 
 			 FROM sys.dm_db_log_info(db.database_id) 
-             GROUP BY file_id) AS li
+Â Â Â Â Â Â Â Â Â Â    GROUP BYÂ file_id)Â AS li
 ORDER BY [VLF Count] DESC  OPTION (RECOMPILE);
 ------
 
@@ -1138,7 +1139,7 @@ AND counter_name = N'Page life expectancy' OPTION (RECOMPILE);
 -- Higher PLE is better. Watch the trend over time, not the absolute value
 -- This will only return one row for non-NUMA systems
 
--- Page Life Expectancy isn’t what you think…
+-- Page Life Expectancy isnÂ’t what you thinkÂ…
 -- https://bit.ly/2EgynLa
 
 
@@ -1976,13 +1977,13 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 
 -- These three Pluralsight Courses go into more detail about how to run these queries and interpret the results
 
--- SQL Server 2014 DMV Diagnostic Queries – Part 1 
+-- SQL Server 2014 DMV Diagnostic Queries Â– Part 1 
 -- https://bit.ly/2plxCer
 
--- SQL Server 2014 DMV Diagnostic Queries – Part 2
+-- SQL Server 2014 DMV Diagnostic Queries Â– Part 2
 -- https://bit.ly/2IuJpzI
 
--- SQL Server 2014 DMV Diagnostic Queries – Part 3
+-- SQL Server 2014 DMV Diagnostic Queries Â– Part 3
 -- https://bit.ly/2FIlCPb
 
 

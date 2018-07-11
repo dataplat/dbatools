@@ -196,7 +196,7 @@ function Copy-DbaSqlDataCollector {
                         }
                         catch {
                             $copyCollectionSetStatus.Status = "Failed to drop on destination"
-                            $copyCollectionSetStatus.Notes = $_.Exception
+                            $copyCollectionSetStatus.Notes = (Get-ErrorMessage -Record $_)
                             $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Stop-Function -Message "Issue dropping collection" -Target $collectionName -ErrorRecord $_ -Continue
                         }
@@ -217,7 +217,7 @@ function Copy-DbaSqlDataCollector {
                 }
                 catch {
                     $copyCollectionSetStatus.Status = "Failed to create collection"
-                    $copyCollectionSetStatus.Notes = $_.Exception
+                    $copyCollectionSetStatus.Notes = (Get-ErrorMessage -Record $_)
 
                     Stop-Function -Message "Issue creating collection set" -Target $collectionName -ErrorRecord $_
                 }
@@ -234,7 +234,7 @@ function Copy-DbaSqlDataCollector {
                 }
                 catch {
                     $copyCollectionSetStatus.Status = "Failed to start collection"
-                    $copyCollectionSetStatus.Notes = $_.Exception
+                    $copyCollectionSetStatus.Notes = (Get-ErrorMessage -Record $_)
                     $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                     Stop-Function -Message "Issue starting collection set" -Target $collectionName -ErrorRecord $_

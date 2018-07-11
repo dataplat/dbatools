@@ -8,7 +8,7 @@
 
         .PARAMETER Path
             The path to the template directory. Defaults to the dbatools template repository (\bin\perfmontemplates\).
-        
+
         .PARAMETER Pattern
             Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaPfDataCollectorSetTemplate.
 
@@ -21,6 +21,7 @@
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Performance, DataCollector, PerfCounter
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -58,11 +59,11 @@
     process {
         foreach ($directory in $Path) {
             $files = Get-ChildItem "$directory\*.xml"
-            
+
             if ($Template) {
                 $files = $files | Where-Object BaseName -in $Template
             }
-            
+
             foreach ($file in $files) {
                 try {
                     $xml = [xml](Get-Content $file)
@@ -70,7 +71,7 @@
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                 }
-                
+
                 foreach ($dataset in $xml.DataCollectorSet) {
                     $meta = $metadata | Where-Object Name -eq $dataset.name
                     if ($Pattern) {
