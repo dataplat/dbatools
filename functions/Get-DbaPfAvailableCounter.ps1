@@ -26,6 +26,7 @@
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Performance, DataCollector, PerfCounter
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -69,7 +70,7 @@
         $scriptblock = {
             $counters = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib\009' -Name 'counter' | Select-Object -ExpandProperty Counter |
                 Where-Object { $_ -notmatch '[0-90000]' } | Sort-Object | Get-Unique
-            
+
             foreach ($counter in $counters) {
                 [pscustomobject]@{
                     ComputerName = $env:COMPUTERNAME
@@ -78,14 +79,14 @@
                 }
             }
         }
-        
+
         # In case people really want a "like" search, which is slower
         $Pattern = $Pattern.Replace("*", ".*").Replace("..*", ".*")
     }
     process {
         foreach ($computer in $ComputerName) {
             Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
-            
+
             try {
                 if ($pattern) {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $credential -ErrorAction Stop |

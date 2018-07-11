@@ -1,84 +1,82 @@
 function Test-DbaLogShippingStatus {
     <#
-    .SYNOPSIS
-    Test-DbaLogShippingStatus returns the status of your log shipping databases
+        .SYNOPSIS
+            Test-DbaLogShippingStatus returns the status of your log shipping databases
 
-    .DESCRIPTION
-    Most of the time your log shipping "just works".
-    Checking your log shipping status can be done really easy with this function.
+        .DESCRIPTION
+            Most of the time your log shipping "just works".
+            Checking your log shipping status can be done really easy with this function.
 
-    Make sure you're connecting to the monitoring instance of your log shipping infrastructure.
+            Make sure you're connecting to the monitoring instance of your log shipping infrastructure.
 
-    The function will return the status for a database. This can be one or more messages in a comma separated list.
-    If everything is OK with the database than you should only see the message "All OK".
+            The function will return the status for a database. This can be one or more messages in a comma separated list.
+            If everything is OK with the database than you should only see the message "All OK".
 
-    .PARAMETER SqlInstance
-    SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        .PARAMETER SqlInstance
+            SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-    .PARAMETER SqlCredential
-    Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER Database
-    Allows you to filter the results to only return the databases you're interested in. This can be one or more values separated by commas.
-    This is not a wildcard and should be the exact database name. See examples for more info.
+        .PARAMETER Database
+            Allows you to filter the results to only return the databases you're interested in. This can be one or more values separated by commas.
+            This is not a wildcard and should be the exact database name. See examples for more info.
 
-    .PARAMETER ExcludeDatabase
-    Allows you to filter the results to only return the databases you're not interested in. This can be one or more values separated by commas.
-    This is not a wildcard and should be the exact database name.
+        .PARAMETER ExcludeDatabase
+            Allows you to filter the results to only return the databases you're not interested in. This can be one or more values separated by commas.
+            This is not a wildcard and should be the exact database name.
 
-    .PARAMETER Primary
-    Allows to filter the results to only return values that apply to the primary instance.
+        .PARAMETER Primary
+            Allows to filter the results to only return values that apply to the primary instance.
 
-    .PARAMETER Secondary
-    Allows to filter the results to only return values that apply to the secondary instance.
+        .PARAMETER Secondary
+            Allows to filter the results to only return values that apply to the secondary instance.
 
-    .PARAMETER Simple
-    By default all the information will be returned.
-    If this parameter is used you get an overview with the SQL Instance, Database, Instance Type and the status
+        .PARAMETER Simple
+            By default all the information will be returned.
+            If this parameter is used you get an overview with the SQL Instance, Database, Instance Type and the status
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .NOTES
-    Original Author: Sander Stad (@sqlstad, sqlstad.nl)
-    Tags: LogShipping
+        .NOTES
+            Tags: LogShipping
+            Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: MIT https://opensource.org/licenses/MIT
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    .LINK
-    https://dbatools.io/Test-DbaLogShippingStatus
+        .LINK
+            https://dbatools.io/Test-DbaLogShippingStatus
 
-    .EXAMPLE
-    Test-DbaLogShippingStatus -SqlInstance sql1
+        .EXAMPLE
+            Test-DbaLogShippingStatus -SqlInstance sql1
 
-    Retrieves the log ship informaton from sql1 and displays all the information present including the status.
+            Retrieves the log ship information from sql1 and displays all the information present including the status.
 
-    .EXAMPLE
-    Test-DbaLogShippingStatus -SqlInstance sql1 -Database AdventureWorks2014
+        .EXAMPLE
+            Test-DbaLogShippingStatus -SqlInstance sql1 -Database AdventureWorks2014
 
-    Retrieves the log ship information for just the database AdventureWorks.
+            Retrieves the log ship information for just the database AdventureWorks.
 
-    .EXAMPLE
-    Test-DbaLogShippingStatus -SqlInstance sql1 -Primary
+        .EXAMPLE
+            Test-DbaLogShippingStatus -SqlInstance sql1 -Primary
 
-    Retrieves the log ship information and only returns the information for the databases on the primary instance.
+            Retrieves the log ship information and only returns the information for the databases on the primary instance.
 
-    .EXAMPLE
-    Test-DbaLogShippingStatus -SqlInstance sql1 -Secondary
+        .EXAMPLE
+            Test-DbaLogShippingStatus -SqlInstance sql1 -Secondary
 
-    Retrieves the log ship information and only returns the information for the databases on the secondary instance.
+            Retrieves the log ship information and only returns the information for the databases on the secondary instance.
 
-    .EXAMPLE
-    Test-DbaLogShippingStatus -SqlInstance sql1 -Simple
+        .EXAMPLE
+            Test-DbaLogShippingStatus -SqlInstance sql1 -Simple
 
-    Retrieves the log ship information and only returns the columns SQL Instance, Database, Instance Type and Status
-
-#>
-
+            Retrieves the log ship information and only returns the columns SQL Instance, Database, Instance Type and Status
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -167,7 +165,7 @@ EXEC master.sys.sp_help_log_shipping_monitor"
     process {
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }

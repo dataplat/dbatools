@@ -289,8 +289,8 @@ function Restore-DbaDatabase {
         Tags: DisasterRecovery, Backup, Restore
         Author: Stuart Moore (@napalmgram), stuart-moore.com
 
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-        Copyright (C) 2016 Chrissy LeMaire
+        Website: https://dbatools.io
+        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: MIT https://opensource.org/licenses/MIT
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Restore")]
@@ -612,21 +612,21 @@ function Restore-DbaDatabase {
             if ($StopAfterGetBackupInformation) {
                 return
             }
-
+            
             $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints
-
-            if ( Test-Bound -ParameterName SelectBackupInformation) {
+            
+            if (Test-Bound -ParameterName SelectBackupInformation) {
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose
                 Set-Variable -Name $SelectBackupInformation -Value $FilteredBackupHistory -Scope Global
-
+                
             }
             if ($StopAfterSelectBackupInformation) {
                 return
             }
-
+            
             $null = $FilteredBackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping
-
-            if ( Test-Bound -ParameterName FormatBackupInformation) {
+            
+            if (Test-Bound -ParameterName FormatBackupInformation) {
                 Set-Variable -Name $FormatBackupInformation -Value $FilteredBackupHistory -Scope Global
             }
             if ($StopAfterFormatBackupInformation) {
@@ -641,17 +641,17 @@ function Restore-DbaDatabase {
                 Stop-Function -ErrorRecord $_ -Message "Failure" -Continue
             }
             
-            if ( Test-Bound -ParameterName TestBackupInformation) {
+            if (Test-Bound -ParameterName TestBackupInformation) {
                 Set-Variable -Name $TestBackupInformation -Value $FilteredBackupHistory -Scope Global
             }
             if ($StopAfterTestBackupInformation) {
                 return
             }
-            $DbVerfied = ($FilteredBackupHistory | Where-Object {$_.IsVerified -eq $True} | Select-Object -Property Database -Unique).Database -join ','
+            $DbVerfied = ($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $True } | Select-Object -Property Database -Unique).Database -join ','
             Write-Message -Message "$DbVerfied passed testing" -Level Verbose
-
-            if (($FilteredBackupHistory | Where-Object {$_.IsVerified -eq $True}).count -lt $FilteredBackupHistory.count) {
-                $DbUnVerified = ($FilteredBackupHistory | Where-Object {$_.IsVerified -eq $False} | Select-Object -Property Database -Unique).Database -join ','
+            
+            if (($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $True }).count -lt $FilteredBackupHistory.count) {
+                $DbUnVerified = ($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $False } | Select-Object -Property Database -Unique).Database -join ','
                 if ($AllowContinue) {
                     Write-Message -Message "$DbUnverified failed testing, AllowContinue set" -Level Verbose
                 }
@@ -660,7 +660,7 @@ function Restore-DbaDatabase {
                     return
                 }
             }
-
+            
             If ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (($FilteredBackupHistory.Database | select-Object -unique | Measure-Object).count -ne 1) {
                     Stop-Function -Message "Must only 1 database passed in for Page Restore. Sorry"
@@ -676,7 +676,12 @@ function Restore-DbaDatabase {
                 Write-Message -Message "Taking Tail log backup for page restore for non-Enterprise" -Level Verbose
                 $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
             }
-            $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore
+            try {
+                $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore -EnableException -AzureCredential $AzureCredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
+            }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage" ) {
                 if ($RestoreInstace.Edition -like '*Enterprise*') {
                     Write-Message -Message "Taking Tail log backup for page restore for Enterprise" -Level Verbose

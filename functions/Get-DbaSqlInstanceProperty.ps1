@@ -25,6 +25,7 @@ function Get-DbaSqlInstanceProperty {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Instance, Configure, Configuration
             Author: Klaas Vandenberghe (@powerdbaklaas)
 
             Website: https://dbatools.io
@@ -78,7 +79,7 @@ function Get-DbaSqlInstanceProperty {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential

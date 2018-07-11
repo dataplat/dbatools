@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaSchemaChangeHistory {
     <#
     .SYNOPSIS
@@ -32,7 +33,7 @@ function Get-DbaSchemaChangeHistory {
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-    Tags: Migration, Backup, Databases
+    Tags: Migration, Backup, Database
     Author: Stuart Moore (@napalmgram - http://stuart-moore.com)
 
     Website: https://dbatools.io
@@ -83,7 +84,7 @@ function Get-DbaSchemaChangeHistory {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -107,7 +108,7 @@ function Get-DbaSchemaChangeHistory {
 
             foreach ($db in $Databases) {
                 if ($db.IsAccessible -eq $false) {
-                    Stop-Function -Message "$db on $server is inaccessible" -Continue
+                    Write-Message -Level Verbose -Message "$($db.name) is not accessible, skipping"
                 }
 
                 $sql = "select SERVERPROPERTY('MachineName') AS ComputerName,
@@ -144,7 +145,7 @@ function Get-DbaSchemaChangeHistory {
                 Write-Message -Level Verbose -Message "Querying Database $db on $instance"
                 Write-Message -Level Debug -Message "SQL: $sql"
 
-                $db.Query($sql)  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, DateModified, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
+                $db.Query($sql) | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, DateModified, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
             }
         }
     }

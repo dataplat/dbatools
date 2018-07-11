@@ -68,7 +68,7 @@ function Copy-DbaDatabase {
             To reuse Destination folder structure, use the  -WithReplace switch.
 
         .PARAMETER IncludeSupportDbs
-            If this switch is enabled, ReportServer, ReportServerTempDb, SSISDB, and distribution databases will be copied if they exist on Source. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory.
+            If this switch is enabled, ReportServer, ReportServerTempDb, SSISDB, and distribution databases will be copied if they exist on Source. A log file named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory.
 
             Use of this switch requires -BackupRestore or -DetachAttach as well.
 
@@ -100,12 +100,14 @@ function Copy-DbaDatabase {
             If this switch is enabled, existing databases on Destination with matching names from Source will be dropped. If using -DetachReattach, mirrors will be broken and the database(s) dropped from Availability Groups.
 
         .NOTES
-            Tags: Migration, DisasterRecovery, Backup, Restore
+            Tags: Migration, Backup, Restore
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Requires: sysadmin access on SQL Servers
             Limitations: Doesn't cover what it doesn't cover (replication, certificates, etc)
-                        SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
-                        Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.
+
+            SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
+            Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -663,7 +665,7 @@ function Copy-DbaDatabase {
             return
         }
 
-        Write-Message -Level Verbose -Message "Attempting to connect to SQL Servers."
+        Write-Message -Level Verbose -Message "Connecting to SQL Servers."
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 

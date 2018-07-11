@@ -128,7 +128,7 @@ Removes all set SPNs for sql2005 and the relative delegations
                 }
             }
             catch {
-                Write-Message -Message "Could not remove SPN. $($_.Exception.Message)" -Level Warning -EnableException $EnableException -ErrorRecord $_ -Target $ServiceAccountWrite
+                Write-Message -Message "Could not remove SPN. $($_.Exception.Message)" -Level Warning -EnableException $EnableException.ToBool() -ErrorRecord $_ -Target $ServiceAccountWrite
                 $set = $true
                 $status = "Failed to remove SPN"
                 $delegate = $false
@@ -166,7 +166,7 @@ Removes all set SPNs for sql2005 and the relative delegations
                         $status = "Successfully removed delegation"
                     }
                     catch {
-                        Write-Message -Message "Could not remove delegation. $($_.Exception.Message)" -Level Warning -EnableException $EnableException -ErrorRecord $_ -Target $ServiceAccount
+                        Write-Message -Message "Could not remove delegation. $($_.Exception.Message)" -Level Warning -EnableException $EnableException.ToBool() -ErrorRecord $_ -Target $ServiceAccount
                         $set = $true
                         $status = "Failed to remove delegation"
                     }

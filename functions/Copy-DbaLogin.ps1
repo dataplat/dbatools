@@ -115,13 +115,13 @@ function Copy-DbaLogin {
             Copy-DbaLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
 
             Copies OldUser and then renames it to newlogin.
-    
+
         .EXAMPLE
             Get-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017
 
             Displays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.
     #>
-    
+
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     Param (
         [parameter(ParameterSetName = "SqlInstance", Mandatory)]
@@ -290,7 +290,7 @@ function Copy-DbaLogin {
                         }
                         catch {
                             $copyLoginStatus.Status = "Failed"
-                            $copyLoginStatus.Notes = $_.Exception.Message
+                            $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Stop-Function -Message "Could not drop $userName." -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
@@ -395,7 +395,7 @@ function Copy-DbaLogin {
                             }
                             catch {
                                 $copyLoginStatus.Status = "Failed"
-                                $copyLoginStatus.Notes = $_.Exception.Message
+                                $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                                 $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                                 Stop-Function -Message "Failed to add $userName to $destination." -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
@@ -421,7 +421,7 @@ function Copy-DbaLogin {
                         }
                         catch {
                             $copyLoginStatus.Status = "Failed"
-                            $copyLoginStatus.Notes = $_.Exception.Message
+                            $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
@@ -444,7 +444,7 @@ function Copy-DbaLogin {
                         }
                         catch {
                             $copyLoginStatus.Status = "Successful - but could not disable on destination"
-                            $copyLoginStatus.Notes = $_.Exception.Message
+                            $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Stop-Function -Message "$userName disabled on source, could not be disabled on $destination." -Category InvalidOperation -ErrorRecord $_ -Target $destServer  3>$null
@@ -456,7 +456,7 @@ function Copy-DbaLogin {
                         }
                         catch {
                             $copyLoginStatus.Status = "Successful - but could not deny login on destination"
-                            $copyLoginStatus.Notes = $_.Exception.Message
+                            $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Stop-Function -Message "$userName denied login on source, could not be denied login on $destination." -Category InvalidOperation -ErrorRecord $_ -Target $destServer 3>$null
@@ -482,7 +482,7 @@ function Copy-DbaLogin {
                         catch {
                             $copyLoginStatus.DestinationLogin = $NewLogin
                             $copyLoginStatus.Status = "Failed to rename"
-                            $copyLoginStatus.Notes = $_.Exception.Message
+                            $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Stop-Function -Message "Issue renaming $userName to $NewLogin" -Category InvalidOperation -ErrorRecord $_ -Target $destServer 3>$null
@@ -492,37 +492,37 @@ function Copy-DbaLogin {
             } #end for each $sourceLogin
         } #end function Copy-Login
     }
-    
+
     process {
-        
+
         if (Test-Bound -ParameterName InputObject) {
             $Source = $InputObject[0].Parent.Name
             $Sourceserver = $InputObject[0].Parent
             $Login = $InputObject.Name
         }
         else {
-            Write-Message -Level Verbose -Message "Attempting to connect to SQL Servers."
+            Write-Message -Level Verbose -Message "Connecting to SQL Servers."
             $sourceServer = Connect-SqlInstance -RegularUser -SqlInstance $Source -SqlCredential $SourceSqlCredential
             $source = $sourceServer.DomainInstanceName
         }
-        
+
         if ($Destination) {
             $destServer = Connect-SqlInstance -RegularUser -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
             $Destination = $destServer.DomainInstanceName
-            
+
             $sourceVersionMajor = $sourceServer.VersionMajor
             $destVersionMajor = $destServer.VersionMajor
             if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
                 Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
-            
+
             if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
                 Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
         }
-        
+
         if ($SyncOnly) {
-            Sync-DbaSqlPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
+            Sync-DbaLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
             return
         }
 

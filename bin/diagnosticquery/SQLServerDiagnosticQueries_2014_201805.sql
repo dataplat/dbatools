@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: June 5, 2018
+-- Last Modified: June 19, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -88,7 +88,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 --																													12.0.5557		SP2 CU8			10/16/2017
 --																													12.0.5563		SP2 CU9			12/18/2017
 --																													12.0.5571		SP2 CU10		1/16/2018
---                                                                                                                  12.0.5579		SP2 CU11		3/19/2018	
+--                                                                                                                  12.0.5579		SP2 CU11		3/19/2018
+--																													12.0.5589		SP2 CU12		6/18/2018	
 
 
 
@@ -1122,7 +1123,7 @@ AND counter_name = N'Page life expectancy' OPTION (RECOMPILE);
 -- Higher PLE is better. Watch the trend over time, not the absolute value
 -- This will only return one row for non-NUMA systems
 
--- Page Life Expectancy isn’t what you think…
+-- Page Life Expectancy isnï¿½t what you thinkï¿½
 -- https://bit.ly/2EgynLa
 
 
@@ -1306,7 +1307,7 @@ ORDER BY qs.execution_count DESC OPTION (RECOMPILE);
 ------
 
 
--- Queries 54 through 58 are the "Bad Man List" for stored procedures
+-- Queries 54 through 59 are the "Bad Man List" for stored procedures
 
 -- Top Cached SPs By Execution Count (Query 54) (SP Execution Counts)
 SELECT TOP(100) p.name AS [SP Name], qs.execution_count AS [Execution Count],
@@ -1775,13 +1776,13 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 
 -- These three Pluralsight Courses go into more detail about how to run these queries and interpret the results
 
--- SQL Server 2014 DMV Diagnostic Queries – Part 1 
+-- SQL Server 2014 DMV Diagnostic Queries ï¿½ Part 1 
 -- https://bit.ly/2plxCer
 
--- SQL Server 2014 DMV Diagnostic Queries – Part 2
+-- SQL Server 2014 DMV Diagnostic Queries ï¿½ Part 2
 -- https://bit.ly/2IuJpzI
 
--- SQL Server 2014 DMV Diagnostic Queries – Part 3
+-- SQL Server 2014 DMV Diagnostic Queries ï¿½ Part 3
 -- https://bit.ly/2FIlCPb
 
 

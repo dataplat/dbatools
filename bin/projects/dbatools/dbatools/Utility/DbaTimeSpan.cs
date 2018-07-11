@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Sqlcollaborative.Dbatools.Utility
 {
@@ -143,6 +145,15 @@ namespace Sqlcollaborative.Dbatools.Utility
         }
 
         /// <summary>
+        /// Converts a string into a timespan
+        /// </summary>
+        /// <param name="Timespan">The string to convert</param>
+        public DbaTimeSpan(string Timespan)
+        {
+            _timespan = ParseTimeSpan(Timespan);
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="ticks"></param>
@@ -189,6 +200,48 @@ namespace Sqlcollaborative.Dbatools.Utility
         #endregion Constructors
 
         #region Methods
+        /// <summary>
+        /// Parses an input string as timespan
+        /// </summary>
+        /// <param name="Value">The string to interpret</param>
+        /// <returns>The interpreted timespan value</returns>
+        internal static TimeSpan ParseTimeSpan(string Value)
+        {
+            if (String.IsNullOrWhiteSpace(Value))
+                throw new ArgumentNullException("Cannot parse empty string!");
+
+            try { return TimeSpan.Parse(Value, CultureInfo.CurrentCulture); }
+            catch { }
+            try { return TimeSpan.Parse(Value, CultureInfo.InvariantCulture); }
+            catch { }
+
+            bool positive = !(Value.Contains("-"));
+            TimeSpan timeResult = new TimeSpan();
+            string tempValue = Value.Replace("-", "").Trim();
+
+            foreach (string element in tempValue.Split(' '))
+            {
+                if (Regex.IsMatch(element, @"^\d+$"))
+                    timeResult = timeResult.Add(new TimeSpan(0, 0, Int32.Parse(element)));
+                else if (UtilityHost.IsLike(element, "*ms") && Regex.IsMatch(element, @"^\d+ms$", RegexOptions.IgnoreCase))
+                    timeResult = timeResult.Add(new TimeSpan(0, 0, 0, 0, Int32.Parse(Regex.Match(element, @"^(\d+)ms$", RegexOptions.IgnoreCase).Groups[1].Value)));
+                else if (UtilityHost.IsLike(element, "*s") && Regex.IsMatch(element, @"^\d+s$", RegexOptions.IgnoreCase))
+                    timeResult = timeResult.Add(new TimeSpan(0, 0, Int32.Parse(Regex.Match(element, @"^(\d+)s$", RegexOptions.IgnoreCase).Groups[1].Value)));
+                else if (UtilityHost.IsLike(element, "*m") && Regex.IsMatch(element, @"^\d+m$", RegexOptions.IgnoreCase))
+                    timeResult = timeResult.Add(new TimeSpan(0, Int32.Parse(Regex.Match(element, @"^(\d+)m$", RegexOptions.IgnoreCase).Groups[1].Value), 0));
+                else if (UtilityHost.IsLike(element, "*h") && Regex.IsMatch(element, @"^\d+h$", RegexOptions.IgnoreCase))
+                    timeResult = timeResult.Add(new TimeSpan(Int32.Parse(Regex.Match(element, @"^(\d+)h$", RegexOptions.IgnoreCase).Groups[1].Value), 0, 0));
+                else if (UtilityHost.IsLike(element, "*d") && Regex.IsMatch(element, @"^\d+d$", RegexOptions.IgnoreCase))
+                    timeResult = timeResult.Add(new TimeSpan(Int32.Parse(Regex.Match(element, @"^(\d+)d$", RegexOptions.IgnoreCase).Groups[1].Value), 0, 0, 0));
+                else
+                    throw new ArgumentException(String.Format("Failed to parse as timespan: {0} at {1}", Value, element));
+            }
+
+            if (!positive)
+                return timeResult.Negate();
+            return timeResult;
+        }
+
         /// <summary>
         /// 
         /// </summary>

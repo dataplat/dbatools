@@ -38,12 +38,12 @@ function Get-DbaProcess {
             If this switch is enabled, system Spids will be ignored.
 
         .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags:
+            Tags: Process, Session, ActivityMonitor
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -92,7 +92,7 @@ function Get-DbaProcess {
     process {
         foreach ($instance in $sqlinstance) {
 
-            Write-Message -Message "Attempting to connect to $instance." -Level Verbose
+            Write-Message -Message "Connecting to $instance." -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

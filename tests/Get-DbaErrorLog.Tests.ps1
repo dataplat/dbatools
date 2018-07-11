@@ -28,44 +28,44 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Has the correct default properties" {
             $expectedProps = 'ComputerName,InstanceName,SqlInstance,LogDate,Source,Text'.Split(',')
-            $results = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 0
+            $results = Get-DbaErrorLog -SqlInstance $script:instance1 -LogNumber 0
             ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($expectedProps | Sort-Object)
         }
         It "Returns filtered results for [Source = $sourceFilter]" {
-            $results = Get-DbaSqlLog -SqlInstance $script:instance1 -Source $sourceFilter
+            $results = Get-DbaErrorLog -SqlInstance $script:instance1 -Source $sourceFilter
             $results[0].Source | Should Be $sourceFilter
         }
         It "Returns filtered result for [LogNumber = 0] and [Source = $sourceFilter]" {
-            $results = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 0 -Source $sourceFilter
+            $results = Get-DbaErrorLog -SqlInstance $script:instance1 -LogNumber 0 -Source $sourceFilter
             $results[0].Source | Should Be $sourceFilter
         }
         It "Returns filtered results for [Text = $textFilter]" {
-            $results = Get-DbaSqlLog -SqlInstance $script:instance1 -Text $textFilter
+            $results = Get-DbaErrorLog -SqlInstance $script:instance1 -Text $textFilter
             {$results[0].Text -like "*$textFilter*"} | Should Be $true
         }
         It "Returns filtered result for [LogNumber = 0] and [Text = $textFilter]" {
-            $results = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 0 -Text $textFilter
+            $results = Get-DbaErrorLog -SqlInstance $script:instance1 -LogNumber 0 -Text $textFilter
             {$results[0].Text -like "*$textFilter"} | Should Be $true
         }
-        $after = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 1 | Select-Object -First 1
-        $before = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 1 | Select-Object -Last 1
+        $after = Get-DbaErrorLog -SqlInstance $script:instance1 -LogNumber 1 | Select-Object -First 1
+        $before = Get-DbaErrorLog -SqlInstance $script:instance1 -LogNumber 1 | Select-Object -Last 1
 
         $afterFilter = $after.LogDate.AddMinutes(+1)
         It "Returns filtered results for [After = $afterFilter" {
-            $results = Get-DbaSqlLog -SqlInstance $script:instance1 -After $afterFilter
+            $results = Get-DbaErrorLog -SqlInstance $script:instance1 -After $afterFilter
             {$results[0].LogDate -ge $afterFilter} | Should Be $true
         }
         It "Returns filtered results for [LogNumber = 1] and [After = $afterFilter" {
-            $results = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 1 -After $afterFilter
+            $results = Get-DbaErrorLog -SqlInstance $script:instance1 -LogNumber 1 -After $afterFilter
             {$results[0].LogDate -ge $afterFilter} | Should Be $true
         }
         $beforeFilter = $before.LogDate.AddMinutes(-1)
         It "Returns filtered result for [Before = $beforeFilter]" {
-            $results = Get-DbaSqlLog -SqlInstance $script:instance1 -Before $beforeFilter
+            $results = Get-DbaErrorLog -SqlInstance $script:instance1 -Before $beforeFilter
             {$results[-1].LogDate -le $beforeFilter} | Should Be $true
         }
         It "Returns filtered result for [LogNumber = 1] and [Before = $beforeFilter]" {
-            $results = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 1 -Before $beforeFilter
+            $results = Get-DbaErrorLog -SqlInstance $script:instance1 -LogNumber 1 -Before $beforeFilter
             {$results[-1].LogDate -le $beforeFilter} | Should Be $true
         }
     }

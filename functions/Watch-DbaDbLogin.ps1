@@ -83,9 +83,8 @@ function Watch-DbaDbLogin {
             return
         }
 
-        Write-Message -Level Verbose -Message "Attempting to connect to $SqlInstance"
+        Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
         try {
-            Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
             $serverDest = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {
@@ -121,9 +120,8 @@ function Watch-DbaDbLogin {
             Process each server
         #>
         foreach ($instance in $servers) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
             catch {

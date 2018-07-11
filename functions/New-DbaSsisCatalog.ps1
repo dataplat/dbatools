@@ -1,57 +1,57 @@
 function New-DbaSsisCatalog {
     <#
-.SYNOPSIS
-Enables the SSIS Catalog on a SQL Server 2012+
+        .SYNOPSIS
+            Enables the SSIS Catalog on a SQL Server 2012+
 
-.DESCRIPTION
-After installing the SQL Server Engine and SSIS you still have to enable the SSIS Catalog. This function will enable the catalog and gives the option of supplying the password.
+        .DESCRIPTION
+            After installing the SQL Server Engine and SSIS you still have to enable the SSIS Catalog. This function will enable the catalog and gives the option of supplying the password.
 
-.PARAMETER SqlInstance
-SQL Server you wish to run the function on.
+        .PARAMETER SqlInstance
+            SQL Server you wish to run the function on.
 
-.PARAMETER SqlCredential
-Credentials used to connect to the SQL Server
+        .PARAMETER SqlCredential
+            Credentials used to connect to the SQL Server
 
-.PARAMETER Password
-Required password that will be used for the security key in SSISDB.
+        .PARAMETER Password
+            Required password that will be used for the security key in SSISDB.
 
-.PARAMETER SsisCatalog
-SSIS catalog name. By default, this is SSISDB.
+        .PARAMETER SsisCatalog
+            SSIS catalog name. By default, this is SSISDB.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-Tags:
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-License: MIT https://opensource.org/licenses/MIT
+        .NOTES
+            Tags: SSIS, SSISDB, Catalog
+            Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+            Tags:
+            dbatools PowerShell module (https://dbatools.io)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/New-DbaSsisCatalog
+        .LINK
+            https://dbatools.io/New-DbaSsisCatalog
 
-.EXAMPLE
-$password = ConvertTo-SecureString MyVisiblePassWord -AsPlainText -Force
-New-DbaSsisCatalog -SqlInstance sql2016 -Password $password
+        .EXAMPLE
+            $password = ConvertTo-SecureString MyVisiblePassWord -AsPlainText -Force
+            New-DbaSsisCatalog -SqlInstance sql2016 -Password $password
 
-Creates the SSIS Catalog on server DEV01 with the specified password.
+            Creates the SSIS Catalog on server DEV01 with the specified password.
 
-.EXAMPLE
-$password = Read-Host -AsSecureString -Prompt "Enter password"
-New-DbaSsisCatalog -SqlInstance DEV01 -Password $password
+        .EXAMPLE
+            $password = Read-Host -AsSecureString -Prompt "Enter password"
+            New-DbaSsisCatalog -SqlInstance DEV01 -Password $password
 
-Creates the SSIS Catalog on server DEV01 with the specified password.
-
-#>
+            Creates the SSIS Catalog on server DEV01 with the specified password.
+    #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -67,11 +67,9 @@ Creates the SSIS Catalog on server DEV01 with the specified password.
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-
+            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
