@@ -181,6 +181,7 @@ function Backup-DbaDatabase {
             }
             catch {
                 Stop-Function -Message "Cannot connect to $SqlInstance" -ErrorRecord $_
+                return
             }
 
             if ($Database) {
@@ -201,19 +202,23 @@ function Backup-DbaDatabase {
 
             if ($InputObject.Count -gt 1 -and $BackupFileName -ne '') {
                 Stop-Function -Message "1 BackupFile specified, but more than 1 database."
+                return
             }
 
             if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
                 Stop-Function -Message "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
+                return
             }
             if ($BlockSize) {
                 if ($BlockSize -notin (0.5kb, 1kb, 2kb, 4kb, 8kb, 16kb, 32kb, 64kb)) {
                     Stop-Function -Message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
+                    return
                 }
             }
             if ('' -ne $AzureBaseUrl) {
                 if ($null -eq $AzureCredential) {
                     Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
+                    return
                 }
                 $AzureBaseUrl = $AzureBaseUrl.Trim("/")
                 $FileCount = 1
@@ -229,6 +234,7 @@ function Backup-DbaDatabase {
     process {
         if (!$SqlInstance -and !$InputObject) {
             Stop-Function -Message "You must specify a server and database or pipe some databases"
+            return
         }
 
         Write-Message -Level Verbose -Message "$($InputObject.Count) database to backup"
@@ -529,7 +535,7 @@ function Backup-DbaDatabase {
                     }
                     else {
                         Write-Progress -id $ProgressId -activity "Backup" -status "Failed" -completed
-                        Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_
+                        Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_ -Continue
                         $BackupComplete = $false
                     }
                 }
