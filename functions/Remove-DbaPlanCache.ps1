@@ -13,7 +13,7 @@
             Note: This command removes the plans from all SQL instances on the destionation server but the process column is specific to -SqlInstance passed.
 
         .PARAMETER SqlInstance
-            The SQL Server instance. Server version must be SQL Server version XXXX or higher.
+            The target SQL Server instance.
 
         .PARAMETER SqlCredential
            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
