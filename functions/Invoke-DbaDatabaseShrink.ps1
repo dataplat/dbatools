@@ -214,8 +214,8 @@ function Invoke-DbaDatabaseShrink {
                         if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false) {
                             Write-Message -Level Verbose -Message "Getting starting average fragmentation"
                             $dataRow = $server.Query($sql, $db.name)
-                            $startingFrag = $dataRow.avg_fragmentation_in_percent
-                            $startingTopFrag = $dataRow.max_fragmentation_in_percent
+                            $startingFrag = $dataRow.avg_fragmentation_in_percent[0]
+                            $startingTopFrag = $dataRow.max_fragmentation_in_percent[0]
                         }
                         else {
                             $startingTopFrag = $startingFrag = $null
@@ -284,8 +284,8 @@ function Invoke-DbaDatabaseShrink {
                         if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false -and $success -and $FileType -ne 'Log') {
                             Write-Message -Level Verbose -Message "Getting ending average fragmentation"
                             $dataRow = $server.Query($sql, $db.name)
-                            $endingDefrag = $dataRow.avg_fragmentation_in_percent
-                            $endingTopDefrag = $dataRow.max_fragmentation_in_percent
+                            $endingDefrag = $dataRow.avg_fragmentation_in_percent[0]
+                            $endingTopDefrag = $dataRow.max_fragmentation_in_percent[0]
                         }
                         else {
                             $endingTopDefrag = $endingDefrag = $null
