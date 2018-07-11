@@ -212,7 +212,7 @@ function Invoke-DbaDatabaseShrink {
                 else {
                     if ($Pscmdlet.ShouldProcess("$db on $instance", "Shrinking from $([int]$spaceAvailableMB) MB space available to $([int]$desiredSpaceAvailable) MB space available")) {
                         if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false) {
-                            Write-Message -Level Verbose -Message "Getting average fragmentation"
+                            Write-Message -Level Verbose -Message "Getting starting average fragmentation"
                             $dataRow = $server.Query($sql, $db.name)
                             $startingFrag = $dataRow.avg_fragmentation_in_percent
                             $startingTopFrag = $dataRow.max_fragmentation_in_percent
@@ -282,7 +282,7 @@ function Invoke-DbaDatabaseShrink {
                         Write-Message -Level Verbose -Message "Final space available: $([int]$newSpaceAvailableMB) MB"
 
                         if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false -and $success -and $FileType -ne 'Log') {
-                            Write-Message -Level Verbose -Message "Getting average fragmentation after shrink"
+                            Write-Message -Level Verbose -Message "Getting ending average fragmentation"
                             $dataRow = $server.Query($sql, $db.name)
                             $endingDefrag = $dataRow.avg_fragmentation_in_percent
                             $endingTopDefrag = $dataRow.max_fragmentation_in_percent
@@ -298,7 +298,7 @@ function Invoke-DbaDatabaseShrink {
                 }
 
                 if ($Pscmdlet.ShouldProcess("$db on $instance", "Showing results")) {
-                    if ($null -eq $notes) {
+                    if ($null -eq $notes -and $FileType -ne 'Log') {
                         $notes = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
                     }
                     $object = [PSCustomObject]@{
