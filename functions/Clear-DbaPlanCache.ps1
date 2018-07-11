@@ -1,4 +1,4 @@
-﻿function Remove-DbaPlanCache {
+﻿function Clear-DbaPlanCache {
     <#
         .SYNOPSIS
             Removes adhoc and prepared plan caches is single use plans are over defined threshold.
@@ -10,8 +10,6 @@
 
             References: https://www.sqlskills.com/blogs/kimberly/plan-cache-adhoc-workloads-and-clearing-the-single-use-plan-cache-bloat/
 
-            Note: This command removes the plans from all SQL instances on the destionation server but the process column is specific to -SqlInstance passed.
-
         .PARAMETER SqlInstance
             The target SQL Server instance.
 
@@ -20,6 +18,9 @@
 
         .PARAMETER Threshold
             Memory used threshold.
+
+        .PARAMETER InputObject
+            Enables results to be piped in from Get-DbaPlanCache.
 
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -41,48 +42,59 @@
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
         .LINK
-            https://dbatools.io/Remove-DbaPlanCache
+            https://dbatools.io/Clear-DbaPlanCache
 
         .EXAMPLE
-            Remove-DbaPlanCache -SqlInstance sql2017 -Threshold 200
+            Clear-DbaPlanCache -SqlInstance sql2017 -Threshold 200
 
-            Logs into the SQL Server instance "sql2017" and removes plan caches if over 200 MBs.
+            Logs into the SQL Server instance "sql2017" and removes plan caches if over 200 MB.
 
         .EXAMPLE
-            Remove-DbaPlanCache -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin)
+            Clear-DbaPlanCache -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin)
 
             Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
-            and removes if Threshold over 100 MBs.
+            and removes if Threshold over 100 MB.
     #>
-        [CmdletBinding(SupportsShouldProcess = $true)]
-        Param (
-            [parameter(Mandatory, ValueFromPipeline)]
-            [Alias("ServerInstance", "SqlServer", "SqlServers")]
-            [DbaInstanceParameter[]]$SqlInstance,
-            [PSCredential]$SqlCredential,
-            [int]$Threshold = 100,
-            [switch]$EnableException
-        )
-        process {
-            foreach ($instance in $SqlInstance) {
-                try {
-                    Write-Message -Level Verbose -Message "Connecting to $instance"
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $sqlcredential
-                }
-                catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                }
+    [CmdletBinding(SupportsShouldProcess)]
+    Param (
+        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [int]$Threshold = 100,
+        [parameter(ValueFromPipeline)]
+        [object[]]$InputObject,
+        [switch]$EnableException
+    )
+    process {
+        foreach ($instance in $SqlInstance) {
+            $InputObject += Get-DbaPlanCache -SqlInstance $instance -SqlCredential $SqlCredential
+        }
 
-                $results = Get-DbaQueryPlan -SqlInstance $instance -SqlCredential $SqlCredential -Threshold $Threshold
-
-                if ($results.MB -ge $Threshold) {
-                    if ($Pscmdlet.ShouldProcess("$server", "Cleared SQL Plans plan cache")) {
-                        $server.Query("DBCC FREESYSTEMCACHE('SQL Plans')")
+        foreach ($result in $InputObject) {
+            if ($result.MB -ge $Threshold) {
+                if ($Pscmdlet.ShouldProcess($($result.SqlInstance), "Cleared SQL Plans plan cache")) {
+                    $server.Query("DBCC FREESYSTEMCACHE('SQL Plans')")
+                    [pscustomobject]@{
+                        ComputerName = $result.ComputerName
+                        InstanceName = $result.InstanceName
+                        SqlInstance  = $result.SqlInstance
+                        Size         = $result.Size
+                        Status       = "Plan cache cleared"
                     }
-                    else {
-                        Write-Message -Level Verbose -Message "Threshold [$Threshold] below $server plan cache size of [$($results.MB)]"
+                }
+            }
+            else {
+                if ($Pscmdlet.ShouldProcess($($result.SqlInstance), "Results $($result.Size) below threshold")) {
+                    [pscustomobject]@{
+                        ComputerName = $result.ComputerName
+                        InstanceName = $result.InstanceName
+                        SqlInstance  = $result.SqlInstance
+                        Size         = $result.Size
+                        Status       = "Plan cache size below threshold ($Threshold) "
                     }
+                    Write-Message -Level Verbose -Message "Plan cache size below threshold ($Threshold) "
                 }
             }
         }
     }
+}

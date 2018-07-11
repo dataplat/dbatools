@@ -56,9 +56,11 @@
             [switch]$EnableException
         )
         begin {
-            $Sql = "SELECT MB = sum(cast((CASE WHEN usecounts = 1 AND objtype IN ('Adhoc', 'Prepared') THEN size_in_bytes ELSE 0 END) as decimal(12, 2))) / 1024 / 1024,
-                    UseCount = sum(CASE WHEN usecounts = 1 AND objtype IN ('Adhoc', 'Prepared') THEN 1 ELSE 0 END)
-                FROM sys.dm_exec_cached_plans;"
+            $Sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
+        ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
+        SERVERPROPERTY('ServerName') AS SqlInstance, MB = sum(cast((CASE WHEN usecounts = 1 AND objtype IN ('Adhoc', 'Prepared') THEN size_in_bytes ELSE 0 END) as decimal(12, 2))) / 1024 / 1024,
+        UseCount = sum(CASE WHEN usecounts = 1 AND objtype IN ('Adhoc', 'Prepared') THEN 1 ELSE 0 END)
+        FROM sys.dm_exec_cached_plans;"
         }
 
         process {
@@ -72,14 +74,10 @@
                 }
 
                 $results = $server.Query($sql)
+                $size = [dbasize]($results.MB*1024*1024)
+                Add-Member -Force -InputObject $results -MemberType NoteProperty -Name Size -Value $size
 
-                Add-Member -Force -InputObject $results -MemberType NoteProperty -Name ComputerName -value $server.NetName
-                Add-Member -Force -InputObject $results -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $results -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $results -MemberType NoteProperty -Name MB -Value $results.MB
-                Add-Member -Force -InputObject $results -MemberType NoteProperty -Name UseCount -Value $results.UseCount
-
-                Select-DefaultView -InputObject $results -Property ComputerName, InstanceName, SqlInstance, MB, UseCount
+                Select-DefaultView -InputObject $results -Property ComputerName, InstanceName, SqlInstance, Size, UseCount
             }
         }
     }

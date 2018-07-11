@@ -80,15 +80,14 @@ function Get-DbaLastBackup {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                Write-Message -Level Verbose -Message "Connecting to $instance."
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
             }
             catch {
-                Write-Message -Level Warning -Message "Can't connect to $instance"
-                Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
             $dbs = $server.Databases | Where-Object { $_.name -ne 'tempdb' }
 
             if ($Database) {
