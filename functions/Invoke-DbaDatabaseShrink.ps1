@@ -145,24 +145,15 @@ function Invoke-DbaDatabaseShrink {
         $StatementTimeoutSeconds = $StatementTimeout * 60
 
         $sql = "SELECT
-                indexstats.avg_fragmentation_in_percent
-                FROM sys.dm_db_index_physical_stats (DB_ID(), NULL, NULL, NULL, NULL) AS indexstats
-                INNER JOIN sys.tables dbtables on dbtables.[object_id] = indexstats.[object_id]
-                INNER JOIN sys.schemas dbschemas on dbtables.[schema_id] = dbschemas.[schema_id]
-                INNER JOIN sys.indexes AS dbindexes ON dbindexes.[object_id] = indexstats.[object_id]
-                AND indexstats.index_id = dbindexes.index_id
-                WHERE indexstats.database_id = DB_ID() AND indexstats.avg_fragmentation_in_percent > 0
-                ORDER BY indexstats.avg_fragmentation_in_percent desc"
-
-        $sqlTop1 = "SELECT top 1
-                indexstats.avg_fragmentation_in_percent
-                FROM sys.dm_db_index_physical_stats (DB_ID(), NULL, NULL, NULL, NULL) AS indexstats
-                INNER JOIN sys.tables dbtables on dbtables.[object_id] = indexstats.[object_id]
-                INNER JOIN sys.schemas dbschemas on dbtables.[schema_id] = dbschemas.[schema_id]
-                INNER JOIN sys.indexes AS dbindexes ON dbindexes.[object_id] = indexstats.[object_id]
-                AND indexstats.index_id = dbindexes.index_id
-                WHERE indexstats.database_id = DB_ID()
-                ORDER BY indexstats.avg_fragmentation_in_percent desc"
+                    avg(indexstats.avg_fragmentation_in_percent) as [avg_fragmentation_in_percent],
+                    max(indexstats.avg_fragmentation_in_percent) as [max_fragmentation_in_percent]
+                    FROM sys.dm_db_index_physical_stats (DB_ID(), NULL, NULL, NULL, NULL) AS indexstats
+                    INNER JOIN sys.tables dbtables on dbtables.[object_id] = indexstats.[object_id]
+                    INNER JOIN sys.schemas dbschemas on dbtables.[schema_id] = dbschemas.[schema_id]
+                    INNER JOIN sys.indexes AS dbindexes ON dbindexes.[object_id] = indexstats.[object_id]
+                    AND indexstats.index_id = dbindexes.index_id
+                    WHERE indexstats.database_id = DB_ID() AND indexstats.avg_fragmentation_in_percent > 0
+                    AND indexstats.page_count > 100"
     }
 
     process {
@@ -174,7 +165,6 @@ function Invoke-DbaDatabaseShrink {
             Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -221,10 +211,11 @@ function Invoke-DbaDatabaseShrink {
                 }
                 else {
                     if ($Pscmdlet.ShouldProcess("$db on $instance", "Shrinking from $([int]$spaceAvailableMB) MB space available to $([int]$desiredSpaceAvailable) MB space available")) {
-                        if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false) {
+                        if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false) {
                             Write-Message -Level Verbose -Message "Getting average fragmentation"
-                            $startingFrag = ($server.Query($sql, $db.name) | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
-                            $startingTopFrag = ($server.Query($sqlTop1, $db.name)).avg_fragmentation_in_percent
+                            $dataRow = $server.Query($sql, $db.name)
+                            $startingFrag = $dataRow.avg_fragmentation_in_percent
+                            $startingTopFrag = $dataRow.max_fragmentation_in_percent
                         }
                         else {
                             $startingTopFrag = $startingFrag = $null
@@ -238,7 +229,6 @@ function Invoke-DbaDatabaseShrink {
                                     Write-Message -Level Verbose -Message "Beginning shrink of log files"
                                     $db.LogFiles.Shrink($desiredSpaceAvailable, $ShrinkMethod)
                                     $db.Refresh()
-                                    Write-Message -Level Verbose -Message "Recalculating space usage"
                                     $success = $true
                                     $notes = $null
                                 }
@@ -253,7 +243,7 @@ function Invoke-DbaDatabaseShrink {
                                     foreach ($fileGroup in $db.FileGroups) {
                                         foreach ($file in $fileGroup.Files) {
                                             Write-Message -Level Verbose -Message "Beginning shrink of $($file.Name)"
-                                            $file.Shrink($PercentFreeSpace, $ShrinkMethod)
+                                            $file.Shrink($desiredSpaceAvailable, $ShrinkMethod)
                                         }
                                     }
                                     $db.Refresh()
@@ -291,10 +281,11 @@ function Invoke-DbaDatabaseShrink {
                         Write-Message -Level Verbose -Message "Final database size: $([int]$dbSize) MB"
                         Write-Message -Level Verbose -Message "Final space available: $([int]$newSpaceAvailableMB) MB"
 
-                        if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false) {
-                            Write-Message -Level Verbose -Message "Refreshing indexes and getting average fragmentation"
-                            $endingDefrag = ($server.Query($sql, $db.name) | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
-                            $endingTopDefrag = ($server.Query($sqlTop1, $db.name)).avg_fragmentation_in_percent
+                        if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false -and $success -and $FileType -ne 'Log') {
+                            Write-Message -Level Verbose -Message "Getting average fragmentation after shrink"
+                            $dataRow = $server.Query($sql, $db.name)
+                            $endingDefrag = $dataRow.avg_fragmentation_in_percent
+                            $endingTopDefrag = $dataRow.max_fragmentation_in_percent
                         }
                         else {
                             $endingTopDefrag = $endingDefrag = $null
@@ -305,8 +296,6 @@ function Invoke-DbaDatabaseShrink {
                         $elapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
                     }
                 }
-
-                #$db.TruncateLog()
 
                 if ($Pscmdlet.ShouldProcess("$db on $instance", "Showing results")) {
                     if ($null -eq $notes) {
