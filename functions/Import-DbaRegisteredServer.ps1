@@ -133,9 +133,9 @@ function Import-DbaRegisteredServer {
                         foreach ($reggroup in $reggroups) {
                             try {
                                 Write-Message -Level Verbose -Message "Importing $file to $($reggroup.Name) on $instance"
-                                $namelist = $reggroup.RegisteredServers.Name
+                                $urnlist = $reggroup.RegisteredServers.Urn.Value
                                 $reggroup.Import($file.FullName)
-                                Get-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential | Where-Object { $_.Name -notin $namelist -and $_.Parent.Name -eq $reggroup.Name }
+                                Get-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential | Where-Object { $_.Urn.Value -notin $urnlist }
                             }
                             catch {
                                 Stop-Function -Message "Failure attempting to import $file to $instance" -ErrorRecord $_ -Continue
