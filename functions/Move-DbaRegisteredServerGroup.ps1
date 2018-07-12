@@ -115,6 +115,7 @@ function Move-DbaRegisteredServerGroup {
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptMove($groupobject).GetScript())
                     Write-Message -Level Verbose -Message "Connecting to $instance to search for $newname"
                     Get-DbaRegisteredServerGroup -SqlInstance $server -Group $newname
+                    $parentserver.ServerConnection.Disconnect()
                 }
                 catch {
                     Stop-Function -Message "Failed to move $($regserver.Name) to $NewGroup on $($regserver.SqlInstance)" -ErrorRecord $_ -Continue
