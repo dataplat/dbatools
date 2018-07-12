@@ -2,10 +2,10 @@
 function Move-DbaRegisteredServerGroup {
     <#
         .SYNOPSIS
-            Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
+             Moves registered server groups around SQL Server Central Management Server (CMS).
 
         .DESCRIPTION
-            Returns an array of Server Groups found in the CMS.
+            Moves registered server groups around SQL Server Central Management Server (CMS).
 
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to.

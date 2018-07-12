@@ -481,7 +481,9 @@
         'Move-DbaRegisteredServer',
         'Move-DbaRegisteredServerGroup',
         'Remove-DbaRegisteredServer',
-        'Remove-DbaRegisteredServerGroup'
+        'Remove-DbaRegisteredServerGroup',
+        'Get-DbaPlanCache',
+        'Clear-DbaPlanCache'
     )
 
     # Cmdlets to export from this module
