@@ -145,15 +145,11 @@ function Invoke-DbaDatabaseShrink {
         $StatementTimeoutSeconds = $StatementTimeout * 60
 
         $sql = "SELECT
-                    avg(indexstats.avg_fragmentation_in_percent) as [avg_fragmentation_in_percent],
-                    max(indexstats.avg_fragmentation_in_percent) as [max_fragmentation_in_percent]
-                    FROM sys.dm_db_index_physical_stats (DB_ID(), NULL, NULL, NULL, NULL) AS indexstats
-                    INNER JOIN sys.tables dbtables on dbtables.[object_id] = indexstats.[object_id]
-                    INNER JOIN sys.schemas dbschemas on dbtables.[schema_id] = dbschemas.[schema_id]
-                    INNER JOIN sys.indexes AS dbindexes ON dbindexes.[object_id] = indexstats.[object_id]
-                    AND indexstats.index_id = dbindexes.index_id
-                    WHERE indexstats.database_id = DB_ID() AND indexstats.avg_fragmentation_in_percent > 0
-                    AND indexstats.page_count > 100"
+            	  avg(avg_fragmentation_in_percent) as [avg_fragmentation_in_percent]
+	            , max(avg_fragmentation_in_percent) as [max_fragmentation_in_percent]
+	            FROM sys.dm_db_index_physical_stats (DB_ID(), NULL, NULL, NULL, NULL) AS indexstats
+                WHERE indexstats.avg_fragmentation_in_percent > 0 AND indexstats.page_count > 100
+                GROUP BY indexstats.database_id"
     }
 
     process {
@@ -214,8 +210,8 @@ function Invoke-DbaDatabaseShrink {
                         if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false) {
                             Write-Message -Level Verbose -Message "Getting starting average fragmentation"
                             $dataRow = $server.Query($sql, $db.name)
-                            $startingFrag = $dataRow.avg_fragmentation_in_percent[0]
-                            $startingTopFrag = $dataRow.max_fragmentation_in_percent[0]
+                            $startingFrag = $dataRow.avg_fragmentation_in_percent
+                            $startingTopFrag = $dataRow.max_fragmentation_in_percent
                         }
                         else {
                             $startingTopFrag = $startingFrag = $null
@@ -234,7 +230,8 @@ function Invoke-DbaDatabaseShrink {
                                 }
                                 catch {
                                     $success = $false
-                                    $notes = $_.Exception.InnerException
+                                    Stop-Function -message "Shrink Failed:  $($_.Exception.InnerException)"  -EnableException $EnableException -ErrorRecord $_ -Continue 
+                                    continue
                                 }
                             }
                             'Data' {
@@ -254,7 +251,8 @@ function Invoke-DbaDatabaseShrink {
                                 }
                                 catch {
                                     $success = $false
-                                    $notes = $_.Exception.InnerException
+                                    Stop-Function -message "Shrink Failed:  $($_.Exception.InnerException)" -EnableException $EnableException -ErrorRecord $_ -Continue 
+                                    continue
                                 }
                             }
                             default {
@@ -269,7 +267,8 @@ function Invoke-DbaDatabaseShrink {
                                 }
                                 catch {
                                     $success = $false
-                                    $notes = $_.Exception.InnerException
+                                    Stop-Function -message "Shrink Failed:  $($_.Exception.InnerException)" -EnableException $EnableException -ErrorRecord $_ -Continue 
+                                    continue
                                 }
                             }
                         }
@@ -284,8 +283,8 @@ function Invoke-DbaDatabaseShrink {
                         if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false -and $success -and $FileType -ne 'Log') {
                             Write-Message -Level Verbose -Message "Getting ending average fragmentation"
                             $dataRow = $server.Query($sql, $db.name)
-                            $endingDefrag = $dataRow.avg_fragmentation_in_percent[0]
-                            $endingTopDefrag = $dataRow.max_fragmentation_in_percent[0]
+                            $endingDefrag = $dataRow.avg_fragmentation_in_percent
+                            $endingTopDefrag = $dataRow.max_fragmentation_in_percent
                         }
                         else {
                             $endingTopDefrag = $endingDefrag = $null
