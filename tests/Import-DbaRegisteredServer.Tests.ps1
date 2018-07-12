@@ -48,8 +48,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "imports a file from Export-DbaRegisteredServer" {
             $results3 = $newServer3 | Export-DbaRegisteredServer -Path C:\temp\dbatoolsci_regserverexport.xml
             $results4 = Import-DbaRegisteredServer -SqlInstance $script:instance2 -Path $results3
-            $results4.ServerName | Should -Be $newServer3.ServerName
-            $results4.Description | Should -Be $newServer3.Description
+            $results4.ServerName | Should -Be @('dbatoolsci-server3', 'dbatoolsci-server1')
+            $results4.Description | Should -Be @('dbatoolsci-server3desc', 'dbatoolsci-server123')
         }
         It "imports from a random object so long as it has ServerName" {
             $object = [pscustomobject]@{
