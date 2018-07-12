@@ -145,9 +145,9 @@ function Invoke-DbaDatabaseShrink {
         $StatementTimeoutSeconds = $StatementTimeout * 60
 
         $sql = "SELECT
-            	  avg(avg_fragmentation_in_percent) as [avg_fragmentation_in_percent]
-	            , max(avg_fragmentation_in_percent) as [max_fragmentation_in_percent]
-	            FROM sys.dm_db_index_physical_stats (DB_ID(), NULL, NULL, NULL, NULL) AS indexstats
+                  avg(avg_fragmentation_in_percent) as [avg_fragmentation_in_percent]
+                , max(avg_fragmentation_in_percent) as [max_fragmentation_in_percent]
+                FROM sys.dm_db_index_physical_stats (DB_ID(), NULL, NULL, NULL, NULL) AS indexstats
                 WHERE indexstats.avg_fragmentation_in_percent > 0 AND indexstats.page_count > 100
                 GROUP BY indexstats.database_id"
     }
@@ -230,7 +230,7 @@ function Invoke-DbaDatabaseShrink {
                                 }
                                 catch {
                                     $success = $false
-                                    Stop-Function -message "Shrink Failed:  $($_.Exception.InnerException)"  -EnableException $EnableException -ErrorRecord $_ -Continue 
+                                    Stop-Function -message "Shrink Failed:  $($_.Exception.InnerException)"  -EnableException $EnableException -ErrorRecord $_ -Continue
                                     continue
                                 }
                             }
@@ -251,7 +251,7 @@ function Invoke-DbaDatabaseShrink {
                                 }
                                 catch {
                                     $success = $false
-                                    Stop-Function -message "Shrink Failed:  $($_.Exception.InnerException)" -EnableException $EnableException -ErrorRecord $_ -Continue 
+                                    Stop-Function -message "Shrink Failed:  $($_.Exception.InnerException)" -EnableException $EnableException -ErrorRecord $_ -Continue
                                     continue
                                 }
                             }
@@ -267,7 +267,7 @@ function Invoke-DbaDatabaseShrink {
                                 }
                                 catch {
                                     $success = $false
-                                    Stop-Function -message "Shrink Failed:  $($_.Exception.InnerException)" -EnableException $EnableException -ErrorRecord $_ -Continue 
+                                    Stop-Function -message "Shrink Failed:  $($_.Exception.InnerException)" -EnableException $EnableException -ErrorRecord $_ -Continue
                                     continue
                                 }
                             }
