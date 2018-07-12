@@ -123,9 +123,10 @@ function Get-DbaRegisteredServer {
                     Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
                 }
                 $servers += ($serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers())
+                $serverstore.ServerConnection.Disconnect()
             }
         }
-
+        
         if ($Name) {
             Write-Message -Level Verbose -Message "Filtering by name for $name"
             $servers = $servers | Where-Object Name -in $Name
