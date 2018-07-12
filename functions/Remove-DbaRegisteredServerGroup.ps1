@@ -82,6 +82,7 @@ function Remove-DbaRegisteredServerGroup {
 
             if ($Pscmdlet.ShouldProcess($parentserver.DomainInstanceName, "Removing $($regservergroup.Name) CMS Group")) {
                 $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptDrop().GetScript())
+                $parentserver.ServerConnection.Disconnect()
                 try {
                     [pscustomobject]@{
                         ComputerName            = $parentserver.ComputerName
