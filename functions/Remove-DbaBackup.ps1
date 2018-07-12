@@ -151,7 +151,7 @@ function Remove-DbaBackup {
             if ($EnumErrors) {
                 Write-Message "Errors encountered enumerating folders." -Level Warning -ErrorRecord $EnumErrors
             }
-            Write-Message -Message "Removed empty folders." -Level Verbose -EnableException $EnableException
+            Write-Message -Message "Removed empty folders." -Level Verbose
         }
     }
 }

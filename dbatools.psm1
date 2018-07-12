@@ -111,6 +111,15 @@ if ($dbatools_serialimport) { $script:serialImport = $true }
 if ($dbatoolsSystemSystemNode.SerialImport) { $script:serialImport = $true }
 if ($dbatoolsSystemUserNode.SerialImport) { $script:serialImport = $true }
 #endregion Serial Import
+
+#region Multi File Import
+$script:multiFileImport = $false
+if ($dbatools_serialimport) { $script:multiFileImport = $true }
+if ($dbatoolsSystemSystemNode.MultiFileImport) { $script:multiFileImport = $true }
+if ($dbatoolsSystemUserNode.MultiFileImport) { $script:multiFileImport = $true }
+if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $true }
+#endregion Multi File Import
+
 Write-ImportTime -Text "Validated defines"
 #endregion Import Defines
 
@@ -157,16 +166,19 @@ if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
     . Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
     Write-ImportTime -Text "Configuration System"
 }
-if (-not ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath)) {
-    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
+if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
+    [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
 }
 
-if ((Test-Path -Path "$script:PSModuleRoot\.git")) {
+if ($script:multiFileImport) {
     # All internal functions privately available within the toolset
     foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\functions\*.ps1")) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Internal Commands"
+    
+    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    Write-ImportTime -Text "Registering cmdlets"
     
     # All exported functions
     foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
@@ -178,6 +190,9 @@ if ((Test-Path -Path "$script:PSModuleRoot\.git")) {
 else {
     . "$script:PSModuleRoot\allcommands.ps1"
     Write-ImportTime -Text "Loading Public and Private Commands"
+    
+    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    Write-ImportTime -Text "Registering cmdlets"
 }
 
 # Run all optional code
@@ -653,8 +668,8 @@ if ($PSCommandPath -like "*.psm1") {
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUN5E7ANIgUTz3iNXPfuO5w+vD
-# WRWggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUMppNYOVwF8P3jkLrL5oD/iwZ
+# 7lSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -785,22 +800,22 @@ if ($PSCommandPath -like "*.psm1") {
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUY1cQ0wjIjMi8oL5ZugSxebZ+sC8wDQYJKoZIhvcNAQEBBQAE
-# ggEAFcn7EvfoONTnCyOccRZ72IHrv+PhEBZK/V6vGxDZx71ZLB56i0sbD3X2BjSz
-# TFI1MtZk08fDFhz9/YZ3KHg0JXgGuYKHQZYgSkNl35ibvc1bAoOdFsVZAmjqYfj8
-# 4SB+UWiM1MIW8r0x+GFmpD5gyhxcYuOmL09fTz5giqOVhLAEMCNF19jnnCs92NNr
-# 5d6sjxtDdwl1FxDd589rDoVXRn7cbUOCgOQWoYVkJpN5IBkhb5wEePC/UmTwcIZ2
-# lz7iZ+tNi95ua2uUBYHNw9LVxBkhcP9GBMAH93PrRbpI4GnB/EOo1e1k8A6xcovh
-# 4JXX0xJl+N5WabPhJj9SHCTYUqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQU4/1qvSB/Mu/Jbi4lVeb0Vxt//fowDQYJKoZIhvcNAQEBBQAE
+# ggEAKL16Dp4CziVc/U5pTzjY2nf/xOYyvb/eAcQOdBNF5bsfQszz5xx2Fm54Ndkq
+# flMpTdxnEDc7yVhNBXRXDhIbokHpkdI6QrZ5dhsm8pd2CEGoYMwNinljfWDvOd07
+# p1+CnSU+2j8h6xoAZEhoTkINqd5n8pPYoQbsw4yZOjS6ieRIiksAofh+wJAzTXhh
+# lGZffkV3HPSMI4ID4fSkxyJdb3JRganlw31N6p3zQaAHKa4ZSNQIVUCxZm4DpGFv
+# lgRzK74xhFOX2bzTmo2FIHpw3au+7TAXTHQ9ags6KEVDey9e5jzfvRcJmW/UBFmc
+# H5d4Tk4hIEDi8V7lk4pOMgNBCqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwNzA2MjMzNDM5WjAj
-# BgkqhkiG9w0BCQQxFgQUTSAwuNcpak2EN4HUvepteOCi2GIwDQYJKoZIhvcNAQEB
-# BQAEggEAkDDacHRmCw+V31SjoYQS+o0uX1H3gsPTc4u7+6KXS065gfh6e38trJ5s
-# LuJxG196Rsj/IERx2YxUh7MJBY5nvoWPDBZwdZ7Yw6AV6z0OCC3rEkEKCZskC+P1
-# tYzBie2dyhWPvpJAyJEscHiUedFfRLTV3spIo9cuhDv+6IOhpNvBsjIP9wQIQbT7
-# 7NFR57+PuiXFKMcEGISHkgmccGs4IH31yEHm1CyiMsSPgC71XNp0uq0VHMu9QVe7
-# 70s+vWwsc/cSOOmSKxT5kjsfeogHmEydlP1blr3mcCBD+jFcBK2adBKQuS+45X21
-# Jc246wvbAt9xdbXXkzmxj+SkT6LfBg==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwNzEyMDkzNzMzWjAj
+# BgkqhkiG9w0BCQQxFgQUd6da32pB043/6dfTnCE7aGKXkf4wDQYJKoZIhvcNAQEB
+# BQAEggEAB7SP+wTWbg3ct55T6ajilS6f7SCfPBYl4q0SdIHmWyenR0IzvqrT+1aG
+# sYbVfkM1WTCRQnuseR22hDJcnm6MiISgCC5woXkH7CWD+mld5316uc/T0ABxUEZI
+# Phn8I/hmJY/Vdy6QLF4xpLtVPuhj/PE2XMS8Bb0fwZf4QQJHpg/t1EE4NDZjiH8h
+# Xd8fkPWkM/RXygg0Oy7MMbpuHhyxZ+SlyBLC9egGCBaEVJQqabtN4KJa3wtgeU7/
+# Ehvm6YLCGXiBpr9MCYTD6mVQEvrONBwbnXst+mg1pZmw0n8HpYuAbcHa/CmcSuWl
+# znLjWvqg5IvyBd2xL4XAaYPsnr6v2w==
 # SIG # End signature block
