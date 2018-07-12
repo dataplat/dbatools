@@ -32,7 +32,7 @@ function Set-DbaConfig {
         .PARAMETER Validation
             The name of the validation script used for input validation.
             These can be used to validate make sure that input is of the proper data type.
-            New validation scripts can be registered using Register-PSFConfigValidation
+            New validation scripts can be registered using Register-DbaConfigValidation
 
         .PARAMETER Handler
             A scriptblock that is executed when a value is being set.

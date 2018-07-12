@@ -38,14 +38,14 @@
 
     process {
         if (-not (Test-Path -Path $Path)) {
-            Stop-PSFFunction -Message "$Path does not exist"
+            Stop-Function -Message "$Path does not exist"
             return
         }
 
         $association = Get-ItemProperty "Registry::HKEY_Classes_root\.pbix" -ErrorAction SilentlyContinue
 
         if (-not $association) {
-            Stop-PSFFunction -Message ".pbix not associated with any program. Please (re)install Power BI"
+            Stop-Function -Message ".pbix not associated with any program. Please (re)install Power BI"
             return
         }
 
@@ -61,7 +61,7 @@
             Invoke-Item -Path $path
         }
         catch {
-            Stop-PSFFunction -Message "Failure" -Exception $_
+            Stop-Function -Message "Failure" -ErrorRecord $_
             return
         }
     }
