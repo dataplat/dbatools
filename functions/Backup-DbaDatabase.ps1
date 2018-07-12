@@ -180,8 +180,8 @@ function Backup-DbaDatabase {
                 $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
             }
             catch {
-                Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
-                continue
+                Stop-Function -Message "Cannot connect to $SqlInstance" -ErrorRecord $_
+                return
             }
 
             if ($Database) {
@@ -201,24 +201,24 @@ function Backup-DbaDatabase {
             }
 
             if ($InputObject.Count -gt 1 -and $BackupFileName -ne '') {
-                Write-Message -Level Warning -Message "1 BackupFile specified, but more than 1 database."
-                break
+                Stop-Function -Message "1 BackupFile specified, but more than 1 database."
+                return
             }
 
             if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
-                Write-Message -Level Warning -Message "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
-                break
+                Stop-Function -Message "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
+                return
             }
             if ($BlockSize) {
                 if ($BlockSize -notin (0.5kb, 1kb, 2kb, 4kb, 8kb, 16kb, 32kb, 64kb)) {
-                    Write-Message -Level Warning -Message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
-                    break
+                    Stop-Function -Message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
+                    return
                 }
             }
             if ('' -ne $AzureBaseUrl) {
                 if ($null -eq $AzureCredential) {
                     Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
-                    break
+                    return
                 }
                 $AzureBaseUrl = $AzureBaseUrl.Trim("/")
                 $FileCount = 1
@@ -233,8 +233,8 @@ function Backup-DbaDatabase {
 
     process {
         if (!$SqlInstance -and !$InputObject) {
-            Write-Message -Level Warning -Message "You must specify a server and database or pipe some databases"
-            continue
+            Stop-Function -Message "You must specify a server and database or pipe some databases"
+            return
         }
 
         Write-Message -Level Verbose -Message "$($InputObject.Count) database to backup"
@@ -245,18 +245,15 @@ function Backup-DbaDatabase {
             $dbname = $Database.Name
 
             if ($dbname -eq "tempdb") {
-                Write-Message -Level Warning -Message "Backing up tempdb not supported"
-                continue
+                Stop-Function -Message "Backing up tempdb not supported" -Continue
             }
 
             if ('Normal' -notin ($Database.Status -split ',')) {
-                Write-Message -Level Warning -Message "Database status not Normal. $dbname skipped."
-                continue
+                Stop-Function -Message "Database status not Normal. $dbname skipped." -Continue
             }
 
             if ($Database.DatabaseSnapshotBaseName) {
-                Write-Message -Level Warning -Message "Backing up snapshots not supported. $dbname skipped."
-                continue
+                Stop-Function -Message "Backing up snapshots not supported. $dbname skipped." -Continue
             }
 
             if ($null -eq $server) { $server = $Database.Parent }
@@ -538,7 +535,7 @@ function Backup-DbaDatabase {
                     }
                     else {
                         Write-Progress -id $ProgressId -activity "Backup" -status "Failed" -completed
-                        Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_
+                        Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_ -Continue
                         $BackupComplete = $false
                     }
                 }
