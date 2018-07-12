@@ -22,7 +22,7 @@ function Invoke-DbaDatabaseShrink {
             3. Consider running DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE after the shrink is complete.
 
         .PARAMETER SqlInstance
-            The SQL Server that you're connecting to.
+            The target SQL Server instances
 
         .PARAMETER SqlCredential
             SqlCredential object used to connect to the SQL Server as a different user.
