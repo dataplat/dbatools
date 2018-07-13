@@ -160,7 +160,7 @@ function Test-DbaWindowsLogin {
                 $exists = $false
                 try {
                     $u = Get-DbaADObject -ADObject $adLogin -Type User -EnableException
-                    if ($null -eq $u){
+                    if ($null -eq $u -and $adLogin -like '*$'){
                         Write-Message -Message "Parsing Login as computer" -Level Verbose
                         $u = Get-DbaADObject -ADObject $adLogin -Type Computer -EnableException
                         $adType = 'Computer'
