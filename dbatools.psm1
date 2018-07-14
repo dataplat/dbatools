@@ -208,6 +208,9 @@ Write-ImportTime -Text "Loading Optional Commands"
 . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\insertTepp.ps1"
 Write-ImportTime -Text "Loading TEPP"
 
+# Process transforms
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\message-transforms.ps1"
+Write-ImportTime -Text "Loading Message Transforms"
 
 # Load scripts that must be individually run at the end #
 #-------------------------------------------------------#
@@ -668,8 +671,8 @@ if ($PSCommandPath -like "*.psm1") {
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUMppNYOVwF8P3jkLrL5oD/iwZ
-# 7lSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU+6vQmhIj9wBkPDlGYRpBav4E
+# CXaggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -800,22 +803,22 @@ if ($PSCommandPath -like "*.psm1") {
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQU4/1qvSB/Mu/Jbi4lVeb0Vxt//fowDQYJKoZIhvcNAQEBBQAE
-# ggEAKL16Dp4CziVc/U5pTzjY2nf/xOYyvb/eAcQOdBNF5bsfQszz5xx2Fm54Ndkq
-# flMpTdxnEDc7yVhNBXRXDhIbokHpkdI6QrZ5dhsm8pd2CEGoYMwNinljfWDvOd07
-# p1+CnSU+2j8h6xoAZEhoTkINqd5n8pPYoQbsw4yZOjS6ieRIiksAofh+wJAzTXhh
-# lGZffkV3HPSMI4ID4fSkxyJdb3JRganlw31N6p3zQaAHKa4ZSNQIVUCxZm4DpGFv
-# lgRzK74xhFOX2bzTmo2FIHpw3au+7TAXTHQ9ags6KEVDey9e5jzfvRcJmW/UBFmc
-# H5d4Tk4hIEDi8V7lk4pOMgNBCqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUqenTCxlSKxVk1TtommQmaiBy0K0wDQYJKoZIhvcNAQEBBQAE
+# ggEAeW38z2G3o3KfGXyKN+JVRvdvLJi6Q5MzVjrE0uLt84eKxb1AGir3y9j7/80P
+# 3TCiP+a92bK1KYsky7S7BYG9aYuVo724Kftm9oM87sqB4z19Nqwv5wsWswclrVKf
+# U8gT4uJ/dLcNHbi6712aW+JPJlwyTlrGiv1S5G15uEtAedNwFiNkGNGXDzwuJ8Nh
+# N/3jwuUpcdkXF3bDeg0VXuaEpPAitz+NSjkaFSJnPtmzuBI1k8Cj2C0oBePA1x7m
+# jf3kMj6SHi3X97vcXcPhi0Dt8w4MAqppysKxzWrMQ/NFBiPpigKoxQdRw0GKBC9c
+# cmnTY2nhBhrg7zUPQJH07HHc+aGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwNzEyMjEyNTIxWjAj
-# BgkqhkiG9w0BCQQxFgQUd6da32pB043/6dfTnCE7aGKXkf4wDQYJKoZIhvcNAQEB
-# BQAEggEAOvkwFnMYCXTyU8TKxzDsgsyuEQePWsImZXlJMWARxdgG8mz1WDR8+9LF
-# LBx+2I5HsYKoDE0Ycq4TjIvsvX6U6l2xzMpgIyCATKTZPqCnh+xJDigVc29WZq1+
-# 8kVgps3k98Kmm2dvLSN/LjYMYy9dpgoXJaKAB0KOmzq/c3hTHTaUMxnWXxfESOgm
-# sQpKH1xfaAzioDzRqLEQ0RndjCpLuugQTnJNw5dkyVIZSRGhHh6hCHmIjVHbScdD
-# hPmQZJHICC/LPUvxdp22CvWP6VjdKd83UpUOM5OMubFDvDKSOsz2zEBiX71raNs4
-# b+ZCkzp91O3+HYhQ3i4yiir60K4BFw==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwNzE0MTQwNjU1WjAj
+# BgkqhkiG9w0BCQQxFgQUM4/disPjDL4uWUmDa/Krx5pufEcwDQYJKoZIhvcNAQEB
+# BQAEggEAoH4PI3IGsDn0IBs/WDjPe+k1RU/3rOiWE4gj79nzT1TlBwU8S5KARt7Q
+# Xkwf/RVc93krVKfy5TZ6HelwkbYeEnnn77TrqX0vLWa5Q9oSJ4nEP1oFuvoOt/ci
+# NaY6GAwn7YbdHxbh0Jz4OWKGcKx3RLGPV89UZQMOCwoTTUjwTIirU2Fd0EX1GIjk
+# uEOnuWay0hgQcCXbb/uD/uf05DaKC8O7GL6uWMKA8rsJJj21ucRQp7jzP7Ntdgai
+# Wmvfe4NlkqS992RDy5JlMaOfyVYCkgaw+WFL2tHiI4Mrx94B1fXDH/IV0W6rwnJ/
+# VKG58kDOjtPemrHAsERPv/XYinIDZw==
 # SIG # End signature block
