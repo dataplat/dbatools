@@ -208,6 +208,9 @@ Write-ImportTime -Text "Loading Optional Commands"
 . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\insertTepp.ps1"
 Write-ImportTime -Text "Loading TEPP"
 
+# Process transforms
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\message-transforms.ps1"
+Write-ImportTime -Text "Loading Message Transforms"
 
 # Load scripts that must be individually run at the end #
 #-------------------------------------------------------#
