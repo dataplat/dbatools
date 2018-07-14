@@ -1,4 +1,10 @@
-﻿comment: false
+﻿coverage:
+  status:
+    project:
+      default:
+        threshold: 50
 
 fixes:
   - "dbatools/::bin/projects/dbatools/dbatools/"
+
+comment: false
