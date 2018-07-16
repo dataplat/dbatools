@@ -186,7 +186,7 @@ function Connect-SqlInstance {
     catch { }
 
     try {
-        if ($NonPooled) {
+        if ($NonPooled -or $authtype -eq "Windows Authentication with Credential") {
             $server.ConnectionContext.Connect()
         }
         else {
