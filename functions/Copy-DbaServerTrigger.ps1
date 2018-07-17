@@ -87,16 +87,15 @@ function Copy-DbaServerTrigger {
     begin {
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         $serverTriggers = $sourceServer.Triggers
-        
-        if ($destServer.VersionMajor -lt $sourceServer.VersionMajor) {
-            Stop-Function -Message "Migration from version $($destServer.VersionMajor) to version $($sourceServer.VersionMajor) is not supported."
-            return
-        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+            if ($destServer.VersionMajor -lt $sourceServer.VersionMajor) {
+                Stop-Function -Message "Migration from version $($destServer.VersionMajor) to version $($sourceServer.VersionMajor) is not supported."
+                return
+            }
             $destTriggers = $destServer.Triggers
             
             foreach ($trigger in $serverTriggers) {
