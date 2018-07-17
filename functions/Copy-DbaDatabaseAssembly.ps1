@@ -77,7 +77,7 @@ function Copy-DbaDatabaseAssembly {
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
         [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,
+        [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [object[]]$Assembly,
         [object[]]$ExcludeAssembly,
@@ -86,19 +86,7 @@ function Copy-DbaDatabaseAssembly {
         [switch]$EnableException
     )
     begin {
-        
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-        
-        $source = $sourceServer.DomainInstanceName
-        $destination = $destServer.DomainInstanceName
-        
-        if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
-            throw "Assemblies are only supported in SQL Server 2005 and newer. Quitting."
-        }
-    }
-    process {
-        
+        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         $sourceAssemblies = @()
         foreach ($database in ($sourceServer.Databases | Where-Object IsAccessible)) {
             Write-Message -Level Verbose -Message "Processing $database on source"
@@ -112,113 +100,119 @@ function Copy-DbaDatabaseAssembly {
             }
             catch { }
         }
-        
-        $destAssemblies = @()
-        foreach ($database in $destServer.Databases) {
-            Write-Message -Level VeryVerbose -Message "Processing $database on destination"
-            try {
-                # a bug here requires a try/catch
-                $userAssemblies = $database.Assemblies | Where-Object IsSystemObject -eq $false
-                foreach ($assembly in $userAssemblies) {
-                    $destAssemblies += $assembly
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+        foreach ($destinstance in $Destination) {
+            $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+            
+            $destAssemblies = @()
+            foreach ($database in $destServer.Databases) {
+                Write-Message -Level VeryVerbose -Message "Processing $database on destination"
+                try {
+                    # a bug here requires a try/catch
+                    $userAssemblies = $database.Assemblies | Where-Object IsSystemObject -eq $false
+                    foreach ($assembly in $userAssemblies) {
+                        $destAssemblies += $assembly
+                    }
                 }
+                catch { }
             }
-            catch { }
-        }
-        foreach ($currentAssembly in $sourceAssemblies) {
-            $assemblyName = $currentAssembly.Name
-            $dbName = $currentAssembly.Parent.Name
-            $destDb = $destServer.Databases[$dbName]
-            Write-Message -Level VeryVerbose -Message "Processing $assemblyName on $dbname"
-            $copyDbAssemblyStatus = [pscustomobject]@{
-                SourceServer         = $sourceServer.Name
-                SourceDatabase       = $dbName
-                DestinationServer    = $destServer.Name
-                DestinationDatabase  = $destDb
-                type                 = "Database Assembly"
-                Name                 = $assemblyName
-                Status               = $null
-                Notes                = $null
-                DateTime             = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
-            }
-            
-            
-            if (!$destDb) {
-                $copyDbAssemblyStatus.Status = "Skipped"
-                $copyDbAssemblyStatus.Notes = "Destination database does not exist"
-                $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+            foreach ($currentAssembly in $sourceAssemblies) {
+                $assemblyName = $currentAssembly.Name
+                $dbName = $currentAssembly.Parent.Name
+                $destDb = $destServer.Databases[$dbName]
+                Write-Message -Level VeryVerbose -Message "Processing $assemblyName on $dbname"
+                $copyDbAssemblyStatus = [pscustomobject]@{
+                    SourceServer = $sourceServer.Name
+                    SourceDatabase = $dbName
+                    DestinationServer = $destServer.Name
+                    DestinationDatabase = $destDb
+                    type         = "Database Assembly"
+                    Name         = $assemblyName
+                    Status       = $null
+                    Notes        = $null
+                    DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                }
                 
-                Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName.";
-                continue
-            }
-            
-            if ((Test-Bound -ParameterName Assembly) -and $Assembly -notcontains "$dbName.$assemblyName" -or $ExcludeAssembly -contains "$dbName.$assemblyName") {
-                continue
-            }
-            
-            if ($currentAssembly.AssemblySecurityLevel -eq "External" -and -not $destDb.Trustworthy) {
-                if ($Pscmdlet.ShouldProcess($destination, "Setting $dbName to External")) {
-                    Write-Message -Level Verbose -Message "Setting $dbName Security Level to External on $destination."
-                    $sql = "ALTER DATABASE $dbName SET TRUSTWORTHY ON"
-                    try {
-                        Write-Message -Level Debug -Message $sql
-                        $destServer.Query($sql)
-                    }
-                    catch {
-                        $copyDbAssemblyStatus.Status = "Failed"
-                        $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
-                        Stop-Function -Message "Issue setting security level." -Target $destDb -ErrorRecord $_
-                    }
-                }
-            }
-            
-            if ($destServer.Databases[$dbName].Assemblies.Name -contains $currentAssembly.name) {
-                if ($force -eq $false) {
+                
+                if (!$destDb) {
                     $copyDbAssemblyStatus.Status = "Skipped"
-                    $copyDbAssemblyStatus.Notes = "Already exists"
+                    $copyDbAssemblyStatus.Notes = "Destination database does not exist"
                     $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     
-                    Write-Message -Level Verbose -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
+                    Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName.";
                     continue
                 }
-                else {
-                    if ($Pscmdlet.ShouldProcess($destination, "Dropping assembly $assemblyName and recreating")) {
+                
+                if ((Test-Bound -ParameterName Assembly) -and $Assembly -notcontains "$dbName.$assemblyName" -or $ExcludeAssembly -contains "$dbName.$assemblyName") {
+                    continue
+                }
+                
+                if ($currentAssembly.AssemblySecurityLevel -eq "External" -and -not $destDb.Trustworthy) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Setting $dbName to External")) {
+                        Write-Message -Level Verbose -Message "Setting $dbName Security Level to External on $destinstance."
+                        $sql = "ALTER DATABASE $dbName SET TRUSTWORTHY ON"
                         try {
-                            Write-Message -Level Verbose -Message "Dropping assembly $assemblyName."
-                            Write-Message -Level Verbose -Message "This won't work if there are dependencies."
-                            $destServer.Databases[$dbName].Assemblies[$assemblyName].Drop()
-                            Write-Message -Level Verbose -Message "Copying assembly $assemblyName."
-                            $sql = $currentAssembly.Script()
                             Write-Message -Level Debug -Message $sql
-                            $destServer.Query($sql, $dbName)
+                            $destServer.Query($sql)
                         }
                         catch {
                             $copyDbAssemblyStatus.Status = "Failed"
                             $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             
-                            Stop-Function -Message "Issue dropping assembly." -Target $assemblyName -ErrorRecord $_ -Continue
+                            Stop-Function -Message "Issue setting security level." -Target $destDb -ErrorRecord $_
                         }
                     }
                 }
-            }
-            
-            if ($Pscmdlet.ShouldProcess($destination, "Creating assembly $assemblyName")) {
-                try {
-                    Write-Message -Level Verbose -Message "Copying assembly $assemblyName from database."
-                    $sql = $currentAssembly.Script()
-                    Write-Message -Level Debug -Message $sql
-                    $destServer.Query($sql, $dbName)
-                    
-                    $copyDbAssemblyStatus.Status = "Successful"
-                    $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    
+                
+                if ($destServer.Databases[$dbName].Assemblies.Name -contains $currentAssembly.name) {
+                    if ($force -eq $false) {
+                        $copyDbAssemblyStatus.Status = "Skipped"
+                        $copyDbAssemblyStatus.Notes = "Already exists"
+                        $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        
+                        Write-Message -Level Verbose -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
+                        continue
+                    }
+                    else {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping assembly $assemblyName and recreating")) {
+                            try {
+                                Write-Message -Level Verbose -Message "Dropping assembly $assemblyName."
+                                Write-Message -Level Verbose -Message "This won't work if there are dependencies."
+                                $destServer.Databases[$dbName].Assemblies[$assemblyName].Drop()
+                                Write-Message -Level Verbose -Message "Copying assembly $assemblyName."
+                                $sql = $currentAssembly.Script()
+                                Write-Message -Level Debug -Message $sql
+                                $destServer.Query($sql, $dbName)
+                            }
+                            catch {
+                                $copyDbAssemblyStatus.Status = "Failed"
+                                $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                
+                                Stop-Function -Message "Issue dropping assembly." -Target $assemblyName -ErrorRecord $_ -Continue
+                            }
+                        }
+                    }
                 }
-                catch {
-                    $copyDbAssemblyStatus.Status = "Failed"
-                    $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    
-                    Stop-Function -Message "Issue creating assembly." -Target $assemblyName -ErrorRecord $_
+                
+                if ($Pscmdlet.ShouldProcess($destinstance, "Creating assembly $assemblyName")) {
+                    try {
+                        Write-Message -Level Verbose -Message "Copying assembly $assemblyName from database."
+                        $sql = $currentAssembly.Script()
+                        Write-Message -Level Debug -Message $sql
+                        $destServer.Query($sql, $dbName)
+                        
+                        $copyDbAssemblyStatus.Status = "Successful"
+                        $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        
+                    }
+                    catch {
+                        $copyDbAssemblyStatus.Status = "Failed"
+                        $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        
+                        Stop-Function -Message "Issue creating assembly." -Target $assemblyName -ErrorRecord $_
+                    }
                 }
             }
         }

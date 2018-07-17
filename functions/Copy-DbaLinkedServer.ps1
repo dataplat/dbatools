@@ -73,7 +73,7 @@ function Copy-DbaLinkedServer {
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
         [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,
+        [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [object[]]$LinkedServer,
         [object[]]$ExcludeLinkedServer,
@@ -313,7 +313,7 @@ function Copy-DbaLinkedServer {
                         continue
                     }
                     else {
-                        if ($Pscmdlet.ShouldProcess($destination, "Dropping $linkedServerName")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping $linkedServerName")) {
                             if ($currentLinkedServer.Name -eq 'repl_distributor') {
                                 Write-Message -Level Verbose -Message "repl_distributor cannot be dropped. Not going to try."
                                 continue
@@ -326,7 +326,7 @@ function Copy-DbaLinkedServer {
                 }
 
                 Write-Message -Level Verbose -Message "Attempting to migrate: $linkedServerName."
-                If ($Pscmdlet.ShouldProcess($destination, "Migrating $linkedServerName")) {
+                If ($Pscmdlet.ShouldProcess($destinstance, "Migrating $linkedServerName")) {
                     try {
                         $sql = $currentLinkedServer.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
@@ -360,7 +360,7 @@ function Copy-DbaLinkedServer {
                     $lslogins = $sourcelogins | Where-Object { $_.LinkedServer -eq $linkedServerName }
 
                     foreach ($login in $lslogins) {
-                        if ($Pscmdlet.ShouldProcess($destination, "Migrating $($login.Login)")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Migrating $($login.Login)")) {
                             $currentlogin = $destlogins | Where-Object { $_.RemoteUser -eq $login.Login }
 
                             $copyLinkedServer.Type = $login.Login
@@ -385,31 +385,17 @@ function Copy-DbaLinkedServer {
                 }
             }
         }
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
+        
         if ($null -ne $SourceSqlCredential.username) {
             Write-Message -Level Verbose -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
         }
-
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-
-        $source = $sourceServer.Name
-        $destination = $destServer.Name
-
         if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
             Stop-Function -Message "Not a sysadmin on $source. Quitting." -Target $sourceServer
-            return
         }
-        if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
-            Stop-Function -Message "Not a sysadmin on $destination. Quitting." -Target $destServer
-            return
-        }
-
         Write-Message -Level Verbose -Message "Getting NetBios name for $source."
         $sourceNetBios = Resolve-NetBiosName $sourceserver
-
+        
         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source."
         try {
             Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
@@ -418,9 +404,19 @@ function Copy-DbaLinkedServer {
             Stop-Function -Message "Can't connect to registry on $source." -Target $sourceNetBios -ErrorRecord $_
             return
         }
-
-        # Magic happens here
-        Copy-DbaLinkedServers $LinkedServer -Force:$force
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+        
+        foreach ($destinstance in $Destination) {
+            $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+            if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
+                Stop-Function -Message "Not a sysadmin on $destinstance" -Target $destServer -Continue
+            }
+            
+            # Magic happens here
+            Copy-DbaLinkedServers $LinkedServer -Force:$force
+        }
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlLinkedServer
