@@ -165,7 +165,7 @@ function Copy-DbaBackupDevice {
                         
                         try {
                             Write-Message -Level Verbose -Message "Updating $deviceName to use $backupDirectory"
-                            $sql = $sql -replace $path, $backupDirectory
+                            $sql = $sql -replace [Regex]::Escape($path), $backupDirectory
                         }
                         catch {
                             $copyBackupDeviceStatus.Status = "Failed"
