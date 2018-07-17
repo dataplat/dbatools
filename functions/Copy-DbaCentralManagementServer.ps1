@@ -78,7 +78,7 @@ function Copy-DbaCentralManagementServer {
         [PSCredential]
         $SourceSqlCredential,
         [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,
+        [DbaInstanceParameter[]]$Destination,
         [PSCredential]
         $DestinationSqlCredential,
         [object[]]$CMSGroup,
@@ -118,7 +118,7 @@ function Copy-DbaCentralManagementServer {
                         Write-Message -Level Verbose -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
                         continue
                     }
-                    if ($Pscmdlet.ShouldProcess($destination, "Dropping group $groupName")) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Dropping group $groupName")) {
                         try {
                             Write-Message -Level Verbose -Message "Dropping group $groupName"
                             $destinationGroup.Drop()
@@ -132,7 +132,7 @@ function Copy-DbaCentralManagementServer {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destination, "Creating group $groupName")) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Creating group $groupName")) {
                     Write-Message -Level Verbose -Message "Creating group $($sourceGroup.Name)"
                     $destinationGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($currentServerGroup, $sourceGroup.Name)
                     $destinationGroup.Create()
@@ -182,7 +182,7 @@ function Copy-DbaCentralManagementServer {
                         continue
                     }
 
-                    if ($Pscmdlet.ShouldProcess($destination, "Dropping instance $instanceName from $groupName and recreating")) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Dropping instance $instanceName from $groupName and recreating")) {
                         try {
                             Write-Message -Level Verbose -Message "Dropping instance $instance from $groupName"
                             $destinationGroup.RegisteredServers[$instanceName].Drop()
@@ -196,7 +196,7 @@ function Copy-DbaCentralManagementServer {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destination, "Copying $instanceName")) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Copying $instanceName")) {
                     $newServer = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($destinationGroup, $instanceName)
                     $newServer.ServerName = $serverName
                     $newServer.Description = $instance.Description
@@ -251,7 +251,7 @@ function Copy-DbaCentralManagementServer {
                         continue
                     }
 
-                    if ($Pscmdlet.ShouldProcess($destination, "Dropping subgroup $fromSubGroupName recreating")) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Dropping subgroup $fromSubGroupName recreating")) {
                         try {
                             Write-Message -Level Verbose -Message "Dropping subgroup $fromSubGroupName"
                             $toSubGroup.Drop()
@@ -265,7 +265,7 @@ function Copy-DbaCentralManagementServer {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess($destination, "Creating group $($fromSubGroup.Name)")) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Creating group $($fromSubGroup.Name)")) {
                     Write-Message -Level Verbose -Message "Creating group $($fromSubGroup.Name)"
                     $toSubGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationGroup, $fromSubGroup.Name)
                     $toSubGroup.create()
@@ -279,37 +279,26 @@ function Copy-DbaCentralManagementServer {
         }
 
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-
-        $source = $sourceServer.DomainInstanceName
-        $destination = $destServer.DomainInstanceName
-
-        if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
-            throw "Central Management Server is only supported in SQL Server 2008 and newer. Quitting."
-        }
+        $fromCmStore = Get-DbaRegisteredServerStore -SqlInstance $sourceServer
     }
-
+    
     process {
-        Write-Message -Level Verbose -Message "Connecting to Central Management Servers"
-
-        try {
-            $fromCmStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sourceServer.ConnectionContext.SqlConnectionObject)
-            $toCmStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($destServer.ConnectionContext.SqlConnectionObject)
-        }
-        catch {
-            throw "Cannot access Central Management Servers"
-        }
-
-        $stores = $fromCmStore.DatabaseEngineServerGroup
-        if ($CMSGroup) {
-            $stores = @();
-            foreach ($groupName in $CMSGroup) {
-                $stores += $fromCmStore.DatabaseEngineServerGroup.ServerGroups[$groupName]
+        if (Test-FunctionInterrupt) { return }
+        foreach ($destinstance in $Destination) {
+            $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+            $toCmStore = Get-DbaRegisteredServerStore -SqlInstance $destServer
+            
+            $stores = $fromCmStore.DatabaseEngineServerGroup
+            if ($CMSGroup) {
+                $stores = @();
+                foreach ($groupName in $CMSGroup) {
+                    $stores += $fromCmStore.DatabaseEngineServerGroup.ServerGroups[$groupName]
+                }
             }
-        }
-
-        foreach ($store in $stores) {
-            Invoke-ParseServerGroup -sourceGroup $store -destinationgroup $toCmStore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
+            
+            foreach ($store in $stores) {
+                Invoke-ParseServerGroup -sourceGroup $store -destinationgroup $toCmStore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
+            }
         }
     }
     end {

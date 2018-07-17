@@ -75,6 +75,7 @@ function Copy-DbaAgentSharedSchedule {
         $serverSchedules = $sourceServer.JobServer.SharedSchedules
     }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             

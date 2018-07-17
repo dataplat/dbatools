@@ -80,6 +80,7 @@ function Copy-DbaAgentProxyAccount {
         $serverProxyAccounts = $sourceServer.JobServer.ProxyAccounts
     }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             $destProxyAccounts = $destServer.JobServer.ProxyAccounts

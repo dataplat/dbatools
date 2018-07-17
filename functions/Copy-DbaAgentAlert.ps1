@@ -90,6 +90,7 @@ function Copy-DbaAgentAlert {
         $serverAlerts = $sourceServer.JobServer.Alerts
     }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             $destAlerts = $destServer.JobServer.Alerts
