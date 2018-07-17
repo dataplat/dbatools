@@ -225,7 +225,7 @@ function Get-DbaLogin {
                     Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $null
                 }
 
-                Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
 

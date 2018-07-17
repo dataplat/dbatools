@@ -224,7 +224,7 @@ function Find-DbaAgentJob {
             $jobs = $output | Select-Object -Unique
 
             foreach ($job in $jobs) {
-                Add-Member -Force -InputObject $job -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $job -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $job -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $job -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $job -MemberType NoteProperty -Name JobName -value $job.Name

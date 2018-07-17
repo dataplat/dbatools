@@ -138,7 +138,7 @@ function Connect-SqlInstance {
                 Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
             }
         }
-        $parsedcomputername = $server.NetName
+        $parsedcomputername = $server.ComputerName
         if (-not $parsedcomputername) {
             $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
         }
@@ -287,7 +287,7 @@ function Connect-SqlInstance {
         }
     }
 
-    $parsedcomputername = $server.NetName
+    $parsedcomputername = $server.ComputerName
     if (-not $parsedcomputername) {
         $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
     }

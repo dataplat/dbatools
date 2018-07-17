@@ -301,7 +301,7 @@ function Invoke-DbaDatabaseShrink {
                         $notes = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
                     }
                     $object = [PSCustomObject]@{
-                        ComputerName                  = $server.NetName
+                        ComputerName                  = $server.ComputerName
                         InstanceName                  = $server.ServiceName
                         SqlInstance                   = $server.DomainInstanceName
                         Database                      = $db.name
