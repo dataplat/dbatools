@@ -238,7 +238,7 @@ function Set-DbaMaxDop {
                     }
 
                     $results += [pscustomobject]@{
-                        ComputerName           = $server.NetName
+                        ComputerName           = $server.ComputerName
                         InstanceName           = $server.ServiceName
                         SqlInstance            = $server.DomainInstanceName
                         InstanceVersion        = $row.InstanceVersion

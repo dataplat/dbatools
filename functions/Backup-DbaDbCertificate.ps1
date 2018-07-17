@@ -183,7 +183,7 @@ function Backup-DbaDbCertificate {
                     }
 
                     [pscustomobject]@{
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Database       = $db.Name
@@ -207,7 +207,7 @@ function Backup-DbaDbCertificate {
                         $exception = $_.Exception
                     }
                     [pscustomobject]@{
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Database       = $db.Name

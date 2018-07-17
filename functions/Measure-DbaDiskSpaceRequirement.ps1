@@ -208,7 +208,7 @@ function Measure-DbaDiskSpaceRequirement {
         }
         else {
             Write-Message -Level Verbose -Message "Database [$DestinationDatabase] does not exist on Destination Instance $Destination."
-            $computerName = $destServer.NetName
+            $computerName = $destServer.ComputerName
         }
 
         foreach ($sourceFile in $sourceFiles) {
@@ -216,10 +216,10 @@ function Measure-DbaDiskSpaceRequirement {
                 if ($found = ($sourceFile.Name -eq $destFile.Name)) {
                     # Files found on both sides
                     [PSCustomObject]@{
-                            SourceComputerName      = $sourceServer.NetName
+                            SourceComputerName      = $sourceServer.ComputerName
                             SourceInstance          = $sourceServer.ServiceName
                             SourceSqlInstance       = $sourceServer.DomainInstanceName
-                            DestinationComputerName = $destServer.NetName
+                            DestinationComputerName = $destServer.ComputerName
                             DestinationInstance     = $destServer.ServiceName
                             DestinationSqlInstance  = $destServer.DomainInstanceName
                             SourceDatabase          = $sourceDb.Name
@@ -239,10 +239,10 @@ function Measure-DbaDiskSpaceRequirement {
             if (!$found) {
                 # Files on source but not on destination
                 [PSCustomObject]@{
-                        SourceComputerName      = $sourceServer.NetName
+                        SourceComputerName      = $sourceServer.ComputerName
                         SourceInstance          = $sourceServer.ServiceName
                         SourceSqlInstance       = $sourceServer.DomainInstanceName
-                        DestinationComputerName = $destServer.NetName
+                        DestinationComputerName = $destServer.ComputerName
                         DestinationInstance     = $destServer.ServiceName
                         DestinationSqlInstance  = $destServer.DomainInstanceName
                         SourceDatabase          = $sourceDb.Name
@@ -263,10 +263,10 @@ function Measure-DbaDiskSpaceRequirement {
             $destFilesNotSource = Compare-Object -ReferenceObject $destFiles -DifferenceObject $sourceFiles -Property Name -PassThru
             foreach ($destFileNotSource in $destFilesNotSource) {
                 [PSCustomObject]@{
-                        SourceComputerName      = $sourceServer.NetName
+                        SourceComputerName      = $sourceServer.ComputerName
                         SourceInstance          = $sourceServer.ServiceName
                         SourceSqlInstance       = $sourceServer.DomainInstanceName
-                        DestinationComputerName = $destServer.NetName
+                        DestinationComputerName = $destServer.ComputerName
                         DestinationInstance     = $destServer.ServiceName
                         DestinationSqlInstance  = $destServer.DomainInstanceName
                         SourceDatabaseName      = $Database

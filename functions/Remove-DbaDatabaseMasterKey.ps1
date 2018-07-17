@@ -115,7 +115,7 @@ function Remove-DbaDatabaseMasterKey {
                     Write-Message -Level Verbose -Message "Successfully removed master key from the $db database on $instance"
 
                     [pscustomobject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $db.Name
@@ -124,7 +124,7 @@ function Remove-DbaDatabaseMasterKey {
                 }
                 catch {
                     [pscustomobject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $db.Name
@@ -163,7 +163,7 @@ function Remove-DbaDatabaseMasterKey {
                         }
                         [DbaMode]::Report {
                             [pscustomobject]@{
-                                ComputerName = $server.NetName
+                                ComputerName = $server.ComputerName
                                 InstanceName = $server.ServiceName
                                 SqlInstance  = $server.DomainInstanceName
                                 Database     = $db
@@ -185,7 +185,7 @@ function Remove-DbaDatabaseMasterKey {
                         }
                         "Report" {
                             [pscustomobject]@{
-                                ComputerName = $server.NetName
+                                ComputerName = $server.ComputerName
                                 InstanceName = $server.ServiceName
                                 SqlInstance  = $server.DomainInstanceName
                                 Database     = $smodb.Name
