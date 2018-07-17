@@ -245,7 +245,14 @@ function Connect-DbaInstance {
                     $server.ConnectionContext.Connect()
                 }
                 if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
-                else { return $server }
+                else {
+                    $parsedcomputername = $server.NetName
+                    if (-not $parsedcomputername) {
+                        $parsedcomputername = ([dbainstance]$instance).ComputerName
+                    }
+                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
+                    return $server
+                }
             }
 
             if ($instance.IsConnectionString) { $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject) }
@@ -354,7 +361,14 @@ function Connect-DbaInstance {
             }
 
             if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
-            else { return $server }
+            else {
+                $parsedcomputername = $server.NetName
+                if (-not $parsedcomputername) {
+                    $parsedcomputername = ([dbainstance]$instance).ComputerName
+                }
+                Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
+                return $server
+            }
         }
     }
 }
