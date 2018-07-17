@@ -54,76 +54,78 @@ function Copy-DbaSysDbUserObject {
         [PSCredential]$SourceSqlCredential,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [DbaInstanceParameter]$Destination,
+        [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [Alias('Silent')]
         [switch]$EnableException
     )
     process {
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-
-        $source = $sourceServer.DomainInstanceName
-        $destination = $destServer.DomainInstanceName
-
+        
         if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
             Stop-Function -Message "Not a sysadmin on $source. Quitting."
             return
         }
-        if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
-            Stop-Function -Message "Not a sysadmin on $destination. Quitting."
-            return
-        }
-
-        $systemDbs = "master", "model", "msdb"
-
-        foreach ($systemDb in $systemDbs) {
-            $sysdb = $sourceServer.databases[$systemDb]
-            $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $sysdb
-            $transfer.CopyAllObjects = $false
-            $transfer.CopyAllDatabaseTriggers = $true
-            $transfer.CopyAllDefaults = $true
-            $transfer.CopyAllRoles = $true
-            $transfer.CopyAllRules = $true
-            $transfer.CopyAllSchemas = $true
-            $transfer.CopyAllSequences = $true
-            $transfer.CopyAllSqlAssemblies = $true
-            $transfer.CopyAllSynonyms = $true
-            $transfer.CopyAllTables = $true
-            $transfer.CopyAllViews = $true
-            $transfer.CopyAllStoredProcedures = $true
-            $transfer.CopyAllUserDefinedAggregates = $true
-            $transfer.CopyAllUserDefinedDataTypes = $true
-            $transfer.CopyAllUserDefinedTableTypes = $true
-            $transfer.CopyAllUserDefinedTypes = $true
-            $transfer.CopyAllUserDefinedFunctions = $true
-            $transfer.CopyAllUsers = $true
-            $transfer.PreserveDbo = $true
-            $transfer.Options.AllowSystemObjects = $false
-            $transfer.Options.ContinueScriptingOnError = $true
-            $transfer.Options.IncludeDatabaseRoleMemberships = $true
-            $transfer.Options.Indexes = $true
-            $transfer.Options.Permissions = $true
-            $transfer.Options.WithDependencies = $false
-
-            Write-Message -Level Output -Message "Copying from $systemDb."
-            try {
-                $sqlQueries = $transfer.ScriptTransfer()
-
-                foreach ($sql in $sqlQueries) {
-                    Write-Message -Level Debug -Message $sql
-                    if ($PSCmdlet.ShouldProcess($destServer, $sql)) {
-                        try {
-                            $destServer.Query($sql, $systemDb)
-                        }
-                        catch {
-                            # Don't care - long story having to do with duplicate stuff
+        
+        if (Test-FunctionInterrupt) { return }
+        foreach ($destinstance in $Destination) {
+            $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+            
+            if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
+                Stop-Function -Message "Not a sysadmin on $destinstance. Quitting."
+                return
+            }
+            
+            $systemDbs = "master", "model", "msdb"
+            
+            foreach ($systemDb in $systemDbs) {
+                $sysdb = $sourceServer.databases[$systemDb]
+                $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $sysdb
+                $transfer.CopyAllObjects = $false
+                $transfer.CopyAllDatabaseTriggers = $true
+                $transfer.CopyAllDefaults = $true
+                $transfer.CopyAllRoles = $true
+                $transfer.CopyAllRules = $true
+                $transfer.CopyAllSchemas = $true
+                $transfer.CopyAllSequences = $true
+                $transfer.CopyAllSqlAssemblies = $true
+                $transfer.CopyAllSynonyms = $true
+                $transfer.CopyAllTables = $true
+                $transfer.CopyAllViews = $true
+                $transfer.CopyAllStoredProcedures = $true
+                $transfer.CopyAllUserDefinedAggregates = $true
+                $transfer.CopyAllUserDefinedDataTypes = $true
+                $transfer.CopyAllUserDefinedTableTypes = $true
+                $transfer.CopyAllUserDefinedTypes = $true
+                $transfer.CopyAllUserDefinedFunctions = $true
+                $transfer.CopyAllUsers = $true
+                $transfer.PreserveDbo = $true
+                $transfer.Options.AllowSystemObjects = $false
+                $transfer.Options.ContinueScriptingOnError = $true
+                $transfer.Options.IncludeDatabaseRoleMemberships = $true
+                $transfer.Options.Indexes = $true
+                $transfer.Options.Permissions = $true
+                $transfer.Options.WithDependencies = $false
+                
+                Write-Message -Level Output -Message "Copying from $systemDb."
+                try {
+                    $sqlQueries = $transfer.ScriptTransfer()
+                    
+                    foreach ($sql in $sqlQueries) {
+                        Write-Message -Level Debug -Message $sql
+                        if ($PSCmdlet.ShouldProcess($destServer, $sql)) {
+                            try {
+                                $destServer.Query($sql, $systemDb)
+                            }
+                            catch {
+                                # Don't care - long story having to do with duplicate stuff
+                            }
                         }
                     }
                 }
-            }
-            catch {
-                # Don't care - long story having to do with duplicate stuff
+                catch {
+                    # Don't care - long story having to do with duplicate stuff
+                }
             }
         }
     }

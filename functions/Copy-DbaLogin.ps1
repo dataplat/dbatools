@@ -121,15 +121,14 @@ function Copy-DbaLogin {
 
             Displays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.
     #>
-
+    
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     Param (
         [parameter(ParameterSetName = "SqlInstance", Mandatory)]
         [DbaInstanceParameter]$Source,
-        [PSCredential]
-        $SourceSqlCredential,
+        [PSCredential]$SourceSqlCredential,
         [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,
+        [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [object[]]$Login,
         [object[]]$ExcludeLogin,
@@ -148,61 +147,60 @@ function Copy-DbaLogin {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    
     begin {
         function Copy-Login {
             foreach ($sourceLogin in $sourceServer.Logins) {
-
                 $userName = $sourceLogin.name
-
+                
                 $copyLoginStatus = [pscustomobject]@{
-                    SourceServer      = $sourceServer.Name
+                    SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
-                    Type              = "Login - $($sourceLogin.LoginType)"
-                    Name              = $userName
-                    DestinationLogin  = $userName
-                    SourceLogin       = $userName
-                    Status            = $null
-                    Notes             = $null
-                    DateTime          = [DbaDateTime](Get-Date)
+                    Type         = "Login - $($sourceLogin.LoginType)"
+                    Name         = $userName
+                    DestinationLogin = $userName
+                    SourceLogin  = $userName
+                    Status       = $null
+                    Notes        = $null
+                    DateTime     = [DbaDateTime](Get-Date)
                 }
-
+                
                 if ($Login -and $Login -notcontains $userName -or $ExcludeLogin -contains $userName) { continue }
-
+                
                 if ($sourceLogin.id -eq 1) { continue }
-
+                
                 if ($userName.StartsWith("##") -or $userName -eq 'sa') {
                     Write-Message -Level Verbose -Message "Skipping $userName."
                     continue
                 }
-
+                
                 $serverName = Resolve-NetBiosName $sourceServer
-
+                
                 $currentLogin = $sourceServer.ConnectionContext.truelogin
-
+                
                 if ($currentLogin -eq $userName -and $force) {
                     if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it is performing the migration.")) {
                         Write-Message -Level Verbose -Message "Cannot drop login performing the migration. Skipping."
                     }
-
+                    
                     $copyLoginStatus.Status = "Skipped"
                     $copyLoginStatus.Notes = "Current login"
                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     continue
                 }
-
+                
                 if (($destServer.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($sourceLogin.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin)) {
                     Write-Message -Level Verbose -Message "$Destination does not have Mixed Mode enabled. [$userName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login."
                 }
-
+                
                 $userBase = ($userName.Split("\")[0]).ToLower()
-
+                
                 if ($serverName -eq $userBase -or $userName.StartsWith("NT ")) {
                     if ($sourceServer.ComputerName -ne $destServer.ComputerName) {
                         if ($Pscmdlet.ShouldProcess("console", "Stating $userName was skipped because it is a local machine name.")) {
                             Write-Message -Level Verbose -Message "$userName was skipped because it is a local machine name."
                         }
-
+                        
                         $copyLoginStatus.Status = "Skipped"
                         $copyLoginStatus.Notes = "Local machine name"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -211,72 +209,72 @@ function Copy-DbaLogin {
                     else {
                         if ($ExcludeSystemLogin) {
                             Write-Message -Level Verbose -Message "$userName was skipped because ExcludeSystemLogin was specified."
-
+                            
                             $copyLoginStatus.Status = "Skipped"
                             $copyLoginStatus.Notes = "System login"
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             continue
                         }
-
+                        
                         if ($Pscmdlet.ShouldProcess("console", "Stating local login $userName since the source and destination server reside on the same machine.")) {
                             Write-Message -Level Verbose -Message "Copying local login $userName since the source and destination server reside on the same machine."
                         }
                     }
                 }
-
+                
                 if ($null -ne $destServer.Logins.Item($userName) -and !$force) {
                     if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it exists at destination.")) {
                         Write-Message -Level Verbose -Message "$userName already exists in destination. Use -Force to drop and recreate."
                     }
-
+                    
                     $copyLoginStatus.Status = "Skipped"
                     $copyLoginStatus.Notes = "Already exists"
                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     continue
                 }
-
+                
                 if ($null -ne $destServer.Logins.Item($userName) -and $force) {
                     if ($userName -eq $destServer.ServiceAccount) {
                         Write-Message -Level Verbose -Message "$userName is the destination service account. Skipping drop."
-
+                        
                         $copyLoginStatus.Status = "Skipped"
                         $copyLoginStatus.Notes = "Destination service account"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         continue
                     }
-
-                    if ($Pscmdlet.ShouldProcess($destination, "Dropping $userName")) {
-
+                    
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Dropping $userName")) {
+                        
                         # Kill connections, delete user
                         Write-Message -Level Verbose -Message "Attempting to migrate $userName"
-                        Write-Message -Level Verbose -Message "Force was specified. Attempting to drop $userName on $destination."
-
+                        Write-Message -Level Verbose -Message "Force was specified. Attempting to drop $userName on $destinstance."
+                        
                         try {
                             $ownedDbs = $destServer.Databases | Where-Object Owner -eq $userName
-
+                            
                             foreach ($ownedDb in $ownedDbs) {
                                 Write-Message -Level Verbose -Message "Changing database owner for $($ownedDb.name) from $userName to sa."
                                 $ownedDb.SetOwner('sa')
                                 $ownedDb.Alter()
                             }
-
+                            
                             $ownedJobs = $destServer.JobServer.Jobs | Where-Object OwnerLoginName -eq $userName
-
+                            
                             foreach ($ownedJob in $ownedJobs) {
                                 Write-Message -Level Verbose -Message "Changing job owner for $($ownedJob.name) from $userName to sa."
                                 $ownedJob.Set_OwnerLoginName('sa')
                                 $ownedJob.Alter()
                             }
-
+                            
                             $activeConnections = $destServer.EnumProcesses() | Where-Object Login -eq $userName
-
+                            
                             if ($activeConnections -and $KillActiveConnection) {
                                 if (!$destServer.Logins.Item($userName).IsDisabled) {
                                     $disabled = $true
                                     $destServer.Logins.Item($userName).Disable()
                                 }
-
-                                $activeConnections | ForEach-Object { $destServer.KillProcess($_.Spid)}
+                                
+                                $activeConnections | ForEach-Object { $destServer.KillProcess($_.Spid) }
                                 Write-Message -Level Verbose -Message "-KillActiveConnection was provided. There are $($activeConnections.Count) active connections killed."
                                 # just in case the kill didn't work, it'll leave behind a disabled account
                                 if ($disabled) { $destServer.Logins.Item($userName).Enable() }
@@ -285,32 +283,32 @@ function Copy-DbaLogin {
                                 Write-Message -Level Verbose -Message "There are $($activeConnections.Count) active connections found for the login $userName. Utilize -KillActiveConnection with -Force to kill the connections."
                             }
                             $destServer.Logins.Item($userName).Drop()
-
-                            Write-Message -Level Verbose -Message "Successfully dropped $userName on $destination."
+                            
+                            Write-Message -Level Verbose -Message "Successfully dropped $userName on $destinstance."
                         }
                         catch {
                             $copyLoginStatus.Status = "Failed"
                             $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
+                            
                             Stop-Function -Message "Could not drop $userName." -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
                         }
                     }
                 }
-
-                if ($Pscmdlet.ShouldProcess($destination, "Adding SQL login $userName")) {
-
-                    Write-Message -Level Verbose -Message "Attempting to add $userName to $destination."
+                
+                if ($Pscmdlet.ShouldProcess($destinstance, "Adding SQL login $userName")) {
+                    
+                    Write-Message -Level Verbose -Message "Attempting to add $userName to $destinstance."
                     $destLogin = New-Object Microsoft.SqlServer.Management.Smo.Login($destServer, $userName)
-
+                    
                     Write-Message -Level Verbose -Message "Setting $userName SID to source username SID."
                     $destLogin.Set_Sid($sourceLogin.Get_Sid())
-
+                    
                     $defaultDb = $sourceLogin.DefaultDatabase
-
+                    
                     Write-Message -Level Verbose -Message "Setting login language to $($sourceLogin.Language)."
                     $destLogin.Language = $sourceLogin.Language
-
+                    
                     if ($null -eq $destServer.databases[$defaultDb]) {
                         # we end up here when the default database on source doesn't exist on dest
                         # if source login is a sysadmin, then set the default database to master
@@ -326,24 +324,24 @@ function Copy-DbaLogin {
                         }
                         Write-Message -Level Verbose -Message "$OrigdefaultDb does not exist on destination. Setting defaultdb to $defaultDb."
                     }
-
+                    
                     Write-Message -Level Verbose -Message "Set $userName defaultdb to $defaultDb."
                     $destLogin.DefaultDatabase = $defaultDb
-
+                    
                     $checkexpiration = "ON"; $checkpolicy = "ON"
-
+                    
                     if ($sourceLogin.PasswordPolicyEnforced -eq $false) { $checkpolicy = "OFF" }
-
+                    
                     if (!$sourceLogin.PasswordExpirationEnabled) { $checkexpiration = "OFF" }
-
+                    
                     $destLogin.PasswordPolicyEnforced = $sourceLogin.PasswordPolicyEnforced
                     $destLogin.PasswordExpirationEnabled = $sourceLogin.PasswordExpirationEnabled
-
+                    
                     # Attempt to add SQL Login User
                     if ($sourceLogin.LoginType -eq "SqlLogin") {
                         $destLogin.LoginType = "SqlLogin"
                         $sourceLoginname = $sourceLogin.name
-
+                        
                         switch ($sourceServer.versionMajor) {
                             0 { $sql = "SELECT CONVERT(VARBINARY(256),password) as hashedpass FROM master.dbo.syslogins WHERE loginname='$sourceLoginname'" }
                             8 { $sql = "SELECT CONVERT(VARBINARY(256),password) as hashedpass FROM dbo.syslogins WHERE name='$sourceLoginname'" }
@@ -354,7 +352,7 @@ function Copy-DbaLogin {
                         WHERE principal_id = $($sourceLogin.id)"
                             }
                         }
-
+                        
                         try {
                             $hashedPass = $sourceServer.ConnectionContext.ExecuteScalar($sql)
                         }
@@ -362,20 +360,20 @@ function Copy-DbaLogin {
                             $hashedPassDt = $sourceServer.Databases['master'].ExecuteWithResults($sql)
                             $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
                         }
-
+                        
                         if ($hashedPass.GetType().Name -ne "String") {
                             $passString = "0x"; $hashedPass | ForEach-Object { $passString += ("{0:X}" -f $_).PadLeft(2, "0") }
                             $hashedPass = $passString
                         }
-
+                        
                         try {
                             $destLogin.Create($hashedPass, [Microsoft.SqlServer.Management.Smo.LoginCreateOptions]::IsHashed)
                             $destLogin.Refresh()
-                            Write-Message -Level Verbose -Message "Successfully added $userName to $destination."
-
+                            Write-Message -Level Verbose -Message "Successfully added $userName to $destinstance."
+                            
                             $copyLoginStatus.Status = "Successful"
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
+                            
                         }
                         catch {
                             try {
@@ -383,22 +381,22 @@ function Copy-DbaLogin {
                                 $sql = "CREATE LOGIN [$userName] WITH PASSWORD = $hashedPass HASHED, SID = $sid,
                                                 DEFAULT_DATABASE = [$defaultDb], CHECK_POLICY = $checkpolicy,
                                                 CHECK_EXPIRATION = $checkexpiration, DEFAULT_LANGUAGE = [$($sourceLogin.Language)]"
-
+                                
                                 $null = $destServer.Query($sql)
-
+                                
                                 $destLogin = $destServer.logins[$userName]
-                                Write-Message -Level Verbose -Message "Successfully added $userName to $destination."
-
+                                Write-Message -Level Verbose -Message "Successfully added $userName to $destinstance."
+                                
                                 $copyLoginStatus.Status = "Successful"
                                 $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
+                                
                             }
                             catch {
                                 $copyLoginStatus.Status = "Failed"
                                 $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                                 $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                                Stop-Function -Message "Failed to add $userName to $destination." -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
+                                
+                                Stop-Function -Message "Failed to add $userName to $destinstance." -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
                             }
                         }
                     }
@@ -406,38 +404,38 @@ function Copy-DbaLogin {
                     elseif ($sourceLogin.LoginType -eq "WindowsUser" -or $sourceLogin.LoginType -eq "WindowsGroup") {
                         Write-Message -Level Verbose -Message "Adding as login type $($sourceLogin.LoginType)"
                         $destLogin.LoginType = $sourceLogin.LoginType
-
+                        
                         Write-Message -Level Verbose -Message "Setting language as $($sourceLogin.Language)"
                         $destLogin.Language = $sourceLogin.Language
-
+                        
                         try {
                             $destLogin.Create()
                             $destLogin.Refresh()
-                            Write-Message -Level Verbose -Message "Successfully added $userName to $destination."
-
+                            Write-Message -Level Verbose -Message "Successfully added $userName to $destinstance."
+                            
                             $copyLoginStatus.Status = "Successful"
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
+                            
                         }
                         catch {
                             $copyLoginStatus.Status = "Failed"
                             $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
+                            
+                            Stop-Function -Message "Failed to add $userName to $destinstance" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
                         }
                     }
                     # This script does not currently support certificate mapped or asymmetric key users.
                     else {
                         Write-Message -Level Verbose -Message "$($sourceLogin.LoginType) logins not supported. $($sourceLogin.name) skipped."
-
+                        
                         $copyLoginStatus.Status = "Skipped"
                         $copyLoginStatus.Notes = "$($sourceLogin.LoginType) not supported"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
+                        
                         continue
                     }
-
+                    
                     if ($sourceLogin.IsDisabled) {
                         try {
                             $destLogin.Disable()
@@ -446,8 +444,8 @@ function Copy-DbaLogin {
                             $copyLoginStatus.Status = "Successful - but could not disable on destination"
                             $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Stop-Function -Message "$userName disabled on source, could not be disabled on $destination." -Category InvalidOperation -ErrorRecord $_ -Target $destServer  3>$null
+                            
+                            Stop-Function -Message "$userName disabled on source, could not be disabled on $destinstance." -Category InvalidOperation -ErrorRecord $_ -Target $destServer  3>$null
                         }
                     }
                     if ($sourceLogin.DenyWindowsLogin) {
@@ -458,94 +456,91 @@ function Copy-DbaLogin {
                             $copyLoginStatus.Status = "Successful - but could not deny login on destination"
                             $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Stop-Function -Message "$userName denied login on source, could not be denied login on $destination." -Category InvalidOperation -ErrorRecord $_ -Target $destServer 3>$null
+                            
+                            Stop-Function -Message "$userName denied login on source, could not be denied login on $destinstance." -Category InvalidOperation -ErrorRecord $_ -Target $destServer 3>$null
                         }
                     }
                 }
-                if ($Pscmdlet.ShouldProcess($destination, "Updating SQL login $userName permissions")) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Updating SQL login $userName permissions")) {
                     Update-SqlPermissions -sourceserver $sourceServer -sourcelogin $sourceLogin -destserver $destServer -destlogin $destLogin
                 }
-
+                
                 if ($LoginRenameHashtable.Keys -contains $userName) {
                     $NewLogin = $LoginRenameHashtable[$userName]
-
-                    if ($Pscmdlet.ShouldProcess($destination, "Renaming SQL Login $userName to $NewLogin")) {
+                    
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Renaming SQL Login $userName to $NewLogin")) {
                         try {
                             Rename-DbaLogin -SqlInstance $destServer -Login $userName -NewLogin $NewLogin
-
+                            
                             $copyLoginStatus.DestinationLogin = $NewLogin
                             $copyLoginStatus.Status = "Successful"
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
+                            
                         }
                         catch {
                             $copyLoginStatus.DestinationLogin = $NewLogin
                             $copyLoginStatus.Status = "Failed to rename"
                             $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_).Message
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
+                            
                             Stop-Function -Message "Issue renaming $userName to $NewLogin" -Category InvalidOperation -ErrorRecord $_ -Target $destServer 3>$null
                         }
                     }
                 }
-            } #end for each $sourceLogin
-        } #end function Copy-Login
+            }
+        }
     }
-
+    
     process {
-
-        if (Test-Bound -ParameterName InputObject) {
-            $Source = $InputObject[0].Parent.Name
-            $Sourceserver = $InputObject[0].Parent
-            $Login = $InputObject.Name
-        }
-        else {
-            Write-Message -Level Verbose -Message "Connecting to SQL Servers."
-            $sourceServer = Connect-SqlInstance -RegularUser -SqlInstance $Source -SqlCredential $SourceSqlCredential
-            $source = $sourceServer.DomainInstanceName
-        }
-
-        if ($Destination) {
-            $destServer = Connect-SqlInstance -RegularUser -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-            $Destination = $destServer.DomainInstanceName
-
+        if (Test-FunctionInterrupt) { return }
+        foreach ($destinstance in $Destination) {
+            if (Test-Bound -ParameterName InputObject) {
+                $Source = $InputObject[0].Parent.Name
+                $Sourceserver = $InputObject[0].Parent
+                $Login = $InputObject.Name
+            }
+            else {
+                Write-Message -Level Verbose -Message "Connecting to SQL Servers."
+                $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            }
+            
+            $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             $sourceVersionMajor = $sourceServer.VersionMajor
             $destVersionMajor = $destServer.VersionMajor
             if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
                 Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
-
+            
             if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
                 Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
-        }
-
-        if ($SyncOnly) {
-            Sync-DbaLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
-            return
-        }
-
-        if ($OutFile) {
-            Export-DbaLogin -SqlInstance $sourceServer -FilePath $OutFile -Login $Login -ExcludeLogin $ExcludeLogin
-            return
-        }
-
-        if ($Pscmdlet.ShouldProcess("console", "Showing migration attempt message")) {
-            Write-Message -Level Verbose -Message "Attempting Login Migration."
-        }
-
-        Copy-Login -sourceserver $sourceServer -destserver $destServer -Login $Login -Exclude $ExcludeLogin
-
-        if ($SyncSaName) {
-            $sa = $sourceServer.Logins | Where-Object id -eq 1
-            $destSa = $destServer.Logins | Where-Object id -eq 1
-            $saName = $sa.Name
-            if ($saName -ne $destSa.name) {
-                Write-Message -Level Verbose -Message "Changing sa username to match source ($saName)."
-                if ($Pscmdlet.ShouldProcess($destination, "Changing sa username to match source ($saName)")) {
-                    $destSa.Rename($saName)
-                    $destSa.Alter()
+            
+            if ($SyncOnly) {
+                Sync-DbaLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
+                return
+            }
+            
+            if ($OutFile) {
+                Export-DbaLogin -SqlInstance $sourceServer -FilePath $OutFile -Login $Login -ExcludeLogin $ExcludeLogin
+                return
+            }
+            
+            if ($Pscmdlet.ShouldProcess("console", "Showing migration attempt message")) {
+                Write-Message -Level Verbose -Message "Attempting Login Migration."
+            }
+            
+            Copy-Login -sourceserver $sourceServer -destserver $destServer -Login $Login -Exclude $ExcludeLogin
+            
+            if ($SyncSaName) {
+                $sa = $sourceServer.Logins | Where-Object id -eq 1
+                $destSa = $destServer.Logins | Where-Object id -eq 1
+                $saName = $sa.Name
+                if ($saName -ne $destSa.name) {
+                    Write-Message -Level Verbose -Message "Changing sa username to match source ($saName)."
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Changing sa username to match source ($saName)")) {
+                        $destSa.Rename($saName)
+                        $destSa.Alter()
+                    }
                 }
             }
         }
