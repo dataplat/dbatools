@@ -138,11 +138,14 @@ function Connect-SqlInstance {
                 Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
             }
         }
-        $parsedcomputername = $server.ComputerName
-        if (-not $parsedcomputername) {
-            $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
+        
+        if (-not $server.ComputerName) {
+            $parsedcomputername = $server.NetName
+            if (-not $parsedcomputername) {
+                $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
+            }
+            Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
         }
-        Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
         return $server
     }
     #endregion Input Object was a server object
@@ -286,12 +289,14 @@ function Connect-SqlInstance {
             Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
         }
     }
-
-    $parsedcomputername = $server.ComputerName
-    if (-not $parsedcomputername) {
-        $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
+    
+    if (-not $server.ComputerName) {
+        $parsedcomputername = $server.NetName
+        if (-not $parsedcomputername) {
+            $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
+        }
+        Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
     }
-    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
     return $server
     #endregion Input Object was anything else
 }

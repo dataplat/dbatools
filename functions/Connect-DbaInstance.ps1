@@ -246,11 +246,13 @@ function Connect-DbaInstance {
                 }
                 if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
                 else {
-                    $parsedcomputername = $server.ComputerName
-                    if (-not $parsedcomputername) {
-                        $parsedcomputername = ([dbainstance]$instance).ComputerName
+                    if (-not $server.ComputerName) {
+                        $parsedcomputername = $server.NetName
+                        if (-not $parsedcomputername) {
+                            $parsedcomputername = ([dbainstance]$instance).ComputerName
+                        }
+                        Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
                     }
-                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
                     return $server
                 }
             }
@@ -362,11 +364,13 @@ function Connect-DbaInstance {
 
             if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
             else {
-                $parsedcomputername = $server.ComputerName
-                if (-not $parsedcomputername) {
-                    $parsedcomputername = ([dbainstance]$instance).ComputerName
+                if (-not $server.ComputerName) {
+                    $parsedcomputername = $server.NetName
+                    if (-not $parsedcomputername) {
+                        $parsedcomputername = ([dbainstance]$instance).ComputerName
+                    }
+                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
                 }
-                Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
                 return $server
             }
         }
