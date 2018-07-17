@@ -98,23 +98,23 @@ function Test-DbaServerName {
             $instance = $server.InstanceName
 
             if ($instance.Length -eq 0) {
-                $serverInstanceName = $server.ComputerName
+                $serverInstanceName = $server.NetName
                 $instance = "MSSQLSERVER"
             }
             else {
-                $ComputerName = $server.ComputerName
-                $serverInstanceName = "$ComputerName\$instance"
+                $netname = $server.NetName
+                $serverInstanceName = "$netname\$instance"
             }
 
             $serverInfo = [PSCustomObject]@{
-                ComputerName     = $server.ComputerName
-                ServerName       = $sqlInstanceName
-                InstanceName     = $server.ServiceName
-                SqlInstance      = $server.DomainInstanceName
-                RenameRequired   = $serverInstanceName -ne $sqlInstanceName
-                Updatable        = "N/A"
-                Warnings         = $null
-                Blockers         = $null
+                ComputerName = $server.NetName
+                ServerName   = $sqlInstanceName
+                InstanceName = $server.ServiceName
+                SqlInstance  = $server.DomainInstanceName
+                RenameRequired = $serverInstanceName -ne $sqlInstanceName
+                Updatable    = "N/A"
+                Warnings     = $null
+                Blockers     = $null
             }
 
             $reasons = @()
