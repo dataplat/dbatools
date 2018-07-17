@@ -456,7 +456,7 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
                     #Execute query against individual database and add to output
                     foreach ($row in ($server.Query($sql, $db.Name))) {
                         [pscustomobject]@{
-                            ComputerName                  = $server.NetName
+                            ComputerName                  = $server.ComputerName
                             InstanceName                  = $server.ServiceName
                             SqlInstance                   = $server.DomainInstanceName
                             Database                      = $row.DBName

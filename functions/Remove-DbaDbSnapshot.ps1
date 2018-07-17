@@ -149,7 +149,7 @@ function Remove-DbaDbSnapshot {
                         $server.Refresh()
 
                         [pscustomobject]@{
-                            ComputerName   = $server.NetName
+                            ComputerName   = $server.ComputerName
                             InstanceName   = $server.ServiceName
                             SqlInstance    = $server.DomainInstanceName
                             Database       = $db.name
@@ -161,7 +161,7 @@ function Remove-DbaDbSnapshot {
                     Write-Message -Level Verbose -Message "Could not drop database $db on $server"
 
                     [pscustomobject]@{
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Database       = $db.name

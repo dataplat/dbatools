@@ -170,7 +170,7 @@ function Install-DbaFirstResponderKit {
                             $scriptError = $true
                         }
                         $baseres = @{
-                            ComputerName = $server.NetName
+                            ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $Database

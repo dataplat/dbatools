@@ -189,7 +189,7 @@ function Test-DbaIdentityUsage {
 
                     if ($row.PercentUsed -ge $threshold) {
                         [PSCustomObject]@{
-                            ComputerName   = $server.NetName
+                            ComputerName   = $server.ComputerName
                             InstanceName   = $server.ServiceName
                             SqlInstance    = $server.DomainInstanceName
                             Database       = $row.DatabaseName

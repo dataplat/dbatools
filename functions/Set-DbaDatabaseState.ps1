@@ -484,7 +484,7 @@ function Set-DbaDatabaseState {
             }
             if ($Detached -eq $true) {
                 [PSCustomObject]@{
-                    ComputerName = $server.NetName
+                    ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     DatabaseName = $db.Name
@@ -506,7 +506,7 @@ function Set-DbaDatabaseState {
                 }
 
                 [PSCustomObject]@{
-                    ComputerName = $server.NetName
+                    ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     DatabaseName = $db.Name

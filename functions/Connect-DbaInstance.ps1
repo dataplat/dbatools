@@ -246,7 +246,7 @@ function Connect-DbaInstance {
                 }
                 if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
                 else {
-                    $parsedcomputername = $server.NetName
+                    $parsedcomputername = $server.ComputerName
                     if (-not $parsedcomputername) {
                         $parsedcomputername = ([dbainstance]$instance).ComputerName
                     }
@@ -362,7 +362,7 @@ function Connect-DbaInstance {
 
             if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
             else {
-                $parsedcomputername = $server.NetName
+                $parsedcomputername = $server.ComputerName
                 if (-not $parsedcomputername) {
                     $parsedcomputername = ([dbainstance]$instance).ComputerName
                 }
