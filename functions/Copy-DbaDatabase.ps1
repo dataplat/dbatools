@@ -689,7 +689,7 @@ function Copy-DbaDatabase {
         }
 
         if ($DetachAttach) {
-            if ($sourceServer.NetName -eq $env:COMPUTERNAME -or $destServer.NetName -eq $env:COMPUTERNAME) {
+            if ($sourceServer.ComputerName -eq $env:COMPUTERNAME -or $destServer.ComputerName -eq $env:COMPUTERNAME) {
                 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
                     Write-Message -Level Verbose -Message "When running DetachAttach locally on the console, it's possible you'll need to Run As Administrator. Trying anyway."
                 }

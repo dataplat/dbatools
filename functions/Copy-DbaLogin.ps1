@@ -198,7 +198,7 @@ function Copy-DbaLogin {
                 $userBase = ($userName.Split("\")[0]).ToLower()
 
                 if ($serverName -eq $userBase -or $userName.StartsWith("NT ")) {
-                    if ($sourceServer.NetName -ne $destServer.NetName) {
+                    if ($sourceServer.ComputerName -ne $destServer.ComputerName) {
                         if ($Pscmdlet.ShouldProcess("console", "Stating $userName was skipped because it is a local machine name.")) {
                             Write-Message -Level Verbose -Message "$userName was skipped because it is a local machine name."
                         }

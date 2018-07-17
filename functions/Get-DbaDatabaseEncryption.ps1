@@ -108,7 +108,7 @@ function Get-DbaDatabaseEncryption {
 
                 if ($db.EncryptionEnabled -eq $true) {
                     [PSCustomObject]@{
-                        ComputerName             = $server.NetName
+                        ComputerName             = $server.ComputerName
                         InstanceName             = $server.ServiceName
                         SqlInstance              = $server.DomainInstanceName
                         Database                 = $db.Name
@@ -127,7 +127,7 @@ function Get-DbaDatabaseEncryption {
 
                 foreach ($cert in $db.Certificates) {
                     [PSCustomObject]@{
-                        ComputerName             = $server.NetName
+                        ComputerName             = $server.ComputerName
                         InstanceName             = $server.ServiceName
                         SqlInstance              = $server.DomainInstanceName
                         Database                 = $db.Name
@@ -146,7 +146,7 @@ function Get-DbaDatabaseEncryption {
 
                 foreach ($ak in $db.AsymmetricKeys) {
                     [PSCustomObject]@{
-                        ComputerName             = $server.NetName
+                        ComputerName             = $server.ComputerName
                         InstanceName             = $server.ServiceName
                         SqlInstance              = $server.DomainInstanceName
                         Database                 = $db.Name

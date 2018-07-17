@@ -135,7 +135,7 @@ function Test-DbaBackupInformation {
                             $VerificationErrors++
                         }
                         elseif ($path -in $DBHistoryPhysicalPathsExists) {
-                                Write-Message -Message "File $path already exists on $($SqlInstance.NetName), not owned by any database in $SqlInstance, will not overwrite." -Level Warning
+                                Write-Message -Message "File $path already exists on $($SqlInstance.ComputerName), not owned by any database in $SqlInstance, will not overwrite." -Level Warning
                                 $VerificationErrors++
                         }
                     }
