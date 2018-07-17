@@ -63,91 +63,85 @@ function Copy-DbaAgentSharedSchedule {
         [PSCredential]
         $SourceSqlCredential,
         [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,
+        [DbaInstanceParameter[]]$Destination,
         [PSCredential]
         $DestinationSqlCredential,
         [switch]$Force,
         [Alias('Silent')]
         [switch]$EnableException
     )
-
     begin {
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-
-        $source = $sourceServer.DomainInstanceName
-        $destination = $destServer.DomainInstanceName
-
-        if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
-            throw "Server SharedSchedules are only supported in SQL Server 2005 and above. Quitting."
-        }
-
+        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         $serverSchedules = $sourceServer.JobServer.SharedSchedules
-        $destSchedules = $destServer.JobServer.SharedSchedules
     }
     process {
-        foreach ($schedule in $serverSchedules) {
-            $scheduleName = $schedule.Name
-            $copySharedScheduleStatus = [pscustomobject]@{
-                SourceServer      = $sourceServer.Name
-                DestinationServer = $destServer.Name
-                Type              = "Agent Schedule"
-                Name              = $scheduleName
-                Status            = $null
-                Notes             = $null
-                DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
-            }
-
-            if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
-                continue
-            }
-
-            if ($destSchedules.Name -contains $scheduleName) {
-                if ($force -eq $false) {
-                    $copySharedScheduleStatus.Status = "Skipped"
-                    $copySharedScheduleStatus.Notes = "Already exists"
-                    $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Write-Message -Level Verbose -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
+        foreach ($destinstance in $Destination) {
+            $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+            
+            $destSchedules = $destServer.JobServer.SharedSchedules
+            foreach ($schedule in $serverSchedules) {
+                $scheduleName = $schedule.Name
+                $copySharedScheduleStatus = [pscustomobject]@{
+                    SourceServer = $sourceServer.Name
+                    DestinationServer = $destServer.Name
+                    Type         = "Agent Schedule"
+                    Name         = $scheduleName
+                    Status       = $null
+                    Notes        = $null
+                    DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                }
+                
+                if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
                     continue
                 }
-                else {
-                    if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
+                
+                if ($destSchedules.Name -contains $scheduleName) {
+                    if ($force -eq $false) {
                         $copySharedScheduleStatus.Status = "Skipped"
+                        $copySharedScheduleStatus.Notes = "Already exists"
                         $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Level Verbose -Message "Schedule [$scheduleName] has associated jobs. Skipping."
+                        Write-Message -Level Verbose -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
                         continue
                     }
                     else {
-                        if ($Pscmdlet.ShouldProcess($destination, "Dropping schedule $scheduleName and recreating")) {
-                            try {
-                                Write-Message -Level Verbose -Message "Dropping schedule $scheduleName"
-                                $destServer.JobServer.SharedSchedules[$scheduleName].Drop()
-                            }
-                            catch {
-                                $copySharedScheduleStatus.Status = "Failed"
-                                $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                Stop-Function -Message "Issue dropping schedule" -Target $scheduleName -InnerErrorRecord $_ -Continue
+                        if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
+                            $copySharedScheduleStatus.Status = "Skipped"
+                            $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Write-Message -Level Verbose -Message "Schedule [$scheduleName] has associated jobs. Skipping."
+                            continue
+                        }
+                        else {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Dropping schedule $scheduleName and recreating")) {
+                                try {
+                                    Write-Message -Level Verbose -Message "Dropping schedule $scheduleName"
+                                    $destServer.JobServer.SharedSchedules[$scheduleName].Drop()
+                                }
+                                catch {
+                                    $copySharedScheduleStatus.Status = "Failed"
+                                    $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                    Stop-Function -Message "Issue dropping schedule" -Target $scheduleName -ErrorRecord $_ -Continue
+                                }
                             }
                         }
                     }
                 }
-            }
-
-            if ($Pscmdlet.ShouldProcess($destination, "Creating schedule $scheduleName")) {
-                try {
-                    Write-Message -Level Verbose -Message "Copying schedule $scheduleName"
-                    $sql = $schedule.Script() | Out-String
-
-                    Write-Message -Level Debug -Message $sql
-                    $destServer.Query($sql)
-
-                    $copySharedScheduleStatus.Status = "Successful"
-                    $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                }
-                catch {
-                    $copySharedScheduleStatus.Status = "Failed"
-                    $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Stop-Function -Message "Issue creating schedule" -Target $scheduleName -InnerErrorRecord $_ -Continue
+                
+                if ($Pscmdlet.ShouldProcess($destinstance, "Creating schedule $scheduleName")) {
+                    try {
+                        Write-Message -Level Verbose -Message "Copying schedule $scheduleName"
+                        $sql = $schedule.Script() | Out-String
+                        
+                        Write-Message -Level Debug -Message $sql
+                        $destServer.Query($sql)
+                        
+                        $copySharedScheduleStatus.Status = "Successful"
+                        $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
+                    catch {
+                        $copySharedScheduleStatus.Status = "Failed"
+                        $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Stop-Function -Message "Issue creating schedule" -Target $scheduleName -ErrorRecord $_ -Continue
+                    }
                 }
             }
         }
