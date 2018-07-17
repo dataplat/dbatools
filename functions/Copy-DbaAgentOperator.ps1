@@ -89,6 +89,7 @@ function Copy-DbaAgentOperator {
         $serverOperator = $sourceServer.JobServer.Operators
     }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             

@@ -352,6 +352,7 @@ function Copy-DbaAgentCategory {
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
     }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             

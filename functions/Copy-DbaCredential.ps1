@@ -88,7 +88,7 @@ function Copy-DbaCredential {
         [PSCredential]
         $Credential,
         [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,
+        [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [string[]]$Name,
         [string[]]$ExcludeName,
@@ -323,7 +323,7 @@ function Copy-DbaCredential {
                         continue
                     }
                     else {
-                        if ($Pscmdlet.ShouldProcess($destination.Name, "Dropping $identity")) {
+                        if ($Pscmdlet.ShouldProcess($destinstance.Name, "Dropping $identity")) {
                             $destServer.Credentials[$credentialName].Drop()
                             $destServer.Credentials.Refresh()
                         }
@@ -335,7 +335,7 @@ function Copy-DbaCredential {
                     $currentCred = $sourceCredentials | Where-Object { $_.Credential -eq "[$credentialName]" }
                     $identity = $currentCred.Identity
                     $password = $currentCred.Password
-                    if ($Pscmdlet.ShouldProcess($destination.Name, "Copying $identity")) {
+                    if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying $identity")) {
                         $sql = "CREATE CREDENTIAL [$credentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'"
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
@@ -355,28 +355,15 @@ function Copy-DbaCredential {
             }
         }
 
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-
-        $source = $sourceServer.DomainInstanceName
-        $destination = $destServer.DomainInstanceName
-
+        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+        
         if ($null -ne $SourceSqlCredential.Username) {
             Write-Message -Level Verbose -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
         }
-
-        if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
-            throw "Credentials are only supported in SQL Server 2005 and above. Quitting."
-        }
-
-        Invoke-SmoCheck -SqlInstance $sourceServer
-        Invoke-SmoCheck -SqlInstance $destServer
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
-        Write-Message -Level Verbose -Message "Getting NetBios name for $source"
+        
         $sourceNetBios = Resolve-NetBiosName $sourceServer
-
+        
+        Invoke-SmoCheck -SqlInstance $sourceServer
         # This output is wrong. Will fix later.
         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
         try {
@@ -386,9 +373,16 @@ function Copy-DbaCredential {
             Stop-Function -Message "Can't connect to registry on $source." -Target $sourceNetBios -ErrorRecord $_
             return
         }
-
-        # Magic happens here
-        Copy-Credential $credentials -force:$force
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+        
+        foreach ($destinstance in $Destination) {
+            $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+            Invoke-SmoCheck -SqlInstance $destServer
+            
+            Copy-Credential $credentials -force:$force
+        }
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCredential

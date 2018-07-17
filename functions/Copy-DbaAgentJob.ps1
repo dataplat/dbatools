@@ -93,6 +93,7 @@ function Copy-DbaAgentJob {
         $serverJobs = $sourceServer.JobServer.Jobs
     }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             $destJobs = $destServer.JobServer.Jobs
