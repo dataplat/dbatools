@@ -74,6 +74,9 @@ function Copy-DbaDatabase {
 
         .PARAMETER InputObject
             A collection of dbobjects from the pipeline.
+    
+        .PARAMETER UseLastBackup
+            Use the last full, diff and logs instead of performing backups
 
         .PARAMETER NoCopyOnly
              If this switch is enabled, backups will be taken without COPY_ONLY. This will break the LSN backup chain, which will interfere with the restore chain of the database.
@@ -150,7 +153,7 @@ function Copy-DbaDatabase {
         [switch]$AllDatabases,
         [parameter(Mandatory = $true, ParameterSetName = "DbBackup")]
         [switch]$BackupRestore,
-        [parameter(Mandatory = $true, ParameterSetName = "DbBackup",
+        [parameter(ParameterSetName = "DbBackup",
                    HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and the SQL Server service accounts for both Source and Destination.")]
         [string]$NetworkShare,
         [parameter(ParameterSetName = "DbBackup")]
@@ -176,6 +179,8 @@ function Copy-DbaDatabase {
         [parameter(ParameterSetName = "DbBackup")]
         [parameter(ParameterSetName = "DbAttachDetach")]
         [switch]$IncludeSupportDbs,
+        [parameter(ParameterSetName = "DbBackup")]
+        [switch]$UseLastBackups,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$NoCopyOnly,
@@ -186,6 +191,15 @@ function Copy-DbaDatabase {
     )
     begin {
         $CopyOnly = -not $NoCopyOnly
+        
+        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackups)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackups"
+            return
+        }
+        if ($NetworkShare -and $UseLastBackups) {
+            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackups because the backup path is determined by the paths in the last backups"
+            return
+        }
         function Join-AdminUnc {
             <#
         .SYNOPSIS
@@ -970,24 +984,34 @@ function Copy-DbaDatabase {
 
                     if ($BackupRestore) {
                         If ($Pscmdlet.ShouldProcess($destinstance, "Backup $dbName from $source and restoring.")) {
-                            $copyDatabaseStatus.Type = "Database (BackupRestore)"
-
-                            $backupTmpResult = $backupCollection | Where-Object Database -eq $dbName
-                            if (-not $backupTmpResult) {
-                                $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $NetworkShare -FileCount $numberfiles -CopyOnly:$CopyOnly
+                            if ($UseLastBackups) {
+                                $backupTmpResult = Get-DbaBackupHistory -SqlInstance $sourceServer -Database $dbName -IncludeCopyOnly -Last
+                                if (-not $backupTmpResult) {
+                                    $copyDatabaseStatus.Type = "Database (BackupRestore)"
+                                    $copyDatabaseStatus.Status = "Failed"
+                                    $copyDatabaseStatus.Notes = "No backups for $dbName on $source"
+                                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                    continue
+                                }
                             }
-                            if ($backupTmpResult) {
-                                $backupCollection += $backupTmpResult
-                            }
-                            $backupResult = $BackupTmpResult.BackupComplete
-                            if (-not $backupResult) {
-                                $serviceAccount = $sourceServer.ServiceAccount
-                                Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($NetworkShare)? Aborting routine for this database."
-
-                                $copyDatabaseStatus.Status = "Failed"
-                                $copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $NetworkShare."
-                                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                continue
+                            else {
+                                $backupTmpResult = $backupCollection | Where-Object Database -eq $dbName
+                                if (-not $backupTmpResult) {
+                                    $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $NetworkShare -FileCount $numberfiles -CopyOnly:$CopyOnly
+                                }
+                                if ($backupTmpResult) {
+                                    $backupCollection += $backupTmpResult
+                                }
+                                $backupResult = $BackupTmpResult.BackupComplete
+                                if (-not $backupResult) {
+                                    $serviceAccount = $sourceServer.ServiceAccount
+                                    Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($NetworkShare)? Aborting routine for this database."
+                                    
+                                    $copyDatabaseStatus.Status = "Failed"
+                                    $copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $NetworkShare."
+                                    $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                    continue
+                                }
                             }
                             Write-Message -Level Verbose -Message "Reuse = $ReuseSourceFolderStructure."
                             try {
@@ -1215,6 +1239,7 @@ function Copy-DbaDatabase {
         }
     }
     end {
+        if (Test-FunctionInterrupt) { return }
         if (-not $NoBackupCleanUp -and $Destination.Count -gt 1) {
             foreach ($backupFile in ($backupCollection.BackupPath)) {
                 try {
