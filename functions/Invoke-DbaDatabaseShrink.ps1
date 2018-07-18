@@ -299,6 +299,7 @@ function Invoke-DbaDatabaseShrink {
                             }
                         }
                     }
+                }
             }
         }
     }
