@@ -243,20 +243,29 @@ function Copy-DbaSsisCatalog {
         }
 
         $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
-
-        $sourceConnection = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
-
+        
+        try {
+            Write-Message -Level Verbose -Message "Connecting to $Source"
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
+        }
+        catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            return
+        }
+        
         try {
             Write-Message -Level Verbose -Message "Connecting to $Source integration services."
             $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceConnection
         }
         catch {
             Stop-Function -Message "There was an error connecting to the source integration services." -Target $sourceConnection -ErrorRecord $_
+            return
         }
         
         $sourceCatalog = $sourceSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
         if (!$sourceCatalog) {
             Stop-Function -Message "The source SSISDB catalog on $Source does not exist."
+            return
         }
         $sourceFolders = $sourceCatalog.Folders
     }

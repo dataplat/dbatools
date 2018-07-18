@@ -86,6 +86,7 @@ function Copy-DbaQueryStoreConfig {
         }
         catch {
             Stop-Function -Message "Can't connect to $Source." -ErrorRecord $_ -Target $Source
+            return
         }
     }
     
