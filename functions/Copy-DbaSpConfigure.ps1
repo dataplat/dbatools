@@ -81,14 +81,26 @@ function Copy-DbaSpConfigure {
         [switch]$EnableException
     )
     begin {
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $sourceProps = Get-DbaSpConfigure -SqlInstance $sourceServer
+        try {
+            Write-Message -Level Verbose -Message "Connecting to $instance."
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            $sourceProps = Get-DbaSpConfigure -SqlInstance $sourceServer
+        }
+        catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
-            $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-            $destProps = Get-DbaSpConfigure -SqlInstance $destServer
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance."
+                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                $destProps = Get-DbaSpConfigure -SqlInstance $destServer
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
             
             foreach ($sourceProp in $sourceProps) {
                 $displayName = $sourceProp.DisplayName
