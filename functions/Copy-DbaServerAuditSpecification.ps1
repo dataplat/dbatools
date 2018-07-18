@@ -138,11 +138,13 @@ function Copy-DbaServerAuditSpecification {
                 }
                 
                 $destServer.Audits.Refresh()
-                
                 if ($destServer.Audits.Name -notcontains $auditSpec.AuditName) {
-                    $copyAuditSpecStatus.Status = "Skipped"
-                    $copyAuditSpecStatus.Notes = "Already exists"
-                    Write-Message -Level Warning -Message "Audit $($auditSpec.AuditName) does not exist on $destinstance. Skipping $auditSpecName."
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Audit $($auditSpec.AuditName) does not exist on $destinstance. Skipping $auditSpecName.")) {
+                        $copyAuditSpecStatus.Status = "Skipped"
+                        $copyAuditSpecStatus.Notes = "Audit $($auditSpec.AuditName) does not exist on $destinstance. Skipping $auditSpecName."
+                        Write-Message -Level Warning -Message "Audit $($auditSpec.AuditName) does not exist on $destinstance. Skipping $auditSpecName."
+                        $copyAuditSpecStatus
+                    }
                     continue
                 }
                 
