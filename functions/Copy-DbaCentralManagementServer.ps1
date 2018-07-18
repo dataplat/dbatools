@@ -109,14 +109,15 @@ function Copy-DbaCentralManagementServer {
                 }
                 
                 if ($null -ne $destinationGroup) {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if $groupName exists")) {
-                        if ($force -eq $false) {
+                    
+                    if ($force -eq $false) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if $groupName exists")) {
                             $copyDestinationGroupStatus.Status = "Skipped"
                             $copyDestinationGroupStatus.Notes = "Already exists"
                             $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
-                            continue
                         }
+                        continue
                     }
                     if ($Pscmdlet.ShouldProcess($destinstance, "Dropping group $groupName")) {
                         try {
@@ -247,15 +248,15 @@ function Copy-DbaCentralManagementServer {
                 }
                 
                 if ($null -ne $toSubGroup) {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if subgroup $fromSubGroupName exists")) {
-                        if ($force -eq $false) {
+                    if ($force -eq $false) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if subgroup $fromSubGroupName exists")) {
                             $copyGroupStatus.Status = "Skipped"
                             $copyGroupStatus.Notes = "Already exists"
                             $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             
                             Write-Message -Level Verbose -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
-                            continue
                         }
+                        continue
                     }
                     
                     if ($Pscmdlet.ShouldProcess($destinstance, "Dropping subgroup $fromSubGroupName recreating")) {
