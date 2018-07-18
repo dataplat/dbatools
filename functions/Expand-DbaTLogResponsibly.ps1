@@ -484,7 +484,7 @@ function Expand-DbaTLogResponsibly {
                 $currentVLFCount = Test-DbaDbVirtualLogFile -SqlInstance $server -Database $db
 
                 [pscustomobject]@{
-                    ComputerName    = $server.NetName
+                    ComputerName    = $server.ComputerName
                     InstanceName    = $server.ServiceName
                     SqlInstance     = $server.DomainInstanceName
                     Database        = $db

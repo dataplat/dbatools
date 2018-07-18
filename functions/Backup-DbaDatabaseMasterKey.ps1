@@ -145,7 +145,7 @@ Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas
                     Write-Message -Level Warning -Message "Backup failure: $($_.Exception.InnerException)"
                 }
 
-                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $dbname

@@ -149,7 +149,7 @@ function Export-DbaDacpac {
                     Write-Message -level Verbose -Message "StandardOutput: $stdout"
 
                     [pscustomobject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $dbname

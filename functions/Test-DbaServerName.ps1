@@ -107,14 +107,14 @@ function Test-DbaServerName {
             }
 
             $serverInfo = [PSCustomObject]@{
-                ComputerName     = $server.NetName
-                ServerName       = $sqlInstanceName
-                InstanceName     = $server.ServiceName
-                SqlInstance      = $server.DomainInstanceName
-                RenameRequired   = $serverInstanceName -ne $sqlInstanceName
-                Updatable        = "N/A"
-                Warnings         = $null
-                Blockers         = $null
+                ComputerName = $server.NetName
+                ServerName   = $sqlInstanceName
+                InstanceName = $server.ServiceName
+                SqlInstance  = $server.DomainInstanceName
+                RenameRequired = $serverInstanceName -ne $sqlInstanceName
+                Updatable    = "N/A"
+                Warnings     = $null
+                Blockers     = $null
             }
 
             $reasons = @()

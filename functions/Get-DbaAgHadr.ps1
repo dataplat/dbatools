@@ -53,7 +53,7 @@ function Get-DbaAgHadr {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $server.NetName
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 

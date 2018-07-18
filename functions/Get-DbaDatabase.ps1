@@ -342,7 +342,7 @@ function Get-DbaDatabase {
 
                     $lastusedinfo = $dblastused | Where-Object { $_.dbname -eq $db.name }
                     Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
-                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -value $lastusedinfo.last_read
