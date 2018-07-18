@@ -111,17 +111,21 @@ function Copy-DbaAgentSharedSchedule {
                 
                 if ($destSchedules.Name -contains $scheduleName) {
                     if ($force -eq $false) {
-                        $copySharedScheduleStatus.Status = "Skipped"
-                        $copySharedScheduleStatus.Notes = "Already exists"
-                        $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Level Verbose -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
-                        continue
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate.")) {
+                            $copySharedScheduleStatus.Status = "Skipped"
+                            $copySharedScheduleStatus.Notes = "Already exists"
+                            $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Write-Message -Level Verbose -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
+                            continue
+                        }
                     }
                     else {
-                        if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
-                            $copySharedScheduleStatus.Status = "Skipped"
-                            $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Write-Message -Level Verbose -Message "Schedule [$scheduleName] has associated jobs. Skipping."
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Schedule [$scheduleName] has associated jobs. Skipping.")) {
+                            if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
+                                $copySharedScheduleStatus.Status = "Skipped"
+                                $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message "Schedule [$scheduleName] has associated jobs. Skipping."
+                            }
                             continue
                         }
                         else {

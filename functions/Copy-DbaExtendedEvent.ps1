@@ -139,12 +139,14 @@ function Copy-DbaExtendedEvent {
                 
                 if ($null -ne $destStore.Sessions[$sessionName]) {
                     if ($force -eq $false) {
-                        $copyXeSessionStatus.Status = "Skipped"
-                        $copyXeSessionStatus.Notes = "Already exists"
-                        $copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
-                        Write-Message -Level Verbose -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destinstance."
-                        Write-Message -Level Verbose -Message "Use -Force to drop and recreate."
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Extended Event Session '$sessionName' was skipped because it already exists on $destinstance.")) {
+                            $copyXeSessionStatus.Status = "Skipped"
+                            $copyXeSessionStatus.Notes = "Already exists"
+                            $copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            
+                            Write-Message -Level Verbose -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destinstance."
+                            Write-Message -Level Verbose -Message "Use -Force to drop and recreate."
+                        }
                         continue
                     }
                     else {

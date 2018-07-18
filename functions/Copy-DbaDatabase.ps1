@@ -600,7 +600,20 @@ function Copy-DbaDatabase {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-
+        
+        # testing twice for whatif reasons
+        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackups)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackups"
+            return
+        }
+        if ($NetworkShare -and $UseLastBackups) {
+            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackups because the backup path is determined by the paths in the last backups"
+            return
+        }
+        if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
+            Stop-Function -Message "When using -DetachAttach with multiple servers, you must specify -Reattach to reattach database at source"
+            return
+        }
         if (($AllDatabases -or $IncludeSupportDbs -or $Database) -and !$DetachAttach -and !$BackupRestore) {
             Stop-Function -Message "You must specify -DetachAttach or -BackupRestore when migrating databases."
             return
@@ -875,22 +888,26 @@ function Copy-DbaDatabase {
 
                     Write-Message -Level Verbose -Message "Checking for accessibility."
                     if ($currentdb.IsAccessible -eq $false) {
-                        Write-Message -Level Verbose -Message "Skipping $dbName. Database is inaccessible."
-
-                        $copyDatabaseStatus.Status = "Skipped"
-                        $copyDatabaseStatus.Notes = "Database is not accessible"
-                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $dbName. Database is inaccessible.")) {
+                            Write-Message -Level Verbose -Message "Skipping $dbName. Database is inaccessible."
+                            
+                            $copyDatabaseStatus.Status = "Skipped"
+                            $copyDatabaseStatus.Notes = "Database is not accessible"
+                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
                         continue
                     }
 
                     if ($fsWarning) {
                         $fsRows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and FileType = 'FileStream'")
-
+                        
                         if ($fsRows.Count -gt 0) {
-                            Write-Message -Level Verbose -Message "Skipping $dbName (contains FILESTREAM)."
-                            $copyDatabaseStatus.Status = "Skipped"
-                            $copyDatabaseStatus.Notes = "Contains FILESTREAM"
-                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $dbName (contains FILESTREAM).")) {
+                                Write-Message -Level Verbose -Message "Skipping $dbName (contains FILESTREAM)."
+                                $copyDatabaseStatus.Status = "Skipped"
+                                $copyDatabaseStatus.Notes = "Contains FILESTREAM"
+                                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            }
                             continue
                         }
                     }
@@ -898,13 +915,15 @@ function Copy-DbaDatabase {
                     if ($ReuseSourceFolderStructure) {
                         $fgRows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and FileType = 'ROWS'")[0]
                         $remotePath = Split-Path $fgRows.Filename
-
+                        
                         if (!(Test-DbaSqlPath -SqlInstance $destServer -Path $remotePath)) {
-                            # Stop-Function -Message "Cannot resolve $remotePath on $source. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script."
-                            $copyDatabaseStatus.Status = "Failed"
-                            $copyDatabaseStatus.Notes = "$remotePath does not exist on $destinstance and ReuseSourceFolderStructure was specified" #"Can't resolve $remotePath"
-                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            return
+                            if ($Pscmdlet.ShouldProcess($destinstance, "$remotePath does not exist on $destinstance and ReuseSourceFolderStructure was specified")) {
+                                # Stop-Function -Message "Cannot resolve $remotePath on $source. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script."
+                                $copyDatabaseStatus.Status = "Failed"
+                                $copyDatabaseStatus.Notes = "$remotePath does not exist on $destinstance and ReuseSourceFolderStructure was specified" #"Can't resolve $remotePath"
+                                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            }
+                            continue
                         }
                     }
 
@@ -916,40 +935,49 @@ function Copy-DbaDatabase {
                     }
 
                     $dbStatus = $currentdb.Status.ToString()
-
+                    
                     if ($dbStatus.StartsWith("Normal") -eq $false) {
-                        Write-Message -Level Verbose -Message "$dbName is not in a Normal state. Skipping."
-
-                        $copyDatabaseStatus.Status = "Skipped"
-                        $copyDatabaseStatus.Notes = "Not in normal state"
-                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        if ($Pscmdlet.ShouldProcess($destinstance, "$dbName is not in a Normal state. Skipping.")) {
+                            Write-Message -Level Verbose -Message "$dbName is not in a Normal state. Skipping."
+                            
+                            $copyDatabaseStatus.Status = "Skipped"
+                            $copyDatabaseStatus.Notes = "Not in normal state"
+                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
                         continue
                     }
-
+                    
                     if ($currentdb.ReplicationOptions -ne "None" -and $DetachAttach -eq $true) {
-                        Write-Message -Level Verbose -Message "$dbName is part of replication. Skipping."
-
-                        $copyDatabaseStatus.Status = "Skipped"
-                        $copyDatabaseStatus.Notes = "Part of replication"
-                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        if ($Pscmdlet.ShouldProcess($destinstance, "$dbName is part of replication. Skipping.")) {
+                            Write-Message -Level Verbose -Message "$dbName is part of replication. Skipping."
+                            
+                            $copyDatabaseStatus.Status = "Skipped"
+                            $copyDatabaseStatus.Notes = "Part of replication"
+                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
                         continue
                     }
-
+                    
                     if ($currentdb.IsMirroringEnabled -and !$force -and $DetachAttach) {
-                        Write-Message -Level Verbose -Message "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
-
-                        $copyDatabaseStatus.Status = "Skipped"
-                        $copyDatabaseStatus.Notes = "Database is mirrored"
-                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method.")) {
+                            Write-Message -Level Verbose -Message "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
+                            
+                            $copyDatabaseStatus.Status = "Skipped"
+                            $copyDatabaseStatus.Notes = "Database is mirrored"
+                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                        
                         continue
                     }
-
+                    
                     if (($null -ne $destServer.Databases[$dbName]) -and !$force -and !$WithReplace) {
-                        Write-Message -Level Verbose -Message "Database exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
-
-                        $copyDatabaseStatus.Status = "Skipped"
-                        $copyDatabaseStatus.Notes = "Already exists"
-                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        if ($Pscmdlet.ShouldProcess($destinstance, "$dbname exists at destination. Use -Force to drop and migrate. Aborting routine for this database.")) {
+                            Write-Message -Level Verbose -Message "$dbname exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
+                            
+                            $copyDatabaseStatus.Status = "Skipped"
+                            $copyDatabaseStatus.Notes = "Already exists"
+                            $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
                         continue
                     }
                     elseif ($null -ne $destServer.Databases[$dbName] -and $force) {

@@ -155,10 +155,12 @@ function Copy-DbaAgentAlert {
                 
                 if ($destAlerts.name -contains $serverAlert.name) {
                     if ($force -eq $false) {
-                        $copyAgentAlertStatus.Status = "Skipped"
-                        $copyAgentAlertStatus.Notes = "Already exists"
-                        $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Message "Alert [$alertName] exists at destination. Use -Force to drop and migrate." -Level Verbose
+                        if ($PSCmdlet.ShouldProcess($destinstance, "Alert [$alertName] exists at destination. Use -Force to drop and migrate.")) {
+                            $copyAgentAlertStatus.Status = "Skipped"
+                            $copyAgentAlertStatus.Notes = "Already exists"
+                            $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Write-Message -Message "Alert [$alertName] exists at destination. Use -Force to drop and migrate." -Level Verbose
+                        }
                         continue
                     }
                     
@@ -180,24 +182,27 @@ function Copy-DbaAgentAlert {
                 }
                 
                 if ($destAlerts | Where-Object { $_.Severity -eq $serverAlert.Severity -and $_.MessageID -eq $serverAlert.MessageID -and $_.DatabaseName -eq $serverAlert.DatabaseName -and $_.EventDescriptionKeyword -eq $serverAlert.EventDescriptionKeyword }) {
-                    $conflictMessage = "Alert [$alertName] has already been defined to use"
-                    if ($serverAlert.Severity -gt 0) { $conflictMessage += " severity $($serverAlert.Severity)" }
-                    if ($serverAlert.MessageID -gt 0) { $conflictMessage += " error number $($serverAlert.MessageID)" }
-                    if ($serverAlert.DatabaseName) { $conflictMessage += " on database '$($serverAlert.DatabaseName)'" }
-                    if ($serverAlert.EventDescriptionKeyword) { $conflictMessage += " with error text '$($serverAlert.Severity)'" }
-                    $conflictMessage += ". Skipping."
-                    
-                    Write-Message -Level Verbose -Message $conflictMessage
-                    $copyAgentAlertStatus.Status = "Skipped"
-                    $copyAgentAlertStatus.Notes = $conflictMessage
-                    $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    if ($PSCmdlet.ShouldProcess($destinstance, "Checking for conflicts")) {
+                        $conflictMessage = "Alert [$alertName] has already been defined to use"
+                        if ($serverAlert.Severity -gt 0) { $conflictMessage += " severity $($serverAlert.Severity)" }
+                        if ($serverAlert.MessageID -gt 0) { $conflictMessage += " error number $($serverAlert.MessageID)" }
+                        if ($serverAlert.DatabaseName) { $conflictMessage += " on database '$($serverAlert.DatabaseName)'" }
+                        if ($serverAlert.EventDescriptionKeyword) { $conflictMessage += " with error text '$($serverAlert.Severity)'" }
+                        $conflictMessage += ". Skipping."
+                        
+                        Write-Message -Level Verbose -Message $conflictMessage
+                        $copyAgentAlertStatus.Status = "Skipped"
+                        $copyAgentAlertStatus.Notes = $conflictMessage
+                        $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
                     continue
                 }
                 if ($serverAlert.JobName -and $destServer.JobServer.Jobs.Name -NotContains $serverAlert.JobName) {
                     Write-Message -Level Verbose -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $destServer. Skipping."
-                    
-                    $copyAgentAlertStatus.Status = "Skipped"
-                    $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    if ($PSCmdlet.ShouldProcess($destinstance, "Checking for conflicts")) {
+                        $copyAgentAlertStatus.Status = "Skipped"
+                        $copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
                     continue
                 }
                 

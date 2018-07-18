@@ -142,10 +142,12 @@ function Copy-DbaAgentJob {
                 $MaintenancePlanName = $sourceServer.Query($sql).MaintenancePlanName
                 
                 if ($MaintenancePlanName) {
-                    $copyJobStatus.Status = "Skipped"
-                    $copyJobStatus.Notes = "Job is associated with maintenance plan"
-                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Write-Message -Level Verbose -Message "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanName"
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanNam")) {
+                        $copyJobStatus.Status = "Skipped"
+                        $copyJobStatus.Notes = "Job is associated with maintenance plan"
+                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanName"
+                    }
                     continue
                 }
                 
@@ -153,11 +155,13 @@ function Copy-DbaAgentJob {
                 $missingDb = $dbNames | Where-Object { $destServer.Databases.Name -notcontains $_ }
                 
                 if ($missingDb.Count -gt 0 -and $dbNames.Count -gt 0) {
-                    $missingDb = ($missingDb | Sort-Object | Get-Unique) -join ", "
-                    $copyJobStatus.Status = "Skipped"
-                    $copyJobStatus.Notes = "Job is dependent on database: $missingDb"
-                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Write-Message -Level Verbose -Message "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName]."
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName].")) {
+                        $missingDb = ($missingDb | Sort-Object | Get-Unique) -join ", "
+                        $copyJobStatus.Status = "Skipped"
+                        $copyJobStatus.Notes = "Job is dependent on database: $missingDb"
+                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName]."
+                    }
                     continue
                 }
                 
@@ -165,11 +169,13 @@ function Copy-DbaAgentJob {
                 
                 if ($missingLogin.Count -gt 0) {
                     if ($force -eq $false) {
-                        $missingLogin = ($missingLogin | Sort-Object | Get-Unique) -join ", "
-                        $copyJobStatus.Status = "Skipped"
-                        $copyJobStatus.Notes = "Job is dependent on login $missingLogin"
-                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Level Verbose -Message "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName]."
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName].")) {
+                            $missingLogin = ($missingLogin | Sort-Object | Get-Unique) -join ", "
+                            $copyJobStatus.Status = "Skipped"
+                            $copyJobStatus.Notes = "Job is dependent on login $missingLogin"
+                            $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Write-Message -Level Verbose -Message "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName]."
+                        }
                         continue
                     }
                 }
@@ -178,11 +184,13 @@ function Copy-DbaAgentJob {
                 $missingProxy = $proxyNames | Where-Object { $destServer.JobServer.ProxyAccounts.Name -notcontains $_ }
                 
                 if ($missingProxy.Count -gt 0 -and $proxyNames.Count -gt 0) {
-                    $missingProxy = ($missingProxy | Sort-Object | Get-Unique) -join ", "
-                    $copyJobStatus.Status = "Skipped"
-                    $copyJobStatus.Notes = "Job is dependent on proxy $($proxyNames[0])"
-                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Write-Message -Level Verbose -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName]."
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName].")) {
+                        $missingProxy = ($missingProxy | Sort-Object | Get-Unique) -join ", "
+                        $copyJobStatus.Status = "Skipped"
+                        $copyJobStatus.Notes = "Job is dependent on proxy $($proxyNames[0])"
+                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName]."
+                    }
                     continue
                 }
                 
@@ -190,20 +198,24 @@ function Copy-DbaAgentJob {
                 $missingOperators = $operators | Where-Object { $destServer.JobServer.Operators.Name -notcontains $_ }
                 
                 if ($missingOperators.Count -gt 0 -and $operators.Count -gt 0) {
-                    $missingOperator = ($operators | Sort-Object | Get-Unique) -join ", "
-                    $copyJobStatus.Status = "Skipped"
-                    $copyJobStatus.Notes = "Job is dependent on operator $missingOperator"
-                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Write-Message -Level Verbose -Message "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]"
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]")) {
+                        $missingOperator = ($operators | Sort-Object | Get-Unique) -join ", "
+                        $copyJobStatus.Status = "Skipped"
+                        $copyJobStatus.Notes = "Job is dependent on operator $missingOperator"
+                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]"
+                    }
                     continue
                 }
                 
                 if ($destJobs.name -contains $serverJob.name) {
                     if ($force -eq $false) {
-                        $copyJobStatus.Status = "Skipped"
-                        $copyJobStatus.Notes = "Job already exists on destination"
-                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Level Verbose -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Job $jobName exists at destination. Use -Force to drop and migrate.")) {
+                            $copyJobStatus.Status = "Skipped"
+                            $copyJobStatus.Notes = "Job already exists on destination"
+                            $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Write-Message -Level Verbose -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
+                        }
                         continue
                     }
                     else {
@@ -262,8 +274,10 @@ function Copy-DbaAgentJob {
                         $serverJob.Alter()
                     }
                 }
-                $copyJobStatus.Status = "Successful"
-                $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                if ($Pscmdlet.ShouldProcess($destinstance, "Reporting status")) {
+                    $copyJobStatus.Status = "Successful"
+                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                }
             }
         }
     }
