@@ -991,10 +991,12 @@ function Copy-DbaDatabase {
                             }
                             Write-Message -Level Verbose -Message "Reuse = $ReuseSourceFolderStructure."
                             try {
+                                $msg = $null
                                 $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $dbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -EnableException
                             }
                             catch {
-                                Stop-Function -Message "Failure" -Exception $_.Exception.InnerException.InnerException.InnerException.InnerException
+                                $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                                Stop-Function -Message "Failure attempting to restore $dbName to $destinstance" -Exception $_.Exception.InnerException.InnerException.InnerException.InnerException
                             }
                             $restoreResult = $restoreResultTmp.RestoreComplete
 
@@ -1015,9 +1017,12 @@ function Copy-DbaDatabase {
                                 }
                                 else {
                                     Write-Message -Level Verbose -Message "Failed to restore $dbName to $destinstance. Aborting routine for this database."
-
+                                    
                                     $copyDatabaseStatus.Status = "Failed"
-                                    $copyDatabaseStatus.Notes = "Failed to restore database"
+                                    if (-not $msg) {
+                                        $msg = "Failed to restore database"
+                                    }
+                                    $copyDatabaseStatus.Notes = $msg
                                     $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                     continue
                                 }
