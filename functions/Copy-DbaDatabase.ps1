@@ -74,7 +74,7 @@ function Copy-DbaDatabase {
 
         .PARAMETER InputObject
             A collection of dbobjects from the pipeline.
-    
+
         .PARAMETER UseLastBackup
             Use the last full, diff and logs instead of performing backups
 
@@ -191,13 +191,17 @@ function Copy-DbaDatabase {
     )
     begin {
         $CopyOnly = -not $NoCopyOnly
-        
+
         if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackups)) {
             Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackups"
             return
         }
         if ($NetworkShare -and $UseLastBackups) {
             Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackups because the backup path is determined by the paths in the last backups"
+            return
+        }
+        if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
+            Stop-Function -Message "When using -DetachAttach with multiple servers, you must specify -Reattach to reattach database at source"
             return
         }
         function Join-AdminUnc {
@@ -605,7 +609,7 @@ function Copy-DbaDatabase {
         if ($Database -contains "master" -or $Database -contains "msdb" -or $Database -contains "tempdb") {
             Stop-Function -Message "Migrating system databases is not currently supported." -Continue
         }
-        
+
         try {
             Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
@@ -614,7 +618,7 @@ function Copy-DbaDatabase {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-        
+
         Invoke-SmoCheck -SqlInstance $sourceServer
         $sourceNetBios = $sourceServer.ComputerName
 
@@ -634,7 +638,7 @@ function Copy-DbaDatabase {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             if ($sourceServer.ComputerName -eq $destServer.ComputerName) {
                 $script:sameserver = $true
             }
@@ -687,7 +691,7 @@ function Copy-DbaDatabase {
                 }
             }
 
-            $destNetBios = $sourceServer.ComputerName
+            $destNetBios = $destserver.ComputerName
 
             Write-Message -Level Verbose -Message "Performing SMO version check."
             Invoke-SmoCheck -SqlInstance $destServer
@@ -765,17 +769,17 @@ function Copy-DbaDatabase {
                 $remoteSourcePath = Join-AdminUNC $sourceNetBios (Get-SqlDefaultPaths -SqlInstance $sourceServer -filetype data)
 
                 if ((Test-Path $remoteSourcePath) -ne $true -and $DetachAttach) {
-                    Write-Message -Level Verbose -Message "Can't access remote Sql directories on $source which is required to perform detach/copy/attach."
-                    Write-Message -Level Verbose -Message "You can manually try accessing $remoteSourcePath to diagnose any issues."
-                    Stop-Function -Message "Halting database migration."
+                    Write-Message -Level Warning -Message "Can't access remote Sql directories on $source which is required to perform detach/copy/attach."
+                    Write-Message -Level Warning -Message "You can manually try accessing $remoteSourcePath to diagnose any issues."
+                    Stop-Function -Message "Halting database migration"
                     return
                 }
 
                 $remoteDestPath = Join-AdminUNC $destNetBios (Get-SqlDefaultPaths -SqlInstance $destServer -filetype data)
                 If ((Test-Path $remoteDestPath) -ne $true -and $DetachAttach) {
-                    Write-Message -Level Output -Message "Can't access remote Sql directories on $destinstance which is required to perform detach/copy/attach."
-                    Write-Message -Level Output -Message "You can manually try accessing $remoteDestPath to diagnose any issues."
-                    Stop-Function -Message "Halting database migration." -Continue
+                    Write-Message -Level Warning -Message "Can't access remote Sql directories on $destinstance which is required to perform detach/copy/attach."
+                    Write-Message -Level Warning -Message "You can manually try accessing $remoteDestPath to diagnose any issues."
+                    Stop-Function -Message "Halting database migration" -Continue
                 }
             }
 
@@ -958,9 +962,7 @@ function Copy-DbaDatabase {
                         $WithReplace = $true
                     }
 
-                    if ($Pscmdlet.ShouldProcess("console", "Showing start time")) {
-                        Write-Message -Level Verbose -Message "Started: $dbStart."
-                    }
+                    Write-Message -Level Verbose -Message "Started: $dbStart."
 
                     if ($sourceServer.VersionMajor -ge 9) {
                         $sourceDbOwnerChaining = $sourceServer.Databases[$dbName].DatabaseOwnershipChaining
@@ -983,7 +985,13 @@ function Copy-DbaDatabase {
                     }
 
                     if ($BackupRestore) {
-                        If ($Pscmdlet.ShouldProcess($destinstance, "Backup $dbName from $source and restoring.")) {
+                        if ($UseLastBackups) {
+                            $whatifmsg = "Gathering last backup information for $dbName from $Source and restoring"
+                        }
+                        else {
+                            $whatifmsg = "Backup $dbName from $source and restoring"
+                        }
+                        If ($Pscmdlet.ShouldProcess($destinstance, $whatifmsg)) {
                             if ($UseLastBackups) {
                                 $backupTmpResult = Get-DbaBackupHistory -SqlInstance $sourceServer -Database $dbName -IncludeCopyOnly -Last
                                 if (-not $backupTmpResult) {
@@ -1006,7 +1014,7 @@ function Copy-DbaDatabase {
                                 if (-not $backupResult) {
                                     $serviceAccount = $sourceServer.ServiceAccount
                                     Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($NetworkShare)? Aborting routine for this database."
-                                    
+
                                     $copyDatabaseStatus.Status = "Failed"
                                     $copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $NetworkShare."
                                     $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -1041,7 +1049,7 @@ function Copy-DbaDatabase {
                                 }
                                 else {
                                     Write-Message -Level Verbose -Message "Failed to restore $dbName to $destinstance. Aborting routine for this database."
-                                    
+
                                     $copyDatabaseStatus.Status = "Failed"
                                     if (-not $msg) {
                                         $msg = "Failed to restore database"
@@ -1068,7 +1076,7 @@ function Copy-DbaDatabase {
                                         }
                                         catch {
                                             Write-Message -Level Verbose -Message "Cannot delete backup file $backupFile."
-                                            
+
                                             # Set NoBackupCleanup so that there's a warning at the end
                                             $NoBackupCleanup = $true
                                         }
@@ -1076,7 +1084,7 @@ function Copy-DbaDatabase {
                                 }
                             }
                         }
-                        
+
                         $dbFinish = Get-Date
                         if ($NoRecovery -eq $false) {
                             # needed because the newly restored database doesn't show up
@@ -1227,13 +1235,12 @@ function Copy-DbaDatabase {
                         }
                     }
 
-                    if ($Pscmdlet.ShouldProcess("console", "Showing elapsed time")) {
-                        $dbTotalTime = $dbFinish - $dbStart
-                        $dbTotalTime = ($dbTotalTime.ToString().Split(".")[0])
+                    $dbTotalTime = $dbFinish - $dbStart
+                    $dbTotalTime = ($dbTotalTime.ToString().Split(".")[0])
 
-                        Write-Message -Level Verbose -Message "Finished: $dbFinish."
-                        Write-Message -Level Verbose -Message "Elapsed time: $dbTotalTime."
-                    }
+                    Write-Message -Level Verbose -Message "Finished: $dbFinish."
+                    Write-Message -Level Verbose -Message "Elapsed time: $dbTotalTime."
+
                 } # end db by db processing
             }
         }
