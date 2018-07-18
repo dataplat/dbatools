@@ -233,8 +233,8 @@ function Copy-DbaLogin {
                 }
                 
                 if ($null -ne $destServer.Logins.Item($userName) -and $force) {
-                    if ($Pscmdlet.ShouldProcess("console", "$userName is the destination service account. Skipping drop.")) {
-                        if ($userName -eq $destServer.ServiceAccount) {
+                    if ($userName -eq $destServer.ServiceAccount) {
+                        if ($Pscmdlet.ShouldProcess("console", "$userName is the destination service account. Skipping drop.")) {
                             Write-Message -Level Verbose -Message "$userName is the destination service account. Skipping drop."
                             
                             $copyLoginStatus.Status = "Skipped"
@@ -374,7 +374,6 @@ function Copy-DbaLogin {
 
                             $copyLoginStatus.Status = "Successful"
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
                         }
                         catch {
                             try {
