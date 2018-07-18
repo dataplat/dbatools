@@ -152,7 +152,7 @@ function Copy-DbaAgentCategory {
                                 }
                                 catch {
                                     $copyJobCategoryStatus.Status = "Failed"
-                                    $copyJobCategoryStatus
+                                    $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                     Stop-Function -Message "Issue dropping job category" -Target $categoryName -ErrorRecord $_ -Continue
                                 }
                             }
@@ -306,7 +306,7 @@ function Copy-DbaAgentCategory {
                         if ($force -eq $false) {
                             $copyAlertCategoryStatus.Status = "Skipped"
                             $copyAlertCategoryStatus.Notes = "Already exists"
-                            $copyAlertCategoryStatus
+                            $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Alert category $categoryName exists at destination. Use -Force to drop and migrate."
                             continue
                         }
@@ -322,7 +322,7 @@ function Copy-DbaAgentCategory {
                                 }
                                 catch {
                                     $copyAlertCategoryStatus.Status = "Failed"
-                                    $copyAlertCategoryStatus
+                                    $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                     Stop-Function -Message "Issue dropping alert category" -Target $categoryName -ErrorRecord $_
                                 }
                             }
@@ -337,11 +337,11 @@ function Copy-DbaAgentCategory {
                                 $destServer.Query($sql)
                                 
                                 $copyAlertCategoryStatus.Status = "Successful"
-                                $copyAlertCategoryStatus
+                                $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             }
                             catch {
                                 $copyAlertCategoryStatus.Status = "Failed"
-                                $copyAlertCategoryStatus
+                                $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 Stop-Function -Message "Issue creating alert category" -Target $categoryName -ErrorRecord $_
                             }
                         }
