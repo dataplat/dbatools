@@ -613,8 +613,14 @@ function Copy-DbaDatabase {
         }
 
         foreach ($destinstance in $Destination) {
-            $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $destinstance"
+                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+            }
+            
             if ($sourceServer.ComputerName -eq $destServer.ComputerName) {
                 $script:sameserver = $true
             }

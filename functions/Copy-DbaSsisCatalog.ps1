@@ -272,7 +272,13 @@ function Copy-DbaSsisCatalog {
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
-            $destinationConnection = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 11
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $destinstance"
+                $destinationConnection = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 1
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+            }
             
             try {
                 Get-RemoteIntegrationService -Computer $destinstance
