@@ -35,13 +35,17 @@ function Start-DbaMigration {
             By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
         .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+            Source SQL Server.
 
         .PARAMETER SourceSqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+            Destination SQL Server. You may specify multiple servers.
+
+            Note that when using -BackupRestore with multiple servers, the backup will only be performed once and backups will be deleted at the end (if you didn't specify -NoBackupCleanup).
+
+            When using -DetachAttach with multiple servers, -Reattach must be specified.
 
         .PARAMETER DestinationSqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -141,6 +145,9 @@ function Start-DbaMigration {
         .PARAMETER DisableJobsOnSource
             If this switch is enabled, SQL Agent jobs will be disabled on the source instance.
 
+        .PARAMETER UseLastBackups
+            Use the last full, diff and logs instead of performing backups. Note that the backups must exist in a location accessible by all destination servers, such a network share.
+
         .PARAMETER Force
             If migrating users, forces drop and recreate of SQL and Windows logins.
             If migrating databases, deletes existing databases with matching names.
@@ -206,7 +213,7 @@ function Start-DbaMigration {
         [switch]$Reattach,
         [parameter(Position = 5, Mandatory = $true, ParameterSetName = "DbBackup")]
         [switch]$BackupRestore,
-        [parameter(Position = 6, Mandatory = $true, ParameterSetName = "DbBackup",
+        [parameter(Position = 6, ParameterSetName = "DbBackup",
                    HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
         [string]$NetworkShare,
         [parameter(Position = 7, ParameterSetName = "DbBackup")]
@@ -259,6 +266,7 @@ function Start-DbaMigration {
         [switch]$DisableJobsOnDestination,
         [switch]$DisableJobsOnSource,
         [switch]$NoSaRename,
+        [switch]$UseLastBackups,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -272,12 +280,23 @@ function Start-DbaMigration {
             Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -NoDatabases"
             return
         }
-
         if (-not $NoDatabases) {
             if (-not $DetachAttach -and !$BackupRestore) {
                 Stop-Function -Message "You must specify a migration method using -BackupRestore or -DetachAttach."
                 return
             }
+        }
+        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackups)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackups"
+            return
+        }
+        if ($NetworkShare -and $UseLastBackups) {
+            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackups because the backup path is determined by the paths in the last backups"
+            return
+        }
+        if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
+            Stop-Function -Message "When using -DetachAttach with multiple servers, you must specify -Reattach to reattach database at source"
+            return
         }
     }
 
@@ -335,7 +354,12 @@ function Start-DbaMigration {
             # Do it
             Write-Message -Level Verbose -Message "Migrating databases"
             if ($BackupRestore) {
-                Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs
+                if ($UseLastBackups) {
+                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -UseLastBackups:$UseLastBackups
+                }
+                else {
+                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs
+                }
             }
             else {
                 Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -IncludeSupportDbs:$IncludeSupportDbs
@@ -354,7 +378,7 @@ function Start-DbaMigration {
                 $null = Update-SqlDbOwner -Source $sourceserver -Destination $dest -DestinationSqlCredential $DestinationSqlCredential
             }
         }
-        
+
         if (-not $NoDataCollector) {
             Write-Message -Level Verbose -Message "Migrating Data Collector collection sets"
             Copy-DbaSqlDataCollector -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
