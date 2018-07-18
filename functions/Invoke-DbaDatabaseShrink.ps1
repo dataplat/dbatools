@@ -259,10 +259,10 @@ function Invoke-DbaDatabaseShrink {
                                 continue
                             }
                             $end = Get-Date
-                            $fileSize = $file.Size / 1024
-                            $newSpaceAvailableMB = ($file.Size - $file.UsedSpace) / 1024
-                            Write-Message -Level Verbose -Message "Final file size: $([int]$fileSize) MB"
-                            Write-Message -Level Verbose -Message "Final file space available: $([int]$newSpaceAvailableMB) MB"
+                            $finalFileSize = $file.Size / 1024
+                            $finalSpaceAvailableMB = ($file.Size - $file.UsedSpace) / 1024
+                            Write-Message -Level Verbose -Message "Final file size: $([int]$finalFileSize) MB"
+                            Write-Message -Level Verbose -Message "Final file space available: $([int]$finalSpaceAvailableMB) MB"
 
                             if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false -and $success -and $FileType -ne 'Log') {
                                 Write-Message -Level Verbose -Message "Getting ending average fragmentation"
@@ -283,16 +283,17 @@ function Invoke-DbaDatabaseShrink {
                                 InstanceName                  = $server.ServiceName
                                 SqlInstance                   = $server.DomainInstanceName
                                 Database                      = $db.name
+                                File                          = $file.name
                                 Start                         = $start
                                 End                           = $end
                                 Elapsed                       = $elapsed
                                 Success                       = $success
                                 StartingTotalSizeMB           = [math]::Round($startingSize, 2)
                                 StartingUsedMB                = [math]::Round($spaceUsed, 2)
-                                FinalTotalSizeMB              = [math]::Round($file.size, 2)
+                                FinalTotalSizeMB              = [math]::Round($filesize, 2)
                                 StartingAvailableMB           = [math]::Round($spaceAvailableMB, 2)
                                 DesiredAvailableMB            = [math]::Round($desiredSpaceAvailable, 2)
-                                FinalAvailableMB              = [math]::Round(($file.SpaceAvailable / 1024), 2)
+                                FinalAvailableMB              = [math]::Round($finalFileSize, 2)
                                 StartingAvgIndexFragmentation = [math]::Round($startingFrag, 1)
                                 EndingAvgIndexFragmentation   = [math]::Round($endingDefrag, 1)
                                 StartingTopIndexFragmentation = [math]::Round($startingTopFrag, 1)
