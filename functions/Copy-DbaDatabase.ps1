@@ -9,13 +9,17 @@ function Copy-DbaDatabase {
             By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
         .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+            Source SQL Server.
 
         .PARAMETER SourceSqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+            Destination SQL Server. You may specify multiple servers. 
+    
+            Note that when using -BackupRestore with multiple servers, the backup will only be performed once and backups will be deleted at the end (if you didn't specify -NoBackupCleanup).
+    
+            When using -DetachAttach with multiple servers, -Reattach must be specified.
 
         .PARAMETER DestinationSqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -75,8 +79,8 @@ function Copy-DbaDatabase {
         .PARAMETER InputObject
             A collection of dbobjects from the pipeline.
 
-        .PARAMETER UseLastBackup
-            Use the last full, diff and logs instead of performing backups
+        .PARAMETER UseLastBackups
+            Use the last full, diff and logs instead of performing backups. Note that the backups must exist in a location accessible by all destination servers, such a network share.
 
         .PARAMETER NoCopyOnly
              If this switch is enabled, backups will be taken without COPY_ONLY. This will break the LSN backup chain, which will interfere with the restore chain of the database.
@@ -120,17 +124,24 @@ function Copy-DbaDatabase {
             https://dbatools.io/Copy-DbaDatabase
 
         .EXAMPLE
-            Copy-DbaDatabase -Source sqlserver2014a -Destination sqlserver2014b -Database TestDB -BackupRestore -NetworkShare \\fileshare\sql\migration
+            Copy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -NetworkShare \\fileshare\sql\migration
 
-            Migrates a single user database TestDB using Backup and restore from instance sqlserver2014a to sqlserver2014b. Backup files are stored in \\fileshare\sql\migration.
-
-        .EXAMPLE
-            Copy-DbaDatabase -Source sqlserver2014a -Destination sqlcluster -DetachAttach -Reattach
-
-            Databases will be migrated from sqlserver2014a to sqlcluster using the detach/copy files/attach method.The following will be performed: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SqlSERVER\M$\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
+            Migrates a single user database TestDB using Backup and restore from instance sql2014a to sql2014b. Backup files are stored in \\fileshare\sql\migration.
 
         .EXAMPLE
-            Copy-DbaDatabase -Source sqlserver2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\fileshare\sql\migration
+            Copy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -DetachAttach -Reattach
+
+            Databases will be migrated from sql2012 to both sql2014 and sql2016 using the detach/copy files/attach method.The following will be performed: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SqlSERVER\M$\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
+
+        .EXAMPLE
+            Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackups -Force
+
+            Migrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql204a. If the databases exists on the destinations, they will be dropped prior to attach.
+    
+            Note that the backups must exist in a location accessible by all destination servers, such a network share.
+    
+        .EXAMPLE
+            Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\fileshare\sql\migration
 
             Migrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\fileshare\sql\migration. If the database exists on the destination, it will be dropped prior to attach.
 
