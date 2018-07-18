@@ -136,10 +136,12 @@ function Copy-DbaLinkedServer {
 
                 if ($null -ne $destServer.LinkedServers[$linkedServerName]) {
                     if (!$force) {
-                        $copyLinkedServer.Status = "Skipped"
-                        $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Write-Message -Level Verbose -Message "$linkedServerName exists $($destServer.Name). Skipping."
+                        if ($Pscmdlet.ShouldProcess($destinstance, "$linkedServerName exists $($destServer.Name). Skipping.")) {
+                            $copyLinkedServer.Status = "Skipped"
+                            $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            
+                            Write-Message -Level Verbose -Message "$linkedServerName exists $($destServer.Name). Skipping."
+                        }
                         continue
                     }
                     else {

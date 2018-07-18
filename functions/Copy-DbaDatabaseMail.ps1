@@ -84,7 +84,7 @@ function Copy-DbaDatabaseMail {
     )
     begin {
         function Copy-DbaDatabaseMailConfig {
-            [cmdletbinding(SupportsShouldProcess = $true)]
+            [cmdletbinding(SupportsShouldProcess)]
             param ()
 
             Write-Message -Message "Migrating mail server configuration values." -Level Verbose
@@ -111,11 +111,12 @@ function Copy-DbaDatabaseMail {
                     $copyMailConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     Stop-Function -Message "Unable to migrate mail configuration." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
                 }
+                $copyMailConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
-            $copyMailConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
         }
-
+        
         function Copy-DbaDatabaseAccount {
+            [cmdletbinding(SupportsShouldProcess)]
             $sourceAccounts = $sourceServer.Mail.Accounts
             $destAccounts = $destServer.Mail.Accounts
 
@@ -138,9 +139,11 @@ function Copy-DbaDatabaseMail {
 
                 if ($destAccounts.name -contains $accountName) {
                     if ($force -eq $false) {
-                        $copyMailAccountStatus.Status = "Skipped"
-                        $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Message "Account $accountName exists at destination. Use -Force to drop and migrate." -Level Verbose
+                        If ($pscmdlet.ShouldProcess($destinstance, "Account $accountName exists at destination. Use -Force to drop and migrate.")) {
+                            $copyMailAccountStatus.Status = "Skipped"
+                            $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Write-Message -Message "Account $accountName exists at destination. Use -Force to drop and migrate." -Level Verbose
+                        }
                         continue
                     }
 
@@ -172,11 +175,11 @@ function Copy-DbaDatabaseMail {
                         $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Issue copying mail account." -Target $accountName -Category InvalidOperation -InnerErrorRecord $_
                     }
+                    $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
-                $copyMailAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
         }
-
+        
         function Copy-DbaDatabaseMailProfile {
 
             $sourceProfiles = $sourceServer.Mail.Profiles
@@ -202,10 +205,12 @@ function Copy-DbaDatabaseMail {
 
                 if ($destProfiles.name -contains $profileName) {
                     if ($force -eq $false) {
-                        $copyMailProfileStatus.Status = "Skipped"
-                        $copyMailProfileStatus.Notes = "Already exists"
-                        $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Message "Profile $profileName exists at destination. Use -Force to drop and migrate." -Level Verbose
+                        If ($pscmdlet.ShouldProcess($destinstance, "Profile $profileName exists at destination. Use -Force to drop and migrate.")) {
+                            $copyMailProfileStatus.Status = "Skipped"
+                            $copyMailProfileStatus.Notes = "Already exists"
+                            $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Write-Message -Message "Profile $profileName exists at destination. Use -Force to drop and migrate." -Level Verbose
+                        }
                         continue
                     }
 
@@ -238,12 +243,13 @@ function Copy-DbaDatabaseMail {
                         $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Issue copying mail profile." -Target $profileName -Category InvalidOperation -InnerErrorRecord $_
                     }
+                    $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
-                $copyMailProfileStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
         }
-
+        
         function Copy-DbaDatabaseMailServer {
+            [cmdletbinding(SupportsShouldProcess)]
             $sourceMailServers = $sourceServer.Mail.Accounts.MailServers
             $destMailServers = $destServer.Mail.Accounts.MailServers
 
@@ -265,10 +271,12 @@ function Copy-DbaDatabaseMail {
 
                 if ($destMailServers.name -contains $mailServerName) {
                     if ($force -eq $false) {
-                        $copyMailServerStatus.Status = "Skipped"
-                        $copyMailServerStatus.Notes = "Already exists"
-                        $copyMailServerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        Write-Message -Message "Mail server $mailServerName exists at destination. Use -Force to drop and migrate." -Level Verbose
+                        if ($pscmdlet.ShouldProcess($destinstance, "Mail server $mailServerName exists at destination. Use -Force to drop and migrate.")) {
+                            $copyMailServerStatus.Status = "Skipped"
+                            $copyMailServerStatus.Notes = "Already exists"
+                            $copyMailServerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Write-Message -Message "Mail server $mailServerName exists at destination. Use -Force to drop and migrate." -Level Verbose
+                        }
                         continue
                     }
 
@@ -299,8 +307,8 @@ function Copy-DbaDatabaseMail {
                         $copyMailServerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Issue copying mail server" -Target $mailServerName -Category InvalidOperation -InnerErrorRecord $_
                     }
+                    $copyMailServerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
-                $copyMailServerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
         }
         
@@ -385,22 +393,21 @@ function Copy-DbaDatabaseMail {
             
         <# ToDo: Use Get/Set-DbaSpConfigure once the dynamic parameters are replaced. #>
             
-            $sourceDbMailEnabled = ($sourceServer.Configuration.DatabaseMailEnabled).ConfigValue
-            Write-Message -Message "$sourceServer DBMail configuration value: $sourceDbMailEnabled." -Level Verbose
-            
-            $destDbMailEnabled = ($destServer.Configuration.DatabaseMailEnabled).ConfigValue
-            Write-Message -Message "$destServer DBMail configuration value: $destDbMailEnabled." -Level Verbose
-            $enableDBMailStatus = [pscustomobject]@{
-                SourceServer = $sourceServer.name
-                DestinationServer = $destServer.name
-                Name         = "Enabled on Destination"
-                Type         = "Mail Configuration"
-                Status       = if ($destDbMailEnabled -eq 1) { "Enabled" } else { $null }
-                DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
-            }
-            
             if (($sourceDbMailEnabled -eq 1) -and ($destDbMailEnabled -eq 0)) {
                 if ($pscmdlet.ShouldProcess($destinstance, "Enabling Database Mail")) {
+                    $sourceDbMailEnabled = ($sourceServer.Configuration.DatabaseMailEnabled).ConfigValue
+                    Write-Message -Message "$sourceServer DBMail configuration value: $sourceDbMailEnabled." -Level Verbose
+                    
+                    $destDbMailEnabled = ($destServer.Configuration.DatabaseMailEnabled).ConfigValue
+                    Write-Message -Message "$destServer DBMail configuration value: $destDbMailEnabled." -Level Verbose
+                    $enableDBMailStatus = [pscustomobject]@{
+                        SourceServer = $sourceServer.name
+                        DestinationServer = $destServer.name
+                        Name         = "Enabled on Destination"
+                        Type         = "Mail Configuration"
+                        Status       = if ($destDbMailEnabled -eq 1) { "Enabled" } else { $null }
+                        DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                    }
                     try {
                         Write-Message -Message "Enabling Database Mail on $destServer." -Level Verbose
                         $destServer.Configuration.DatabaseMailEnabled.ConfigValue = 1
@@ -412,8 +419,8 @@ function Copy-DbaDatabaseMail {
                         $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Stop-Function -Message "Cannot enable Database Mail." -Category InvalidOperation -ErrorRecord $_ -Target $destServer
                     }
+                    $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
-                $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
         }
     }

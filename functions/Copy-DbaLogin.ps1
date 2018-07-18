@@ -152,7 +152,7 @@ function Copy-DbaLogin {
         function Copy-Login {
             foreach ($sourceLogin in $sourceServer.Logins) {
                 $userName = $sourceLogin.name
-
+                
                 $copyLoginStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -164,7 +164,7 @@ function Copy-DbaLogin {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-
+                
                 if ($Login -and $Login -notcontains $userName -or $ExcludeLogin -contains $userName) { continue }
 
                 if ($sourceLogin.id -eq 1) { continue }
@@ -181,14 +181,13 @@ function Copy-DbaLogin {
                 if ($currentLogin -eq $userName -and $force) {
                     if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it is performing the migration.")) {
                         Write-Message -Level Verbose -Message "Cannot drop login performing the migration. Skipping."
+                        $copyLoginStatus.Status = "Skipped"
+                        $copyLoginStatus.Notes = "Current login"
+                        $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-
-                    $copyLoginStatus.Status = "Skipped"
-                    $copyLoginStatus.Notes = "Current login"
-                    $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     continue
                 }
-
+                
                 if (($destServer.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($sourceLogin.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin)) {
                     Write-Message -Level Verbose -Message "$Destination does not have Mixed Mode enabled. [$userName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login."
                 }
@@ -199,50 +198,52 @@ function Copy-DbaLogin {
                     if ($sourceServer.ComputerName -ne $destServer.ComputerName) {
                         if ($Pscmdlet.ShouldProcess("console", "Stating $userName was skipped because it is a local machine name.")) {
                             Write-Message -Level Verbose -Message "$userName was skipped because it is a local machine name."
+                            $copyLoginStatus.Status = "Skipped"
+                            $copyLoginStatus.Notes = "Local machine name"
+                            $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
-
-                        $copyLoginStatus.Status = "Skipped"
-                        $copyLoginStatus.Notes = "Local machine name"
-                        $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         continue
                     }
                     else {
                         if ($ExcludeSystemLogin) {
-                            Write-Message -Level Verbose -Message "$userName was skipped because ExcludeSystemLogin was specified."
-
-                            $copyLoginStatus.Status = "Skipped"
-                            $copyLoginStatus.Notes = "System login"
-                            $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            if ($Pscmdlet.ShouldProcess("console", "$userName was skipped because ExcludeSystemLogin was specified.")) {
+                                Write-Message -Level Verbose -Message "$userName was skipped because ExcludeSystemLogin was specified."
+                                
+                                $copyLoginStatus.Status = "Skipped"
+                                $copyLoginStatus.Notes = "System login"
+                                $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            }
                             continue
                         }
-
+                        
                         if ($Pscmdlet.ShouldProcess("console", "Stating local login $userName since the source and destination server reside on the same machine.")) {
                             Write-Message -Level Verbose -Message "Copying local login $userName since the source and destination server reside on the same machine."
                         }
                     }
                 }
-
+                
                 if ($null -ne $destServer.Logins.Item($userName) -and !$force) {
                     if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it exists at destination.")) {
                         Write-Message -Level Verbose -Message "$userName already exists in destination. Use -Force to drop and recreate."
+                        $copyLoginStatus.Status = "Skipped"
+                        $copyLoginStatus.Notes = "Already exists"
+                        $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-
-                    $copyLoginStatus.Status = "Skipped"
-                    $copyLoginStatus.Notes = "Already exists"
-                    $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     continue
                 }
-
+                
                 if ($null -ne $destServer.Logins.Item($userName) -and $force) {
-                    if ($userName -eq $destServer.ServiceAccount) {
-                        Write-Message -Level Verbose -Message "$userName is the destination service account. Skipping drop."
-
-                        $copyLoginStatus.Status = "Skipped"
-                        $copyLoginStatus.Notes = "Destination service account"
-                        $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    if ($Pscmdlet.ShouldProcess("console", "$userName is the destination service account. Skipping drop.")) {
+                        if ($userName -eq $destServer.ServiceAccount) {
+                            Write-Message -Level Verbose -Message "$userName is the destination service account. Skipping drop."
+                            
+                            $copyLoginStatus.Status = "Skipped"
+                            $copyLoginStatus.Notes = "Destination service account"
+                            $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
                         continue
                     }
-
+                    
                     if ($Pscmdlet.ShouldProcess($destinstance, "Dropping $userName")) {
 
                         # Kill connections, delete user
@@ -531,12 +532,14 @@ function Copy-DbaLogin {
             if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
                 Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
-
+            
             if ($SyncOnly) {
-                Sync-DbaLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
-                continue
+                if ($Pscmdlet.ShouldProcess($destinstance, "Syncing $Login permissions")) {
+                    Sync-DbaLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
+                    continue
+                }
             }
-
+            
             Write-Message -Level Verbose -Message "Attempting Login Migration."
             Copy-Login -sourceserver $sourceServer -destserver $destServer -Login $Login -Exclude $ExcludeLogin
 

@@ -119,20 +119,22 @@ function Copy-DbaSqlDataCollector {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             if ($NoServerReconfig -eq $false) {
-                Write-Message -Level Verbose -Message "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
-                $NoServerReconfig = $true
-                
+                if ($Pscmdlet.ShouldProcess($destinstance, "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time.")) {
+                    Write-Message -Level Verbose -Message "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
+                    $NoServerReconfig = $true
+                    
             <# for future use when this support is added #>
-                $copyServerConfigStatus = [pscustomobject]@{
-                    SourceServer = $sourceServer.Name
-                    DestinationServer = $destServer.Name
-                    Name         = $userName
-                    Type         = "Data Collection Server Config"
-                    Status       = "Skipped"
-                    Notes        = "Not supported at this time"
-                    DateTime     = [DbaDateTime](Get-Date)
+                    $copyServerConfigStatus = [pscustomobject]@{
+                        SourceServer = $sourceServer.Name
+                        DestinationServer = $destServer.Name
+                        Name         = $userName
+                        Type         = "Data Collection Server Config"
+                        Status       = "Skipped"
+                        Notes        = "Not supported at this time"
+                        DateTime     = [DbaDateTime](Get-Date)
+                    }
+                    $copyServerConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
-                $copyServerConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
             $destSqlConn = $destServer.ConnectionContext.SqlConnectionObject
             $destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
@@ -155,7 +157,7 @@ function Copy-DbaSqlDataCollector {
             
             if ($destStore.Enabled -eq $false) {
                 Write-Message -Level Verbose -Message "The Data Collector must be setup initially for Collection Sets to be migrated. Setup the Data Collector and try again."
-                return
+                continue
             }
             
             $storeCollectionSets = $sourceStore.CollectionSets | Where-Object { $_.IsSystem -eq $false }
@@ -182,11 +184,13 @@ function Copy-DbaSqlDataCollector {
                 
                 if ($null -ne $destStore.CollectionSets[$collectionName]) {
                     if ($force -eq $false) {
-                        Write-Message -Level Verbose -Message "Collection Set '$collectionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
-                        
-                        $copyCollectionSetStatus.Status = "Skipped"
-                        $copyCollectionSetStatus.Notes = "Already exists"
-                        $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Collection Set '$collectionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate")) {
+                            Write-Message -Level Verbose -Message "Collection Set '$collectionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
+                            
+                            $copyCollectionSetStatus.Status = "Skipped"
+                            $copyCollectionSetStatus.Notes = "Already exists"
+                            $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
                         continue
                     }
                     else {

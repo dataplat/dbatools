@@ -302,7 +302,20 @@ function Start-DbaMigration {
 
     process {
         if (Test-FunctionInterrupt) { return }
-
+        
+        # testing twice for whatif reasons
+        if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackups)) {
+            Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackups"
+            return
+        }
+        if ($NetworkShare -and $UseLastBackups) {
+            Stop-Function -Message "-NetworkShare cannot be used with -UseLastBackups because the backup path is determined by the paths in the last backups"
+            return
+        }
+        if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
+            Stop-Function -Message "When using -DetachAttach with multiple servers, you must specify -Reattach to reattach database at source"
+            return
+        }
         if (-not $NoSpConfigure) {
             Write-Message -Level Verbose -Message "Migrating SQL Server Configuration"
             Copy-DbaSpConfigure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
