@@ -212,7 +212,7 @@ limiting results to queries with more than 200 total executions and an execution
                 try {
                     foreach ($row in $db.ExecuteWithResults($sql).Tables.Rows) {
                         [PSCustomObject]@{
-                            ComputerName       = $server.NetName
+                            ComputerName       = $server.ComputerName
                             InstanceName       = $server.ServiceName
                             SqlInstance        = $server.DomainInstanceName
                             Database           = $row.DatabaseName
