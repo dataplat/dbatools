@@ -15,10 +15,10 @@ function Copy-DbaDatabase {
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Destination
-            Destination SQL Server. You may specify multiple servers. 
-    
+            Destination SQL Server. You may specify multiple servers.
+
             Note that when using -BackupRestore with multiple servers, the backup will only be performed once and backups will be deleted at the end (if you didn't specify -NoBackupCleanup).
-    
+
             When using -DetachAttach with multiple servers, -Reattach must be specified.
 
         .PARAMETER DestinationSqlCredential
@@ -137,9 +137,9 @@ function Copy-DbaDatabase {
             Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackups -Force
 
             Migrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql204a. If the databases exists on the destinations, they will be dropped prior to attach.
-    
+
             Note that the backups must exist in a location accessible by all destination servers, such a network share.
-    
+
         .EXAMPLE
             Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\fileshare\sql\migration
 
