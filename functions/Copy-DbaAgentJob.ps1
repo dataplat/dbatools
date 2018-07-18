@@ -274,7 +274,7 @@ function Copy-DbaAgentJob {
                         $serverJob.Alter()
                     }
                 }
-                if ($Pscmdlet.ShouldProcess($destinstance, "Reporting status")) {
+                if ($Pscmdlet.ShouldProcess($destinstance, "Reporting status of migration for $jobname")) {
                     $copyJobStatus.Status = "Successful"
                     $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
