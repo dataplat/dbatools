@@ -71,13 +71,13 @@ function Copy-DbaSysDbUserObject {
         function get-sqltypename ($type) {
             switch ($type) {
                 "VIEW" { "View" }
-                "SQL_TABLE_VALUED_FUNCTION" { "Table Valued Function" }
-                "DEFAULT_CONSTRAINT" { "Default Constraint" }
-                "SQL_STORED_PROCEDURE" { "Stored Procedure" }
-                "RULE" { "Rule" }
-                "SQL_INLINE_TABLE_VALUED_FUNCTION" { "Inline Table Valued Function" }
-                "SQL_TRIGGER" { "Trigger" }
-                "SQL_SCALAR_FUNCTION" { "Scalar Function" }
+                "SQL_TABLE_VALUED_FUNCTION" { "user table valued fsunction" }
+                "DEFAULT_CONSTRAINT" { "user default constraint" }
+                "SQL_STORED_PROCEDURE" { "user stored procedure" }
+                "RULE" { "user rule" }
+                "SQL_INLINE_TABLE_VALUED_FUNCTION" { "user inline table valued function" }
+                "SQL_TRIGGER" { "user server trigger" }
+                "SQL_SCALAR_FUNCTION" { "user scalar function" }
                 default { $type }
             }
         }
@@ -137,7 +137,7 @@ function Copy-DbaSysDbUserObject {
                             $null = $transfer.DropDestinationObjectsFirst = $true
                         }
                         $sql = $transfer.ScriptTransfer()
-                        if ($PSCmdlet.ShouldProcess($destServer, "Adding table $($table.Name) to $systemDb")) {
+                        if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add table $($table.Name) to $systemDb")) {
                             try {
                                 Write-Message -Level Debug -Message "$sql"
                                 $null = $destServer.Query($sql, $systemDb)
@@ -172,7 +172,7 @@ function Copy-DbaSysDbUserObject {
                             DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
                         Write-Message -Level Debug -Message $sql
-                        if ($PSCmdlet.ShouldProcess($destServer, "Adding $type $name to $systemDb")) {
+                        if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add $type $name to $systemDb")) {
                             try {
                                 $null = $destServer.Query($sql, $systemDb)
                                 $copyobject.Status = "Successful"
