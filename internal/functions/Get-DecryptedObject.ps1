@@ -125,6 +125,7 @@
         }
     }
     
+    Write-Message -Level Debug -Message $sql
     # Get entropy from the registry
     try {
         $results = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $connString, $sql {
@@ -178,9 +179,17 @@
         $i = 8; foreach ($b in $decrypted) { if ($decrypted[$i] -ne 0 -and $decrypted[$i + 1] -ne 0 -or $i -eq $decrypted.Length) { $i -= 1; break; }; $i += 1; }
         $decrypted = $decrypted[8 .. $i]
         
+        if ($Type -eq "LinkedServer") {
+            $name = $result.srvname
+            $identity = $result.Name
+        }
+        else {
+            $name = $result.name
+            $identity = $result.credential_identity
+        }
         [pscustomobject]@{
-            Name = $result.srvname
-            Identity = $result.Name
+            Name = $name
+            Identity = $identity
             Password = $encode.GetString($decrypted)
         }
     }

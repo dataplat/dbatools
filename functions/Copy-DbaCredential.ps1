@@ -104,183 +104,6 @@ function Copy-DbaCredential {
     begin {
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
 
-        function Get-SqlCredential {
-            <#
-                .SYNOPSIS
-                    Gets Credential Logins
-
-                    This function is heavily based on Antti Rantasaari's script at http://goo.gl/omEOrW
-                    Antti Rantasaari 2014, NetSPI
-                    License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
-
-                .OUTPUT
-                    System.Data.DataTable
-            #>
-            [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-            param (
-                [DbaInstanceParameter]$SqlInstance,
-                [PSCredential]$SqlCredential
-            )
-
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-            $sourceName = $server.Name
-
-            # Query Service Master Key from the database - remove padding from the key
-            # key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
-            $sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) FROM sys.key_encryptions WHERE key_id=102 and (thumbprint=0x03 or thumbprint=0x0300000001)"
-            try {
-                $smkBytes = $server.ConnectionContext.ExecuteScalar($sql)
-            }
-            catch {
-                throw "Can't execute SQL on $sourceName"
-            }
-
-            $sourceNetBios = Resolve-NetBiosName $server
-            $instance = $server.InstanceName
-            $serviceInstanceId = $server.ServiceInstanceId
-
-            # Get entropy from the registry - hopefully finds the right SQL server instance
-            try {
-                [byte[]]$entropy = Invoke-Command2 -ComputerName $sourceNetBios -Credential $Credential -ArgumentList $serviceInstanceId -ScriptBlock {
-                    $serviceInstanceId = $args[0]
-                    $entropy = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$serviceInstanceId\Security\").Entropy
-                    return $entropy
-                } -Raw
-            }
-            catch {
-                throw "Can't access registry keys on $sourceName. Quitting. $_"
-            }
-
-            # Decrypt the service master key
-            try {
-                $serviceKey = Invoke-Command2 -ComputerName $sourceNetBios -Credential $Credential -ArgumentList $smkBytes, $Entropy -ScriptBlock {
-                    Add-Type -AssemblyName System.Security
-                    Add-Type -AssemblyName System.Core
-                    $smkBytes = $args[0]; $Entropy = $args[1]
-                    $serviceKey = [System.Security.Cryptography.ProtectedData]::Unprotect($smkBytes, $Entropy, 'LocalMachine')
-                    return $serviceKey
-                } -Raw
-            }
-            catch {
-                throw "Can't unprotect registry data on $($source.Name)). Quitting."
-            }
-
-            <#
-                Choose the encryption algorithm based on the SMK length:
-                    3DES for 2008, AES for 2012
-                Choose IV length based on the algorithm
-            #>
-            if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
-                throw "Unknown key size. Cannot continue. Quitting."
-            }
-
-            if ($serviceKey.Length -eq 16) {
-                $decryptor = New-Object System.Security.Cryptography.TripleDESCryptoServiceProvider
-                $ivlen = 8
-            }
-            elseif ($serviceKey.Length -eq 32) {
-                $decryptor = New-Object System.Security.Cryptography.AESCryptoServiceProvider
-                $ivlen = 16
-            }
-
-            <#
-                Query link server password information from the Db. Remove header from pwdhash,
-                    extract IV (as iv) and ciphertext (as pass).
-                Ignore links with blank credentials (integrated auth ?)
-            #>
-            if ($server.IsClustered -eq $false) {
-                $connString = "Server=ADMIN:$sourceNetBios\$instance;Trusted_Connection=True"
-            }
-            else {
-                $dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
-
-
-                if ($dacEnabled -eq $false) {
-                    if ($Pscmdlet.ShouldProcess($server.Name, "Enabling DAC on clustered instance")) {
-                        Write-Message -Level Verbose -Message "DAC must be enabled for clusters, even when accessed from active node. Enabling."
-                        $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
-                        $server.Configuration.Alter()
-                    }
-                }
-
-                $connString = "Server=ADMIN:$sourceName;Trusted_Connection=True"
-            }
-
-            $sql = "SELECT QUOTENAME(name) AS name,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.Credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
-
-            # Get entropy from the registry
-            try {
-                $creds = Invoke-Command2 -ComputerName $sourceNetBios -Credential $Credential -ArgumentList $connString, $sql -ScriptBlock {
-                    $connString = $args[0]; $sql = $args[1]
-                    $conn = New-Object System.Data.SqlClient.SqlConnection($connString)
-                    try {
-                        $conn.Open()
-                        $cmd = New-Object System.Data.SqlClient.SqlCommand($sql, $conn);
-                        $data = $cmd.ExecuteReader()
-                        $dt = New-Object "System.Data.DataTable"
-                        $dt.Load($data)
-                        $conn.Close()
-                        $conn.Dispose()
-                        return $dt
-                    }
-                    catch {
-                        Stop-Function -Message "Can't establish local DAC connection to $sourceName or other error. Quitting." -ErrorRecord $_
-                        return
-                    }
-                } -Raw
-            }
-            catch {
-                Stop-Function -Message "Can't establish local DAC connection to $sourceName or other error. Quitting." -ErrorRecord $_
-                return
-            }
-
-            if ($server.IsClustered -and $dacEnabled -eq $false) {
-                if ($Pscmdlet.ShouldProcess($server.Name, "Disabling DAC on clustered instance")) {
-                    Write-Message -Level Verbose -Message "Setting DAC config back to 0"
-                    $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
-                    $server.Configuration.Alter()
-                }
-            }
-
-            $decryptedLogins = New-Object "System.Data.DataTable"
-            [void]$decryptedLogins.Columns.Add("Credential")
-            [void]$decryptedLogins.Columns.Add("Identity")
-            [void]$decryptedLogins.Columns.Add("Password")
-
-            # Go through each row in results
-            foreach ($cred in $creds) {
-                # decrypt the password using the service master key and the extracted IV
-                $decryptor.Padding = "None"
-                $decrypt = $decryptor.CreateEncryptor($serviceKey, $cred.iv)
-                $stream = New-Object System.IO.MemoryStream ( , $cred.pass)
-                $crypto = New-Object System.Security.Cryptography.CryptoStream $stream, $decrypt, "Write"
-
-                $crypto.Write($cred.Pass, 0, $cred.Pass.Length)
-                [byte[]]$decrypted = $stream.ToArray()
-
-                # convert decrypted password to unicode
-                $encode = New-Object System.Text.UnicodeEncoding
-
-                <#
-                    Print results - removing the weird padding (8 bytes in the front, some bytes at the end)...
-                    Might cause problems but so far seems to work.. may be dependant on SQL server version...
-                    If problems arise remove the next three lines..
-                #>
-                $i = 8
-                foreach ($b in $decrypted) {
-                    if ($decrypted[$i] -ne 0 -and $decrypted[$i + 1] -ne 0 -or $i -eq $decrypted.Length) {
-                        $i -= 1
-                        break
-                    }
-                    $i += 1
-                }
-                $decrypted = $decrypted[8 .. $i]
-
-                [void]$decryptedLogins.Rows.Add($($cred.Name), $($cred.Credential_Identity), $($encode.GetString($decrypted)))
-            }
-            return $decryptedLogins
-        }
-
         function Copy-Credential {
             <#
                 .SYNOPSIS
@@ -290,12 +113,12 @@ function Copy-DbaCredential {
                     System.Data.DataTable
             #>
             param (
-                [string[]]$credentials,
-                [bool]$force
+                [string[]]$Credentials,
+                [bool]$Force
             )
 
             Write-Message -Level Verbose -Message "Collecting Credential logins and passwords on $($sourceServer.Name)"
-            $sourceCredentials = Get-SqlCredential $sourceServer
+            $sourceCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential
             $credentialList = Get-DbaCredential -SqlInstance $sourceServer -Name $Name -ExcludeName $ExcludeName -Identity $Identity -ExcludeIdentity $ExcludeIdentity
             
             Write-Message -Level Verbose -Message "Starting migration"
@@ -329,15 +152,15 @@ function Copy-DbaCredential {
                         }
                     }
                 }
-
+                
                 Write-Message -Level Verbose -Message "Attempting to migrate $credentialName"
                 try {
-                    $currentCred = $sourceCredentials | Where-Object { $_.Credential -eq "[$credentialName]" }
+                    $currentCred = $sourceCredentials | Where-Object { $_.Name -eq "[$credentialName]" }
                     $identity = $currentCred.Identity
                     $password = $currentCred.Password
                     if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying $identity")) {
                         $sql = "CREATE CREDENTIAL [$credentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'"
-                        Write-Message -Level Debug -Message $sql
+                        
                         $destServer.Query($sql)
                         $destServer.Credentials.Refresh()
                         Write-Message -Level Verbose -Message "$credentialName successfully copied"
@@ -371,13 +194,13 @@ function Copy-DbaCredential {
         $sourceNetBios = Resolve-NetBiosName $sourceServer
         
         Invoke-SmoCheck -SqlInstance $sourceServer
-        # This output is wrong. Will fix later.
+        
         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
         try {
             Invoke-Command2 -ComputerName $sourceNetBios -Credential $credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
         }
         catch {
-            Stop-Function -Message "Can't connect to registry on $source." -Target $sourceNetBios -ErrorRecord $_
+            Stop-Function -Message "Can't connect to registry on $source" -Target $sourceNetBios -ErrorRecord $_
             return
         }
     }
