@@ -82,12 +82,13 @@ function Copy-DbaSpConfigure {
     )
     begin {
         try {
-            Write-Message -Level Verbose -Message "Connecting to $instance."
+            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             $sourceProps = Get-DbaSpConfigure -SqlInstance $sourceServer
         }
         catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            return
         }
     }
     process {

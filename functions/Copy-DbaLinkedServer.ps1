@@ -386,12 +386,21 @@ function Copy-DbaLinkedServer {
             }
         }
         
-        if ($null -ne $SourceSqlCredential.username) {
+        if ($null -ne $SourceSqlCredential.Username) {
             Write-Message -Level Verbose -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
         }
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        try {
+            Write-Message -Level Verbose -Message "Connecting to $Source"
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            return
+        }
+        catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            return
+        }
         if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
             Stop-Function -Message "Not a sysadmin on $source. Quitting." -Target $sourceServer
+            return
         }
         Write-Message -Level Verbose -Message "Getting NetBios name for $source."
         $sourceNetBios = Resolve-NetBiosName $sourceserver

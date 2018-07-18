@@ -591,8 +591,16 @@ function Copy-DbaDatabase {
         if ($Database -contains "master" -or $Database -contains "msdb" -or $Database -contains "tempdb") {
             Stop-Function -Message "Migrating system databases is not currently supported." -Continue
         }
-
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        
+        try {
+            Write-Message -Level Verbose -Message "Connecting to $Source"
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        }
+        catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            return
+        }
+        
         Invoke-SmoCheck -SqlInstance $sourceServer
         $sourceNetBios = $sourceServer.ComputerName
 

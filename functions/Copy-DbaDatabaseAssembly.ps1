@@ -86,7 +86,14 @@ function Copy-DbaDatabaseAssembly {
         [switch]$EnableException
     )
     begin {
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+        try {
+            Write-Message -Level Verbose -Message "Connecting to $Source"
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+        }
+        catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            return
+        }
         $sourceAssemblies = @()
         foreach ($database in ($sourceServer.Databases | Where-Object IsAccessible)) {
             Write-Message -Level Verbose -Message "Processing $database on source"

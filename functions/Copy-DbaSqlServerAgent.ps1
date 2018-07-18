@@ -83,7 +83,14 @@ function Copy-DbaSqlServerAgent {
     )
 
     begin {
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        try {
+            Write-Message -Level Verbose -Message "Connecting to $Source"
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        }
+        catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            return
+        }
         Invoke-SmoCheck -SqlInstance $sourceServer
         $sourceAgent = $sourceServer.JobServer
     }

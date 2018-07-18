@@ -498,8 +498,14 @@ function Copy-DbaLogin {
             $Login = $InputObject.Name
         }
         else {
-            Write-Message -Level Verbose -Message "Connecting to SQL Servers."
-            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $Source"
+                $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+                return
+            }
         }
         $sourceVersionMajor = $sourceServer.VersionMajor
 
