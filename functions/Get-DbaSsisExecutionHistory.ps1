@@ -6,6 +6,15 @@ function Get-DbaSsisExecutionHistory {
 
         .DESCRIPTION
             This command gets execution history for SSIS executison given one or more instances and can be filtered by Project, Environment,Folder or Status.
+        
+        .PARAMETER SqlInstance
+            SQL Server name or SMO object representing the SQL Server to connect to.
+            This can be a collection and receive pipeline input to allow the function
+            to be executed against multiple SQL Server instances.
+
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+
         .PARAMETER Project
             Specifies a filter by project
 
@@ -49,66 +58,69 @@ function Get-DbaSsisExecutionHistory {
 
             Shows what would happen if the command were executed and would return the SQL statement that would be executed per instance.
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$SQLInstance,
+        [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [ValidateSet("Created", "Running", "Cancelled", "Failed", "Pending", "Halted", "Succeeded", "Stopping","Completed")]
+        [ValidateSet("Created", "Running", "Cancelled", "Failed", "Pending", "Halted", "Succeeded", "Stopping", "Completed")]
         [String[]]$Status,
         [String[]]$Project,
         [String[]]$Folder,
         [String[]]$Environment,
-        [Switch]$Force,
         [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
         $statuses = @{
-            'created'= 1
-            'running'= 2
-            'cancelled'= 3
-            'failed'= 4
-            'pending'= 5
-            'halted'= 6
-            'succeeded'= 7
-            'stopping'= 8
-            'completed'= 9
-          }
-            if ($Status) {
-                $csv = ($statuses[$Status] -join ',')
-                $statusq = "AND e.[status] in ($csv)"
-            } else {
-                $statusq = ''
-            }
-
-            if ($Project) {
-                $csv = "`"" + ($Project -join'","') + "`""
-                $projectq = "AND e.[project_name] in ($csv)"
-            } else {
-                $projectq = ''
-            }
-
-            if ($Folder) {
-                $csv = "`'" + ($Folder -join"'","'") + "`'"
-                $folderq = "AND e.[folder_name] in ($csv)"
-            } else {
-                $folderq = ''
-            }
-
-            if ($Environment) {
-                $csv = "`'" + ($Environment -join"'","'") + "`'"
-                $environmentq = "AND e.[environment] in ($csv)"
-            } else {
-                $environmentq = ''
-            }
-
-            $q = @"
+            'Created'   = 1
+            'Running'   = 2
+            'Cancelled' = 3
+            'Failed'    = 4
+            'Pending'   = 5
+            'Halted'    = 6
+            'Succeeded' = 7
+            'Stopping'  = 8
+            'Completed' = 9
+        }
+        if ($Status) {
+            $csv = ($statuses[$Status] -join ',')
+            $statusq = "AND e.[Status] in ($csv)"
+        }
+        else {
+            $statusq = ''
+        }
+        
+        if ($Project) {
+            $csv = "`"" + ($Project -join '","') + "`""
+            $projectq = "AND e.[ProjectName] in ($csv)"
+        }
+        else {
+            $projectq = ''
+        }
+        
+        if ($Folder) {
+            $csv = "`'" + ($Folder -join "'", "'") + "`'"
+            $folderq = "AND e.[FolderName] in ($csv)"
+        }
+        else {
+            $folderq = ''
+        }
+        
+        if ($Environment) {
+            $csv = "`'" + ($Environment -join "'", "'") + "`'"
+            $environmentq = "AND e.[Environment] in ($csv)"
+        }
+        else {
+            $environmentq = ''
+        }
+        
+        $sql = "
             WITH
             cteLoglevel as (
                 SELECT
-                    execution_id,
-                    cast(parameter_value AS INT) AS logging_level
+                    execution_id as ExecutionID,
+                    cast(parameter_value AS INT) AS LoggingLevel
                 FROM
                     [catalog].[execution_parameter_values]
                 WHERE
@@ -120,33 +132,33 @@ function Get-DbaSsisExecutionHistory {
                     ,[code]
                 FROM (
                     VALUES
-                          ( 1,'created'  )
-                        , ( 2,'running'  )
-                        , ( 3,'cancelled')
-                        , ( 4,'failed'	  )
-                        , ( 5,'pending'  )
-                        , ( 6,'halted'	  )
-                        , ( 7,'succeeded')
-                        , ( 8,'stopping' )
-                        , ( 9,'completed')
+                          ( 1,'Created'  )
+                        , ( 2,'Running'  )
+                        , ( 3,'Cancelled')
+                        , ( 4,'Failed'   )
+                        , ( 5,'Pending'  )
+                        , ( 6,'Halted'   )
+                        , ( 7,'Succeeded')
+                        , ( 8,'Stopping' )
+                        , ( 9,'Completed')
                 ) codes([key],[code])
             )
             SELECT
-                      e.execution_id
-                    , e.folder_name
-                    , e.project_name
-                    , e.package_name
-                    , e.project_lsn
-                    , environment = isnull(e.environment_folder_name, '') + isnull('\' + e.environment_name,  '')
-                    , s.code AS status_code
-                    , start_time
-                    , end_time
-                    , elapsed_time_min = DATEDIFF(ss, e.start_time, e.end_time)
-                    , l.logging_level
+                      e.execution_id as ExecutionID
+                    , e.folder_name as FolderName
+                    , e.project_name as ProjectName
+                    , e.package_name as PackageName
+                    , e.project_lsn as ProjectLsn
+                    , Environment = isnull(e.environment_folder_name, '') + isnull('\' + e.environment_name,  '')
+                    , s.code AS StatusCode
+                    , start_time as StartTime
+                    , end_time as EndTime
+                    , ElapsedMinutes = DATEDIFF(ss, e.start_time, e.end_time)
+                    , l.LoggingLevel
             FROM
                 [catalog].executions e
                 LEFT OUTER JOIN cteLoglevel l
-                    ON e.execution_id = l.execution_id
+                    ON e.execution_id = l.ExecutionID
                 LEFT OUTER JOIN cteStatus s
                     ON s.[key] = e.status
             WHERE 1=1
@@ -154,22 +166,16 @@ function Get-DbaSsisExecutionHistory {
                 $projectq
                 $folderq
                 $environmentq
-                OPTION  ( RECOMPILE );
-"@
+                OPTION  ( RECOMPILE );"
     }
     process {
-        if ($pscmdlet.ShouldProcess("$SqlInstance", "Get History")){
-            foreach ($instance in $SqlInstance) {
-                $x = Invoke-DbaSqlQuery -SqlInstance $instance -Database SSISDB -Query $q -as PSObject -Verbose -SqlCredential $SqlCredential
-                foreach($row in $x) {
-                    $row.start_time = [dbadatetime]$row.start_time.DateTime
-                    $row.end_time = [dbadatetime]$row.end_time.DateTime 
-                    $row
-                }
+        foreach ($instance in $SqlInstance) {
+            $results = Invoke-DbaSqlQuery -SqlInstance $instance -Database SSISDB -Query $sql -as PSObject -SqlCredential $SqlCredential
+            foreach ($row in $results) {
+                $row.start_time = [dbadatetime]$row.StartTime.DateTime
+                $row.end_time = [dbadatetime]$row.EndTime.DateTime
+                $row
             }
-        }
-        else{
-            $q
         }
     }
 }
