@@ -129,9 +129,11 @@ function Copy-DbaServerAudit {
                 
                 if ($destAudits.Name -contains $auditName) {
                     if ($force -eq $false) {
-                        $copyAuditStatus.Status = "Skipped"
-                        $copyAuditStatus.Notes = "Already exists"
-                        Write-Message -Level Verbose -Message "Server audit $auditName exists at destination. Use -Force to drop and migrate."
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Server audit $auditName exists at destination. Use -Force to drop and migrate.")) {
+                            $copyAuditStatus.Status = "Skipped"
+                            $copyAuditStatus.Notes = "Already exists"
+                            Write-Message -Level Verbose -Message "Server audit $auditName exists at destination. Use -Force to drop and migrate."
+                        }
                         continue
                     }
                     else {
@@ -158,13 +160,13 @@ function Copy-DbaServerAudit {
                     }
                 }
                 
-                if ($null -ne ($currentAudit.Filepath) -AND (Test-DbaSqlPath -SqlInstance $destServer -Path $currentAudit.Filepath) -eq $false) {
+                if ($null -ne ($currentAudit.Filepath) -and -not (Test-DbaSqlPath -SqlInstance $destServer -Path $currentAudit.Filepath)) {
                     if ($Force -eq $false) {
-                        Write-Message -Level Verbose -Message "$($currentAudit.Filepath) does not exist on $destinstance. Skipping $auditName. Specify -Force to create the directory."
-                        
-                        $copyAuditStatus.Status = "Skipped"
-                        $copyAuditStatus.Notes = "Already exists"
-                        $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        if ($Pscmdlet.ShouldProcess($destinstance, "$($currentAudit.Filepath) does not exist on $destinstance. Skipping $auditName. Specify -Force to create the directory.")) {
+                            $copyAuditStatus.Status = "Skipped"
+                            $copyAuditStatus.Notes = "$($currentAudit.Filepath) does not exist on $destinstance. Skipping $auditName. Specify -Force to create the directory."
+                            $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
                         continue
                     }
                     else {
@@ -176,15 +178,15 @@ function Copy-DbaServerAudit {
                         $rootUnc = Join-AdminUnc $destNetBios $root
                         
                         if ((Test-Path $rootUnc) -eq $true) {
-                            try {
-                                if ($Pscmdlet.ShouldProcess($destinstance, "Creating directory $($currentAudit.Filepath)")) {
-                                    $null = New-Item -ItemType Directory $currentAudit.Filepath -ErrorAction Continue
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Creating directory $($currentAudit.Filepath)")) {
+                                try {
+                                    $null = New-DbaSqlDirectory -SqlInstance $destServer -Path $currentAudit.Filepath -EnableException
                                 }
-                            }
-                            catch {
-                                Write-Message -Level Verbose -Message "Couldn't create directory $($currentAudit.Filepath). Using default data directory."
-                                $datadir = Get-SqlDefaultPaths $destServer data
-                                $sql = $sql.Replace($currentAudit.FilePath, $datadir)
+                                catch {
+                                    Write-Message -Level Warning -Message "Couldn't create directory $($currentAudit.Filepath). Using default data directory."
+                                    $datadir = Get-SqlDefaultPaths $destServer data
+                                    $sql = $sql.Replace($currentAudit.FilePath, $datadir)
+                                }
                             }
                         }
                         else {
