@@ -976,10 +976,11 @@ function Copy-DbaDatabase {
                             if (-not $backupTmpResult) {
                                 $backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -BackupDirectory $NetworkShare -FileCount $numberfiles -CopyOnly:$CopyOnly
                             }
-                            if (-not $backupTmpResult) { continue }
-                            $backupCollection += $backupTmpResult
+                            if ($backupTmpResult) {
+                                $backupCollection += $backupTmpResult
+                            }
                             $backupResult = $BackupTmpResult.BackupComplete
-                            if ($backupResult -eq $false) {
+                            if (-not $backupResult) {
                                 $serviceAccount = $sourceServer.ServiceAccount
                                 Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($NetworkShare)? Aborting routine for this database."
 
@@ -1021,8 +1022,32 @@ function Copy-DbaDatabase {
                                     continue
                                 }
                             }
+                            if (-not $NoBackupCleanUp -and $Destination.Count -eq 1) {
+                                foreach ($backupFile in ($backupTmpResult.BackupPath)) {
+                                    try {
+                                        if (Test-Path $backupFile -ErrorAction Stop) {
+                                            Write-Message -Level Verbose -Message "Deleting $backupFile."
+                                            Remove-Item $backupFile -ErrorAction Stop
+                                        }
+                                    }
+                                    catch {
+                                        try {
+                                            Write-Message -Level Verbose -Message "Trying alternate SQL method to delete $backupFile."
+                                            $sql = "EXEC master.sys.xp_delete_file 0, '$backupFile'"
+                                            Write-Message -Level Debug -Message $sql
+                                            $null = $sourceServer.Query($sql)
+                                        }
+                                        catch {
+                                            Write-Message -Level Verbose -Message "Cannot delete backup file $backupFile."
+                                            
+                                            # Set NoBackupCleanup so that there's a warning at the end
+                                            $NoBackupCleanup = $true
+                                        }
+                                    }
+                                }
+                            }
                         }
-
+                        
                         $dbFinish = Get-Date
                         if ($NoRecovery -eq $false) {
                             # needed because the newly restored database doesn't show up
@@ -1185,7 +1210,7 @@ function Copy-DbaDatabase {
         }
     }
     end {
-        if (-not $NoBackupCleanUp) {
+        if (-not $NoBackupCleanUp -and $Destination.Count -gt 1) {
             foreach ($backupFile in ($backupCollection.BackupPath)) {
                 try {
                     if (Test-Path $backupFile -ErrorAction Stop) {
