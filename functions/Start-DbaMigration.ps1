@@ -339,7 +339,7 @@ function Start-DbaMigration {
         if (-not $NoSysDbUserObjects) {
             Write-Message -Level Verbose -Message "Migrating user objects in system databases (this can take a second)."
             If ($Pscmdlet.ShouldProcess($destination, "Copying user objects.")) {
-                Copy-DbaSysDbUserObject -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
+                Copy-DbaSysDbUserObject -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$force
             }
         }
 
