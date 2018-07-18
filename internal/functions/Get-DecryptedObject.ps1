@@ -26,7 +26,7 @@
         $smkbytes = $server.Query($sql).smk
     }
     catch {
-        Stop-Function -Message "Can't run query." -Target $server -ErrorRecord $_
+        Stop-Function -Message "Can't execute query on $sourcename" -Target $server -ErrorRecord $_
         return
     }
     
@@ -43,7 +43,7 @@
         }
     }
     catch {
-        Stop-Function -Message "Can't access registry keys on $sourceName. Quitting." -Target $server ErrorRecord $_
+       Stop-Function -Message "Can't access registry keys on $sourceName. Do you have administrative access to the Windows registry on $sourcename? Otherwise, we're out of ideas." -Target $source
         return
     }
     
@@ -58,7 +58,7 @@
         }
     }
     catch {
-        Stop-Function -Message "Can't unprotect registry data on $($source.Name)). Quitting." -Target $server -ErrorRecord $_
+        Stop-Function -Message "Can't unprotect registry data on $sourcename. Do you have administrative access to the Windows registry on $sourcename? Otherwise, we're out of ideas." -Target $source
         return
     }
     
@@ -66,7 +66,7 @@
     # Choose IV length based on the algorithm
     if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
         Write-Message -Level Verbose -Message "ServiceKey found: $serviceKey.Length"
-        Stop-Function -Message "Unknown key size. Do you have administrative access to the Windows registry on $sourcename?" -Target $source
+        Stop-Function -Message "Unknown key size. Do you have administrative access to the Windows registry on $sourcename? Otherwise, we're out of ideas." -Target $source
         return
     }
     
@@ -103,7 +103,7 @@
         }
     }
     catch {
-        Stop-Function -Message "Failure on $sourcename" -Target $source -ErrorRecord $_
+        Stop-Function -Message "Failure enabling DAC on $sourcename" -Target $source -ErrorRecord $_
     }
     
     <# NOTE: This query is accessing syslnklgns table. Can only be done via the DAC connection #>
@@ -141,7 +141,7 @@
         }
     }
     catch {
-        Stop-Function -Message "Can't establish local DAC connection." -Target $server -ErrorRecord $_
+        Stop-Function -Message "Can't establish local DAC connection on $sourcename." -Target $server -ErrorRecord $_
         return
     }
     
@@ -153,7 +153,7 @@
                 $server.Configuration.Alter()
             }
             catch {
-                Stop-Function -Message "Can't establish local DAC connection on $server" -Target $server -ErrorRecord $_
+                Stop-Function -Message "Can't establish local DAC connection on $sourcename" -Target $server -ErrorRecord $_
                 return
             }
         }
