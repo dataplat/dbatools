@@ -483,7 +483,8 @@
         'Remove-DbaRegisteredServer',
         'Remove-DbaRegisteredServerGroup',
         'Get-DbaPlanCache',
-        'Clear-DbaPlanCache'
+        'Clear-DbaPlanCache',
+        'Get-DbaSsisExecutionHistory'
     )
 
     # Cmdlets to export from this module
