@@ -102,12 +102,12 @@ function Copy-DbaQueryStoreConfig {
             
             foreach ($destinationServer in $destinstance) {
                 
-                Write-Message -Message "Connecting to destination: $destinstance." -Level Verbose
                 try {
-                    $destServer = Connect-SqlInstance -SqlInstance $destinstanceServer -SqlCredential $DestinationSqlCredential
+                    Write-Message -Level Verbose -Message "Connecting to $destinstance"
+                    $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
                 }
                 catch {
-                    Stop-Function -Message "Can't connect to $destinationServer." -ErrorRecord $_ -Target $destinationServer -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
                 }
                 
                 # We have to exclude all the system databases since they cannot have the Query Store feature enabled
