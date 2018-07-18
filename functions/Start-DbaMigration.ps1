@@ -199,7 +199,7 @@ function Start-DbaMigration {
         [parameter(Position = 1, Mandatory = $true)]
         [DbaInstanceParameter]$Source,
         [parameter(Position = 2, Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,
+        [DbaInstanceParameter[]]$Destination,
         [parameter(Position = 3, Mandatory = $true, ParameterSetName = "DbAttachDetach")]
         [switch]$DetachAttach,
         [parameter(Position = 4, ParameterSetName = "DbAttachDetach")]
@@ -207,7 +207,7 @@ function Start-DbaMigration {
         [parameter(Position = 5, Mandatory = $true, ParameterSetName = "DbBackup")]
         [switch]$BackupRestore,
         [parameter(Position = 6, Mandatory = $true, ParameterSetName = "DbBackup",
-            HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
+                   HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
         [string]$NetworkShare,
         [parameter(Position = 7, ParameterSetName = "DbBackup")]
         [switch]$WithReplace,
@@ -266,317 +266,142 @@ function Start-DbaMigration {
     begin {
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         $started = Get-Date
-
         $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-        $source = $sourceserver.DomainInstanceName
-        $destination = $destserver.DomainInstanceName
+        if ($BackupRestore -eq $false -and $DetachAttach -eq $false -and $NoDatabases -eq $false) {
+            Stop-Function -Message "You must specify a database migration method (-BackupRestore or -DetachAttach) or -NoDatabases"
+            return
+        }
+
+        if (-not $NoDatabases) {
+            if (-not $DetachAttach -and !$BackupRestore) {
+                Stop-Function -Message "You must specify a migration method using -BackupRestore or -DetachAttach."
+                return
+            }
+        }
     }
 
     process {
+        if (Test-FunctionInterrupt) { return }
 
-        if ($BackupRestore -eq $false -and $DetachAttach -eq $false -and $NoDatabases -eq $false) {
-            throw "You must specify a database migration method (-BackupRestore or -DetachAttach) or -NoDatabases"
+        if (-not $NoSpConfigure) {
+            Write-Message -Level Verbose -Message "Migrating SQL Server Configuration"
+            Copy-DbaSpConfigure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
         }
 
-        if (!$NoSpConfigure) {
-            Write-Message -Level Verbose -Message "Migrating SQL Server Configuration."
-            try {
-                Copy-DbaSpConfigure -Source $sourceserver -Destination $destserver
-            }
-            catch {
-                Write-Message -Level Warning -Message "Configuration migration reported the following error $($_.Exception.Message)."
-            }
+        if (-not $NoCustomErrors) {
+            Write-Message -Level Verbose -Message "Migrating custom errors (user defined messages)"
+            Copy-DbaCustomError -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
-
-        if (!$NoCustomErrors) {
-            Write-Message -Level Verbose -Message "Migrating custom errors (user defined messages)."
-            try {
-                Copy-DbaCustomError -Source $sourceserver -Destination $destserver -Force:$Force
-            }
-            catch {
-                Write-Message -Level Warning -Message "Couldn't copy custom errors."
-            }
+        if (-not $NoCredentials) {
+            Write-Message -Level Verbose -Message "Migrating SQL credentials"
+            Copy-DbaCredential -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
-        if (!$NoCredentials) {
-            if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
-                Write-Message -Level Verbose -Message "Credentials are only supported in SQL Server 2005 and above. Skipping."
-            }
-            else {
-                Write-Message -Level Verbose -Message "Migrating SQL credentials."
-                try {
-                    Copy-DbaCredential -Source $sourceserver -Destination $destserver -Force:$Force
-                }
-                catch {
-                    Write-Message -Level Warning -Message "Credential migration reported the following error $($_.Exception.Message)."
-                }
-            }
+        if (-not $NoDatabaseMail) {
+            Write-Message -Level Verbose -Message "Migrating database mail"
+            Copy-DbaDatabaseMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
-        if (!$NoDatabaseMail) {
-            if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
-                Write-Message -Level Verbose -Message "Database Mail is only supported in SQL Server 2005 and above. Skipping."
-            }
-            else {
-                Write-Message -Level Verbose -Message "Migrating database mail."
-                try {
-                    Copy-DbaDatabaseMail -Source $sourceserver -Destination $destserver -Force:$Force
-                }
-                catch {
-                    Write-Message -Level Warning -Message "Database mail migration reported the following error $($_.Exception.Message)."
-                }
-            }
-        }
-
-        if (!$NoSysDbUserObjects) {
+        if (-not $NoSysDbUserObjects) {
             Write-Message -Level Verbose -Message "Migrating user objects in system databases (this can take a second)."
-            try {
-                If ($Pscmdlet.ShouldProcess($destination, "Copying user objects.")) {
-                    Copy-DbaSysDbUserObject -Source $sourceserver -Destination $destserver
-                }
-
-            }
-            catch {
-                Write-Message -Level Warning -Message "Couldn't copy all user objects in system databases."
+            If ($Pscmdlet.ShouldProcess($destination, "Copying user objects.")) {
+                Copy-DbaSysDbUserObject -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
             }
         }
 
-        if (!$NoCentralManagementServer) {
-            if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
-                Write-Message -Level Verbose -Message "Central Management Server is only supported in SQL Server 2008 and above. Skipping."
-            }
-            else {
-                Write-Message -Level Verbose -Message "Migrating Central Management Server."
-                try {
-                    Copy-DbaCentralManagementServer -Source $sourceserver -Destination $destserver -Force:$Force
-                }
-                catch {
-                    Write-Message -Level Warning -Message "Central Management Server migration reported the following error $($_.Exception.Message)."
-                }
-            }
+        if (-not $NoCentralManagementServer) {
+            Write-Message -Level Verbose -Message "Migrating Central Management Server"
+            Copy-DbaCentralManagementServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
-        if (!$NoBackupDevices) {
-            Write-Message -Level Verbose -Message "Migrating Backup Devices."
-            try {
-                Copy-DbaBackupDevice -Source $sourceserver -Destination $destserver -Force:$Force
-            }
-            catch {
-                Write-Message -Level Warning -Message "Backup device migration reported the following error $($_.Exception.Message)."
-            }
+        if (-not $NoBackupDevices) {
+            Write-Message -Level Verbose -Message "Migrating Backup Devices"
+            Copy-DbaBackupDevice -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
-        if (!$NoLinkedServers) {
-            Write-Message -Level Verbose -Message "Migrating linked servers."
-            try {
-                Copy-DbaLinkedServer -Source $sourceserver -Destination $destserver -Force:$Force
-            }
-            catch {
-                Write-Message -Level Warning -Message "Linked server migration reported the following error $($_.Exception.Message)."
-            }
+        if (-not $NoLinkedServers) {
+            Write-Message -Level Verbose -Message "Migrating linked servers"
+            Copy-DbaLinkedServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
-        if (!$NoSystemTriggers) {
-            if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
-                Write-Message -Level Verbose -Message "Server Triggers are only supported in SQL Server 2008 and above. Skipping."
-            }
-            else {
-                Write-Message -Level Verbose -Message "Migrating System Triggers."
-                try {
-                    Copy-DbaServerTrigger -Source $sourceserver -Destination $destserver -Force:$Force
-                }
-                catch {
-                    Write-Message -Level Warning -Message "System Triggers migration reported the following error $($_.Exception.Message)."
-                }
-            }
+        if (-not $NoSystemTriggers) {
+            Write-Message -Level Verbose -Message "Migrating System Triggers"
+            Copy-DbaServerTrigger -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
-        if (!$NoDatabases) {
-            # Test some things
-            if ($networkshare.length -gt 0) {
-                $netshare += "-NetworkShare $NetworkShare"
-            }
-            if (!$DetachAttach -and !$BackupRestore) {
-                throw "You must specify a migration method using -BackupRestore or -DetachAttach."
-            }
+        if (-not $NoDatabases) {
             # Do it
-            Write-Message -Level Verbose -Message "`nMigrating databases."
-            try {
-                if ($BackupRestore) {
-                    Copy-DbaDatabase -Source $sourceserver -Destination $destserver -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs
-                }
-                else {
-                    Copy-DbaDatabase -Source $sourceserver -Destination $destserver -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -IncludeSupportDbs:$IncludeSupportDbs
-                }
-            }
-            catch {
-                Write-Message -Level Warning -Message "Database migration reported the following error $($_.Exception.Message)."
-            }
-        }
-
-
-        if (!$NoLogins) {
-            Write-Message -Level Verbose -Message "Migrating logins."
-            try {
-                if ($NoSaRename -eq $false) {
-                    Copy-DbaLogin -Source $sourceserver -Destination $destserver -Force:$Force -SyncSaName
-                }
-                else {
-                    Copy-DbaLogin -Source $sourceserver -Destination $destserver -Force:$Force
-                }
-            }
-            catch {
-                Write-Message -Level Warning -Message "Login migration reported the following error $($_.Exception.Message)."
-            }
-        }
-
-        if (!$NoLogins -and !$NoDatabases -and !$NoRecovery) {
-            Write-Message -Level Verbose -Message "Updating database owners to match newly migrated logins."
-            try {
-                $null = Update-SqlDbOwner -Source $sourceserver -Destination $destserver
-            }
-            catch {
-                Write-Message -Level Warning -Message "Login migration reported the following error $($_.Exception.Message)."
-            }
-        }
-
-        if (!$NoDataCollector) {
-            if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
-                Write-Message -Level Verbose -Message "Data Collection sets are only supported in SQL Server 2008 and above. Skipping."
+            Write-Message -Level Verbose -Message "Migrating databases"
+            if ($BackupRestore) {
+                Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs
             }
             else {
-                Write-Message -Level Verbose -Message "Migrating Data Collector collection sets."
-                try {
-                    Copy-DbaSqlDataCollector -Source $sourceserver -Destination $destserver -Force:$Force
-                }
-                catch {
-                    Write-Message -Level Warning -Message "Job Server migration reported the following error $($_.Exception.Message)."
-                }
+                Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -IncludeSupportDbs:$IncludeSupportDbs
             }
         }
 
-
-        if (!$NoAudits) {
-            if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
-                Write-Message -Level Verbose -Message "Server Audit Specifications are only supported in SQL Server 2008 and above. Skipping."
-            }
-            else {
-                Write-Message -Level Verbose -Message "Migrating Audits."
-                try {
-                    Copy-DbaServerAudit -Source $sourceserver -Destination $destserver -Force:$Force
-                }
-                catch {
-                    Write-Message -Level Warning -Message "Backup device migration reported the following error $($_.Exception.Message)."
-                }
-            }
+        if (-not $NoLogins) {
+            Write-Message -Level Verbose -Message "Migrating logins"
+            $syncit = $NoSaRename -eq $false
+            Copy-DbaLogin -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force -SyncSaName:$syncit
         }
 
-        if (!$NoServerAuditSpecifications) {
-            if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
-                Write-Message -Level Verbose -Message "Server Audit Specifications are only supported in SQL Server 2008 and above. Skipping."
-            }
-            else {
-                Write-Message -Level Verbose -Message "Migrating Server Audit Specifications."
-                try {
-                    Copy-DbaServerAuditSpecification -Source $sourceserver -Destination $destserver -Force:$Force
-                }
-                catch {
-                    Write-Message -Level Warning -Message "Server Audit Specification migration reported the following error $($_.Exception.Message)."
-                }
+        if (-not $NoLogins -and -not $NoDatabases -and -not $NoRecovery) {
+            Write-Message -Level Verbose -Message "Updating database owners to match newly migrated logins"
+            foreach ($dest in $Destination) {
+                $null = Update-SqlDbOwner -Source $sourceserver -Destination $dest -DestinationSqlCredential $DestinationSqlCredential
             }
         }
-
-        if (!$NoEndpoints) {
-            if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
-                Write-Message -Level Verbose -Message "Server Endpoints are only supported in SQL Server 2008 and above. Skipping."
-            }
-            else {
-                Write-Message -Level Verbose -Message "Migrating Endpoints."
-                try {
-                    Copy-DbaEndpoint -Source $sourceserver -Destination $destserver -Force:$Force
-                }
-                catch {
-                    Write-Message -Level Warning -Message "Backup device migration reported the following error $($_.Exception.Message)."
-                }
-            }
+        
+        if (-not $NoDataCollector) {
+            Write-Message -Level Verbose -Message "Migrating Data Collector collection sets"
+            Copy-DbaSqlDataCollector -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
-
-        if (!$NoPolicyManagement) {
-            if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
-                Write-Message -Level Verbose -Message "Policy Management is only supported in SQL Server 2008 and above. Skipping."
-            }
-            else {
-                Write-Message -Level Verbose -Message "Migrating Policy Management."
-                try {
-                    Copy-DbaSqlPolicyManagement -Source $sourceserver -Destination $destserver -Force:$Force
-                }
-                catch {
-                    Write-Message -Level Warning -Message "Policy Management migration reported the following error $($_.Exception.Message)."
-                }
-            }
+        if (-not $NoAudits) {
+            Write-Message -Level Verbose -Message "Migrating Audits"
+            Copy-DbaServerAudit -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
-        if (!$NoResourceGovernor) {
-            if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
-                Write-Message -Level Verbose -Message "Resource Governor is only supported in SQL Server 2008 and above. Skipping."
-            }
-            else {
-                Write-Message -Level Verbose -Message "Migrating Resource Governor."
-                try {
-                    Copy-DbaResourceGovernor -Source $sourceserver -Destination $destserver -Force:$Force
-                }
-                catch {
-                    Write-Message -Level Warning -Message "Resource Governor migration reported the following error $($_.Exception.Message)."
-                }
-            }
+        if (-not $NoServerAuditSpecifications) {
+            Write-Message -Level Verbose -Message "Migrating Server Audit Specifications"
+            Copy-DbaServerAuditSpecification -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
-        if (!$NoExtendedEvents) {
-            if ($sourceserver.versionMajor -lt 11 -or $destserver.versionMajor -lt 11) {
-                Write-Message -Level Verbose -Message "Extended Events are only supported in SQL Server 2012 and above. Skipping."
-            }
-            else {
-                Write-Message -Level Verbose -Message "Migrating Extended Events."
-                try {
-                    Copy-DbaExtendedEvent -Source $sourceserver -Destination $destserver -Force:$Force
-                }
-                catch {
-                    Write-Message -Level Warning -Message "Extended Event migration reported the following error $($_.Exception.Message)."
-                }
-            }
+        if (-not $NoEndpoints) {
+            Write-Message -Level Verbose -Message "Migrating Endpoints"
+            Copy-DbaEndpoint -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
-        if (!$NoAgentServer) {
-            Write-Message -Level Verbose -Message "Migrating job server."
-            try {
-                Copy-DbaSqlServerAgent -Source $sourceserver -Destination $destserver -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
-            }
-            catch {
-                Write-Message -Level Warning -Message "Job Server migration reported the following error $($_.Exception.Message)."
-            }
+        if (-not $NoPolicyManagement) {
+            Write-Message -Level Verbose -Message "Migrating Policy Management"
+            Copy-DbaSqlPolicyManagement -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
+        if (-not $NoResourceGovernor) {
+            Write-Message -Level Verbose -Message "Migrating Resource Governor"
+            Copy-DbaResourceGovernor -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+        }
+
+        if (-not $NoExtendedEvents) {
+            Write-Message -Level Verbose -Message "Migrating Extended Events"
+            Copy-DbaExtendedEvent -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+        }
+
+        if (-not $NoAgentServer) {
+            Write-Message -Level Verbose -Message "Migrating job server"
+            Copy-DbaSqlServerAgent -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
+        }
     }
 
     end {
+        if (Test-FunctionInterrupt) { return }
         $totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
-
-        if ($sourceserver.ConnectionContext.IsOpen -eq $true) {
-            $sourceserver.ConnectionContext.Disconnect()
-        }
-        if ($destserver.ConnectionContext.IsOpen -eq $true) {
-            $destserver.ConnectionContext.Disconnect()
-        }
-
-        If ($Pscmdlet.ShouldProcess("console", "Showing SQL Server migration finished message")) {
-            Write-Message -Level Verbose -Message "SQL Server migration complete."
-            Write-Message -Level Verbose -Message "Migration started: $started"
-            Write-Message -Level Verbose -Message "Migration completed: $(Get-Date)"
-            Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
-        }
+        Write-Message -Level Verbose -Message "SQL Server migration complete."
+        Write-Message -Level Verbose -Message "Migration started: $started"
+        Write-Message -Level Verbose -Message "Migration completed: $(Get-Date)"
+        Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
     }
 }
