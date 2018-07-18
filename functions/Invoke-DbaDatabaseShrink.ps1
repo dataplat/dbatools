@@ -1,5 +1,5 @@
 function Invoke-DbaDatabaseShrink {
-<#
+    <#
         .SYNOPSIS
             Shrinks all files in a database. This is a command that should rarely be used.
 
@@ -196,13 +196,11 @@ function Invoke-DbaDatabaseShrink {
 
                 $files = @()
                 if ($FileType -in ('Log','All')) {
-                    $files += $db.LogFiles #| Select-Object name, size, usedspace
+                    $files += $db.LogFiles
                 }
                 if ($FileType -in ('Data','All')) {
-                    $files += $db.FileGroups.Files #| Select-Object name, size, usedspace
+                    $files += $db.FileGroups.Files
                 }
-
-            #$object = [PSCustomObject]@{}
 
                 foreach($file in $files) {
                     try {
@@ -219,7 +217,7 @@ function Invoke-DbaDatabaseShrink {
                     }
                     catch {
                         $success = $false
-                        Stop-Function -message "Shrink Failed:  $($_.Exception.InnerException)"  -EnableException $EnableException -ErrorRecord $_ -Continue
+                        Stop-Function -message "Shrink Failed: $($_.Exception.InnerException)" -EnableException $EnableException -ErrorRecord $_ -Continue
                         continue
                     }
 
@@ -245,13 +243,6 @@ function Invoke-DbaDatabaseShrink {
                                 $file.Refresh()
                                 $success = $true
                                 $notes = $null
-
-                                Write-Message -Level Verbose -Message "Recalculating space usage"
-
-                                ##????
-                                #if (-not $ExcludeUpdateUsage) {
-                                #    $db.RecalculateSpaceUsage()
-                                #}
                             }
                             catch {
                                 $success = $false
@@ -300,7 +291,6 @@ function Invoke-DbaDatabaseShrink {
                                 EndingTopIndexFragmentation   = [math]::Round($endingTopDefrag, 1)
                                 Notes                         = $notes
                             }
-
                             if ($ExcludeIndexStats) {
                                 Select-DefaultView -InputObject $object -ExcludeProperty StartingAvgIndexFragmentation, EndingAvgIndexFragmentation, StartingTopIndexFragmentation, EndingTopIndexFragmentation
                             }
@@ -309,62 +299,7 @@ function Invoke-DbaDatabaseShrink {
                             }
                         }
                     }
-
-                    #if ($Pscmdlet.ShouldProcess("$db on $instance", "Showing results")) {
-                    #    if ($null -eq $notes -and $FileType -ne 'Log') {
-                    #        $notes = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
-                    #    }
-                    #    $object = [PSCustomObject]@{
-                    #        ComputerName                  = $server.ComputerName
-                    #        InstanceName                  = $server.ServiceName
-                    #        SqlInstance                   = $server.DomainInstanceName
-                    #        Database                      = $db.name
-                    #        Start                         = $start
-                    #        End                           = $end
-                    #        Elapsed                       = $elapsed
-                    #        Success                       = $success
-                    #        StartingTotalSizeMB           = [math]::Round($startingSize, 2)
-                    #        StartingUsedMB                = [math]::Round($spaceUsed, 2)
-                    #        FinalTotalSizeMB              = [math]::Round($db.size, 2)
-                    #        StartingAvailableMB           = [math]::Round($spaceAvailableMB, 2)
-                    #        DesiredAvailableMB            = [math]::Round($desiredSpaceAvailable, 2)
-                    #        FinalAvailableMB              = [math]::Round(($db.SpaceAvailable / 1024), 2)
-                    #        StartingAvgIndexFragmentation = [math]::Round($startingFrag, 1)
-                    #        EndingAvgIndexFragmentation   = [math]::Round($endingDefrag, 1)
-                    #        StartingTopIndexFragmentation = [math]::Round($startingTopFrag, 1)
-                    #        EndingTopIndexFragmentation   = [math]::Round($endingTopDefrag, 1)
-                    #        Notes                         = $notes
-                    #    }
-                    #}
-                }
-                #if ($ExcludeIndexStats) {
-                #    Select-DefaultView -InputObject $object -ExcludeProperty StartingAvgIndexFragmentation, EndingAvgIndexFragmentation, StartingTopIndexFragmentation, EndingTopIndexFragmentation
-                #}
-                #else {
-                #    $object
-                #}
             }
         }
     }
 }
-
-                            #switch ($FileType) {
-
-                                #}
-                                #default {
-                                #    try {
-                                #        Write-Message -Level Verbose -Message "Beginning shrink of entire database"
-                                #        $db.Shrink($desiredSpaceAvailable, $ShrinkMethod)
-                                #        $db.Refresh()
-                                #        Write-Message -Level Verbose -Message "Recalculating space usage"
-                                #        if (-not $ExcludeUpdateUsage) { $db.RecalculateSpaceUsage() }
-                                #        $success = $true
-                                #        $notes = $null
-                                #    }
-                                #    catch {
-                                #        $success = $false
-                                #        Stop-Function -message "Shrink Failed:  $($_.Exception.InnerException)" -EnableException $EnableException -ErrorRecord $_ -Continue
-                                #        continue
-                                #    }
-                                #}
-                            #}
