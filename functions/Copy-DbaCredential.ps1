@@ -79,15 +79,15 @@ function Copy-DbaCredential {
 
             Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the Credential already exists on the destination, it will be dropped and recreated.
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]
         $SourceSqlCredential,
         [PSCredential]
         $Credential,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [string[]]$Name,
@@ -156,12 +156,11 @@ function Copy-DbaCredential {
                 Write-Message -Level Verbose -Message "Attempting to migrate $credentialName"
                 try {
                     $currentCred = $sourceCredentials | Where-Object { $_.Name -eq "[$credentialName]" }
-                    $identity = $currentCred.Identity
-                    $password = $currentCred.Password
+                    $sqlcredentialName = $credentialName.Replace("'", "''")
+                    $identity = $currentCred.Identity.Replace("'", "''")
+                    $password = $currentCred.Password.Replace("'","''")
                     if ($Pscmdlet.ShouldProcess($destinstance.Name, "Copying $identity")) {
-                        $sql = "CREATE CREDENTIAL [$credentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'"
-                        
-                        $destServer.Query($sql)
+                        $destServer.Query("CREATE CREDENTIAL [$sqlcredentialName] WITH IDENTITY = N'$identity', SECRET = N'$password'")
                         $destServer.Credentials.Refresh()
                         Write-Message -Level Verbose -Message "$credentialName successfully copied"
                     }
