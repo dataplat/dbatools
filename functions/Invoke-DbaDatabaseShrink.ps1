@@ -281,10 +281,10 @@ function Invoke-DbaDatabaseShrink {
                                 Success                       = $success
                                 StartingTotalSizeMB           = [math]::Round($startingSize, 2)
                                 StartingUsedMB                = [math]::Round($spaceUsed, 2)
-                                FinalTotalSizeMB              = [math]::Round($filesize, 2)
+                                FinalTotalSizeMB              = [math]::Round($finalFileSize, 2)
                                 StartingAvailableMB           = [math]::Round($spaceAvailableMB, 2)
                                 DesiredAvailableMB            = [math]::Round($desiredSpaceAvailable, 2)
-                                FinalAvailableMB              = [math]::Round($finalFileSize, 2)
+                                FinalAvailableMB              = [math]::Round($finalSpaceAvailableMB, 2)
                                 StartingAvgIndexFragmentation = [math]::Round($startingFrag, 1)
                                 EndingAvgIndexFragmentation   = [math]::Round($endingDefrag, 1)
                                 StartingTopIndexFragmentation = [math]::Round($startingTopFrag, 1)
