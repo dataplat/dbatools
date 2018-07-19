@@ -18,26 +18,17 @@ Describe "$commandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "CheckForSql works with mount points" {
         Mock -ModuleName 'dbatools' -CommandName 'Connect-SqlInstance' -ParameterFilter { $SqlInstance -in ('MadeUpServer', 'MadeUpServer\MadeUpInstance') } -MockWith {
-            return @{
-                Databases = @(
-                    @{
-                        LogFiles = @(
-                            @{
-                                FileName = 'D:\Data\FakeLog.ldf'
-                            }
-                        )
-                        FileGroups = @(
-                            @{
-                                Files = @(
-                                    @{
-                                        FileName = 'D:\Data\FakeData.mdf'
-                                    }
-                                )
-                            }
-                        )
-                    }
-                )
+            $object = [PSCustomObject] @{
+                Version = @{
+                    Major = 13
+                }
             }
+            $object | Add-Member -Name 'Query' -MemberType ScriptMethod -Value {
+                return @{
+                    SqlDisk = @('D:\Data\')
+                }
+            }
+            return $object
         }
 
         Mock -ModuleName 'dbatools' -CommandName 'Get-DbaSqlService' -ParameterFilter { $ComputerName.ComputerName -eq 'MadeUpServer' } -MockWith {
