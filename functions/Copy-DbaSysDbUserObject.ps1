@@ -166,12 +166,12 @@ function Copy-DbaSysDbUserObject {
                                 try {
                                     Write-Message -Level Debug -Message "$sql"
                                     $null = $destServer.Query($sql, $systemDb)
-                                    $copyobject.Status = "Success"
+                                    $copyobject.Status = "Successful"
                                     $copyobject.Notes = "May have also created dependencies"
                                 }
                                 catch {
                                     $copyobject.Status = "Failed"
-                                    $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                                    $copyobject.Notes = (Get-ErrorMessage -Record $_)
                                 }
                             }
                         }
@@ -224,12 +224,12 @@ function Copy-DbaSysDbUserObject {
                                 try {
                                     Write-Message -Level Debug -Message "$sql"
                                     $null = $destServer.Query($sql, $systemDb)
-                                    $copyobject.Status = "Success"
+                                    $copyobject.Status = "Successful"
                                     $copyobject.Notes = "May have also created dependencies"
                                 }
                                 catch {
                                     $copyobject.Status = "Failed"
-                                    $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                                    $copyobject.Notes = (Get-ErrorMessage -Record $_)
                                 }
                             }
                         }
@@ -272,7 +272,11 @@ function Copy-DbaSysDbUserObject {
                                         "SQL_STORED_PROCEDURE" { $smodb.StoredProcedures.Item($userobject.Name, $userobject.SchemaName) }
                                         "RULE" { $smodb.Rules.Item($userobject.Name, $userobject.SchemaName) }
                                         "SQL_TRIGGER" { $smodb.Triggers.Item($userobject.Name, $userobject.SchemaName) }
+                                        "SQL_TABLE_VALUED_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
+                                        "SQL_INLINE_TABLE_VALUED_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
+                                        "SQL_SCALAR_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
                                     }
+                                    
                                     if ($smobject) {
                                         Write-Message -Level Verbose -Message "Force specified. Dropping $smobject on $destdb on $destinstance using SMO"
                                         $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
@@ -320,18 +324,20 @@ function Copy-DbaSysDbUserObject {
                                     $sql = $transfer.ScriptTransfer()
                                     Write-Message -Level Debug -Message "$sql"
                                     Write-Message -Level Verbose -Message "Adding $smoobject on $destdb on $destinstance"
-                                    $null = $destdb.Query("$sql")
-                                    $copyobject.Status = "Success"
+                                    if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add $type $name to $systemDb")) {
+                                        $null = $destdb.Query("$sql")
+                                    }
+                                    $copyobject.Status = "Successful"
                                     $copyobject.Notes = "May have also installed dependencies"
                                 }
                                 else {
                                     $copyobject.Status = "Failed"
-                                    $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                                    $copyobject.Notes = (Get-ErrorMessage -Record $_)
                                 }
                             }
                             catch {
                                 $copyobject.Status = "Failed"
-                                $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                                $copyobject.Notes = (Get-ErrorMessage -Record $_)
                             }
                         }
                         $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
