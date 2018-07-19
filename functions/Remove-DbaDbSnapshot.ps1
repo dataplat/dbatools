@@ -140,21 +140,12 @@ function Remove-DbaDbSnapshot {
             }
 
             if ($Force) {
-                $db | Remove-DbaDatabase -Confirm:$confirm | Select-DefaultView -Property $defaultprops
+                $db | Remove-DbaDatabase -Confirm:$false | Select-DefaultView -Property $defaultprops
             }
             else {
                 try {
                     if ($Pscmdlet.ShouldProcess("$db on $server", "Drop snapshot")) {
-                        $db.Drop()
-                        $server.Refresh()
-
-                        [pscustomobject]@{
-                            ComputerName   = $server.ComputerName
-                            InstanceName   = $server.ServiceName
-                            SqlInstance    = $server.DomainInstanceName
-                            Database       = $db.name
-                            Status         = "Dropped"
-                        } | Select-DefaultView -Property $defaultprops
+                        $db | Remove-DbaDatabase -Confirm:$false | Select-DefaultView -Property $defaultprops
                     }
                 }
                 catch {
