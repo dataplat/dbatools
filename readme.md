@@ -2,20 +2,13 @@
 
 > PowerShell Core (aka PowerShell 6+) went GA (generally available) and supported in January of 2018. Please be aware at this time we do not support this version of PowerShell. It is on the roadmap but at this time there is no estimated time we will be supporting it.
 
-| Stats  |
-| ------------- |
-| ![PowerShell Gallery](https://img.shields.io/powershellgallery/v/dbatools.svg?style=plastic) |
-| ![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/dbatools.svg?style=plastic) |
-| [![AppVeyor](https://img.shields.io/appveyor/tests/sqlcollaborative/dbatools/master.svg)](https://ci.appveyor.com/project/sqlcollaborative/dbatools/history) |
-| ![GitHub issues](https://img.shields.io/github/issues-raw/sqlcollaborative/dbatools.svg?style=plastic) |
-| ![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/sqlcollaborative/dbatools.svg?style=plastic) |
-| [![GitHub forks](https://img.shields.io/github/forks/badges/shields.svg?style=plastic&label=Forks)](https://github.com/sqlcollaborative/dbatools/network/members) |
-
 <img align="left" src=https://blog.netnerds.net/wp-content/uploads/2016/05/dbatools.png alt="dbatools logo">  dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of [over 400 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
 
 Got ideas for new commands? Please propose them as [issues](https://dbatools.io/issues) and let us know what you'd like to see. Bug reports should also be filed under this repository's [issues](https://github.com/sqlcollaborative/dbatools/issues) section.
 
 There's also over 1400 of us on the [SQL Server Community Slack](https://sqlcommunity.slack.com) in the #dbatools channel. Need an invite? Check out the [self-invite page](https://dbatools.io/slack/). Drop by if you'd like to chat about dbatools or even [join the team](https://dbatools.io/team)!
+
+![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/dbatools.svg?style=plastic) [![AppVeyor](https://img.shields.io/appveyor/tests/sqlcollaborative/dbatools/master.svg)](https://ci.appveyor.com/project/sqlcollaborative/dbatools/history) [![GitHub forks](https://img.shields.io/github/forks/badges/shields.svg?style=plastic&label=Forks)](https://github.com/sqlcollaborative/dbatools/network/members) 
 
 ## Installer
 This module is now in the PowerShell Gallery. Run the following from an administrative prompt to install:
