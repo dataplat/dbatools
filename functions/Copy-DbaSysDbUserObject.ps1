@@ -283,29 +283,28 @@ function Copy-DbaSysDbUserObject {
                                         $dropsql = $transfer.ScriptTransfer()
                                         Write-Message -Level Debug -Message "$dropsql"
                                         if ($PSCmdlet.ShouldProcess($destServer, "Attempting to drop $type $name from $systemDb")) {
-                                            $copyobject.Status = "Dropped on destination first"
-                                            $copyobject.Notes = "$name exists on destination"
                                             $null = $destdb.Query("$dropsql")
                                         }
                                     }
                                     else {
                                         if ($PSCmdlet.ShouldProcess($destServer, "Attempting to drop $type $name from $systemDb using T-SQL")) {
-                                            $copyobject.Status = "Dropped on destination second"
-                                            $copyobject.Notes = "$name exists on destination"
-                                            $null = $destdb.Query("DROP FUNCTION $userobject")
+                                            $null = $destdb.Query("DROP FUNCTION $($userobject.name)")
                                         }
+                                    }
+                                    if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add $type $name to $systemDb")) {
+                                        $null = $destdb.Query("$sql")
+                                        $copyobject.Status = "Successful"
                                     }
                                 }
                             }
                             else {
                                 if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add $type $name to $systemDb")) {
-                                    $null = $destServer.Query($sql, $systemDb)
+                                    $null = $destdb.Query("$sql")
                                     $copyobject.Status = "Successful"
                                 }
                             }
                         }
                         catch {
-                            $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
                             try {
                                 $smobject = switch ($userobject.Type) {
                                     "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
@@ -326,7 +325,6 @@ function Copy-DbaSysDbUserObject {
                                     $copyobject.Notes = "May have also installed dependencies"
                                 }
                                 else {
-                                    Write-Warning $sql
                                     $copyobject.Status = "Failed"
                                     $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
                                 }
