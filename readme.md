@@ -4,6 +4,8 @@
 
 | Stats  |
 | ------------- |
+| ![PowerShell Gallery](https://img.shields.io/powershellgallery/v/dbatools.svg?style=plastic) |
+| ![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/dbatools.svg?style=plastic) |
 | [![AppVeyor](https://img.shields.io/appveyor/tests/sqlcollaborative/dbatools/master.svg)](https://ci.appveyor.com/project/sqlcollaborative/dbatools/history) |
 | ![GitHub issues](https://img.shields.io/github/issues-raw/sqlcollaborative/dbatools.svg?style=plastic) |
 | ![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/sqlcollaborative/dbatools.svg?style=plastic) |
