@@ -71,13 +71,13 @@ function Copy-DbaSysDbUserObject {
         function get-sqltypename ($type) {
             switch ($type) {
                 "VIEW" { "view" }
-                "SQL_TABLE_VALUED_FUNCTION" { "user table valued fsunction" }
-                "DEFAULT_CONSTRAINT" { "user default constraint" }
-                "SQL_STORED_PROCEDURE" { "user stored procedure" }
-                "RULE" { "user rule" }
-                "SQL_INLINE_TABLE_VALUED_FUNCTION" { "user inline table valued function" }
-                "SQL_TRIGGER" { "user server trigger" }
-                "SQL_SCALAR_FUNCTION" { "user scalar function" }
+                "SQL_TABLE_VALUED_FUNCTION" { "User table valued fsunction" }
+                "DEFAULT_CONSTRAINT" { "User default constraint" }
+                "SQL_STORED_PROCEDURE" { "User stored procedure" }
+                "RULE" { "User rule" }
+                "SQL_INLINE_TABLE_VALUED_FUNCTION" { "User inline table valued function" }
+                "SQL_TRIGGER" { "User server trigger" }
+                "SQL_SCALAR_FUNCTION" { "User scalar function" }
                 default { $type }
             }
         }
@@ -116,47 +116,131 @@ function Copy-DbaSysDbUserObject {
             if (-not $Classic) {
                 foreach ($systemDb in $systemDbs) {
                     $smodb = $sourceServer.databases[$systemDb]
-                    $tables = $smodb.Tables | Where-Object IsSystemObject -ne $true
+                    $destdb = $destserver.databases[$systemDb]
                     
-                    foreach ($table in $tables) {
+                    $tables = $smodb.Tables | Where-Object IsSystemObject -ne $true
+                    $schemas = $smodb.Schemas | Where-Object IsSystemObject -ne $true
+                    
+                    foreach ($schema in $schemas) {
                         $copyobject = [pscustomobject]@{
                             SourceServer = $sourceServer.Name
                             DestinationServer = $destServer.Name
-                            Name         = $table.Name
-                            Type         = "Table in $systemDb"
+                            Name         = $schema
+                            Type         = "User schema in $systemDb"
                             Status       = $null
                             Notes        = $null
                             DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
                         
-                        $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
-                        $null = $transfer.CopyAllObjects = $false
-                        $null = $transfer.Options.WithDependencies = $true
-                        $null = $transfer.ObjectList.Add($table)
-                        if ($Force) {
-                            $null = $transfer.DropDestinationObjectsFirst = $true
-                        }
-                        $sql = $transfer.ScriptTransfer()
-                        if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add table $($table.Name) to $systemDb")) {
-                            try {
-                                Write-Message -Level Debug -Message "$sql"
-                                $null = $destServer.Query($sql, $systemDb)
-                                $copyobject.Status = "Success"
-                                $copyobject.Notes = "May have also created dependencies"
+                        $destschema = $destdb.Schemas | Where-Object Name -eq $schema.Name
+                        $schmadoit = $true
+                        
+                        if ($destschema) {
+                            if (-not $force) {
+                                $copyobject.Status = "Skipped"
+                                $copyobject.Notes = "$schema exists on destination"
+                                $schmadoit = $false
                             }
-                            catch {
-                                $copyobject.Status = "Failed"
-                                $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                            else {
+                                if ($PSCmdlet.ShouldProcess($destServer, "Dropping schema $schema in $systemDb")) {
+                                    try {
+                                        Write-Message -Level Verbose -Message "Force specified. Dropping $schema in $destdb on $destinstance"
+                                        $destschema.Drop()
+                                    }
+                                    catch {
+                                        $schmadoit = $false
+                                        $copyobject.Status = "Failed"
+                                        $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.Message
+                                    }
+                                }
                             }
-                            $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
+                        
+                        if ($schmadoit) {
+                            $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
+                            $null = $transfer.CopyAllObjects = $false
+                            $null = $transfer.Options.WithDependencies = $true
+                            $null = $transfer.ObjectList.Add($schema)
+                            $sql = $transfer.ScriptTransfer()
+                            if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add schema $($schema.Name) to $systemDb")) {
+                                try {
+                                    Write-Message -Level Debug -Message "$sql"
+                                    $null = $destServer.Query($sql, $systemDb)
+                                    $copyobject.Status = "Success"
+                                    $copyobject.Notes = "May have also created dependencies"
+                                }
+                                catch {
+                                    $copyobject.Status = "Failed"
+                                    $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                                }
+                            }
+                        }
+                        
+                        $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     
-                    $userobjects = Get-DbaSqlModule -SqlInstance $destServer -Database $systemDb -NoSystemObjects | Sort-Object Type
-                    Write-Message -Level Verbose -Message "Copying from $systemDb."
+                    foreach ($table in $tables) {
+                        $copyobject = [pscustomobject]@{
+                            SourceServer = $sourceServer.Name
+                            DestinationServer = $destServer.Name
+                            Name         = $table
+                            Type         = "User table in $systemDb"
+                            Status       = $null
+                            Notes        = $null
+                            DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+                        }
+                        
+                        $desttable = $destdb.Tables.Item($table.Name, $table.Schema)
+                        $doit = $true
+                        
+                        if ($desttable) {
+                            if (-not $force) {
+                                $copyobject.Status = "Skipped"
+                                $copyobject.Notes = "$table exists on destination"
+                                $doit = $false
+                            }
+                            else {
+                                if ($PSCmdlet.ShouldProcess($destServer, "Dropping table $table in $systemDb")) {
+                                    try {
+                                        Write-Message -Level Verbose -Message "Force specified. Dropping $table in $destdb on $destinstance"
+                                        $desttable.Drop()
+                                    }
+                                    catch {
+                                        $doit = $false
+                                        $copyobject.Status = "Failed"
+                                        $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.Message
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if ($doit) {
+                            $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
+                            $null = $transfer.CopyAllObjects = $false
+                            $null = $transfer.Options.WithDependencies = $true
+                            $null = $transfer.ObjectList.Add($table)
+                            $sql = $transfer.ScriptTransfer()
+                            if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add table $table to $systemDb")) {
+                                try {
+                                    Write-Message -Level Debug -Message "$sql"
+                                    $null = $destServer.Query($sql, $systemDb)
+                                    $copyobject.Status = "Success"
+                                    $copyobject.Notes = "May have also created dependencies"
+                                }
+                                catch {
+                                    $copyobject.Status = "Failed"
+                                    $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                                }
+                            }
+                        }
+                        $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
+                    
+                    $userobjects = Get-DbaSqlModule -SqlInstance $sourceserver -Database $systemDb -NoSystemObjects | Sort-Object Type
+                    Write-Message -Level Verbose -Message "Copying from $systemDb"
                     foreach ($userobject in $userobjects) {
                         
-                        $name = $userobject.Name
+                        $name = "[$($userobject.SchemaName)].[$($userobject.Name)]"
                         $db = $userobject.Database
                         $type = get-sqltypename $userobject.Type
                         $sql = $userobject.Definition
@@ -172,56 +256,87 @@ function Copy-DbaSysDbUserObject {
                             DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
                         Write-Message -Level Debug -Message $sql
-                        if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add $type $name to $systemDb")) {
-                            try {
-                                $null = $destServer.Query($sql, $systemDb)
-                                $copyobject.Status = "Successful"
+                        try {
+                            Write-Message -Level Verbose -Message "Searching for $name in $db on $destinstance"
+                            $result = Get-DbaSqlModule -SqlInstance $destServer -NoSystemObjects -Database $db |
+                            Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
+                            if ($result) {
+                                Write-Message -Level Verbose -Message "Found $name in $db on $destinstance"
+                                if (-not $Force) {
+                                    $copyobject.Status = "Skipped"
+                                    $copyobject.Notes = "$name exists on destination"
+                                }
+                                else {
+                                    $smobject = switch ($userobject.Type) {
+                                        "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
+                                        "SQL_STORED_PROCEDURE" { $smodb.StoredProcedures.Item($userobject.Name, $userobject.SchemaName) }
+                                        "RULE" { $smodb.Rules.Item($userobject.Name, $userobject.SchemaName) }
+                                        "SQL_TRIGGER" { $smodb.Triggers.Item($userobject.Name, $userobject.SchemaName) }
+                                    }
+                                    if ($smobject) {
+                                        Write-Message -Level Verbose -Message "Force specified. Dropping $smobject on $destdb on $destinstance using SMO"
+                                        $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
+                                        $null = $transfer.CopyAllObjects = $false
+                                        $null = $transfer.Options.WithDependencies = $true
+                                        $null = $transfer.ObjectList.Add($smobject)
+                                        $null = $transfer.Options.ScriptDrops = $true
+                                        $dropsql = $transfer.ScriptTransfer()
+                                        Write-Message -Level Debug -Message "$dropsql"
+                                        if ($PSCmdlet.ShouldProcess($destServer, "Attempting to drop $type $name from $systemDb")) {
+                                            $copyobject.Status = "Dropped on destination first"
+                                            $copyobject.Notes = "$name exists on destination"
+                                            $null = $destdb.Query("$dropsql")
+                                        }
+                                    }
+                                    else {
+                                        if ($PSCmdlet.ShouldProcess($destServer, "Attempting to drop $type $name from $systemDb using T-SQL")) {
+                                            $copyobject.Status = "Dropped on destination second"
+                                            $copyobject.Notes = "$name exists on destination"
+                                            $null = $destdb.Query("DROP FUNCTION $userobject")
+                                        }
+                                    }
+                                }
                             }
-                            catch {
-                                $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
-                                if ($msg -match "already an object") {
+                            else {
+                                if ($PSCmdlet.ShouldProcess($destServer, "Attempting to add $type $name to $systemDb")) {
+                                    $null = $destServer.Query($sql, $systemDb)
+                                    $copyobject.Status = "Successful"
+                                }
+                            }
+                        }
+                        catch {
+                            $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                            try {
+                                $smobject = switch ($userobject.Type) {
+                                    "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
+                                    "SQL_STORED_PROCEDURE" { $smodb.StoredProcedures.Item($userobject.Name, $userobject.SchemaName) }
+                                    "RULE" { $smodb.Rules.Item($userobject.Name, $userobject.SchemaName) }
+                                    "SQL_TRIGGER" { $smodb.Triggers.Item($userobject.Name, $userobject.SchemaName) }
+                                }
+                                if ($smobject) {
+                                    $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
+                                    $null = $transfer.CopyAllObjects = $false
+                                    $null = $transfer.Options.WithDependencies = $true
+                                    $null = $transfer.ObjectList.Add($smobject)
+                                    $sql = $transfer.ScriptTransfer()
+                                    Write-Message -Level Debug -Message "$sql"
+                                    Write-Message -Level Verbose -Message "Adding $smoobject on $destdb on $destinstance"
+                                    $null = $destdb.Query("$sql")
+                                    $copyobject.Status = "Success"
+                                    $copyobject.Notes = "May have also installed dependencies"
+                                }
+                                else {
+                                    Write-Warning $sql
                                     $copyobject.Status = "Failed"
                                     $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
                                 }
-                                else {
-                                    try {
-                                        $smobject = switch ($userobject.Type) {
-                                            "VIEW" { $smodb.Views.Item($name, $schema) }
-                                            "SQL_TABLE_VALUED_FUNCTION" { $smodb.UserDefinedFunctions.Item($name, $schema) }
-                                            "SQL_STORED_PROCEDURE" { $smodb.StoredProcedures.Item($name, $schema) }
-                                            "RULE" { $smodb.Rules.Item($name, $schema) }
-                                            "SQL_INLINE_TABLE_VALUED_FUNCTION" { $smodb.UserDefinedFunctions.Item($name, $schema) }
-                                            "SQL_TRIGGER" { $smodb.Triggers.Item($name, $schema) }
-                                            "SQL_SCALAR_FUNCTION" { $smodb.UserDefinedFunctions.Item($name, $schema) }
-                                        }
-                                        
-                                        if ($smobject) {
-                                            $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
-                                            $null = $transfer.CopyAllObjects = $false
-                                            $null = $transfer.Options.WithDependencies = $true
-                                            $null = $transfer.ObjectList.Add($smobject)
-                                            if ($Force) {
-                                                $null = $transfer.DropDestinationObjectsFirst = $true
-                                            }
-                                            $sql = $transfer.ScriptTransfer()
-                                            Write-Message -Level Debug -Message "$sql"
-                                            $null = $smodb.Query($sql)
-                                            $copyobject.Status = "Success"
-                                            $copyobject.Notes = "May have also installed dependencies"
-                                        }
-                                        else {
-                                            $copyobject.Status = "Failed"
-                                            $copyobject.Notes = $msg
-                                        }
-                                    }
-                                    catch {
-                                        $copyobject.Status = "Failed"
-                                        $copyobject.Notes = $msg
-                                    }
-                                }
                             }
-                            $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            catch {
+                                $copyobject.Status = "Failed"
+                                $copyobject.Notes = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                            }
                         }
+                        $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                 }
             }
