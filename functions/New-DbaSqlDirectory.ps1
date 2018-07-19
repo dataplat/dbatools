@@ -16,9 +16,14 @@ function New-DbaSqlDirectory {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
         .NOTES
             Tags: Path, Directory, Folder
-            Author: Chrissy LeMaire (@cl), netnerds.net
+            Author: Stuart Moore
 
             Requires: Admin access to server (not SQL Services),
             Remoting must be enabled and accessible if $SqlInstance is not local
@@ -42,41 +47,49 @@ function New-DbaSqlDirectory {
             If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false. Uses a SqlCredential to connect
     #>
     [CmdletBinding()]
-    [OutputType([bool])]
     param (
         [Parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory = $true)]
         [string]$Path,
-        [PSCredential]$SqlCredential
+        [PSCredential]$SqlCredential,
+        [switch]$EnableException
     )
-
-    $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-
-    $Path = $Path.Replace("'", "''")
-
-    $exists = Test-DbaSqlPath -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Path $Path
-
-    if ($exists) {
-        Write-Warning "$Path already exists"
-        return
-    }
-
-    $sql = "EXEC master.dbo.xp_create_subdir'$path'"
-    Write-Debug $sql
-
-    try {
-        $query = $server.Query($sql)
-        $Created = $true
-    }
-    catch {
-        $Created = $false
-    }
-
-    [pscustomobject]@{
-        Server  = $SqlInstance
-        Path    = $Path
-        Created = $Created
+    
+    foreach ($instance in $SqlInstance) {
+        try {
+            Write-Message -Level Verbose -Message "Connecting to $instance."
+            $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+        }
+        catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        }
+        
+        $Path = $Path.Replace("'", "''")
+        
+        $exists = Test-DbaSqlPath -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Path $Path
+        
+        if ($exists) {
+            Stop-Function -Message "$Path already exists" -Target $server -Continue
+        }
+        
+        $sql = "EXEC master.dbo.xp_create_subdir'$path'"
+        Write-Message -Level Debug -Message $sql
+        
+        try {
+            $query = $server.Query($sql)
+            $Created = $true
+        }
+        catch {
+            $Created = $false
+            Stop-Function -Message "Failure" -ErrorRecord $_
+        }
+        
+        [pscustomobject]@{
+            Server  = $SqlInstance
+            Path    = $Path
+            Created = $Created
+        }
     }
 }
