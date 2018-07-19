@@ -161,14 +161,18 @@ function Get-DbaDiskSpace {
                         Write-Message -Level VeryVerbose -Message "Processing instance $($instanceName)"
                         try {
                             $server = Connect-SqlInstance -SqlInstance $instanceName -SqlCredential $SqlCredential
-
-                            $files = @()
-                            $files += $server.Databases.LogFiles.FileName | Select-Object -Property @{Label = 'Path'; Expression = { (Split-Path -Path $_ -Parent) + [IO.Path]::DirectorySeparatorChar }}
-                            $files += $server.Databases.FileGroups.Files.FileName | Select-Object -Property @{Label = 'Path'; Expression = { (Split-Path -Path $_ -Parent) + [IO.Path]::DirectorySeparatorChar  }}
-
-                            foreach ($file in $files) {
-                                if (-not $sqlDisks.Contains($file.Path)) {
-                                    $null = $sqlDisks.Add($file.Path)
+                            if ($server.Version.Major -lt 9) {
+                                $sql = "SELECT DISTINCT SUBSTRING(physical_name, 1, LEN(physical_name) - CHARINDEX('\', REVERSE(physical_name)) + 1) AS SqlDisk FROM sysaltfiles"
+                            }
+                            else {
+                                $sql = "SELECT DISTINCT SUBSTRING(physical_name, 1, LEN(physical_name) - CHARINDEX('\', REVERSE(physical_name)) + 1) AS SqlDisk FROM sys.master_files"
+                            }
+                            $results = $server.Query($sql)
+                            if ($results.SqlDisk.Count -gt 0) {
+                                foreach ($sqlDisk in $results.SqlDisk) {
+                                    if (-not $sqlDisks.Contains($sqlDisk)) {
+                                        $null = $sqlDisks.Add($sqlDisk)
+                                    }
                                 }
                             }
                         }
