@@ -8,7 +8,7 @@ Got ideas for new commands? Please propose them as [issues](https://dbatools.io/
 
 There's also over 1400 of us on the [SQL Server Community Slack](https://sqlcommunity.slack.com) in the #dbatools channel. Need an invite? Check out the [self-invite page](https://dbatools.io/slack/). Drop by if you'd like to chat about dbatools or even [join the team](https://dbatools.io/team)!
 
-![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/dbatools.svg?style=plastic) [![AppVeyor](https://img.shields.io/appveyor/tests/sqlcollaborative/dbatools/master.svg)](https://ci.appveyor.com/project/sqlcollaborative/dbatools/history) [![GitHub forks](https://img.shields.io/github/forks/badges/shields.svg?style=plastic&label=Forks)](https://github.com/sqlcollaborative/dbatools/network/members) 
+![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/dbatools.svg?style=plastic) [![AppVeyor](https://img.shields.io/appveyor/tests/sqlcollaborative/dbatools/master.svg)](https://ci.appveyor.com/project/sqlcollaborative/dbatools/history) [![GitHub forks](https://img.shields.io/github/forks/badges/shields.svg?style=plastic&label=Forks)](https://github.com/sqlcollaborative/dbatools/network/members) ![GitHub issues](https://img.shields.io/github/issues-raw/sqlcollaborative/dbatools.svg?style=plastic) ![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/sqlcollaborative/dbatools.svg?style=plastic)
 
 ## Installer
 This module is now in the PowerShell Gallery. Run the following from an administrative prompt to install:
