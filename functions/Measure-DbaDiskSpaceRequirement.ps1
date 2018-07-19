@@ -35,8 +35,8 @@ function Measure-DbaDiskSpaceRequirement {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-           Tags: Database, DiskSpace, Migration
-           Author: Pollus Brodeur (@pollusb)
+            Tags: Database, DiskSpace, Migration
+            Author: Pollus Brodeur (@pollusb)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -74,12 +74,15 @@ function Measure-DbaDiskSpaceRequirement {
         [DbaInstanceParameter]$Source,
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [string]$Database,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [PSCredential]$SourceSqlCredential,
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [DbaInstanceParameter]$Destination,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [string]$DestinationDatabase,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [PSCredential]$DestinationSqlCredential,
+        [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [PSCredential]$Credential,
         [Alias('Silent')]
         [switch]$EnableException
@@ -87,7 +90,16 @@ function Measure-DbaDiskSpaceRequirement {
     begin {
         $local:cacheMP = @{}
         $local:cacheDP = @{}
-
+        function Get-MountPoint {
+            [CmdletBinding()]
+            param(
+                [Parameter(Mandatory = $true)]
+                $computerName,
+                [PSCredential]$credential
+            )
+            Get-DbaCmObject -Class Win32_MountPoint -ComputerName $computerName -Credential $credential |
+                Select-Object @{n='Mountpoint';e={$_.Directory.split('=')[1].Replace('"','').Replace('\\','\')}}
+        }
         function Get-MountPointFromPath {
             [CmdletBinding()]
             param(
@@ -99,8 +111,8 @@ function Measure-DbaDiskSpaceRequirement {
             )
             if (!$cacheMP[$computerName]) {
                 try {
-                    $cacheMP.Add($computerName, (Get-DbaDiskSpace -ComputerName $computerName -Credential $Credential -EnableException))
-                    Write-Message -Level Verbose -Message "cacheMP[$computerName] is in cache"
+                    $cacheMP.Add($computerName, (Get-MountPoint -computerName $computerName -credential $credential))
+                    Write-Message -Level Verbose -Message "cacheMP[$computerName] is now cached"
                 }
                 catch {
                     # This way, I won't be asking again for this computer.
@@ -111,9 +123,9 @@ function Measure-DbaDiskSpaceRequirement {
             if ($cacheMP[$computerName] -eq '?') {
                 return '?'
             }
-            foreach ($m in ($cacheMP[$computerName] | Sort-Object -Property Name -Descending)) {
-                if ($path -like "$($m.Name)*") {
-                    return $m.Name
+            foreach ($m in ($cacheMP[$computerName] | Sort-Object -Property Mountpoint -Descending)) {
+                if ($path -like "$($m.Mountpoint)*") {
+                    return $m.Mountpoint
                 }
             }
             Write-Message -Level Warning -Message "Path $path can't be found in any MountPoints of $computerName"
@@ -134,7 +146,7 @@ function Measure-DbaDiskSpaceRequirement {
             if (!$cacheDP[$SqlInstance]) {
                 try {
                     $cacheDP.Add($SqlInstance, (Get-DbaDefaultPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -EnableException))
-                    Write-Message -Level Verbose -Message "cacheDP[$SqlInstance] is in cache"
+                    Write-Message -Level Verbose -Message "cacheDP[$SqlInstance] is now cached"
                 }
                 catch {
                     Stop-Function -Message "Can't connect to $SqlInstance" -Continue
@@ -150,7 +162,7 @@ function Measure-DbaDiskSpaceRequirement {
             }
             if (!$cacheMP[$computerName]) {
                 try {
-                    $cacheMP.Add($computerName, (Get-DbaDiskSpace -ComputerName $computerName -Credential $Credential))
+                    $cacheMP.Add($computerName, (Get-MountPoint -computerName $computerName -Credential $Credential))
                 }
                 catch {
                     Stop-Function -Message "Can't connect to $computerName." -Continue
@@ -164,9 +176,9 @@ function Measure-DbaDiskSpaceRequirement {
             else {
                 $path = $cacheDP[$SqlInstance].Data
             }
-            foreach ($m in ($cacheMP[$computerName] | Sort-Object -Property Name -Descending)) {
-                if ($path -like "$($m.Name)*") {
-                    return $m.Name
+            foreach ($m in ($cacheMP[$computerName] | Sort-Object -Property Mountpoint -Descending)) {
+                if ($path -like "$($m.Mountpoint)*") {
+                    return $m.Mountpoint
                 }
             }
         }
@@ -232,7 +244,8 @@ function Measure-DbaDiskSpaceRequirement {
                             DestinationFileSize     = [DbaSize]($destFile.Size * 1000) * -1
                             DifferenceSize          = [DbaSize]( ($sourceFile.Size * 1000) - ($destFile.Size * 1000) )
                             MountPoint              = Get-MountPointFromPath -Path $destFile.Filename -ComputerName $computerName -Credential $Credential
-                        } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationComputerName, DestinationInstance
+                            FileLocation            = 'Source and Destination'
+                        } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
                     break
                 }
             }
@@ -254,8 +267,10 @@ function Measure-DbaDiskSpaceRequirement {
                         DestinationFileName     = $null
                         DestinationFileSize     = [DbaSize]0
                         DifferenceSize          = [DbaSize]($sourceFile.Size * 1000)
-                        MountPoint              = Get-MountPointFromDefaultPath -DefaultPathType $sourceFile.Type -SqlInstance $destServer -SqlCredential $DestinationSqlCredential
-                    } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationComputerName, DestinationInstance
+                        MountPoint              = Get-MountPointFromDefaultPath -DefaultPathType $sourceFile.Type -SqlInstance $Destination `
+                                                  -SqlCredential $DestinationSqlCredential -computerName $computerName -credential $Credential
+                        FileLocation            = 'Only on Source'
+                    } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
             }
         }
         if ($destDb) {
@@ -279,7 +294,8 @@ function Measure-DbaDiskSpaceRequirement {
                         DestinationFileSize     = [DbaSize]($destFileNotSource.Size * 1000) * -1
                         DifferenceSize          = [DbaSize]($destFileNotSource.Size * 1000) * -1
                         MountPoint              = Get-MountPointFromPath -Path $destFileNotSource.Filename -ComputerName $computerName -Credential $Credential
-                    } | Select-DefaultView  -ExcludeProperty SourceComputerName, SourceInstance, DestinationComputerName, DestinationInstance
+                        FileLocation            = 'Only on Destination'
+                    } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
             }
         }
         $DestinationDatabase = $null
