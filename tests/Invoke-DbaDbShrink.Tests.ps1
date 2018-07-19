@@ -2,6 +2,21 @@ $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+        Context "Validate parameters" {
+            $paramCount = 13
+            $defaultParamCount = 13
+            [object[]]$params = (Get-ChildItem function:\Invoke-DbaDbShrink).Parameters.Keys
+            $knownParameters = 'SqlInstance', 'SqlCredential','Database','ExcludeDatabase','AllUserDatabases','PercentFreeSpace','ShrinkMethod','StatementTimeout','LogsOnly','FileType','ExcludeIndexStats','ExcludeUpdateUsage','EnableException'
+            It "Should contain our specific parameters" {
+                ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+            }
+            It "Should only contain $paramCount parameters" {
+                $params.Count - $defaultParamCount | Should Be $paramCount
+            }
+        }
+    }
+
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying Database is shrunk" {
         BeforeAll {
@@ -54,7 +69,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Shrinks just the log file when FileType is Log" {
-            Invoke-DbaDatabaseShrink $server -Database $db.Name -FileType Log
+            Invoke-DbaDbShrink $server -Database $db.Name -FileType Log
             $db.Refresh()
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
@@ -64,7 +79,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Shrinks just the data file(s) when FileType is Data" {
-            Invoke-DbaDatabaseShrink $server -Database $db.Name -FileType Data
+            Invoke-DbaDbShrink $server -Database $db.Name -FileType Data
             $db.Refresh()
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
@@ -74,7 +89,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Shrinks the entire database when FileType is All" {
-            Invoke-DbaDatabaseShrink $server -Database $db.Name -FileType All
+            Invoke-DbaDbShrink $server -Database $db.Name -FileType All
             $db.Refresh()
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
