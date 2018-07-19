@@ -46,23 +46,26 @@
         [switch]$EnableException
     )
     process {
-        if (-not (Test-Path -Path $Destination)) {
+        if (Test-FunctionInterrupt) { return }
+        foreach ($destinstance in $Destination) {
+            if (-not (Test-Path -Path $destinstance)) {
+                try {
+                    $null = New-Item -ItemType Directory -Path $destinstance -ErrorAction Stop
+                }
+                catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $destinstance
+                }
+            }
             try {
-                $null = New-Item -ItemType Directory -Path $Destination -ErrorAction Stop
+                $files = (Get-DbaXESessionTemplate -Path $Path | Where-Object Source -ne Microsoft).Path
+                foreach ($file in $files) {
+                    Write-Message -Level Output -Message "Copying $($file.Name) to $destinstance."
+                    Copy-Item -Path $file -Destination $destinstance -ErrorAction Stop
+                }
             }
             catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $Destination
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $path
             }
-        }
-        try {
-            $files = (Get-DbaXESessionTemplate -Path $Path | Where-Object Source -ne Microsoft).Path
-            foreach ($file in $files) {
-                Write-Message -Level Output -Message "Copying $($file.Name) to $Destination."
-                Copy-Item -Path $file -Destination $Destination -ErrorAction Stop
-            }
-        }
-        catch {
-            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $path
         }
     }
 }
