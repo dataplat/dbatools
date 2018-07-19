@@ -2,7 +2,12 @@
 
 > PowerShell Core (aka PowerShell 6+) went GA (generally available) and supported in January of 2018. Please be aware at this time we do not support this version of PowerShell. It is on the roadmap but at this time there is no estimated time we will be supporting it.
 
-[![licence badge]][licence]
+| Stats  |
+| ------------- |
+| [![AppVeyor](https://img.shields.io/appveyor/tests/sqlcollaborative/dbatools/master.svg)](https://ci.appveyor.com/project/sqlcollaborative/dbatools/history) |
+| ![GitHub issues](https://img.shields.io/github/issues-raw/sqlcollaborative/dbatools.svg?style=plastic) |
+| ![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/sqlcollaborative/dbatools.svg?style=plastic) |
+| [![GitHub forks](https://img.shields.io/github/forks/badges/shields.svg?style=plastic&label=Forks)](https://github.com/sqlcollaborative/dbatools/network/members) |
 
 <img align="left" src=https://blog.netnerds.net/wp-content/uploads/2016/05/dbatools.png alt="dbatools logo">  dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of [over 400 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
 
