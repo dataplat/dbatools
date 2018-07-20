@@ -22,22 +22,22 @@ function Invoke-DbaDbShrink {
             3. Consider running DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE after the shrink is complete.
 
         .PARAMETER SqlInstance
-            The target SQL Server instances
+            The target SQL Server instance. Defaults to the default instance on localhost.
 
         .PARAMETER SqlCredential
-            SqlCredential object used to connect to the SQL Server as a different user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential).
 
         .PARAMETER Database
             The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
         .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
+            The database(s) to exclude - this list is auto-populated from the server.
 
         .PARAMETER AllUserDatabases
-            Run command against all user databases
+            Run command against all user databases.
 
         .PARAMETER PercentFreeSpace
-            Specifies how much to reduce the database in percent, defaults to 0.
+            Specifies how much free space to leave, defaults to 0.
 
         .PARAMETER ShrinkMethod
             Specifies the method that is used to shrink the database
@@ -51,10 +51,10 @@ function Invoke-DbaDbShrink {
                     Data distribution is not affected. Files are truncated to reflect allocated space, recovering free space at the end of any file.
 
         .PARAMETER StatementTimeout
-            Timeout in minutes. Defaults to infinity (shrinks can take a while.)
+            Timeout in minutes. Defaults to infinity (shrinks can take a while).
 
         .PARAMETER LogsOnly
-            Deprecated. Use FileType instead
+            Deprecated. Use FileType instead.
 
         .PARAMETER FileType
             Specifies the files types that will be shrunk
@@ -64,15 +64,18 @@ function Invoke-DbaDbShrink {
                     Just the Data files are shrunk using file shrink
                 Log
                     Just the Log files are shrunk using file shrink
+        .PARAMETER StepSizeMB
+            If specified, this will chunk a larger shrink operation into multiple smaller shrinks.
+            If shrinking a file by a large amount there are benefits of doing multiple smaller chunks.
 
         .PARAMETER ExcludeIndexStats
-            Exclude statistics about fragmentation
+            Exclude statistics about fragmentation.
 
         .PARAMETER ExcludeUpdateUsage
-            Exclude DBCC UPDATE USAGE for database
+            Exclude DBCC UPDATE USAGE for database.
 
         .PARAMETER WhatIf
-            Shows what would happen if the command were to run
+            Shows what would happen if the command were to run.
 
         .PARAMETER Confirm
             Prompts for confirmation of every step. For example:
