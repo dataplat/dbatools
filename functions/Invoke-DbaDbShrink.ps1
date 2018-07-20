@@ -64,6 +64,7 @@ function Invoke-DbaDbShrink {
                     Just the Data files are shrunk using file shrink
                 Log
                     Just the Log files are shrunk using file shrink
+
         .PARAMETER StepSizeMB
             If specified, this will chunk a larger shrink operation into multiple smaller shrinks.
             If shrinking a file by a large amount there are benefits of doing multiple smaller chunks.
