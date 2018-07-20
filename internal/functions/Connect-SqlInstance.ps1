@@ -117,10 +117,13 @@ function Connect-SqlInstance {
             if ($NonPooled) {
                 $server.ConnectionContext.Connect()
             }
+            elseif ($authtype -eq "Windows Authentication with Credential") {
+                # Make it connect in a natural way, hard to explain.
+                $null = $server.IsMemberOfWsfcCluster
+            }
             else {
                 $server.ConnectionContext.SqlConnectionObject.Open()
             }
-
         }
 
         # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
@@ -138,7 +141,7 @@ function Connect-SqlInstance {
                 Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
             }
         }
-        
+
         if (-not $server.ComputerName) {
             $parsedcomputername = $server.NetName
             if (-not $parsedcomputername) {
@@ -181,8 +184,12 @@ function Connect-SqlInstance {
     catch { }
 
     try {
-        if ($NonPooled -or $authtype -eq "Windows Authentication with Credential") {
+        if ($NonPooled) {
             $server.ConnectionContext.Connect()
+        }
+        elseif ($authtype -eq "Windows Authentication with Credential") {
+            # Make it connect in a natural way, hard to explain.
+            $null = $server.IsMemberOfWsfcCluster
         }
         else {
             $server.ConnectionContext.SqlConnectionObject.Open()
@@ -289,7 +296,7 @@ function Connect-SqlInstance {
             Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
         }
     }
-    
+
     if (-not $server.ComputerName) {
         $parsedcomputername = $server.NetName
         if (-not $parsedcomputername) {
