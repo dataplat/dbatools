@@ -27,7 +27,10 @@ function Get-DbaSsisExecutionHistory {
         .PARAMETER Status
             Specifies a filter by status (created,running,cancelled,failed,pending,halted,succeeded,stopping,completed)
 
-        .PARAMETER EnableException
+        .PARAMETER Since
+            Datetime object used to narrow the results to a date
+        
+            .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
@@ -63,6 +66,7 @@ function Get-DbaSsisExecutionHistory {
         [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [datetime]$Since,
         [ValidateSet("Created", "Running", "Cancelled", "Failed", "Pending", "Halted", "Succeeded", "Stopping", "Completed")]
         [String[]]$Status,
         [String[]]$Project,
@@ -72,6 +76,8 @@ function Get-DbaSsisExecutionHistory {
         [switch]$EnableException
     )
     begin {
+        $params = @{}    
+
         $statuses = @{
             'Created'   = 1
             'Running'   = 2
@@ -114,7 +120,11 @@ function Get-DbaSsisExecutionHistory {
         else {
             $environmentq = ''
         }
-        
+        if($Since){
+            $sinceq = 'AND e.[start_time] >= @since'
+            $params.Add('since',$Since )
+        }
+
         $sql = "
             WITH
             cteLoglevel as (
@@ -166,14 +176,17 @@ function Get-DbaSsisExecutionHistory {
                 $projectq
                 $folderq
                 $environmentq
+                $sinceq
                 OPTION  ( RECOMPILE );"
     }
+
+
     process {
         foreach ($instance in $SqlInstance) {
-            $results = Invoke-DbaSqlQuery -SqlInstance $instance -Database SSISDB -Query $sql -as PSObject -SqlCredential $SqlCredential
+            $results = Invoke-DbaSqlQuery -SqlInstance $instance -Database SSISDB -Query $sql -as PSObject -SqlParameters $params -SqlCredential $SqlCredential
             foreach ($row in $results) {
-                $row.start_time = [dbadatetime]$row.StartTime.DateTime
-                $row.end_time = [dbadatetime]$row.EndTime.DateTime
+                $row.StartTime = [dbadatetime]$row.StartTime.DateTime
+                $row.EndTime = [dbadatetime]$row.EndTime.DateTime
                 $row
             }
         }
