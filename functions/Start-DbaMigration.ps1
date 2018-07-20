@@ -336,13 +336,6 @@ function Start-DbaMigration {
             Copy-DbaDatabaseMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
-        if (-not $NoSysDbUserObjects) {
-            Write-Message -Level Verbose -Message "Migrating user objects in system databases (this can take a second)."
-            If ($Pscmdlet.ShouldProcess($destination, "Copying user objects.")) {
-                Copy-DbaSysDbUserObject -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$force
-            }
-        }
-
         if (-not $NoCentralManagementServer) {
             Write-Message -Level Verbose -Message "Migrating Central Management Server"
             Copy-DbaCentralManagementServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
@@ -421,7 +414,14 @@ function Start-DbaMigration {
             Write-Message -Level Verbose -Message "Migrating Resource Governor"
             Copy-DbaResourceGovernor -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
-
+        
+        if (-not $NoSysDbUserObjects) {
+            Write-Message -Level Verbose -Message "Migrating user objects in system databases (this can take a second)."
+            If ($Pscmdlet.ShouldProcess($destination, "Copying user objects.")) {
+                Copy-DbaSysDbUserObject -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$force
+            }
+        }
+        
         if (-not $NoExtendedEvents) {
             Write-Message -Level Verbose -Message "Migrating Extended Events"
             Copy-DbaExtendedEvent -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
