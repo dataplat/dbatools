@@ -212,7 +212,7 @@ function Invoke-DbaDbShrink {
                         $startingSize = $file.Size / 1024
                         $spaceUsed = $file.UsedSpace / 1024
                         $spaceAvailableMB = ($file.Size - $file.UsedSpace) / 1024
-                        $desiredSpaceAvailable = [math]::ceiling((1+($PercentFreeSpace/100)) * $spaceUsed)
+                        $desiredSpaceAvailable = [math]::ceiling((($PercentFreeSpace/100)) * $spaceUsed)
                         $desiredFileSize = $spaceUsed + $desiredSpaceAvailable
 
                         Write-Message -Level Verbose -Message "File: $($file.Name)"
@@ -247,12 +247,9 @@ function Invoke-DbaDbShrink {
                             try {
                                 Write-Message -Level Verbose -Message "Beginning shrink of files"
 
-                                #if($StepSizeMB -and (($spaceAvailableMB - $desiredSpaceAvailable) -gt $stepSizeMB)) {
                                 $shrinkGap = ($startingSize - $desiredFileSize)
-
                                 Write-Message -Level Verbose -Message "ShrinkGap: $([int]$shrinkGap) MB"
                                 Write-Message -Level Verbose -Message "Step Size MB: $([int]$StepSizeMB) MB"
-
 
                                 if($StepSizeMB -and ($shrinkGap -gt $stepSizeMB)) {
                                     for($i=1; $i -le [int](($shrinkGap)/$stepSizeMB); $i++) {
