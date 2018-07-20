@@ -111,9 +111,15 @@ function Invoke-DbaDbShrink {
             Shrinks AdventureWorks2014 to have 50% free space. So let's say AdventureWorks2014 was 1GB and it's using 100MB space. The database free space would be reduced to 50MB.
 
         .EXAMPLE
+            Invoke-DbaDatabaseShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSizeMB 25
+
+            Shrinks AdventureWorks2014 to have 50% free space, runs shrinks in 25MB chunks for improved performance.
+
+        .EXAMPLE
             Invoke-DbaDatabaseShrink -SqlInstance sql2012 -AllUserDatabases
 
             Shrinks all databases on SQL2012 (not ideal for production)
+
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     param (
