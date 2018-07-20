@@ -225,7 +225,7 @@ function Invoke-DbaDbShrink {
                     }
 
                     if ($spaceAvailableMB -le $desiredSpaceAvailable) {
-                        Write-Message -Level Warning -Message "File size of ($startingSize) is less than or equal to the desired outcome ($desiredFileSize)"
+                        Write-Message -Level Warning -Message "File size of ($startingSize) is less than or equal to the desired outcome ($desiredFileSize) for $($file.Name)"
                     }
                     else {
                         if ($Pscmdlet.ShouldProcess("$db on $instance", "Shrinking from $([int]$startingSize)MB to $([int]$desiredFileSize)MB")) {
@@ -257,11 +257,14 @@ function Invoke-DbaDbShrink {
                                         if($shrinkSize -lt $desiredFileSize) {
                                             $shrinkSize = $desiredFileSize
                                         }
-                                        #$shrinkSize
                                         Write-Message -Level Verbose -Message ("Shrinking {0} to {1}" -f $file.Name, $shrinkSize)
                                         $file.Shrink($shrinkSize, $ShrinkMethod)
                                         $file.Refresh()
-                                        #if not shrinking stop
+
+                                        if($startingSize -eq $file.Size) {
+                                            Write-Message -Level Verbose -Message ("Unable to shrink further")
+                                            break
+                                        }
                                     }
                                 } else {
                                     $file.Shrink($desiredFileSize, $ShrinkMethod)
