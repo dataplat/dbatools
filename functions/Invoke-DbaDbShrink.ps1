@@ -128,6 +128,7 @@ function Invoke-DbaDbShrink {
         [string]$ShrinkMethod = "Default",
         [ValidateSet('All', 'Data', 'Log')]
         [string]$FileType = "All",
+        [int]$StepSizeMB,
         [int]$StatementTimeout = 0,
         [switch]$LogsOnly,
         [switch]$ExcludeIndexStats,
@@ -207,13 +208,15 @@ function Invoke-DbaDbShrink {
                         $startingSize = $file.Size / 1024
                         $spaceUsed = $file.UsedSpace / 1024
                         $spaceAvailableMB = ($file.Size - $file.UsedSpace) / 1024
-                        $desiredSpaceAvailable = ($PercentFreeSpace * $spaceUsed) / 100
+                        $desiredSpaceAvailable = [math]::ceiling((1+($PercentFreeSpace/100)) * $spaceUsed)
+                        $desiredFileSize = $spaceUsed + $desiredSpaceAvailable
 
                         Write-Message -Level Verbose -Message "File: $($file.Name)"
                         Write-Message -Level Verbose -Message "Starting Size (MB): $([int]$startingSize)"
                         Write-Message -Level Verbose -Message "Space Used (MB): $([int]$spaceUsed)"
                         Write-Message -Level Verbose -Message "Starting Freespace (MB): $([int]$spaceAvailableMB)"
                         Write-Message -Level Verbose -Message "Desired Freespace (MB): $([int]$desiredSpaceAvailable)"
+                        Write-Message -Level Verbose -Message "Desired FileSize (MB): $([int]$desiredFileSize)"
                     }
                     catch {
                         $success = $false
@@ -222,10 +225,10 @@ function Invoke-DbaDbShrink {
                     }
 
                     if ($spaceAvailableMB -le $desiredSpaceAvailable) {
-                        Write-Message -Level Warning -Message "Space Available ($spaceAvailableMB) is less than or equal to the desired outcome ($desiredSpaceAvailable)"
+                        Write-Message -Level Warning -Message "File size of ($startingSize) is less than or equal to the desired outcome ($desiredFileSize)"
                     }
                     else {
-                        if ($Pscmdlet.ShouldProcess("$db on $instance", "Shrinking from $([int]$spaceAvailableMB) MB space available to $([int]$desiredSpaceAvailable) MB space available")) {
+                        if ($Pscmdlet.ShouldProcess("$db on $instance", "Shrinking from $([int]$startingSize)MB to $([int]$desiredFileSize)MB")) {
                             if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false) {
                                 Write-Message -Level Verbose -Message "Getting starting average fragmentation"
                                 $dataRow = $server.Query($sql, $db.name)
@@ -239,10 +242,33 @@ function Invoke-DbaDbShrink {
                             $start = Get-Date
                             try {
                                 Write-Message -Level Verbose -Message "Beginning shrink of files"
-                                $file.Shrink($desiredSpaceAvailable, $ShrinkMethod)
-                                $file.Refresh()
+
+                                #if($StepSizeMB -and (($spaceAvailableMB - $desiredSpaceAvailable) -gt $stepSizeMB)) {
+                                $shrinkGap = ($startingSize - $desiredFileSize)
+
+                                Write-Message -Level Verbose -Message "ShrinkGap: $([int]$shrinkGap) MB"
+                                Write-Message -Level Verbose -Message "Step Size MB: $([int]$StepSizeMB) MB"
+
+
+                                if($StepSizeMB -and ($shrinkGap -gt $stepSizeMB)) {
+                                    for($i=1; $i -le [int](($shrinkGap)/$stepSizeMB); $i++) {
+                                        Write-Message -Level Verbose -Message "Step: $i"
+                                        $shrinkSize = $startingSize - ($stepSizeMB * $i)
+                                        if($shrinkSize -lt $desiredFileSize) {
+                                            $shrinkSize = $desiredFileSize
+                                        }
+                                        #$shrinkSize
+                                        Write-Message -Level Verbose -Message ("Shrinking {0} to {1}" -f $file.Name, $shrinkSize)
+                                        $file.Shrink($shrinkSize, $ShrinkMethod)
+                                        $file.Refresh()
+                                        #if not shrinking stop
+                                    }
+                                } else {
+                                    $file.Shrink($desiredFileSize, $ShrinkMethod)
+                                    $file.Refresh()
+                                }
                                 $success = $true
-                                $notes = $null
+                                $notes = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
                             }
                             catch {
                                 $success = $false
@@ -253,7 +279,7 @@ function Invoke-DbaDbShrink {
                             $finalFileSize = $file.Size / 1024
                             $finalSpaceAvailableMB = ($file.Size - $file.UsedSpace) / 1024
                             Write-Message -Level Verbose -Message "Final file size: $([int]$finalFileSize) MB"
-                            Write-Message -Level Verbose -Message "Final file space available: $([int]$finalSpaceAvailableMB) MB"
+                            Write-Message -Level Verbose -Message "Final file space available: $($finalSpaceAvailableMB) MB"
 
                             if ($server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false -and $success -and $FileType -ne 'Log') {
                                 Write-Message -Level Verbose -Message "Getting ending average fragmentation"
