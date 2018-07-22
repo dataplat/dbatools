@@ -100,7 +100,7 @@ function Get-DbaSpConfigure {
 
                     [pscustomobject]@{
                         ServerName            = $server.Name
-                        ComputerName          = $server.NetName
+                        ComputerName          = $server.ComputerName
                         InstanceName          = $server.ServiceName
                         SqlInstance           = $server.DomainInstanceName
                         Name                  = $prop.Name

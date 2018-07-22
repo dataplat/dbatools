@@ -707,19 +707,19 @@ function Rename-DbaDatabase {
                 #region move
                 $ComputerName = $null
                 $Final_Renames = New-Object System.Collections.ArrayList
-                if ([DbaValidate]::IsLocalhost($server.NetName)) {
+                if ([DbaValidate]::IsLocalhost($server.ComputerName)) {
                     # locally ran so we can just use rename-item
-                    $ComputerName = $server.NetName
+                    $ComputerName = $server.ComputerName
                 }
                 else {
-                    # let's start checking if we can access .NetName
+                    # let's start checking if we can access .ComputerName
                     $testPS = $false
                     if ($SqlCredential) {
                         # why does Test-PSRemoting require a Credential param ? this is ugly...
-                        $testPS = Test-PSRemoting -ComputerName $server.NetName -Credential $SqlCredential -ErrorAction Stop
+                        $testPS = Test-PSRemoting -ComputerName $server.ComputerName -Credential $SqlCredential -ErrorAction Stop
                     }
                     else {
-                        $testPS = Test-PSRemoting -ComputerName $server.NetName -ErrorAction Stop
+                        $testPS = Test-PSRemoting -ComputerName $server.ComputerName -ErrorAction Stop
                     }
                     if (!($testPS)) {
                         # let's try to resolve it to a more qualified name, without "cutting" knowledge about the domain (only $server.Name possibly holds the complete info)
@@ -735,11 +735,11 @@ function Rename-DbaDatabase {
                         }
                     }
                     else {
-                        $ComputerName = $server.NetName
+                        $ComputerName = $server.ComputerName
                     }
                 }
                 foreach ($op in $pending_renames) {
-                    if ([DbaValidate]::IsLocalhost($server.NetName)) {
+                    if ([DbaValidate]::IsLocalhost($server.ComputerName)) {
                         $null = $Final_Renames.Add([pscustomobject]@{
                                 Source       = $op.Source
                                 Destination  = $op.Destination
@@ -749,11 +749,11 @@ function Rename-DbaDatabase {
                     else {
                         if ($null -eq $ComputerName) {
                             # if we don't have remote access ($ComputerName is null) we can fallback to admin shares if they're available
-                            if (Test-Path (Join-AdminUnc -ServerName $server.NetName -filepath $op.Source)) {
+                            if (Test-Path (Join-AdminUnc -ServerName $server.ComputerName -filepath $op.Source)) {
                                 $null = $Final_Renames.Add([pscustomobject]@{
-                                        Source       = Join-AdminUnc -ServerName $server.NetName -filepath $op.Source
-                                        Destination  = Join-AdminUnc -ServerName $server.NetName -filepath $op.Destination
-                                        ComputerName = $server.NetName
+                                        Source       = Join-AdminUnc -ServerName $server.ComputerName -filepath $op.Source
+                                        Destination  = Join-AdminUnc -ServerName $server.ComputerName -filepath $op.Destination
+                                        ComputerName = $server.ComputerName
                                     })
                             }
                             else {
@@ -857,7 +857,7 @@ function Rename-DbaDatabase {
                 }
             }
             [pscustomobject]@{
-                ComputerName       = $server.NetName
+                ComputerName       = $server.ComputerName
                 InstanceName       = $server.ServiceName
                 SqlInstance        = $server.DomainInstanceName
                 Database           = $db

@@ -180,7 +180,7 @@ Gets super detailed information for execution plans on only for AdventureWorks20
                         $planWarnings = $simple.QueryPlan.Warnings.PlanAffectingConvert;
 
                         [pscustomobject]@{
-                            ComputerName                      = $server.NetName
+                            ComputerName                      = $server.ComputerName
                             InstanceName                      = $server.ServiceName
                             SqlInstance                       = $server.DomainInstanceName
                             DatabaseName                      = $row.DatabaseName

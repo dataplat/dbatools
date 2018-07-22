@@ -23,7 +23,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
             Mock Connect-SQLInstance -MockWith {
                 [object]@{
                     Name      = 'SQLServerName'
-                    NetName   = 'SQLServerName'
+                    ComputerName   = 'SQLServerName'
                     JobServer = @{
                         Jobs = @(
                             @{

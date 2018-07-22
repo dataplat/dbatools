@@ -98,11 +98,11 @@ function Get-DbaXESessionTarget {
                                 $file = "$directory\$file"
                             }
                             $filecollection += $file
-                            $remotefile += Join-AdminUnc -servername $server.netName -filepath $file
+                            $remotefile += Join-AdminUnc -servername $server.ComputerName -filepath $file
                         }
                     }
 
-                    Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                    Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name Session -Value $sessionname
