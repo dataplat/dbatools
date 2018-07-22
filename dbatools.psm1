@@ -595,8 +595,11 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"           = "Test-DbaValidLogin"
         "Definition"          = "Test-DbaWindowsLogin"
+    },
+    @{
+        "AliasName"  = "Get-DbaJobCategory"
+        "Definition" = "Get-DbaAgentJobCategory"
     }
-    
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
 }
