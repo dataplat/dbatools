@@ -8,12 +8,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $script:PesterOutputPath = "TestDrive:$commandName"
         $database = "dbatoolsci_frk_$(Get-Random)"
         $database2 = "dbatoolsci_frk_$(Get-Random)"
+        $database3 = "dbatoolsci_frk_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $server.Query("CREATE DATABASE [$database]")
         $server.Query("CREATE DATABASE [$database2]")
+        $server.Query("CREATE DATABASE [$database3]")
     }
     AfterAll {
-        @($database, $database2) | Foreach-Object {
+        @($database, $database2, $database3) | Foreach-Object {
             $db = $_
             $server.Query("IF DB_ID('$db') IS NOT NULL
                 begin
@@ -38,10 +40,25 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific
             @($results).Count | Should -BeGreaterThan 10
         }
+        It "works with specific database provided" {
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'File Sizes and Space', 'Log Space Usage' -Database $database2, $database3
+            @($results | Where-Object {$_.Database -eq $Database}).Count | Should -Be 0
+            @($results | Where-Object {$_.Database -eq $Database2}).Count | Should -Be 2
+            @($results | Where-Object {$_.Database -eq $Database3}).Count | Should -Be 2
+        }
         It "works with Exclude Databases provided" {
             $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -ExcludeDatabase $database2
-            @($results | Where-Object {$_.Database -eq $Database1}).Count | Should -BeGreaterThan 1
+            @($results | Where-Object {$_.Database -eq $Database}).Count | Should -BeGreaterThan 1
             @($results | Where-Object {$_.Database -eq $Database2}).Count | Should -Be 0
+        }
+
+        $columnnames = 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
+        $TestCases = @()
+        $columnnames.ForEach{$TestCases += @{columnname = $PSItem}}
+        $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Memory Clerk Usage'
+        It "correctly excludes default column name <columnname>" -TestCases $TestCases {
+            Param($columnname)
+            @($results.Result | Get-Member | Where-Object Name -eq $columnname).Count | Should be 0
         }
     }
 
