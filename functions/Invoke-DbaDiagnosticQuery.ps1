@@ -344,7 +344,9 @@ function Invoke-DbaDiagnosticQuery {
                                 DatabaseSpecific = $scriptpart.DBSpecific
                                 Database         = $null
                                 Notes            = $null
-                                Result           = Select-DefaultView -InputObject $result -Property *
+                                #Result           = Select-DefaultView -InputObject $result -Property *
+                                #Not using Select-DefaultView because excluding the fields below doesn't seem to work
+                                Result           = $result | Select-Object * -ExcludeProperty 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
                             }
 
                         }
@@ -399,7 +401,7 @@ function Invoke-DbaDiagnosticQuery {
                                         Name             = $scriptpart.QueryName
                                         Description      = $scriptpart.Description
                                         DatabaseSpecific = $scriptpart.DBSpecific
-                                        Database         = $null
+                                        Database         = $currentdb
                                         Notes            = "Empty Result for this Query"
                                         Result           = $null
                                     }
@@ -410,17 +412,21 @@ function Invoke-DbaDiagnosticQuery {
                                 Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $currentDb) -Target $currentdb -ErrorRecord $_
                             }
 
-                            [pscustomobject]@{
-                                ComputerName     = $server.NetName
-                                InstanceName     = $server.ServiceName
-                                SqlInstance      = $server.DomainInstanceName
-                                Number           = $scriptpart.QueryNr
-                                Name             = $scriptpart.QueryName
-                                Description      = $scriptpart.Description
-                                DatabaseSpecific = $scriptpart.DBSpecific
-                                Database         = $currentDb
-                                Notes            = $null
-                                Result           = Select-DefaultView -InputObject $result -Property *
+                            if ($result){
+                                [pscustomobject]@{
+                                    ComputerName     = $server.NetName
+                                    InstanceName     = $server.ServiceName
+                                    SqlInstance      = $server.DomainInstanceName
+                                    Number           = $scriptpart.QueryNr
+                                    Name             = $scriptpart.QueryName
+                                    Description      = $scriptpart.Description
+                                    DatabaseSpecific = $scriptpart.DBSpecific
+                                    Database         = $currentDb
+                                    Notes            = $null
+                                    #Result           = Select-DefaultView -InputObject $result -Property *
+                                    #Not using Select-DefaultView because excluding the fields below doesn't seem to work
+                                    Result           = $result | Select-Object * -ExcludeProperty 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
+                                }
                             }
                         }
                         else {
