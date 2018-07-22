@@ -80,7 +80,7 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
             $server.Triggers |
                 ForEach-Object {
                 [PSCustomObject]@{
-                    ComputerName     = $server.NetName
+                    ComputerName     = $server.ComputerName
                     InstanceName     = $server.ServiceName
                     SqlInstance      = $server.DomainInstanceName
                     TriggerLevel     = "Server"
@@ -108,7 +108,7 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
                 $_.Triggers |
                     ForEach-Object {
                     [PSCustomObject]@{
-                        ComputerName     = $server.NetName
+                        ComputerName     = $server.ComputerName
                         InstanceName     = $server.ServiceName
                         SqlInstance      = $server.DomainInstanceName
                         TriggerLevel     = "Database"

@@ -1,10 +1,9 @@
 ﻿coverage:
   status:
-    project:
-      default:
-        threshold: 50
+    project: off
+    patch: off
+comment: off
 
 fixes:
   - "dbatools/::bin/projects/dbatools/dbatools/"
 
-comment: false

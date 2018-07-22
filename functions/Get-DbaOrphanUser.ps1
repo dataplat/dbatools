@@ -103,7 +103,7 @@ function Get-DbaOrphanUser {
                             Write-Message -Level Verbose -Message "Orphan users found"
                             foreach ($user in $UsersToWork) {
                                 [PSCustomObject]@{
-                                    ComputerName = $server.NetName
+                                    ComputerName = $server.ComputerName
                                     InstanceName = $server.ServiceName
                                     SqlInstance  = $server.DomainInstanceName
                                     DatabaseName = $db.Name

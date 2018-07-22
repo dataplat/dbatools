@@ -187,7 +187,7 @@ Returns information on the CommandLog table in the DBA database on both instance
                 }
 
                 foreach ($sqltable in $tables) {
-                    $sqltable | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                    $sqltable | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     $sqltable | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     $sqltable | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     $sqltable | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name

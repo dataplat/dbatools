@@ -64,7 +64,7 @@ function Get-DbaSqlInstanceUserOption {
             }
             $props = $server.useroptions.properties
             foreach ($prop in $props) {
-                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                 Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value
