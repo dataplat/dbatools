@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: June 20, 2018
+-- Last Modified: July 19, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -75,7 +75,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3023.8		CU5					3/20/2018		https://support.microsoft.com/en-us/help/4092643
 -- 14.0.3025.34		CU6					4/17/2018	    https://support.microsoft.com/en-us/help/4101464
 -- 14.0.3026.27		CU7					5/23/2018		https://support.microsoft.com/en-us/help/4229789
--- 14.0.3029.16		CU8					6/19/2018		https://support.microsoft.com/en-us/help/4338363 
+-- 14.0.3029.16		CU8					6/19/2018		https://support.microsoft.com/en-us/help/4338363
+-- 14.0.3037.27		CU9					7/19/2018		https://support.microsoft.com/en-us/help/4341265 
 		
 															
 
@@ -204,7 +205,7 @@ DBCC TRACESTATUS (-1);
 --           https://bit.ly/2HrQUpU         
 
 -- The behavior of TF 1117, 1118 are enabled for tempdb in SQL Server 2016 by default
--- SQL 2016 Â– It Just Runs Faster: -T1117 and -T1118 changes for TEMPDB and user databases
+-- SQL 2016 – It Just Runs Faster: -T1117 and -T1118 changes for TEMPDB and user databases
 -- https://bit.ly/2lbNWxK           
 
 -- The behavior of TF 2371 is enabled by default in SQL Server 2016 and newer (in compat level 130 and higher)
@@ -451,7 +452,7 @@ ORDER BY ag.name, ar.replica_server_name, adc.[database_name] OPTION (RECOMPILE)
 
 -- You will see no results if your instance is not using AlwaysOn AGs
 
--- SQL Server 2016 Â– It Just Runs Faster: Always On Availability Groups Turbocharged
+-- SQL Server 2016 – It Just Runs Faster: Always On Availability Groups Turbocharged
 -- https://bit.ly/2dn1H6r
 
 
@@ -834,11 +835,11 @@ ORDER BY index_advantage DESC OPTION (RECOMPILE);
 
 
 -- Get VLF Counts for all databases on the instance (Query 35) (VLF Counts)
-SELECTÂ [name] AS [Database Name],Â [VLF Count] 
-FROMÂ sys.databasesÂ AS db WITH (NOLOCK)
-CROSS APPLYÂ (SELECTÂ file_id, COUNT(*)Â AS [VLF Count]Â 
+SELECT [name] AS [Database Name], [VLF Count] 
+FROM sys.databases AS db WITH (NOLOCK)
+CROSS APPLY (SELECT file_id, COUNT(*) AS [VLF Count] 
 			 FROM sys.dm_db_log_info(db.database_id) 
-Â Â Â Â Â Â Â Â Â Â    GROUP BYÂ file_id)Â AS li
+             GROUP BY file_id) AS li
 ORDER BY [VLF Count] DESC  OPTION (RECOMPILE);
 ------
 
@@ -1114,7 +1115,9 @@ qs.max_elapsed_time AS [Max Elapsed Time],
 qs.min_logical_reads AS [Min Logical Reads],
 qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads],
 qs.max_logical_reads AS [Max Logical Reads], 
-qs.execution_count AS [Execution Count], qs.creation_time AS [Creation Time]
+qs.execution_count AS [Execution Count],
+CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index], 
+qs.creation_time AS [Creation Time]
 --,t.[text] AS [Query Text], qp.query_plan AS [Query Plan] -- uncomment out these columns if not copying results to Excel
 FROM sys.dm_exec_query_stats AS qs WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_sql_text(plan_handle) AS t 
@@ -1139,7 +1142,7 @@ AND counter_name = N'Page life expectancy' OPTION (RECOMPILE);
 -- Higher PLE is better. Watch the trend over time, not the absolute value
 -- This will only return one row for non-NUMA systems
 
--- Page Life Expectancy isnÂ’t what you thinkÂ…
+-- Page Life Expectancy isn’t what you think…
 -- https://bit.ly/2EgynLa
 
 
@@ -1180,13 +1183,15 @@ ORDER BY SUM(mc.pages_kb) DESC OPTION (RECOMPILE);
 
 
 -- Find single-use, ad-hoc and prepared queries that are bloating the plan cache  (Query 49) (Ad hoc Queries)
-SELECT TOP(50) [text] AS [QueryText], cp.cacheobjtype, cp.objtype, cp.size_in_bytes/1024 AS [Plan Size in KB]
+SELECT TOP(50) DB_NAME(t.[dbid]) AS [Database Name], t.[text] AS [Query Text], 
+cp.objtype AS [Object Type], cp.cacheobjtype AS [Cache Object Type],  
+cp.size_in_bytes/1024 AS [Plan Size in KB]
 FROM sys.dm_exec_cached_plans AS cp WITH (NOLOCK)
-CROSS APPLY sys.dm_exec_sql_text(plan_handle) 
+CROSS APPLY sys.dm_exec_sql_text(plan_handle) AS t
 WHERE cp.cacheobjtype = N'Compiled Plan' 
 AND cp.objtype IN (N'Adhoc', N'Prepared') 
 AND cp.usecounts = 1
-ORDER BY cp.size_in_bytes DESC OPTION (RECOMPILE);
+ORDER BY cp.size_in_bytes DESC, DB_NAME(t.[dbid]) OPTION (RECOMPILE);
 ------
 
 -- Gives you the text, type and size of single-use ad-hoc and prepared queries that waste space in the plan cache
@@ -1211,7 +1216,9 @@ qs.max_worker_time AS [Max Worker Time],
 qs.min_elapsed_time AS [Min Elapsed Time], 
 qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time], 
 qs.max_elapsed_time AS [Max Elapsed Time],
-qs.execution_count AS [Execution Count], qs.creation_time AS [Creation Time]
+qs.execution_count AS [Execution Count], 
+CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
+qs.creation_time AS [Creation Time]
 --,t.[text] AS [Complete Query Text], qp.query_plan AS [Query Plan] -- uncomment out these columns if not copying results to Excel
 FROM sys.dm_exec_query_stats AS qs WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_sql_text(plan_handle) AS t 
@@ -1233,8 +1240,9 @@ qs.execution_count AS [Execution Count],
 qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads], 
 qs.total_physical_reads/qs.execution_count AS [Avg Physical Reads], 
 qs.total_worker_time/qs.execution_count AS [Avg Worker Time],
+CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
 qs.creation_time AS [Creation Time]
---, qp.query_plan AS [Query Plan] -- comment out this column if copying results to Excel
+--,t.[text] AS [Complete Query Text], qp.query_plan AS [Query Plan] -- uncomment out these columns if not copying results to Excel
 FROM sys.dm_exec_query_stats AS qs WITH (NOLOCK)
 CROSS APPLY sys.dm_exec_sql_text(plan_handle) AS t 
 CROSS APPLY sys.dm_exec_query_plan(plan_handle) AS qp 
@@ -1370,7 +1378,8 @@ qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads],
 qs.total_worker_time AS [Total Worker Time],
 qs.total_worker_time/qs.execution_count AS [Avg Worker Time], 
 qs.total_elapsed_time AS [Total Elapsed Time],
-qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time], 
+qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],
+CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index], 
 qs.creation_time AS [Creation Time]
 --,t.[text] AS [Complete Query Text], qp.query_plan AS [Query Plan] -- uncomment out these columns if not copying results to Excel
 FROM sys.dm_exec_query_stats AS qs WITH (NOLOCK)
@@ -1389,6 +1398,7 @@ ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Ca
 qs.total_elapsed_time/qs.execution_count AS [Avg Elapsed Time],
 qs.total_worker_time/qs.execution_count AS [Avg Worker Time],    
 qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads],
+CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
 FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
 FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
 -- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
@@ -1411,6 +1421,7 @@ qs.max_elapsed_time, qs.last_elapsed_time, qs.total_elapsed_time, qs.execution_c
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute], 
 qs.total_worker_time/qs.execution_count AS [AvgWorkerTime], 
 qs.total_worker_time AS [TotalWorkerTime],
+CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
 FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
 FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
 -- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
@@ -1433,6 +1444,7 @@ SELECT TOP(25) p.name AS [SP Name], qs.total_worker_time AS [TotalWorkerTime],
 qs.total_worker_time/qs.execution_count AS [AvgWorkerTime], qs.execution_count, 
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
 qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
+CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
 FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
 FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
 -- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
@@ -1453,7 +1465,8 @@ ORDER BY qs.total_worker_time DESC OPTION (RECOMPILE);
 SELECT TOP(25) p.name AS [SP Name], qs.total_logical_reads AS [TotalLogicalReads], 
 qs.total_logical_reads/qs.execution_count AS [AvgLogicalReads],qs.execution_count, 
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute], 
-qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time], 
+qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
+CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index], 
 FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
 FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
 -- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan
@@ -1474,6 +1487,7 @@ ORDER BY qs.total_logical_reads DESC OPTION (RECOMPILE);
 SELECT TOP(25) p.name AS [SP Name],qs.total_physical_reads AS [TotalPhysicalReads], 
 qs.total_physical_reads/qs.execution_count AS [AvgPhysicalReads], qs.execution_count, 
 qs.total_logical_reads,qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
+CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index],
 FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
 FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
 -- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan 
@@ -1496,7 +1510,8 @@ ORDER BY qs.total_physical_reads DESC, qs.total_logical_reads DESC OPTION (RECOM
 SELECT TOP(25) p.name AS [SP Name], qs.total_logical_writes AS [TotalLogicalWrites], 
 qs.total_logical_writes/qs.execution_count AS [AvgLogicalWrites], qs.execution_count,
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
-qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time], 
+qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time],
+CASE WHEN CONVERT(nvarchar(max), qp.query_plan) LIKE N'%<MissingIndexes>%' THEN 1 ELSE 0 END AS [Has Missing Index], 
 FORMAT(qs.last_execution_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Last Execution Time], 
 FORMAT(qs.cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
 -- ,qp.query_plan AS [Query Plan] -- Uncomment if you want the Query Plan 
@@ -1832,8 +1847,9 @@ ORDER BY total_lock_wait_in_ms DESC OPTION (RECOMPILE);
 
 -- Look at UDF execution statistics (Query 80) (UDF Statistics)
 SELECT OBJECT_NAME(object_id) AS [Function Name], execution_count,
-	   total_worker_time, total_logical_reads, total_physical_reads,
-       total_elapsed_time, [type_desc]
+	   total_worker_time, total_logical_reads, total_physical_reads, total_elapsed_time, 
+	   total_elapsed_time/execution_count AS [avg_elapsed_time],
+	   FORMAT(cached_time, 'yyyy-MM-dd HH:mm:ss', 'en-US') AS [Plan Cached Time]
 FROM sys.dm_exec_function_stats WITH (NOLOCK) 
 WHERE database_id = DB_ID()
 ORDER BY total_worker_time DESC OPTION (RECOMPILE); 
@@ -1841,6 +1857,7 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 
 -- New for SQL Server 2016
 -- Helps you investigate scalar UDF performance issues
+-- Does not return information for table valued functions
 
 -- sys.dm_exec_function_stats (Transact-SQL)
 -- https://bit.ly/2q1Q6BM
@@ -1856,6 +1873,9 @@ FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);
 -- New for SQL Server 2016
 -- Requires that Query Store is enabled for this database
 
+-- Make sure that the actual_state_desc is the same as desired_state_desc
+-- Make sure that the current_storage_size_mb is less than the max_storage_size_mb
+
 -- Tuning Workload Performance with Query Store
 -- https://bit.ly/1kHSl7w
 
@@ -1863,8 +1883,8 @@ FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);
 -- Get highest aggregate duration queries over last hour (Query 82) (High Aggregate Duration Queries)
 WITH AggregatedDurationLastHour
 AS
-(SELECT q.query_id, SUM(count_executions * avg_duration) AS total_duration,
-   COUNT (distinct p.plan_id) AS number_of_plans
+(SELECT q.query_id, SUM(rs.count_executions * rs.avg_duration) AS total_duration,
+   COUNT (DISTINCT p.plan_id) AS number_of_plans
    FROM sys.query_store_query_text AS qt WITH (NOLOCK)
    INNER JOIN sys.query_store_query AS q WITH (NOLOCK)
    ON qt.query_text_id = q.query_text_id
@@ -1876,8 +1896,8 @@ AS
    ON rsi.runtime_stats_interval_id = rs.runtime_stats_interval_id
    WHERE rsi.start_time >= DATEADD(hour, -1, GETUTCDATE()) 
    AND rs.execution_type_desc = N'Regular'
-   GROUP BY q.query_id),
-OrderedDuration AS
+   GROUP BY q.query_id), OrderedDuration 
+AS
 (SELECT query_id, total_duration, number_of_plans, 
  ROW_NUMBER () OVER (ORDER BY total_duration DESC, query_id) AS RN
  FROM AggregatedDurationLastHour)
@@ -1886,7 +1906,8 @@ od.total_duration AS [Total Duration (microsecs)],
 od.number_of_plans AS [Plan Count],
 p.is_forced_plan, p.is_parallel_plan, p.is_trivial_plan,
 q.query_parameterization_type_desc, p.[compatibility_level],
-p.last_compile_start_time, q.last_execution_time,
+p.last_compile_start_time, 
+q.last_execution_time,
 CONVERT(xml, p.query_plan) AS query_plan_xml 
 FROM OrderedDuration AS od 
 INNER JOIN sys.query_store_query AS q WITH (NOLOCK)
@@ -1896,14 +1917,59 @@ ON q.query_text_id = qt.query_text_id
 INNER JOIN sys.query_store_plan AS p WITH (NOLOCK)
 ON q.query_id = p.query_id
 WHERE od.RN <= 50 
-ORDER BY total_duration DESC OPTION (RECOMPILE);
+ORDER BY od.total_duration DESC OPTION (RECOMPILE);
 ------
 
 -- New for SQL Server 2016
 -- Requires that QueryStore is enabled for this database
 
 
--- Get input buffer information for the current database (Query 83) (Input Buffer)
+
+-- Get highest aggregate CPU time queries over last hour (Query 83) (High Aggregate CPU Queries)
+WITH AggregatedCPULastHour
+AS
+(SELECT q.query_id, SUM(rs.count_executions * rs.avg_cpu_time) AS total_cpu_time,
+   COUNT (DISTINCT p.plan_id) AS number_of_plans
+   FROM sys.query_store_query_text AS qt WITH (NOLOCK)
+   INNER JOIN sys.query_store_query AS q WITH (NOLOCK)
+   ON qt.query_text_id = q.query_text_id
+   INNER JOIN sys.query_store_plan AS p WITH (NOLOCK)
+   ON q.query_id = p.query_id
+   INNER JOIN sys.query_store_runtime_stats AS rs WITH (NOLOCK)
+   ON rs.plan_id = p.plan_id
+   INNER JOIN sys.query_store_runtime_stats_interval AS rsi WITH (NOLOCK)
+   ON rsi.runtime_stats_interval_id = rs.runtime_stats_interval_id
+   WHERE rsi.start_time >= DATEADD(hour, -1, GETUTCDATE()) 
+   AND rs.execution_type_desc = N'Regular'
+   GROUP BY q.query_id), OrderedDuration 
+AS
+(SELECT query_id, total_cpu_time, number_of_plans, 
+ ROW_NUMBER () OVER (ORDER BY total_cpu_time DESC, query_id) AS RN
+ FROM AggregatedCPULastHour)
+SELECT OBJECT_NAME(q.object_id) AS [Containing Object], qt.query_sql_text, 
+od.total_cpu_time AS [Total CPU Time (microsecs)], 
+od.number_of_plans AS [Plan Count],
+p.is_forced_plan, p.is_parallel_plan, p.is_trivial_plan,
+q.query_parameterization_type_desc, p.[compatibility_level],
+p.last_compile_start_time, 
+q.last_execution_time,
+CONVERT(xml, p.query_plan) AS query_plan_xml 
+FROM OrderedDuration AS od 
+INNER JOIN sys.query_store_query AS q WITH (NOLOCK)
+ON q.query_id  = od.query_id
+INNER JOIN sys.query_store_query_text AS qt WITH (NOLOCK)
+ON q.query_text_id = qt.query_text_id
+INNER JOIN sys.query_store_plan AS p WITH (NOLOCK)
+ON q.query_id = p.query_id
+WHERE od.RN <= 50 
+ORDER BY od.total_cpu_time DESC OPTION (RECOMPILE);
+------
+
+-- New for SQL Server 2016
+-- Requires that QueryStore is enabled for this database
+
+
+-- Get input buffer information for the current database (Query 84) (Input Buffer)
 SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],
        es.login_time, es.cpu_time, es.logical_reads, es.memory_usage,
        es.[status], ib.event_info AS [Input Buffer]
@@ -1925,7 +1991,7 @@ AND es.session_id <> @@SPID OPTION (RECOMPILE);
 
 
 
--- Get any resumable index rebuild operation information (Query 84) (Resumable Index Rebuild)
+-- Get any resumable index rebuild operation information (Query 85) (Resumable Index Rebuild)
 SELECT OBJECT_NAME(iro.object_id) AS [Object Name], iro.index_id, iro.name AS [Index Name],
        iro.sql_text, iro.last_max_dop_used, iro.partition_number, iro.state_desc, iro.start_time, iro.percent_complete
 FROM  sys.index_resumable_operations AS iro WITH (NOLOCK)
@@ -1936,7 +2002,7 @@ OPTION (RECOMPILE);
 -- https://bit.ly/2pYSWqq
 
 
--- Get database automatic tuning options (Query 85) (Automatic Tuning Options)
+-- Get database automatic tuning options (Query 86) (Automatic Tuning Options)
 SELECT [name], desired_state_desc, actual_state_desc, reason_desc
 FROM sys.database_automatic_tuning_options WITH (NOLOCK)
 OPTION (RECOMPILE);
@@ -1947,7 +2013,7 @@ OPTION (RECOMPILE);
 
 
 
--- Look at recent Full backups for the current database (Query 86) (Recent Full Backups)
+-- Look at recent Full backups for the current database (Query 87) (Recent Full Backups)
 SELECT TOP (30) bs.machine_name, bs.server_name, bs.database_name AS [Database Name], bs.recovery_model,
 CONVERT (BIGINT, bs.backup_size / 1048576 ) AS [Uncompressed Backup Size (MB)],
 CONVERT (BIGINT, bs.compressed_backup_size / 1048576 ) AS [Compressed Backup Size (MB)],
@@ -1977,13 +2043,13 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 
 -- These three Pluralsight Courses go into more detail about how to run these queries and interpret the results
 
--- SQL Server 2014 DMV Diagnostic Queries Â– Part 1 
+-- SQL Server 2014 DMV Diagnostic Queries – Part 1 
 -- https://bit.ly/2plxCer
 
--- SQL Server 2014 DMV Diagnostic Queries Â– Part 2
+-- SQL Server 2014 DMV Diagnostic Queries – Part 2
 -- https://bit.ly/2IuJpzI
 
--- SQL Server 2014 DMV Diagnostic Queries Â– Part 3
+-- SQL Server 2014 DMV Diagnostic Queries – Part 3
 -- https://bit.ly/2FIlCPb
 
 
