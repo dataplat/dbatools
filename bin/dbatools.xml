@@ -5740,6 +5740,21 @@
             </summary>
             <param name="charList">Character list string</param>
         </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.UtilityHost.Callstack">
+            <summary>
+            Returns the current callstack
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.UtilityHost._CallstackNew">
+            <summary>
+            Returns the current callstack on PS4+
+            </summary>
+        </member>
+        <member name="P:Sqlcollaborative.Dbatools.Utility.UtilityHost._CallstackOld">
+            <summary>
+            Returns the current callstack on PS3
+            </summary>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Utility.Validation">
             <summary>
             Provides helper methods that aid in validating stuff.
