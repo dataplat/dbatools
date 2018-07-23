@@ -140,7 +140,7 @@ function Remove-DbaDbSnapshot {
             }
 
             if ($Force) {
-                $db | Remove-DbaDatabase -Confirm:$confirm | Select-DefaultView -Property $defaultprops
+                $db | Remove-DbaDatabase -Confirm:$false | Select-DefaultView -Property $defaultprops
             }
             else {
                 try {
