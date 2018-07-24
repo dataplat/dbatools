@@ -64,7 +64,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Shrinks just the log file when FileType is Log" {
-            Invoke-DbaDbShrink $server -Database $db.Name -FileType Log -Verbose
+            Invoke-DbaDbShrink $server -Database $db.Name -FileType Log
             $db.Refresh()
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
