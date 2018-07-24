@@ -33,14 +33,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $primaryFile = New-Object Microsoft.SqlServer.Management.Smo.DataFile($primaryFileGroup, $db.Name)
             $primaryFile.FileName = "$($defaultPath.Data)\$($db.Name).mdf"
-            $primaryFile.Size = $setFileSize
+            $primaryFile.Size = 1024
             $primaryFile.Growth = 8 * 1024
             $primaryFile.GrowthType = "KB"
             $primaryFileGroup.Files.Add($primaryFile)
 
             $logFile = New-Object Microsoft.SqlServer.Management.Smo.LogFile($db, "$($db.Name)_log")
             $logFile.FileName = "$($defaultPath.Log)\$($db.Name)_log.ldf"
-            $logFile.Size = $setFileSize
+            $logFile.Size = 1024
             $logFile.Growth = 8 * 1024
             $logFile.GrowthType = "KB"
             $db.LogFiles.Add($logFile)
