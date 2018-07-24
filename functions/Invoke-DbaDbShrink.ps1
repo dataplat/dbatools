@@ -152,6 +152,10 @@ function Invoke-DbaDbShrink {
             Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "LogsOnly"
             $FileType = 'Log'
         }
+        if (!$Database -and !$ExcludeDatabase -and !$AllUserDatabases) {
+            Stop-Function -Message "You must specify databases to execute against using either -Database, -Exclude or -AllUserDatabases"
+            return
+        }
 
         $StepSizeKB = ($stepSizeMB * 1024)
 
@@ -166,9 +170,7 @@ function Invoke-DbaDbShrink {
     }
 
     process {
-        if (!$Database -and !$ExcludeDatabase -and !$AllUserDatabases) {
-            Stop-Function -Message "You must specify databases to execute against using either -Database, -Exclude or -AllUserDatabases" -Continue
-        }
+        if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
