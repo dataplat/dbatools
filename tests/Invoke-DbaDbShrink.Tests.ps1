@@ -45,16 +45,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $db.Create()
 
-            # Execute a bunch of inserts in a transaction to grow the data and log files
-            $conn = $server.ConnectionContext
-            $conn.ExecuteNonQuery("use $($db.Name);")
-            $conn.BeginTransaction();
-            $conn.ExecuteNonQuery("create table dbatoolsci_test1 (col1 char(8000));")
-            1..1000 | ForEach-Object {
-                $conn.ExecuteNonQuery("insert into dbatoolsci_test1 values('data');")
-            }
-            $conn.ExecuteNonQuery("drop table dbatoolsci_test1;")
-            $conn.CommitTransaction();
+            # grow the files
+            $server.Query("
+            ALTER DATABASE [$($db.name)] MODIFY FILE ( NAME = N'$($db.name)', SIZE = 16384KB )
+            ALTER DATABASE [$($db.name)] MODIFY FILE ( NAME = N'$($db.name)_log', SIZE = 16384KB )")
 
             # Save the current file sizes
             $db.Refresh()
