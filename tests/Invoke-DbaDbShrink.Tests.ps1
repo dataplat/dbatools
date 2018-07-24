@@ -57,6 +57,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.LogFiles[0].Refresh()
             $oldLogSize = $db.LogFiles[0].Size
             $oldDataSize = $db.FileGroups[0].Files[0].Size
+            $db.Checkpoint()
         }
         AfterEach {
             $db | Remove-DbaDatabase -Confirm:$false
