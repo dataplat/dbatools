@@ -29,7 +29,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
             $primaryFileGroup = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($db, "PRIMARY")
             $db.FileGroups.Add($primaryFileGroup)
-            $setFileSize = 1 * 1024
+            $setFileSize = 1024
 
             $primaryFile = New-Object Microsoft.SqlServer.Management.Smo.DataFile($primaryFileGroup, $db.Name)
             $primaryFile.FileName = "$($defaultPath.Data)\$($db.Name).mdf"
