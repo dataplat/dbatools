@@ -53,7 +53,7 @@ function Get-DbaSsisExecutionHistory {
 
         .EXAMPLE
             Get-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Status Failed,Cancelled
-            
+
             Gets all failed or canceled executions for SMTQ01.
 
         .EXAMPLE
@@ -91,37 +91,50 @@ function Get-DbaSsisExecutionHistory {
         }
         if ($Status) {
             $csv = ($statuses[$Status] -join ',')
-            $statusq = "AND e.[Status] in ($csv)"
+            $statusq = "`n`t`tAND e.[Status] in ($csv)"
         }
         else {
             $statusq = ''
         }
-        
+
+        #construct parameterized collection predicate for project array
         if ($Project) {
-            $csv = "`"" + ($Project -join '","') + "`""
-            $projectq = "AND e.[ProjectName] in ($csv)"
+            $projectq = "`n`t`tAND ( 1=0 "
+            $i = 0
+            foreach($p in $Project){
+                $i ++
+                $projectq += "`n`t`t`tOR e.[project_name] = @project$i"
+                $params.Add("project$i",$p)
+            }
+            $projectq += "`n`t`t)"
         }
         else {
             $projectq = ''
         }
-        
+
         if ($Folder) {
-            $csv = "`'" + ($Folder -join "'", "'") + "`'"
-            $folderq = "AND e.[FolderName] in ($csv)"
+            $folderq = "`n`t`tAND ( 1=0 "
+            $i = 0
+            foreach($f in $Folder){
+                $i ++
+                $folderq += "`n`t`t`tOR e.[folder_name] = @folder$i"
+                $params.Add("folder$i" , $f)
+            }
+            $folderq += "`n`t`t)"
         }
         else {
             $folderq = ''
         }
-        
+
         if ($Environment) {
-            $csv = "`'" + ($Environment -join "'", "'") + "`'"
-            $environmentq = "AND e.[Environment] in ($csv)"
+            $csv = "`'" + ($Environment -join "`', `'") + "`'"
+            $environmentq = "`n`t`tAND e.[Environment] in ($csv)"
         }
         else {
             $environmentq = ''
         }
         if($Since){
-            $sinceq = 'AND e.[start_time] >= @since'
+            $sinceq = "`n`t`tAND e.[start_time] >= @since"
             $params.Add('since',$Since )
         }
 
@@ -171,13 +184,12 @@ function Get-DbaSsisExecutionHistory {
                     ON e.execution_id = l.ExecutionID
                 LEFT OUTER JOIN cteStatus s
                     ON s.[key] = e.status
-            WHERE 1=1
-                $statusq
-                $projectq
-                $folderq
-                $environmentq
-                $sinceq
-                OPTION  ( RECOMPILE );"
+            WHERE 1=1$statusq$projectq$folderq$environmentq$sinceq
+            OPTION  ( RECOMPILE );"
+        Write-Verbose "`nSQL statement: $sql"
+
+        $paramout = ($params | Out-String)
+        Write-Verbose "`nParameters:$paramout"
     }
 
 
