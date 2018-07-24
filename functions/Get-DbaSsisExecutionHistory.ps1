@@ -6,7 +6,7 @@ function Get-DbaSsisExecutionHistory {
 
         .DESCRIPTION
             This command gets execution history for SSIS executison given one or more instances and can be filtered by Project, Environment,Folder or Status.
-        
+
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to.
             This can be a collection and receive pipeline input to allow the function
@@ -20,7 +20,7 @@ function Get-DbaSsisExecutionHistory {
 
         .PARAMETER Folder
             Specifies a filter by folder
-        
+
         .PARAMETER Environment
             Specifies a filter by environment
 
@@ -29,7 +29,7 @@ function Get-DbaSsisExecutionHistory {
 
         .PARAMETER Since
             Datetime object used to narrow the results to a date
-        
+
             .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -76,8 +76,9 @@ function Get-DbaSsisExecutionHistory {
         [switch]$EnableException
     )
     begin {
-        $params = @{}    
-
+        $params = @{}
+        
+        #build status parameter
         $statuses = @{
             'Created'   = 1
             'Running'   = 2
@@ -112,6 +113,7 @@ function Get-DbaSsisExecutionHistory {
             $projectq = ''
         }
 
+        #construct parameterized collection predicate for folder array
         if ($Folder) {
             $folderq = "`n`t`tAND ( 1=0 "
             $i = 0
@@ -126,20 +128,29 @@ function Get-DbaSsisExecutionHistory {
             $folderq = ''
         }
 
-        if ($Environment) {
-            $csv = "`'" + ($Environment -join "`', `'") + "`'"
-            $environmentq = "`n`t`tAND e.[Environment] in ($csv)"
+         #construct parameterized collection predicate for environment array
+         if ($Environment) {
+            $environmentq = "`n`t`tAND ( 1=0 "
+            $i = 0
+            foreach($e in $Environment){
+                $i ++
+                $environmentq += "`n`t`t`tOR e.[environment_name] = @environment$i"
+                $params.Add("environment$i" , $e)
+            }
+            $environmentq += "`n`t`t)"
         }
         else {
             $environmentq = ''
         }
+
+        #construct date filter for since
         if($Since){
             $sinceq = "`n`t`tAND e.[start_time] >= @since"
             $params.Add('since',$Since )
         }
 
         $sql = "
-            WITH
+        WITH
             cteLoglevel as (
                 SELECT
                     execution_id as ExecutionID,
@@ -185,9 +196,11 @@ function Get-DbaSsisExecutionHistory {
                 LEFT OUTER JOIN cteStatus s
                     ON s.[key] = e.status
             WHERE 1=1$statusq$projectq$folderq$environmentq$sinceq
-            OPTION  ( RECOMPILE );"
-        Write-Verbose "`nSQL statement: $sql"
+            OPTION  ( RECOMPILE );
+        "
 
+        #debug verbose output
+        Write-Verbose "`nSQL statement: $sql"
         $paramout = ($params | Out-String)
         Write-Verbose "`nParameters:$paramout"
     }
