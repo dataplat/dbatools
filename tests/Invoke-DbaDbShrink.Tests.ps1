@@ -20,7 +20,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying Database is shrunk" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $server = Connect-DbaInstance -SqlInstance $script:instance2
             $defaultPath = $server | Get-DbaDefaultPath
         }
         BeforeEach {
@@ -64,7 +64,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Shrinks just the log file when FileType is Log" {
-            Invoke-DbaDbShrink $server -Database $db.Name -FileType Log -Verbose
+            Invoke-DbaDbShrink $server -Database $db.Name -FileType Log
             $db.Refresh()
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
