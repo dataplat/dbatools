@@ -130,9 +130,9 @@ function Remove-DbaAgentJob {
                     $dropJobQuery = ("EXEC dbo.sp_delete_job @job_name = '{0}', @delete_history = {1}, @delete_unused_schedule = {2}" -f $currentJob.Name.Replace("'", "''"), $dropHistory, $dropSchedule)
                     $server.Databases['msdb'].ExecuteNonQuery($dropJobQuery)
                     [pscustomobject]@{
-                        ComputerName = $currentJob.ComputerName
-                        InstanceName = $currentJob.InstanceName
-                        SqlInstance  = $currentJob.SqlInstance
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
                         Name         = $currentJob.Name
                         Status       = 'Dropped'
                     }
@@ -141,9 +141,9 @@ function Remove-DbaAgentJob {
                     Write-Message -Level Verbose -Message "Could not drop job $job on $server"
                     
                     [pscustomobject]@{
-                        ComputerName = $currentJob.ComputerName
-                        InstanceName = $currentJob.InstanceName
-                        SqlInstance  = $currentJob.SqlInstance
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
                         Name         = $currentJob.Name
                         Status       = "Failed. $(Get-ErrorMessage -Record $_)"
                     }
