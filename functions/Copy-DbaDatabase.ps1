@@ -82,6 +82,9 @@ function Copy-DbaDatabase {
         .PARAMETER UseLastBackups
             Use the last full, diff and logs instead of performing backups. Note that the backups must exist in a location accessible by all destination servers, such a network share.
 
+        .PARAMETER Continue
+            If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackups
+
         .PARAMETER NoCopyOnly
              If this switch is enabled, backups will be taken without COPY_ONLY. This will break the LSN backup chain, which will interfere with the restore chain of the database.
 
@@ -192,6 +195,8 @@ function Copy-DbaDatabase {
         [switch]$IncludeSupportDbs,
         [parameter(ParameterSetName = "DbBackup")]
         [switch]$UseLastBackups,
+        [parameter(ParameterSetName = "DbBackup")]
+        [switch]$Continue,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$NoCopyOnly,
@@ -213,6 +218,10 @@ function Copy-DbaDatabase {
         }
         if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
             Stop-Function -Message "When using -DetachAttach with multiple servers, you must specify -Reattach to reattach database at source"
+            return
+        }
+        if ($Continue -and -not $UseLastBackups) {
+            Stop-Function -Message "-Continue cannot be used without -UseLastBackups"
             return
         }
         function Join-AdminUnc {
@@ -1063,7 +1072,7 @@ function Copy-DbaDatabase {
                             Write-Message -Level Verbose -Message "Reuse = $ReuseSourceFolderStructure."
                             try {
                                 $msg = $null
-                                $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $dbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -EnableException
+                                $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $dbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException
                             }
                             catch {
                                 $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
