@@ -21,6 +21,13 @@
         .PARAMETER Template
             Specifies the name of one of the templates from the dbatools repository. Press tab to cycle through the provided templates.
 
+        .PARAMETER AddTargetRingBuffer
+            Add a ring buffer target.
+    
+        .PARAMETER AddTargetFile
+            Use this switch to save results to a file. By default, files will be created in the default xel directory. Use TargetFilePath to change all instances of
+            filename = "file.xel" to filename = "$TargetFilePath\file.xel". Only specify the directory, not the file itself.
+
         .PARAMETER TargetFilePath
             By default, files will be created in the default xel directory. Use TargetFilePath to change all instances of
             filename = "file.xel" to filename = "$TargetFilePath\file.xel". Only specify the directory, not the file itself.
@@ -79,8 +86,10 @@
         [Alias("FullName")]
         [string[]]$Path,
         [string[]]$Template,
+        [switch]$AddTargetFile,
         [string]$TargetFilePath,
         [string]$TargetFileMetadataPath,
+        [switch]$AddTargetRingBuffer,
         [switch]$EnableException
     )
     begin {
