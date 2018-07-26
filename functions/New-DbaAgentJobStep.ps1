@@ -223,7 +223,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                             Write-Message -Message "Step $StepName already exists for job. Force is used. Removing existing step" -Level Verbose
 
                             # Remove the job step based on the name
-                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName
+                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName -SqlCredential $SqlCredential
 
                             # Set the name job step object
                             $JobStep.Name = $StepName
@@ -240,14 +240,12 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                             Write-Message -Message "Setting job step step id to $StepId" -Level Verbose
                             $JobStep.ID = $StepId
                         }
-                        elseif ($Job.JobSteps.ID -contains $StepId) {
-                            if($Force){
-                                Write-Message -Message "Step ID $StepId already exists for job. Force is used. Removing existing step" -Level Verbose
+                        elseif (($Job.JobSteps.ID -contains $StepId) -and $Force) {
+                            Write-Message -Message "Step ID $StepId already exists for job. Force is used. Removing existing step" -Level Verbose
 
-                                # Remove the existing job step
-                                $StepName = ($Server.JobServer.Jobs['Job2'].JobSteps | Where-Object {$_.ID -eq 1}).Name
-                                Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName
-                            }
+                            # Remove the existing job step
+                            $StepName = ($Server.JobServer.Jobs[$j].JobSteps | Where-Object {$_.ID -eq 1}).Name
+                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName -SqlCredential $SqlCredential
 
                             # Set the ID job step object
                             $JobStep.ID = $StepId
