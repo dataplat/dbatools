@@ -67,9 +67,9 @@ Get-DbaDatabase -SqlInstance server\instance -ExcludeAllSystemDb | Remove-DbaDat
 
 Removes all the user databases from server\instance without any confirmation
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
     Param (
-        [parameter(, Mandatory, ParameterSetName = "instance")]
+        [parameter(Mandatory, ParameterSetName = "instance")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [parameter(Mandatory = $false)]
@@ -113,7 +113,7 @@ Removes all the user databases from server\instance without any confirmation
                     $server.Refresh()
 
                     [pscustomobject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $db.name
@@ -127,7 +127,7 @@ Removes all the user databases from server\instance without any confirmation
                         $null = $server.Query("if exists (select * from sys.databases where name = '$($db.name)' and state = 0) alter database $db set single_user with rollback immediate; drop database $db")
 
                         [pscustomobject]@{
-                            ComputerName = $server.NetName
+                            ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name
@@ -142,7 +142,7 @@ Removes all the user databases from server\instance without any confirmation
                             $server.Refresh()
 
                             [pscustomobject]@{
-                                ComputerName = $server.NetName
+                                ComputerName = $server.ComputerName
                                 InstanceName = $server.ServiceName
                                 SqlInstance  = $server.DomainInstanceName
                                 Database     = $db.name
@@ -154,11 +154,11 @@ Removes all the user databases from server\instance without any confirmation
                         Write-Message -Level Verbose -Message "Could not drop database $db on $server"
 
                         [pscustomobject]@{
-                            ComputerName = $server.NetName
+                            ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name
-                            Status       = $_
+                            Status       = (Get-ErrorMessage -Record $_)
                         }
                     }
                 }

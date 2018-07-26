@@ -19,6 +19,7 @@ function Get-DbaAvailableCollation {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Collation, Configuration
             Author: Bryan Hamby (@galador)
 
             Website: https://dbatools.io
@@ -32,7 +33,6 @@ function Get-DbaAvailableCollation {
             Get-DbaAvailableCollation -SqlInstance sql2016
 
             Gets all the collations from server sql2016 using NT authentication
-
     #>
     [CmdletBinding()]
     Param (
@@ -99,7 +99,7 @@ function Get-DbaAvailableCollation {
 
             $availableCollations = $server.EnumCollations()
             foreach ($collation in $availableCollations) {
-                Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name CodePageName -Value (Get-CodePageDescription $collation.CodePage)

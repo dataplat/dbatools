@@ -20,7 +20,7 @@ function Get-DbaCredential {
 
         .PARAMETER ExcludeName
             Excluded credential names
-    
+
         .PARAMETER Identity
             Only include specific identities
             Note: if spaces exist in the credential identity, you will have to type "" or '' around it.
@@ -53,7 +53,7 @@ function Get-DbaCredential {
             Get-DbaCredential -SqlInstance localhost, sql2016 -Name 'PowerShell Proxy'
 
             Returns the SQL Credentials named 'PowerShell Proxy' for the local and sql2016 SQL Server instances
-    
+
         .EXAMPLE
             Get-DbaCredential -SqlInstance localhost, sql2016 -Identity ad\powershell
 
@@ -63,7 +63,7 @@ function Get-DbaCredential {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
     param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Name,
         [string[]]$ExcludeName,
@@ -77,7 +77,7 @@ function Get-DbaCredential {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -86,25 +86,25 @@ function Get-DbaCredential {
             }
 
             $credential = $server.Credentials
-            
+
             if ($Name) {
                 $credential = $credential | Where-Object { $Name -contains $_.Name }
             }
-            
+
             if ($ExcludeName) {
                 $credential = $credential | Where-Object { $ExcludeName -notcontains $_.Name }
             }
-            
+
             if ($Identity) {
                 $credential = $credential | Where-Object { $Identity -contains $_.Identity }
             }
-            
+
             if ($ExcludeIdentity) {
                 $credential = $credential | Where-Object { $ExcludeIdentity -notcontains $_.Identity }
             }
-            
+
             foreach ($currentcredential in $credential) {
-                Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name ComputerName -value $currentcredential.Parent.NetName
+                Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name ComputerName -value $currentcredential.Parent.ComputerName
                 Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name InstanceName -value $currentcredential.Parent.ServiceName
                 Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name SqlInstance -value $currentcredential.Parent.DomainInstanceName
 

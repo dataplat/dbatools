@@ -24,7 +24,7 @@ function Get-DbaAvailabilityGroup {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: DisasterRecovery, AG, AvailabilityGroup
+            Tags: Hadr, AG, AvailabilityGroup
             Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
 
             Website: https://dbatools.io
@@ -85,7 +85,7 @@ function Get-DbaAvailabilityGroup {
             }
 
             foreach ($ag in $ags) {
-                Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 

@@ -39,7 +39,8 @@ function Connect-SqlInstance {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidDefaultValueSwitchParameter", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
     param (
-        [Parameter(Mandatory = $true)][object]$SqlInstance,
+        [Parameter(Mandatory = $true)]
+        [object]$SqlInstance,
         [object]$SqlCredential,
         [switch]$ParameterConnection,
         [switch]$RegularUser = $true,
@@ -52,8 +53,7 @@ function Connect-SqlInstance {
     function Invoke-TEPPCacheUpdate {
         [CmdletBinding()]
         param (
-            [System.Management.Automation.ScriptBlock]
-            $ScriptBlock
+            [System.Management.Automation.ScriptBlock]$ScriptBlock
         )
 
         try {
@@ -65,12 +65,7 @@ function Connect-SqlInstance {
                 return
             }
 
-            if ($ENV:APPVEYOR_BUILD_FOLDER -or ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::DeveloperMode)) { throw }
-            <#
-            elseif ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::DevelopmentBranch) {
-                Write-Message -Level Warning -Message "Failed TEPP Caching: $($s | Select-String '"(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })" -ErrorRecord $_ -EnableException $false
-            }
-            #>
+            if ($ENV:APPVEYOR_BUILD_FOLDER -or ([Sqlcollaborative.Dbatools.Message.MEssageHost]::DeveloperMode)) { throw }
             else {
                 Write-Message -Level Warning -Message "Failed TEPP Caching: $($scriptBlock.ToString() | Select-String '"(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })" -ErrorRecord $_ 3>$null
             }
@@ -122,10 +117,13 @@ function Connect-SqlInstance {
             if ($NonPooled) {
                 $server.ConnectionContext.Connect()
             }
+            elseif ($authtype -eq "Windows Authentication with Credential") {
+                # Make it connect in a natural way, hard to explain.
+                $null = $server.IsMemberOfWsfcCluster
+            }
             else {
                 $server.ConnectionContext.SqlConnectionObject.Open()
             }
-
         }
 
         # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
@@ -143,24 +141,19 @@ function Connect-SqlInstance {
                 Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
             }
         }
+
+        if (-not $server.ComputerName) {
+            $parsedcomputername = $server.NetName
+            if (-not $parsedcomputername) {
+                $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
+            }
+            Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
+        }
         return $server
     }
     #endregion Input Object was a server object
 
     #region Input Object was anything else
-    # This seems a little complex but is required because some connections do TCP,SqlInstance
-    $loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName -like "Microsoft.SqlServer.SMO,*" }
-
-    if ($loadedSmoVersion) {
-        $loadedSmoVersion = $loadedSmoVersion | ForEach-Object {
-            if ($_.Location -match "__") {
-                ((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
-            }
-            else {
-                ((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion)
-            }
-        }
-    }
 
     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlInstance.FullSmoName
     $server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
@@ -194,6 +187,10 @@ function Connect-SqlInstance {
         if ($NonPooled) {
             $server.ConnectionContext.Connect()
         }
+        elseif ($authtype -eq "Windows Authentication with Credential") {
+            # Make it connect in a natural way, hard to explain.
+            $null = $server.IsMemberOfWsfcCluster
+        }
         else {
             $server.ConnectionContext.SqlConnectionObject.Open()
         }
@@ -224,7 +221,7 @@ function Connect-SqlInstance {
     }
 
     if ($AzureUnsupported -and $server.DatabaseEngineType -eq "SqlAzureDatabase") {
-        throw "SQL Azure DB not supported :("
+        throw "Azure SQL Database not supported"
     }
 
     if (-not $RegularUser) {
@@ -234,56 +231,54 @@ function Connect-SqlInstance {
     }
     #'PrimaryFilePath' seems the culprit for slow SMO on databases
     $Fields2000_Db = 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsSystemObject', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'ReadOnly', 'RecoveryModel', 'ReplicationOptions', 'Status', 'Version'
-    $Fields200x_Db = $Fields2000_Db + @('BrokerEnabled', 'IsMirroringEnabled', 'Trustworthy')
+    $Fields200x_Db = $Fields2000_Db + @('BrokerEnabled', 'DatabaseSnapshotBaseName', 'IsMirroringEnabled', 'Trustworthy')
     $Fields201x_Db = $Fields200x_Db + @('ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'ContainmentType', 'EncryptionEnabled')
 
-    $Fields2000_Login = 'CreateDate' , 'DateLastModified' , 'DefaultDatabase' , 'DenyWindowsLogin' , 'IsSystemObject' , 'Language' , 'LanguageAlias' , 'LoginType' , 'Name' , 'Sid' , 'WindowsLoginAccessType'
+    $Fields2000_Login = 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType'
     $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
     $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
 
-    if ($loadedSmoVersion -ge 11) {
-        try {
-            if ($Server.ServerType -ne 'SqlAzureDatabase') {
-                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Trigger], 'IsSystemObject')
-                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Schema], 'IsSystemObject')
-                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.SqlAssembly], 'IsSystemObject')
-                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Table], 'IsSystemObject')
-                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.View], 'IsSystemObject')
-                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.StoredProcedure], 'IsSystemObject')
-                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.UserDefinedFunction], 'IsSystemObject')
+    try {
+        if ($Server.ServerType -ne 'SqlAzureDatabase') {
+            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Trigger], 'IsSystemObject')
+            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Schema], 'IsSystemObject')
+            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.SqlAssembly], 'IsSystemObject')
+            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Table], 'IsSystemObject')
+            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.View], 'IsSystemObject')
+            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.StoredProcedure], 'IsSystemObject')
+            $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.UserDefinedFunction], 'IsSystemObject')
 
-                if ($server.VersionMajor -eq 8) {
-                    # 2000
-                    $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
-                    [void]$initFieldsDb.AddRange($Fields2000_Db)
-                    $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
-                    [void]$initFieldsLogin.AddRange($Fields2000_Login)
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
-                }
-                elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
-                    # 2005 and 2008
-                    $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
-                    [void]$initFieldsDb.AddRange($Fields200x_Db)
-                    $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
-                    [void]$initFieldsLogin.AddRange($Fields200x_Login)
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
-                }
-                else {
-                    # 2012 and above
-                    $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
-                    [void]$initFieldsDb.AddRange($Fields201x_Db)
-                    $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
-                    [void]$initFieldsLogin.AddRange($Fields201x_Login)
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
-                }
+            if ($server.VersionMajor -eq 8) {
+                # 2000
+                $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                [void]$initFieldsDb.AddRange($Fields2000_Db)
+                $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                [void]$initFieldsLogin.AddRange($Fields2000_Login)
+                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
+            }
+            elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
+                # 2005 and 2008
+                $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                [void]$initFieldsDb.AddRange($Fields200x_Db)
+                $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                [void]$initFieldsLogin.AddRange($Fields200x_Login)
+                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
+            }
+            else {
+                # 2012 and above
+                $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                [void]$initFieldsDb.AddRange($Fields201x_Db)
+                $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                [void]$initFieldsLogin.AddRange($Fields201x_Login)
+                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
             }
         }
-        catch {
-            # perhaps a DLL issue, continue going
-        }
+    }
+    catch {
+        # perhaps a DLL issue, continue going
     }
 
     # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
@@ -302,6 +297,13 @@ function Connect-SqlInstance {
         }
     }
 
+    if (-not $server.ComputerName) {
+        $parsedcomputername = $server.NetName
+        if (-not $parsedcomputername) {
+            $parsedcomputername = ([dbainstance]$SqlInstance).ComputerName
+        }
+        Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
+    }
     return $server
     #endregion Input Object was anything else
 }

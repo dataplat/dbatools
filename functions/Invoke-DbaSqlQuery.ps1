@@ -293,10 +293,10 @@ function Invoke-DbaSqlQuery {
                         if ($null -eq $item) {continue}
                         $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
                         $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
-                        Invoke-DbaSqlAsync -SQLConnection $conncontext.SqlConnectionObject @splatInvokeDbaSqlAsync -Query $QueryfromFile
+                        Invoke-DbaSqlAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
                     }
                 }
-                else { Invoke-DbaSqlAsync -SQLConnection $conncontext.SqlConnectionObject @splatInvokeDbaSqlAsync }
+                else { Invoke-DbaSqlAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync }
             }
             catch {
                 Stop-Function -Message "[$db] Failed during execution" -ErrorRecord $_ -Target $server -Continue
@@ -320,11 +320,11 @@ function Invoke-DbaSqlQuery {
                         if ($null -eq $item) {continue}
                         $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
                         $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
-                        Invoke-DbaSqlAsync -SQLConnection $conncontext.SqlConnectionObject @splatInvokeDbaSqlAsync -Query $QueryfromFile
+                        Invoke-DbaSqlAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
                     }
                 }
                 else {
-                    Invoke-DbaSqlAsync -SQLConnection $conncontext.SqlConnectionObject @splatInvokeDbaSqlAsync
+                    Invoke-DbaSqlAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync
                 }
             }
             catch {

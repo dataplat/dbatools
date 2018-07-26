@@ -1,87 +1,86 @@
 function Invoke-DbaDbDecryptObject {
     <#
-    .SYNOPSIS
-        Invoke-DbaDbDecryptObject returns the decrypted version of an object
+        .SYNOPSIS
+            Invoke-DbaDbDecryptObject returns the decrypted version of an object
 
-    .DESCRIPTION
-        When a procedure or a function is created with encryption and you lost the code you're in trouble.
-        You cannot alter the object or view the definition.
-        With this command you can search for the object and decrypt the it.
+        .DESCRIPTION
+            When a procedure or a function is created with encryption and you lost the code you're in trouble.
+            You cannot alter the object or view the definition.
+            With this command you can search for the object and decrypt the it.
 
-        The command will output the results to the console.
-        There is an option to export all the results to a folder creating .sql files.
+            The command will output the results to the console.
+            There is an option to export all the results to a folder creating .sql files.
 
-        Make sure the instance allowed dedicated administrator connections (DAC).
-        The binary versions of the objects can only be retrieved using a DAC connection.
-        You can check the DAC connection with:
-        'Get-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled'
-        It should say 1 in the ConfiguredValue.
+            Make sure the instance allowed dedicated administrator connections (DAC).
+            The binary versions of the objects can only be retrieved using a DAC connection.
+            You can check the DAC connection with:
+            'Get-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled'
+            It should say 1 in the ConfiguredValue.
 
-        To change the configurations you can use the Set-DbaSpConfigure command:
-        'Set-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled -Value 1'
-        In some cases you may need to reboot the instance.
+            To change the configurations you can use the Set-DbaSpConfigure command:
+            'Set-DbaSpConfigure -SqlInstance [yourinstance] -ConfigName RemoteDacConnectionsEnabled -Value 1'
+            In some cases you may need to reboot the instance.
 
-    .PARAMETER SqlInstance
-        The target SQL Server instance
+        .PARAMETER SqlInstance
+            The target SQL Server instance
 
-    .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER Database
-        Database to look through for the object.
+        .PARAMETER Database
+            Database to look through for the object.
 
-    .PARAMETER ObjectName
-        The name of the object to search for in the database.
+        .PARAMETER ObjectName
+            The name of the object to search for in the database.
 
-    .PARAMETER EncodingType
-        The encoding that's used to decrypt and encrypt values.
+        .PARAMETER EncodingType
+            The encoding that's used to decrypt and encrypt values.
 
-    .PARAMETER ExportDestination
-        Used for exporting the results to.
-        The destiation will use the instance name, database name and object type i.e.: C:\temp\decrypt\SQLDB1\DB1\StoredProcedure
+        .PARAMETER ExportDestination
+            Used for exporting the results to.
+            The destiation will use the instance name, database name and object type i.e.: C:\temp\decrypt\SQLDB1\DB1\StoredProcedure
 
-    .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .NOTES
-        Author: Sander Stad (@sqlstad, sqlstad.nl)
-        Tags: Encryption, Decrypt, Database Objects
+        .NOTES
+            Tags: Encryption, Decrypt, Database
+            Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MIT
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    .LINK
-        https://dbatools.io/Invoke-DbaDbDecryptObject
+        .LINK
+            https://dbatools.io/Invoke-DbaDbDecryptObject
 
-    .EXAMPLE
-    Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1
+        .EXAMPLE
+            Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1
 
-    Decrypt object "Function1" in DB1 of instance SQLDB1 and output the data to the user.
+            Decrypt object "Function1" in DB1 of instance SQLDB1 and output the data to the user.
 
-    .EXAMPLE
-    Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1 -ExportDestination C:\temp\decrypt
+        .EXAMPLE
+            Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1 -ExportDestination C:\temp\decrypt
 
-    Decrypt object "Function1" in DB1 of instance SQLDB1 and output the data to the folder "C:\temp\decrypt".
+            Decrypt object "Function1" in DB1 of instance SQLDB1 and output the data to the folder "C:\temp\decrypt".
 
-    .EXAMPLE
-    Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ExportDestination C:\temp\decrypt
+        .EXAMPLE
+            Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ExportDestination C:\temp\decrypt
 
-    Decrypt all objects in DB1 of instance SQLDB1 and output the data to the folder "C:\temp\decrypt"
+            Decrypt all objects in DB1 of instance SQLDB1 and output the data to the folder "C:\temp\decrypt"
 
-    .EXAMPLE
-    Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1, Function2
+        .EXAMPLE
+            Invoke-DbaDbDecryptObject -SqlInstance SQLDB1 -Database DB1 -ObjectName Function1, Function2
 
-    Decrypt objects "Function1" and "Function2" and output the data to the user.
+            Decrypt objects "Function1" and "Function2" and output the data to the user.
 
-    .EXAMPLE
-    "SQLDB1" | Invoke-DbaDbDecryptObject -Database DB1 -ObjectName Function1, Function2
+        .EXAMPLE
+            "SQLDB1" | Invoke-DbaDbDecryptObject -Database DB1 -ObjectName Function1, Function2
 
-    Decrypt objects "Function1" and "Function2" and output the data to the user using a pipeline for the instance.
-
-#>
+            Decrypt objects "Function1" and "Function2" and output the data to the user using a pipeline for the instance.
+    #>
    [CmdletBinding()]
     param(
         [parameter(Mandatory, ValueFromPipeline)]
@@ -333,7 +332,7 @@ function Invoke-DbaDbDecryptObject {
 
                         # Add the results to the custom object
                         [PSCustomObject]@{
-                                ComputerName    = $server.NetName
+                                ComputerName    = $server.ComputerName
                                 InstanceName    = $server.ServiceName
                                 SqlInstance     = $server.DomainInstanceName
                                 Database        = $db.Name

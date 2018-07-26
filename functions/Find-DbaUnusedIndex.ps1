@@ -48,7 +48,7 @@ function Find-DbaUnusedIndex {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Indexes
+            Tags: Index
             Author: Aaron Nelson (@SQLvariant), SQLvariant.com
 
             Website: https://dbatools.io
@@ -91,7 +91,7 @@ function Find-DbaUnusedIndex {
 
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -163,7 +163,7 @@ function Find-DbaUnusedIndex {
             }
         }
 
-        Write-Message -Level Output -Message "Attempting to connect to Sql Server."
+        Write-Message -Level Output -Message "Connecting to SQL Server."
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
     process {

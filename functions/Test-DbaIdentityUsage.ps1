@@ -146,8 +146,7 @@ function Test-DbaIdentityUsage {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-
+            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             }
@@ -190,7 +189,7 @@ function Test-DbaIdentityUsage {
 
                     if ($row.PercentUsed -ge $threshold) {
                         [PSCustomObject]@{
-                            ComputerName   = $server.NetName
+                            ComputerName   = $server.ComputerName
                             InstanceName   = $server.ServiceName
                             SqlInstance    = $server.DomainInstanceName
                             Database       = $row.DatabaseName

@@ -31,7 +31,7 @@ function Get-DbaOrphanUser {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Orphan, Databases
+            Tags: Orphan, Database, User, Security, Login
             Author: Claudio Silva (@ClaudioESSilva)
             Author: Garry Bargsley (@gbargsley)
             Editor: Simone Bizzotto (@niphlod)
@@ -74,7 +74,7 @@ function Get-DbaOrphanUser {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
-                Write-Message -Level Warning -Message "Failed to connect to: $SqlInstance."
+                Write-Message -Level Warning -Message "Failed to connect to: $instance."
                 continue
             }
             $DatabaseCollection = $server.Databases | Where-Object IsAccessible
@@ -103,7 +103,7 @@ function Get-DbaOrphanUser {
                             Write-Message -Level Verbose -Message "Orphan users found"
                             foreach ($user in $UsersToWork) {
                                 [PSCustomObject]@{
-                                    ComputerName = $server.NetName
+                                    ComputerName = $server.ComputerName
                                     InstanceName = $server.ServiceName
                                     SqlInstance  = $server.DomainInstanceName
                                     DatabaseName = $db.Name

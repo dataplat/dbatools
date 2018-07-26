@@ -32,7 +32,7 @@ function Test-DbaMaxDop {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: MaxDop, SPConfigure
+            Tags: MaxDop, SpConfigure
             Author  : Claudio Silva (@claudioessilva)
             Requires: sysadmin access on SQL Servers
 
@@ -162,7 +162,7 @@ function Test-DbaMaxDop {
             }
 
             [pscustomobject]@{
-                ComputerName          = $server.NetName
+                ComputerName          = $server.ComputerName
                 InstanceName          = $server.ServiceName
                 SqlInstance           = $server.DomainInstanceName
                 InstanceVersion       = $server.Version
@@ -192,7 +192,7 @@ function Test-DbaMaxDop {
                     $dbmaxdop = $database.MaxDop
 
                     [pscustomobject]@{
-                        ComputerName          = $server.NetName
+                        ComputerName          = $server.ComputerName
                         InstanceName          = $server.ServiceName
                         SqlInstance           = $server.DomainInstanceName
                         InstanceVersion       = $server.Version

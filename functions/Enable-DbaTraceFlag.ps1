@@ -52,8 +52,7 @@ function Enable-DbaTraceFlag {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-
+            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -65,8 +64,8 @@ function Enable-DbaTraceFlag {
 
             # We could combine all trace flags but the granularity is worth it
             foreach ($tf in $TraceFlag) {
-                $TraceFlagInfo = [pscustomobject]@{
-                    SourceServer = $server.NetName
+                $TraceFlagInfo = [PSCustomObject]@{
+                    SourceServer = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     TraceFlag    = $tf
@@ -74,7 +73,7 @@ function Enable-DbaTraceFlag {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                If ($CurrentRunningTraceFlags.TraceFlag -contains $tf) {
+                if ($CurrentRunningTraceFlags.TraceFlag -contains $tf) {
                     $TraceFlagInfo.Status = 'Skipped'
                     $TraceFlagInfo.Notes = "The Trace flag is already running."
                     $TraceFlagInfo

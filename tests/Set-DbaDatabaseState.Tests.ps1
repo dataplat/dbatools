@@ -78,7 +78,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
         AfterAll {
-            $null = Set-DbaDatabaseState -Sqlinstance $script:instance2 -Database $db2, $db3, $db4, $db5, $db7 -Online -ReadWrite -MultiUser -Force
+            $null = Set-DbaDatabaseState -Sqlinstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db7 -Online -ReadWrite -MultiUser -Force
             $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
         }
         if ($setupright) {

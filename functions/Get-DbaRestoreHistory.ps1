@@ -36,7 +36,7 @@ function Get-DbaRestoreHistory {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: DisasterRecovery, Backup, Restore, Databases
+            Tags: DisasterRecovery, Backup, Restore
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -100,7 +100,7 @@ function Get-DbaRestoreHistory {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-                $computername = $server.NetName
+                $computername = $server.ComputerName
                 $instancename = $server.ServiceName
                 $servername = $server.DomainInstanceName
 

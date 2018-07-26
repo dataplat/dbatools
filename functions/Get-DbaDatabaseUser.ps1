@@ -27,7 +27,7 @@ This switch removes all system objects from the user collection
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
-Tags: security, Databases
+Tags: Security, Database
 Author: Klaas Vandenberghe ( @PowerDbaKlaas )
 
 Website: https://dbatools.io
@@ -106,7 +106,7 @@ Gets the users for the databases on Sql1 and Sql2/sqlexpress
 
                 $users | foreach {
 
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name

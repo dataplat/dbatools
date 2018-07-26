@@ -101,7 +101,7 @@ function New-DbaAgentSchedule {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Agent, Job, Job Step
+            Tags: Agent, Job, JobStep
             Author: Sander Stad (@sqlstad, sqlstad.nl)
 
             Website: https://dbatools.io
@@ -417,7 +417,7 @@ function New-DbaAgentSchedule {
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

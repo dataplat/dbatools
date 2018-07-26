@@ -18,7 +18,7 @@ function Get-DbaRunningJob {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags:
+            Tags: Process, Session, ActivityMonitor, Agent, Job
             Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -69,7 +69,7 @@ function Get-DbaRunningJob {
             else {
                 foreach ($job in $jobs) {
                     [pscustomobject]@{
-                        ComputerName     = $server.NetName
+                        ComputerName     = $server.ComputerName
                         InstanceName     = $server.ServiceName
                         SqlInstance      = $server.DomainInstanceName
                         Name             = $job.name

@@ -21,8 +21,9 @@ function Get-DbaXESession {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: ExtendedEvent, XE, Xevent
+            Tags: ExtendedEvent, XE, XEvent
             Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -97,11 +98,11 @@ function Get-DbaXESession {
                             $file = "$directory\$file"
                         }
                         $filecollection += $file
-                        $remotefile += Join-AdminUnc -servername $server.netName -filepath $file
+                        $remotefile += Join-AdminUnc -servername $server.ComputerName -filepath $file
                     }
                 }
 
-                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Status -Value $status

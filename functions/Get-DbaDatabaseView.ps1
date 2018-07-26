@@ -27,7 +27,7 @@ function Get-DbaDatabaseView {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: security, Databases
+            Tags: Security, Database
             Author: Klaas Vandenberghe ( @PowerDbaKlaas )
 
             Website: https://dbatools.io
@@ -105,7 +105,7 @@ function Get-DbaDatabaseView {
 
                 $views | Foreach-Object {
 
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name

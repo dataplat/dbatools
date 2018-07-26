@@ -25,6 +25,7 @@ function Get-DbaSqlInstanceProperty {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Instance, Configure, Configuration
             Author: Klaas Vandenberghe (@powerdbaklaas)
 
             Website: https://dbatools.io
@@ -78,7 +79,7 @@ function Get-DbaSqlInstanceProperty {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -97,7 +98,7 @@ function Get-DbaSqlInstanceProperty {
                     $infoProperties = $infoProperties | Where-Object Name -NotIn $ExcludeInstanceProperty
                 }
                 foreach ($prop in $infoProperties) {
-                    Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                    Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Information'
@@ -118,7 +119,7 @@ function Get-DbaSqlInstanceProperty {
                     $userProperties = $userProperties | Where-Object Name -NotIn $ExcludeInstanceProperty
                 }
                 foreach ($prop in $userProperties) {
-                    Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                    Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'UserOption'
@@ -139,7 +140,7 @@ function Get-DbaSqlInstanceProperty {
                     $settingProperties = $settingProperties | Where-Object Name -NotIn $ExcludeInstanceProperty
                 }
                 foreach ($prop in $settingProperties) {
-                    Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                    Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Setting'

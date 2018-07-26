@@ -74,7 +74,7 @@ function Test-DbaDatabaseCollation {
     process {
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -95,7 +95,7 @@ function Test-DbaDatabaseCollation {
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.name) on $servername."
                 [PSCustomObject]@{
-                    ComputerName      = $server.NetName
+                    ComputerName      = $server.ComputerName
                     InstanceName      = $server.ServiceName
                     SqlInstance       = $server.DomainInstanceName
                     Database          = $db.name

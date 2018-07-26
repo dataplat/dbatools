@@ -14,7 +14,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $results.LastGoodCheckDb -is [datetime]
     }
     
-    $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1
+    $results = Get-DbaLastGoodCheckDb -SqlInstance $script:instance1 -WarningAction SilentlyContinue
     It "returns more than 3 results" {
         ($results).Count -gt 3
     }

@@ -34,7 +34,7 @@ Prompts you for confirmation before executing any changing operations within the
 
 .NOTES
 Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job, Job Category
+Tags: Agent, Job, JobCategory
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -84,7 +84,7 @@ Rename multiple jobs in one go on multiple servers.
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -123,7 +123,7 @@ Rename multiple jobs in one go on multiple servers.
 
                         # Set up the custom object
                         $null = $collection.Add([PSCustomObject]@{
-                                ComputerName    = $server.NetName
+                                ComputerName    = $server.ComputerName
                                 InstanceName    = $server.ServiceName
                                 SqlInstance     = $server.DomainInstanceName
                                 CategoryName    = $originalCategoryName

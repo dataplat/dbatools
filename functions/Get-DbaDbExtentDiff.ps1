@@ -31,6 +31,7 @@ function Get-DbaDbExtentDiff {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Backup, Database
             Author: Viorel Ciucu, viorel.ciucu@gmail.com, cviorel.com
 
             Website: https://dbatools.io
@@ -48,7 +49,7 @@ function Get-DbaDbExtentDiff {
             Get the changes for the DB01 database on multiple servers.
             Get-DbaDbExtentDiff -SqlInstance $SQL2017N1, $SQL2017N2, $SQL2016 -Database DB01 -SqlCredential $Cred
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias('ServerInstance', 'SqlServer')]
@@ -119,7 +120,7 @@ function Get-DbaDbExtentDiff {
                     "
                     $DBCCPageResults = $server.Query($DBCCPageQueryDMV, $db.Name)
                     [pscustomobject]@{
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         DatabaseName   = $db.Name
@@ -154,7 +155,7 @@ function Get-DbaDbExtentDiff {
                     }
                     $extents = Get-DbaExtent $dbExtents.Field
                     [pscustomobject]@{
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         DatabaseName   = $db.Name

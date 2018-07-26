@@ -68,6 +68,15 @@ function Backup-DbaDatabase {
             .PARAMETER Verify
                 If this switch is enabled, the backup will be verified by running a RESTORE VERIFYONLY against the SqlInstance
 
+            .PARAMETER WithFormat
+                 Formats the media as the first step of the backup operation. NOTE: This will set Initialize and SkipTapeHeader to $true.
+
+            .PARAMETER Initialize
+                 Initializes the media as part of the backup operation.
+
+            .PARAMETER SkipTapeHeader
+                 Initializes the media as part of the backup operation.
+
             .PARAMETER InputObject
                 Internal parameter
 
@@ -90,7 +99,7 @@ function Backup-DbaDatabase {
                 Note, that as we can't check the path you may well end up with errors.
 
             .PARAMETER OutputScriptOnly
-                Switch causes only the T-SQL script for the backup to be generated. Will not create any paths if they do now exist
+                Switch causes only the T-SQL script for the backup to be generated. Will not create any paths if they do not exist
 
             .PARAMETER EnableException
                 By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -154,6 +163,9 @@ function Backup-DbaDatabase {
         [string]$AzureCredential,
         [switch]$NoRecovery,
         [switch]$BuildPath,
+        [switch]$WithFormat,
+        [switch]$Initialize,
+        [switch]$SkipTapeHeader,
         [switch]$IgnoreFileChecks,
         [switch]$OutputScriptOnly,
         [Alias('Silent')]
@@ -165,11 +177,11 @@ function Backup-DbaDatabase {
         if ($SqlInstance.length -ne 0) {
             Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
             try {
-                $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
             }
             catch {
-                Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
-                continue
+                Stop-Function -Message "Cannot connect to $SqlInstance" -ErrorRecord $_
+                return
             }
 
             if ($Database) {
@@ -189,24 +201,24 @@ function Backup-DbaDatabase {
             }
 
             if ($InputObject.Count -gt 1 -and $BackupFileName -ne '') {
-                Write-Message -Level Warning -Message "1 BackupFile specified, but more than 1 database."
-                break
+                Stop-Function -Message "1 BackupFile specified, but more than 1 database."
+                return
             }
 
             if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
-                Write-Message -Level Warning -Message "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
-                break
+                Stop-Function -Message "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
+                return
             }
             if ($BlockSize) {
                 if ($BlockSize -notin (0.5kb, 1kb, 2kb, 4kb, 8kb, 16kb, 32kb, 64kb)) {
-                    Write-Message -Level Warning -Message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
-                    break
+                    Stop-Function -Message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
+                    return
                 }
             }
             if ('' -ne $AzureBaseUrl) {
                 if ($null -eq $AzureCredential) {
                     Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
-                    break
+                    return
                 }
                 $AzureBaseUrl = $AzureBaseUrl.Trim("/")
                 $FileCount = 1
@@ -221,8 +233,8 @@ function Backup-DbaDatabase {
 
     process {
         if (!$SqlInstance -and !$InputObject) {
-            Write-Message -Level Warning -Message "You must specify a server and database or pipe some databases"
-            continue
+            Stop-Function -Message "You must specify a server and database or pipe some databases"
+            return
         }
 
         Write-Message -Level Verbose -Message "$($InputObject.Count) database to backup"
@@ -233,18 +245,15 @@ function Backup-DbaDatabase {
             $dbname = $Database.Name
 
             if ($dbname -eq "tempdb") {
-                Write-Message -Level Warning -Message "Backing up tempdb not supported"
-                continue
+                Stop-Function -Message "Backing up tempdb not supported" -Continue
             }
 
             if ('Normal' -notin ($Database.Status -split ',')) {
-                Write-Message -Level Warning -Message "Database status not Normal. $dbname skipped."
-                continue
+                Stop-Function -Message "Database status not Normal. $dbname skipped." -Continue
             }
 
             if ($Database.DatabaseSnapshotBaseName) {
-                Write-Message -Level Warning -Message "Backing up snapshots not supported. $dbname skipped."
-                continue
+                Stop-Function -Message "Backing up snapshots not supported. $dbname skipped." -Continue
             }
 
             if ($null -eq $server) { $server = $Database.Parent }
@@ -356,14 +365,20 @@ function Backup-DbaDatabase {
                 }
             }
 
+            if ($AzureBaseUrl -or $AzureCredential) {
+                $slash = "/"
+            }
+            else {
+                $slash = "\"
+            }
             if ($FinalBackupPath.Count -gt 1) {
                 $File = New-Object System.IO.FileInfo($BackupFinalName)
                 for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] + "\" + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] + $slash + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
                 }
             }
             elseif ($FinalBackupPath[0] -ne 'NUL:') {
-                $FinalBackupPath[0] = $FinalBackupPath[0] + "\" + $BackupFinalName
+                $FinalBackupPath[0] = $FinalBackupPath[0] + $slash + $BackupFinalName
             }
 
             if ($CreateFolder -and $FinalBackupPath[0] -ne 'NUL:') {
@@ -374,7 +389,7 @@ function Backup-DbaDatabase {
                 }
             }
 
-            if (-not $IgnoreFileChecks) {
+            if (-not $IgnoreFileChecks -and -not $AzureBaseUrl) {
                 $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
                 foreach ($parentPath in $parentPaths) {
                     if (-not (Test-DbaSqlPath -SqlInstance $server -Path $parentPath)) {
@@ -410,6 +425,16 @@ function Backup-DbaDatabase {
                     else {
                         $device.DeviceType = "File"
                     }
+                    
+                    if ($WithFormat) {
+                        Write-Message -Message "WithFormat specified. Ensuring Initialize and SkipTapeHeader are set to true." -Level Verbose
+                        $Initialize = $true
+                        $SkipTapeHeader = $true
+                    }
+                    
+                    $backup.FormatMedia = $WithFormat
+                    $backup.Initialize = $Initialize
+                    $backup.SkipTapeHeader = $SkipTapeHeader
                     $device.Name = $backupfile
                     $backup.Devices.Add($device)
                 }
@@ -510,7 +535,7 @@ function Backup-DbaDatabase {
                     }
                     else {
                         Write-Progress -id $ProgressId -activity "Backup" -status "Failed" -completed
-                        Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_
+                        Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_ -Continue
                         $BackupComplete = $false
                     }
                 }

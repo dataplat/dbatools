@@ -45,7 +45,7 @@ function Remove-DbaOrphanUser {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Orphan, Databases
+            Tags: Orphan, Database, Security, Login
             Author: Claudio Silva (@ClaudioESSilva)
             Editor: Simone Bizzotto (@niphlod)
             Website: https://dbatools.io
@@ -107,7 +107,7 @@ function Remove-DbaOrphanUser {
     process {
 
         foreach ($Instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $Instance."
+            Write-Message -Level Verbose -Message "Connecting to $Instance."
             try {
                 $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
             }
@@ -217,7 +217,7 @@ function Remove-DbaOrphanUser {
                                                         $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
 
                                                         [pscustomobject]@{
-                                                            ComputerName      = $server.NetName
+                                                            ComputerName      = $server.ComputerName
                                                             InstanceName      = $server.ServiceName
                                                             SqlInstance       = $server.DomainInstanceName
                                                             DatabaseName      = $db.Name
@@ -242,7 +242,7 @@ function Remove-DbaOrphanUser {
                                                         $DropSchema += "DROP SCHEMA [$($sch.Name)]"
 
                                                         [pscustomobject]@{
-                                                            ComputerName      = $server.NetName
+                                                            ComputerName      = $server.ComputerName
                                                             InstanceName      = $server.ServiceName
                                                             SqlInstance       = $server.DomainInstanceName
                                                             DatabaseName      = $db.Name
@@ -260,7 +260,7 @@ function Remove-DbaOrphanUser {
                                                         $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
 
                                                         [pscustomobject]@{
-                                                            ComputerName      = $server.NetName
+                                                            ComputerName      = $server.ComputerName
                                                             InstanceName      = $server.ServiceName
                                                             SqlInstance       = $server.DomainInstanceName
                                                             DatabaseName      = $db.Name

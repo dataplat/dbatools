@@ -111,6 +111,15 @@ if ($dbatools_serialimport) { $script:serialImport = $true }
 if ($dbatoolsSystemSystemNode.SerialImport) { $script:serialImport = $true }
 if ($dbatoolsSystemUserNode.SerialImport) { $script:serialImport = $true }
 #endregion Serial Import
+
+#region Multi File Import
+$script:multiFileImport = $false
+if ($dbatools_serialimport) { $script:multiFileImport = $true }
+if ($dbatoolsSystemSystemNode.MultiFileImport) { $script:multiFileImport = $true }
+if ($dbatoolsSystemUserNode.MultiFileImport) { $script:multiFileImport = $true }
+if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $true }
+#endregion Multi File Import
+
 Write-ImportTime -Text "Validated defines"
 #endregion Import Defines
 
@@ -157,16 +166,19 @@ if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
     . Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
     Write-ImportTime -Text "Configuration System"
 }
-if (-not ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath)) {
-    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
+if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
+    [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
 }
 
-if ((Test-Path -Path "$script:PSModuleRoot\.git")) {
+if ($script:multiFileImport) {
     # All internal functions privately available within the toolset
     foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\functions\*.ps1")) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Internal Commands"
+    
+    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    Write-ImportTime -Text "Registering cmdlets"
     
     # All exported functions
     foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
@@ -178,6 +190,9 @@ if ((Test-Path -Path "$script:PSModuleRoot\.git")) {
 else {
     . "$script:PSModuleRoot\allcommands.ps1"
     Write-ImportTime -Text "Loading Public and Private Commands"
+    
+    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    Write-ImportTime -Text "Registering cmdlets"
 }
 
 # Run all optional code
@@ -193,6 +208,9 @@ Write-ImportTime -Text "Loading Optional Commands"
 . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\insertTepp.ps1"
 Write-ImportTime -Text "Loading TEPP"
 
+# Process transforms
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\message-transforms.ps1"
+Write-ImportTime -Text "Loading Message Transforms"
 
 # Load scripts that must be individually run at the end #
 #-------------------------------------------------------#
@@ -430,7 +448,11 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"    = "Sync-SqlLoginPermissions"
-        "Definition"   = "Sync-DbaSqlLoginPermission"
+        "Definition"   = "Sync-DbaLoginPermission"
+    },
+    @{
+        "AliasName"     = "Sync-DbaSqlLoginPermission"
+        "Definition"    = "Sync-DbaLoginPermission"
     },
     @{
         "AliasName"    = "Test-SqlConnection"
@@ -564,7 +586,25 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"         = "Restore-DbaDatabaseSnapshot"
         "Definition"        = "Restore-DbaDbSnapshot"
+    },
+    @{
+        "AliasName"          = "Get-DbaSqlLog"
+        "Definition"         = "Get-DbaErrorLog"
     }
+     ,
+    @{
+        "AliasName"           = "Test-DbaValidLogin"
+        "Definition"          = "Test-DbaWindowsLogin"
+    },
+    @{
+        "AliasName"  = "Get-DbaJobCategory"
+        "Definition" = "Get-DbaAgentJobCategory"
+    },
+    @{
+        "AliasName"  = "Invoke-DbaDatabaseShrink"
+        "Definition" = "Invoke-DbaDbShrink"
+    }
+    
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
 }
@@ -640,8 +680,8 @@ if ($PSCommandPath -like "*.psm1") {
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU27EkXsD/MV6Zc8WN9Z0SqPgF
-# bqWggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUlvm9Bw+nnAYfIrfFLl3c131k
+# pjOggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -772,22 +812,22 @@ if ($PSCommandPath -like "*.psm1") {
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUraH67vG9cILIbW+7srv8vWYo2qAwDQYJKoZIhvcNAQEBBQAE
-# ggEAflA4s1mQvqr+yFIwIYMn3ZHppTrzdDm4M21hzHW5v++iRcc8gfF6QV1U1+wT
-# upSf9IdceAqSJzDiraRcXnG4NQfuZ+2tMzu2GTKI5lxfz6ARm+X+99vT6UAKltYD
-# fa020LGzcZwn8cSNF4e52f0CvFgm8SoNWA5Y8CArPF//7sXlyAsfGuNOdbwNnX1E
-# Ob3M/PCv8JiJuSxJ92mOoyRr5Vw2QB0qOEKS6O5tfJ0lIxWYPvWfC7f3pcfiWLhe
-# bOrCHkkdDIqCRAx/pBKbnf1qwCYZRTuudhxKgsMrs6QhGFLaJI/8ibLhN2KrHMrj
-# XNx82MZBtp1NPdEXhVqlrBSemKGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUkaq1VfzE0aX1eAZGl6ccIX4i784wDQYJKoZIhvcNAQEBBQAE
+# ggEAI5NEv67pv0Bs0d46wCVhShxYCialeB0IMSL8uCQrY3YCJT83oOGIAtcnHHSA
+# XA7a5mgpLIDqymtTthepID26k9jhSJu/tCGw732DTg/ucEIKf5UTG8T1ocHl80JB
+# hYhXlw7k87DdZmDa6W2FxeXtXWDgbLfs2FOhze0VarVLZlC1xrfMVqF3okq2eTPq
+# YwoLHZq3Oaoap6xYTtauA4tIDvCnnr2l3mYNpOov3s1NXUWUJtACvqJjgdocVaCn
+# TktFhHMRkjT0P0hZNNEtlUHRiOYG15pWdWEHTOIW3TnWU5KTuytmafzbRmTLgxS2
+# AWyggWtVPJV5XrOKFUPKFyczVaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwNjAxMTMzNTQzWjAj
-# BgkqhkiG9w0BCQQxFgQUQlnFJEWwgZwKUpv3yiZc5/7oX7AwDQYJKoZIhvcNAQEB
-# BQAEggEAW0KpJzOdbB61aZ1RdzxdlY/hgQdLqLUjYzoSg3i6qet5p+tV55bE2mo7
-# QjigR1T1MCAP3rJFu7JH2qiztvFO36D3QweAIv/cz5RdW7Ns9Q6ldidP7V2mkT5/
-# bYdGdT2vENx0oOkhfEWy6n9bUaX/yFOmQMYxopf5WE9WrNliMpGAWhoXwViuBmTJ
-# vRvzlNEE8qcL/QJFjk46b+mrj5LZogp1oYwxqxYdTKpGjozlAwiMx8OsnGqanp5i
-# 5CFPcc60vkG0ylm6T2S6q5UXXTjpWK1P3tumxdyNMVDoarn6LG+oX2fNmcKZ0Iwn
-# 8oWN77xuBxFSk9NTDTJmcgV83NjVsw==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwNzI2MDczOTE0WjAj
+# BgkqhkiG9w0BCQQxFgQUpfBNPLRBvUF1qJuzr7jb16QbQTMwDQYJKoZIhvcNAQEB
+# BQAEggEAcQX9LuONpg8B04H4UgzxXiXFym7dTN9rda87GzQpg1JNznpgCTxUHsUS
+# uO9D5FDAwDQjgZK9AIEAFXpLgRj3AYoUOtCNFOjLxGqFnHEBEF6lJvhc7FaQ5eHT
+# 0tx84uUr652DEa3u6oQNbj09s+wPfIN97ehUVG4BdO3E8q0evJfmuRqvLR4qHKC+
+# wb+Rx2rx+0o2JtGfolE4NVnwEJ2kgv9zMkgyA+jgNDqnP2RFNOA2XcdR5VwYnoH5
+# MXuI8U/4dK8jqzb20rLkOLTEjKBDdqQfX4ZwqTteZprYTQrfWelQDeaiIW/u3xFp
+# 43vIaKeafzmv5Y3YtNBy4aF4KEmY3A==
 # SIG # End signature block

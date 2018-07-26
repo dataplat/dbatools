@@ -44,7 +44,7 @@
     param (
         [Alias('Connection', 'Conn')]
         [ValidateNotNullOrEmpty()]
-        [System.Data.SqlClient.SQLConnection]$SQLConnection,
+        [Microsoft.SqlServer.Management.Common.ServerConnection]$SQLConnection,
 
         [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Query")]
         [string]
@@ -151,8 +151,7 @@
 
     }
     process {
-        $Conn = $SQLConnection
-
+        $Conn = $SQLConnection.SqlConnectionObject
 
 
         Write-Message -Level Debug -Message "Stripping GOs from source"
@@ -254,16 +253,15 @@
                 }
                 Resolve-SqlError $Err
             }
-
             if ($AppendServerInstance) {
                 #Basics from Chad Miller
                 $Column = New-Object Data.DataColumn
                 $Column.ColumnName = "ServerInstance"
-
+                
                 if ($ds.Tables.Count -ne 0) {
                     $ds.Tables[0].Columns.Add($Column)
                     Foreach ($row in $ds.Tables[0]) {
-                        $row.ServerInstance = $SQLInstance
+                        $row.ServerInstance = $SQLConnection.ServerInstance
                     }
                 }
             }
