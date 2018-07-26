@@ -41,8 +41,5 @@
             </leaf>
          </predicate>
       </event>
-      <target package="package0" name="event_file">
-         <parameter name="filename" value="15_second_io_error" />
-      </target>
    </event_session>
 </event_sessions>

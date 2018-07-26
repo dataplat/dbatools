@@ -45,6 +45,5 @@
          <action package="sqlserver" name="server_principal_name" />
          <action package="sqlserver" name="session_id" />
       </event>
-      <target package="package0" name="ring_buffer" />
    </event_session>
 </event_sessions>

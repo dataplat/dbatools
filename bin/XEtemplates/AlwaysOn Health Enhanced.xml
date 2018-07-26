@@ -254,10 +254,5 @@
       <event package="sqlserver" name="lock_redo_blocked">
          <action package="sqlserver" name="server_instance_name" />
       </event>
-      <target package="package0" name="event_file">
-         <parameter name="filename" value="AlwaysOn Health Enhanced" />
-         <parameter name="max_file_size" value="5" />
-         <parameter name="max_rollover_files" value="4" />
-      </target>
    </event_session>
 </event_sessions>

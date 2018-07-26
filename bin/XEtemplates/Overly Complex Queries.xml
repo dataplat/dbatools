@@ -34,11 +34,5 @@
             </and>
          </predicate>
       </event>
-      <target package="package0" name="event_file">
-         <parameter name="filename" value="Overly Complex Queries" />
-         <parameter name="max_file_size" value="200" />
-         <parameter name="max_rollover_files" value="5" />
-         <parameter name="metadatafile" value=" Overly Complex Queries.xem" />
-      </target>
    </event_session>
 </event_sessions>

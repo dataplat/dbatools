@@ -22,8 +22,5 @@
          <action package="sqlserver" name="plan_handle" />
          <action package="sqlserver" name="sql_text" />
       </event>
-      <target package="package0" name="event_file">
-         <parameter name="filename" value="capture_deadlock_graphs" />
-      </target>
    </event_session>
 </event_sessions>

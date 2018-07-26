@@ -66,10 +66,5 @@
             </and>
          </predicate>
       </event>
-      <target package="package0" name="event_file">
-         <parameter name="filename" value="Long Running Queries" />
-         <parameter name="max_file_size" value="100" />
-      </target>
-      <target package="package0" name="ring_buffer" />
    </event_session>
 </event_sessions>

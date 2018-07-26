@@ -261,10 +261,5 @@
       <event package="sqlserver" name="xml_deadlock_report">
          <action package="sqlserver" name="database_name" />
       </event>
-      <target package="package0" name="event_file">
-         <parameter name="filename" value="Database Health 2016 and Above" />
-         <parameter name="max_file_size" value="5" />
-         <parameter name="max_rollover_files" value="100" />
-      </target>
    </event_session>
 </event_sessions>

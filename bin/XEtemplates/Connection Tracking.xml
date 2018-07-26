@@ -20,6 +20,5 @@
       <action package="sqlserver" name="context_info" />
       <action package="sqlserver" name="session_id" />
     </event>
-    <target package="package0" name="ring_buffer" />
   </event_session>
 </event_sessions>

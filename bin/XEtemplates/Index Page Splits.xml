@@ -13,9 +13,5 @@
          <action package="sqlserver" name="database_name" />
          <action package="sqlserver" name="sql_text" />
       </event>
-      <target package="package0" name="event_file">
-         <parameter name="filename" value="page_splits" />
-         <parameter name="max_rollover_files" value="0" />
-      </target>
    </event_session>
 </event_sessions>

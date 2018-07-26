@@ -87,6 +87,5 @@
         </and>
       </predicate>
     </event>
-    <target package="package0" name="ring_buffer" />
   </event_session>
 </event_sessions>

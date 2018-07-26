@@ -14,6 +14,5 @@
          <action package="sqlserver" name="sql_text" />
          <action package="sqlserver" name="tsql_stack" />
       </event>
-      <target package="package0" name="ring_buffer" />
    </event_session>
 </event_sessions>

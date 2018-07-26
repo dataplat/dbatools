@@ -62,6 +62,5 @@
       <parameter name="filtering_event_name" value="sqlos.spinlock_backoff" />
       <parameter name="source" value="sqlserver.sql_text" />
     </target>
-    <target package="package0" name="ring_buffer" />
   </event_session>
 </event_sessions>

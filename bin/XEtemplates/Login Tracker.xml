@@ -46,9 +46,5 @@
             </and>
          </predicate>
       </event>
-      <target package="package0" name="event_file">
-         <parameter name="filename" value="Login Tracker" />
-         <parameter name="max_file_size" value="10" />
-      </target>
    </event_session>
 </event_sessions>
