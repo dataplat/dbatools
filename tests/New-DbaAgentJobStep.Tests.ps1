@@ -23,6 +23,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should not write over existing job steps" {
             New-DbaAgentJobStep -SqlInstance $script:instance2 -Job "dbatoolsci Job One" -StepName "Step One" -WarningAction SilentlyContinue -WarningVariable warn
             $warn -match "already exists" | Should -Be $true
+            $newresults = Get-DbaAgentJob -SqlInstance $script:instance2 -Job "dbatoolsci Job One"
+            $newresults.JobSteps.Name | Should -Be "Step One"
         }
         
         It "Force should add jobstep to job and the older job step should be second" {
