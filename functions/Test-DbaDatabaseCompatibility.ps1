@@ -27,7 +27,7 @@ function Test-DbaDatabaseCompatibility {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags:
+            Tags: Database, Compatibility
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -97,7 +97,7 @@ function Test-DbaDatabaseCompatibility {
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.name) on $instance."
                 [PSCustomObject]@{
-                    ComputerName          = $server.NetName
+                    ComputerName          = $server.ComputerName
                     InstanceName          = $server.ServiceName
                     SqlInstance           = $server.DomainInstanceName
                     ServerLevel           = $serverversion

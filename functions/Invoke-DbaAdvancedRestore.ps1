@@ -1,93 +1,102 @@
 function Invoke-DbaAdvancedRestore {
     <#
-    .SYNOPSIS
-        Allows the restore of modified BackupHistory Objects
-        For 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk
+        .SYNOPSIS
+            Allows the restore of modified BackupHistory Objects
+            For 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk
 
-    .DESCRIPTION
-        This is the final piece in the Restore-DbaDatabase Stack. Usually a BackupHistory object will arrive here from Restore-DbaDatabse via the following pipeline:
-        Get-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore
+        .DESCRIPTION
+            This is the final piece in the Restore-DbaDatabase Stack. Usually a BackupHistory object will arrive here from Restore-DbaDatabse via the following pipeline:
+            Get-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore
 
-        We have exposed these functions publicly to allow advanced users to perform operations that we don't support, or won't add as they would make things too complex for the majority of our users
+            We have exposed these functions publicly to allow advanced users to perform operations that we don't support, or won't add as they would make things too complex for the majority of our users
 
-        For example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via Format-DbaBackupInformation
+            For example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via Format-DbaBackupInformation
 
-        We would recommend ALWAYS pushing your input through Test-DbaBackupInformation just to make sure that it makes sense to us.
+            We would recommend ALWAYS pushing your input through Test-DbaBackupInformation just to make sure that it makes sense to us.
 
-    .PARAMETER BackupHistory
-        The BackupHistory object to be restored.
-        Can be passed in on the pipeline
+        .PARAMETER BackupHistory
+            The BackupHistory object to be restored.
+            Can be passed in on the pipeline
 
-    .PARAMETER SqlInstance
-        The SqlInstance to which the backups should be restored
+        .PARAMETER SqlInstance
+            The SqlInstance to which the backups should be restored
 
-    .PARAMETER SqlCredential
-        SqlCredential to be used to connect to the target SqlInstance
+        .PARAMETER SqlCredential
+            SqlCredential to be used to connect to the target SqlInstance
 
-    .PARAMETER OutputScriptOnly
-        If set, the restore will not be performed, but the T-SQL scripts to perform it will be returned
+        .PARAMETER OutputScriptOnly
+            If set, the restore will not be performed, but the T-SQL scripts to perform it will be returned
 
-    .PARAMETER VerifyOnly
-        If set, performs a Verify of the backups rather than a full restore
+        .PARAMETER VerifyOnly
+            If set, performs a Verify of the backups rather than a full restore
 
-    .PARAMETER RestoreTime
-        Point in Time to which the database should be restored.
+        .PARAMETER RestoreTime
+            Point in Time to which the database should be restored.
 
-        This should be the same value or earlier, as used in the previous pipeline stages
+            This should be the same value or earlier, as used in the previous pipeline stages
 
-    .PARAMETER StandbyDirectory
-        A folder path where a standby file should be created to put the recoverd databases in a standby mode
+        .PARAMETER StandbyDirectory
+            A folder path where a standby file should be created to put the recovered databases in a standby mode
 
-    .PARAMETER NoRecovery
-        Leave the database in a restoring state so that further restore may be made
+        .PARAMETER NoRecovery
+            Leave the database in a restoring state so that further restore may be made
 
-    .PARAMETER MaxTransferSize
-        Parameter to set the unit of transfer. Values must be a multiple by 64kb
+        .PARAMETER MaxTransferSize
+            Parameter to set the unit of transfer. Values must be a multiple by 64kb
 
-    .PARAMETER Blocksize
-        Specifies the block size to use. Must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb or 64kb
-        Can be specified in bytes
-        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+        .PARAMETER Blocksize
+            Specifies the block size to use. Must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb or 64kb
+            Can be specified in bytes
+            Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
 
-    .PARAMETER BufferCount
-        Number of I/O buffers to use to perform the operation.
-        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+        .PARAMETER BufferCount
+            Number of I/O buffers to use to perform the operation.
+            Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
 
-    .PARAMETER Continue
-        Indicates that the restore is continuing a restore, so target database must be in Recovering or Standby states
+        .PARAMETER Continue
+            Indicates that the restore is continuing a restore, so target database must be in Recovering or Standby states
 
-    .PARAMETER AzureCredential
-        AzureCredential required to connect to blob storage holding the backups
+        .PARAMETER AzureCredential
+            AzureCredential required to connect to blob storage holding the backups
 
-    .PARAMETER WithReplace
-        Indicated that if the database already exists it should be replaced
+        .PARAMETER WithReplace
+            Indicated that if the database already exists it should be replaced
 
-    .PARAMETER KeepCDC
-        Indicates whether CDC information should be restored as part of the database
+        .PARAMETER KeepCDC
+            Indicates whether CDC information should be restored as part of the database
 
-    .PARAMETER PageRestore
-        The output from Get-DbaSuspect page containing the suspect pages to be restored.
+        .PARAMETER PageRestore
+            The output from Get-DbaSuspect page containing the suspect pages to be restored.
 
-    .PARAMETER WhatIf
-        Shows what would happen if the cmdlet runs. The cmdlet is not run.
+        .PARAMETER WhatIf
+            Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
-    .PARAMETER Confirm
-        Prompts you for confirmation before running the cmdlet.
+        .PARAMETER Confirm
+            Prompts you for confirmation before running the cmdlet.
 
-    .PARAMETER EnableException
-        Replaces user friendly yellow warnings with bloody red exceptions of doom!
-        Use this if you want the function to throw terminating errors you want to catch.
+        .PARAMETER EnableException
+            Replaces user friendly yellow warnings with bloody red exceptions of doom!
+            Use this if you want the function to throw terminating errors you want to catch.
 
-    .EXAMPLE
-        $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
+        .NOTES
+            Tags: Restore, Backup
+            dbatools PowerShell module (https://dbatools.io)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: MIT https://opensource.org/licenses/MIT
 
-        Will restore all the backups in the BackupHistory object according to the transformations it contains
+        .LINK
+            https://dbatools.io/Invoke-DbaAdvancedRestore
 
-    .EXAMPLE
-        $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly
-        $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
+        .EXAMPLE
+            $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
 
-        First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore. By reusing the BackupHistory object there is no need to rescan all the backup files again
+            Will restore all the backups in the BackupHistory object according to the transformations it contains
+
+        .EXAMPLE
+            $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly
+            $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
+
+            First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore. By reusing the BackupHistory object there is no need to rescan all the backup files again
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
@@ -105,7 +114,7 @@ function Invoke-DbaAdvancedRestore {
         [int]$BlockSize,
         [int]$BufferCount,
         [switch]$Continue,
-        [PSCredential]$AzureCredential,
+        [string]$AzureCredential,
         [switch]$WithReplace,
         [switch]$KeepCDC,
         [object[]]$PageRestore,
@@ -145,6 +154,7 @@ function Invoke-DbaAdvancedRestore {
         if (Test-FunctionInterrupt) { return }
         $Databases = $InternalHistory.Database | Select-Object -Unique
         foreach ($Database in $Databases) {
+            $DatabaseRestoreStartTime = Get-Date
             if ($Database -in $Server.Databases.Name) {
                 if (-not $OutputScriptOnly -and -not $VerifyOnly) {
                     if ($Pscmdlet.ShouldProcess("Killing processes in $Database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
@@ -168,6 +178,7 @@ function Invoke-DbaAdvancedRestore {
             $backups = @($InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
             foreach ($backup in $backups) {
+                $FileRestoreStartTime = Get-Date
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
                 if (($backup -ne $backups[-1]) -or $true -eq $NoRecovery) {
                     $Restore.NoRecovery = $True
@@ -223,13 +234,17 @@ function Invoke-DbaAdvancedRestore {
                     Write-Message -Message "Adding device $file" -Level Debug
                     $Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
                     $Device.Name = $file
-                    if ($file -like "http*") {
+                    if ($file.StartsWith("http")) {
                         $Device.devicetype = "URL"
-                        $Restore.CredentialName = $AzureCredential
                     }
                     else {
                         $Device.devicetype = "File"
                     }
+                    
+                    if ($AzureCredential) {
+                        $Restore.CredentialName = $AzureCredential
+                    }
+                    
                     $Restore.FileNumber = $backup.Position
                     $Restore.Devices.Add($Device)
                 }
@@ -324,6 +339,8 @@ function Invoke-DbaAdvancedRestore {
                                 CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { ($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum } else { $null }
                                 Script                 = $script
                                 BackupFileRaw          = ($backups.Fullname)
+                                FileRestoreTime        = New-TimeSpan -Seconds ((Get-Date)-$FileRestoreStartTime).TotalSeconds
+                                DatabaseRestoreTime    = New-TimeSpan -Seconds ((Get-Date)-$DatabaseRestoreStartTime).TotalSeconds
                                 ExitError              = $ExitError
                             } | Select-DefaultView -ExcludeProperty BackupSize, CompressedBackupSize, ExitError, BackupFileRaw, RestoredFileFull
                         }

@@ -116,7 +116,7 @@ CREATE TABLE ##testdbacompression (
     ,[IndexName] SYSNAME NULL
     ,[Partition] INT
     ,[IndexID] INT
-    ,[IndexType] VARCHAR(12)
+    ,[IndexType] VARCHAR(25)
     ,[PercentScan] SMALLINT
     ,[PercentUpdate] SMALLINT
     ,[RowEstimatePercentOriginal] BIGINT
@@ -175,9 +175,42 @@ INNER JOIN sys.partitions p ON x.object_id = p.object_id
 WHERE objectproperty(t.object_id, 'IsUserTable') = 1
     AND p.data_compression_desc = 'NONE'
     AND p.rows > 0
-    AND t.is_memory_optimized = 0
-    AND t.object_id not in (select object_id from sys.columns where encryption_type IS NOT NULL)
 ORDER BY [TableName] ASC;
+
+DECLARE @sqlVersion int
+SELECT @sqlVersion = substring(CONVERT(VARCHAR,SERVERPROPERTY('ProductVersion')),0,CHARINDEX('.',(CONVERT(VARCHAR,SERVERPROPERTY('ProductVersion')))))
+IF @sqlVersion >= '12'
+    BEGIN
+        -- remove memory optimized tables
+        DELETE tdc
+        FROM ##testdbacompression tdc
+        INNER JOIN sys.tables t
+            ON SCHEMA_NAME(t.schema_id) = tdc.[Schema]
+            AND t.name = tdc.TableName
+        WHERE t.is_memory_optimized = 1
+    END
+IF @sqlVersion >= '13'
+    BEGIN
+        -- remove tables with encrypted columns
+        DELETE tdc
+        FROM ##testdbacompression tdc
+        INNER JOIN sys.tables t
+            ON SCHEMA_NAME(t.schema_id) = tdc.[Schema]
+            AND t.name = tdc.TableName
+        INNER JOIN sys.columns c
+            ON t.object_id = c.object_id
+        WHERE encryption_type IS NOT NULL
+    END
+IF @sqlVersion >= '14'
+    BEGIN
+        -- remove graph (node/edge) tables
+        DELETE tdc
+        FROM ##testdbacompression tdc
+        INNER JOIN sys.tables t
+            ON tdc.[Schema] = SCHEMA_NAME(t.schema_id)
+            AND tdc.TableName = t.name
+        WHERE (is_node = 1 OR is_edge = 1)
+    END
 
 DECLARE @schema SYSNAME
     ,@tbname SYSNAME
@@ -423,7 +456,7 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
                     #Execute query against individual database and add to output
                     foreach ($row in ($server.Query($sql, $db.Name))) {
                         [pscustomobject]@{
-                            ComputerName                  = $server.NetName
+                            ComputerName                  = $server.ComputerName
                             InstanceName                  = $server.ServiceName
                             SqlInstance                   = $server.DomainInstanceName
                             Database                      = $row.DBName

@@ -205,7 +205,7 @@ function Set-DbaDbCompression {
                                     $($obj.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
                                     $obj.Rebuild()
                                     [pscustomobject]@{
-                                        ComputerName                  = $server.NetName
+                                        ComputerName                  = $server.ComputerName
                                         InstanceName                  = $server.ServiceName
                                         SqlInstance                   = $server.DomainInstanceName
                                         Database                      = $db.Name
@@ -248,7 +248,7 @@ function Set-DbaDbCompression {
                                         }
 
                                         [pscustomobject]@{
-                                            ComputerName                  = $server.NetName
+                                            ComputerName                  = $server.ComputerName
                                             InstanceName                  = $server.ServiceName
                                             SqlInstance                   = $server.DomainInstanceName
                                             Database                      = $db.Name
@@ -289,7 +289,7 @@ function Set-DbaDbCompression {
                                     }
 
                                     [pscustomobject]@{
-                                        ComputerName                  = $server.NetName
+                                        ComputerName                  = $server.ComputerName
                                         InstanceName                  = $server.ServiceName
                                         SqlInstance                   = $server.DomainInstanceName
                                         Database                      = $db.Name

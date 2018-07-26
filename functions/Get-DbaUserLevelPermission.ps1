@@ -180,7 +180,7 @@ function Get-DbaUserLevelPermission {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
@@ -227,7 +227,7 @@ function Get-DbaUserLevelPermission {
 
                     foreach ($row in $serverDT) {
                         [PSCustomObject]@{
-                            ComputerName       = $server.NetName
+                            ComputerName       = $server.ComputerName
                             InstanceName       = $server.ServiceName
                             SqlInstance        = $server.DomainInstanceName
                             Object             = 'SERVER'
@@ -252,7 +252,7 @@ function Get-DbaUserLevelPermission {
 
                 foreach ($row in $dbDT) {
                     [PSCustomObject]@{
-                        ComputerName       = $server.NetName
+                        ComputerName       = $server.ComputerName
                         InstanceName       = $server.ServiceName
                         SqlInstance        = $server.DomainInstanceName
                         Object             = $db.Name

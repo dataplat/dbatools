@@ -18,8 +18,17 @@ function Start-DbaAgentJob {
         .PARAMETER ExcludeJob
             The job(s) to exclude - this list is auto-populated from the server.
 
+        .PARAMETER AllJobs
+            Retrieve all the jobs
+
         .PARAMETER Wait
             Wait for output until the job has started
+
+        .PARAMETER WaitPeriod
+            Wait period in seconds to use when -Wait is used
+
+        .PARAMETER SleepPeriod
+            Period in milliseconds to wait after a job has started
 
         .PARAMETER InputObject
             Internal parameter that enables piping
@@ -64,6 +73,11 @@ function Start-DbaAgentJob {
 
             Restarts all failed jobs on all servers in the $servers collection
 
+        .EXAMPLE
+            Start-DbaAgentJob -SqlInstance sql2016 -AllJobs
+
+            Start all the jobs
+
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     param (
@@ -75,58 +89,90 @@ function Start-DbaAgentJob {
         [string[]]$ExcludeJob,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Object")]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
+        [switch]$AllJobs,
         [switch]$Wait,
+        [int]$WaitPeriod = 3,
+        [int]$SleepPeriod = 300,
         [Alias('Silent')]
         [switch]$EnableException
     )
-
     process {
+        if ((Test-Bound -not -ParameterName AllJobs) -and (Test-Bound -not -ParameterName Job) -and (Test-Bound -not -ParameterName InputObject)) {
+            Stop-Function -Message "Please use one of the job parameters, either -Job or -AllJobs. Or pipe in a list of jobs." -Target $instance
+            return
+        }
+        # Loop through each of the instances
         foreach ($instance in $SqlInstance) {
-            Write-Verbose "Attempting to connect to $instance"
             try {
+                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            $InputObject += $server.JobServer.Jobs
-
-            if ($Job) {
-                $InputObject = $InputObject | Where-Object Name -In $Job
+            
+            # Check if all the jobs need to included
+            if ($AllJobs) {
+                $InputObject += $server.JobServer.Jobs
             }
+            
+            # If a specific job needs to be added
+            if (-not $AllJobs -and $Job) {
+                $InputObject = $server.JobServer.Jobs | Where-Object Name -In $Job
+            }
+            
+            # If a job needs to be excluded
             if ($ExcludeJob) {
                 $InputObject = $InputObject | Where-Object Name -NotIn $ExcludeJob
             }
         }
-
+        
+        # Loop through each of the jobs
         foreach ($currentjob in $InputObject) {
             $server = $currentjob.Parent.Parent
             $status = $currentjob.CurrentRunStatus
+            
             if ($status -ne 'Idle') {
                 Stop-Function -Message "$currentjob on $server is not idle ($status)" -Target $currentjob -Continue
             }
-
+            
             If ($Pscmdlet.ShouldProcess($server, "Starting job $currentjob")) {
+                # Start the job
+                $lastrun = $currentjob.LastRunDate
+                Write-Message -Level Verbose -Message "Last run date was $lastrun"
                 $null = $currentjob.Start()
-                Start-Sleep -Milliseconds 300
+                
+                # Wait and refresh so that it has a chance to change status
+                Start-Sleep -Milliseconds $SleepPeriod
                 $currentjob.Refresh()
-
-                while ($currentjob.CurrentRunStatus -eq 'Idle' -and $i++ -lt 60) {
-                    Start-Sleep -Milliseconds 100
+                
+                $i = 0
+                # Check if the status is Idle
+                while (($currentjob.CurrentRunStatus -eq 'Idle' -and $i++ -lt 60)) {
+                    Write-Message -Level Verbose -Message "Job $($currentjob.Name) status is $($currentjob.CurrentRunStatus)"
+                    Write-Message -Level Verbose -Message "Job $($currentjob.Name) last run date is $($currentjob.LastRunDate)"
+                    
+                    Write-Message -Level Verbose -Message "Sleeping for $SleepPeriod ms and refreshing"
+                    Start-Sleep -Milliseconds $SleepPeriod
                     $currentjob.Refresh()
+                    
+                    # If it failed fast, speed up output
+                    if ($lastrun -ne $currentjob.LastRunDate) {
+                        $i = 600
+                    }
                 }
-
-                if ($wait) {
+                
+                # Wait for the job
+                if (Test-Bound -ParameterName Wait) {
                     while ($currentjob.CurrentRunStatus -ne 'Idle') {
                         Write-Message -Level Output -Message "$currentjob is $($currentjob.CurrentRunStatus)"
-                        Start-Sleep -Seconds 3
+                        Start-Sleep -Seconds $WaitPeriod
                         $currentjob.Refresh()
                     }
-                    $currentjob
+                    Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
                 }
                 else {
-                    $currentjob
+                    Get-DbaAgentJob -SqlInstance $server -Job $currentjob.Name
                 }
             }
         }

@@ -35,7 +35,7 @@ function Find-DbaOrphanedFile {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: DisasterRecovery, Orphan
+            Tags: Orphan, Database, DatabaseFile
             Author: Sander Stad (@sqlstad), sqlstad.nl
             Requires: sysadmin access on SQL Servers
 
@@ -244,11 +244,11 @@ function Find-DbaOrphanedFile {
 
                     $result = [pscustomobject]@{
                         Server         = $server.name
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Filename       = $fullpath
-                        RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $fullpath
+                        RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $fullpath
                     }
 
                     if ($LocalOnly -eq $true) {

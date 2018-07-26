@@ -34,14 +34,20 @@ function Get-DbaDependency {
         .PARAMETER IncludeScript
             Setting this switch will cause the function to also retrieve the creation script of the dependency.
 
+        .NOTES
+            Tags: Database, Dependent, Dependency, Object
+            dbatools PowerShell module (https://dbatools.io)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: MIT https://opensource.org/licenses/MIT
+
+        .LINK
+            https://dbatools.io/Get-DbaDependency
+
         .EXAMPLE
             $table = (Get-DbaDatabase -SqlInstance sql2012 -Database Northwind).tables | Where Name -eq Customers
             $table | Get-DbaDependency
 
             Returns everything that depends on the "Customers" table
-
-        .LINK
-            https://dbatools.io/Get-DbaDependency
     #>
     [CmdletBinding()]
     Param (
@@ -160,7 +166,7 @@ function Get-DbaDependency {
                     $parent = $Server.GetSmoObject($Item.Parent.Urn)
 
                     $NewObject = New-Object Sqlcollaborative.Dbatools.Database.Dependency
-                    $NewObject.ComputerName = $server.NetName
+                    $NewObject.ComputerName = $server.ComputerName
                     $NewObject.ServiceName = $server.ServiceName
                     $NewObject.SqlInstance = $server.DomainInstanceName
                     $NewObject.Dependent = $richobject.Name
@@ -210,7 +216,7 @@ function Get-DbaDependency {
     }
     Process {
         foreach ($Item in $InputObject) {
-            Write-Message -EnableException $EnableException -Level 5 -Message "Processing: $Item"
+            Write-Message -EnableException $EnableException -Level Verbose -Message "Processing: $Item"
             if ($null -eq $Item.urn) {
                 Stop-Function -Message "$Item is not a valid SMO object" -EnableException $EnableException -Category InvalidData -Continue -Target $Item
             }
@@ -231,7 +237,7 @@ function Get-DbaDependency {
             $limitCount = 2
             if ($IncludeSelf) { $limitCount = 1 }
             if ($tree.Count -lt $limitCount) {
-                Write-Message -Message "No dependencies detected for $($Item)" -Level 2 -EnableException $EnableException
+                Write-Message -Message "No dependencies detected for $($Item)" -Level Host
                 continue
             }
 

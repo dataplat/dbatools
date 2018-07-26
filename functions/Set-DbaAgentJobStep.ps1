@@ -95,7 +95,7 @@ The force parameter will ignore some errors in the parameters and assume default
 
 .NOTES
 Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job, Job Step
+Tags: Agent, Job, JobStep
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -204,7 +204,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
         foreach ($instance in $sqlinstance) {
 
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

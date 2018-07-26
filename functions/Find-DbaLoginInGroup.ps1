@@ -7,14 +7,6 @@ function Find-DbaLoginInGroup {
         .DESCRIPTION
             Outputs all the active directory groups members for a server, or limits it to find a specific AD user in the groups
 
-        .NOTES
-            Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-            Author: Simone Bizzotto, @niphlod
-
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
-
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to. This can be a
             collection and receive pipeline input.
@@ -29,6 +21,15 @@ function Find-DbaLoginInGroup {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+        .NOTES
+            Tags: Login, AD, ActiveDirectory, Group, Security
+            Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+            Author: Simone Bizzotto, @niphlod
+
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Find-DbaLoginInGroup
@@ -98,12 +99,12 @@ function Find-DbaLoginInGroup {
                         }
                         else {
                             $output += [PSCustomObject]@{
-                                SqlInstance  = $server.Name
-                                InstanceName = $server.ServiceName
-                                ComputerName = $server.NetName
-                                Login        = $memberDomain + "\" + $member.SamAccountName
-                                DisplayName  = $member.DisplayName
-                                MemberOf     = $AdGroup
+                                SqlInstance        = $server.Name
+                                InstanceName       = $server.ServiceName
+                                ComputerName       = $server.ComputerName
+                                Login              = $memberDomain + "\" + $member.SamAccountName
+                                DisplayName        = $member.DisplayName
+                                MemberOf           = $AdGroup
                                 ParentADGroupLogin = $ParentADGroup
                             }
                         }
@@ -129,8 +130,7 @@ function Find-DbaLoginInGroup {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-
+            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

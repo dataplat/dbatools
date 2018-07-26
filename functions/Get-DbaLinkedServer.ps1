@@ -25,6 +25,7 @@ function Get-DbaLinkedServer {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: LinkedServer, Linked
             Author: Stephen Bennett ( https://sqlnotesfromtheunderground.wordpress.com/ )
 
             Website: https://dbatools.io
@@ -69,7 +70,7 @@ function Get-DbaLinkedServer {
         }
 
         foreach ($ls in $lservers) {
-            Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name ComputerName -value $server.NetName
+            Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
             Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
             Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
             Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name Impersonate -value $ls.LinkedServerLogins.Impersonate

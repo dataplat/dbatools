@@ -79,7 +79,7 @@ function Find-DbaDatabase {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -115,7 +115,7 @@ function Find-DbaDatabase {
                 if ($extendedproperties.count -eq 0) { $extendedproperties = 0 }
 
                 [PSCustomObject]@{
-                    ComputerName       = $server.NetName
+                    ComputerName       = $server.ComputerName
                     InstanceName       = $server.ServiceName
                     SqlInstance        = $server.Name
                     Name               = $db.Name

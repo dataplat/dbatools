@@ -161,7 +161,7 @@ function Get-DbaADObject {
                 $Domain, $obj = $Splitted
             }
             if ($SearchAllDomains) {
-                Write-Message -Message "Searching for $obj under all domains in $IdentityType format" -Level 4 -EnableException $EnableException
+                Write-Message -Message "Searching for $obj under all domains in $IdentityType format" -Level VeryVerbose
                 # if we're lucky, we can resolve the domain right away
                 try {
                     Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj -EnableException $true
@@ -171,7 +171,7 @@ function Get-DbaADObject {
                     $ForestObject = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
                     $AllDomains = $ForestObject.Domains.Name
                     foreach ($ForestDomain in $AllDomains) {
-                        Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -EnableException $EnableException
+                        Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level VeryVerbose
                         $found = Get-DbaADObjectInternal -Domain $ForestDomain -IdentityType $IdentityType -obj $obj
                         if ($found) {
                             $found
@@ -181,7 +181,7 @@ function Get-DbaADObject {
                     # we are very unlucky, let's search also in all trusted domains
                     $AllTrusted = ($ForestObject.GetAllTrustRelationships().TopLevelNames | Where-Object Status -eq 'Enabled').Name
                     foreach ($ForestDomain in $AllTrusted) {
-                        Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -EnableException $EnableException
+                        Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level VeryVerbose
                         $found = Get-DbaADObjectInternal -Domain $ForestDomain -IdentityType $IdentityType -obj $obj
                         if ($found) {
                             $found
@@ -191,7 +191,7 @@ function Get-DbaADObject {
                 }
             }
             else {
-                Write-Message -Message "Searching for $obj under domain $domain in $IdentityType format" -Level 4 -EnableException $EnableException
+                Write-Message -Message "Searching for $obj under domain $domain in $IdentityType format" -Level VeryVerbose
                 Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj
             }
         }

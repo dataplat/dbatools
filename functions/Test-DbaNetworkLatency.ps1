@@ -109,7 +109,7 @@ function Test-DbaNetworkLatency {
                 }
 
                 [PSCustomObject]@{
-                    ComputerName     = $server.NetName
+                    ComputerName     = $server.ComputerName
                     InstanceName     = $server.ServiceName
                     SqlInstance      = $server.DomainInstanceName
                     Count            = $count

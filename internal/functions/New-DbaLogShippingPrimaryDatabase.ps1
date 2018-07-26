@@ -1,97 +1,93 @@
 function New-DbaLogShippingPrimaryDatabase {
     <#
-    .SYNOPSIS
-    New-DbaLogShippingPrimaryDatabase add the primary database to log shipping
+        .SYNOPSIS
+            New-DbaLogShippingPrimaryDatabase add the primary database to log shipping
 
-    .DESCRIPTION
-    New-DbaLogShippingPrimaryDatabase will add the primary database to log shipping.
-    This is executed on the primary server.
+        .DESCRIPTION
+            New-DbaLogShippingPrimaryDatabase will add the primary database to log shipping.
+            This is executed on the primary server.
 
-    .PARAMETER SqlInstance
-    SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        .PARAMETER SqlInstance
+            SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-    .PARAMETER SqlCredential
-    Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER Database
-    Database to set up log shipping for.
+        .PARAMETER Database
+            Database to set up log shipping for.
 
-    .PARAMETER BackupDirectory
-    Is the path to the backup folder on the primary server.
+        .PARAMETER BackupDirectory
+            Is the path to the backup folder on the primary server.
 
-    .PARAMETER BackupJob
-    Is the name of the SQL Server Agent job on the primary server that copies the backup into the backup folder.
+        .PARAMETER BackupJob
+            Is the name of the SQL Server Agent job on the primary server that copies the backup into the backup folder.
 
-    .PARAMETER BackupJobID
-    The SQL Server Agent job ID associated with the backup job on the primary server.
+        .PARAMETER BackupJobID
+            The SQL Server Agent job ID associated with the backup job on the primary server.
 
-    .PARAMETER BackupRetention
-    Is the length of time, in minutes, to retain the log backup file in the backup directory on the primary server.
+        .PARAMETER BackupRetention
+            Is the length of time, in minutes, to retain the log backup file in the backup directory on the primary server.
 
-    .PARAMETER BackupShare
-    Is the network path to the backup directory on the primary server.
+        .PARAMETER BackupShare
+            Is the network path to the backup directory on the primary server.
 
-    .PARAMETER BackupThreshold
-    Is the length of time, in minutes, after the last backup before a threshold_alert error is raised.
-    The default is 60.
+        .PARAMETER BackupThreshold
+            Is the length of time, in minutes, after the last backup before a threshold_alert error is raised.
+            The default is 60.
 
-    .PARAMETER CompressBackup
-    Enables the use of backup compression
+        .PARAMETER CompressBackup
+            Enables the use of backup compression
 
-    .PARAMETER ThressAlert
-    Is the length of time, in minutes, when the alert is to be raised when the backup threshold is exceeded.
-    The default is 14,420.
+        .PARAMETER ThressAlert
+            Is the length of time, in minutes, when the alert is to be raised when the backup threshold is exceeded.
+            The default is 14,420.
 
-    .PARAMETER HistoryRetention
-    Is the length of time in minutes in which the history will be retained.
-    The default is 14420.
+        .PARAMETER HistoryRetention
+            Is the length of time in minutes in which the history will be retained.
+            The default is 14420.
 
-    .PARAMETER MonitorServer
-    Is the name of the monitor server.
-    The default is the name of the primary server.
+        .PARAMETER MonitorServer
+            Is the name of the monitor server.
+            The default is the name of the primary server.
 
-    .PARAMETER MonitorCredential
-    Allows you to login to enter a secure credential.
-    This is only needed in combination with MonitorServerSecurityMode having either a 0 or 'sqlserver' value.
-    To use: $scred = Get-Credential, then pass $scred object to the -MonitorCredential parameter.
+        .PARAMETER MonitorCredential
+            Allows you to login to enter a secure credential.
+            This is only needed in combination with MonitorServerSecurityMode having either a 0 or 'sqlserver' value.
+            To use: $scred = Get-Credential, then pass $scred object to the -MonitorCredential parameter.
 
-    .PARAMETER MonitorServerSecurityMode
-    The security mode used to connect to the monitor server. Allowed values are 0, "sqlserver", 1, "windows"
-    The default is 1 or Windows.
+        .PARAMETER MonitorServerSecurityMode
+            The security mode used to connect to the monitor server. Allowed values are 0, "sqlserver", 1, "windows"
+            The default is 1 or Windows.
 
-    .PARAMETER ThresholdAlertEnabled
-    Specifies whether an alert will be raised when backup threshold is exceeded.
-    The default is 0.
+        .PARAMETER ThresholdAlertEnabled
+            Specifies whether an alert will be raised when backup threshold is exceeded.
+            The default is 0.
 
-    .PARAMETER WhatIf
-    Shows what would happen if the command were to run. No actions are actually performed.
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
 
-    .PARAMETER Confirm
-    Prompts you for confirmation before executing any changing operations within the command.
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
-    .PARAMETER EnableException
+        .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .PARAMETER Force
-    The force parameter will ignore some errors in the parameters and assume defaults.
-    It will also remove the any present schedules with the same name for the specific job.
+        .PARAMETER Force
+            The force parameter will ignore some errors in the parameters and assume defaults.
+            It will also remove the any present schedules with the same name for the specific job.
 
-    .NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
-    Tags: Log shippin, primary database
+        .NOTES
+            Author: Sander Stad (@sqlstad, sqlstad.nl)
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: MIT https://opensource.org/licenses/MIT
+        .EXAMPLE
+            New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirectory D:\data\logshipping -BackupJob LSBackup_DB1 -BackupRetention 4320 -BackupShare "\\sql1\logshipping" -BackupThreshold 60 -CompressBackup -HistoryRetention 14420 -MonitorServer sql1 -ThresholdAlertEnabled
 
-
-    .EXAMPLE
-    New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirectory D:\data\logshipping -BackupJob LSBackup_DB1 -BackupRetention 4320 -BackupShare "\\sql1\logshipping" -BackupThreshold 60 -CompressBackup -HistoryRetention 14420 -MonitorServer sql1 -ThresholdAlertEnabled
-
-#>
-
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
     param (
@@ -146,7 +142,7 @@ function New-DbaLogShippingPrimaryDatabase {
     )
 
     # Try connecting to the instance
-    Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
+    Write-Message -Message "Connecting to $SqlInstance" -Level Verbose
     try {
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }

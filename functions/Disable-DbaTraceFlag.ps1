@@ -49,7 +49,7 @@ function Disable-DbaTraceFlag {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -62,7 +62,7 @@ function Disable-DbaTraceFlag {
 
             foreach ($tf in $TraceFlag) {
                 $TraceFlagInfo = [pscustomobject]@{
-                    SourceServer = $server.NetName
+                    SourceServer = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     TraceFlag    = $tf

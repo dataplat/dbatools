@@ -51,68 +51,53 @@ function Get-DbaDefaultPath {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -AzureUnsupported
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $datapath = $server.DefaultFile
-
-            if ($datapath.Length -eq 0) {
-                $datapath = $server.ConnectionContext.ExecuteScalar("SELECT SERVERPROPERTY('InstanceDefaultDataPath')")
+            $dataPath = $server.DefaultFile
+            if ($dataPath.Length -eq 0) {
+                $dataPath = $server.ConnectionContext.ExecuteScalar("SELECT SERVERPROPERTY('InstanceDefaultdataPath')")
             }
 
-            <# eh, this can be a failback if we can get it to work ;)
-            if ($datapath -eq [System.DBNull]::Value -or $datapath.Length -eq 0) {
-                $datapath = $server.ConnectionContext.ExecuteScalar("master.dbo.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'DefaultData'")
-            }
-            #>
-
-            if ($datapath -eq [System.DBNull]::Value -or $datapath.Length -eq 0) {
-                $datapath = Split-Path (Get-DbaDatabase -SqlInstance $server -Database model).FileGroups[0].Files[0].FileName
+            if ($dataPath -eq [System.DBNull]::Value -or $dataPath.Length -eq 0) {
+                $dataPath = Split-Path (Get-DbaDatabase -SqlInstance $server -Database model).FileGroups[0].Files[0].FileName
             }
 
-            if ($datapath.Length -eq 0) {
-                $datapath = $server.Information.MasterDbPath
+            if ($dataPath.Length -eq 0) {
+                $dataPath = $server.Information.MasterDbPath
             }
 
-            $logpath = $server.DefaultLog
+            $logPath = $server.DefaultLog
 
-            if ($logpath.Length -eq 0) {
-                $logpath = $server.ConnectionContext.ExecuteScalar("SELECT SERVERPROPERTY('InstanceDefaultLogPath')")
+            if ($logPath.Length -eq 0) {
+                $logPath = $server.ConnectionContext.ExecuteScalar("SELECT SERVERPROPERTY('InstanceDefaultLogPath')")
             }
 
-            <#
-            eh, this can be a failback if we can get it to work ;)
-            right now, the Get-Database thing below causes enumeration which slows stuff down on systems with hundreds of dbs
-            if ($logpath -eq [System.DBNull]::Value -or $logpath.Length -eq 0) {
-                $logpath = $server.ConnectionContext.ExecuteScalar("master.dbo.xp_instance_regread N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'DefaultLog'")
-            }
-            #>
-
-            if ($logpath -eq [System.DBNull]::Value -or $logpath.Length -eq 0) {
-                $logpath = Split-Path (Get-DbaDatabase -SqlInstance $server -Database model).LogFiles.FileName
+            if ($logPath -eq [System.DBNull]::Value -or $logPath.Length -eq 0) {
+                $logPath = Split-Path (Get-DbaDatabase -SqlInstance $server -Database model).LogFiles.FileName
             }
 
-            if ($logpath.Length -eq 0) {
-                $logpath = $server.Information.MasterDbLogPath
+            if ($logPath.Length -eq 0) {
+                $logPath = $server.Information.MasterDbLogPath
             }
 
-            $datapath = $datapath.Trim().TrimEnd("\")
-            $logpath = $logpath.Trim().TrimEnd("\")
+            $dataPath = $dataPath.Trim().TrimEnd("\")
+            $logPath = $logPath.Trim().TrimEnd("\")
 
-            [pscustomobject]@{
-                ComputerName = $server.NetName
+            [PSCustomObject]@{
+                ComputerName = $server.ComputerName
                 InstanceName = $server.ServiceName
                 SqlInstance  = $server.DomainInstanceName
-                Data         = $datapath
-                Log          = $logpath
+                Data         = $dataPath
+                Log          = $logPath
                 Backup       = $server.BackupDirectory
-                ErrorLog     = $server.ErrorLogPath
+                ErrorLog     = $server.ErrorlogPath
             }
         }
     }

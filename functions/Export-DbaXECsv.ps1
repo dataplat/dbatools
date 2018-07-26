@@ -18,9 +18,9 @@ function Export-DbaXECsv {
             Allows Piping
 
         .NOTES
+            Tags: ExtendedEvent, XE, XEvent
             Author: Gianluca Sartori (@spaghettidba)
-            Tags: ExtendedEvent, XE, Xevent
-            Website: https://dbatools.io
+
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
             SmartTarget: by Gianluca Sartori (@spaghettidba)

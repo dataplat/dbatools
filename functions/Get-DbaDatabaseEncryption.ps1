@@ -1,62 +1,61 @@
 function Get-DbaDatabaseEncryption {
     <#
-    .SYNOPSIS
-        Returns a summary of encryption used on databases passed to it.
+        .SYNOPSIS
+            Returns a summary of encryption used on databases passed to it.
 
-    .DESCRIPTION
-        Shows if a database has Transparent Data Encryption (TDE), any certificates, asymmetric keys or symmetric keys with details for each.
+        .DESCRIPTION
+            Shows if a database has Transparent Data Encryption (TDE), any certificates, asymmetric keys or symmetric keys with details for each.
 
-    .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input.
+        .PARAMETER SqlInstance
+            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input.
 
-    .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER Database
-        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        .PARAMETER Database
+            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-    .PARAMETER ExcludeDatabase
-        The database(s) to exclude - this list is auto-populated from the server.
+        .PARAMETER ExcludeDatabase
+            The database(s) to exclude - this list is auto-populated from the server.
 
-    .PARAMETER IncludeSystemDBs
-        Switch parameter that when used will display system database information.
+        .PARAMETER IncludeSystemDBs
+            Switch parameter that when used will display system database information.
 
-    .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .NOTES
-        Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MIT
+        .NOTES
+            Tags: Encryption, Database
+            Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    .LINK
-        https://dbatools.io/Get-DbaDatabaseEncryption
+        .LINK
+            https://dbatools.io/Get-DbaDatabaseEncryption
 
-    .EXAMPLE
-        Get-DbaDatabaseEncryption -SqlInstance DEV01
+        .EXAMPLE
+            Get-DbaDatabaseEncryption -SqlInstance DEV01
 
-        List all encryption found on the instance by database
+            List all encryption found on the instance by database
 
-    .EXAMPLE
-        Get-DbaDatabaseEncryption -SqlInstance DEV01 -Database MyDB
+        .EXAMPLE
+            Get-DbaDatabaseEncryption -SqlInstance DEV01 -Database MyDB
 
-        List all encryption found for the MyDB database.
+            List all encryption found for the MyDB database.
 
-    .EXAMPLE
-        Get-DbaDatabaseEncryption -SqlInstance DEV01 -ExcludeDatabase MyDB
+        .EXAMPLE
+            Get-DbaDatabaseEncryption -SqlInstance DEV01 -ExcludeDatabase MyDB
 
-        List all encryption found for all databases except MyDB.
+            List all encryption found for all databases except MyDB.
 
-    .EXAMPLE
-        Get-DbaDatabaseEncryption -SqlInstance DEV01 -IncludeSystemDBs
+        .EXAMPLE
+            Get-DbaDatabaseEncryption -SqlInstance DEV01 -IncludeSystemDBs
 
-        List all encryption found for all databases including the system databases.
-
-#>
-
+            List all encryption found for all databases including the system databases.
+    #>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline, Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
@@ -109,7 +108,7 @@ function Get-DbaDatabaseEncryption {
 
                 if ($db.EncryptionEnabled -eq $true) {
                     [PSCustomObject]@{
-                        ComputerName             = $server.NetName
+                        ComputerName             = $server.ComputerName
                         InstanceName             = $server.ServiceName
                         SqlInstance              = $server.DomainInstanceName
                         Database                 = $db.Name
@@ -128,7 +127,7 @@ function Get-DbaDatabaseEncryption {
 
                 foreach ($cert in $db.Certificates) {
                     [PSCustomObject]@{
-                        ComputerName             = $server.NetName
+                        ComputerName             = $server.ComputerName
                         InstanceName             = $server.ServiceName
                         SqlInstance              = $server.DomainInstanceName
                         Database                 = $db.Name
@@ -147,7 +146,7 @@ function Get-DbaDatabaseEncryption {
 
                 foreach ($ak in $db.AsymmetricKeys) {
                     [PSCustomObject]@{
-                        ComputerName             = $server.NetName
+                        ComputerName             = $server.ComputerName
                         InstanceName             = $server.ServiceName
                         SqlInstance              = $server.DomainInstanceName
                         Database                 = $db.Name

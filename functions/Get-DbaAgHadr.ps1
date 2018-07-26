@@ -18,7 +18,7 @@ function Get-DbaAgHadr {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: DisasterRecovery, AG, AvailabilityGroup
+            Tags: Hadr, AG, AvailabilityGroup
             Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
 
             Website: https://dbatools.io
@@ -52,11 +52,11 @@ function Get-DbaAgHadr {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
-            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $server.NetName
+
+            Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-            
+
             Select-DefaultView -InputObject $server -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'IsHadrEnabled'
         }
     }

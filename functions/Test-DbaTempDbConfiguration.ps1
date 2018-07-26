@@ -67,7 +67,7 @@ function Test-DbaTempDbConfiguration {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
@@ -80,7 +80,7 @@ function Test-DbaTempDbConfiguration {
                 $notes = 'SQL Server 2016 has this functionality enabled by default'
                 # DBA May have changed setting. May need to check.
                 $value = [PSCustomObject]@{
-                    ComputerName   = $server.NetName
+                    ComputerName   = $server.ComputerName
                     InstanceName   = $server.ServiceName
                     SqlInstance    = $server.DomainInstanceName
                     Rule           = 'TF 1118 Enabled'
@@ -94,7 +94,7 @@ function Test-DbaTempDbConfiguration {
                 $notes = 'KB328551 describes how TF 1118 can benefit performance.'
 
                 $value = [PSCustomObject]@{
-                    ComputerName   = $server.NetName
+                    ComputerName   = $server.ComputerName
                     InstanceName   = $server.ServiceName
                     SqlInstance    = $server.DomainInstanceName
                     Rule           = 'TF 1118 Enabled'
@@ -122,7 +122,7 @@ function Test-DbaTempDbConfiguration {
             Write-Message -Level Verbose -Message "TempDB file objects gathered"
 
             $value = [PSCustomObject]@{
-                ComputerName   = $server.NetName
+                ComputerName   = $server.ComputerName
                 InstanceName   = $server.ServiceName
                 SqlInstance    = $server.DomainInstanceName
                 Rule           = 'File Count'
@@ -156,7 +156,7 @@ function Test-DbaTempDbConfiguration {
             }
 
             $value = [PSCustomObject]@{
-                ComputerName   = $server.NetName
+                ComputerName   = $server.ComputerName
                 InstanceName   = $server.ServiceName
                 SqlInstance    = $server.DomainInstanceName
                 Rule           = 'File Growth in Percent'
@@ -187,7 +187,7 @@ function Test-DbaTempDbConfiguration {
             }
 
             $value = [PSCustomObject]@{
-                ComputerName   = $server.NetName
+                ComputerName   = $server.ComputerName
                 InstanceName   = $server.ServiceName
                 SqlInstance    = $server.DomainInstanceName
                 Rule           = 'File Location'
@@ -218,7 +218,7 @@ function Test-DbaTempDbConfiguration {
             }
 
             $value = [PSCustomObject]@{
-                ComputerName   = $server.NetName
+                ComputerName   = $server.ComputerName
                 InstanceName   = $server.ServiceName
                 SqlInstance    = $server.DomainInstanceName
                 Rule           = 'File MaxSize Set'
