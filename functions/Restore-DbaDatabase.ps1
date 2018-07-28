@@ -459,6 +459,7 @@ function Restore-DbaDatabase {
             }
             if ($Continue) {
                 $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $RestoreInstance
+                $LastRestoreType = Get-DbaBackupHistory -SqlInstance $RestoreInstance -Last
                 #$WithReplace = $true
                 #$ContinuePoints
             }
@@ -613,7 +614,7 @@ function Restore-DbaDatabase {
                 return
             }
             
-            $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints
+            $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastBackupType $LastBackupType
             
             if (Test-Bound -ParameterName SelectBackupInformation) {
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose

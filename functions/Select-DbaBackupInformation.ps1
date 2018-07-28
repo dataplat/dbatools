@@ -78,6 +78,7 @@ function Select-DbaBackupInformation {
         [string[]]$DatabaseName,
         [string[]]$ServerName,
         [object]$ContinuePoints,
+        [object]$LastBackupType,
         [switch]$EnableException
     )
     begin {
@@ -85,8 +86,7 @@ function Select-DbaBackupInformation {
 
         if ((Test-Bound -ParameterName ContinuePoints) -and $null -ne $ContinuePoints) {
             Write-Message -Message "ContinuePoints provided so setting up for a continue" -Level Verbose
-
-            $IgnoreDiffs = $true
+            #$IgnoreDiffs = $true
             $IgnoreFull = $true
             if (Test-Bound -ParameterName DatabaseName) {
                 $DatabaseName = $DatabaseName | Where-Object {$_ -in ($ContinuePoints | Select-Object -Property Database).Database}
@@ -124,22 +124,35 @@ function Select-DbaBackupInformation {
         ForEach ($Database in $Databases) {
             Write-Message -Message "Processing Db $Database" -Level Verbose
             $DatabaseHistory = $InternalHistory | Where-Object {$_.Database -eq $Database}
-
+            
             $dbHistory = @()
             #Find the Last Full Backup before RestoreTime
             if ($true -ne $IgnoreFull) {
                 $Full = $DatabaseHistory | Where-Object {$_.Type -in ('Full', 'Database') -and $_.Start -le $RestoreTime} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
                 $full.Fullname = ($DatabaseHistory | Where-Object {$_.Type -in ('Full', 'Database') -and $_.BackupSetID -eq $Full.BackupSetID}).Fullname
                 $dbHistory += $full
+            } 
+            elseif ($IgnoreFull -and $null -ne $ContinuePoints) {
+                Write-Message -Message "Continuing, so setting a fake full backup from the db"
+                $Full = [PsCustomObject]@{
+                        CheckpointLSN = ($ContinuePoints | Where-Object {$_.Database -eq $Database})
+                        #.differential_base_lsn
+                    }
             }
+
             #Find the Last diff between Full and RestoreTime
             if ($true -ne $IgnoreDiffs) {
+                Write-Message -Message "processing diffs" -Level Verbose
                 $Diff = $DatabaseHistory | Where-Object {$_.Type -in ('Differential', 'Database Differential') -and $_.Start -le $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
                 if ($null -ne $Diff) {
                     $Diff.FullName = ($DatabaseHistory | Where-Object {$_.Type -in ('Differential', 'Database Differential') -and $_.BackupSetID -eq $diff.BackupSetID}).Fullname
                     $dbhistory += $Diff
                 }
             }
+            #$full
+            #$ContinuePoints #| Where-Object {$_.Database -eq $Database}
+            $Database
+            return
             #Get All t-logs up to restore time
             if ($IgnoreFull -eq $true) {
                 [bigint]$LogBaseLsn = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).redo_start_lsn
