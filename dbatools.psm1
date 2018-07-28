@@ -114,7 +114,7 @@ if ($dbatoolsSystemUserNode.SerialImport) { $script:serialImport = $true }
 
 #region Multi File Import
 $script:multiFileImport = $false
-if ($dbatools_serialimport) { $script:multiFileImport = $true }
+if ($dbatools_multiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemSystemNode.MultiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemUserNode.MultiFileImport) { $script:multiFileImport = $true }
 if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $true }
