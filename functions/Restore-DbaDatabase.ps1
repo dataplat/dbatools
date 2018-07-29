@@ -460,7 +460,7 @@ function Restore-DbaDatabase {
             if ($Continue) {
                 Write-Message -Message "Called with continue, so assume we have an existing db in norecovery"
                 $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $RestoreInstance
-                $LastRestoreType = Get-DbaBackupHistory -SqlInstance $RestoreInstance -Last
+                $LastRestoreType = Get-DbaRestoreHistory -SqlInstance $RestoreInstance -Last
             }
             if (!($PSBoundParameters.ContainsKey("DataBasename"))) {
                 $PipeDatabaseName = $true

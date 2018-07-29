@@ -361,6 +361,28 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
         
     }
+
+    Context "Continue Restore with Differentials" {
+        AfterAll {
+            $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        }
+        $Results = Restore-DbaDatabase -SqlInstance -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\diffcontinue\full.bak -NoRecovery
+        It "Should Have restored the database cleanly" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | Measure-Object).count -gt 0) | Should be $True
+        }
+        It "Should have left the db in a norecovery state" {
+            (Get-DbaDatabase -SqlInstance $script:instance1 -Database diffrest).Status | Should Be "Restoring"
+        }
+        $Results2  = Restore-DbaDatabase -SqlInstance -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\diffcontinue\diff.bak -Continue
+        It "Should Have restored the database cleanly" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | Measure-Object).count -gt 0) | Should be $True
+        }
+        It "Should have recovered the database" {
+            (Get-DbaDatabase -SqlInstance $script:instance1 -Database diffrest).Status | Should Be "Normal" 
+        }
+    }
     
     Context "Backup DB For next test" {
         $null = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44")
