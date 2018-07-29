@@ -83,11 +83,9 @@ function Select-DbaBackupInformation {
     )
     begin {
         $InternalHistory = @()
-
         if ((Test-Bound -ParameterName ContinuePoints) -and $null -ne $ContinuePoints) {
             Write-Message -Message "ContinuePoints provided so setting up for a continue" -Level Verbose
-            #$IgnoreDiffs = $true
-            $IgnoreFull = $true
+            $IgnoreFull = $true      
             if (Test-Bound -ParameterName DatabaseName) {
                 $DatabaseName = $DatabaseName | Where-Object {$_ -in ($ContinuePoints | Select-Object -Property Database).Database}
 
@@ -125,6 +123,16 @@ function Select-DbaBackupInformation {
         $Databases = ($InternalHistory | Select-Object -Property Database -unique).Database
         ForEach ($Database in $Databases) {
             Write-Message -Message "Processing Db $Database" -Level Verbose
+                        
+            if (($LastRestoreType | Where-Object {$_.Database -eq $Database}).RestoreType -eq 'Database'){
+                Write-Message -Message 'Last restore of $database was a database restore, so diffs can still be used' -Level Verbose
+                $IgnoreDiffs = $false
+            }
+            else {
+                $IgnoreDiffs = $true
+            }
+            Set-Variable -Name dlast -Value $LastRestoreType -Scope global  
+            Set-Variable -Name dname -Value $DatabaseName -Scope global
             $DatabaseHistory = $InternalHistory | Where-Object {$_.Database -eq $Database}
             
             $dbHistory = @()
@@ -134,11 +142,10 @@ function Select-DbaBackupInformation {
                 $full.Fullname = ($DatabaseHistory | Where-Object {$_.Type -in ('Full', 'Database') -and $_.BackupSetID -eq $Full.BackupSetID}).Fullname
                 $dbHistory += $full
             } 
-            elseif ($IgnoreFull -and $null -ne $ContinuePoints) {
+            elseif ($IgnoreFull -and $false -eq $IgnoreDiffs) {
                 Write-Message -Message "Continuing, so setting a fake full backup from the db"
                 $Full = [PsCustomObject]@{
-                        CheckpointLSN = ($ContinuePoints | Where-Object {$_.Database -eq $Database})
-                        #.differential_base_lsn
+                        CheckpointLSN = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).differential_base_lsn
                     }
             }
 
