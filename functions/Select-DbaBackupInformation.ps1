@@ -78,7 +78,7 @@ function Select-DbaBackupInformation {
         [string[]]$DatabaseName,
         [string[]]$ServerName,
         [object]$ContinuePoints,
-        [object]$LastBackupType,
+        [object]$LastRestoreType,
         [switch]$EnableException
     )
     begin {
@@ -115,6 +115,8 @@ function Select-DbaBackupInformation {
             Write-Message -Message "Filtering by DatabaseName" -Level Verbose
             $InternalHistory = $InternalHistory | Where-Object {$_.Database -in $DatabaseName}
         }
+       # $DatabaseName
+       # $InternalHistory
         if (Test-Bound -ParameterName ServerName) {
             Write-Message -Message "Filtering by ServerName" -Level Verbose
             $InternalHistory = $InternalHistory | Where-Object {$_.InstanceName -in $servername}
@@ -151,8 +153,9 @@ function Select-DbaBackupInformation {
             }
             #$full
             #$ContinuePoints #| Where-Object {$_.Database -eq $Database}
-            $Database
-            return
+            #$Database
+           # $LastRestoreType
+           # return
             #Get All t-logs up to restore time
             if ($IgnoreFull -eq $true) {
                 [bigint]$LogBaseLsn = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).redo_start_lsn
