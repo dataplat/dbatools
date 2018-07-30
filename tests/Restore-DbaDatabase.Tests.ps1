@@ -366,7 +366,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         AfterAll {
             $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         }
-        $Results = Restore-DbaDatabase -SqlInstance -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\diffcontinue\full.bak -NoRecovery
+        $Results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\diffcontinue\full.bak -NoRecovery
         It "Should Have restored the database cleanly" {
             ($results.RestoreComplete -contains $false) | Should be $False
             (($results | Measure-Object).count -gt 0) | Should be $True
@@ -374,7 +374,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have left the db in a norecovery state" {
             (Get-DbaDatabase -SqlInstance $script:instance1 -Database diffrest).Status | Should Be "Restoring"
         }
-        $Results2  = Restore-DbaDatabase -SqlInstance -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\diffcontinue\diff.bak -Continue
+        $Results2  = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\diffcontinue\diff.bak -Continue
         It "Should Have restored the database cleanly" {
             ($results.RestoreComplete -contains $false) | Should be $False
             (($results | Measure-Object).count -gt 0) | Should be $True
