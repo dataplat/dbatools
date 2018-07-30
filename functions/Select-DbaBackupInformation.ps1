@@ -123,13 +123,14 @@ function Select-DbaBackupInformation {
         $Databases = ($InternalHistory | Select-Object -Property Database -unique).Database
         ForEach ($Database in $Databases) {
             Write-Message -Message "Processing Db $Database" -Level Verbose
-                        
-            if (($LastRestoreType | Where-Object {$_.Database -eq $Database}).RestoreType -eq 'Database'){
-                Write-Message -Message 'Last restore of $database was a database restore, so diffs can still be used' -Level Verbose
-                $IgnoreDiffs = $false
-            }
-            else {
-                $IgnoreDiffs = $true
+            if ((Test-Bound -ParameterName ContinuePoints) -and $null -ne $ContinuePoints) {            
+                if (($LastRestoreType | Where-Object {$_.Database -eq $Database}).RestoreType -eq 'Database'){
+                    Write-Message -Message 'Last restore of $database was a database restore, so diffs can still be used' -Level Verbose
+                    $IgnoreDiffs = $false
+                }
+                else {
+                    $IgnoreDiffs = $true
+                }
             }
             Set-Variable -Name dlast -Value $LastRestoreType -Scope global  
             Set-Variable -Name dname -Value $DatabaseName -Scope global
