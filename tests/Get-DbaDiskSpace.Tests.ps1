@@ -127,7 +127,7 @@ Describe "$commandName Integration Tests" -Tags "IntegrationTests" {
             )
         }
 
-        It -Skip "SQL Server drive is not found in there somewhere" {
+        It "SQL Server drive is not found in there somewhere" {
             $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME -CheckForSql -WarningAction SilentlyContinue
             $false | Should BeIn $results.IsSqlDisk
         }
