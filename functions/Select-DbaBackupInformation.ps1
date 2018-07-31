@@ -85,7 +85,8 @@ function Select-DbaBackupInformation {
         $InternalHistory = @()
         if ((Test-Bound -ParameterName ContinuePoints) -and $null -ne $ContinuePoints) {
             Write-Message -Message "ContinuePoints provided so setting up for a continue" -Level Verbose
-            $IgnoreFull = $true      
+            $IgnoreFull = $true
+            $Continue = $True      
             if (Test-Bound -ParameterName DatabaseName) {
                 $DatabaseName = $DatabaseName | Where-Object {$_ -in ($ContinuePoints | Select-Object -Property Database).Database}
 
@@ -111,7 +112,7 @@ function Select-DbaBackupInformation {
         }
         if ((Test-Bound -ParameterName DatabaseName) -and '' -ne $DatabaseName) {
             Write-Message -Message "Filtering by DatabaseName" -Level Verbose
-            $InternalHistory = $InternalHistory | Where-Object {$_.Database -in $DatabaseName}
+          #  $InternalHistory = $InternalHistory | Where-Object {$_.Database -in $DatabaseName}
         }
 
         if (Test-Bound -ParameterName ServerName) {
@@ -120,7 +121,21 @@ function Select-DbaBackupInformation {
         }
 
         $Databases = ($InternalHistory | Select-Object -Property Database -unique).Database
+        if ($continue -and $Databases.count -gt 1 -and $DatabaseName.count -gt 1){
+            Stop-Function -Message "Cannot continue restores on multiple databases with renames, exiting"
+            return
+        } 
+
         ForEach ($Database in $Databases) {
+            if ($continue -and $Databases.count -eq 1 -and $DatabaseName.count -eq 1 -and $DatabaseName[0] -eq $Database){
+                $DatabaseFilter = $DatabaseName[0]
+            }
+            elseif ($continue -and $Databases.count -eq 1 -and $DatabaseName.count -eq 1 -and $DatabaseName[0] -ne $Database){
+                $DatabaseFilter = $DatabaseName[0]
+            }
+            else {
+                $DatabaseFilter = $Database
+            }
             Write-Message -Message "Processing Db $Database" -Level Verbose
             if ((Test-Bound -ParameterName ContinuePoints) -and $null -ne $ContinuePoints) {            
                 if (($LastRestoreType | Where-Object {$_.Database -eq $Database}).RestoreType -eq 'Database'){
@@ -133,7 +148,7 @@ function Select-DbaBackupInformation {
             }
 
             $DatabaseHistory = $InternalHistory | Where-Object {$_.Database -eq $Database}
-            
+            set-variable -name ddbhist -value $DatabaseHistory -scope global
             $dbHistory = @()
             #Find the Last Full Backup before RestoreTime
             if ($true -ne $IgnoreFull) {
@@ -144,7 +159,7 @@ function Select-DbaBackupInformation {
             elseif ($IgnoreFull -and $false -eq $IgnoreDiffs) {
                 Write-Message -Message "Continuing, so setting a fake full backup from the db"
                 $Full = [PsCustomObject]@{
-                        CheckpointLSN = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).differential_base_lsn
+                        CheckpointLSN = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).differential_base_lsn
                     }
             }
 
@@ -160,8 +175,10 @@ function Select-DbaBackupInformation {
 
             #Get All t-logs up to restore time
             if ($IgnoreFull -eq $true) {
-                [bigint]$LogBaseLsn = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).redo_start_lsn
-                $FirstRecoveryForkID = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).FirstRecoveryForkID
+                Set-Variable -Name DContP -Value $ContinuePoints -scope global
+                Set-Variable -Name DDbName -Value $Database -scope global
+                [bigint]$LogBaseLsn = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).redo_start_lsn
+                $FirstRecoveryForkID = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).FirstRecoveryForkID
                 Write-Message -Message "Continuing, setting fake LastLsn - $LogBaseLSN" -Level Verbose
             }
             else {
