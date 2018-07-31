@@ -113,8 +113,7 @@ function Select-DbaBackupInformation {
             Write-Message -Message "Filtering by DatabaseName" -Level Verbose
             $InternalHistory = $InternalHistory | Where-Object {$_.Database -in $DatabaseName}
         }
-       # $DatabaseName
-       # $InternalHistory
+
         if (Test-Bound -ParameterName ServerName) {
             Write-Message -Message "Filtering by ServerName" -Level Verbose
             $InternalHistory = $InternalHistory | Where-Object {$_.InstanceName -in $servername}
@@ -132,8 +131,7 @@ function Select-DbaBackupInformation {
                     $IgnoreDiffs = $true
                 }
             }
-            Set-Variable -Name dlast -Value $LastRestoreType -Scope global  
-            Set-Variable -Name dname -Value $DatabaseName -Scope global
+
             $DatabaseHistory = $InternalHistory | Where-Object {$_.Database -eq $Database}
             
             $dbHistory = @()
@@ -159,13 +157,9 @@ function Select-DbaBackupInformation {
                     $dbhistory += $Diff
                 }
             }
-            #$full
-            #$ContinuePoints #| Where-Object {$_.Database -eq $Database}
-            #$Database
-           # $LastRestoreType
-           # return
+
             #Get All t-logs up to restore time
-<#            if ($IgnoreFull -eq $true) {
+            if ($IgnoreFull -eq $true) {
                 [bigint]$LogBaseLsn = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).redo_start_lsn
                 $FirstRecoveryForkID = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).FirstRecoveryForkID
                 Write-Message -Message "Continuing, setting fake LastLsn - $LogBaseLSN" -Level Verbose
@@ -175,15 +169,15 @@ function Select-DbaBackupInformation {
                 [bigint]$LogBaseLsn = ($dbHistory | Sort-Object -Property LastLsn -Descending | select-object -First 1).lastLsn.ToString()
                 $FirstRecoveryForkID = $Full.FirstRecoveryForkID
             }
-#>
+
             if ($true -ne $IgnoreLogs) {
                 $FilteredLogs = $DatabaseHistory | Where-Object {$_.Type -in ('Log', 'Transaction Log') -and $_.Start -le $RestoreTime -and $_.LastLSN.ToString() -ge $LogBaseLsn -and $_.FirstLSN -ne $_.LastLSN}  | Sort-Object -Property LastLsn, FirstLsn
                 $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN, FirstLSN
                 ForEach ($Group in $GroupedLogs) {
                     $Log = $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID} | select-object -First 1
                     $Log.FullName = ($DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}).Fullname
-                    $dbhistory += $Log
-                    #$dbhistory += $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}
+                    #$dbhistory += $Log
+                    $dbhistory += $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}
                 }
                 # Get Last T-log
                 $dbHistory += $DatabaseHistory | Where-Object {$_.Type -in ('Log', 'Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn, FirstLsn  | Select-Object -First 1
