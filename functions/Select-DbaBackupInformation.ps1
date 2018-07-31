@@ -165,7 +165,7 @@ function Select-DbaBackupInformation {
            # $LastRestoreType
            # return
             #Get All t-logs up to restore time
-            if ($IgnoreFull -eq $true) {
+<#            if ($IgnoreFull -eq $true) {
                 [bigint]$LogBaseLsn = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).redo_start_lsn
                 $FirstRecoveryForkID = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).FirstRecoveryForkID
                 Write-Message -Message "Continuing, setting fake LastLsn - $LogBaseLSN" -Level Verbose
@@ -175,7 +175,7 @@ function Select-DbaBackupInformation {
                 [bigint]$LogBaseLsn = ($dbHistory | Sort-Object -Property LastLsn -Descending | select-object -First 1).lastLsn.ToString()
                 $FirstRecoveryForkID = $Full.FirstRecoveryForkID
             }
-
+#>
             if ($true -ne $IgnoreLogs) {
                 $FilteredLogs = $DatabaseHistory | Where-Object {$_.Type -in ('Log', 'Transaction Log') -and $_.Start -le $RestoreTime -and $_.LastLSN.ToString() -ge $LogBaseLsn -and $_.FirstLSN -ne $_.LastLSN}  | Sort-Object -Property LastLsn, FirstLsn
                 $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN, FirstLSN
