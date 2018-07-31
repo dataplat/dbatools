@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     InModuleScope dbatools {
         Context "Empty TLog Backup Issues" {
-               $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\EmptyTlogData.json -raw)
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\EmptyTlogData.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = Select-DbaBackupInformation -BackupHistory $header #-EnableException:$true
 
