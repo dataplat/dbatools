@@ -114,7 +114,7 @@ if ($dbatoolsSystemUserNode.SerialImport) { $script:serialImport = $true }
 
 #region Multi File Import
 $script:multiFileImport = $false
-if ($dbatools_serialimport) { $script:multiFileImport = $true }
+if ($dbatools_multiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemSystemNode.MultiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemUserNode.MultiFileImport) { $script:multiFileImport = $true }
 if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $true }
@@ -680,8 +680,8 @@ if ($PSCommandPath -like "*.psm1") {
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUlvm9Bw+nnAYfIrfFLl3c131k
-# pjOggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUzuBEXrAUO3NVvftZe0Zh4NV5
+# 4eeggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -812,22 +812,22 @@ if ($PSCommandPath -like "*.psm1") {
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUkaq1VfzE0aX1eAZGl6ccIX4i784wDQYJKoZIhvcNAQEBBQAE
-# ggEAI5NEv67pv0Bs0d46wCVhShxYCialeB0IMSL8uCQrY3YCJT83oOGIAtcnHHSA
-# XA7a5mgpLIDqymtTthepID26k9jhSJu/tCGw732DTg/ucEIKf5UTG8T1ocHl80JB
-# hYhXlw7k87DdZmDa6W2FxeXtXWDgbLfs2FOhze0VarVLZlC1xrfMVqF3okq2eTPq
-# YwoLHZq3Oaoap6xYTtauA4tIDvCnnr2l3mYNpOov3s1NXUWUJtACvqJjgdocVaCn
-# TktFhHMRkjT0P0hZNNEtlUHRiOYG15pWdWEHTOIW3TnWU5KTuytmafzbRmTLgxS2
-# AWyggWtVPJV5XrOKFUPKFyczVaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUJc2L50QWUHDa0np5rcTx8UP3gDYwDQYJKoZIhvcNAQEBBQAE
+# ggEAX7wLIuvfa8sUpLjhZGLS7eWmJL01TOuSF2aSx2m9ARpzLTFEvitaSoKVZ0+E
+# mkAZZgGXbpPm79U5AXC/yhwD420gpYL6GFgIqZSADoDyToCzYJOvtteMlI1IqKPz
+# JB5G+IxFgNBtTtobtS4cquRb/gKwoLY4AVM/MxTfKvxfcDBxrYmNj1UQuRyrYvpv
+# FhMYEk3S9ou0uI9NXmr2JyfRx8sD1ewB8GWDMjknWTB8EpLfFOK0FlU3vQ4gEwSJ
+# vAWLwUJCqB/R2rsm8DsDY6yMj+HuEKeKmhPlOSrwPd/OU4//t9gXlruXZiyotptL
+# msE0f8cUsWpbwSWvaFjYEMbyv6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwNzI2MTQzOTAwWjAj
-# BgkqhkiG9w0BCQQxFgQUpfBNPLRBvUF1qJuzr7jb16QbQTMwDQYJKoZIhvcNAQEB
-# BQAEggEAh/HVu7DbGe1iL+BKh71Le504Y2/UnR5I6aRtam9kNmGAkUPmdyVq7W09
-# mGCpkc53Bgd1utZ9OkKWvHPMJLa0jFp3yA/NF93RYSdTBKzUmkJaLGaXxmPDHfPC
-# T2apHHZEbLNH7i+Gj/wernPTvUUEBFVUVZOHQbR4mmOkol+p5P9epbZYNnJVBPK0
-# Tx25dDVqapOu8G+4DAghYSwZ04wkm1NMb3e9DoPKCqwU2YTDUcQqO4AwusZUMIv9
-# bBcaAMi4hJ0U4BvSdgJn/n+392iRkSYxy/HMQ+r2cH7tDsjZcwDHwfyr8XwYYvMH
-# w6kLFV7Pht2jP66/QaN7C7qrXQMhMA==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwODAxMjA0MDE2WjAj
+# BgkqhkiG9w0BCQQxFgQUBWy0ok2bPJiyorhyKDYge/0N7l4wDQYJKoZIhvcNAQEB
+# BQAEggEAl+whqq49ICxDEHEHzmntl3GtEHnon32tSUVDf3Ip/wbAAMCd80CH3azt
+# gphDoXH3GhPNAVITlpiUnJeNswQWjk33W1zq6Loe5H/SwvJJ5Bverv0C5I1Y5mS3
+# sFLN8yqBWSXn2P8aOex8qi+uZYwYLG6+CeWG64v4sZFO1yPqiMl5ovU/EPghIw86
+# 0LutBRVI6ZA3uCTZKqrWx2SXZW8pfZv19Hb9laf0yOE5/R3uVG/UAUxv5Ztq9mW6
+# uTU9pXhv1Xi2b/NXtAgvIjJmXv+BBEtmknhhKPm0d333trVka0ByKKcmUWFRE05U
+# 8LxPATeFx37SvlQrFUMk37haJrEc9A==
 # SIG # End signature block

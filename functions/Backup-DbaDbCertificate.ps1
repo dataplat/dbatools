@@ -142,6 +142,7 @@ function Backup-DbaDbCertificate {
                 $actualPath = Get-SqlDefaultPaths -SqlInstance $server -filetype Data
             }
 
+            $actualPath = $actualPath.TrimEnd('\')
             $fullCertName = "$actualPath\$certName$Suffix"
             $exportPathKey = "$fullCertName.pvk"
 
