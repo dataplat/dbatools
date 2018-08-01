@@ -8,7 +8,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     $LogFolder = 'C:\temp\logfiles'
     New-Item -ItemType Directory $DataFolder -ErrorAction SilentlyContinue
     New-Item -ItemType Directory $LogFolder -ErrorAction SilentlyContinue
-    
+  
     Context "Properly restores a database on the local drive using Path" {
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak
@@ -446,7 +446,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         AfterAll {
            $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         }
-        $Results = Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db[12]\FULL\*.* | Restore-DbaDatabase -SqlInstance $script:instance1  -NoRecovery
+        $files = @()
+        $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\FULL\
+        $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db2\FULL\
+        $Results = $files | Restore-DbaDatabase -SqlInstance $script:instance1  -NoRecovery
         It "Should Have restored the database cleanly" {
             ($results.RestoreComplete -contains $false) | Should be $False
             (($results | Measure-Object).count -gt 0) | Should be $True
@@ -802,6 +805,5 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $results.Script -match 'CREDENTIAL' | Should -Be $true
             }
         }
-    }
-    
+    }   
 }
