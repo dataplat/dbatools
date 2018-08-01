@@ -416,7 +416,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             (($results | Measure-Object).count -gt 0) | Should be $True
         }
         It "Should have recovered the database" {
-            (Get-DbaDatabase -SqlInstance $script:instance1 -Database ft1).Status | Should Be "Normal" 
+            (Get-DbaDatabase -SqlInstance $script:instance1 -Database ft1).Status | Should Be "Normal"
         }
     }
 
@@ -438,7 +438,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             (($results2 | Measure-Object).count -gt 0) | Should be $True
         }
         It "Should have recovered the database" {
-            (Get-DbaDatabase -SqlInstance $script:instance1 -Database contest).Status | Should Be "Normal" 
+            (Get-DbaDatabase -SqlInstance $script:instance1 -Database contest).Status | Should Be "Normal"
         }
     }
 
