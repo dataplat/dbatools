@@ -616,7 +616,7 @@ function Restore-DbaDatabase {
             $null = $BackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping
             
             if (Test-Bound -ParameterName FormatBackupInformation) {
-                Set-Variable -Name $FormatBackupInformation -Value $FilteredBackupHistory -Scope Global
+                Set-Variable -Name $FormatBackupInformation -Value $BackupHistory -Scope Global
             }
             if ($StopAfterFormatBackupInformation) {
                 return

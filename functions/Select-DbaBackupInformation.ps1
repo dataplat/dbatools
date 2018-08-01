@@ -28,6 +28,10 @@ function Select-DbaBackupInformation {
             The Output of Get-RestoreContinuableDatabase while provides 'Database',redo_start_lsn,'FirstRecoveryForkID' values. Used to filter backups to continue a restore on a database
             Sets IgnoreDiffs, and also filters databases to only those within the ContinuePoints object, or the ContinuePoints object AND DatabaseName if both specified
 
+        .PARAMETER LastRestoreType
+            The Output of Get-DbaRestoreHistory -last
+            This is used to check the last type of backup to a database to see if a differential backup can be restored
+            
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -130,19 +134,22 @@ function Select-DbaBackupInformation {
 
         ForEach ($Database in $Databases) {
             #Cope with restores renaming the db
+            # $database = the name of database in the backups being scanned
+            # $databasefilter = the name of the database the backups are being restore to/against
             if ($null -ne $DatabaseName) {
                 $databasefilter = $DatabaseName
             }
             else {
                 $databasefilter = $database 
             }
+            
             if ($true -eq $Continue){
                 #Test if Database is in a continuing state and the LSN to continue from:
                 if ($Databasefilter -in ($ContinuePoints | Select-Object -Property Database).Database) {
                     Write-Message -Message "$Database in ContinuePoints, will attmept to continue" -Level verbose
                     $IgnoreFull = $True
                     #Check what the last backup restored was
-                    if (($LastRestoreType | Where-Object {$_.Database -eq $Database}).RestoreType -eq 'Database') {
+                    if (($LastRestoreType | Where-Object {$_.Database -eq $Databasefilter}).RestoreType -eq 'Database') {
                         #Full Backup last restored, so diffs can be used
                         $IgnoreDiffs = $false
                     }
@@ -152,7 +159,7 @@ function Select-DbaBackupInformation {
                     }
                 } 
                 else {
-                    Write-Message -Message "$Database not in ContinuePoints, will attmept normal restore" -Level verbose
+                    Write-Message -Message "$Database not in ContinuePoints, will attmept normal restore" -Level Warning
                 }              
             }
 
@@ -166,7 +173,7 @@ function Select-DbaBackupInformation {
             }
             elseif ($true -eq $IgnoreFull -and $false -eq $IgnoreDiffs) {
                 #Fake the Full backup
-                Write-Message -Message "Continuing, so setting a fake full backup from the db"
+                Write-Message -Message "Continuing, so setting a fake full backup from the existing database"
                 $Full = [PsCustomObject]@{
                         CheckpointLSN = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).differential_base_lsn
                     }
@@ -188,9 +195,14 @@ function Select-DbaBackupInformation {
                 $FirstRecoveryForkID = $Full.FirstRecoveryForkID
             }
             else {
-                #We need to fake it.
-                [bigint]$LogBaseLsn = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).redo_start_lsn
-                $FirstRecoveryForkID = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).FirstRecoveryForkID
+                Write-Message -Message "No full or diff, so attempting to pull from Continue informmation" -Level Verbose
+                try {
+                    [bigint]$LogBaseLsn = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).redo_start_lsn
+                    $FirstRecoveryForkID = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).FirstRecoveryForkID
+                }
+                catch{
+                    Stop-Function -Message "Failed to find LSN or RecoveryForkID for $DatabaseFilter" -Category InvalidOperation -Target $DatabaseFilter
+                }
             }
 
             if ($true -eq $IgnoreFull -and $true -eq $IgnoreDiffs){
