@@ -444,7 +444,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Continue Restore with multiple databases" {
         AfterAll {
-            $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+           $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         }
         $Results = Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db[12]\FULL\*.* | Restore-DbaDatabase -SqlInstance $script:instance1  -NoRecovery
         It "Should Have restored the database cleanly" {
@@ -467,8 +467,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
-
-    
+ 
     Context "Backup DB For next test" {
         $null = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44")
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database RestoreTimeClean -BackupDirectory C:\temp
@@ -804,4 +803,5 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
+    
 }
