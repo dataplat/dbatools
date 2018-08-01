@@ -612,6 +612,16 @@ function Restore-DbaDatabase {
             if ($StopAfterGetBackupInformation) {
                 return
             }
+
+            $null = $BackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping
+            
+            if (Test-Bound -ParameterName FormatBackupInformation) {
+                Set-Variable -Name $FormatBackupInformation -Value $FilteredBackupHistory -Scope Global
+            }
+            if ($StopAfterFormatBackupInformation) {
+                return
+            }
+
             $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
             
             if (Test-Bound -ParameterName SelectBackupInformation) {
@@ -620,15 +630,6 @@ function Restore-DbaDatabase {
                 
             }
             if ($StopAfterSelectBackupInformation) {
-                return
-            }
-            
-            $null = $FilteredBackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping
-            
-            if (Test-Bound -ParameterName FormatBackupInformation) {
-                Set-Variable -Name $FormatBackupInformation -Value $FilteredBackupHistory -Scope Global
-            }
-            if ($StopAfterFormatBackupInformation) {
                 return
             }
             
