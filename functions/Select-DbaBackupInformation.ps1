@@ -31,7 +31,7 @@ function Select-DbaBackupInformation {
         .PARAMETER LastRestoreType
             The Output of Get-DbaRestoreHistory -last
             This is used to check the last type of backup to a database to see if a differential backup can be restored
-            
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -91,7 +91,7 @@ function Select-DbaBackupInformation {
         if ((Test-Bound -ParameterName ContinuePoints) -and $null -ne $ContinuePoints) {
             Write-Message -Message "ContinuePoints provided so setting up for a continue" -Level Verbose
             $IgnoreFull = $true
-            $Continue = $True      
+            $Continue = $True
             if (Test-Bound -ParameterName DatabaseName) {
                 $DatabaseName = $DatabaseName | Where-Object {$_ -in ($ContinuePoints | Select-Object -Property Database).Database}
 
@@ -129,7 +129,7 @@ function Select-DbaBackupInformation {
         if ($continue -and $Databases.count -gt 1 -and $DatabaseName.count -gt 1){
             Stop-Function -Message "Cannot perform continuing restores on multiple databases with renames, exiting"
             return
-        } 
+        }
 
 
         ForEach ($Database in $Databases) {
@@ -140,7 +140,7 @@ function Select-DbaBackupInformation {
                 $databasefilter = $DatabaseName
             }
             else {
-                $databasefilter = $database 
+                $databasefilter = $database
             }
             
             if ($true -eq $Continue){
@@ -157,10 +157,10 @@ function Select-DbaBackupInformation {
                         #Last restore was a diff or log, so can only restore more logs
                         $IgnoreDiffs = $true
                     }
-                } 
+                }
                 else {
                     Write-Message -Message "$Database not in ContinuePoints, will attmept normal restore" -Level Warning
-                }              
+                }
             }
 
             $dbhistory = @()
