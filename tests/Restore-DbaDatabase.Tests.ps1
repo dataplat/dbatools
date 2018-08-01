@@ -442,6 +442,32 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
+    Context "Continue Restore with multiple databases" {
+        AfterAll {
+            $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        }
+        $Results = Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db[12]\FULL\*.* | Restore-DbaDatabase -SqlInstance $script:instance1  -NoRecovery
+        It "Should Have restored the database cleanly" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | Measure-Object).count -gt 0) | Should be $True
+        }
+        It "Should have left the db in a norecovery state" {
+            1..2 | ForEach-Object {
+                (Get-DbaDatabase -SqlInstance $script:instance1 -Database "db$_").Status | Should Be "Restoring"
+            }
+        }
+        $Results2  = gci C:\github\appveyor-lab\sql2008-backups\db[12]\*  -Recurse | ?{$_.PsIsContainer -eq $false} | Restore-DbaDatabase -SqlInstance $script:instance1 -Continue
+        It "Should Have restored the database cleanly" {
+            ($results2.RestoreComplete -contains $false) | Should be $False
+            (($results2 | Measure-Object).count -gt 0) | Should be $True
+        }
+        It "Should have recovered the database" {
+            1..2 | ForEach-Object {
+                (Get-DbaDatabase -SqlInstance $script:instance1 -Database "db$_").Status | Should Be "Normal"
+            }
+        }
+    }
+
     
     Context "Backup DB For next test" {
         $null = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44")
