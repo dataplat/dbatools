@@ -51,6 +51,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             @($results | Where-Object {$_.Database -eq $Database}).Count | Should -BeGreaterThan 1
             @($results | Where-Object {$_.Database -eq $Database2}).Count | Should -Be 0
         }
+        It "Correctly excludes queries" {
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Version Info', 'Core Counts', 'Server Properties' -ExcludeQuery 'Core Counts'
+            @($results).Count | Should be 2
+        }
 
         $columnnames = 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
         $TestCases = @()

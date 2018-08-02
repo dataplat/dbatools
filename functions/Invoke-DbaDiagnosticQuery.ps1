@@ -139,6 +139,8 @@ function Invoke-DbaDiagnosticQuery {
 
         [object[]]$ExcludeDatabase,
 
+        [object[]]$ExcludeQuery,
+
         [Alias('Credential')]
         [PSCredential]$SqlCredential,
         [System.IO.FileInfo]$Path,
@@ -263,7 +265,10 @@ function Invoke-DbaDiagnosticQuery {
             }
             #since some database level queries can take longer (such as fragmentation) calculate progress with database specific queries * count of databases to run against into context
             $CountOfDatabases = ($databases).Count
-
+            
+            if ($ExcludeQuery) {
+                $QueryName = Compare-Object -ReferenceObject $QueryName -DifferenceObject $ExcludeQuery | Where-Object SideIndicator -eq "<=" | Select-Object -ExpandProperty InputObject
+            }
 
             if ($QueryName.Count -ne 0) {
                 #if running all queries, then calculate total to run by instance queries count + (db specific count * databases to run each against)
