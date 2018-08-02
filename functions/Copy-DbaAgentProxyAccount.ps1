@@ -20,6 +20,12 @@ function Copy-DbaAgentProxyAccount {
         .PARAMETER DestinationSqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+        .PARAMETER ProxyAccount
+            Only migrate specific proxy accounts
+    
+        .PARAMETER ExcludeProxyAccount
+            Migrate all proxy accounts except the ones explicitly excluded
+    
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -65,12 +71,12 @@ function Copy-DbaAgentProxyAccount {
     param (
         [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$Source,
-        [PSCredential]
-        $SourceSqlCredential,
+        [PSCredential]$SourceSqlCredential,
         [parameter(Mandatory = $true)]
         [DbaInstanceParameter[]]$Destination,
-        [PSCredential]
-        $DestinationSqlCredential,
+        [PSCredential]$DestinationSqlCredential,
+        [string[]]$ProxyAccount,
+        [string[]]$ExcludeProxyAccount,
         [switch]$Force,
         [Alias('Silent')]
         [switch]$EnableException
@@ -85,6 +91,12 @@ function Copy-DbaAgentProxyAccount {
             return
         }
         $serverProxyAccounts = $sourceServer.JobServer.ProxyAccounts
+        if ($ProxyAccount) {
+            $serverProxyAccounts | Where-Object Name -in $ProxyAccount
+        }
+        if ($ExcludeProxyAccount) {
+            $serverProxyAccounts | Where-Object Name -notin $ProxyAccount
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -99,8 +111,8 @@ function Copy-DbaAgentProxyAccount {
             
             $destProxyAccounts = $destServer.JobServer.ProxyAccounts
             
-            foreach ($proxyAccount in $serverProxyAccounts) {
-                $proxyName = $proxyAccount.Name
+            foreach ($account in $serverProxyAccounts) {
+                $proxyName = $account.Name
                 
                 $copyAgentProxyAccountStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
@@ -112,12 +124,8 @@ function Copy-DbaAgentProxyAccount {
                     DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
                 
-                if ($proxyAccounts.Length -gt 0 -and $proxyAccounts -notcontains $proxyName) {
-                    continue
-                }
-                
                 # Proxy accounts rely on Credential accounts
-                $credentialName = $proxyAccount.CredentialName
+                $credentialName = $account.CredentialName
                 $copyAgentProxyAccountStatus.Name = $credentialName
                 $copyAgentProxyAccountStatus.Type = "Credential"
                 
@@ -167,7 +175,7 @@ function Copy-DbaAgentProxyAccount {
                     
                     try {
                         Write-Message -Level Verbose -Message "Copying server proxy account $proxyName"
-                        $sql = $proxyAccount.Script() | Out-String
+                        $sql = $account.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
                         
