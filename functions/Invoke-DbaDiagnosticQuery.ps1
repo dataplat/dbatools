@@ -27,6 +27,9 @@ function Invoke-DbaDiagnosticQuery {
     .PARAMETER ExcludeDatabase
     The database(s) to exclude
 
+    .PARAMETER ExcludeQuery
+    The Queries to exclude
+
     .PARAMETER UseSelectionHelper
     Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified.
 
