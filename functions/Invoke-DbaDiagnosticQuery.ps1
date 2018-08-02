@@ -27,6 +27,9 @@ function Invoke-DbaDiagnosticQuery {
     .PARAMETER ExcludeDatabase
     The database(s) to exclude
 
+    .PARAMETER ExcludeQuery
+    The Queries to exclude
+
     .PARAMETER UseSelectionHelper
     Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified.
 
@@ -138,6 +141,8 @@ function Invoke-DbaDiagnosticQuery {
         [object[]]$Database,
 
         [object[]]$ExcludeDatabase,
+
+        [object[]]$ExcludeQuery,
 
         [Alias('Credential')]
         [PSCredential]$SqlCredential,
@@ -263,7 +268,10 @@ function Invoke-DbaDiagnosticQuery {
             }
             #since some database level queries can take longer (such as fragmentation) calculate progress with database specific queries * count of databases to run against into context
             $CountOfDatabases = ($databases).Count
-
+            
+            if ($ExcludeQuery) {
+                $QueryName = Compare-Object -ReferenceObject $QueryName -DifferenceObject $ExcludeQuery | Where-Object SideIndicator -eq "<=" | Select-Object -ExpandProperty InputObject
+            }
 
             if ($QueryName.Count -ne 0) {
                 #if running all queries, then calculate total to run by instance queries count + (db specific count * databases to run each against)
