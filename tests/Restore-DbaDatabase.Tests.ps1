@@ -458,7 +458,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             (Get-DbaDatabase -SqlInstance $script:instance1 | Where-Object {$_.Status -eq 'Recovering'}).count | Should Be 0
         }
         $files = @()
-        $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\ -Recurse 
+        $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\ -Recurse
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\dbareports\ -Recurse
         $Results2  = $files | ?{$_.PsIsContainer -eq $false} | Restore-DbaDatabase -SqlInstance $script:instance1 -Continue
         It "Should Have restored the database cleanly" {
@@ -804,5 +804,5 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $results.Script -match 'CREDENTIAL' | Should -Be $true
             }
         }
-    }   
+    }
 }
