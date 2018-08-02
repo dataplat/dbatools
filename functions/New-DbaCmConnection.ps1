@@ -65,7 +65,7 @@ function New-DbaCmConnection {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: ComputerManagement
+            Tags: ComputerManagement, CIM
             Author: Fred Winmann (@FredWeinmann)
 
             Website: https://dbatools.io
@@ -91,7 +91,7 @@ function New-DbaCmConnection {
 
             Gathers a list of computers from a text file, then creates and registers connections for each of them, setting them to ...
             - use the credentials stored in $cred
-            - use the opzions stored in $options when connecting using CIM over WinRM
+            - use the options stored in $options when connecting using CIM over WinRM
             - not store credentials that are known to not work
             - to ignore explicitly specified credentials
 

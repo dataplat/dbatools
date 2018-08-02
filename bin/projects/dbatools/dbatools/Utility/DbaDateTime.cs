@@ -18,6 +18,15 @@ namespace Sqlcollaborative.Dbatools.Utility
         }
 
         /// <summary>
+        /// Parses a string into a datetime object.
+        /// </summary>
+        /// <param name="Time">The time-string to parse</param>
+        public DbaDateTime(string Time)
+        {
+            _timestamp = ParseDateTime(Time);
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="ticks"></param>

@@ -10,7 +10,7 @@ function Get-DbaAgentSchedule {
             SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
         .PARAMETER SqlCredential
-            PSCredential object to connect as. If not specified, current Windows login will be used.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Schedule
             Parameter to filter the schedules returned
@@ -229,7 +229,7 @@ function Get-DbaAgentSchedule {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -255,7 +255,7 @@ function Get-DbaAgentSchedule {
         foreach ($schedule in $scheduleCollection) {
             $description = Get-ScheduleDescription -Schedule $schedule
 
-            Add-Member -Force -InputObject $schedule -MemberType NoteProperty ComputerName -value $server.NetName
+            Add-Member -Force -InputObject $schedule -MemberType NoteProperty ComputerName -value $server.ComputerName
             Add-Member -Force -InputObject $schedule -MemberType NoteProperty InstanceName -value $server.ServiceName
             Add-Member -Force -InputObject $schedule -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
             Add-Member -Force -InputObject $schedule -MemberType NoteProperty Description -Value $description

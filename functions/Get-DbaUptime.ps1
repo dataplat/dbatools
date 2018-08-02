@@ -75,7 +75,7 @@ function Get-DbaUptime {
                 $servername = $instance.SqlInstance
             }
             elseif ($instance.Gettype().FullName -eq [Microsoft.SqlServer.Management.Smo.Server]) {
-                $servername = $instance.NetName
+                $servername = $instance.ComputerName
             }
             else {
                 $servername = $instance.ComputerName;

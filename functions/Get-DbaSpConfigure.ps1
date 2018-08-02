@@ -12,12 +12,18 @@ function Get-DbaSpConfigure {
             collection and receive pipeline input
 
         .PARAMETER SqlCredential
-            PSCredential object to connect as. If not specified, current Windows login will be used.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER ConfigName
+        .PARAMETER Name
             Return only specific configurations -- auto-populated from source server
 
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
         .NOTES
+            Tags: SpConfig, Configure, Configuration
             Author: Nic Cain, https://sirsql.net/
 
             Website: https://dbatools.io
@@ -30,7 +36,7 @@ function Get-DbaSpConfigure {
         .EXAMPLE
             Get-DbaSpConfigure -SqlInstance localhost
 
-            Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
+            Returns server level configuration data on the localhost (ServerName, Name, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
 
         .EXAMPLE
             'localhost','localhost\namedinstance' | Get-DbaSpConfigure
@@ -40,10 +46,10 @@ function Get-DbaSpConfigure {
         .EXAMPLE
             Get-DbaSpConfigure -SqlInstance localhost
 
-            Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
+            Returns server level configuration data on the localhost (ServerName, Name, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
 
         .EXAMPLE
-            Get-DbaSpConfigure -SqlInstance sql2012 -ConfigName MaxServerMemory
+            Get-DbaSpConfigure -SqlInstance sql2012 -Name MaxServerMemory
 
             Returns only the system configuration for MaxServerMemory. Configs is auto-populated for tabbing convenience.
         #>
@@ -53,8 +59,9 @@ function Get-DbaSpConfigure {
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias("Config")]
-        [object[]]$ConfigName
+        [Alias("Config", "ConfigName")]
+        [string[]]$Name,
+        [switch]$EnableException
     )
 
     process {
@@ -70,8 +77,8 @@ function Get-DbaSpConfigure {
             #Get a list of the configuration property parents, and exclude the Parent, Properties values
             $proplist = Get-Member -InputObject $server.Configuration -MemberType Property -Force | Select-Object Name | Where-Object { $_.Name -ne "Parent" -and $_.Name -ne "Properties" }
 
-            if ($ConfigName) {
-                $proplist = $proplist | Where-Object { $_.Name -in $ConfigName }
+            if ($Name) {
+                $proplist = $proplist | Where-Object { $_.Name -in $Name }
             }
 
             #Grab the default sp_configure property values from the external function
@@ -93,7 +100,10 @@ function Get-DbaSpConfigure {
 
                     [pscustomobject]@{
                         ServerName            = $server.Name
-                        ConfigName            = $prop.Name
+                        ComputerName          = $server.ComputerName
+                        InstanceName          = $server.ServiceName
+                        SqlInstance           = $server.DomainInstanceName
+                        Name                  = $prop.Name
                         DisplayName           = $displayname
                         Description           = $propInfo.Description
                         IsAdvanced            = $propInfo.IsAdvanced
@@ -104,7 +114,9 @@ function Get-DbaSpConfigure {
                         RunningValue          = $propInfo.RunValue
                         DefaultValue          = $defaultConfig.Value
                         IsRunningDefaultValue = $isDefault
-                    }
+                        Parent                = $server
+                        ConfigName            = $prop.Name
+                    } | Select-DefaultView -ExcludeProperty ServerName, Parent, ConfigName
                 }
             }
         }

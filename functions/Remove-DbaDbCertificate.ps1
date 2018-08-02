@@ -29,8 +29,8 @@ Prompts you for confirmation before executing any changing operations within the
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER CertificateCollection
-Internal parameter to support pipeline input
+.PARAMETER InputObject
+Piped certificate objects
 
 .NOTES
 Tags: Certificate
@@ -61,7 +61,7 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
         [parameter(Mandatory, ParameterSetName = "instance")]
         [object[]]$Certificate,
         [parameter(ValueFromPipeline, ParameterSetName = "collection")]
-        [Microsoft.SqlServer.Management.Smo.Certificate[]]$CertificateCollection,
+        [Microsoft.SqlServer.Management.Smo.Certificate[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -76,7 +76,7 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
             $db = $smocert.Parent.Name
 
             $output = [pscustomobject]@{
-                ComputerName = $server.NetName
+                ComputerName = $server.ComputerName
                 InstanceName = $server.ServiceName
                 SqlInstance  = $instance
                 Database     = $db
@@ -132,7 +132,7 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
             }
         }
 
-        foreach ($smocert in $CertificateCollection) {
+        foreach ($smocert in $InputObject) {
             Drop-Cert -smocert $smocert
         }
     }

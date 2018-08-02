@@ -110,7 +110,7 @@ Returns an object with SQL Instance install date as a string for every server li
             }
 
             $object = [PSCustomObject]@{
-                ComputerName       = $server.NetName
+                ComputerName       = $server.ComputerName
                 InstanceName       = $server.ServiceName
                 SqlInstance        = $server.DomainInstanceName
                 SqlInstallDate     = $sqlInstallDate

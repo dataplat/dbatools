@@ -11,9 +11,7 @@ Set-DbaAgentSchedule will help update a schedule for a job. It does not attach t
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-To connect as a different Windows user, run PowerShell as that user.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER Job
 The name of the job that has the schedule.
@@ -91,7 +89,7 @@ It will also remove the any present schedules with the same name for the specifi
 
 .NOTES
 Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job, Job Step
+Tags: Agent, Job, JobStep
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -129,7 +127,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [object[]]$Job,
@@ -328,7 +326,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
             foreach ($j in $Job) {
 
                 # Try connecting to the instance
-                Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+                Write-Message -Message "Connecting to $instance" -Level Verbose
                 try {
                     $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 }

@@ -28,11 +28,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.isBestPractice | Should Be $false
         }
     }
-
-    Context "Fails gracefully" {
-        It "Should throw on an invalid Connection" {
-            Mock -ModuleName 'dbatools' Connect-SqlInstance { throw }
-            { Test-DbaPowerPlan -ComputerName 'MadeUpServer' -EnableException 3>$null } | Should Throw
-        }
-    }
 }

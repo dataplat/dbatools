@@ -122,7 +122,7 @@ function Connect-DbaInstance {
         Instead of returning a rich SMO server object, this command will only return a SqlConnection object when setting this switch.
 
     .NOTES
-        dbatools PowerShell module (https://dbatools.io)
+        Tags: Connect, Connection
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: MIT https://opensource.org/licenses/MIT
@@ -218,6 +218,16 @@ function Connect-DbaInstance {
                 }
             }
         }
+        #'PrimaryFilePath' seems the culprit for slow SMO on databases
+        $Fields2000_Db = 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsSystemObject', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'ReadOnly', 'RecoveryModel', 'ReplicationOptions', 'Status', 'Version'
+        $Fields200x_Db = $Fields2000_Db + @('BrokerEnabled', 'DatabaseSnapshotBaseName', 'IsMirroringEnabled', 'Trustworthy')
+        $Fields201x_Db = $Fields200x_Db + @('ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'ContainmentType', 'EncryptionEnabled')
+
+        $Fields2000_Login = 'CreateDate' , 'DateLastModified' , 'DefaultDatabase' , 'DenyWindowsLogin' , 'IsSystemObject' , 'Language' , 'LanguageAlias' , 'LoginType' , 'Name' , 'Sid' , 'WindowsLoginAccessType'
+        $Fields200x_Login = $Fields2000_Login + @('AsymmetricKey', 'Certificate', 'Credential', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'MustChangePassword', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced')
+        $Fields201x_Login = $Fields200x_Login + @('PasswordHashAlgorithm')
+
+
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -235,7 +245,16 @@ function Connect-DbaInstance {
                     $server.ConnectionContext.Connect()
                 }
                 if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
-                else { return $server }
+                else {
+                    if (-not $server.ComputerName) {
+                        $parsedcomputername = $server.NetName
+                        if (-not $parsedcomputername) {
+                            $parsedcomputername = ([dbainstance]$instance).ComputerName
+                        }
+                        Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
+                    }
+                    return $server
+                }
             }
 
             if ($instance.IsConnectionString) { $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject) }
@@ -298,7 +317,16 @@ function Connect-DbaInstance {
                         }
                     }
 
-                    $server.ConnectionContext.Connect()
+                    if ($NonPooled) {
+                        $server.ConnectionContext.Connect()
+                    }
+                    elseif ($authtype -eq "Windows Authentication with Credential") {
+                        # Make it connect in a natural way, hard to explain.
+                        $null = $server.IsMemberOfWsfcCluster
+                    }
+                    else {
+                        $server.ConnectionContext.SqlConnectionObject.Open()
+                    }
                 }
                 catch {
                     $message = $_.Exception.InnerException.InnerException
@@ -314,25 +342,48 @@ function Connect-DbaInstance {
             if ($loadedSmoVersion -ge 11) {
                 if ($server.VersionMajor -eq 8) {
                     # 2000
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType')
+                    $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsDb.AddRange($Fields2000_Db)
+                    $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsLogin.AddRange($Fields2000_Login)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
                 }
 
                 elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
                     # 2005 and 2008
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+                    $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsDb.AddRange($Fields200x_Db)
+                    $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsLogin.AddRange($Fields200x_Login)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
                 }
 
                 else {
                     # 2012 and above
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
-                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+                    $initFieldsDb = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsDb.AddRange($Fields201x_Db)
+                    $initFieldsLogin = New-Object System.Collections.Specialized.StringCollection
+                    [void]$initFieldsLogin.AddRange($Fields201x_Login)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], $initFieldsDb)
+                    $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], $initFieldsLogin)
                 }
             }
 
-            if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
-            else { return $server }
+            if ($SqlConnectionOnly) {
+                return $server.ConnectionContext.SqlConnectionObject
+            }
+            else {
+                if (-not $server.ComputerName) {
+                    $parsedcomputername = $server.NetName
+                    if (-not $parsedcomputername) {
+                        $parsedcomputername = ([dbainstance]$instance).ComputerName
+                    }
+                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
+                }
+                return $server
+            }
         }
     }
 }

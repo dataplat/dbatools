@@ -10,13 +10,7 @@ function Test-DbaDatabaseCompatibility {
             The SQL Server that you're connecting to.
 
         .PARAMETER Credential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -Credential parameter.
-
-            Windows Authentication will be used if Credential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -33,7 +27,7 @@ function Test-DbaDatabaseCompatibility {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags:
+            Tags: Database, Compatibility
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -103,7 +97,7 @@ function Test-DbaDatabaseCompatibility {
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.name) on $instance."
                 [PSCustomObject]@{
-                    ComputerName          = $server.NetName
+                    ComputerName          = $server.ComputerName
                     InstanceName          = $server.ServiceName
                     SqlInstance           = $server.DomainInstanceName
                     ServerLevel           = $serverversion

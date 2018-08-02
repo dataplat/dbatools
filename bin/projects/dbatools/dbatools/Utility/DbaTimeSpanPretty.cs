@@ -38,6 +38,16 @@ namespace Sqlcollaborative.Dbatools.Utility
         }
 
         /// <summary>
+        /// Converts a string into a timespan
+        /// </summary>
+        /// <param name="Timespan">The string to convert</param>
+        public DbaTimeSpanPretty(string Timespan)
+            : base(Timespan)
+        {
+            
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="ticks"></param>

@@ -143,8 +143,6 @@ function Export-DbaUser {
                 Stop-Function -Message "Parent directory $directory does not exist"
                 return
             }
-
-            Write-Message -Level Output -Message "Attempting to connect to SQL Servers.."
         }
 
         $outsql = @()
@@ -175,7 +173,7 @@ function Export-DbaUser {
 
         try {
             Write-Message -Level Verbose -Message "Connecting to $sqlinstance"
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue

@@ -7,11 +7,11 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
         $paramCount = 3
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaAgHadr).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'Credential', 'EnableException'
-        it "Should contian our specifc parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
+        It "Should contian our specifc parameters" {
+            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
-        it "Should only contain $paramCount parameters" {
+        It "Should only contain $paramCount parameters" {
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
     }
@@ -20,9 +20,8 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
     $results = Get-DbaAgHadr -SqlInstance $script:instance2
     Context "Validate output" {
-        it "Should have correct properties" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,IsHadrEnabled'.Split(',')
-            ($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+        It "returns the correct properties" {
+            $results.IsHadrEnabled | Should -Not -Be $null
         }
     }
 }

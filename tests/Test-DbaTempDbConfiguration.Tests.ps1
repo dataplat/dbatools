@@ -27,10 +27,6 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         It "Should only contain $paramCount parameters" {
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
-        It "Should throw on an invalid SQL Connection" {
-            Mock -ModuleName 'dbatools' Connect-SqlInstance { throw }
-            { Test-DbaTempDbConfiguration -SqlInstance 'MadeUpServer' -EnableException } | Should Throw
-        }
     }
 }
 

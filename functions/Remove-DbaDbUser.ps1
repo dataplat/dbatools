@@ -23,8 +23,8 @@ function Remove-DbaDbUser {
     .PARAMETER User
     Specifies the list of users to remove.
 
-    .PARAMETER UserCollection
-    Internal parameter to support piping from Get-DbaDatabaseUser.
+    .PARAMETER InputObject
+    Support piping from Get-DbaDatabaseUser.
 
     .PARAMETER Force
     If enabled this will force the change of the owner to 'dbo' for any schema which owner is the User.
@@ -41,7 +41,7 @@ function Remove-DbaDbUser {
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-    Tags: Databases, User
+    Tags: Database, User, Login, Security
     Author: Doug Meyers (@dgmyrs)
 
     Website: https://dbatools.io
@@ -95,7 +95,7 @@ function Remove-DbaDbUser {
         [object[]]$User,
 
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Object')]
-        [Microsoft.SqlServer.Management.Smo.User[]]$UserCollection,
+        [Microsoft.SqlServer.Management.Smo.User[]]$InputObject,
 
         [parameter(ParameterSetName = 'User')]
         [parameter(ParameterSetName = 'Object')]
@@ -192,7 +192,7 @@ function Remove-DbaDbUser {
                     }
 
                     [pscustomobject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $db.name
@@ -205,8 +205,8 @@ function Remove-DbaDbUser {
     }
 
     process {
-        if ($UserCollection) {
-            Remove-DbUser $UserCollection
+        if ($InputObject) {
+            Remove-DbUser $InputObject
         }
         else {
             foreach ($instance in $SqlInstance) {

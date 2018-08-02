@@ -24,14 +24,7 @@ function Watch-DbaDbLogin {
             The name of the Watch table. By default, this is DbaTools-WatchDbLogins.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted).
-
-            To use:
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -90,9 +83,8 @@ function Watch-DbaDbLogin {
             return
         }
 
-        Write-Message -Level Verbose -Message "Attempting to connect to $SqlInstance"
+        Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
         try {
-            Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
             $serverDest = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {
@@ -128,9 +120,8 @@ function Watch-DbaDbLogin {
             Process each server
         #>
         foreach ($instance in $servers) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
             catch {
@@ -161,7 +152,7 @@ function Watch-DbaDbLogin {
             $procs = $procs | Where-Object { $systemdbs -notcontains $_.Database -and $excludedPrograms -notcontains $_.Program }
 
             if ($procs.Count -gt 0) {
-                $procs | Select-Object @{Label = "ComputerName"; Expression = {$server.NetName}}, @{Label = "InstanceName"; Expression = {$server.ServiceName}}, @{Label = "SqlInstance"; Expression = {$server.DomainInstanceName}}, LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | ConvertTo-DbaDataTable | Write-DbaDataTable -SqlInstance $serverDest -Database $Database -Table $Table -AutoCreateTable
+                $procs | Select-Object @{Label = "ComputerName"; Expression = {$server.ComputerName}}, @{Label = "InstanceName"; Expression = {$server.ServiceName}}, @{Label = "SqlInstance"; Expression = {$server.DomainInstanceName}}, LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | ConvertTo-DbaDataTable | Write-DbaDataTable -SqlInstance $serverDest -Database $Database -Table $Table -AutoCreateTable
 
                 Write-Output "Added process information for $instance to datatable."
             }

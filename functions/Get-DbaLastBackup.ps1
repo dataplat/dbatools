@@ -13,13 +13,7 @@ function Get-DbaLastBackup {
             The SQL Server instance to connect to.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             Specifies one or more database(s) to process. If unspecified, all databases will be processed.
@@ -86,15 +80,14 @@ function Get-DbaLastBackup {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                Write-Message -Level Verbose -Message "Connecting to $instance."
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
             }
             catch {
-                Write-Message -Level Warning -Message "Can't connect to $instance"
-                Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
             $dbs = $server.Databases | Where-Object { $_.name -ne 'tempdb' }
 
             if ($Database) {
@@ -105,9 +98,9 @@ function Get-DbaLastBackup {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
             # Get-DbaBackupHistory -Last would make the job in one query but SMO's (and this) report the last backup of this type irregardless of the chain
-            $FullHistory = Get-DbaBackupHistory -SqlInstance $instance  -Database $dbs.Name -LastFull -IncludeCopyOnly -Raw
-            $DiffHistory = Get-DbaBackupHistory -SqlInstance $instance  -Database $dbs.Name -LastDiff -IncludeCopyOnly -Raw
-            $IncrHistory = Get-DbaBackupHistory -SqlInstance $instance  -Database $dbs.Name -LastLog -IncludeCopyOnly -Raw
+            $FullHistory = Get-DbaBackupHistory -SqlInstance $server -Database $dbs.Name -LastFull -IncludeCopyOnly -Raw
+            $DiffHistory = Get-DbaBackupHistory -SqlInstance $server -Database $dbs.Name -LastDiff -IncludeCopyOnly -Raw
+            $IncrHistory = Get-DbaBackupHistory -SqlInstance $server -Database $dbs.Name -LastLog -IncludeCopyOnly -Raw
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
 
@@ -155,7 +148,7 @@ function Get-DbaLastBackup {
                 }
 
                 $result = [PSCustomObject]@{
-                    ComputerName       = $server.NetName
+                    ComputerName       = $server.ComputerName
                     InstanceName       = $server.ServiceName
                     SqlInstance        = $server.DomainInstanceName
                     Database           = $db.Name

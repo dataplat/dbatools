@@ -33,11 +33,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         { Remove-DbaBackup -Path $testPath -BackupFileExtension 'bak' -RetentionPeriod '11y' -EnableException } | Should Throw "units invalid"
     }
     Context "BackupFileExtension validation" {
-        { Remove-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' -EnableException } | Should Not Throw
+        { Remove-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' -EnableException -WarningAction SilentlyContinue } | Should Not Throw
     }
     Context "BackupFileExtension message validation" {
-        $warnmessage = Remove-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' 3>&1
-        $warnmessage | Should BeLike '*period*'
+        Remove-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' -WarningAction SilentlyContinue -WarningVariable warnmessage
+        $warnmessage | Should -Match period
     }
     Context "Files are removed" {
         for ($i = 1; $i -le 5; $i++) {

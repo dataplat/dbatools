@@ -12,10 +12,7 @@ function New-DbaAgentSchedule {
             SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
-
-            To use: $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Job
             The name of the job that has the schedule.
@@ -104,7 +101,7 @@ function New-DbaAgentSchedule {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Agent, Job, Job Step
+            Tags: Agent, Job, JobStep
             Author: Sander Stad (@sqlstad, sqlstad.nl)
 
             Website: https://dbatools.io
@@ -420,7 +417,7 @@ function New-DbaAgentSchedule {
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

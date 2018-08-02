@@ -12,13 +12,7 @@ function Watch-DbaXESession {
             Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Session
             Only return a specific session. Options for this parameter are auto-populated from the server.
@@ -35,7 +29,7 @@ function Watch-DbaXESession {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: ExtendedEvent, XE, Xevent
+            Tags: ExtendedEvent, XE, XEvent
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -52,7 +46,7 @@ function Watch-DbaXESession {
             Watch-DbaXESession -SqlInstance sql2017 -Session system_health | Export-Csv -NoTypeInformation -Path C:\temp\system_health.csv
 
             Exports live events to CSV. Ctrl-C may not not cancel out of it - fastest way is to stop the session.
-        
+
         .EXAMPLE
             Get-DbaXESession -SqlInstance sql2017 -Session system_health | Start-DbaXESession | Watch-DbaXESession | Export-Csv -NoTypeInformation -Path C:\temp\system_health.csv
 
@@ -89,31 +83,30 @@ function Watch-DbaXESession {
             Write-Message -Level Verbose -Message "Getting XEvents Sessions on $SqlInstance."
             $InputObject = $XEStore.sessions | Where-Object Name -eq $Session | Select-Object -First 1
         }
-        
+
         if ($InputObject) {
-            $status = $InputObject.Status
-            if ($status -ne "Running") {
+            if (-Not $InputObject.IsRunning) {
                 Stop-Function -Message "$($InputObject.Name) is in a $status state."
                 return
             }
-            
+
             # Setup all columns for csv but do it in an order
             $columns = @("name", "timestamp")
             $newcolumns = @()
-            
+
             $fields = ($InputObject.Events.EventFields.Name | Select-Object -Unique)
             foreach ($column in $fields) {
                 $newcolumns += $column.TrimStart("collect_")
             }
-            
+
             $actions = ($InputObject.Events.Actions.Name | Select-Object -Unique)
             foreach ($action in $actions) {
                 $newcolumns += ($action -Split '\.')[-1]
             }
-            
+
             $newcolumns = $newcolumns | Sort-Object
             $columns = ($columns += $newcolumns) | Select-Object -Unique
-            
+
             try {
                 $xevent = New-Object -TypeName Microsoft.SqlServer.XEvent.Linq.QueryableXEventData(
                     ($server.ConnectionContext.ConnectionString),
@@ -121,27 +114,27 @@ function Watch-DbaXESession {
                     [Microsoft.SqlServer.XEvent.Linq.EventStreamSourceOptions]::EventStream,
                     [Microsoft.SqlServer.XEvent.Linq.EventStreamCacheOptions]::DoNotCache
                 )
-                
+
                 if ($raw) {
                     return $xevent
                 }
-                
+
                 # Format output
                 foreach ($event in $xevent) {
                     $hash = [ordered]@{}
-                    
+
                     foreach ($column in $columns) {
                         $null = $hash.Add($column, $event.$column) # this basically adds name and timestamp then nulls
                     }
-                    
+
                     foreach ($action in $event.Actions) {
                         $hash[$action.Name] = $action.Value
                     }
-                    
+
                     foreach ($field in $event.Fields) {
                         $hash[$field.Name] = $field.Value
                     }
-                    
+
                     [pscustomobject]($hash)
                 }
             }

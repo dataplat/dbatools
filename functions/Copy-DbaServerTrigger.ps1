@@ -12,23 +12,13 @@ function Copy-DbaServerTrigger {
             Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
         .PARAMETER SourceSqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
-
-            Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Destination
             Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
         .PARAMETER DestinationSqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-            $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
-
-            Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER ServerTrigger
             The Server Trigger(s) to process - this list is auto-populated from the server. If unspecified, all Server Triggers will be processed.
@@ -84,7 +74,7 @@ function Copy-DbaServerTrigger {
         [PSCredential]
         $SourceSqlCredential,
         [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,
+        [DbaInstanceParameter[]]$Destination,
         [PSCredential]
         $DestinationSqlCredential,
         [object[]]$ServerTrigger,
@@ -95,94 +85,97 @@ function Copy-DbaServerTrigger {
     )
 
     begin {
-
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-
-        $source = $sourceServer.DomainInstanceName
-        $destination = $destServer.DomainInstanceName
-
-        if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
-            Stop-Function -Message "Server Triggers are only supported in SQL Server 2005 and above. Quitting."
+        try {
+            Write-Message -Level Verbose -Message "Connecting to $Source"
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+        }
+        catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-
-        if ($destServer.VersionMajor -lt $sourceServer.VersionMajor) {
-            Stop-Function -Message "Migration from version $($destServer.VersionMajor) to version $($sourceServer.VersionMajor) is not supported."
-            return
-        }
-
         $serverTriggers = $sourceServer.Triggers
-        $destTriggers = $destServer.Triggers
-
     }
     process {
         if (Test-FunctionInterrupt) { return }
-
-        foreach ($trigger in $serverTriggers) {
-            $triggerName = $trigger.Name
-
-            $copyTriggerStatus = [pscustomobject]@{
-                SourceServer      = $sourceServer.Name
-                DestinationServer = $destServer.Name
-                Name              = $triggerName
-                Type              = "Server Trigger"
-                Status            = $null
-                Notes             = $null
-                DateTime          = [DbaDateTime](Get-Date)
+        foreach ($destinstance in $Destination) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $destinstance"
+                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             }
-
-            if ($ServerTrigger -and $triggerName -notin $ServerTrigger -or $triggerName -in $ExcludeServerTrigger) {
-                continue
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-
-            if ($destTriggers.Name -contains $triggerName) {
-                if ($force -eq $false) {
-                    Write-Message -Level Verbose -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
-
-                    $copyTriggerStatus.Status = "Skipped"
-                    $copyTriggerStatus.Status = "Already exists"
-                    $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+            if ($destServer.VersionMajor -lt $sourceServer.VersionMajor) {
+                Stop-Function -Message "Migration from version $($destServer.VersionMajor) to version $($sourceServer.VersionMajor) is not supported."
+                return
+            }
+            $destTriggers = $destServer.Triggers
+            
+            foreach ($trigger in $serverTriggers) {
+                $triggerName = $trigger.Name
+                
+                $copyTriggerStatus = [pscustomobject]@{
+                    SourceServer = $sourceServer.Name
+                    DestinationServer = $destServer.Name
+                    Name         = $triggerName
+                    Type         = "Server Trigger"
+                    Status       = $null
+                    Notes        = $null
+                    DateTime     = [DbaDateTime](Get-Date)
+                }
+                
+                if ($ServerTrigger -and $triggerName -notin $ServerTrigger -or $triggerName -in $ExcludeServerTrigger) {
                     continue
                 }
-                else {
-                    if ($Pscmdlet.ShouldProcess($destination, "Dropping server trigger $triggerName and recreating")) {
-                        try {
-                            Write-Message -Level Verbose -Message "Dropping server trigger $triggerName"
-                            $destServer.Triggers[$triggerName].Drop()
-                        }
-                        catch {
-                            $copyTriggerStatus.Status = "Failed"
-                            $copyTriggerStatus.Notes = $_.Exception
-                            $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Stop-Function -Message "Issue dropping trigger on destination" -Target $triggerName -ErrorRecord $_ -Continue
+                
+                if ($destTriggers.Name -contains $triggerName) {
+                    if ($force -eq $false) {
+                        Write-Message -Level Verbose -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
+                        
+                        $copyTriggerStatus.Status = "Skipped"
+                        $copyTriggerStatus.Status = "Already exists"
+                        $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        continue
+                    }
+                    else {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server trigger $triggerName and recreating")) {
+                            try {
+                                Write-Message -Level Verbose -Message "Dropping server trigger $triggerName"
+                                $destServer.Triggers[$triggerName].Drop()
+                            }
+                            catch {
+                                $copyTriggerStatus.Status = "Failed"
+                                $copyTriggerStatus.Notes = (Get-ErrorMessage -Record $_)
+                                $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                
+                                Stop-Function -Message "Issue dropping trigger on destination" -Target $triggerName -ErrorRecord $_ -Continue
+                            }
                         }
                     }
                 }
-            }
-
-            if ($Pscmdlet.ShouldProcess($destination, "Creating server trigger $triggerName")) {
-                try {
-                    Write-Message -Level Verbose -Message "Copying server trigger $triggerName"
-                    $sql = $trigger.Script() | Out-String
-                    $sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
-                    $sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
-                    Write-Message -Level Debug -Message $sql
-
-                    foreach ($query in ($sql -split '\nGO\b')) {
-                        $destServer.Query($query) | Out-Null
+                
+                if ($Pscmdlet.ShouldProcess($destinstance, "Creating server trigger $triggerName")) {
+                    try {
+                        Write-Message -Level Verbose -Message "Copying server trigger $triggerName"
+                        $sql = $trigger.Script() | Out-String
+                        $sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
+                        $sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
+                        Write-Message -Level Debug -Message $sql
+                        
+                        foreach ($query in ($sql -split '\nGO\b')) {
+                            $destServer.Query($query) | Out-Null
+                        }
+                        
+                        $copyTriggerStatus.Status = "Successful"
+                        $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-
-                    $copyTriggerStatus.Status = "Successful"
-                    $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                }
-                catch {
-                    $copyTriggerStatus.Status = "Failed"
-                    $copyTriggerStatus.Notes = $_.Exception
-                    $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                    Stop-Function -Message "Issue creating trigger on destination" -Target $triggerName -ErrorRecord $_
+                    catch {
+                        $copyTriggerStatus.Status = "Failed"
+                        $copyTriggerStatus.Notes = (Get-ErrorMessage -Record $_)
+                        $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        
+                        Stop-Function -Message "Issue creating trigger on destination" -Target $triggerName -ErrorRecord $_
+                    }
                 }
             }
         }

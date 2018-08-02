@@ -134,7 +134,7 @@ Password needs to be passed the Shared Access Token (SAS Key).
                         $credential.ProviderName = $ProviderName
                         $credential.Create($Identity, $Password)
 
-                        Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                        Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                         Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                         Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 

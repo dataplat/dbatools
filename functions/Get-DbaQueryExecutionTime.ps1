@@ -10,10 +10,7 @@ Quickly find slow query executions within a database.  Results will include stor
 Allows you to specify a comma separated list of servers to query.
 
 .PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$cred = Get-Credential, this pass this $cred to the param.
-
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER Database
 The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -108,8 +105,8 @@ limiting results to queries with more than 200 total executions and an execution
                 FROM    sys.dm_exec_procedure_stats
                 WHERE   database_id = DB_ID()"
 
-        If ($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
-        If ($MinExecMs) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecMs }
+        if ($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
+        if ($MinExecMs) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecMs }
 
         $sql += "`n UNION
             SELECT
@@ -135,11 +132,11 @@ limiting results to queries with more than 200 total executions and an execution
             CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) as st
             WHERE st.dbid = DB_ID() OR (pa.attribute = 'dbid' and pa.value = DB_ID())"
 
-        If ($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
-        If ($MinExecMs) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecMs }
+        if ($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
+        if ($MinExecMs) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecMs }
 
-        If ($MaxResultsPerDb) { $sql += ")`n SELECT TOP " + $MaxResultsPerDb }
-        Else {
+        if ($MaxResultsPerDb) { $sql += ")`n SELECT TOP " + $MaxResultsPerDb }
+        else {
             $sql += ")
                         SELECT "
         }
@@ -159,14 +156,14 @@ limiting results to queries with more than 200 total executions and an execution
                         full_statement_text
                     FROM StatsCTE "
 
-        If ($MinExecs -or $MinExecMs) {
+        if ($MinExecs -or $MinExecMs) {
             $sql += "`n WHERE `n"
 
-            If ($MinExecs) {
+            if ($MinExecs) {
                 $sql += " execution_count >= " + $MinExecs
             }
 
-            If ($MinExecMs -gt 0 -and $MinExecs) {
+            if ($MinExecMs -gt 0 -and $MinExecs) {
                 $sql += "`n AND AvgExec_ms >= " + $MinExecMs
             }
             elseif ($MinExecMs) {
@@ -178,23 +175,17 @@ limiting results to queries with more than 200 total executions and an execution
     }
     process {
         if (!$MaxResultsPerDb -and !$MinExecs -and !$MinExecMs) {
-            Write-Warning "Results may take time, depending on system resources and size of buffer cache."
-            Write-Warning "Consider limiting results using -MaxResultsPerDb, -MinExecs and -MinExecMs parameters."
+            Write-Message -Level Warning -Message "Results may take time, depending on system resources and size of buffer cache."
+            Write-Message -Level Warning -Message "Consider limiting results using -MaxResultsPerDb, -MinExecs and -MinExecMs parameters."
         }
 
         foreach ($instance in $SqlInstance) {
-            Write-Verbose "Attempting to connect to $instance"
+            Write--Message -Level Verbose -Message "Connecting to $instance"
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            if ($server.versionMajor -lt 10) {
-                Write-Warning "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $instance."
-
-                Continue
             }
 
             $dbs = $server.Databases
@@ -211,17 +202,17 @@ limiting results to queries with more than 200 total executions and an execution
             }
 
             foreach ($db in $dbs) {
-                Write-Verbose "Processing $db on $instance"
+                Write-Message -Level Verbose -Message "Processing $db on $instance"
 
                 if ($db.IsAccessible -eq $false) {
-                    Write-Warning "The database $db is not accessible. Skipping database."
-                    Continue
+                    Write-Message -Level Warning -Message "The database $db is not accessible. Skipping database."
+                    continue
                 }
 
                 try {
                     foreach ($row in $db.ExecuteWithResults($sql).Tables.Rows) {
                         [PSCustomObject]@{
-                            ComputerName       = $server.NetName
+                            ComputerName       = $server.ComputerName
                             InstanceName       = $server.ServiceName
                             SqlInstance        = $server.DomainInstanceName
                             Database           = $row.DatabaseName
@@ -241,8 +232,7 @@ limiting results to queries with more than 200 total executions and an execution
                     }
                 }
                 catch {
-                    Write-Warning "Could not process $db on $instance. Exception: $_"
-                    Continue
+                    Stop-Function -Message "Could not process $db on $instance" -Target $db -ErrorRecord $_ -Continue
                 }
             }
         }

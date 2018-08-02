@@ -10,10 +10,7 @@ function Disable-DbaTraceFlag {
         Allows you to specify a comma separated list of servers to query.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-        $cred = Get-Credential, this pass this $cred to the param.
-
-        Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER TraceFlag
         Trace flag number to enable globally
@@ -52,7 +49,7 @@ function Disable-DbaTraceFlag {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -65,7 +62,7 @@ function Disable-DbaTraceFlag {
 
             foreach ($tf in $TraceFlag) {
                 $TraceFlagInfo = [pscustomobject]@{
-                    SourceServer = $server.NetName
+                    SourceServer = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     TraceFlag    = $tf

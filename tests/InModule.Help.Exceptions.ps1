@@ -4,6 +4,7 @@
 
 $global:HelpTestEnumeratedArrays = @(
     "Sqlcollaborative.Dbatools.Connection.ManagementConnectionType[]"
+    "Sqlcollaborative.Dbatools.Message.MessageLevel[]"
 )
 
 $global:HelpTestSkipParameterType = @{

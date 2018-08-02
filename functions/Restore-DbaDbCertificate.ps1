@@ -13,11 +13,7 @@ The SQL Server to create the certificates on.
 The Path the contains the certificate and private key files. The path can be a directory or a specific certificate.
 
 .PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-$scred = Get-Credential, this pass $scred object to the param.
-
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER Password
 Secure string used to decrypt the private key.

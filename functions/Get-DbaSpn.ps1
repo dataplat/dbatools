@@ -1,53 +1,53 @@
 #ValidationTags#FlowControl,Pipeline#
 function Get-DbaSpn {
     <#
-.SYNOPSIS
-Returns a list of set service principal names for a given computer/AD account
+        .SYNOPSIS
+            Returns a list of set service principal names for a given computer/AD account
 
-.DESCRIPTION
-Get a list of set SPNs. SPNs are set at the AD account level. You can either retrieve set SPNs for a computer, or any SPNs set for
-a given active directory account. You can query one, or both. You'll get a list of every SPN found for either search term.
+        .DESCRIPTION
+            Get a list of set SPNs. SPNs are set at the AD account level. You can either retrieve set SPNs for a computer, or any SPNs set for
+            a given active directory account. You can query one, or both. You'll get a list of every SPN found for either search term.
 
-.PARAMETER ComputerName
-The servers you want to return set SPNs for. This is defaulted automatically to localhost.
+        .PARAMETER ComputerName
+            The servers you want to return set SPNs for. This is defaulted automatically to localhost.
 
-.PARAMETER AccountName
-The accounts you want to retrieve set SPNs for.
+        .PARAMETER AccountName
+            The accounts you want to retrieve set SPNs for.
 
-.PARAMETER Credential
-User credential to connect to the remote servers or active directory.
+        .PARAMETER Credential
+            User credential to connect to the remote servers or active directory.
 
-.PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: SPN
-Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
+        .NOTES
+            Tags: SPN
+            Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
 
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-License: MIT https://opensource.org/licenses/MIT
+            dbatools PowerShell module (https://dbatools.io)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Get-DbaSpn
+        .LINK
+            https://dbatools.io/Get-DbaSpn
 
-.EXAMPLE
-Get-DbaSpn -ServerName SQLSERVERA -Credential (Get-Credential)
+        .EXAMPLE
+            Get-DbaSpn -ServerName SQLSERVERA -Credential (Get-Credential)
 
-Returns a custom object with SearchTerm (ServerName) and the SPNs that were found
+            Returns a custom object with SearchTerm (ServerName) and the SPNs that were found
 
-.EXAMPLE
-Get-DbaSpn -AccountName domain\account -Credential (Get-Credential)
+        .EXAMPLE
+            Get-DbaSpn -AccountName domain\account -Credential (Get-Credential)
 
-Returns a custom object with SearchTerm (domain account) and the SPNs that were found
+            Returns a custom object with SearchTerm (domain account) and the SPNs that were found
 
-.EXAMPLE
-Get-DbaSpn -ServerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
+        .EXAMPLE
+            Get-DbaSpn -ServerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
 
-Returns a custom object with SearchTerm (ServerName) and the SPNs that were found for multiple computers
-#>
+            Returns a custom object with SearchTerm (ServerName) and the SPNs that were found for multiple computers
+    #>
     [cmdletbinding()]
     param (
         [Parameter(Mandatory = $false, ValueFromPipeline = $true)]

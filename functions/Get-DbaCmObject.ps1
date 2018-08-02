@@ -1,72 +1,72 @@
 function Get-DbaCmObject {
     <#
-    .SYNOPSIS
-        Retrieves Wmi/Cim-Style information from computers.
+        .SYNOPSIS
+            Retrieves Wmi/Cim-Style information from computers.
 
-    .DESCRIPTION
-        This function centralizes all requests for information retrieved from Get-WmiObject or Get-CimInstance.
-        It uses different protocols as available in this order:
-        - Cim over WinRM
-        - Cim over DCOM
-        - Wmi
-        - Wmi over PowerShell Remoting
-        It remembers channels that didn't work and will henceforth avoid them. It remembers invalid credentials and will avoid reusing them.
-        Much of its behavior can be configured using Test-DbaWmConnection.
+        .DESCRIPTION
+            This function centralizes all requests for information retrieved from Get-WmiObject or Get-CimInstance.
+            It uses different protocols as available in this order:
+            - Cim over WinRM
+            - Cim over DCOM
+            - Wmi
+            - Wmi over PowerShell Remoting
+            It remembers channels that didn't work and will henceforth avoid them. It remembers invalid credentials and will avoid reusing them.
+            Much of its behavior can be configured using Test-DbaWmConnection.
 
-    .PARAMETER ClassName
-        The name of the class to retrieve.
+        .PARAMETER ClassName
+            The name of the class to retrieve.
 
-    .PARAMETER Query
-        The Wmi/Cim query tu run against the server.
+        .PARAMETER Query
+            The Wmi/Cim query tu run against the server.
 
-    .PARAMETER ComputerName
-        The computer(s) to connect to. Defaults to localhost.
+        .PARAMETER ComputerName
+            The computer(s) to connect to. Defaults to localhost.
 
-    .PARAMETER Credential
-        Credentials to use. Invalid credentials will be stored in a credentials cache and not be reused.
+        .PARAMETER Credential
+            Credentials to use. Invalid credentials will be stored in a credentials cache and not be reused.
 
-    .PARAMETER Namespace
-        The namespace of the class to use.
+        .PARAMETER Namespace
+            The namespace of the class to use.
 
-    .PARAMETER DoNotUse
-        Connection Protocols that should not be used.
+        .PARAMETER DoNotUse
+            Connection Protocols that should not be used.
 
-    .PARAMETER Force
-        Overrides some checks that might otherwise halt execution as a precaution
-        - Ignores timeout on bad connections
+        .PARAMETER Force
+            Overrides some checks that might otherwise halt execution as a precaution
+            - Ignores timeout on bad connections
 
-    .PARAMETER SilentlyContinue
-        Use in conjunction with the -EnableException switch.
-        By default, Get-DbaCmObject will throw a terminating exception when connecting to a target is impossible in exception enabled mode.
-        Setting this switch will cause it write a non-terminating exception and continue with the next computer.
+        .PARAMETER SilentlyContinue
+            Use in conjunction with the -EnableException switch.
+            By default, Get-DbaCmObject will throw a terminating exception when connecting to a target is impossible in exception enabled mode.
+            Setting this switch will cause it write a non-terminating exception and continue with the next computer.
 
-    .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .EXAMPLE
-        Get-DbaCmObject win32_OperatingSystem
+        .NOTES
+            Tags: ComputerManagement, CIM
+            Author: Fred Winmann (@FredWeinmann)
 
-        Retrieves the common operating system informations from the local computer.
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    .EXAMPLE
-        Get-DbaCmObject -Computername "sql2014" -ClassName Win32_OperatingSystem -Credential $cred -DoNotUse CimRM
+        .LINK
+            https://dbatools.io/Get-DbaCmObject
 
-        Retrieves the common operating system informations from the server sql2014.
-        It will use the credewntials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).
+        .EXAMPLE
+            Get-DbaCmObject win32_OperatingSystem
 
-    .NOTES
-        Author: Fred Winmann (@FredWeinmann)
-        Tags: ComputerManagement
+            Retrieves the common operating system information from the local computer.
 
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MIT
+        .EXAMPLE
+            Get-DbaCmObject -Computername "sql2014" -ClassName Win32_OperatingSystem -Credential $cred -DoNotUse CimRM
 
-    .LINK
-        https://dbatools.io/Get-DbaCmObject
-#>
+            Retrieves the common operating system information from the server sql2014.
+            It will use the credewntials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).
+    #>
     [CmdletBinding(DefaultParameterSetName = "Class")]
     param (
         [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Class")]

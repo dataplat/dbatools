@@ -27,7 +27,7 @@ function Get-DbaDbStoredProcedure {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Databases
+            Tags: Database, StoredProcedure, Proc
             Author: Klaas Vandenberghe ( @PowerDbaKlaas )
 
             Website: https://dbatools.io
@@ -106,7 +106,7 @@ function Get-DbaDbStoredProcedure {
                         continue
                     }
 
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name Database -value $db.Name

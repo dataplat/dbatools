@@ -11,9 +11,7 @@ Set-DbaAgentJob updates a job in the SQL Server Agent with parameters supplied.
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-To connect as a different Windows user, run PowerShell as that user.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER Job
 The name of the job.
@@ -84,7 +82,7 @@ The force parameter will ignore some errors in the parameters and assume default
 
 .PARAMETER InputObject
 Enables piping job objects
-    
+
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -178,73 +176,73 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
         [switch][Alias('Silent')]
         $EnableException
     )
-    
+
     begin {
         # Check of the event log level is of type string and set the integer value
         if (($EventLogLevel -notin 0, 1, 2, 3) -and ($null -ne $EventLogLevel)) {
             $EventLogLevel = switch ($EventLogLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
-        
+
         # Check of the email level is of type string and set the integer value
         if (($EmailLevel -notin 0, 1, 2, 3) -and ($null -ne $EmailLevel)) {
             $EmailLevel = switch ($EmailLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
-        
+
         # Check of the net send level is of type string and set the integer value
         if (($NetsendLevel -notin 0, 1, 2, 3) -and ($null -ne $NetsendLevel)) {
             $NetsendLevel = switch ($NetsendLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
-        
+
         # Check of the page level is of type string and set the integer value
         if (($PageLevel -notin 0, 1, 2, 3) -and ($null -ne $PageLevel)) {
             $PageLevel = switch ($PageLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
-        
+
         # Check of the delete level is of type string and set the integer value
         if (($DeleteLevel -notin 0, 1, 2, 3) -and ($null -ne $DeleteLevel)) {
             $DeleteLevel = switch ($DeleteLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
         }
-        
+
         # Check the e-mail operator name
         if (($EmailLevel -ge 1) -and (-not $EmailOperator)) {
             Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $sqlinstance
             return
         }
-        
+
         # Check the e-mail operator name
         if (($NetsendLevel -ge 1) -and (-not $NetsendOperator)) {
             Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $sqlinstance
             return
         }
-        
+
         # Check the e-mail operator name
         if (($PageLevel -ge 1) -and (-not $PageOperator)) {
             Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $sqlinstance
             return
         }
     }
-    
+
     process {
-        
+
         if (Test-FunctionInterrupt) { return }
-        
+
         if ((-not $InputObject) -and (-not $Job)) {
             Stop-Function -Message "You must specify a job name or pipe in results from another command" -Target $sqlinstance
             return
         }
-        
+
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             foreach ($j in $Job) {
-                
+
                 # Check if the job exists
                 if ($server.JobServer.Jobs.Name -notcontains $j) {
                     Stop-Function -Message "Job $j doesn't exists on $instance" -Target $instance
@@ -253,7 +251,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     # Get the job
                     try {
                         $InputObject += $server.JobServer.Jobs[$j]
-                        
+
                         # Refresh the object
                         $InputObject.Refresh()
                     }
@@ -263,24 +261,24 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                 }
             }
         }
-        
+
         foreach ($currentjob in $InputObject) {
             $server = $currentjob.Parent.Parent
-            
+
             #region job options
             # Settings the options for the job
             if ($NewName) {
                 Write-Message -Message "Setting job name to $NewName" -Level Verbose
                 $currentjob.Rename($NewName)
             }
-            
+
             if ($Schedule) {
                 # Loop through each of the schedules
                 foreach ($s in $Schedule) {
                     if ($server.JobServer.SharedSchedules.Name -contains $s) {
                         # Get the schedule ID
                         $sID = $server.JobServer.SharedSchedules[$s].ID
-                        
+
                         # Add schedule to job
                         Write-Message -Message "Adding schedule id $sID to job" -Level Verbose
                         $currentjob.AddSharedSchedule($sID)
@@ -288,10 +286,10 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     else {
                         Stop-Function -Message "Schedule $s cannot be found on instance $instance" -Target $s -Continue
                     }
-                    
+
                 }
             }
-            
+
             if ($ScheduleId) {
                 # Loop through each of the schedules IDs
                 foreach ($sID in $ScheduleId) {
@@ -300,29 +298,29 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                         # Add schedule to job
                         Write-Message -Message "Adding schedule id $sID to job" -Level Verbose
                         $currentjob.AddSharedSchedule($sID)
-                        
+
                     }
                     else {
                         Stop-Function -Message "Schedule ID $sID cannot be found on instance $instance" -Target $sID -Continue
                     }
                 }
             }
-            
+
             if ($Enabled) {
                 Write-Message -Message "Setting job to enabled" -Level Verbose
                 $currentjob.IsEnabled = $true
             }
-            
+
             if ($Disabled) {
                 Write-Message -Message "Setting job to disabled" -Level Verbose
                 $currentjob.IsEnabled = $false
             }
-            
+
             if ($Description) {
                 Write-Message -Message "Setting job description to $Description" -Level Verbose
                 $currentjob.Description = $Description
             }
-            
+
             if ($Category) {
                 # Check if the job category exists
                 if ($Category -notin $server.JobServer.JobCategories.Name) {
@@ -331,7 +329,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                             try {
                                 # Create the category
                                 New-DbaAgentJobCategory -SqlInstance $instance -Category $Category
-                                
+
                                 Write-Message -Message "Setting job category to $Category" -Level Verbose
                                 $currentjob.Category = $Category
                             }
@@ -350,11 +348,11 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     $currentjob.Category = $Category
                 }
             }
-            
+
             if ($StartStepId) {
                 # Get the job steps
                 $currentjobSteps = $currentjob.JobSteps
-                
+
                 # Check if there are any job steps
                 if ($currentjobSteps.Count -ge 1) {
                     # Check if the start step id value is one of the job steps in the job
@@ -365,14 +363,14 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     else {
                         Write-Message -Message "The step id is not present in job $j on instance $instance" -Warning
                     }
-                    
+
                 }
                 else {
                     Stop-Function -Message "There are no job steps present for job $j on instance $instance" -Target $instance -Continue
                 }
-                
+
             }
-            
+
             if ($OwnerLogin) {
                 # Check if the login name is present on the instance
                 if ($server.Logins.Name -contains $OwnerLogin) {
@@ -383,18 +381,18 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     Stop-Function -Message "The given owner log in name $OwnerLogin does not exist on instance $instance" -Target $instance -Continue
                 }
             }
-            
+
             if ($EventLogLevel) {
                 Write-Message -Message "Setting job event log level to $EventlogLevel" -Level Verbose
                 $currentjob.EventLogLevel = $EventLogLevel
             }
-            
+
             if ($EmailLevel) {
                 # Check if the notifiction needs to be removed
                 if ($EmailLevel -eq 0) {
                     # Remove the operator
                     $currentjob.OperatorToEmail = $null
-                    
+
                     # Remove the notification
                     $currentjob.EmailLevel = $EmailLevel
                 }
@@ -409,13 +407,13 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     }
                 }
             }
-            
+
             if ($NetsendLevel) {
                 # Check if the notifiction needs to be removed
                 if ($NetsendLevel -eq 0) {
                     # Remove the operator
                     $currentjob.OperatorToNetSend = $null
-                    
+
                     # Remove the notification
                     $currentjob.NetSendLevel = $NetsendLevel
                 }
@@ -430,13 +428,13 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     }
                 }
             }
-            
+
             if ($PageLevel) {
                 # Check if the notifiction needs to be removed
                 if ($PageLevel -eq 0) {
                     # Remove the operator
                     $currentjob.OperatorToPage = $null
-                    
+
                     # Remove the notification
                     $currentjob.PageLevel = $PageLevel
                 }
@@ -451,7 +449,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     }
                 }
             }
-            
+
             # Check the current setting of the job's email level
             if ($EmailOperator) {
                 # Check if the operator name is present
@@ -463,7 +461,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     Stop-Function -Message "The e-mail operator name $EmailOperator does not exist on instance $instance. Exiting.." -Target $j -Continue
                 }
             }
-            
+
             if ($NetsendOperator) {
                 # Check if the operator name is present
                 if ($server.JobServer.Operators.Name -contains $NetsendOperator) {
@@ -474,7 +472,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     Stop-Function -Message "The netsend operator name $NetsendOperator does not exist on instance $instance. Exiting.." -Target $j -Continue
                 }
             }
-            
+
             if ($PageOperator) {
                 # Check if the operator name is present
                 if ($server.JobServer.Operators.Name -contains $PageOperator) {
@@ -485,18 +483,18 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     Stop-Function -Message "The page operator name $PageOperator does not exist on instance $instance. Exiting.." -Target $instance -Continue
                 }
             }
-            
+
             if ($DeleteLevel) {
                 Write-Message -Message "Setting job delete level to $DeleteLevel" -Level Verbose
                 $currentjob.DeleteLevel = $DeleteLevel
             }
             #endregion job options
-            
+
             # Execute
             if ($PSCmdlet.ShouldProcess($SqlInstance, "Changing the job $j")) {
                 try {
                     Write-Message -Message "Changing the job" -Level Verbose
-                    
+
                     # Change the job
                     $currentjob.Alter()
                 }
@@ -507,7 +505,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
             }
         }
     }
-    
+
     end {
         Write-Message -Message "Finished changing job(s)" -Level Verbose
     }

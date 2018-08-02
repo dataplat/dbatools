@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaRestoreHistory {
     <#
         .SYNOPSIS
@@ -12,13 +13,7 @@ function Get-DbaRestoreHistory {
             Specifies the SQL Server instance(s) to operate on. Requires SQL Server 2005 or higher.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -34,14 +29,14 @@ function Get-DbaRestoreHistory {
 
         .PARAMETER Last
             If this switch is enabled, the last restore action performed on each database is returned.
-        
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: DisasterRecovery, Backup, Restore, Databases
+            Tags: DisasterRecovery, Backup, Restore
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -89,15 +84,15 @@ function Get-DbaRestoreHistory {
         [datetime]$Since,
         [switch]$Force,
         [switch]$Last,
-        [switch][Alias('Silent')]
-        $EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0.0" -EnableException:$false -Parameter 'Force'
 
         if ($Since -ne $null) {
-            $Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
+            $Since = $Since.ToString("yyyy-MM-ddTHH:mm:ss")
         }
     }
 
@@ -105,7 +100,7 @@ function Get-DbaRestoreHistory {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-                $computername = $server.NetName
+                $computername = $server.ComputerName
                 $instancename = $server.ServiceName
                 $servername = $server.DomainInstanceName
 
@@ -145,7 +140,8 @@ function Get-DbaRestoreHistory {
                     bs.last_lsn,
                     bs.checkpoint_lsn,
                     bs.database_backup_lsn,
-                    bs.backup_finish_date
+                    bs.backup_finish_date,
+                    bs.backup_finish_date AS BackupFinishDate
                     "
                 }
 
@@ -190,16 +186,15 @@ function Get-DbaRestoreHistory {
                 Write-Message -Level Debug -Message $sql
 
                 $results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
-
                 if ($last) {
-                    $ga = $results | group-Object database
+                    $ga = $results | Group-Object Database
                     $tmpres = @()
-                    $ga | foreach-Object {
-                        $tmpres += $_.Group | Sort-Object -Property RESTORE_DATE -Descending | Select-Object -first 1
+                    foreach($g in $ga) {
+                        $tmpres += $g.Group | Sort-Object -Property Date -Descending | Select-Object -First 1
                     }
                     $results = $tmpres
                 }
-                Select-DefaultView -InputObject $results -Exclude first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, RowError, RowState, Table, ItemArray, HasErrors
+                $results | Select-DefaultView -ExcludeProperty first_lsn, last_lsn, checkpoint_lsn, database_backup_lsn, backup_finish_date
             }
             catch {
                 Stop-Function -Message "Failure" -Target $SqlInstance -Error $_ -Exception $_.Exception.InnerException -Continue

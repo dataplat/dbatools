@@ -1,96 +1,91 @@
 function Invoke-DbaLogShippingRecovery {
     <#
-    .SYNOPSIS
-        Invoke-DbaLogShippingRecovery recovers log shipped databases to a normal state to act upon a migration or disaster.
+        .SYNOPSIS
+            Invoke-DbaLogShippingRecovery recovers log shipped databases to a normal state to act upon a migration or disaster.
 
-    .DESCRIPTION
-        By default all the databases for a particular instance are recovered.
-        If the database is in the right state, either standby or recovering, the process will try to recover the database.
+        .DESCRIPTION
+            By default all the databases for a particular instance are recovered.
+            If the database is in the right state, either standby or recovering, the process will try to recover the database.
 
-        At first the function will check if the backup source directory can still be reached.
-        If so it will look up the last transaction log backup for the database. If that backup file is not the last copied file the log shipping copy job will be started.
-        If the directory cannot be reached for the function will continue to the restoring process.
-        After the copy job check is performed the job is disabled to prevent the job to run.
+            At first the function will check if the backup source directory can still be reached.
+            If so it will look up the last transaction log backup for the database. If that backup file is not the last copied file the log shipping copy job will be started.
+            If the directory cannot be reached for the function will continue to the restoring process.
+            After the copy job check is performed the job is disabled to prevent the job to run.
 
-        For the restore the log shipping status is checked in the msdb database.
-        If the last restored file is not the same as the last file name found, the log shipping restore job will be executed.
-        After the restore job check is performed the job is disabled to prevent the job to run
+            For the restore the log shipping status is checked in the msdb database.
+            If the last restored file is not the same as the last file name found, the log shipping restore job will be executed.
+            After the restore job check is performed the job is disabled to prevent the job to run
 
-        The last part is to set the database online by restoring the databases with recovery
+            The last part is to set the database online by restoring the databases with recovery
 
-    .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to
+        .PARAMETER SqlInstance
+            SQL Server name or SMO object representing the SQL Server to connect to
 
-    .PARAMETER Database
-        Database to perform the restore for. This value can also be piped enabling multiple databases to be recovered.
-        If this value is not supplied all databases will be recovered.
+        .PARAMETER Database
+            Database to perform the restore for. This value can also be piped enabling multiple databases to be recovered.
+            If this value is not supplied all databases will be recovered.
 
-    .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        .PARAMETER NoRecovery
+            Allows you to choose to not restore the database to a functional state (Normal) in the final steps of the process.
+            By default the database is restored to a functional state (Normal).
 
-        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-        To connect as a different Windows user, run PowerShell as that user.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .PARAMETER NoRecovery
-        Allows you to choose to not restore the database to a functional state (Normal) in the final steps of the process.
-        By default the database is restored to a functional state (Normal).
+        .PARAMETER Force
+            Use this parameter to force the function to continue and perform any adjusting actions to successfully execute
 
-    .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER Delay
+            Set the delay in seconds to wait for the copy and/or restore jobs.
+            By default the delay is 5 seconds
 
-    .PARAMETER Force
-        Use this parameter to force the function to continue and perform any adjusting actions to successfully execute
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
 
-    .PARAMETER Delay
-        Set the delay in seconds to wait for the copy and/or restore jobs.
-        By default the delay is 5 seconds
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
-    .PARAMETER WhatIf
-        Shows what would happen if the command were to run. No actions are actually performed.
+        .NOTES
+            Tags: LogShipping
+            Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    .PARAMETER Confirm
-        Prompts you for confirmation before executing any changing operations within the command.
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    .EXAMPLE
-        Invoke-DbaLogShippingRecovery -SqlServer server1
+        .LINK
+            https://dbatools.io/Invoke-DbaLogShippingRecovery
 
-        Recovers all the databases on the instance that are enabled for log shipping
+        .EXAMPLE
+            Invoke-DbaLogShippingRecovery -SqlServer server1
 
-    .EXAMPLE
-        Invoke-DbaLogShippingRecovery -SqlServer server1 -SqlCredential $cred -Verbose
+            Recovers all the databases on the instance that are enabled for log shipping
 
-        Recovers all the databases on the instance that are enabled for log shipping using a credential
+        .EXAMPLE
+            Invoke-DbaLogShippingRecovery -SqlServer server1 -SqlCredential $cred -Verbose
 
-    .EXAMPLE
-        Invoke-DbaLogShippingRecovery -SqlServer server1 -database db_logship -Verbose
+            Recovers all the databases on the instance that are enabled for log shipping using a credential
 
-        Recovers the database "db_logship" to a normal status
+        .EXAMPLE
+            Invoke-DbaLogShippingRecovery -SqlServer server1 -database db_logship -Verbose
 
-    .EXAMPLE
-        db1, db2, db3, db4 | Invoke-DbaLogShippingRecovery -SqlServer server1 -Verbose
+            Recovers the database "db_logship" to a normal status
 
-        Recovers the database db1, db2, db3, db4 to a normal status
+        .EXAMPLE
+            db1, db2, db3, db4 | Invoke-DbaLogShippingRecovery -SqlServer server1 -Verbose
 
-    .EXAMPLE
-        Invoke-DbaLogShippingRecovery -SqlServer server1 -WhatIf
+            Recovers the database db1, db2, db3, db4 to a normal status
 
-        Shows what would happen if the command were executed.
+        .EXAMPLE
+            Invoke-DbaLogShippingRecovery -SqlServer server1 -WhatIf
 
-    .NOTES
-        Author: Sander Stad (@sqlstad, sqlstad.nl)
-        Tags: Log Shipping, Recovery
-
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MIT
-
-    .LINK
-        https://dbatools.io/Invoke-DbaLogShippingRecovery
-#>
+            Shows what would happen if the command were executed.
+    #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param
     (
@@ -122,7 +117,7 @@ function Invoke-DbaLogShippingRecovery {
                 $instancename = "MSSQLSERVER"
             }
 
-            Write-Message -Message "Attempting to connect to Sql Server" -Level Output
+            Write-Message -Message "Connecting to Sql Server" -Level Output
             try {
                 $server = Connect-SqlInstance -SqlInstance $sqlinstance -SqlCredential $SqlCredential
             }

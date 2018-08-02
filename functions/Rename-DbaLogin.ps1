@@ -15,12 +15,7 @@ Source SQL Server.You must have sysadmin access and server version must be SQL S
 Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
-
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-To connect as a different Windows user, run PowerShell as that user.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER Login
 The current Login on the server - this list is auto-populated from the server.
@@ -95,7 +90,7 @@ WhatIf Example
                     $dbenums = $currentLogin.EnumDatabaseMappings()
                     $currentLogin.rename($NewLogin)
                     [pscustomobject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $null
@@ -107,7 +102,7 @@ WhatIf Example
                 catch {
                     $dbenums = $null
                     [pscustomobject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $null
@@ -129,7 +124,7 @@ WhatIf Example
                         $oldname = $user.name
                         $user.Rename($NewLogin)
                         [pscustomobject]@{
-                            ComputerName = $server.NetName
+                            ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name
@@ -144,7 +139,7 @@ WhatIf Example
                         $currentLogin.rename($Login)
 
                         [pscustomobject]@{
-                            ComputerName = $server.NetName
+                            ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name

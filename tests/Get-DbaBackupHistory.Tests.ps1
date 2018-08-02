@@ -2,12 +2,11 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-
+Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $DestBackupDir = 'C:\Temp\backups'
-        if (-Not(Test-Path $DestBackupDir)) {
-            New-Item -Type Container -Path $DestBackupDir
+        if (-Not (Test-Path $DestBackupDir)) {
+            New-Item -ItemType Container -Path $DestBackupDir
         }
         $random = Get-Random
         $dbname = "dbatoolsci_history_$random"
@@ -33,6 +32,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         It "First backup should be a Full Backup" {
             $results[0].Type | Should be "Full"
+        }
+        It "Duration should be meaningful" {
+            ($results[0].end - $results[0].start).TotalSeconds | Should Be $results[0].Duration.TotalSeconds
         }
         It "Last Backup Should be a log backup" {
             $results[-1].Type | Should Be "Log"
@@ -65,6 +67,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $resultsCo = Get-DbaBackupHistory -SqlInstance $script:instance1 -Last -IncludeCopyOnly -Database $dbname
         It "Should return just the CopyOnly Full Backup" {
             ($resultsCo | Measure-Object).count | Should Be 1
+        }
+    }
+
+    Context "Testing TotalSize regression test for #3517" {
+        It "supports large numbers" {
+            $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
+            $server = connect-dbainstance $script:instance1
+            $cast = $server.Query('select cast(1000000000000000 as numeric(20,0)) AS TotalSize')
+            $historyObject.TotalSize = $cast.TotalSize
+            ($historyObject.TotalSize.Byte)| Should -Be 1000000000000000
         }
     }
 }

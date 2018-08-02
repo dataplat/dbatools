@@ -188,11 +188,11 @@ Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql201
                     foreach ($type in $FileTypeComparison) {
                         if ($row.filename.ToLower().EndsWith(".$type")) {
                             [pscustomobject]@{
-                                ComputerName   = $server.NetName
+                                ComputerName   = $server.ComputerName
                                 InstanceName   = $server.ServiceName
                                 SqlInstance    = $server.DomainInstanceName
                                 Filename       = $row.fullpath
-                                RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $row.fullpath
+                                RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $row.fullpath
                             } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, RemoteFilename
                         }
                     }
@@ -201,11 +201,11 @@ Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql201
             else {
                 foreach ($row in $datatable) {
                     [pscustomobject]@{
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Filename       = $row.fullpath
-                        RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $row.fullpath
+                        RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $row.fullpath
                     } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, RemoteFilename
                 }
             }

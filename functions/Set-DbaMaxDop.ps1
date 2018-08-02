@@ -14,13 +14,7 @@ function Set-DbaMaxDop {
             The SQL Server instance to connect to.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             Specifies one or more databases to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -49,8 +43,9 @@ function Set-DbaMaxDop {
             Prompts you for confirmation before running the cmdlet.
 
         .NOTES
-            Tags:
+            Tags: MaxDop, SpConfigure
             Author: Claudio Silva (@claudioessilva)
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -243,7 +238,7 @@ function Set-DbaMaxDop {
                     }
 
                     $results += [pscustomobject]@{
-                        ComputerName           = $server.NetName
+                        ComputerName           = $server.ComputerName
                         InstanceName           = $server.ServiceName
                         SqlInstance            = $server.DomainInstanceName
                         InstanceVersion        = $row.InstanceVersion

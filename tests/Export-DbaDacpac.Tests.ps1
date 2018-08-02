@@ -24,7 +24,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         # Sometimes appveyor bombs
         It "exports a dacpac" {
             $results = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
-            Test-Path -Path ($results).Path
             if (($results).Path) {
                 Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
             }

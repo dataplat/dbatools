@@ -10,7 +10,7 @@ function Get-DbaAgentJobCategory {
              SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
         .PARAMETER SqlCredential
-            SqlCredential object to connect as. If not specified, current Windows login will be used.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Category
             The name of the category to filter out. If no category is used all catgories will be returned.
@@ -28,8 +28,8 @@ function Get-DbaAgentJobCategory {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Agent, Job, JobCategory
             Author: Sander Stad (@sqlstad, sqlstad.nl)
-            Tags: Agent, Job, Job Category
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -98,7 +98,7 @@ function Get-DbaAgentJobCategory {
                     $jobCount = ($server.JobServer.Jobs | Where-Object {$_.CategoryID -eq $cat.ID}).Count
 
                     # Add new properties to the category object
-                    Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name JobCount -Value $jobCount

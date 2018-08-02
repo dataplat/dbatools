@@ -10,13 +10,7 @@
             Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Session
             Specifies a list of Extended Events sessions to remove.
@@ -32,14 +26,14 @@
 
         .PARAMETER Confirm
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-            
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: ExtendedEvent, XE, Xevent
+            Tags: ExtendedEvent, XE, XEvent
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -56,7 +50,7 @@
             Remove-DbaXESession -SqlInstance sql2012 -Session xesession1,xesession2
 
             Removes the xesession1 and xesession2 Extended Event sessions.
-        
+
         .EXAMPLE
             Get-DbaXESession -SqlInstance sql2017 | Remove-DbaXESession -Confirm:$false
 
@@ -91,16 +85,16 @@
         function Remove-XESessions {
             [CmdletBinding()]
             param ([Microsoft.SqlServer.Management.XEvent.Session[]]$xeSessions)
-            
+
             foreach ($xe in $xeSessions) {
                 $instance = $xe.Parent.Name
                 $session = $xe.Name
-                
+
                 if ($Pscmdlet.ShouldProcess("$instance", "Removing XEvent Session $session")) {
                     try {
                         $xe.Drop()
                         [pscustomobject]@{
-                            ComputerName = $xe.Parent.NetName
+                            ComputerName = $xe.Parent.ComputerName
                             InstanceName = $xe.Parent.ServiceName
                             SqlInstance  = $xe.Parent.DomainInstanceName
                             Session      = $session
@@ -114,7 +108,7 @@
             }
         }
     }
-    
+
     process {
         if ($InputObject) {
             # avoid the collection issue

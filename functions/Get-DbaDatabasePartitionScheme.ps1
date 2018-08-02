@@ -24,7 +24,7 @@ The database(s) to exclude - this list is auto populated from the server
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
-Tags: Databases
+Tags: Database
 Author: Klaas Vandenberghe ( @PowerDbaKlaas )
 
 Website: https://dbatools.io
@@ -98,7 +98,7 @@ Gets the Partition Schemes for the databases on Sql1 and Sql2/sqlexpress
 
                 $PartitionSchemes | foreach {
 
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name

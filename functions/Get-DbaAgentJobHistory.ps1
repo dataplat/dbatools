@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAgentJobHistory {
     <#
         .SYNOPSIS
@@ -14,7 +15,7 @@ function Get-DbaAgentJobHistory {
             SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
         .PARAMETER SqlCredential
-            SqlCredential object to connect as. If not specified, current Windows login will be used.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Job
             The name of the job from which the history is wanted. If unspecified, all jobs will be processed.
@@ -141,7 +142,7 @@ function Get-DbaAgentJobHistory {
             $tokenrex = [regex]'\$\((?<method>[^()]+)\((?<tok>[^)]+)\)\)|\$\((?<tok>[^)]+)\)'
             $propmap = @{
                 'INST'      = $Server.ServiceName
-                'MACH'      = $Server.NetName
+                'MACH'      = $Server.ComputerName
                 'SQLDIR'    = $Server.InstallDataDirectory
                 'SQLLOGDIR' = $Server.ErrorLogPath
                 #'STEPCT' loop number ?
@@ -238,9 +239,21 @@ function Get-DbaAgentJobHistory {
                 }
                 $outcome = [pscustomobject]@{}
                 foreach ($execution in $executions) {
-                    Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    $status = switch ($execution.RunStatus) {
+                        0 { "Failed" }
+                        1 { "Succeeded" }
+                        2 { "Retry" }
+                        3 { "Canceled" }
+                    }
+
+                    Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    $DurationInSeconds = ($execution.RunDuration % 100) + [int]( ($execution.RunDuration % 10000 ) / 100 ) * 60 + [int]( ($execution.RunDuration % 1000000 ) / 10000 ) * 60 * 60
+                    Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name StartDate -value ([dbadatetime]$execution.RunDate)
+                    Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name EndDate -value ([dbadatetime]$execution.RunDate.AddSeconds($DurationInSeconds))
+                    Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name Duration -value ([prettytimespan](New-TimeSpan -Seconds $DurationInSeconds))
+                    Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name Status -value $status
                     if ($WithOutputFile) {
                         if ($execution.StepID -eq 0) {
                             $outcome = $execution
@@ -248,7 +261,7 @@ function Get-DbaAgentJobHistory {
                         try {
                             $outname = $outmap[$execution.JobName][$execution.StepID]
                             $outname = Resolve-JobToken -exec $execution -outcome $outcome -outfile $outname
-                            $outremote = Join-AdminUNC $Server.NetName $outname
+                            $outremote = Join-AdminUNC $Server.ComputerName $outname
                         }
                         catch {
                             $outname = ''
@@ -256,10 +269,10 @@ function Get-DbaAgentJobHistory {
                         }
                         Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name OutputFileName -value $outname
                         Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name RemoteOutputFileName -value $outremote
-                        Select-DefaultView -InputObject $execution -Property ComputerName, InstanceName, SqlInstance, 'JobName as Job', StepName, RunDate, RunDuration, RunStatus, OutputFileName, RemoteOutputFileName
+                        Select-DefaultView -InputObject $execution -Property ComputerName, InstanceName, SqlInstance, 'JobName as Job', StepName, RunDate, StartDate, EndDate, Duration, Status, OperatorEmailed, Message, OutputFileName, RemoteOutputFileName
                     }
                     else {
-                        Select-DefaultView -InputObject $execution -Property ComputerName, InstanceName, SqlInstance, 'JobName as Job', StepName, RunDate, RunDuration, RunStatus
+                        Select-DefaultView -InputObject $execution -Property ComputerName, InstanceName, SqlInstance, 'JobName as Job', StepName, RunDate, StartDate, EndDate, Duration, Status, OperatorEmailed, Message
                     }
 
                 }
@@ -281,7 +294,7 @@ function Get-DbaAgentJobHistory {
         }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

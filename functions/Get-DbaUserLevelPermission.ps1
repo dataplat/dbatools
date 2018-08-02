@@ -14,10 +14,7 @@ function Get-DbaUserLevelPermission {
         Allows you to specify a comma separated list of servers to query.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-        $cred = Get-Credential, this pass this $cred to the param.
-
-        Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -183,7 +180,7 @@ function Get-DbaUserLevelPermission {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
@@ -230,7 +227,7 @@ function Get-DbaUserLevelPermission {
 
                     foreach ($row in $serverDT) {
                         [PSCustomObject]@{
-                            ComputerName       = $server.NetName
+                            ComputerName       = $server.ComputerName
                             InstanceName       = $server.ServiceName
                             SqlInstance        = $server.DomainInstanceName
                             Object             = 'SERVER'
@@ -255,7 +252,7 @@ function Get-DbaUserLevelPermission {
 
                 foreach ($row in $dbDT) {
                     [PSCustomObject]@{
-                        ComputerName       = $server.NetName
+                        ComputerName       = $server.ComputerName
                         InstanceName       = $server.ServiceName
                         SqlInstance        = $server.DomainInstanceName
                         Object             = $db.Name

@@ -23,11 +23,7 @@ function Export-DbaAvailabilityGroup {
             Do not overwrite existing export files.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER WhatIf
             Shows you what it'd output if you were to run the command
@@ -41,7 +37,7 @@ function Export-DbaAvailabilityGroup {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: DisasterRecovery, AG, AvailabilityGroup
+            Tags: Hadr, AG, AvailabilityGroup
             Author: Chris Sommer (@cjsommer), cjsommer.com
 
             dbatools PowerShell module (https://dbatools.io)
@@ -88,7 +84,7 @@ function Export-DbaAvailabilityGroup {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -111,10 +107,10 @@ function Export-DbaAvailabilityGroup {
                 $ags = $ags | Where-Object Name -NotIn $ExcludeAvailabilityGroup
             }
 
-            if ($ags.count -gt 0 -or $ags.Length -gt 0) {
+            if ($ags) {
 
                 # Set and create the OutputLocation if it doesn't exist
-                $sqlinst = $instance.Replace('\', '$')
+                $sqlinst = $instance.ToString().Replace('\', '$')
                 $outputLocation = "$FilePath\$sqlinst"
 
                 if (!(Test-Path $outputLocation -PathType Container)) {
@@ -164,7 +160,13 @@ function Export-DbaAvailabilityGroup {
                         "*/" | Out-File -FilePath $outFile -Encoding ASCII -Append
 
                         # Script the AG
-                        $ag.Script() | Out-File -FilePath $outFile -Encoding ASCII -Append
+                        try {
+                            $ag.Script() | Out-File -FilePath $outFile -Encoding ASCII -Append
+                            Get-ChildItem $outFile
+                        }
+                        catch {
+                            Stop-Function -ErrorRecord $_ -Message "Error scripting out the availability groups. This is likely due to a bug in SMO." -Continue
+                        }
                     }
                 }
             }

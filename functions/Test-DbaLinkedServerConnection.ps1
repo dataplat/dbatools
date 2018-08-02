@@ -94,7 +94,7 @@ function Test-DbaLinkedServerConnection {
                     $connectivity = $false
                 }
 
-                New-Object Sqlcollaborative.Dbatools.Validation.LinkedServerResult($ls.parent.NetName, $ls.parent.ServiceName, $ls.parent.DomainInstanceName, $ls.Name, $ls.DataSource, $connectivity, $result)
+                New-Object Sqlcollaborative.Dbatools.Validation.LinkedServerResult($ls.parent.ComputerName, $ls.parent.ServiceName, $ls.parent.DomainInstanceName, $ls.Name, $ls.DataSource, $connectivity, $result)
             }
         }
     }

@@ -21,6 +21,8 @@ $TypeAliasTable = @{
     DbaDatabaseSmoParameter  = "SqlCollaborative.Dbatools.Parameter.DbaDatabaseSmoParameter"
     DbaDatabase              = "SqlCollaborative.Dbatools.Parameter.DbaDatabaseParameter"
     DbaDatabaseParameter     = "SqlCollaborative.Dbatools.Parameter.DbaDatabaseParameter"
+    DbaValidatePattern       = "Sqlcollaborative.Dbatools.Utility.DbaValidatePatternAttribute"
+    DbaValidateScript        = "Sqlcollaborative.Dbatools.Utility.DbaValidateScriptAttribute"
 }
 
 # Add all type aliases

@@ -10,13 +10,7 @@
             Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             Specifies the name of the database that contains the target table.
@@ -31,14 +25,14 @@
 
         .PARAMETER Filter
             You can specify a filter expression by using this attribute. The filter expression is in the same form that you would use in a SQL query. For example, a valid example looks like this: duration > 10000 AND cpu_time > 10000
-            
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: ExtendedEvent, XE, Xevent
+            Tags: ExtendedEvent, XE, XEvent
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -50,7 +44,7 @@
         .EXAMPLE
             $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
             Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
-            
+
             Executes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.
     #>
     [CmdletBinding()]

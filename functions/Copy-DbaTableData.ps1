@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Copy-DbaTableData {
     <#
         .SYNOPSIS
@@ -15,23 +16,13 @@ function Copy-DbaTableData {
             Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
-
-            Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Destination
             Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
         .PARAMETER DestinationSqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-            $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
-
-            Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             The database to copy the table from.
@@ -85,6 +76,9 @@ function Copy-DbaTableData {
 
         .PARAMETER BulkCopyTimeOut
             Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
+
+        .PARAMETER InputObject
+            Enables piping of Table objects from Get-DbaTable
 
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -155,8 +149,7 @@ function Copy-DbaTableData {
         [PSCredential]$DestinationSqlCredential,
         [string]$Database,
         [string]$DestinationDatabase,
-        [Parameter(Mandatory, ValueFromPipeline)]
-        [object[]]$Table,
+        [string[]]$Table,
         [string]$Query,
         [int]$BatchSize = 50000,
         [int]$NotifyAfter = 5000,
@@ -168,6 +161,8 @@ function Copy-DbaTableData {
         [switch]$KeepNulls,
         [switch]$Truncate,
         [int]$bulkCopyTimeOut = 5000,
+        [Parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -207,15 +202,16 @@ function Copy-DbaTableData {
     }
 
     process {
+        if ((Test-Bound -Not -ParameterName Table, SqlInstance) -and (Test-Bound -Not -ParameterName InputObject)) {
+            Stop-Function -Message "You must pipe in a table or specify SqlInstance, Database and Table."
+            return
+        }
 
         if ($SqlInstance) {
-
             if ((Test-Bound -Not -ParameterName Database)) {
                 Stop-Function -Message "Database is required when passing a SqlInstance" -Target $Table
                 return
             }
-
-            $tablecollection = [Microsoft.SqlServer.Management.Smo.Table[]]$tablecollection
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
@@ -231,7 +227,7 @@ function Copy-DbaTableData {
             }
 
             try {
-                $tablecollection += Get-DbaTable -SqlInstance $server -Table $Table -Database $Database -EnableException -Verbose:$false
+                $InputObject += Get-DbaTable -SqlInstance $server -Table $Table -Database $Database -EnableException -Verbose:$false
             }
             catch {
                 Stop-Function -Message "Unable to determine source table : $Table"
@@ -239,12 +235,7 @@ function Copy-DbaTableData {
             }
         }
 
-        if (-not $tablecollection) {
-            $tablecollection = [Microsoft.SqlServer.Management.Smo.Table[]]$Table
-        }
-
-        foreach ($sqltable in $tablecollection) {
-
+        foreach ($sqltable in $InputObject) {
             $Database = $sqltable.Parent.Name
             $server = $sqltable.Parent.Parent
 
@@ -295,51 +286,59 @@ function Copy-DbaTableData {
             if (Test-Bound -ParameterName Query -Not) {
                 $Query = "SELECT * FROM $fqtnfrom"
             }
+            try {
+                if ($Truncate -eq $true) {
+                    if ($Pscmdlet.ShouldProcess($destServer, "Truncating table $fqtndest")) {
+                        $null = $destServer.Databases[$DestinationDatabase].ExecuteNonQuery("TRUNCATE TABLE $fqtndest")
+                    }
+                }
+                $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
+                $cmd.CommandText = $Query
+                if ($server.ConnectionContext.IsOpen -eq $false) {
+                    $server.ConnectionContext.SqlConnectionObject.Open()
+                }
+                $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$connstring;Database=$DestinationDatabase", $bulkCopyOptions)
+                $bulkCopy.DestinationTableName = $fqtndest
+                $bulkCopy.EnableStreaming = $true
+                $bulkCopy.BatchSize = $BatchSize
+                $bulkCopy.NotifyAfter = $NotifyAfter
+                $bulkCopy.BulkCopyTimeOut = $BulkCopyTimeOut
 
-            if ($Truncate -eq $true) {
-                if ($Pscmdlet.ShouldProcess($destServer, "Truncating table $fqtndest")) {
-                    $null = $destServer.Databases[$DestinationDatabase].ExecuteNonQuery("TRUNCATE TABLE $fqtndest")
+                $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
+                # Add RowCount output
+                $bulkCopy.Add_SqlRowsCopied({
+                        $RowsPerSec = [math]::Round($args[1].RowsCopied / $elapsed.ElapsedMilliseconds * 1000.0, 1)
+                        Write-Progress -id 1 -activity "Inserting rows" -Status ([System.String]::Format("{0} rows ({1} rows/sec)", $args[1].RowsCopied, $RowsPerSec))
+                    })
+
+                if ($Pscmdlet.ShouldProcess($destServer, "Writing rows to $fqtndest")) {
+                    $reader = $cmd.ExecuteReader()
+                    $bulkCopy.WriteToServer($reader)
+                    $RowsTotal = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkCopy)
+                    $TotalTime = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
+                    Write-Message -Level Verbose -Message "$RowsTotal rows inserted in $TotalTime sec"
+                    if ($rowCount -is [int]) {
+                        Write-Progress -id 1 -activity "Inserting rows" -status "Complete" -Completed
+                    }
+                }
+
+                $bulkCopy.Close()
+                $bulkCopy.Dispose()
+                $reader.Close()
+
+                [pscustomobject]@{
+                    SourceInstance       = $server.Name
+                    SourceDatabase       = $Database
+                    SourceTable          = $sqltable.Name
+                    DestinationInstance  = $destServer.name
+                    DestinationDatabase  = $DestinationDatabase
+                    DestinationTable     = $desttable.Name
+                    RowsCopied           = $rowstotal
+                    Elapsed              = [prettytimespan]$elapsed.Elapsed
                 }
             }
-            $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
-            $cmd.CommandText = $Query
-            $server.ConnectionContext.SqlConnectionObject.Open()
-            $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$connstring;Database=$DestinationDatabase", $bulkCopyOptions)
-            $bulkCopy.DestinationTableName = $fqtndest
-            $bulkCopy.EnableStreaming = $true
-            $bulkCopy.BatchSize = $BatchSize
-            $bulkCopy.NotifyAfter = $NotifyAfter
-            $bulkCopy.BulkCopyTimeOut = $BulkCopyTimeOut
-
-            $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-            # Add RowCount output
-            $bulkCopy.Add_SqlRowsCopied( {
-                    $RowsPerSec = [math]::Round($args[1].RowsCopied / $elapsed.ElapsedMilliseconds * 1000.0, 1)
-                    Write-Progress -id 1 -activity "Inserting rows" -Status ([System.String]::Format("{0} rows ({1} rows/sec)", $args[1].RowsCopied, $RowsPerSec))
-                })
-
-            if ($Pscmdlet.ShouldProcess($destServer, "Writing rows to $fqtndest")) {
-                $bulkCopy.WriteToServer($cmd.ExecuteReader())
-                $RowsTotal = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkCopy)
-                $TotalTime = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
-                Write-Message -Level Verbose -Message "$RowsTotal rows inserted in $TotalTime sec"
-                if ($rowCount -is [int]) {
-                    Write-Progress -id 1 -activity "Inserting rows" -status "Complete" -Completed
-                }
-            }
-
-            $bulkCopy.Close()
-            $bulkCopy.Dispose()
-
-            [pscustomobject]@{
-                SourceInstance      = $server.Name
-                SourceDatabase      = $Database
-                SourceTable         = $sqltable.Name
-                DestinationInstance = $destServer.name
-                DestinationDatabase = $DestinationDatabase
-                DestinationTable    = $desttable.Name
-                RowsCopied          = $rowstotal
-                Elapsed             = [prettytimespan]$elapsed.Elapsed
+            catch {
+                Stop-Function -Message "Something went wrong" -ErrorRecord $_ -Target $server -continue
             }
         }
     }

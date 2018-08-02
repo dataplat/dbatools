@@ -111,6 +111,15 @@ if ($dbatools_serialimport) { $script:serialImport = $true }
 if ($dbatoolsSystemSystemNode.SerialImport) { $script:serialImport = $true }
 if ($dbatoolsSystemUserNode.SerialImport) { $script:serialImport = $true }
 #endregion Serial Import
+
+#region Multi File Import
+$script:multiFileImport = $false
+if ($dbatools_multiFileImport) { $script:multiFileImport = $true }
+if ($dbatoolsSystemSystemNode.MultiFileImport) { $script:multiFileImport = $true }
+if ($dbatoolsSystemUserNode.MultiFileImport) { $script:multiFileImport = $true }
+if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $true }
+#endregion Multi File Import
+
 Write-ImportTime -Text "Validated defines"
 #endregion Import Defines
 
@@ -157,16 +166,19 @@ if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
     . Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
     Write-ImportTime -Text "Configuration System"
 }
-if (-not ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath)) {
-    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
+if (-not ([Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath)) {
+    [Sqlcollaborative.Dbatools.Message.LogHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
 }
 
-if ((Test-Path -Path "$script:PSModuleRoot\.git")) {
+if ($script:multiFileImport) {
     # All internal functions privately available within the toolset
     foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\functions\*.ps1")) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Internal Commands"
+    
+    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    Write-ImportTime -Text "Registering cmdlets"
     
     # All exported functions
     foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
@@ -178,6 +190,9 @@ if ((Test-Path -Path "$script:PSModuleRoot\.git")) {
 else {
     . "$script:PSModuleRoot\allcommands.ps1"
     Write-ImportTime -Text "Loading Public and Private Commands"
+    
+    . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
+    Write-ImportTime -Text "Registering cmdlets"
 }
 
 # Run all optional code
@@ -193,6 +208,9 @@ Write-ImportTime -Text "Loading Optional Commands"
 . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\insertTepp.ps1"
 Write-ImportTime -Text "Loading TEPP"
 
+# Process transforms
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\message-transforms.ps1"
+Write-ImportTime -Text "Loading Message Transforms"
 
 # Load scripts that must be individually run at the end #
 #-------------------------------------------------------#
@@ -213,341 +231,380 @@ Write-ImportTime -Text "Script: Maintenance"
 # I renamed this function to be more accurate - 1ms
 @(
     @{
-        "AliasName"   = "Copy-SqlAgentCategory"
-        "Definition"  = "Copy-DbaAgentCategory"
+        "AliasName"    = "Copy-SqlAgentCategory"
+        "Definition"   = "Copy-DbaAgentCategory"
     },
     @{
-        "AliasName"   = "Copy-SqlAlert"
-        "Definition"  = "Copy-DbaAgentAlert"
+        "AliasName"    = "Copy-SqlAlert"
+        "Definition"   = "Copy-DbaAgentAlert"
     },
     @{
-        "AliasName"   = "Copy-SqlAudit"
-        "Definition"  = "Copy-DbaServerAudit"
+        "AliasName"    = "Copy-SqlAudit"
+        "Definition"   = "Copy-DbaServerAudit"
     },
     @{
-        "AliasName"   = "Copy-SqlAuditSpecification"
-        "Definition"  = "Copy-DbaServerAuditSpecification"
+        "AliasName"    = "Copy-SqlAuditSpecification"
+        "Definition"   = "Copy-DbaServerAuditSpecification"
     },
     @{
-        "AliasName"   = "Copy-SqlBackupDevice"
-        "Definition"  = "Copy-DbaBackupDevice"
+        "AliasName"    = "Copy-SqlBackupDevice"
+        "Definition"   = "Copy-DbaBackupDevice"
     },
     @{
-        "AliasName"   = "Copy-SqlCentralManagementServer"
-        "Definition"  = "Copy-DbaCentralManagementServer"
+        "AliasName"    = "Copy-SqlCentralManagementServer"
+        "Definition"   = "Copy-DbaCentralManagementServer"
     },
     @{
-        "AliasName"   = "Copy-SqlCredential"
-        "Definition"  = "Copy-DbaCredential"
+        "AliasName"    = "Copy-SqlCredential"
+        "Definition"   = "Copy-DbaCredential"
     },
     @{
-        "AliasName"   = "Copy-SqlCustomError"
-        "Definition"  = "Copy-DbaCustomError"
+        "AliasName"    = "Copy-SqlCustomError"
+        "Definition"   = "Copy-DbaCustomError"
     },
     @{
-        "AliasName"   = "Copy-SqlDatabase"
-        "Definition"  = "Copy-DbaDatabase"
+        "AliasName"    = "Copy-SqlDatabase"
+        "Definition"   = "Copy-DbaDatabase"
     },
     @{
-        "AliasName"   = "Copy-SqlDatabaseAssembly"
-        "Definition"  = "Copy-DbaDatabaseAssembly"
+        "AliasName"    = "Copy-SqlDatabaseAssembly"
+        "Definition"   = "Copy-DbaDatabaseAssembly"
     },
     @{
-        "AliasName"   = "Copy-SqlDatabaseMail"
-        "Definition"  = "Copy-DbaDatabaseMail"
+        "AliasName"    = "Copy-SqlDatabaseMail"
+        "Definition"   = "Copy-DbaDatabaseMail"
     },
     @{
-        "AliasName"   = "Copy-SqlDataCollector"
-        "Definition"  = "Copy-DbaSqlDataCollector"
+        "AliasName"    = "Copy-SqlDataCollector"
+        "Definition"   = "Copy-DbaSqlDataCollector"
     },
     @{
-        "AliasName"   = "Copy-SqlEndpoint"
-        "Definition"  = "Copy-DbaEndpoint"
+        "AliasName"    = "Copy-SqlEndpoint"
+        "Definition"   = "Copy-DbaEndpoint"
     },
     @{
-        "AliasName"   = "Copy-SqlExtendedEvent"
-        "Definition"  = "Copy-DbaExtendedEvent"
+        "AliasName"    = "Copy-SqlExtendedEvent"
+        "Definition"   = "Copy-DbaExtendedEvent"
     },
     @{
-        "AliasName"   = "Copy-SqlJob"
-        "Definition"  = "Copy-DbaAgentJob"
+        "AliasName"    = "Copy-SqlJob"
+        "Definition"   = "Copy-DbaAgentJob"
     },
     @{
-        "AliasName"   = "Copy-SqlJobServer"
-        "Definition"  = "Copy-SqlServerAgent"
+        "AliasName"    = "Copy-SqlJobServer"
+        "Definition"   = "Copy-SqlServerAgent"
     },
     @{
-        "AliasName"   = "Copy-SqlLinkedServer"
-        "Definition"  = "Copy-DbaLinkedServer"
+        "AliasName"    = "Copy-SqlLinkedServer"
+        "Definition"   = "Copy-DbaLinkedServer"
     },
     @{
-        "AliasName"   = "Copy-SqlLogin"
-        "Definition"  = "Copy-DbaLogin"
+        "AliasName"    = "Copy-SqlLogin"
+        "Definition"   = "Copy-DbaLogin"
     },
     @{
-        "AliasName"   = "Copy-SqlOperator"
-        "Definition"  = "Copy-DbaAgentOperator"
+        "AliasName"    = "Copy-SqlOperator"
+        "Definition"   = "Copy-DbaAgentOperator"
     },
     @{
-        "AliasName"   = "Copy-SqlPolicyManagement"
-        "Definition"  = "Copy-DbaSqlPolicyManagement"
+        "AliasName"    = "Copy-SqlPolicyManagement"
+        "Definition"   = "Copy-DbaSqlPolicyManagement"
     },
     @{
-        "AliasName"   = "Copy-SqlProxyAccount"
-        "Definition"  = "Copy-DbaAgentProxyAccount"
+        "AliasName"    = "Copy-SqlProxyAccount"
+        "Definition"   = "Copy-DbaAgentProxyAccount"
     },
     @{
-        "AliasName"   = "Copy-SqlResourceGovernor"
-        "Definition"  = "Copy-DbaResourceGovernor"
+        "AliasName"    = "Copy-SqlResourceGovernor"
+        "Definition"   = "Copy-DbaResourceGovernor"
     },
     @{
-        "AliasName"   = "Copy-SqlServerAgent"
-        "Definition"  = "Copy-DbaSqlServerAgent"
+        "AliasName"    = "Copy-SqlServerAgent"
+        "Definition"   = "Copy-DbaSqlServerAgent"
     },
     @{
-        "AliasName"   = "Copy-SqlServerTrigger"
-        "Definition"  = "Copy-DbaServerTrigger"
+        "AliasName"    = "Copy-SqlServerTrigger"
+        "Definition"   = "Copy-DbaServerTrigger"
     },
     @{
-        "AliasName"   = "Copy-SqlSharedSchedule"
-        "Definition"  = "Copy-DbaAgentSharedSchedule"
+        "AliasName"    = "Copy-SqlSharedSchedule"
+        "Definition"   = "Copy-DbaAgentSharedSchedule"
     },
     @{
-        "AliasName"   = "Copy-SqlSpConfigure"
-        "Definition"  = "Copy-DbaSpConfigure"
+        "AliasName"    = "Copy-SqlSpConfigure"
+        "Definition"   = "Copy-DbaSpConfigure"
     },
     @{
-        "AliasName"   = "Copy-SqlSsisCatalog"
-        "Definition"  = "Copy-DbaSsisCatalog"
+        "AliasName"    = "Copy-SqlSsisCatalog"
+        "Definition"   = "Copy-DbaSsisCatalog"
     },
     @{
-        "AliasName"   = "Copy-SqlSysDbUserObjects"
-        "Definition"  = "Copy-DbaSysDbUserObject"
+        "AliasName"    = "Copy-SqlSysDbUserObjects"
+        "Definition"   = "Copy-DbaSysDbUserObject"
     },
     @{
-        "AliasName"   = "Copy-SqlUserDefinedMessage"
-        "Definition"  = "Copy-SqlCustomError"
+        "AliasName"    = "Copy-SqlUserDefinedMessage"
+        "Definition"   = "Copy-SqlCustomError"
     },
     @{
-        "AliasName"   = "Expand-SqlTLogResponsibly"
-        "Definition"  = "Expand-DbaTLogResponsibly"
+        "AliasName"    = "Expand-SqlTLogResponsibly"
+        "Definition"   = "Expand-DbaTLogResponsibly"
     },
     @{
-        "AliasName"   = "Export-SqlLogin"
-        "Definition"  = "Export-DbaLogin"
+        "AliasName"    = "Export-SqlLogin"
+        "Definition"   = "Export-DbaLogin"
     },
     @{
-        "AliasName"   = "Export-SqlSpConfigure"
-        "Definition"  = "Export-DbaSpConfigure"
+        "AliasName"    = "Export-SqlSpConfigure"
+        "Definition"   = "Export-DbaSpConfigure"
     },
     @{
-        "AliasName"   = "Export-SqlUser"
-        "Definition"  = "Export-DbaUser"
+        "AliasName"    = "Export-SqlUser"
+        "Definition"   = "Export-DbaUser"
     },
     @{
-        "AliasName"   = "Find-SqlDuplicateIndex"
-        "Definition"  = "Find-DbaDuplicateIndex"
+        "AliasName"    = "Find-SqlDuplicateIndex"
+        "Definition"   = "Find-DbaDuplicateIndex"
     },
     @{
-        "AliasName"   = "Find-SqlUnusedIndex"
-        "Definition"  = "Find-DbaUnusedIndex"
+        "AliasName"    = "Find-SqlUnusedIndex"
+        "Definition"   = "Find-DbaUnusedIndex"
     },
     @{
-        "AliasName"   = "Get-SqlMaxMemory"
-        "Definition"  = "Get-DbaMaxMemory"
+        "AliasName"    = "Get-SqlMaxMemory"
+        "Definition"   = "Get-DbaMaxMemory"
     },
     @{
-        "AliasName"   = "Get-SqlRegisteredServerName"
-        "Definition"  = "Get-DbaRegisteredServer"
+        "AliasName"    = "Get-SqlRegisteredServerName"
+        "Definition"   = "Get-DbaRegisteredServer"
     },
     @{
-        "AliasName"   = "Get-DbaRegisteredServerName"
-        "Definition"  = "Get-DbaRegisteredServer"
+        "AliasName"    = "Get-DbaRegisteredServerName"
+        "Definition"   = "Get-DbaRegisteredServer"
     },
     @{
-        "AliasName"   = "Get-SqlServerKey"
-        "Definition"  = "Get-DbaSqlProductKey"
+        "AliasName"    = "Get-SqlServerKey"
+        "Definition"   = "Get-DbaSqlProductKey"
     },
     @{
-        "AliasName"   = "Import-SqlSpConfigure"
-        "Definition"  = "Import-DbaSpConfigure"
+        "AliasName"    = "Import-SqlSpConfigure"
+        "Definition"   = "Import-DbaSpConfigure"
     },
     @{
-        "AliasName"   = "Install-SqlWhoIsActive"
-        "Definition"  = "Install-DbaWhoIsActive"
+        "AliasName"    = "Install-SqlWhoIsActive"
+        "Definition"   = "Install-DbaWhoIsActive"
     },
     @{
-        "AliasName"   = "Remove-SqlDatabaseSafely"
-        "Definition"  = "Remove-DbaDatabaseSafely"
+        "AliasName"    = "Remove-SqlDatabaseSafely"
+        "Definition"   = "Remove-DbaDatabaseSafely"
     },
     @{
-        "AliasName"   = "Remove-SqlOrphanUser"
-        "Definition"  = "Remove-DbaOrphanUser"
+        "AliasName"    = "Remove-SqlOrphanUser"
+        "Definition"   = "Remove-DbaOrphanUser"
     },
     @{
-        "AliasName"   = "Repair-SqlOrphanUser"
-        "Definition"  = "Repair-DbaOrphanUser"
+        "AliasName"    = "Repair-SqlOrphanUser"
+        "Definition"   = "Repair-DbaOrphanUser"
     },
     @{
-        "AliasName"   = "Reset-SqlAdmin"
-        "Definition"  = "Reset-DbaAdmin"
+        "AliasName"    = "Reset-SqlAdmin"
+        "Definition"   = "Reset-DbaAdmin"
     },
     @{
-        "AliasName"   = "Reset-SqlSaPassword"
-        "Definition"  = "Reset-SqlAdmin"
+        "AliasName"    = "Reset-SqlSaPassword"
+        "Definition"   = "Reset-SqlAdmin"
     },
     @{
-        "AliasName"   = "Restore-SqlBackupFromDirectory"
-        "Definition"  = "Restore-DbaBackupFromDirectory"
+        "AliasName"    = "Restore-SqlBackupFromDirectory"
+        "Definition"   = "Restore-DbaBackupFromDirectory"
     },
     @{
-        "AliasName"   = "Set-SqlMaxMemory"
-        "Definition"  = "Set-DbaMaxMemory"
+        "AliasName"    = "Set-SqlMaxMemory"
+        "Definition"   = "Set-DbaMaxMemory"
     },
     @{
-        "AliasName"   = "Set-SqlTempDbConfiguration"
-        "Definition"  = "Set-DbaTempDbConfiguration"
+        "AliasName"    = "Set-SqlTempDbConfiguration"
+        "Definition"   = "Set-DbaTempDbConfiguration"
     },
     @{
-        "AliasName"   = "Show-SqlDatabaseList"
-        "Definition"  = "Show-DbaDatabaseList"
+        "AliasName"    = "Show-SqlDatabaseList"
+        "Definition"   = "Show-DbaDatabaseList"
     },
     @{
-        "AliasName"   = "Show-SqlMigrationConstraint"
-        "Definition"  = "Test-SqlMigrationConstraint"
+        "AliasName"    = "Show-SqlMigrationConstraint"
+        "Definition"   = "Test-SqlMigrationConstraint"
     },
     @{
-        "AliasName"   = "Show-SqlServerFileSystem"
-        "Definition"  = "Show-DbaServerFileSystem"
+        "AliasName"    = "Show-SqlServerFileSystem"
+        "Definition"   = "Show-DbaServerFileSystem"
     },
     @{
-        "AliasName"   = "Show-SqlWhoIsActive"
-        "Definition"  = "Invoke-DbaWhoIsActive"
+        "AliasName"    = "Show-SqlWhoIsActive"
+        "Definition"   = "Invoke-DbaWhoIsActive"
     },
     @{
-        "AliasName"   = "Start-SqlMigration"
-        "Definition"  = "Start-DbaMigration"
+        "AliasName"    = "Start-SqlMigration"
+        "Definition"   = "Start-DbaMigration"
     },
     @{
-        "AliasName"   = "Sync-SqlLoginPermissions"
-        "Definition"  = "Sync-DbaSqlLoginPermission"
+        "AliasName"    = "Sync-SqlLoginPermissions"
+        "Definition"   = "Sync-DbaLoginPermission"
     },
     @{
-        "AliasName"   = "Test-SqlConnection"
-        "Definition"  = "Test-DbaConnection"
+        "AliasName"     = "Sync-DbaSqlLoginPermission"
+        "Definition"    = "Sync-DbaLoginPermission"
     },
     @{
-        "AliasName"   = "Test-SqlDiskAllocation"
-        "Definition"  = "Test-DbaDiskAllocation"
+        "AliasName"    = "Test-SqlConnection"
+        "Definition"   = "Test-DbaConnection"
     },
     @{
-        "AliasName"   = "Test-SqlMigrationConstraint"
-        "Definition"  = "Test-DbaMigrationConstraint"
+        "AliasName"    = "Test-SqlDiskAllocation"
+        "Definition"   = "Test-DbaDiskAllocation"
     },
     @{
-        "AliasName"   = "Test-SqlNetworkLatency"
-        "Definition"  = "Test-DbaNetworkLatency"
+        "AliasName"    = "Test-SqlMigrationConstraint"
+        "Definition"   = "Test-DbaMigrationConstraint"
     },
     @{
-        "AliasName"   = "Test-SqlPath"
-        "Definition"  = "Test-DbaSqlPath"
+        "AliasName"    = "Test-SqlNetworkLatency"
+        "Definition"   = "Test-DbaNetworkLatency"
     },
     @{
-        "AliasName"   = "Test-SqlTempDbConfiguration"
-        "Definition"  = "Test-DbaTempDbConfiguration"
+        "AliasName"    = "Test-SqlPath"
+        "Definition"   = "Test-DbaSqlPath"
     },
     @{
-        "AliasName"   = "Watch-SqlDbLogin"
-        "Definition"  = "Watch-DbaDbLogin"
+        "AliasName"    = "Test-SqlTempDbConfiguration"
+        "Definition"   = "Test-DbaTempDbConfiguration"
     },
     @{
-        "AliasName"   = "Get-DiskSpace"
-        "Definition"  = "Get-DbaDiskSpace"
+        "AliasName"    = "Watch-SqlDbLogin"
+        "Definition"   = "Watch-DbaDbLogin"
     },
     @{
-        "AliasName"   = "Restore-HallengrenBackup"
-        "Definition"  = "Restore-SqlBackupFromDirectory"
+        "AliasName"    = "Get-DiskSpace"
+        "Definition"   = "Get-DbaDiskSpace"
     },
     @{
-        "AliasName"   = "Get-DbaDatabaseFreeSpace"
-        "Definition"  = "Get-DbaDatabaseSpace"
+        "AliasName"    = "Restore-HallengrenBackup"
+        "Definition"   = "Restore-SqlBackupFromDirectory"
     },
     @{
-        "AliasName"   = "Set-DbaQueryStoreConfig"
-        "Definition"  = "Set-DbaDbQueryStoreOptions"
+        "AliasName"    = "Get-DbaDatabaseFreeSpace"
+        "Definition"   = "Get-DbaDatabaseSpace"
     },
     @{
-        "AliasName"   = "Get-DbaQueryStoreConfig"
-        "Definition"  = "Get-DbaDbQueryStoreOptions"
+        "AliasName"    = "Set-DbaQueryStoreConfig"
+        "Definition"   = "Set-DbaDbQueryStoreOptions"
     },
     @{
-        "AliasName"   = "Connect-DbaSqlServer"
-        "Definition"  = "Connect-DbaInstance"
+        "AliasName"    = "Get-DbaQueryStoreConfig"
+        "Definition"   = "Get-DbaDbQueryStoreOptions"
     },
     @{
-        "AliasName"   = "Get-DbaInstance"
-        "Definition"  = "Connect-DbaInstance"
+        "AliasName"    = "Connect-DbaSqlServer"
+        "Definition"   = "Connect-DbaInstance"
     },
     @{
-        "AliasName"   = "Get-DbaXEventSession"
-        "Definition"  = "Get-DbaXESession"
+        "AliasName"    = "Get-DbaInstance"
+        "Definition"   = "Connect-DbaInstance"
     },
     @{
-        "AliasName"   = "Get-DbaXEventSessionTarget"
-        "Definition"  = "Get-DbaXESessionTarget"
+        "AliasName"    = "Get-DbaXEventSession"
+        "Definition"   = "Get-DbaXESession"
     },
     @{
-        "AliasName"   = "Read-DbaXEventFile"
-        "Definition"  = "Read-DbaXEFile"
+        "AliasName"    = "Get-DbaXEventSessionTarget"
+        "Definition"   = "Get-DbaXESessionTarget"
     },
     @{
-        "AliasName"   = "Watch-DbaXEventSession"
-        "Definition"  = "Watch-DbaXESession"
+        "AliasName"    = "Read-DbaXEventFile"
+        "Definition"   = "Read-DbaXEFile"
     },
     @{
-        "AliasName"   = "Get-DbaDatabaseCertificate"
-        "Definition"  = "Get-DbaDbCertificate"
+        "AliasName"    = "Watch-DbaXEventSession"
+        "Definition"   = "Watch-DbaXESession"
     },
     @{
-        "AliasName"   = "New-DbaDatabaseCertificate"
-        "Definition"  = "New-DbaDbCertificate"
+        "AliasName"    = "Get-DbaDatabaseCertificate"
+        "Definition"   = "Get-DbaDbCertificate"
     },
     @{
-        "AliasName"   = "Remove-DbaDatabaseCertificate"
-        "Definition"  = "Remove-DbaDbCertificate"
+        "AliasName"    = "New-DbaDatabaseCertificate"
+        "Definition"   = "New-DbaDbCertificate"
     },
     @{
-        "AliasName"   = "Restore-DbaDatabaseCertificate"
-        "Definition"  = "Restore-DbaDbCertificate"
+        "AliasName"    = "Remove-DbaDatabaseCertificate"
+        "Definition"   = "Remove-DbaDbCertificate"
     },
     @{
-        "AliasName"   = "Backup-DbaDatabaseCertificate"
-        "Definition"  = "Backup-DbaDbCertificate"
+        "AliasName"    = "Restore-DbaDatabaseCertificate"
+        "Definition"   = "Restore-DbaDbCertificate"
     },
     @{
-        "AliasName"   = "Find-DbaDatabaseGrowthEvent"
-        "Definition"  = "Find-DbaDbGrowthEvent"
+        "AliasName"    = "Backup-DbaDatabaseCertificate"
+        "Definition"   = "Backup-DbaDbCertificate"
     },
     @{
-        "AliasName"    = "Get-DbaTraceFile"
-        "Definition"   = "Get-DbaTrace"
+        "AliasName"    = "Find-DbaDatabaseGrowthEvent"
+        "Definition"   = "Find-DbaDbGrowthEvent"
     },
     @{
-        "AliasName"   = "Out-DbaDataTable"
-        "Definition"  = "ConvertTo-DbaDataTable"
+        "AliasName"     = "Get-DbaTraceFile"
+        "Definition"    = "Get-DbaTrace"
     },
     @{
-        "AliasName"    = "Invoke-DbaSqlCmd"
-        "Definition"   = "Invoke-DbaSqlQuery"
+        "AliasName"    = "Out-DbaDataTable"
+        "Definition"   = "ConvertTo-DbaDataTable"
     },
     @{
-        "AliasName"     = "Test-DbaVirtualLogFile"
-        "Definition"    = "Test-DbaDbVirtualLogFile"
+        "AliasName"      = "Invoke-DbaSqlCmd"
+        "Definition"     = "Invoke-DbaSqlQuery"
     },
     @{
-        "AliasName"      = "Test-DbaFullRecoveryModel"
-        "Definition"     = "Test-DbaRecoveryModel"
+        "AliasName"       = "Test-DbaVirtualLogFile"
+        "Definition"      = "Test-DbaDbVirtualLogFile"
+    },
+    @{
+        "AliasName"        = "Test-DbaFullRecoveryModel"
+        "Definition"       = "Test-DbaRecoveryModel"
     }
+     ,
+    @{
+        "AliasName"         = "Get-DbaDatabaseSnapshot"
+        "Definition"        = "Get-DbaDbSnapshot"
+    },
+    @{
+        "AliasName"         = "New-DbaDatabaseSnapshot"
+        "Definition"        = "New-DbaDbSnapshot"
+    },
+    @{
+        "AliasName"         = "Remove-DbaDatabaseSnapshot"
+        "Definition"        = "Remove-DbaDbSnapshot"
+    },
+    @{
+        "AliasName"         = "Restore-DbaDatabaseSnapshot"
+        "Definition"        = "Restore-DbaDbSnapshot"
+    },
+    @{
+        "AliasName"          = "Get-DbaSqlLog"
+        "Definition"         = "Get-DbaErrorLog"
+    }
+     ,
+    @{
+        "AliasName"           = "Test-DbaValidLogin"
+        "Definition"          = "Test-DbaWindowsLogin"
+    },
+    @{
+        "AliasName"  = "Get-DbaJobCategory"
+        "Definition" = "Get-DbaAgentJobCategory"
+    },
+    @{
+        "AliasName"  = "Invoke-DbaDatabaseShrink"
+        "Definition" = "Invoke-DbaDbShrink"
+    }
+    
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
 }
@@ -556,12 +613,12 @@ Write-ImportTime -Text "Script: Maintenance"
 # Leave forever
 @(
     @{
-        "AliasName"   = "Attach-DbaDatabase"
-        "Definition"  = "Mount-DbaDatabase"
+        "AliasName"    = "Attach-DbaDatabase"
+        "Definition"   = "Mount-DbaDatabase"
     },
     @{
-        "AliasName"   = "Detach-DbaDatabase"
-        "Definition"  = "Dismount-DbaDatabase"
+        "AliasName"    = "Detach-DbaDatabase"
+        "Definition"   = "Dismount-DbaDatabase"
     }
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
@@ -623,8 +680,8 @@ if ($PSCommandPath -like "*.psm1") {
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUcWbhzLgWmZGHIQQ5YiQIk8eF
-# utiggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUzuBEXrAUO3NVvftZe0Zh4NV5
+# 4eeggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -755,22 +812,22 @@ if ($PSCommandPath -like "*.psm1") {
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUXQgZw8CgL73ZK5PXiOaX7v/4idYwDQYJKoZIhvcNAQEBBQAE
-# ggEAY7tur8WDSUwFQZJt1M+bPuPFEIBLsR+Vb94hm05ti6fvW0v740RjMjzVApOf
-# suOWilkI80B6NrkiGTOBMaqGrD69LuqJ45sR4+phyExmt8/3Cydc/61Vco8TQfu3
-# c4xlU9d3m9EjGzacnbEkWYOrYQiekKBt7TFTuOfeGFhEMsLuR0YyoUQVyikAeBOA
-# iRBGsgfq4A0Hg+2TVi0X9Y9HhodzwfQI1jwzKq2VO+y0VdLOo894p5WQQS0nErY5
-# bwxkjJb6/MDHtfKj/BHVcYQMZv7W4Q6kBVwl2k6sKWeFC/qpyyLpiujVkmwT4+gH
-# qoP2WaEdvt5EPz4rk9+89yalO6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUJc2L50QWUHDa0np5rcTx8UP3gDYwDQYJKoZIhvcNAQEBBQAE
+# ggEAX7wLIuvfa8sUpLjhZGLS7eWmJL01TOuSF2aSx2m9ARpzLTFEvitaSoKVZ0+E
+# mkAZZgGXbpPm79U5AXC/yhwD420gpYL6GFgIqZSADoDyToCzYJOvtteMlI1IqKPz
+# JB5G+IxFgNBtTtobtS4cquRb/gKwoLY4AVM/MxTfKvxfcDBxrYmNj1UQuRyrYvpv
+# FhMYEk3S9ou0uI9NXmr2JyfRx8sD1ewB8GWDMjknWTB8EpLfFOK0FlU3vQ4gEwSJ
+# vAWLwUJCqB/R2rsm8DsDY6yMj+HuEKeKmhPlOSrwPd/OU4//t9gXlruXZiyotptL
+# msE0f8cUsWpbwSWvaFjYEMbyv6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwMzI4MTUzNTU0WjAj
-# BgkqhkiG9w0BCQQxFgQU6iR1AiwGKv0YUo1M8cSvFtOcC5MwDQYJKoZIhvcNAQEB
-# BQAEggEAQsJU9DvfN/8XOew/IobMBltEzGz93wsJNU0G53F4VrPccWttRC2SYzhf
-# 6iujqj5yM7e/ibwCBsl4xtTDni4SKKK8aRDp6NxPUPjExISbLt1UJ/kr7htRBhgM
-# Hb2aYyVIvYKTgLjq7rvgwi9bzk+f0aGbbWM2gzQimYkX3IVASAzoiLCaly9DjF93
-# tD0KPZxxpnDX4Nzm5UcmVAgwZgqAOEPBWsKUu9F8n1Zkka0kAr4yxGcNxfW4aAtL
-# 6ajsqTJ9/qWYTuzijIRWIl1frFschwEDR9/d243anzeTjZnx+eRNdzoiHdLk6tlf
-# HcO0puR3zEQUPaGo3GjYq2p32hDjxw==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwODAxMjA0MDE2WjAj
+# BgkqhkiG9w0BCQQxFgQUBWy0ok2bPJiyorhyKDYge/0N7l4wDQYJKoZIhvcNAQEB
+# BQAEggEAl+whqq49ICxDEHEHzmntl3GtEHnon32tSUVDf3Ip/wbAAMCd80CH3azt
+# gphDoXH3GhPNAVITlpiUnJeNswQWjk33W1zq6Loe5H/SwvJJ5Bverv0C5I1Y5mS3
+# sFLN8yqBWSXn2P8aOex8qi+uZYwYLG6+CeWG64v4sZFO1yPqiMl5ovU/EPghIw86
+# 0LutBRVI6ZA3uCTZKqrWx2SXZW8pfZv19Hb9laf0yOE5/R3uVG/UAUxv5Ztq9mW6
+# uTU9pXhv1Xi2b/NXtAgvIjJmXv+BBEtmknhhKPm0d333trVka0ByKKcmUWFRE05U
+# 8LxPATeFx37SvlQrFUMk37haJrEc9A==
 # SIG # End signature block

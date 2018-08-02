@@ -10,7 +10,7 @@ function Set-DbaAgentJobOutputFile {
             The SQL Server that you're connecting to.
 
         .PARAMETER SQLCredential
-            Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+            Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
         .PARAMETER Job
             The job to process - this list is auto-populated from the server.
@@ -33,7 +33,8 @@ function Set-DbaAgentJobOutputFile {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Original Author - Rob Sewell (https://sqldbawithabeard.com)
+            Tags: Agent, Job, SqlAgent
+            Author: Rob Sewell (https://sqldbawithabeard.com)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -133,7 +134,7 @@ function Set-DbaAgentJobOutputFile {
                         $jobstep.Refresh()
 
                         [pscustomobject]@{
-                            ComputerName   = $server.NetName
+                            ComputerName   = $server.ComputerName
                             InstanceName   = $server.ServiceName
                             SqlInstance    = $server.DomainInstanceName
                             Job            = $currentJob.Name
