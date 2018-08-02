@@ -244,11 +244,11 @@ function Find-DbaOrphanedFile {
 
                     $result = [pscustomobject]@{
                         Server         = $server.name
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         Filename       = $fullpath
-                        RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $fullpath
+                        RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $fullpath
                     }
 
                     if ($LocalOnly -eq $true) {

@@ -126,7 +126,7 @@ function Test-DbaWindowsLogin {
             $allWindowsLoginsGroups = $server.Logins | Where-Object { $_.LoginType -in ('WindowsUser', 'WindowsGroup') }
 
             # we cannot validate local users
-            $allWindowsLoginsGroups = $allWindowsLoginsGroups | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name.StartsWith($server.NetName) -eq $false -and $_.Name.StartsWith("BUILTIN") -eq $false }
+            $allWindowsLoginsGroups = $allWindowsLoginsGroups | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name.StartsWith($server.ComputerName) -eq $false -and $_.Name.StartsWith("BUILTIN") -eq $false }
             if ($Login) {
                 $allWindowsLoginsGroups = $allWindowsLoginsGroups | Where-Object Name -In $Login
             }

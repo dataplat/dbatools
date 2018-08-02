@@ -124,13 +124,13 @@ function Get-DbaAgentJobOutputFile {
                 foreach ($Step in $j.JobSteps) {
                     if ($Step.OutputFileName) {
                         [pscustomobject]@{
-                            ComputerName         = $server.NetName
+                            ComputerName         = $server.ComputerName
                             InstanceName         = $server.ServiceName
                             SqlInstance          = $server.DomainInstanceName
                             Job                  = $j.Name
                             JobStep              = $Step.Name
                             OutputFileName       = $Step.OutputFileName
-                            RemoteOutputFileName = Join-AdminUNC $Server.NetName $Step.OutputFileName
+                            RemoteOutputFileName = Join-AdminUNC $Server.ComputerName $Step.OutputFileName
                             StepId               = $Step.Id
                         } | Select-DefaultView -ExcludeProperty StepId
                     }

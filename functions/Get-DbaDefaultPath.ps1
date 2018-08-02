@@ -91,7 +91,7 @@ function Get-DbaDefaultPath {
             $logPath = $logPath.Trim().TrimEnd("\")
 
             [PSCustomObject]@{
-                ComputerName = $server.NetName
+                ComputerName = $server.ComputerName
                 InstanceName = $server.ServiceName
                 SqlInstance  = $server.DomainInstanceName
                 Data         = $dataPath

@@ -103,7 +103,7 @@ removes mylogin on SQL Server server\instance
                     $currentlogin.Drop()
                     
                     [pscustomobject]@{
-                        ComputerName  = $server.NetName
+                        ComputerName  = $server.ComputerName
                         InstanceName  = $server.ServiceName
                         SqlInstance   = $server.DomainInstanceName
                         Login         = $currentlogin.name
@@ -113,7 +113,7 @@ removes mylogin on SQL Server server\instance
             }
             catch {
                 [pscustomobject]@{
-                    ComputerName  = $server.NetName
+                    ComputerName  = $server.ComputerName
                     InstanceName  = $server.ServiceName
                     SqlInstance   = $server.DomainInstanceName
                     Login         = $currentlogin.name

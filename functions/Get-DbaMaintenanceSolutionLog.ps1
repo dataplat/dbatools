@@ -170,10 +170,10 @@ function Get-DbaMaintenanceSolutionLog {
                 Continue
             }
             if ($Path) {
-                $logdir = Join-AdminUnc -Servername $server.netname -Filepath $Path
+                $logdir = Join-AdminUnc -Servername $server.ComputerName -Filepath $Path
             }
             else {
-                $logdir = Join-AdminUnc -Servername $server.netname -Filepath $server.errorlogpath # -replace '^(.):', "\\$computername\`$1$"
+                $logdir = Join-AdminUnc -Servername $server.ComputerName -Filepath $server.errorlogpath # -replace '^(.):', "\\$computername\`$1$"
             }
             if (!$logdir) {
                 Write-Message -Level Warning -Message "No log directory returned from $instance"
@@ -207,7 +207,7 @@ function Get-DbaMaintenanceSolutionLog {
                 Continue
             }
             $instanceinfo = @{ }
-            $instanceinfo['ComputerName'] = $server.NetName
+            $instanceinfo['ComputerName'] = $server.ComputerName
             $instanceinfo['InstanceName'] = $server.ServiceName
             $instanceinfo['SqlInstance'] = $server.Name
 
