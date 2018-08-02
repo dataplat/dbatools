@@ -126,7 +126,7 @@ function Test-DbaWindowsLogin {
             $allWindowsLoginsGroups = $server.Logins | Where-Object { $_.LoginType -in ('WindowsUser', 'WindowsGroup') }
 
             # we cannot validate local users
-            $allWindowsLoginsGroups = $allWindowsLoginsGroups | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name.StartsWith($server.NetName) -eq $false -and $_.Name.StartsWith("BUILTIN") -eq $false }
+            $allWindowsLoginsGroups = $allWindowsLoginsGroups | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name.StartsWith($server.ComputerName) -eq $false -and $_.Name.StartsWith("BUILTIN") -eq $false }
             if ($Login) {
                 $allWindowsLoginsGroups = $allWindowsLoginsGroups | Where-Object Name -In $Login
             }
@@ -160,6 +160,14 @@ function Test-DbaWindowsLogin {
                 $exists = $false
                 try {
                     $u = Get-DbaADObject -ADObject $adLogin -Type User -EnableException
+                    if ($null -eq $u -and $adLogin -like '*$'){
+                        Write-Message -Message "Parsing Login as computer" -Level Verbose
+                        $u = Get-DbaADObject -ADObject $adLogin -Type Computer -EnableException
+                        $adType = 'Computer'
+                    }
+                    else {
+                        $adType = 'User'
+                    }
                     $foundUser = $u.GetUnderlyingObject()
                     $foundSid = $foundUser.ObjectSid.Value -join ''
                     if ($foundUser) {
@@ -208,7 +216,7 @@ function Test-DbaWindowsLogin {
                     Server                            = $server.DomainInstanceName
                     Domain                            = $domain
                     Login                             = $username
-                    Type                              = "User"
+                    Type                              = $adType
                     Found                             = $exists
                     DisabledInSQLServer               = $login.IsDisabled
                     AccountNotDelegated               = $additionalProps.AccountNotDelegated

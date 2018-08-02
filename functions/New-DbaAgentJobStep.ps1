@@ -131,49 +131,32 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(Mandatory = $false)]
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [object[]]$Job,
-        [Parameter(Mandatory = $false)]
         [int]$StepId,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$StepName,
-        [Parameter(Mandatory = $false)]
         [ValidateSet('ActiveScripting', 'AnalysisCommand', 'AnalysisQuery', 'CmdExec', 'Distribution', 'LogReader', 'Merge', 'PowerShell', 'QueueReader', 'Snapshot', 'Ssis', 'TransactSql')]
         [string]$Subsystem = 'TransactSql',
-        [Parameter(Mandatory = $false)]
         [string]$Command,
-        [Parameter(Mandatory = $false)]
         [int]$CmdExecSuccessCode,
-        [Parameter(Mandatory = $false)]
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnSuccessAction = 'QuitWithSuccess',
-        [Parameter(Mandatory = $false)]
         [int]$OnSuccessStepId = 0,
-        [Parameter(Mandatory = $false)]
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnFailAction = 'QuitWithFailure',
-        [Parameter(Mandatory = $false)]
         [int]$OnFailStepId,
-        [Parameter(Mandatory = $false)]
         [object]$Database,
-        [Parameter(Mandatory = $false)]
         [string]$DatabaseUser,
-        [Parameter(Mandatory = $false)]
         [int]$RetryAttempts,
-        [Parameter(Mandatory = $false)]
         [int]$RetryInterval,
-        [Parameter(Mandatory = $false)]
         [string]$OutputFileName,
-        [Parameter(Mandatory = $false)]
         [ValidateSet('AppendAllCmdExecOutputToJobHistory', 'AppendToJobHistory', 'AppendToLogFile', 'LogToTableWithOverwrite', 'None', 'ProvideStopProcessEvent')]
         [string[]]$Flag,
-        [Parameter(Mandatory = $false)]
         [string]$ProxyName,
-        [Parameter(Mandatory = $false)]
         [switch]$Force,
         [Alias('Silent')]
         [switch]$EnableException
@@ -181,13 +164,13 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 
     begin {
         # Check the parameter on success step id
-        if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
+        if (($OnSuccessAction -in 'GoToStep', 'GoToNextStep') -and ($OnSuccessStepId -ge 1)) {
             Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'." -Target $SqlInstance
             return
         }
 
         # Check the parameter on success step id
-        if (($OnFailAction -ne 'GoToStep') -and ($OnFailStepId -ge 1)) {
+        if (($OnFailAction -in 'GoToStep', 'GoToNextStep') -and ($OnFailStepId -ge 1)) {
             Stop-Function -Message "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'." -Target $SqlInstance
             return
         }
@@ -240,7 +223,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                             Write-Message -Message "Step $StepName already exists for job. Force is used. Removing existing step" -Level Verbose
 
                             # Remove the job step based on the name
-                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName
+                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName -SqlCredential $SqlCredential
 
                             # Set the name job step object
                             $JobStep.Name = $StepName
@@ -249,7 +232,9 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                             Stop-Function -Message "The step name $StepName already exists for job $j" -Target $instance -Continue
                         }
                     }
-                    elseif ($StepId) {
+
+                    # If the step id need to be set
+                    if ($StepId) {
                         # Check if the used step id is already in place
                         if ($Job.JobSteps.ID -notcontains $StepId) {
                             Write-Message -Message "Setting job step step id to $StepId" -Level Verbose
@@ -259,8 +244,8 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
                             Write-Message -Message "Step ID $StepId already exists for job. Force is used. Removing existing step" -Level Verbose
 
                             # Remove the existing job step
-                            $StepName = ($Server.JobServer.Jobs['Job2'].JobSteps | Where-Object {$_.ID -eq 1}).Name
-                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName
+                            $StepName = ($Server.JobServer.Jobs[$j].JobSteps | Where-Object {$_.ID -eq 1}).Name
+                            Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName -SqlCredential $SqlCredential
 
                             # Set the ID job step object
                             $JobStep.ID = $StepId

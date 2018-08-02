@@ -68,7 +68,7 @@ Gets the classifier function object on Sql1 and Sql2/sqlexpress instances
             }
 
             if ($classifierFunction) {
-                Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name Database -value 'master'

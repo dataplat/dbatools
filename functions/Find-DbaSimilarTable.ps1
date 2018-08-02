@@ -249,7 +249,7 @@ function Find-DbaSimilarTable {
 
                 foreach ($row in $rows) {
                     [PSCustomObject]@{
-                        ComputerName              = $server.NetName
+                        ComputerName              = $server.ComputerName
                         InstanceName              = $server.ServiceName
                         SqlInstance               = $server.DomainInstanceName
                         Table                     = "$($row.DatabaseName).$($row.SchemaName).$($row.TableName)"

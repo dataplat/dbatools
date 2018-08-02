@@ -135,7 +135,7 @@ function Test-DbaBackupInformation {
                             $VerificationErrors++
                         }
                         elseif ($path -in $DBHistoryPhysicalPathsExists) {
-                                Write-Message -Message "File $path already exists on $($SqlInstance.NetName), not owned by any database in $SqlInstance, will not overwrite." -Level Warning
+                                Write-Message -Message "File $path already exists on $($SqlInstance.ComputerName), not owned by any database in $SqlInstance, will not overwrite." -Level Warning
                                 $VerificationErrors++
                         }
                     }
@@ -155,29 +155,6 @@ function Test-DbaBackupInformation {
                         }
                     }
                 }
-                #Easier to do FileStream checks out of the loop:
-                if ('s' -in ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object FileType -Unique).FileType) {
-                    if ((Get-DbaSpConfigure -SqlInstance $RestoreInstance -ConfigName FilestreamAccessLevel).RunningValue -eq 0) {
-                        Write-Message -Level Warning -Message "Database $Database contains FileStream data, and FileStream is not enable on the destination server"
-                        $VerificationErrors++
-                    }
-
-                    $ExistingFS = Get-DbaFileStreamFolder -SqlInstance $SqlInstance
-                    foreach ($FileStreamFolder in ($DbHistory | Select-Object -ExpandProperty filelist | Where-Object {$_.FileType -eq 's'} | Select-Object PhysicalName -unique).PhysicalName) {
-                        if ($null -ne $ExistingFS) {
-                            if ($null -ne ($ExistingFs | Where-Object {$_.Database -eq $Database}) -and $Withreplace -ne $True) {
-                                Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data on $SqlInstance and WithReplace not specified, cannot restore"
-                                $VerificationErrors++
-                            }
-                            $OtherOwners = $ExistingFs | Where-Object {$_.FileStreamFolder -eq $FileStreamFolder -and $_.Database -ne $Database}
-                            if ($null -ne $OtherOwners) {
-                                Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data by $($OtherOwners.Database) on $SqlInstance, cannot restore"
-                                $VerificationErrors++
-                            }
-                        }
-                    }
-                }
-
             }
 
             #Test all backups readable
