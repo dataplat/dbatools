@@ -448,26 +448,25 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
         $files = @()
         $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\FULL\
-        $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db2\FULL\
+        $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\dbareports\FULL
         $Results = $files | Restore-DbaDatabase -SqlInstance $script:instance1  -NoRecovery
         It "Should Have restored the database cleanly" {
             ($results.RestoreComplete -contains $false) | Should be $False
             (($results | Measure-Object).count -gt 0) | Should be $True
         }
         It "Should have left the db in a norecovery state" {
-            1..2 | ForEach-Object {
-                (Get-DbaDatabase -SqlInstance $script:instance1 -Database "db$_").Status | Should Be "Restoring"
-            }
+            (Get-DbaDatabase -SqlInstance $script:instance1 | Where-Object {$_.Status -eq 'Recovering'}).count | Should Be 0
         }
-        $Results2  = gci C:\github\appveyor-lab\sql2008-backups\db[12]\*  -Recurse | ?{$_.PsIsContainer -eq $false} | Restore-DbaDatabase -SqlInstance $script:instance1 -Continue
+        $files = @()
+        $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\ -Recurse 
+        $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\dbareports\ -Recurse
+        $Results2  = $files | ?{$_.PsIsContainer -eq $false} | Restore-DbaDatabase -SqlInstance $script:instance1 -Continue
         It "Should Have restored the database cleanly" {
             ($results2.RestoreComplete -contains $false) | Should be $False
             (($results2 | Measure-Object).count -gt 0) | Should be $True
         }
         It "Should have recovered the database" {
-            1..2 | ForEach-Object {
-                (Get-DbaDatabase -SqlInstance $script:instance1 -Database "db$_").Status | Should Be "Normal"
-            }
+            (Get-DbaDatabase -SqlInstance $script:instance1 | Where-Object {$_.Status -eq 'Recovering'}).count | Should Be 0
         }
     }
  
