@@ -26,7 +26,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         { Find-DbaBackup -Path $testPath -BackupFileExtension 'bak' -RetentionPeriod '11y' -EnableException } | Should Throw "units invalid"
     }
     Context "BackupFileExtension validation" {
-        { Find-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' -EnableException } | Should Not Throw
+        { Find-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' -EnableException -WarningAction SilentlyContinue } | Should Not Throw
     }
     Context "BackupFileExtension message validation" {
         $warnmessage = Find-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' 3>&1

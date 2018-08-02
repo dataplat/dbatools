@@ -10,13 +10,7 @@ function Set-DbaDbRecoveryModel {
             The target SQL Server instance or instances.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             The database(s) to process - this list is auto-populated from the server. if unspecified, all databases will be processed.
@@ -48,7 +42,7 @@ function Set-DbaDbRecoveryModel {
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER DatabaseCollection
+        .PARAMETER InputObject
         A collection of databases (such as returned by Get-DbaDatabase)
 
         .NOTES
@@ -101,7 +95,7 @@ function Set-DbaDbRecoveryModel {
         [switch]$AllDatabases,
         [switch]$EnableException,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Pipeline")]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject
     )
     process {
         foreach ($instance in $SqlInstance) {
@@ -136,10 +130,10 @@ function Set-DbaDbRecoveryModel {
                 return
             }
 
-            $DatabaseCollection += $databases
+            $InputObject += $databases
         }
 
-        foreach ($db in $DatabaseCollection) {
+        foreach ($db in $InputObject) {
             if ($db.RecoveryModel -eq $RecoveryModel) {
                 Stop-Function -Message "Recovery Model for database $db is already set to $RecoveryModel" -Category ConnectionError -Target $instance -Continue
             }

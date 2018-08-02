@@ -10,13 +10,7 @@ function Get-DbaXESession {
             Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Session
             Only return specific sessions. Options for this parameter are auto-populated from the server.
@@ -27,8 +21,9 @@ function Get-DbaXESession {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: ExtendedEvent, XE, Xevent
+            Tags: ExtendedEvent, XE, XEvent
             Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -103,11 +98,11 @@ function Get-DbaXESession {
                             $file = "$directory\$file"
                         }
                         $filecollection += $file
-                        $remotefile += Join-AdminUnc -servername $server.netName -filepath $file
+                        $remotefile += Join-AdminUnc -servername $server.ComputerName -filepath $file
                     }
                 }
 
-                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Status -Value $status
@@ -117,11 +112,6 @@ function Get-DbaXESession {
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Parent -Value $server
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Store -Value $XEStore
                 Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, TargetFile, Events, MaxMemory, MaxEventSize
-                try {
-                    $xesessions.Refresh()
-                } catch {
-                    Stop-Function -Message "Couldn't refresh XESessions" -ErrorRecord $_ -Continue
-                }
             }
         }
     }

@@ -11,7 +11,7 @@ SQL Server name or SMO object representing the SQL Server to connect to. This ca
 collection and receive pipeline input
 
 .PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, current Windows login will be used.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER Database
 The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -187,7 +187,7 @@ Returns information on the CommandLog table in the DBA database on both instance
                 }
 
                 foreach ($sqltable in $tables) {
-                    $sqltable | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                    $sqltable | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     $sqltable | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     $sqltable | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     $sqltable | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name

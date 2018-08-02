@@ -22,7 +22,8 @@ function Watch-DbaUpdate {
 
             Watches the gallery for updates to dbatools.
     #>
-
+    [cmdletbinding()]
+    param()
     process {
         if (([Environment]::OSVersion).Version.Major -lt 10) {
             Write-Warning "This command only supports Windows 10 and higher."
@@ -36,7 +37,7 @@ function Watch-DbaUpdate {
         # leave this in for the scheduled task
         $module = Get-Module -Name dbatools
 
-        if (!$module) {
+        if (-not $module) {
             Import-Module dbatools
             $module = Get-Module -Name dbatools
         }
@@ -48,7 +49,7 @@ function Watch-DbaUpdate {
 
         $file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
 
-        $new = [pscustomobject]@{
+        $new = [PSCustomObject]@{
             NotifyVersion = $galleryVersion
         }
 
@@ -60,7 +61,7 @@ function Watch-DbaUpdate {
 
             if ($galleryVersion -gt $old.NotifyVersion) {
                 Export-Clixml -InputObject $new -Path $file
-                Show-Notification
+                Show-Notification -GalleryVersion $galleryVersion
             }
         }
         else {
@@ -71,7 +72,7 @@ function Watch-DbaUpdate {
             }
 
             Export-Clixml -InputObject $new -Path $file
-            Show-Notification
+            Show-Notification -GalleryVersion $galleryVersion
         }
     }
 }

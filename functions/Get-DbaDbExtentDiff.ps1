@@ -4,16 +4,14 @@ function Get-DbaDbExtentDiff {
             What percentage of a database has changed since the last full backup
 
         .DESCRIPTION
-            This is only an implementation of the script created by Paul S. Randal to find what percentage of a database has changed since the last full backup
+            This is only an implementation of the script created by Paul S. Randal to find what percentage of a database has changed since the last full backup.
             https://www.sqlskills.com/blogs/paul/new-script-how-much-of-the-database-has-changed-since-the-last-full-backup/
 
         .PARAMETER SqlInstance
             The target SQL Server instance
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -33,6 +31,7 @@ function Get-DbaDbExtentDiff {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
+            Tags: Backup, Database
             Author: Viorel Ciucu, viorel.ciucu@gmail.com, cviorel.com
 
             Website: https://dbatools.io
@@ -43,14 +42,14 @@ function Get-DbaDbExtentDiff {
             http://dbatools.io/Get-DbaDbExtentDiff
 
         .EXAMPLE
-            Get the changes for the DBA database
+            Get the changes for the DBA database.
             Get-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA
 
         .EXAMPLE
-            Get the changes for the DB01 database on multiple servers
+            Get the changes for the DB01 database on multiple servers.
             Get-DbaDbExtentDiff -SqlInstance $SQL2017N1, $SQL2017N2, $SQL2016 -Database DB01 -SqlCredential $Cred
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias('ServerInstance', 'SqlServer')]
@@ -121,7 +120,7 @@ function Get-DbaDbExtentDiff {
                     "
                     $DBCCPageResults = $server.Query($DBCCPageQueryDMV, $db.Name)
                     [pscustomobject]@{
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         DatabaseName   = $db.Name
@@ -156,7 +155,7 @@ function Get-DbaDbExtentDiff {
                     }
                     $extents = Get-DbaExtent $dbExtents.Field
                     [pscustomobject]@{
-                        ComputerName   = $server.NetName
+                        ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
                         SqlInstance    = $server.DomainInstanceName
                         DatabaseName   = $db.Name

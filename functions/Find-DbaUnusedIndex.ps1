@@ -16,13 +16,7 @@ function Find-DbaUnusedIndex {
             The SQL Server you want to check for unused indexes.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $cred = Get-Credential, then pass $cred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -54,7 +48,7 @@ function Find-DbaUnusedIndex {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Indexes
+            Tags: Index
             Author: Aaron Nelson (@SQLvariant), SQLvariant.com
 
             Website: https://dbatools.io
@@ -97,7 +91,7 @@ function Find-DbaUnusedIndex {
 
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -169,7 +163,7 @@ function Find-DbaUnusedIndex {
             }
         }
 
-        Write-Message -Level Output -Message "Attempting to connect to Sql Server."
+        Write-Message -Level Output -Message "Connecting to SQL Server."
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
     process {

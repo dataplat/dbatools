@@ -60,7 +60,7 @@ function Get-DbaComputerSystem {
     process {
         foreach ($computer in $ComputerName) {
             try {
-                Write-Message -Level Verbose -Message "Attempting to connect to $computer"
+                Write-Message -Level Verbose -Message "Connecting to $computer"
                 $server = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential
 
                 $computerResolved = $server.FullComputerName
@@ -151,7 +151,7 @@ function Get-DbaComputerSystem {
                 Select-DefaultView -InputObject $inputObject -ExcludeProperty $excludes
             }
             catch {
-                Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
             }
         }
     }

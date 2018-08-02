@@ -12,7 +12,7 @@ function Update-ServiceStatus {
     .PARAMETER Timeout
         How long to wait for the start/stop request completion before moving on.
 
-    .PARAMETER ServiceCollection
+    .PARAMETER InputObject
         A collection of services from Get-DbaSqlService
 
     .PARAMETER Action
@@ -37,23 +37,23 @@ function Update-ServiceStatus {
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
-        $serviceCollection = Get-DbaSqlService -ComputerName sql1
-        Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 30
-        Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'start' -Timeout 30
+        $InputObject = Get-DbaSqlService -ComputerName sql1
+        Update-ServiceStatus -InputObject $InputObject -Action 'stop' -Timeout 30
+        Update-ServiceStatus -InputObject $InputObject -Action 'start' -Timeout 30
 
         Restarts SQL services on sql1
 
     .EXAMPLE
-        $serviceCollection = Get-DbaSqlService -ComputerName sql1
+        $InputObject = Get-DbaSqlService -ComputerName sql1
         $credential = Get-Credential
-        Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 0 -Credential $credential
+        Update-ServiceStatus -InputObject $InputObject -Action 'stop' -Timeout 0 -Credential $credential
 
         Stops SQL services on sql1 and waits indefinitely for them to stop. Uses $credential to authorize on the server.
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
         [parameter(ValueFromPipeline = $true, Mandatory = $true)]
-        [object[]]$ServiceCollection,
+        [object[]]$InputObject,
         [parameter(Mandatory = $true)]
         [string[]]$Action,
         [int]$Timeout = 30,
@@ -146,9 +146,9 @@ function Update-ServiceStatus {
         $threads = @()
 
         #Get priorities on which the service startup/shutdown order is based
-        $servicePriorityCollection = $ServiceCollection.ServicePriority | Select-Object -unique | Sort-Object -Property @{ Expression = { [int]$_ }; Descending = $action -ne 'stop' }
+        $servicePriorityCollection = $InputObject.ServicePriority | Select-Object -unique | Sort-Object -Property @{ Expression = { [int]$_ }; Descending = $action -ne 'stop' }
         foreach ($priority in $servicePriorityCollection) {
-            foreach ($service in ($ServiceCollection | Where-Object { $_.ServicePriority -eq $priority })) {
+            foreach ($service in ($InputObject | Where-Object { $_.ServicePriority -eq $priority })) {
                 if ('dbatools.DbaSqlService' -in $service.PSObject.TypeNames) {
                     if (($service.State -eq 'Running' -and $action -eq 'start') -or ($service.State -eq 'Stopped' -and $action -eq 'stop')) {
                         Add-Member -Force -InputObject $service -NotePropertyName Status -NotePropertyValue 'Successful'
@@ -217,7 +217,7 @@ function Update-ServiceStatus {
                                 Stop-Function -EnableException $EnableException -FunctionName $callerName -Message ("The attempt to $action the service $($thread.ServiceName) on $($thread.ComputerName) did not return any results") -Category ConnectionError -ErrorRecord $_ -Target $thread -Continue
                             }
                             #Find a corresponding service object
-                            $outObject = $ServiceCollection | Where-Object { $_.ServiceName -eq $thread.serviceName -and $_.ComputerName -eq $thread.computerName }
+                            $outObject = $InputObject | Where-Object { $_.ServiceName -eq $thread.serviceName -and $_.ComputerName -eq $thread.computerName }
                             #Set additional properties
                             $status = switch ($jobResult.ExitCode) {
                                 0 { 'Successful' }
@@ -242,7 +242,7 @@ function Update-ServiceStatus {
                             #Session has timed out - return failure and stop the thread
 
                             $thread.isRetrieved = $true
-                            $outObject = $ServiceCollection | Where-Object { $_.ServiceName -eq $thread.serviceName -and $_.ComputerName -eq $thread.computerName }
+                            $outObject = $InputObject | Where-Object { $_.ServiceName -eq $thread.serviceName -and $_.ComputerName -eq $thread.computerName }
                             #Set additional properties
                             Add-Member -Force -InputObject $outObject -NotePropertyName Status -NotePropertyValue 'Failed'
                             Add-Member -Force -InputObject $outObject -NotePropertyName Message -NotePropertyValue "The attempt to $action the service has timed out."

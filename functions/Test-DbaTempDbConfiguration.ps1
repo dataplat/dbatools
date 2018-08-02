@@ -18,13 +18,7 @@ function Test-DbaTempDbConfiguration {
             The SQL Server Instance to connect to. SQL Server 2005 and higher are supported.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Detailed
             Output all properties, will be depreciated in 1.0.0 release.
@@ -73,7 +67,7 @@ function Test-DbaTempDbConfiguration {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
@@ -86,7 +80,7 @@ function Test-DbaTempDbConfiguration {
                 $notes = 'SQL Server 2016 has this functionality enabled by default'
                 # DBA May have changed setting. May need to check.
                 $value = [PSCustomObject]@{
-                    ComputerName   = $server.NetName
+                    ComputerName   = $server.ComputerName
                     InstanceName   = $server.ServiceName
                     SqlInstance    = $server.DomainInstanceName
                     Rule           = 'TF 1118 Enabled'
@@ -100,7 +94,7 @@ function Test-DbaTempDbConfiguration {
                 $notes = 'KB328551 describes how TF 1118 can benefit performance.'
 
                 $value = [PSCustomObject]@{
-                    ComputerName   = $server.NetName
+                    ComputerName   = $server.ComputerName
                     InstanceName   = $server.ServiceName
                     SqlInstance    = $server.DomainInstanceName
                     Rule           = 'TF 1118 Enabled'
@@ -128,7 +122,7 @@ function Test-DbaTempDbConfiguration {
             Write-Message -Level Verbose -Message "TempDB file objects gathered"
 
             $value = [PSCustomObject]@{
-                ComputerName   = $server.NetName
+                ComputerName   = $server.ComputerName
                 InstanceName   = $server.ServiceName
                 SqlInstance    = $server.DomainInstanceName
                 Rule           = 'File Count'
@@ -162,7 +156,7 @@ function Test-DbaTempDbConfiguration {
             }
 
             $value = [PSCustomObject]@{
-                ComputerName   = $server.NetName
+                ComputerName   = $server.ComputerName
                 InstanceName   = $server.ServiceName
                 SqlInstance    = $server.DomainInstanceName
                 Rule           = 'File Growth in Percent'
@@ -193,7 +187,7 @@ function Test-DbaTempDbConfiguration {
             }
 
             $value = [PSCustomObject]@{
-                ComputerName   = $server.NetName
+                ComputerName   = $server.ComputerName
                 InstanceName   = $server.ServiceName
                 SqlInstance    = $server.DomainInstanceName
                 Rule           = 'File Location'
@@ -224,7 +218,7 @@ function Test-DbaTempDbConfiguration {
             }
 
             $value = [PSCustomObject]@{
-                ComputerName   = $server.NetName
+                ComputerName   = $server.ComputerName
                 InstanceName   = $server.ServiceName
                 SqlInstance    = $server.DomainInstanceName
                 Rule           = 'File MaxSize Set'

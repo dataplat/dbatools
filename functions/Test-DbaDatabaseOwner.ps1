@@ -10,24 +10,11 @@ function Test-DbaDatabaseOwner {
 
             Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
 
-        .NOTES
-            Tags:
-            Author: Michael Fal (@Mike_Fal), http://mikefal.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
         .PARAMETER SqlInstance
             Specifies the SQL Server instance(s) to scan.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -46,6 +33,13 @@ function Test-DbaDatabaseOwner {
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+        .NOTES
+            Tags: Database, Owner, DbOwner
+            Author: Michael Fal (@Mike_Fal), http://mikefal.net
+
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Test-DbaDatabaseOwner
@@ -119,7 +113,7 @@ function Test-DbaDatabaseOwner {
 
             Write-Message -Level Verbose -Message "Checking $db"
             [pscustomobject]@{
-                ComputerName = $server.NetName
+                ComputerName = $server.ComputerName
                 InstanceName = $server.ServiceName
                 SqlInstance  = $server.DomainInstanceName
                 Server       = $server.DomainInstanceName

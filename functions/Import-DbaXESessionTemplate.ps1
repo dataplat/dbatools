@@ -10,13 +10,7 @@
             Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Name
             The Name of the session to create.
@@ -32,7 +26,7 @@
             filename = "file.xel" to filename = "$TargetFilePath\file.xel". Only specify the directory, not the file itself.
 
             This path is relative to the destination directory
-    
+
         .PARAMETER TargetFileMetadataPath
             By default, files will be created in the default xem directory. Use TargetFileMetadataPath to change all instances of
             filename = "file.xem" to filename = "$TargetFilePath\file.xem". Only specify the directory, not the file itself.
@@ -45,7 +39,7 @@
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: ExtendedEvent, XE, Xevent
+            Tags: ExtendedEvent, XE, XEvent
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -138,17 +132,17 @@
                 else {
                     Write-Message -Level Verbose -Message "TargetFilePath specified, changing all file locations in $file for $instance."
                     Write-Message -Level Verbose -Message "TargetFileMetadataPath specified, changing all metadata file locations in $file for $instance."
-                    
+
                     # Handle whatever people specify
                     $TargetFilePath = $TargetFilePath.TrimEnd("\")
                     $TargetFileMetadataPath = $TargetFileMetadataPath.TrimEnd("\")
                     $TargetFilePath = "$TargetFilePath\"
                     $TargetFileMetadataPath = "$TargetFileMetadataPath\"
-                    
+
                     # Perform replace
                     $xelphrase = 'name="filename" value="'
                     $xemphrase = 'name="metadatafile" value="'
-                    
+
                     try {
                         $basename = (Get-ChildItem $file).Basename
                         $contents = Get-Content $file -ErrorAction Stop
@@ -182,7 +176,7 @@
                 if ((Test-Bound -ParameterName Name -not)) {
                     $Name = (Get-ChildItem $file).BaseName
                 }
-                
+
                 # This could be done better but not today
                 $no2012 = ($metadata | Where-Object Compatibility -gt 2012).Name
                 $no2014 = ($metadata | Where-Object Compatibility -gt 2014).Name
@@ -190,11 +184,11 @@
                 if ($Name -in $no2012 -and $server.VersionMajor -eq 11) {
                     Stop-Function -Message "$Name is not supported in SQL Server 2012 ($server)" -Continue
                 }
-                
+
                 if ($Name -in $no2014 -and $server.VersionMajor -eq 12) {
                     Stop-Function -Message "$Name is not supported in SQL Server 2014 ($server)" -Continue
                 }
-                
+
                 if ((Get-DbaXESession -SqlInstance $server -Session $Name)) {
                     Stop-Function -Message "$Name already exists on $instance" -Continue
                 }

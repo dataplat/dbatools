@@ -6,7 +6,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "Command actually works" {
         It "should have info for model" {
            $results = Test-DbaDiskSpeed -SqlInstance $script:instance1
-           $results.FileName -contains 'modellog'
+           $results.FileName -contains 'modellog.ldf'
         }
         It "returns only for master" {
             $results = Test-DbaDiskSpeed -SqlInstance $script:instance1 -Database master

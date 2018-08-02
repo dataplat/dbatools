@@ -11,9 +11,7 @@ function Get-DbaSqlModule {
     Allows you to specify a comma separated list of servers to query.
 
     .PARAMETER SqlCredential
-    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-    $cred = Get-Credential, this pass this $cred to the param.
-    Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+    Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Database
     The database(s) to process. If unspecified, all databases will be processed.
@@ -155,7 +153,7 @@ function Get-DbaSqlModule {
 
                 foreach ($row in $server.Query($sql, $db.name)) {
                     [PSCustomObject]@{
-                        ComputerName  = $server.NetName
+                        ComputerName  = $server.ComputerName
                         InstanceName  = $server.ServiceName
                         SqlInstance   = $server.DomainInstanceName
                         Database      = $row.DatabaseName

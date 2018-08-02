@@ -22,9 +22,11 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 InModuleScope dbatools {
+    . "$PSScriptRoot\constants.ps1"
+    $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
     Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         Mock Connect-SqlInstance {
-            Import-Clixml C:\github\appveyor-lab\agserver.xml
+            Import-Clixml $script:appveyorlabrepo\agserver.xml
         }
         Context "gets ag databases" {
             $results = Get-DbaAgDatabase -SqlInstance sql2016c

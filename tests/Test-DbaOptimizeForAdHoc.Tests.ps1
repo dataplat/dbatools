@@ -30,11 +30,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.RecommendedOptimizeAdHoc  | Should BeOfType System.Int32
         }
     }
-
-    Context "Fails gracefully" {
-        It "Should throw on an invalid Connection" {
-            Mock -ModuleName 'dbatools' Connect-SqlInstance { throw }
-            {Test-DbaOptimizeForAdHoc -ComputerName 'MadeUpServer' -EnableException } | Should Throw
-        }
-    }
 }

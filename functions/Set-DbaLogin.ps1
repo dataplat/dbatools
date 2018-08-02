@@ -12,9 +12,7 @@ function Set-DbaLogin {
     SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-    $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-    To connect as a different Windows user, run PowerShell as that user.
+    Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Login
     The login that needs to be changed
@@ -133,7 +131,6 @@ function Set-DbaLogin {
 #>
 
     [CmdletBinding()]
-
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
@@ -141,7 +138,7 @@ function Set-DbaLogin {
         [PSCredential]$SqlCredential,
         [parameter(Mandatory = $true)]
         [string[]]$Login,
-        [object]$Password,
+        [SecureString]$Password,
         [switch]$Unlock,
         [switch]$MustChange,
         [string]$NewName,
@@ -190,7 +187,7 @@ function Set-DbaLogin {
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
@@ -345,7 +342,7 @@ function Set-DbaLogin {
 
                 # Return the results
                 [PSCustomObject]@{
-                    ComputerName           = $server.NetName
+                    ComputerName           = $server.ComputerName
                     InstanceName           = $server.ServiceName
                     SqlInstance            = $server.DomainInstanceName
                     LoginName              = $l.Name

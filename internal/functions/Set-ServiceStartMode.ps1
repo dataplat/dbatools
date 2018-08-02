@@ -6,7 +6,7 @@ function Set-ServiceStartMode {
         .DESCRIPTION
         Accepts objects from Get-DbaSqlService and performs a corresponding action.
 
-        .PARAMETER ServiceCollection
+        .PARAMETER InputObject
         A collection of services from Get-DbaSqlService.
 
         .PARAMETER Mode
@@ -32,7 +32,7 @@ function Set-ServiceStartMode {
 
         .EXAMPLE
         $services = Get-DbaSqlService -ComputerName sql1
-        Set-ServiceStartMode -ServiceCollection $services -Mode 'Automatic'
+        Set-ServiceStartMode -InputObject $services -Mode 'Automatic'
 
         Sets all SQL services on sql1 to Automatic startup.
 
@@ -41,7 +41,7 @@ function Set-ServiceStartMode {
     param (
         [string]$Mode,
         [parameter(ValueFromPipeline = $true, Mandatory = $true)]
-        [object[]]$ServiceCollection
+        [object[]]$InputObject
     )
     begin {
         $callStack = Get-PSCallStack
@@ -55,7 +55,7 @@ function Set-ServiceStartMode {
     }
     process {
         #Get all the objects from the pipeline before proceeding
-        $ProcessArray += $ServiceCollection
+        $ProcessArray += $InputObject
     }
     end {
         $ProcessArray = $ProcessArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.type -in $Type) }
@@ -65,7 +65,7 @@ function Set-ServiceStartMode {
             if ($Pscmdlet.ShouldProcess($Wmi, "Changing the Start Mode to $Mode")) {
                 $x = $Wmi.ChangeStartMode($Mode)
                 if ($x.ReturnValue -ne 0) {
-                    Write-Message -Level Warning -EnableException $EnableException -FunctionName $callerName -Message ("The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) returned the following message: " + (Get-DbaSQLServiceErrorMessage $x.ReturnValue))
+                    Write-Message -Level Warning -FunctionName $callerName -Message ("The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) returned the following message: " + (Get-DbaSQLServiceErrorMessage $x.ReturnValue))
                 }
             }
         }

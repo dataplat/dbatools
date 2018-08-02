@@ -10,13 +10,7 @@ function Get-DbaRunningJob {
             The SQL Server instance to connect to.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -24,7 +18,7 @@ function Get-DbaRunningJob {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags:
+            Tags: Process, Session, ActivityMonitor, Agent, Job
             Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -75,7 +69,7 @@ function Get-DbaRunningJob {
             else {
                 foreach ($job in $jobs) {
                     [pscustomobject]@{
-                        ComputerName     = $server.NetName
+                        ComputerName     = $server.ComputerName
                         InstanceName     = $server.ServiceName
                         SqlInstance      = $server.DomainInstanceName
                         Name             = $job.name

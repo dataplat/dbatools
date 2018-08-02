@@ -4,7 +4,7 @@ function Get-DbaDatabaseSpace {
             Returns database file space information for database files on a SQL instance.
 
         .DESCRIPTION
-            This function returns database file space information for a SQL Instance or group of SQL Instances. Information is based on a query against sys.database_files and the FILEPROPERTY    function to query and return information.
+            This function returns database file space information for a SQL Instance or group of SQL Instances. Information is based on a query against sys.database_files and the FILEPROPERTY function to query and return information.
 
             File free space script borrowed and modified from Glenn Berry's DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)
 
@@ -12,13 +12,7 @@ function Get-DbaDatabaseSpace {
             Specifies the SQL Server instance(s) to scan.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
             Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -33,6 +27,16 @@ function Get-DbaDatabaseSpace {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+        .NOTES
+            Tags: Database, Space, Storage
+            Author: Michael Fal (@Mike_Fal), http://mikefal.net
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
+
+        .LINK
+            https://dbatools.io/Get-DbaDatabaseSpace
 
         .EXAMPLE
             Get-DbaDatabaseSpace -SqlInstance localhost
@@ -53,15 +57,6 @@ function Get-DbaDatabaseSpace {
             Get-DbaDatabaseSpace -SqlInstance localhost -Database db1, db2
 
             Returns database files and free space information for the db1 and db2 on localhost.
-
-        .NOTES
-            Author: Michael Fal (@Mike_Fal), http://mikefal.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaDatabaseSpace
     #>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline, Mandatory = $true)]
@@ -208,7 +203,7 @@ function Get-DbaDatabaseSpace {
                         }
 
                         [pscustomobject]@{
-                            ComputerName         = $server.NetName
+                            ComputerName         = $server.ComputerName
                             InstanceName         = $server.ServiceName
                             SqlInstance          = $server.DomainInstanceName
                             Database             = $row.DBName

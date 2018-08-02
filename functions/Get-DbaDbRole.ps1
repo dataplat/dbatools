@@ -12,11 +12,7 @@ Default output includes columns SQLServer, Database, Role.
 The SQL Server that you're connecting to.
 
 .PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER Database
 The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -36,7 +32,7 @@ Credential object used to connect to the SQL Server as a different user.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
-Tags: Roles, Databases
+Tags: Roles, Database, Security
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
 Website: https://dbatools.io
@@ -130,7 +126,7 @@ Returns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\sql1
                 }
 
                 foreach ($dbrole in $dbroles) {
-                    Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name Database -value $db.Name

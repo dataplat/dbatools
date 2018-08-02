@@ -21,20 +21,18 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     }
 }
 
-InModuleScope dbatools {
-    Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-        Mock Connect-SqlInstance {
-            Import-Clixml C:\github\appveyor-lab\agserver.xml
+Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+    $dbname = "dbatoolsci_agroupdb"
+    Context "gets ags" {
+        $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3
+        It "returns results with proper data" {
+            $results.AvailabilityGroup | Should -Contain 'dbatoolsci_agroup'
+            $results.AvailabilityDatabases.Name | Should -Contain $dbname
         }
-        Context "gets ags" {
-            $results = Get-DbaAvailabilityGroup -SqlInstance sql2016c
-            It "returns results with proper data" {
-                $results.AvailabilityGroup | Should -Be 'SharePoint'
-                $results.LocalReplicaRole | Should -Be 'Resolving'
-                $results.AutomatedBackupPreference | Should -Be 'Secondary'
-                $results.AvailabilityReplicas.Name -match 'sql2016a' | Should -Be $true
-                $results.AvailabilityDatabases.Name -match 'Service_d8a960b7fae44c65aea2daac947b2615' | Should -Be $true
-            }
+        $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup dbatoolsci_agroup
+        It "returns a single result" {
+            $results.AvailabilityGroup | Should -Be 'dbatoolsci_agroup'
+            $results.AvailabilityDatabases.Name | Should -Be $dbname
         }
     }
-}
+} #$script:instance2 for appveyor

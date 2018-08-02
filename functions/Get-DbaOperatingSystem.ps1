@@ -50,7 +50,7 @@ function Get-DbaOperatingSystem {
     )
     process {
         foreach ($computer in $ComputerName) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $computer"
+            Write-Message -Level Verbose -Message "Connecting to $computer"
             $server = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential
 
             $computerResolved = $server.FullComputerName
@@ -117,6 +117,7 @@ function Get-DbaOperatingSystem {
                 Architecture             = $os.OSArchitecture
                 Version                  = $os.Version
                 Build                    = $os.BuildNumber
+                Caption                  = $os.Caption
                 InstallDate              = [DbaDateTime]$os.InstallDate
                 LastBootTime             = [DbaDateTime]$os.LastBootUpTime
                 LocalDateTime            = [DbaDateTime]$os.LocalDateTime
@@ -137,11 +138,10 @@ function Get-DbaOperatingSystem {
                 LanguageThreeLetter      = $language.ThreeLetterISOLanguageName
                 LanguageAlias            = $language.DisplayName
                 LanguageNative           = $language.NativeName
-
                 CodeSet                  = $os.CodeSet
                 CountryCode              = $os.CountryCode
                 Locale                   = $os.Locale
-            } | Select-DefaultView -ExcludeProperty CodeSet, CountryCode, Locale, LanguageAlias
+            } | Select-DefaultView -Property ComputerName, Manufacturer, Organization, Architecture, Version, Caption, LastBootTime, LocalDateTime, PowerShellVersion, TimeZone, TotalVisibleMemory, ActivePowerPlan, LanguageNative
         }
     }
 }

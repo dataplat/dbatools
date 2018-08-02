@@ -45,29 +45,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Remove-Item -Path $outputFile
     }
 
-    It "Should throw exception when trying to connect to an invalid server" {
-        Mock -ModuleName 'dbatools' Connect-SqlInstance -ParameterFilter { [string]$SqlInstance -eq 'MadeUpServer' } -Verifiable {
-            throw 'Forced failure when connecting'
-        }
-
-        { Get-DbaSqlModule -SqlInstance 'MadeUpServer' -EnableException } | Should Throw 'Forced failure when connecting'
-
-        Assert-VerifiableMock
-    }
-
     It "Filters to specific databases" {
-        $output = Export-DbaLogin -SqlInstance $script:instance1 -Database $dbname1 -EnableException
+        $output = Export-DbaLogin -SqlInstance $script:instance1 -Database $dbname1 -WarningAction SilentlyContinue
 
         ([regex]::matches($output, 'USE \[.*?\]').Value | Select-Object -Unique).Count | Should Be 1
     }
 
     It "Doesn't include database details when using NoDatabase" {
-        $output = Export-DbaLogin -SqlInstance $script:instance1 -NoDatabase -EnableException
+        $output = Export-DbaLogin -SqlInstance $script:instance1 -NoDatabases -WarningAction SilentlyContinue
 
         ([regex]::matches($output, 'USE \[.*?\]')).Count | Should Be 0
     }
 
-    $output = Export-DbaLogin -SqlInstance $script:instance1 -EnableException
+    $output = Export-DbaLogin -SqlInstance $script:instance1 -WarningAction SilentlyContinue
     It "Doesn't filter specific databases" {
         ([regex]::matches($output, 'USE \[.*?\]').Value | Select-Object -Unique).Count | Should BeGreaterThan 1
     }
@@ -89,7 +79,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "Exports to the specified file" {
-        Export-DbaLogin -SqlInstance $script:instance1 -FilePath $outputFile -EnableException
+        Export-DbaLogin -SqlInstance $script:instance1 -FilePath $outputFile -WarningAction SilentlyContinue
 
         Test-Path -Path $outputFile | Should Be $true
     }

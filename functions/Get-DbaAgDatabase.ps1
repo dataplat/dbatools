@@ -28,7 +28,7 @@ function Get-DbaAgDatabase {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: DisasterRecovery, AG, AvailabilityGroup, Replica
+            Tags: Hadr, AG, AvailabilityGroup, Replica
             Author: Shawn Melton (@wsmelton)
 
             Website: https://dbatools.io
@@ -58,8 +58,7 @@ function Get-DbaAgDatabase {
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [parameter(ValueFromPipeline = $true)]
         [object[]]$AvailabilityGroup,
         [object[]]$Database,
@@ -92,10 +91,10 @@ function Get-DbaAgDatabase {
                         continue
                     }
 
-                    Add-Member -Force -InputObject $agDb -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $agDb -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $agDb -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $agDb -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $agDb -MemberType NoteProperty -Name Replica -value $server.NetName
+                    Add-Member -Force -InputObject $agDb -MemberType NoteProperty -Name Replica -value $server.ComputerName
 
                     $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Parent as AvailabilityGroup', 'Replica', 'Name as DatabaseName', 'SynchronizationState', 'IsFailoverReady', 'IsJoined', 'IsSuspended'
                     Select-DefaultView -InputObject $agDb -Property $defaults

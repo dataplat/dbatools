@@ -47,7 +47,7 @@ function Stop-DbaRunspace {
 
     process {
         foreach ($item in $Name) {
-            # Ignore all output from Get-PSFRunspace - it'll be handled by the second loop
+            # Ignore all output from Get-DbaRunspace - it'll be handled by the second loop
             if ($item -eq "Sqlcollaborative.Dbatools.Runspace.runspacecontainer") { continue }
 
             if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($item.ToLower())) {

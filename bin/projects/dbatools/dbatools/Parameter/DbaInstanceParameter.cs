@@ -124,7 +124,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
         public string SqlComputerName
         {
-            get { return "[" + _ComputerName + "]"; }
+            get { return "[" + ComputerName + "]"; }
         }
 
         /// <summary>
@@ -263,11 +263,27 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 _NetworkProtocol = SqlConnectionProtocol.NP;
                 return;
             }
-
+            
             string tempString = Name.Trim();
             tempString = Regex.Replace(tempString, @"^\[(.*)\]$", "$1");
+
+            if (UtilityHost.IsLike(tempString, @".\*"))
+            {
+                _ComputerName = Name;
+                _NetworkProtocol = SqlConnectionProtocol.NP;
+
+                string instanceName = tempString.Substring(2);
+
+                if (!Utility.Validation.IsValidInstanceName(instanceName))
+                    throw new ArgumentException(String.Format("Failed to interpret instance name: '{0}' is not a legal name!", instanceName));
+
+                _InstanceName = instanceName;
+
+                return;
+            }
+
             if (UtilityHost.IsLike(tempString, "*.WORKGROUP"))
-                tempString = Regex.Replace(tempString, @"\.WORKGROUP$", "", RegexOptions.IgnoreCase);
+            tempString = Regex.Replace(tempString, @"\.WORKGROUP$", "", RegexOptions.IgnoreCase);
 
             // Named Pipe path notation interpretation
             if (Regex.IsMatch(tempString, @"^\\\\[^\\]+\\pipe\\([^\\]+\\){0,1}sql\\query$", RegexOptions.IgnoreCase))
@@ -614,9 +630,9 @@ namespace Sqlcollaborative.Dbatools.Parameter
         #endregion Constructors
 
         /// <summary>
-        /// Overrides the regular tostring to show something pleasant and useful
+        /// Overrides the regular <c>ToString()</c> to show something pleasant and useful
         /// </summary>
-        /// <returns>The full SMO name</returns>
+        /// <returns>The <see cref="FullSmoName"/></returns>
         public override string ToString()
         {
             return FullSmoName;

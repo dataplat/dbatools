@@ -32,7 +32,7 @@ function Test-DbaDbCompression {
         SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-        SqlCredential object to connect as. If not specified, current Windows login will be used.
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Database
         The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
@@ -63,7 +63,7 @@ function Test-DbaDbCompression {
     .EXAMPLE
         Test-DbaCompression -SqlInstance ServerA -Database DBName | Out-GridView
         Returns results of all potential compression options for a single database
-        with the recommendation of either Page or Row into and nicely formated GridView
+        with the recommendation of either Page or Row into and nicely formatted GridView
 
     .EXAMPLE
         Test-DbaCompression -SqlInstance ServerA
@@ -83,7 +83,7 @@ function Test-DbaDbCompression {
         }
 
         This produces a full analysis of all your servers listed and is pushed to a csv for you to
-        analyize.
+        analyze.
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
@@ -116,7 +116,7 @@ CREATE TABLE ##testdbacompression (
     ,[IndexName] SYSNAME NULL
     ,[Partition] INT
     ,[IndexID] INT
-    ,[IndexType] VARCHAR(12)
+    ,[IndexType] VARCHAR(25)
     ,[PercentScan] SMALLINT
     ,[PercentUpdate] SMALLINT
     ,[RowEstimatePercentOriginal] BIGINT
@@ -159,23 +159,58 @@ INSERT INTO ##testdbacompression (
     ,[PercentScan]
     ,[PercentUpdate]
     )
-SELECT s.NAME AS [Schema]
-    ,o.NAME AS [TableName]
+    SELECT s.NAME AS [Schema]
+    ,t.NAME AS [TableName]
     ,x.NAME AS [IndexName]
     ,p.partition_number AS [Partition]
     ,x.Index_ID AS [IndexID]
     ,x.type_desc AS [IndexType]
     ,NULL AS [PercentScan]
     ,NULL AS [PercentUpdate]
-FROM sys.objects o
-INNER JOIN sys.schemas s ON o.schema_id = s.schema_id
-INNER JOIN sys.indexes x ON x.object_id = o.object_id
+FROM sys.tables t
+INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+INNER JOIN sys.indexes x ON x.object_id = t.object_id
 INNER JOIN sys.partitions p ON x.object_id = p.object_id
     AND x.Index_ID = p.Index_ID
-WHERE objectproperty(o.object_id, 'IsUserTable') = 1
+WHERE objectproperty(t.object_id, 'IsUserTable') = 1
     AND p.data_compression_desc = 'NONE'
     AND p.rows > 0
 ORDER BY [TableName] ASC;
+
+DECLARE @sqlVersion int
+SELECT @sqlVersion = substring(CONVERT(VARCHAR,SERVERPROPERTY('ProductVersion')),0,CHARINDEX('.',(CONVERT(VARCHAR,SERVERPROPERTY('ProductVersion')))))
+IF @sqlVersion >= '12'
+    BEGIN
+        -- remove memory optimized tables
+        DELETE tdc
+        FROM ##testdbacompression tdc
+        INNER JOIN sys.tables t
+            ON SCHEMA_NAME(t.schema_id) = tdc.[Schema]
+            AND t.name = tdc.TableName
+        WHERE t.is_memory_optimized = 1
+    END
+IF @sqlVersion >= '13'
+    BEGIN
+        -- remove tables with encrypted columns
+        DELETE tdc
+        FROM ##testdbacompression tdc
+        INNER JOIN sys.tables t
+            ON SCHEMA_NAME(t.schema_id) = tdc.[Schema]
+            AND t.name = tdc.TableName
+        INNER JOIN sys.columns c
+            ON t.object_id = c.object_id
+        WHERE encryption_type IS NOT NULL
+    END
+IF @sqlVersion >= '14'
+    BEGIN
+        -- remove graph (node/edge) tables
+        DELETE tdc
+        FROM ##testdbacompression tdc
+        INNER JOIN sys.tables t
+            ON tdc.[Schema] = SCHEMA_NAME(t.schema_id)
+            AND tdc.TableName = t.name
+        WHERE (is_node = 1 OR is_edge = 1)
+    END
 
 DECLARE @schema SYSNAME
     ,@tbname SYSNAME
@@ -421,7 +456,7 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
                     #Execute query against individual database and add to output
                     foreach ($row in ($server.Query($sql, $db.Name))) {
                         [pscustomobject]@{
-                            ComputerName                  = $server.NetName
+                            ComputerName                  = $server.ComputerName
                             InstanceName                  = $server.ServiceName
                             SqlInstance                   = $server.DomainInstanceName
                             Database                      = $row.DBName

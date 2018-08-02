@@ -11,13 +11,7 @@ function Test-DbaSqlPath {
             The SQL Server you want to run the test on.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Path
             The Path to test. This can be a file or directory
@@ -60,7 +54,7 @@ function Test-DbaSqlPath {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Parameter(Mandatory = $true)]
-        [string[]]$Path,
+        [object]$Path,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -75,6 +69,8 @@ function Test-DbaSqlPath {
             }
             $counter = [pscustomobject] @{ Value = 0 }
             $groupSize = 100
+            $RawPath = $Path
+            $Path = [string[]]$Path
             $groups = $Path | Group-Object -Property { [math]::Floor($counter.Value++ / $groupSize) }
             foreach ($g in $groups) {
                 $PathsBatch = $g.Group
@@ -84,7 +80,7 @@ function Test-DbaSqlPath {
                 }
                 $sql = $query -join ';'
                 $batchresult = $server.ConnectionContext.ExecuteWithResults($sql)
-                if ($Path.Count -eq 1 -and $SqlInstance.Count -eq 1) {
+                if ($Path.Count -eq 1 -and $SqlInstance.Count -eq 1 -and (-not($RawPath -is [array]))) {
                     if ($batchresult.Tables.rows[0] -eq $true -or $batchresult.Tables.rows[1] -eq $true) {
                         return $true
                     }
@@ -99,9 +95,10 @@ function Test-DbaSqlPath {
                         [pscustomobject]@{
                             SqlInstance  = $server.Name
                             InstanceName = $server.ServiceName
-                            ComputerName = $server.NetName
-                            FilePath   = $PathsBatch[$i]
-                            FileExists = $DoesPass
+                            ComputerName = $server.ComputerName
+                            FilePath     = $PathsBatch[$i]
+                            FileExists   = $DoesPass
+                            IsContainer  = $r[1] -eq $true
                         }
                         $i += 1
                     }

@@ -16,13 +16,7 @@ function Test-DbaServerName {
             The SQL Server that you're connecting to.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -Credential parameter.
-
-            Windows Authentication will be used if Credential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Detailed
             Output all properties, will be deprecated in 1.0.0 release.
@@ -88,7 +82,7 @@ function Test-DbaServerName {
     process {
 
         foreach ($instance in $SqlInstance) {
-            Write-Verbose "Attempting to connect to $instance"
+            Write-Verbose "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
@@ -97,7 +91,7 @@ function Test-DbaServerName {
             }
 
             if ($server.IsClustered) {
-                Write-Message -Level Warning -Message  "$instance is a cluster. Renaming clusters is not supported by Microsoft."
+                Write-Message -Level Warning -Message "$instance is a cluster. Renaming clusters is not supported by Microsoft."
             }
 
             $sqlInstanceName = $server.Query("SELECT @@servername AS ServerName").ServerName
@@ -113,14 +107,14 @@ function Test-DbaServerName {
             }
 
             $serverInfo = [PSCustomObject]@{
-                ComputerName   = $server.NetName
-                InstanceName   = $server.ServiceName
-                SqlInstance    = $server.DomainInstanceName
-                IsEqual        = $serverInstanceName -eq $sqlInstanceName
+                ComputerName = $server.NetName
+                ServerName   = $sqlInstanceName
+                InstanceName = $server.ServiceName
+                SqlInstance  = $server.DomainInstanceName
                 RenameRequired = $serverInstanceName -ne $sqlInstanceName
-                Updatable      = "N/A"
-                Warnings       = $null
-                Blockers       = $null
+                Updatable    = "N/A"
+                Warnings     = $null
+                Blockers     = $null
             }
 
             $reasons = @()
@@ -130,10 +124,10 @@ function Test-DbaServerName {
             $rs = $null
             if ($SkipSsrs -eq $false -or $NoWarning -eq $false) {
                 try {
-                    $rs = Get-DbaSqlService -ComputerName $instance.ComputerName -Instance $server.ServiceName -Type SSRS -EnableException -WarningAction Stop
+                    $rs = Get-DbaSqlService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type SSRS -EnableException -WarningAction Stop
                 }
                 catch {
-                    Write-Message -Level Warning -Message  "Unable to pull information on $ssrsService." -ErrorRecord $_ -Target $instance
+                    Write-Message -Level Warning -Message "Unable to pull information on $ssrsService." -ErrorRecord $_ -Target $instance
                 }
             }
 
@@ -153,7 +147,7 @@ function Test-DbaServerName {
             # check for mirroring
             $mirroredDb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
 
-            Write-Debug "Found the following mirrored dbs: $($mirroredDb.Name)"
+            Write-Message -Level Debug -Message "Found the following mirrored dbs: $($mirroredDb.Name)"
 
             if ($mirroredDb.Length -gt 0) {
                 $dbs = $mirroredDb.Name -join ", "
@@ -189,7 +183,7 @@ function Test-DbaServerName {
                 $serverInfo.Blockers = "N/A"
             }
 
-            $serverInfo | Select-DefaultView -ExcludeProperty Warnings, Blockers
+            $serverInfo | Select-DefaultView -ExcludeProperty InstanceName, SqlInstance
         }
     }
 }

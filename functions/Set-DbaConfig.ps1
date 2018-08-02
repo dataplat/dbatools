@@ -32,7 +32,7 @@ function Set-DbaConfig {
         .PARAMETER Validation
             The name of the validation script used for input validation.
             These can be used to validate make sure that input is of the proper data type.
-            New validation scripts can be registered using Register-PSFConfigValidation
+            New validation scripts can be registered using Register-DbaConfigValidation
 
         .PARAMETER Handler
             A scriptblock that is executed when a value is being set.
@@ -71,6 +71,10 @@ function Set-DbaConfig {
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+        .NOTES
+            Tags: Config, Module
+            Author: Friedrich Weinmann
+
         .EXAMPLE
             PS C:\> Set-DbaConfig -Name 'User' -Value "Friedrich" -Description "The user under which the show must go on."
 
@@ -101,10 +105,6 @@ function Set-DbaConfig {
 
             Creates a configuration entry named "Firewall" in the "Network" module with the value '10.0.0.2'
             This is only set, if the setting does not exist yet. If it does, this command will apply no changes.
-
-        .NOTES
-            Author: Friedrich Weinmann
-            Tags: Config
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(DefaultParameterSetName = "FullName")]

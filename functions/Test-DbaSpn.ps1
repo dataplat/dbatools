@@ -242,7 +242,7 @@ function Test-DbaSpn {
                 $spns
             }
 
-            Write-Message -Message "Attempting to connect to SQL WMI on remote computer " -Level Verbose
+            Write-Message -Message "Connecting to SQL WMI on remote computer " -Level Verbose
 
             try {
                 $spns = Invoke-ManagedComputerCommand -ComputerName $hostEntry -ScriptBlock $Scriptblock -ArgumentList $resolved.FullComputerName, $hostEntry, $computer.InstanceName -Credential $Credential -ErrorAction Stop

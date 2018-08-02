@@ -82,7 +82,7 @@ function Export-DbaScript {
             $options = New-DbaScriptingOption
             $options.ScriptDrops = $false
             $options.WithDependencies = $true
-            Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -ScriptingOptionsObject $options
+            Get-DbaTable -SqlInstance sql2017 -Database PerformanceStore | Export-DbaScript -ScriptingOptionsObject $options
 
             Exports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to $true.
     #>
@@ -145,67 +145,76 @@ function Export-DbaScript {
                 Stop-Function -Message "Failed to find valid SMO server object in input: $object." -Category InvalidData -Target $object -Continue
             }
 
-            $server = $parent
-            $serverName = $server.Name.Replace('\', '$')
+            try {
+                $server = $parent
+                $serverName = $server.Name.Replace('\', '$')
 
-            if ($ScriptingOptionsObject) {
-                $scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter $server
-                $scripter.Options = $ScriptingOptionsObject
-            }
-
-            if (!$passthru) {
-                if ($path) {
-                    $actualPath = $path
+                if ($ScriptingOptionsObject) {
+                    $scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter $server
+                    $scripter.Options = $ScriptingOptionsObject
                 }
-                else {
-                    $actualPath = "$serverName-$shortype-Export-$timeNow.sql"
-                }
-            }
 
-            $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)`n`tSee https://dbatools.io/$commandName for more information`n*/"
-
-            if ($passthru) {
-                $prefix | Out-String
-            }
-            else {
-                if ($prefixArray -notcontains $actualPath) {
-
-                    if ((Test-Path -Path $actualPath) -and $NoClobber) {
-                        Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $actualPath -Continue
+                if (!$passthru) {
+                    if ($path) {
+                        $actualPath = $path
                     }
-                    #Only at the first output we use the passed variables Append & NoClobber. For this execution the next ones need to buse -Append
-                    $prefix | Out-File -FilePath $actualPath -Encoding $encoding -Append:$Append -NoClobber:$NoClobber
-                    $prefixArray += $actualPath
+                    else {
+                        $actualPath = "$serverName-$shortype-Export-$timeNow.sql"
+                    }
                 }
-            }
 
-            if ($Pscmdlet.ShouldProcess($env:computername, "Exporting $object from $server to $actualPath")) {
-                Write-Message -Level Verbose -Message "Exporting $object"
+                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)`n`tSee https://dbatools.io/$commandName for more information`n*/"
 
                 if ($passthru) {
-                    if ($ScriptingOptionsObject) {
-                        foreach ($script in $scripter.EnumScript($object)) {
-                            $script | Out-String
-                        }
-                    }
-                    else {
-                        $object.Script() | Out-String
-                    }
+                    $prefix | Out-String
                 }
                 else {
-                    if ($ScriptingOptionsObject) {
-                        foreach ($script in $scripter.EnumScript($object)) {
-                            $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
+                    if ($prefixArray -notcontains $actualPath) {
+
+                        if ((Test-Path -Path $actualPath) -and $NoClobber) {
+                            Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Target $actualPath -Continue
+                        }
+                        #Only at the first output we use the passed variables Append & NoClobber. For this execution the next ones need to buse -Append
+                        $prefix | Out-File -FilePath $actualPath -Encoding $encoding -Append:$Append -NoClobber:$NoClobber
+                        $prefixArray += $actualPath
+                    }
+                }
+
+                if ($Pscmdlet.ShouldProcess($env:computername, "Exporting $object from $server to $actualPath")) {
+                    Write-Message -Level Verbose -Message "Exporting $object"
+
+                    if ($passthru) {
+                        if ($ScriptingOptionsObject) {
+                            foreach ($script in $scripter.EnumScript($object)) {
+                                $script | Out-String
+                            }
+                        }
+                        else {
+                            $object.Script() | Out-String
                         }
                     }
                     else {
-                        $object.Script() | Out-File -FilePath $actualPath -Encoding $encoding -Append
+                        if ($ScriptingOptionsObject) {
+                            foreach ($script in $scripter.EnumScript($object)) {
+                                $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
+                            }
+                        }
+                        else {
+                            $object.Script() | Out-File -FilePath $actualPath -Encoding $encoding -Append
+                        }
                     }
                 }
-            }
 
-            if (!$passthru) {
-                Write-Message -Level Output -Message "Exported $object on $server to $actualPath"
+                if (!$passthru) {
+                    Write-Message -Level Output -Message "Exported $object on $($server.Name) to $actualPath"
+                }
+            }
+            catch {
+                $message = $_.Exception.InnerException.InnerException.InnerException.Message
+                if (-not $message) {
+                    $message = $_.Exception
+                }
+                Stop-Function -Message "Failure on $($server.Name) | $message" -Target $server
             }
         }
     }

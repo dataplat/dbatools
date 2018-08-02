@@ -114,8 +114,9 @@ function Export-DbaDiagnosticQuery {
             $result = $row.Result
             $name = $row.Name
             $SqlInstance = $row.SqlInstance.Replace("\", "$")
-            $dbname = $row.DatabaseName
+            $dbname = $row.Database
             $number = $row.Number
+            $note = $row.Note
 
             if ($null -eq $result) {
                 Stop-Function -Message "Result was empty for $name" -Target $result -Continue

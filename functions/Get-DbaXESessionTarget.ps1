@@ -10,13 +10,7 @@ function Get-DbaXESessionTarget {
             Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Session
             Only return a specific session. Options for this parameter are auto-populated from the server.
@@ -33,7 +27,7 @@ function Get-DbaXESessionTarget {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: ExtendedEvent, XE, Xevent
+            Tags: ExtendedEvent, XE, XEvent
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -69,7 +63,7 @@ function Get-DbaXESessionTarget {
         [switch][Alias('Silent')]
         $EnableException
     )
-    
+
     begin {
         function Get-Target {
             [CmdletBinding()]
@@ -79,24 +73,24 @@ function Get-DbaXESessionTarget {
                 $Server,
                 $Target
             )
-            
+
             foreach ($xsession in $Sessions) {
-                
+
                 if ($null -eq $server) {
                     $server = $xsession.Parent
                 }
-                
+
                 if ($Session -and $xsession.Name -notin $Session) { continue }
                 $status = switch ($xsession.IsRunning) { $true { "Running" } $false { "Stopped" } }
                 $sessionname = $xsession.Name
-                
+
                 foreach ($xtarget in $xsession.Targets) {
                     if ($Target -and $xtarget.Name -notin $Target) { continue }
-                    
+
                     $files = $xtarget.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
-                    
+
                     $filecollection = $remotefile = @()
-                    
+
                     if ($files) {
                         foreach ($file in $files) {
                             if ($file -notmatch ':\\' -and $file -notmatch '\\\\') {
@@ -104,27 +98,27 @@ function Get-DbaXESessionTarget {
                                 $file = "$directory\$file"
                             }
                             $filecollection += $file
-                            $remotefile += Join-AdminUnc -servername $server.netName -filepath $file
+                            $remotefile += Join-AdminUnc -servername $server.ComputerName -filepath $file
                         }
                     }
-                    
-                    Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+
+                    Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name Session -Value $sessionname
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name SessionStatus -Value $status
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name TargetFile -Value $filecollection
                     Add-Member -Force -InputObject $xtarget -MemberType NoteProperty -Name RemoteTargetFile -Value $remotefile
-                    
+
                     Select-DefaultView -InputObject $xtarget -Property ComputerName, InstanceName, SqlInstance, Session, SessionStatus, Name, ID, 'TargetFields as Field', PackageName, 'TargetFile as File', Description, ScriptName
                 }
             }
         }
     }
-    
+
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential -Session $Session
         }

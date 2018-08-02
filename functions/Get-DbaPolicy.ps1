@@ -10,7 +10,7 @@ function Get-DbaPolicy {
     SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
-    SqlCredential object to connect as. If not specified, current Windows login will be used.
+    Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Policy
     Filters results to only show specific policy
@@ -58,8 +58,7 @@ function Get-DbaPolicy {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [string[]]$Policy,
         [string[]]$Category,
         [switch]$IncludeSystemObject,
@@ -69,7 +68,7 @@ function Get-DbaPolicy {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
@@ -103,7 +102,7 @@ function Get-DbaPolicy {
 
             foreach ($currentpolicy in $allpolicies) {
                 Write-Message -Level Verbose -Message "Processing $currentpolicy"
-                Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
 

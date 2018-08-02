@@ -10,13 +10,7 @@ function Export-DbaLogin {
             The SQL Server instance name. SQL Server 2000 and above supported.
 
         .PARAMETER SqlCredential
-            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-            To connect as a different Windows user, run PowerShell as that user.
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Login
             The login(s) to process. Options for this list are auto-populated from the server. If unspecified, all logins will be processed.
@@ -227,7 +221,7 @@ function Export-DbaLogin {
 
             if ($Pscmdlet.ShouldProcess("Outfile", "Adding T-SQL for login $userName")) {
                 if ($FilePath) {
-                    Write-Message -Level Output -Message "Exporting $userName."
+                    Write-Message -Level Verbose -Message "Exporting $userName."
                 }
 
                 $outsql += "`r`nUSE master`n"
@@ -440,6 +434,7 @@ function Export-DbaLogin {
 
         if ($FilePath) {
             $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+            Get-ChildItem $FilePath
         }
         else {
             $sql
