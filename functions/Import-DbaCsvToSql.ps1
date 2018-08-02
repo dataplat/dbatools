@@ -1308,9 +1308,9 @@ function Import-DbaCsvToSql {
         try {
             if ($oleconn.connection) {$null = $oleconn.close(); $null = $oleconn.dispose()}
             if ($olecmd.connection) {$null = $olecmd.close()}
-            
+
             $null = $sqlconn.close(); $null = $sqlconn.Dispose();
-            $null = $bulkCopy.close(); $bulkcopy.dispose(); 
+            $null = $bulkCopy.close(); $bulkcopy.dispose();
             $null =  $reader.close(); $null = $reader.dispose()
         }
         catch {
