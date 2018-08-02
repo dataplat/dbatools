@@ -178,7 +178,7 @@ function Invoke-DbaDatabaseCorruption {
         $null = Set-DbaDatabaseState -SqlServer $Server -Database $Database -MultiUser -Force
 
         [pscustomobject]@{
-            ComputerName = $Server.NetName
+            ComputerName = $Server.ComputerName
             InstanceName = $Server.ServiceName
             SqlInstance  = $Server.DomainInstanceName
             Database     = $db.Name

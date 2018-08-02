@@ -126,7 +126,7 @@ Returns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\sql1
                 }
 
                 foreach ($dbrole in $dbroles) {
-                    Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name Database -value $db.Name

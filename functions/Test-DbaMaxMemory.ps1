@@ -110,7 +110,7 @@ function Test-DbaMaxMemory {
             $recommendedMax = $recommendedMax / $instanceCount
 
             [pscustomobject]@{
-                ComputerName  = $server.NetName
+                ComputerName  = $server.ComputerName
                 InstanceName  = $server.ServiceName
                 SqlInstance   = $server.DomainInstanceName
                 InstanceCount = $instanceCount

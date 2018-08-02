@@ -246,7 +246,7 @@ function Set-DbaTempDbConfiguration {
                     Write-Message -Level Verbose -Message "tempdb successfully reconfigured."
 
                     [PSCustomObject]@{
-                        ComputerName         = $server.NetName
+                        ComputerName         = $server.ComputerName
                         InstanceName         = $server.ServiceName
                         SqlInstance          = $server.DomainInstanceName
                         DataFileCount        = $DataFileCount

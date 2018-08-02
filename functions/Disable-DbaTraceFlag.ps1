@@ -62,7 +62,7 @@ function Disable-DbaTraceFlag {
 
             foreach ($tf in $TraceFlag) {
                 $TraceFlagInfo = [pscustomobject]@{
-                    SourceServer = $server.NetName
+                    SourceServer = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     TraceFlag    = $tf

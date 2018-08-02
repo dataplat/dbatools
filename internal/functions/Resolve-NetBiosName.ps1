@@ -10,14 +10,6 @@ Internal function. Takes a best guess at the NetBIOS name of a server.
         [object]$SqlInstance,
         [PSCredential]$SqlCredential
     )
-
     $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    $servernetbios = $server.ComputerNamePhysicalNetBIOS
-
-    if ($null -eq $servernetbios) {
-        $servernetbios = ($server.name).Split("\")[0]
-        $servernetbios = $servernetbios.Split(",")[0]
-    }
-
-    return $($servernetbios.ToLower())
+    $server.ComputerName
 }

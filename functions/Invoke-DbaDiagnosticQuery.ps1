@@ -321,7 +321,7 @@ function Invoke-DbaDiagnosticQuery {
                             Write-Message -Level Verbose -Message "Processed $($scriptpart.QueryName) on $instance"
                             if (!$result) {
                                 [pscustomobject]@{
-                                    ComputerName     = $server.NetName
+                                    ComputerName     = $server.ComputerName
                                     InstanceName     = $server.ServiceName
                                     SqlInstance      = $server.DomainInstanceName
                                     Number           = $scriptpart.QueryNr
@@ -340,7 +340,7 @@ function Invoke-DbaDiagnosticQuery {
                         }
                         if ($result) {
                             [pscustomobject]@{
-                                ComputerName     = $server.NetName
+                                ComputerName     = $server.ComputerName
                                 InstanceName     = $server.ServiceName
                                 SqlInstance      = $server.DomainInstanceName
                                 Number           = $scriptpart.QueryNr
@@ -360,7 +360,7 @@ function Invoke-DbaDiagnosticQuery {
                         # if running WhatIf, then return the queries that would be run as an object, not just whatif output
 
                         [pscustomobject]@{
-                            ComputerName     = $server.NetName
+                            ComputerName     = $server.ComputerName
                             InstanceName     = $server.ServiceName
                             SqlInstance      = $server.DomainInstanceName
                             Number           = $scriptpart.QueryNr
@@ -399,7 +399,7 @@ function Invoke-DbaDiagnosticQuery {
                                 $result = $server.Query($scriptpart.Text, $currentDb)
                                 if (!$result) {
                                     [pscustomobject]@{
-                                        ComputerName     = $server.NetName
+                                        ComputerName     = $server.ComputerName
                                         InstanceName     = $server.ServiceName
                                         SqlInstance      = $server.DomainInstanceName
                                         Number           = $scriptpart.QueryNr
@@ -419,7 +419,7 @@ function Invoke-DbaDiagnosticQuery {
 
                             if ($result){
                                 [pscustomobject]@{
-                                    ComputerName     = $server.NetName
+                                    ComputerName     = $server.ComputerName
                                     InstanceName     = $server.ServiceName
                                     SqlInstance      = $server.DomainInstanceName
                                     Number           = $scriptpart.QueryNr
@@ -438,7 +438,7 @@ function Invoke-DbaDiagnosticQuery {
                             # if running WhatIf, then return the queries that would be run as an object, not just whatif output
 
                             [pscustomobject]@{
-                                ComputerName     = $server.NetName
+                                ComputerName     = $server.ComputerName
                                 InstanceName     = $server.ServiceName
                                 SqlInstance      = $server.DomainInstanceName
                                 Number           = $scriptpart.QueryNr

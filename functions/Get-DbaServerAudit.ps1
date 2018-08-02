@@ -81,9 +81,9 @@ function Get-DbaServerAudit {
                 $filename = $currentaudit.FileName
                 $fullname = "$directory\$filename"
                 $remote = $fullname.Replace(":", "$")
-                $remote = "\\$($currentaudit.Parent.NetName)\$remote"
+                $remote = "\\$($currentaudit.Parent.ComputerName)\$remote"
 
-                Add-Member -Force -InputObject $currentaudit -MemberType NoteProperty -Name ComputerName -value $currentaudit.Parent.NetName
+                Add-Member -Force -InputObject $currentaudit -MemberType NoteProperty -Name ComputerName -value $currentaudit.Parent.ComputerName
                 Add-Member -Force -InputObject $currentaudit -MemberType NoteProperty -Name InstanceName -value $currentaudit.Parent.ServiceName
                 Add-Member -Force -InputObject $currentaudit -MemberType NoteProperty -Name SqlInstance -value $currentaudit.Parent.DomainInstanceName
                 Add-Member -Force -InputObject $currentaudit -MemberType NoteProperty -Name FullName -value $fullname
