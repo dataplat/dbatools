@@ -156,7 +156,7 @@ function Copy-DbaAgentJob {
                 continue
             }
 
-            $dbNames = $serverJob.JobSteps.DatabaseName | Where-Object { $_.Length -gt 0 }
+            $dbNames = ($serverJob.JobSteps | where-object {$_.SubSystem -ne 'ActiveScripting'}).DatabaseName | Where-Object { $_.Length -gt 0 }
             $missingDb = $dbNames | Where-Object { $destServer.Databases.Name -notcontains $_ }
 
             if ($missingDb.Count -gt 0 -and $dbNames.Count -gt 0) {
