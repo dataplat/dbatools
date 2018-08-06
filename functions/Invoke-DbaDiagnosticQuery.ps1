@@ -250,6 +250,10 @@ function Invoke-DbaDiagnosticQuery {
                 }
             }
 
+            if ($version -eq "2016" -and $server.VersionMinor -gt 5026 ) {
+                $version = "2016SP2"
+            }
+
             if (!$instanceOnly) {
                 if (-not $Database) {
                     $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -ExcludeDatabase $ExcludeDatabase).Name
