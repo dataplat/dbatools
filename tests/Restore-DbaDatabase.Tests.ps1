@@ -8,7 +8,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     $LogFolder = 'C:\temp\logfiles'
     New-Item -ItemType Directory $DataFolder -ErrorAction SilentlyContinue
     New-Item -ItemType Directory $LogFolder -ErrorAction SilentlyContinue
-    
+  
     Context "Properly restores a database on the local drive using Path" {
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak
@@ -361,7 +361,115 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
         
     }
-    
+
+    Context "RestoreTime point in time and continue with rename" {
+        AfterAll {
+            $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        }
+        $Should_Run = (Connect-DbaInstance -SqlInstance $script:instance1).Version.ToString() -like '10.50*'
+        if (-not ($Should_Run)) {
+            It "The test can run" {
+                Set-TestInconclusive -Message "a 2008R2 is strictly needed"
+            }
+            return
+        }
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Databasename contest -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44") -StandbyDirectory c:\temp
+        $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
+        It "Should have restored 4 files" {
+            $results.count | Should be 4
+        }
+        It "Should have restored from 2017-06-01 12:59:12" {
+            $sqlResults.mindt | Should be (get-date "2017-06-01 12:59:12")
+        }
+        It "Should have restored to 2017-06-01 13:22:43" {
+            $sqlResults.maxdt | Should be (get-date "2017-06-01 13:22:43")
+        }
+        $results2 = Restore-DbaDatabase -SqlInstance $script:instance1 -Databasename contest -path $script:appveyorlabrepo\RestoreTimeClean -Continue
+        $sqlResults2 = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from contest.dbo.steps"
+        It "Should have restored 2 files" {
+            $results2.count | Should be 2
+        }
+        It "Should have restored from 2017-06-01 12:59:12" {
+            $sqlResults2.mindt | Should be (get-date "2017-06-01 12:59:12")
+        }
+        It "Should have restored to 2017-06-01 13:28:43" {
+            $sqlResults2.maxdt | Should be (get-date "2017-06-01 13:28:43")
+        }
+        
+    }
+
+    Context "Continue Restore with Differentials" {
+        AfterAll {
+            $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        }
+        $Results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\sql2008-backups\ft1\FULL\ -NoRecovery
+        It "Should Have restored the database cleanly" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | Measure-Object).count -gt 0) | Should be $True
+        }
+        It "Should have left the db in a norecovery state" {
+            (Get-DbaDatabase -SqlInstance $script:instance1 -Database ft1).Status | Should Be "Restoring"
+        }
+        $Results2  = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\sql2008-backups\ft1\ -Continue
+        It "Should Have restored the database cleanly" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | Measure-Object).count -gt 0) | Should be $True
+        }
+        It "Should have recovered the database" {
+            (Get-DbaDatabase -SqlInstance $script:instance1 -Database ft1).Status | Should Be "Normal"
+        }
+    }
+
+    Context "Continue Restore with Differentials and rename " {
+        AfterAll {
+            $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        }
+        $Results = Restore-DbaDatabase -SqlInstance $script:instance1 -DatabaseName contest -Path $script:appveyorlabrepo\sql2008-backups\ft1\FULL\ -NoRecovery
+        It "Should Have restored the database cleanly" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | Measure-Object).count -gt 0) | Should be $True
+        }
+        It "Should have left the db in a norecovery state" {
+            (Get-DbaDatabase -SqlInstance $script:instance1 -Database contest).Status | Should Be "Restoring"
+        }
+        $Results2  = Restore-DbaDatabase -SqlInstance $script:instance1 -DatabaseName contest -Path $script:appveyorlabrepo\sql2008-backups\ft1\ -Continue
+        It "Should Have restored the database cleanly" {
+            ($results2.RestoreComplete -contains $false) | Should be $False
+            (($results2 | Measure-Object).count -gt 0) | Should be $True
+        }
+        It "Should have recovered the database" {
+            (Get-DbaDatabase -SqlInstance $script:instance1 -Database contest).Status | Should Be "Normal"
+        }
+    }
+
+    Context "Continue Restore with multiple databases" {
+        AfterAll {
+           $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        }
+        $files = @()
+        $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\FULL\
+        $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\dbareports\FULL
+        $Results = $files | Restore-DbaDatabase -SqlInstance $script:instance1  -NoRecovery
+        It "Should Have restored the database cleanly" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | Measure-Object).count -gt 0) | Should be $True
+        }
+        It "Should have left the db in a norecovery state" {
+            (Get-DbaDatabase -SqlInstance $script:instance1 | Where-Object {$_.Status -eq 'Recovering'}).count | Should Be 0
+        }
+        $files = @()
+        $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\db1\ -Recurse
+        $files += Get-ChildItem $script:appveyorlabrepo\sql2008-backups\dbareports\ -Recurse
+        $Results2  = $files | ?{$_.PsIsContainer -eq $false} | Restore-DbaDatabase -SqlInstance $script:instance1 -Continue
+        It "Should Have restored the database cleanly" {
+            ($results2.RestoreComplete -contains $false) | Should be $False
+            (($results2 | Measure-Object).count -gt 0) | Should be $True
+        }
+        It "Should have recovered the database" {
+            (Get-DbaDatabase -SqlInstance $script:instance1 | Where-Object {$_.Status -eq 'Recovering'}).count | Should Be 0
+        }
+    }
+ 
     Context "Backup DB For next test" {
         $null = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44")
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database RestoreTimeClean -BackupDirectory C:\temp
