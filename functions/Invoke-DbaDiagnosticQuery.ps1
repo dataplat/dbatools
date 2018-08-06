@@ -254,6 +254,10 @@ function Invoke-DbaDiagnosticQuery {
                 $version = "2016SP2"
             }
 
+            if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                $version = "AzureSQLDatabase"
+            }
+
             if (!$instanceOnly) {
                 if (-not $Database) {
                     $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -ExcludeDatabase $ExcludeDatabase).Name
