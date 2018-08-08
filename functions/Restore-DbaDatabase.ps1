@@ -458,9 +458,9 @@ function Restore-DbaDatabase {
                 return
             }
             if ($Continue) {
+                Write-Message -Message "Called with continue, so assume we have an existing db in norecovery"
                 $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $RestoreInstance
-                #$WithReplace = $true
-                #$ContinuePoints
+                $LastRestoreType = Get-DbaRestoreHistory -SqlInstance $RestoreInstance -Last
             }
             if (!($PSBoundParameters.ContainsKey("DataBasename"))) {
                 $PipeDatabaseName = $true
@@ -612,8 +612,17 @@ function Restore-DbaDatabase {
             if ($StopAfterGetBackupInformation) {
                 return
             }
+
+            $null = $BackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping
             
-            $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints
+            if (Test-Bound -ParameterName FormatBackupInformation) {
+                Set-Variable -Name $FormatBackupInformation -Value $BackupHistory -Scope Global
+            }
+            if ($StopAfterFormatBackupInformation) {
+                return
+            }
+
+            $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
             
             if (Test-Bound -ParameterName SelectBackupInformation) {
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose
@@ -621,15 +630,6 @@ function Restore-DbaDatabase {
                 
             }
             if ($StopAfterSelectBackupInformation) {
-                return
-            }
-            
-            $null = $FilteredBackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping
-            
-            if (Test-Bound -ParameterName FormatBackupInformation) {
-                Set-Variable -Name $FormatBackupInformation -Value $FilteredBackupHistory -Scope Global
-            }
-            if ($StopAfterFormatBackupInformation) {
                 return
             }
             
