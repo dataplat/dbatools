@@ -36,14 +36,15 @@ if (-not (Test-Path $msbuild)) {
 }
 
 if ($env:APPVEYOR -eq 'True') {
-    $MsbuildOptions += '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" '
-    $MsbuildOptions += '/logger:"BinaryLogger,{0};{1}" ' -f (Join-Path $PSScriptRoot 'StructuredLogger.dll'), (Resolve-Path '..\msbuild.bin.log').Path
+    $MsbuildOptions = $MsbuildOptions + '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" '
     $msbuildConfiguration = 'Debug'
 
     if (-not (Test-Path "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll")) {
         throw "msbuild logger not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
     }
 }
+
+$MsbuildOptions = $MsbuildOptions + '/logger:"BinaryLogger,{0};{1}" ' -f (Join-Path $PSScriptRoot 'StructuredLogger.dll'), (Resolve-Path '..\msbuild.bin.log').Path  
 
 if ( -not (Test-Path $ProjectPath)) {
     throw new-object 'System.IO.FileNotFoundException' 'Could not file project or solution', $ProjectPath
