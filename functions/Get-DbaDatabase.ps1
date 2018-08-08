@@ -289,7 +289,7 @@ function Get-DbaDatabase {
                 $_.IsAccessible -in $AccessibleFilter -and
                 $_.IsSystemObject -in $DBType -and
                 ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and
-                $_.RecoveryModel -in $RecoveryModel -and
+                ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
                 $_.EncryptionEnabled -in $Encrypt
             }
             if ($NoFullBackup -or $NoFullBackupSince) {
