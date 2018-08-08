@@ -44,7 +44,7 @@ if ($env:APPVEYOR -eq 'True') {
     }
 }
 
-$MsbuildOptions = $MsbuildOptions + '/logger:"BinaryLogger,{0};{1}" ' -f (Join-Path $PSScriptRoot 'StructuredLogger.dll'), (Resolve-Path '..\msbuild.bin.log').Path  
+$MsbuildOptions = $MsbuildOptions + '/logger:BinaryLogger,"{0}";"{1}" ' -f (Join-Path $PSScriptRoot 'StructuredLogger.dll'), (Resolve-Path '..\msbuild.bin.log').Path  
 
 if ( -not (Test-Path $ProjectPath)) {
     throw new-object 'System.IO.FileNotFoundException' 'Could not file project or solution', $ProjectPath

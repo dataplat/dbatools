@@ -14,9 +14,9 @@ dbatools.psprojs
 # VIM backup files
 *~
 
-# msbuild log file
+# msbuild log file and structured binary log file
 msbuild.log
-msbuild.bin.log
+msbuild.binlog
 
 # Local constant file
 tests/constants.local.ps1
