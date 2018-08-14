@@ -4,9 +4,9 @@
             Converts literal string status to a html color
 
         .DESCRIPTION
-            This function acceptes Agnet Job status as literal string input and covnerts to html color. 
-            This is internal function, part of ConvertTo-DbaTimeline 
-        
+            This function acceptes Agnet Job status as literal string input and covnerts to html color.
+            This is internal function, part of ConvertTo-DbaTimeline
+
         .PARAMETER Status
 
             The Status input parameter must be a valid SQL Agent Job status as literal string as defined in MS Books:
@@ -20,14 +20,14 @@
         .NOTES
             Tags: Internal
             Author: Marcin Gminski (@marcingminski)
-            
+
             Dependency: None
             Requirements: None
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 -           License: MIT https://opensource.org/licenses/MIT
-        
+
         .LINK
             --internal function, not exposed to end user
 
@@ -41,7 +41,7 @@
     param (
         [Parameter(Mandatory = $true)]
         [string]
-        $Status        
+        $Status
     )
    $out = switch($Status){
         "Failed" {"#FF3D3D"}

@@ -9,7 +9,7 @@ function  ConvertTo-DbaTimeline {
                 Get-DbaBackupHistory
                 (more to come...)
             And generates Bootstrap based, HTML file with Google Chart Timeline
-      
+
         .PARAMETER InputObject
 
             Pipe input, must an output from the above functions.
@@ -17,14 +17,14 @@ function  ConvertTo-DbaTimeline {
         .NOTES
             Tags: Internal
             Author: Marcin Gminski (@marcingminski)
-            
+
             Dependency: ConvertTo-JsDate, Convert-DbaTimelineStatusColor
             Requirements: None
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 -           License: MIT https://opensource.org/licenses/MIT
-        
+
         .LINK
             https://dbatools.io/ConvertTo-DbaTimeline
 
@@ -35,10 +35,10 @@ function  ConvertTo-DbaTimeline {
     #>
 
     [CmdletBinding()]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[object[]]$InputObject
-	)
+    Param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [object[]]$InputObject
+    )
     begin {
         #need to capture calling process to know what we are being asked for i.e. JobHistory, BackupHistory etc?
         #I dont know of any way apart from Get-PSCallStack but that return the whole stack but in order to the last
@@ -59,10 +59,10 @@ function  ConvertTo-DbaTimeline {
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <!-- a bit of custom styling to work with bootstrap grid -->
 <style>
-    
+
     html,body{height:100%;background-color:#c2c2c2;}
     .viewport {height:100%}
-    
+
     .chart{
         background-color:#fff;
         text-align:left;
@@ -103,7 +103,7 @@ function  ConvertTo-DbaTimeline {
         dataTable.addColumn({type: 'string', role: 'style' });
         dataTable.addColumn({type: 'date', id: 'date_start'});
         dataTable.addColumn({type: 'date', id: 'date_end'});
-  
+
         dataTable.addRows([
 "@
     }
@@ -115,12 +115,12 @@ function  ConvertTo-DbaTimeline {
         if ($caller.Position -Like "*Get-DbaAgentJobHistory*") {
             $CallerName = "Get-DbaAgentJobHistory"
             $data = $input | Select @{ Name="SqlInstance"; Expression = {$_.SqlInstance}}, @{ Name="InstanceName"; Expression = {$_.InstanceName}}, @{ Name="vLabel"; Expression = {$_.Job} }, @{ Name="hLabel"; Expression = {$_.Status} }, @{ Name="Style"; Expression = {$(Convert-DbaTimelineStatusColor($_.Status))} }, @{ Name="StartDate"; Expression = {$(ConvertTo-JsDate($_.StartDate))} }, @{ Name="EndDate"; Expression = {$(ConvertTo-JsDate($_.EndDate))} }
-        
+
         }
-                
+
         if ($caller.Position -Like "*Get-DbaBackupHistory*") {
             $CallerName = "Get-DbaBackupHistory"
-            $data = $input | Select @{ Name="SqlInstance"; Expression = {$_.SqlInstance}}, @{ Name="InstanceName"; Expression = {$_.InstanceName}}, @{ Name="vLabel"; Expression = {$_.Database} }, @{ Name="hLabel"; Expression = {$_.Type} }, @{ Name="StartDate"; Expression = {$(ConvertTo-JsDate($_.Start))} }, @{ Name="EndDate"; Expression = {$(ConvertTo-JsDate($_.End))} }        
+            $data = $input | Select @{ Name="SqlInstance"; Expression = {$_.SqlInstance}}, @{ Name="InstanceName"; Expression = {$_.InstanceName}}, @{ Name="vLabel"; Expression = {$_.Database} }, @{ Name="hLabel"; Expression = {$_.Type} }, @{ Name="StartDate"; Expression = {$(ConvertTo-JsDate($_.Start))} }, @{ Name="EndDate"; Expression = {$(ConvertTo-JsDate($_.End))} }
         }
                 "$( $data | %{"['$($_.vLabel)','$($_.hLabel)','$($_.Style)',$($_.StartDate), $($_.EndDate)],"})"
         }
@@ -149,9 +149,9 @@ function  ConvertTo-DbaTimeline {
           dataTable.setValue(i, 2, tooltip);
         }
         var options = {
-            timeline: { 
+            timeline: {
                 rowLabelStyle: { },
-                barLabelStyle: { }, 
+                barLabelStyle: { },
             },
             hAxis: {
                 format: 'dd/MM HH:mm',
@@ -181,6 +181,6 @@ function  ConvertTo-DbaTimeline {
 </div>
 </body>
 </html>
-"@        
+"@
     }
 }
