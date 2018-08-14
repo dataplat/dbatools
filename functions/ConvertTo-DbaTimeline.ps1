@@ -1,37 +1,44 @@
-#------------------------------------------------------------------------------------------------------------------------------------------------
-# helper function to generate color based on the job statu
-# this may need renaming to Get-DbaTimelineStatusColor or similar
-#------------------------------------------------------------------------------------------------------------------------------------------------
-Function Get-StatusColor ([string]$Status) {
-    $out = switch($Status){
-        "Failed" {"#FF3D3D"}
-        "Succeeded" {"#36B300"}
-        "Retry" {"#FFFF00"}
-        "Canceled" {"#C2C2C2"}
-        "In Progress" {"#00CCFF"}
-        default {"#FF00CC"}
-    }
-    return $out
-}
+function  ConvertTo-DbaTimeline {
+    <#
+        .SYNOPSIS
+            Converts InputObject to a html timeline using Google Chart
 
-#------------------------------------------------------------------------------------------------------------------------------------------------
-# helper function to convert human time to java script time format: new Date( Year, Month, Day, Hour, Minute, Second)
-# Java script time is zero base which means January = 0 and December = 11
-#------------------------------------------------------------------------------------------------------------------------------------------------
-Function ConvertTo-JsDate ([datetime]$InputDate) {
-    $out = "new Date($(Get-Date $InputDate -format "yyyy"), $($(Get-Date $InputDate -format "MM")-1), $(Get-Date $InputDate -format "dd"), $(Get-Date $InputDate -format "HH"), $(Get-Date $InputDate -format "mm"), $(Get-Date $InputDate -format "ss"))"
-    return $out
-}
+        .DESCRIPTION
+            This function accepts input as pipeline from the following psdbatools functions:
+                Get-DbaAgentJobHistory
+                Get-DbaBackupHistory
+                (more to come...)
+            And generates Bootstrap based, HTML file with Google Chart Timeline
+      
+        .PARAMETER InputObject
 
-#------------------------------------------------------------------------------------------------------------------------------------------------
-# function to convert to timeline
-#------------------------------------------------------------------------------------------------------------------------------------------------
-Function ConvertTo-DbaTimeline {
+            Pipe input, must an output from the above functions.
+
+        .NOTES
+            Tags: Internal
+            Author: Marcin Gminski (@marcingminski)
+            
+            Dependency: ConvertTo-JsDate, Convert-DbaTimelineStatusColor
+            Requirements: None
+
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+-           License: MIT https://opensource.org/licenses/MIT
+        
+        .LINK
+            https://dbatools.io/ConvertTo-DbaTimeline
+
+        .EXAMPLE
+            Get-DbaAgentJobHistory -SqlInstance sql-1 -StartDate ‘2018-08-13 00:00’ -EndDate ‘2018-08-13 23:59’ -NoJobSteps | ConvertTo-DbaTimeline | Out-File C:\temp\DbaAgentJobHistory.html -Encoding ASCII
+            Get-DbaBackupHistory -SqlInstance sql-1 -Since ‘2018-08-13 00:00’ | ConvertTo-DbaTimeline | Out-File C:\temp\DbaBackupHistory.html -Encoding ASCII
+
+    #>
+
+    [CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$InputObject
 	)
-
     begin {
         #need to capture calling process to know what we are being asked for i.e. JobHistory, BackupHistory etc?
         #I dont know of any way apart from Get-PSCallStack but that return the whole stack but in order to the last
@@ -42,23 +49,18 @@ Function ConvertTo-DbaTimeline {
 <html>
 <head>
 <!-- Developed by Marcin Gminski, https://marcin.gminski.net, 2018 -->
-
 <!-- Load jQuery required to autosize timeline -->
 <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
-
 <!-- Load Bootstrap -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
 <!-- Load Google Charts library -->
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-
 <!-- a bit of custom styling to work with bootstrap grid -->
 <style>
     
     html,body{height:100%;background-color:#c2c2c2;}
-
     .viewport {height:100%}
     
     .chart{
@@ -71,18 +73,15 @@ Function ConvertTo-DbaTimeline {
         box-shadow:1px 1px 3px 0 rgba(0,0,0,.45)
     }
     .badge-custom{background-color:#939}
-
     .container {
         height:100%;
     }
-
     .fill{
         width:100%;
         height:100%;
         min-height:100%;
         padding:10px;
     }
-
     .timeline-tooltip{
         border:1px solid #E0E0E0;
         font-family:Arial,Helvetica;
@@ -91,12 +90,10 @@ Function ConvertTo-DbaTimeline {
     }
     .timeline-tooltip div{padding:6px}
     .timeline-tooltip span{font-weight:700}
-
 </style>
     <script type="text/javascript">
     google.charts.load('43', {'packages':['timeline']});
     google.charts.setOnLoadCallback(drawChart);
-
     function drawChart() {
         var container = document.getElementById('Chart');
         var chart = new google.visualization.Timeline(container);
@@ -117,7 +114,7 @@ Function ConvertTo-DbaTimeline {
         #This is where do column mapping:
         if ($caller.Position -Like "*Get-DbaAgentJobHistory*") {
             $CallerName = "Get-DbaAgentJobHistory"
-            $data = $input | Select @{ Name="SqlInstance"; Expression = {$_.SqlInstance}}, @{ Name="InstanceName"; Expression = {$_.InstanceName}}, @{ Name="vLabel"; Expression = {$_.Job} }, @{ Name="hLabel"; Expression = {$_.Status} }, @{ Name="Style"; Expression = {$(Get-StatusColor($_.Status))} }, @{ Name="StartDate"; Expression = {$(ConvertTo-JsDate($_.StartDate))} }, @{ Name="EndDate"; Expression = {$(ConvertTo-JsDate($_.EndDate))} }
+            $data = $input | Select @{ Name="SqlInstance"; Expression = {$_.SqlInstance}}, @{ Name="InstanceName"; Expression = {$_.InstanceName}}, @{ Name="vLabel"; Expression = {$_.Job} }, @{ Name="hLabel"; Expression = {$_.Status} }, @{ Name="Style"; Expression = {$(Convert-DbaTimelineStatusColor($_.Status))} }, @{ Name="StartDate"; Expression = {$(ConvertTo-JsDate($_.StartDate))} }, @{ Name="EndDate"; Expression = {$(ConvertTo-JsDate($_.EndDate))} }
         
         }
                 
@@ -133,19 +130,15 @@ Function ConvertTo-DbaTimeline {
         var paddingHeight = 20;
         var rowHeight = dataTable.getNumberOfRows() * 41;
         var chartHeight = rowHeight + paddingHeight;
-
         dataTable.insertColumn(2, {type: 'string', role: 'tooltip', p: {html: true}});
-
         var dateFormat = new google.visualization.DateFormat({
           pattern: 'dd/MM/yy HH:mm:ss'
         });
-
         for (var i = 0; i < dataTable.getNumberOfRows(); i++) {
           var duration = (dataTable.getValue(i, 5).getTime() - dataTable.getValue(i, 4).getTime()) / 1000;
           var hours = parseInt( duration / 3600 ) % 24;
           var minutes = parseInt( duration / 60 ) % 60;
           var seconds = duration % 60;
-
           var tooltip = '<div class="timeline-tooltip"><span>' +
             dataTable.getValue(i, 1).split(",").join("<br />")  + '</span></div><div class="timeline-tooltip"><span>' +
             dataTable.getValue(i, 0) + '</span>: ' +
@@ -153,10 +146,8 @@ Function ConvertTo-DbaTimeline {
             dateFormat.formatValue(dataTable.getValue(i, 5)) + '</div>' +
             '<div class="timeline-tooltip"><span>Duration: </span>' +
             hours + 'h ' + minutes + 'm ' + seconds + 's ';
-
           dataTable.setValue(i, 2, tooltip);
         }
-
         var options = {
             timeline: { 
                 rowLabelStyle: { },
@@ -164,10 +155,8 @@ Function ConvertTo-DbaTimeline {
             },
             hAxis: {
                 format: 'dd/MM HH:mm',
-
             },
         }
-
         // Autosize chart. It would not be enough to just count rows and expand based on row height as there can be overlappig rows.
         // this will draw the chart, get the size of the underlying div and apply that size to the parent container and redraw:
         chart.draw(dataTable, options);
@@ -177,7 +166,6 @@ Function ConvertTo-DbaTimeline {
         options.height=realheight
         // draw again:
         chart.draw(dataTable, options);
-
     }
 </script>
 </head>
@@ -196,7 +184,3 @@ Function ConvertTo-DbaTimeline {
 "@        
     }
 }
-
-#execution
-#Get-DbaAgentJobHistory -SqlInstance sql-1 -StartDate ‘2018-08-13 00:00’ -EndDate ‘2018-08-13 23:59’ -NoJobSteps | ConvertTo-DbaTimeline | Out-File C:\temp\DbaAgentJobHistory.html -Encoding ASCII
-#Get-DbaBackupHistory -SqlInstance sql-1 -Since ‘2018-08-13 00:00’ | ConvertTo-DbaTimeline | Out-File C:\temp\DbaBackupHistory.html -Encoding ASCII
