@@ -43,12 +43,7 @@ function  ConvertTo-DbaTimeline {
         #need to capture calling process to know what we are being asked for i.e. JobHistory, BackupHistory etc?
         #I dont know of any way apart from Get-PSCallStack but that return the whole stack but in order to the last
         #function should be the one that called this one? Not sure if this is correct but it works.
-        $caller = Get-PSCallStack | Select-Object -Property * | Select-Object -last 1
-        #check if we can handle the input
-        if ($caller.Position -NotLike "*Get-DbaAgentJobHistory*" -and `
-            $caller.Position -NotLike "*Get-DbaBackupHistory*") {
-            Write-Output "Ummm, we do not know how to create chart for this. Sorry.`r`nDo you want to help us understand what is that you are trying to do? Get in touch!"; break;
-        }      
+        $caller = Get-PSCallStack | Select -Property * | Select -last 1
         #build html container
 @"
 <html>
@@ -119,13 +114,13 @@ function  ConvertTo-DbaTimeline {
         #This is where do column mapping:
         if ($caller.Position -Like "*Get-DbaAgentJobHistory*") {
             $CallerName = "Get-DbaAgentJobHistory"
-            $data = $InputObject | Select-Object @{ Name="SqlInstance"; Expression = {$_.SqlInstance}}, @{ Name="InstanceName"; Expression = {$_.InstanceName}}, @{ Name="vLabel"; Expression = {$_.Job} }, @{ Name="hLabel"; Expression = {$_.Status} }, @{ Name="Style"; Expression = {$(Convert-DbaTimelineStatusColor($_.Status))} }, @{ Name="StartDate"; Expression = {$(ConvertTo-JsDate($_.StartDate))} }, @{ Name="EndDate"; Expression = {$(ConvertTo-JsDate($_.EndDate))} }
+            $data = $input | Select @{ Name="SqlInstance"; Expression = {$_.SqlInstance}}, @{ Name="InstanceName"; Expression = {$_.InstanceName}}, @{ Name="vLabel"; Expression = {$_.Job} }, @{ Name="hLabel"; Expression = {$_.Status} }, @{ Name="Style"; Expression = {$(Convert-DbaTimelineStatusColor($_.Status))} }, @{ Name="StartDate"; Expression = {$(ConvertTo-JsDate($_.StartDate))} }, @{ Name="EndDate"; Expression = {$(ConvertTo-JsDate($_.EndDate))} }
 
         }
 
         if ($caller.Position -Like "*Get-DbaBackupHistory*") {
             $CallerName = "Get-DbaBackupHistory"
-            $data = $InputObject | Select-Object @{ Name="SqlInstance"; Expression = {$_.SqlInstance}}, @{ Name="InstanceName"; Expression = {$_.InstanceName}}, @{ Name="vLabel"; Expression = {$_.Database} }, @{ Name="hLabel"; Expression = {$_.Type} }, @{ Name="StartDate"; Expression = {$(ConvertTo-JsDate($_.Start))} }, @{ Name="EndDate"; Expression = {$(ConvertTo-JsDate($_.End))} }
+            $data = $input | Select @{ Name="SqlInstance"; Expression = {$_.SqlInstance}}, @{ Name="InstanceName"; Expression = {$_.InstanceName}}, @{ Name="vLabel"; Expression = {$_.Database} }, @{ Name="hLabel"; Expression = {$_.Type} }, @{ Name="StartDate"; Expression = {$(ConvertTo-JsDate($_.Start))} }, @{ Name="EndDate"; Expression = {$(ConvertTo-JsDate($_.End))} }
         }
                 "$( $data | %{"['$($_.vLabel)','$($_.hLabel)','$($_.Style)',$($_.StartDate), $($_.EndDate)],"})"
         }
