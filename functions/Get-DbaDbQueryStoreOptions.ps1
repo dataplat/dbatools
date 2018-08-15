@@ -90,7 +90,7 @@ function Get-DbaDbQueryStoreOptions {
                 Write-Message -Level Verbose -Message "Processing $($db.Name) on $instance"
                 $QSO = $db.QueryStoreOptions
 
-                Add-Member -Force -InputObject $QSO -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $QSO -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $QSO -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $QSO -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $QSO -MemberType NoteProperty Database -value $db.Name

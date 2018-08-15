@@ -217,7 +217,7 @@ function Remove-DbaOrphanUser {
                                                         $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
 
                                                         [pscustomobject]@{
-                                                            ComputerName      = $server.NetName
+                                                            ComputerName      = $server.ComputerName
                                                             InstanceName      = $server.ServiceName
                                                             SqlInstance       = $server.DomainInstanceName
                                                             DatabaseName      = $db.Name
@@ -242,7 +242,7 @@ function Remove-DbaOrphanUser {
                                                         $DropSchema += "DROP SCHEMA [$($sch.Name)]"
 
                                                         [pscustomobject]@{
-                                                            ComputerName      = $server.NetName
+                                                            ComputerName      = $server.ComputerName
                                                             InstanceName      = $server.ServiceName
                                                             SqlInstance       = $server.DomainInstanceName
                                                             DatabaseName      = $db.Name
@@ -260,7 +260,7 @@ function Remove-DbaOrphanUser {
                                                         $AlterSchemaOwner += "ALTER AUTHORIZATION ON SCHEMA::[$($sch.Name)] TO [dbo]`r`n"
 
                                                         [pscustomobject]@{
-                                                            ComputerName      = $server.NetName
+                                                            ComputerName      = $server.ComputerName
                                                             InstanceName      = $server.ServiceName
                                                             SqlInstance       = $server.DomainInstanceName
                                                             DatabaseName      = $db.Name

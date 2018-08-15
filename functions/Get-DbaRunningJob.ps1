@@ -69,7 +69,7 @@ function Get-DbaRunningJob {
             else {
                 foreach ($job in $jobs) {
                     [pscustomobject]@{
-                        ComputerName     = $server.NetName
+                        ComputerName     = $server.ComputerName
                         InstanceName     = $server.ServiceName
                         SqlInstance      = $server.DomainInstanceName
                         Name             = $job.name

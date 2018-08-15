@@ -289,7 +289,7 @@ function Get-DbaDatabase {
                 $_.IsAccessible -in $AccessibleFilter -and
                 $_.IsSystemObject -in $DBType -and
                 ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and
-                $_.RecoveryModel -in $RecoveryModel -and
+                ($_.RecoveryModel -in $RecoveryModel -or !$_.RecoveryModel) -and
                 $_.EncryptionEnabled -in $Encrypt
             }
             if ($NoFullBackup -or $NoFullBackupSince) {
@@ -342,7 +342,7 @@ function Get-DbaDatabase {
 
                     $lastusedinfo = $dblastused | Where-Object { $_.dbname -eq $db.name }
                     Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
-                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -value $lastusedinfo.last_read

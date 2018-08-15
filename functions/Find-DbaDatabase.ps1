@@ -115,7 +115,7 @@ function Find-DbaDatabase {
                 if ($extendedproperties.count -eq 0) { $extendedproperties = 0 }
 
                 [PSCustomObject]@{
-                    ComputerName       = $server.NetName
+                    ComputerName       = $server.ComputerName
                     InstanceName       = $server.ServiceName
                     SqlInstance        = $server.Name
                     Name               = $db.Name

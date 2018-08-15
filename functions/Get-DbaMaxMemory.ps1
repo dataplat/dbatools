@@ -65,7 +65,7 @@ function Get-DbaMaxMemory {
             }
 
             [pscustomobject]@{
-                ComputerName = $server.NetName
+                ComputerName = $server.ComputerName
                 InstanceName = $server.ServiceName
                 SqlInstance  = $server.DomainInstanceName
                 TotalMB      = [int]$totalMemory

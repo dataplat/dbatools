@@ -175,7 +175,7 @@ function Repair-DbaOrphanUser {
                                         Write-Message -Level Verbose -Message "User '$($User.Name)' mapped with their login."
 
                                         [PSCustomObject]@{
-                                            ComputerName = $server.NetName
+                                            ComputerName = $server.ComputerName
                                             InstanceName = $server.ServiceName
                                             SqlInstance  = $server.DomainInstanceName
                                             DatabaseName = $db.Name
@@ -192,7 +192,7 @@ function Repair-DbaOrphanUser {
                                     else {
                                         Write-Message -Level Verbose -Message "Orphan user $($User.Name) does not have matching login."
                                         [PSCustomObject]@{
-                                            ComputerName = $server.NetName
+                                            ComputerName = $server.ComputerName
                                             InstanceName = $server.ServiceName
                                             SqlInstance  = $server.DomainInstanceName
                                             DatabaseName = $db.Name

@@ -98,7 +98,7 @@ function Get-DbaSqlInstanceProperty {
                     $infoProperties = $infoProperties | Where-Object Name -NotIn $ExcludeInstanceProperty
                 }
                 foreach ($prop in $infoProperties) {
-                    Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                    Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Information'
@@ -119,7 +119,7 @@ function Get-DbaSqlInstanceProperty {
                     $userProperties = $userProperties | Where-Object Name -NotIn $ExcludeInstanceProperty
                 }
                 foreach ($prop in $userProperties) {
-                    Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                    Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'UserOption'
@@ -140,7 +140,7 @@ function Get-DbaSqlInstanceProperty {
                     $settingProperties = $settingProperties | Where-Object Name -NotIn $ExcludeInstanceProperty
                 }
                 foreach ($prop in $settingProperties) {
-                    Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                    Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Setting'

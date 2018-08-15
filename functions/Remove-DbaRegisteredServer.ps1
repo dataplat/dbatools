@@ -85,8 +85,11 @@ function Remove-DbaRegisteredServer {
 
         foreach ($regserver in $InputObject) {
             $server = $regserver.Parent
+            
             if ($Pscmdlet.ShouldProcess($regserver.Parent, "Removing $regserver")) {
                 $null = $regserver.Drop()
+                Disconnect-RegServer -Server $server
+                
                 try {
                     [pscustomobject]@{
                         ComputerName = $regserver.ComputerName

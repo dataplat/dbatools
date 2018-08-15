@@ -20,6 +20,12 @@ function Copy-DbaAgentProxyAccount {
         .PARAMETER DestinationSqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+        .PARAMETER ProxyAccount
+            Only migrate specific proxy accounts
+    
+        .PARAMETER ExcludeProxyAccount
+            Migrate all proxy accounts except the ones explicitly excluded
+    
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -65,122 +71,133 @@ function Copy-DbaAgentProxyAccount {
     param (
         [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$Source,
-        [PSCredential]
-        $SourceSqlCredential,
+        [PSCredential]$SourceSqlCredential,
         [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,
-        [PSCredential]
-        $DestinationSqlCredential,
+        [DbaInstanceParameter[]]$Destination,
+        [PSCredential]$DestinationSqlCredential,
+        [string[]]$ProxyAccount,
+        [string[]]$ExcludeProxyAccount,
         [switch]$Force,
         [Alias('Silent')]
         [switch]$EnableException
     )
-
     begin {
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-
-        $source = $sourceServer.DomainInstanceName
-        $destination = $destServer.DomainInstanceName
-
-        if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
-            throw "Server ProxyAccounts are only supported in SQL Server 2005 and above. Quitting."
+        try {
+            Write-Message -Level Verbose -Message "Connecting to $Source"
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         }
-
+        catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            return
+        }
         $serverProxyAccounts = $sourceServer.JobServer.ProxyAccounts
-        $destProxyAccounts = $destServer.JobServer.ProxyAccounts
+        if ($ProxyAccount) {
+            $serverProxyAccounts | Where-Object Name -in $ProxyAccount
+        }
+        if ($ExcludeProxyAccount) {
+            $serverProxyAccounts | Where-Object Name -notin $ProxyAccount
+        }
     }
     process {
-        foreach ($proxyAccount in $serverProxyAccounts) {
-            $proxyName = $proxyAccount.Name
-
-            $copyAgentProxyAccountStatus = [pscustomobject]@{
-                SourceServer      = $sourceServer.Name
-                DestinationServer = $destServer.Name
-                Name              = $null
-                Type              = "Agent Proxy"
-                Status            = $null
-                Notes             = $null
-                DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
-            }
-
-            if ($proxyAccounts.Length -gt 0 -and $proxyAccounts -notcontains $proxyName) {
-                continue
-            }
-
-            # Proxy accounts rely on Credential accounts
-            $credentialName = $proxyAccount.CredentialName
-            $copyAgentProxyAccountStatus.Name = $credentialName
-            $copyAgentProxyAccountStatus.Type = "Credential"
-
+        if (Test-FunctionInterrupt) { return }
+        foreach ($destinstance in $Destination) {
             try {
-                $credentialtest = $destServer.Credentials[$CredentialName]
+                Write-Message -Level Verbose -Message "Connecting to $destinstance"
+                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             }
             catch {
-                # don't care
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-
-            if ($null -eq $credentialtest) {
-                $copyAgentProxyAccountStatus.Status = "Skipped"
-                $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                Write-Message -Level Verbose -Message "Associated credential account, $CredentialName, does not exist on $destination. Skipping migration of $proxyName."
-                continue
-            }
-
-            if ($destProxyAccounts.Name -contains $proxyName) {
-                $copyAgentProxyAccountStatus.Name = $proxyName
-                $copyAgentProxyAccountStatus.Type = "ProxyAccount"
-
-                if ($force -eq $false) {
-                    $copyAgentProxyAccountStatus.Status = "Skipped"
-                    $copyAgentProxyAccountStatus
-                    Write-Message -Level Verbose -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate."
-                    continue
+            
+            $destProxyAccounts = $destServer.JobServer.ProxyAccounts
+            
+            foreach ($account in $serverProxyAccounts) {
+                $proxyName = $account.Name
+                
+                $copyAgentProxyAccountStatus = [pscustomobject]@{
+                    SourceServer = $sourceServer.Name
+                    DestinationServer = $destServer.Name
+                    Name         = $null
+                    Type         = "Agent Proxy"
+                    Status       = $null
+                    Notes        = $null
+                    DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
-                else {
-                    if ($Pscmdlet.ShouldProcess($destination, "Dropping server proxy account $proxyName and recreating")) {
-                        try {
-                            Write-Message -Level Verbose -Message "Dropping server proxy account $proxyName"
-                            $destServer.JobServer.ProxyAccounts[$proxyName].Drop()
-                        }
-                        catch {
-                            $copyAgentProxyAccountStatus.Status = "Failed"
-                            $copyAgentProxyAccountStatus.Notes = "Could not drop"
-                            $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            Stop-Function -Message "Issue dropping proxy account" -Target $proxyName -InnerErrorRecord $_ -Continue
-                        }
-                    }
-                }
-            }
-
-            if ($Pscmdlet.ShouldProcess($destination, "Creating server proxy account $proxyName")) {
-                $copyAgentProxyAccountStatus.Name = $proxyName
-                $copyAgentProxyAccountStatus.Type = "ProxyAccount"
-
+                
+                # Proxy accounts rely on Credential accounts
+                $credentialName = $account.CredentialName
+                $copyAgentProxyAccountStatus.Name = $credentialName
+                $copyAgentProxyAccountStatus.Type = "Credential"
+                
                 try {
-                    Write-Message -Level Verbose -Message "Copying server proxy account $proxyName"
-                    $sql = $proxyAccount.Script() | Out-String
-                    Write-Message -Level Debug -Message $sql
-                    $destServer.Query($sql)
-
-                    # Will fixing this misspelled status cause problems downstream?
-                    $copyAgentProxyAccountStatus.Status = "Successful"
-                    $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    $credentialtest = $destServer.Credentials[$CredentialName]
                 }
                 catch {
-                    $exceptionstring = $_.Exception.InnerException.ToString()
-                    if ($exceptionstring -match 'subsystem') {
-                        $copyAgentProxyAccountStatus.Status = "Skipping"
-                        $copyAgentProxyAccountStatus.Notes = "Failure"
-                        $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Write-Message -Level Verbose -Message "One or more subsystems do not exist on the destination server. Skipping that part."
+                    # don't care
+                }
+                
+                if ($null -eq $credentialtest) {
+                    $copyAgentProxyAccountStatus.Status = "Skipped"
+                    $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    Write-Message -Level Verbose -Message "Associated credential account, $CredentialName, does not exist on $destinstance. Skipping migration of $proxyName."
+                    continue
+                }
+                
+                if ($destProxyAccounts.Name -contains $proxyName) {
+                    $copyAgentProxyAccountStatus.Name = $proxyName
+                    $copyAgentProxyAccountStatus.Type = "ProxyAccount"
+                    
+                    if ($force -eq $false) {
+                        $copyAgentProxyAccountStatus.Status = "Skipped"
+                        $copyAgentProxyAccountStatus
+                        Write-Message -Level Verbose -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate."
+                        continue
                     }
                     else {
-                        $copyAgentProxyAccountStatus.Status = "Failed"
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server proxy account $proxyName and recreating")) {
+                            try {
+                                Write-Message -Level Verbose -Message "Dropping server proxy account $proxyName"
+                                $destServer.JobServer.ProxyAccounts[$proxyName].Drop()
+                            }
+                            catch {
+                                $copyAgentProxyAccountStatus.Status = "Failed"
+                                $copyAgentProxyAccountStatus.Notes = "Could not drop"
+                                $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Stop-Function -Message "Issue dropping proxy account" -Target $proxyName -ErrorRecord $_ -Continue
+                            }
+                        }
+                    }
+                }
+                
+                if ($Pscmdlet.ShouldProcess($destinstance, "Creating server proxy account $proxyName")) {
+                    $copyAgentProxyAccountStatus.Name = $proxyName
+                    $copyAgentProxyAccountStatus.Type = "ProxyAccount"
+                    
+                    try {
+                        Write-Message -Level Verbose -Message "Copying server proxy account $proxyName"
+                        $sql = $account.Script() | Out-String
+                        Write-Message -Level Debug -Message $sql
+                        $destServer.Query($sql)
+                        
+                        # Will fixing this misspelled status cause problems downstream?
+                        $copyAgentProxyAccountStatus.Status = "Successful"
                         $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                        Stop-Function -Message "Issue creating proxy account" -Target $proxyName -InnerErrorRecord $_
+                    }
+                    catch {
+                        $exceptionstring = $_.Exception.InnerException.ToString()
+                        if ($exceptionstring -match 'subsystem') {
+                            $copyAgentProxyAccountStatus.Status = "Skipping"
+                            $copyAgentProxyAccountStatus.Notes = "Failure"
+                            $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            
+                            Write-Message -Level Verbose -Message "One or more subsystems do not exist on the destination server. Skipping that part."
+                        }
+                        else {
+                            $copyAgentProxyAccountStatus.Status = "Failed"
+                            $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            
+                            Stop-Function -Message "Issue creating proxy account" -Target $proxyName -ErrorRecord $_
+                        }
                     }
                 }
             }

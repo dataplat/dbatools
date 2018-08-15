@@ -70,7 +70,7 @@ function Get-DbaLinkedServer {
         }
 
         foreach ($ls in $lservers) {
-            Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name ComputerName -value $server.NetName
+            Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
             Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
             Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
             Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name Impersonate -value $ls.LinkedServerLogins.Impersonate

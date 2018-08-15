@@ -74,7 +74,7 @@ function Get-DbaAgentLog {
                     try {
                         foreach ($object in $server.JobServer.ReadErrorLog($number)) {
                             Write-Message -Level Verbose -Message "Processing $object"
-                            Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
+                            Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.ComputerName
                             Add-Member -Force -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
                             Add-Member -Force -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
 
@@ -91,7 +91,7 @@ function Get-DbaAgentLog {
                 try {
                     foreach ($object in $server.JobServer.ReadErrorLog()) {
                         Write-Message -Level Verbose -Message "Processing $object"
-                        Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
+                        Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.ComputerName
                         Add-Member -Force -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
                         Add-Member -Force -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
 

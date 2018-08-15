@@ -24,7 +24,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
             # Thanks @Fred
             $obj = [PSCustomObject]@{
                 Name                 = 'BASEName'
-                NetName              = 'BASENetName'
+                ComputerName              = 'BASEComputerName'
                 InstanceName         = 'BASEInstanceName'
                 DomainInstanceName   = 'BASEDomainInstanceName'
                 InstallDataDirectory = 'BASEInstallDataDirectory'
@@ -189,7 +189,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
 
-                ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be 'BASENetName__Job1Output1'
+                ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be 'BASEComputerName__Job1Output1'
 
             }
             It "Handles SQLDIR" {

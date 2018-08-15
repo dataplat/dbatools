@@ -100,7 +100,7 @@ function Get-DbaAgentOperator {
                 $jobs = $server.JobServer.jobs | Where-Object { $_.OperatorToEmail, $_.OperatorToNetSend, $_.OperatorToPage -contains $operat.Name }
                 $lastemail = [dbadatetime]$operat.LastEmailDate
 
-                Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                 Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name RelatedJobs -Value $jobs

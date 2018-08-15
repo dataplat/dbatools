@@ -123,7 +123,7 @@ function Find-DbaTrigger {
                         $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                         [PSCustomObject]@{
-                            ComputerName     = $server.NetName
+                            ComputerName     = $server.ComputerName
                             SqlInstance      = $server.ServiceName
                             TriggerLevel     = "Server"
                             Database         = $null
@@ -187,7 +187,7 @@ function Find-DbaTrigger {
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                                     [PSCustomObject]@{
-                                        ComputerName     = $server.NetName
+                                        ComputerName     = $server.ComputerName
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Database"
                                         Database         = $db.name
@@ -226,7 +226,7 @@ function Find-DbaTrigger {
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                                     [PSCustomObject]@{
-                                        ComputerName     = $server.NetName
+                                        ComputerName     = $server.ComputerName
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Object"
                                         Database         = $db.name
@@ -261,7 +261,7 @@ function Find-DbaTrigger {
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                                     [PSCustomObject]@{
-                                        ComputerName     = $server.NetName
+                                        ComputerName     = $server.ComputerName
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Database"
                                         Database         = $db.name
@@ -295,7 +295,7 @@ function Find-DbaTrigger {
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                                     [PSCustomObject]@{
-                                        ComputerName     = $server.NetName
+                                        ComputerName     = $server.ComputerName
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Object"
                                         Database         = $db.name

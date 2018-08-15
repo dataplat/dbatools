@@ -94,7 +94,7 @@
                     try {
                         $xe.Drop()
                         [pscustomobject]@{
-                            ComputerName = $xe.Parent.NetName
+                            ComputerName = $xe.Parent.ComputerName
                             InstanceName = $xe.Parent.ServiceName
                             SqlInstance  = $xe.Parent.DomainInstanceName
                             Session      = $session

@@ -65,7 +65,7 @@ function Set-ServiceStartMode {
             if ($Pscmdlet.ShouldProcess($Wmi, "Changing the Start Mode to $Mode")) {
                 $x = $Wmi.ChangeStartMode($Mode)
                 if ($x.ReturnValue -ne 0) {
-                    Write-Message -Level Warning -EnableException $EnableException -FunctionName $callerName -Message ("The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) returned the following message: " + (Get-DbaSQLServiceErrorMessage $x.ReturnValue))
+                    Write-Message -Level Warning -FunctionName $callerName -Message ("The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) returned the following message: " + (Get-DbaSQLServiceErrorMessage $x.ReturnValue))
                 }
             }
         }

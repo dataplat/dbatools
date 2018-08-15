@@ -6,16 +6,16 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Parameter validation" {
         It "Stops if no Database or AllDatabases" {
-            { New-DbaDbSnapshot -SqlInstance $script:instance2 -EnableException } | Should Throw "You must specify"
+            { New-DbaDbSnapshot -SqlInstance $script:instance2 -EnableException -WarningAction SilentlyContinue } | Should Throw "You must specify"
         }
         It "Is nice by default" {
-            { New-DbaDbSnapshot -SqlInstance $script:instance2 *> $null } | Should Not Throw "You must specify"
+            { New-DbaDbSnapshot -SqlInstance $script:instance2 *> $null -WarningAction SilentlyContinue } | Should Not Throw "You must specify"
         }
     }
     
     Context "Operations on not supported databases" {
         It "Doesn't support model, master or tempdb" {
-            $result = New-DbaDbSnapshot -SqlInstance $script:instance2 -EnableException -Database model, master, tempdb
+            $result = New-DbaDbSnapshot -SqlInstance $script:instance2 -EnableException -Database model, master, tempdb -WarningAction SilentlyContinue
             $result | Should Be $null
         }
     }
@@ -44,11 +44,11 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
         
         It "Refuses to accept multiple source databases with a single name target" {
-            { New-DbaDbSnapshot -SqlInstance $script:instance2 -EnableException -Database $db1, $db2 -Name "dbatools_Snapped" } | Should Throw
+            { New-DbaDbSnapshot -SqlInstance $script:instance2 -EnableException -Database $db1, $db2 -Name "dbatools_Snapped" -WarningAction SilentlyContinue } | Should Throw
         }
         
         It "Halts when path is not accessible" {
-            { New-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1 -Path B:\Funnydbatoolspath -EnableException } | Should Throw
+            { New-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1 -Path B:\Funnydbatoolspath -EnableException -WarningAction SilentlyContinue } | Should Throw
         }
         
         It "Creates snaps for multiple dbs by default" {

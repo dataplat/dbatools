@@ -141,6 +141,48 @@ function Get-DbaDiskSpace {
                 Stop-Function -Message "Failed to connect to $computer." -EnableException $EnableException -ErrorRecord $_ -Target $computer.ComputerName -Continue
             }
 
+            if ($CheckForSql) {
+                try {
+                    $sqlServices = Get-DbaSqlService -ComputerName $computer -Type Engine
+                }
+                catch {
+                    Write-Message -Level Warning -Message "Failed to connect to $computer to gather SQL Server instances, will not be reporting SQL Information." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
+                }
+
+                Write-Message -Level Verbose -Message "Instances found on $($computer): $($sqlServices.InstanceName.Count)"
+                if ($sqlServices.InstanceName.Count -gt 0) {
+                    foreach ($sqlService in $sqlServices) {
+                        if ($sqlService.InstanceName -eq "MSSQLSERVER") {
+                            $instanceName = $sqlService.ComputerName
+                        }
+                        else {
+                            $instanceName = "$($sqlService.ComputerName)\$($sqlService.InstanceName)"
+                        }
+                        Write-Message -Level VeryVerbose -Message "Processing instance $($instanceName)"
+                        try {
+                            $server = Connect-SqlInstance -SqlInstance $instanceName -SqlCredential $SqlCredential
+                            if ($server.Version.Major -lt 9) {
+                                $sql = "SELECT DISTINCT SUBSTRING(physical_name, 1, LEN(physical_name) - CHARINDEX('\', REVERSE(physical_name)) + 1) AS SqlDisk FROM sysaltfiles"
+                            }
+                            else {
+                                $sql = "SELECT DISTINCT SUBSTRING(physical_name, 1, LEN(physical_name) - CHARINDEX('\', REVERSE(physical_name)) + 1) AS SqlDisk FROM sys.master_files"
+                            }
+                            $results = $server.Query($sql)
+                            if ($results.SqlDisk.Count -gt 0) {
+                                foreach ($sqlDisk in $results.SqlDisk) {
+                                    if (-not $sqlDisks.Contains($sqlDisk)) {
+                                        $null = $sqlDisks.Add($sqlDisk)
+                                    }
+                                }
+                            }
+                        }
+                        catch {
+                            Write-Message -Level Warning -Message "Failed to connect to $instanceName on $computer. SQL information may not be accurate or services have been stopped." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
+                        }
+                    }
+                }
+            }
+
             foreach ($disk in $disks) {
                 if ($disk.Name -in $ExcludeDrive) {
                     continue
@@ -163,46 +205,14 @@ function Get-DbaDiskSpace {
                 $info.Type = $disk.DriveType
 
                 if ($CheckForSql) {
-                    $driveLetter = $disk.DriveLetter.TrimEnd(":")
-                    try {
-                        $sqlServices = Get-DbaSqlService -ComputerName $computer -Type Engine
-                    }
-                    catch {
-                        Write-Message -Level Warning -Message "Failed to connect to $computer to gather SQL Server instances, will not be reporting SQL Information." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
-                    }
-
-                    Write-Message -Level Verbose -Message "Instances found on $($computer): $($sqlServices.InstanceName.Count)"
-                    if ($sqlServices.InstanceName.Count -gt 0) {
-                        foreach ($sqlService in $sqlServices) {
-                            if ($sqlService.InstanceName -eq "MSSQLSERVER") {
-                                $instanceName = $sqlService.ComputerName
-                            }
-                            else {
-                                $instanceName = "$($sqlService.ComputerName)\$($sqlService.InstanceName)"
-                            }
-                            Write-Message -Level VeryVerbose -Message "Processing instance $($instanceName)"
-                            try {
-                                $server = Connect-SqlInstance -SqlInstance $instanceName -SqlCredential $SqlCredential
-                                if ($server.Version -lt 9) {
-                                    $sql = "SELECT DISTINCT LEFT(filename,1) AS SqlDisk FROM sysaltfiles"
-                                }
-                                else {
-                                    $sql = "SELECT DISTINCT LEFT(physical_name,1) AS SqlDisk FROM sys.master_files"
-                                }
-                                $results = $server.Query($sql)
-                                if ($results.SqlDisk.Count -gt 0) {
-                                    foreach ($sqlDisk in $results.SqlDisk) {
-                                        $null = $sqlDisks.Add($sqlDisk)
-                                    }
-                                }
-                            }
-                            catch {
-                                Write-Message -Level Warning -Message "Failed to connect to $instanceName on $computer. SQL information may not be accurate or services have been stopped." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName
-                            }
+                    $drivePath = $disk.Name
+                    $info.IsSqlDisk = $false
+                    foreach ($sqlDisk in $sqlDisks) {
+                        if ($sqlDisk -like ($drivePath + '*')) {
+                            $info.IsSqlDisk = $true
+                            break
                         }
                     }
-                    $info.IsSqlDisk = ($driveLetter -in $sqlDisks)
-                    $info
                 }
                 $info
             }

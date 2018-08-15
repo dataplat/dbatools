@@ -218,7 +218,7 @@ function Install-DbaWhoIsActive {
                             $status = 'Installed'
                         }
                         [PSCustomObject]@{
-                            ComputerName = $server.NetName
+                            ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $Database

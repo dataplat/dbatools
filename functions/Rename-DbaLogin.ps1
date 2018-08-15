@@ -90,7 +90,7 @@ WhatIf Example
                     $dbenums = $currentLogin.EnumDatabaseMappings()
                     $currentLogin.rename($NewLogin)
                     [pscustomobject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $null
@@ -102,7 +102,7 @@ WhatIf Example
                 catch {
                     $dbenums = $null
                     [pscustomobject]@{
-                        ComputerName = $server.NetName
+                        ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $null
@@ -124,7 +124,7 @@ WhatIf Example
                         $oldname = $user.name
                         $user.Rename($NewLogin)
                         [pscustomobject]@{
-                            ComputerName = $server.NetName
+                            ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name
@@ -139,7 +139,7 @@ WhatIf Example
                         $currentLogin.rename($Login)
 
                         [pscustomobject]@{
-                            ComputerName = $server.NetName
+                            ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $db.name

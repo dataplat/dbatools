@@ -95,7 +95,7 @@ function Test-DbaDatabaseCollation {
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.name) on $servername."
                 [PSCustomObject]@{
-                    ComputerName      = $server.NetName
+                    ComputerName      = $server.ComputerName
                     InstanceName      = $server.ServiceName
                     SqlInstance       = $server.DomainInstanceName
                     Database          = $db.name

@@ -147,7 +147,7 @@ function Get-DbaLastGoodCheckDb {
                 }
 
                 [PSCustomObject]@{
-                    ComputerName             = $server.NetName
+                    ComputerName             = $server.ComputerName
                     InstanceName             = $server.ServiceName
                     SqlInstance              = $server.DomainInstanceName
                     Database                 = $db.name

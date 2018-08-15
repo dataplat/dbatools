@@ -229,7 +229,7 @@ function Export-DbaExecutionPlan {
                 $planhandle = "0x"; $row.planhandle | ForEach-Object { $planhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
 
                 $object = [pscustomobject]@{
-                    ComputerName           = $server.NetName
+                    ComputerName           = $server.ComputerName
                     InstanceName           = $server.ServiceName
                     SqlInstance            = $server.DomainInstanceName
                     DatabaseName           = $row.DatabaseName

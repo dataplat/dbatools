@@ -66,9 +66,7 @@ function Write-DbaDataTable {
             Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
 
         .PARAMETER RegularUser
-            If this switch is enabled, the user connecting will be assumed to be a non-administrative user. By default, the underlying connection assumes that the user has administrative privileges.
-
-            This is particularly important when connecting to a SQL Azure Database.
+           Deprecated - now all connections are regular user (don't require admin)
 
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -130,9 +128,9 @@ function Write-DbaDataTable {
             $passwd = ConvertTo-SecureString "P@ssw0rd" -AsPlainText -Force
             $AzureCredential = Mew-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
             $DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
-            Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -RegularUser -BulkCopyTimeOut 300
+            Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300
 
-            This performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials. The -RegularUser switch is needed to prevent trying to get administrative privilege, and we increase the BulkCopyTimeout value to cope with any latency.
+            This performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials.
 
         .EXAMPLE
             $process = Get-Process | Out-DbaDataTable
@@ -405,7 +403,7 @@ function Write-DbaDataTable {
         #region Connect to server and get database
         Write-Message -Message "Connecting to $SqlInstance." -Level Verbose -Target $SqlInstance
         try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -RegularUser:$RegularUser
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
@@ -640,5 +638,6 @@ function Write-DbaDataTable {
             $bulkCopy.Close()
             $bulkCopy.Dispose()
         }
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter RegularUser
     }
 }

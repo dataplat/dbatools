@@ -153,11 +153,11 @@ function Set-DbaTcpPort {
                 $resolved = Resolve-DbaNetworkName -ComputerName $computerName
 
                 Write-Message -Level Verbose -Message "Writing TCPPort $port for $instance to $($resolved.FQDN)..."
-                Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock $scriptblock -ArgumentList $Server.NetName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
+                Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock $scriptblock -ArgumentList $Server.ComputerName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
 
             }
             catch {
-                Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -ScriptBlock $scriptblock -ArgumentList $Server.NetName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
+                Invoke-ManagedComputerCommand -ComputerName $instance.ComputerName -ScriptBlock $scriptblock -ArgumentList $Server.ComputerName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
             }
         }
     }

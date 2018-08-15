@@ -110,7 +110,7 @@ function Test-DbaDbVirtualLogFile {
                     $inactive = $data | Where-Object Status -eq 0
 
                     [PSCustomObject]@{
-                        ComputerName      = $server.NetName
+                        ComputerName      = $server.ComputerName
                         InstanceName      = $server.ServiceName
                         SqlInstance       = $server.DomainInstanceName
                         Database          = $db.name

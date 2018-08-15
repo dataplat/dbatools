@@ -62,7 +62,7 @@ function Get-DbaErrorLogConfig {
             }
 
             [PSCustomObject]@{
-                ComputerName       = $server.NetName
+                ComputerName       = $server.ComputerName
                 InstanceName       = $server.ServiceName
                 SqlInstance        = $server.DomainInstanceName
                 LogCount           = $numLogs

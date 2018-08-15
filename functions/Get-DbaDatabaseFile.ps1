@@ -223,7 +223,7 @@ ON fd.Drive = LEFT(df.physical_name, 1);
                     if ( ($nextgrowtheventadd.Byte -gt ($MaxSize.Byte - $size.Byte)) -and $maxsize -gt 0 ) { [dbasize]$nextgrowtheventadd = 0 }
 
                     [PSCustomObject]@{
-                        ComputerName             = $server.NetName
+                        ComputerName             = $server.ComputerName
                         InstanceName             = $server.ServiceName
                         SqlInstance              = $server.DomainInstanceName
                         Database                 = $db.name

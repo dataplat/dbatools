@@ -23,7 +23,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     Context "Parameters validation" {
         It "Stops if no Database or AllDatabases" {
-            { Remove-DbaDbSnapshot -SqlInstance $script:instance2 -EnableException } | Should Throw "You must pipe"
+            { Remove-DbaDbSnapshot -SqlInstance $script:instance2 -EnableException -WarningAction SilentlyContinue } | Should Throw "You must pipe"
         }
         It "Is nice by default" {
             { Remove-DbaDbSnapshot -SqlInstance $script:instance2 *> $null } | Should Not Throw "You must pipe"

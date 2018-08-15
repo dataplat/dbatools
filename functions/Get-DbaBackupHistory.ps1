@@ -565,7 +565,7 @@ function Get-DbaBackupHistory {
                         $ratio = 1
                     }
                     $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
-                    $historyObject.ComputerName = $server.NetName
+                    $historyObject.ComputerName = $server.ComputerName
                     $historyObject.InstanceName = $server.ServiceName
                     $historyObject.SqlInstance = $server.DomainInstanceName
                     $historyObject.Database = $commonFields.Database

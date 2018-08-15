@@ -113,7 +113,7 @@ function Test-DbaDatabaseOwner {
 
             Write-Message -Level Verbose -Message "Checking $db"
             [pscustomobject]@{
-                ComputerName = $server.NetName
+                ComputerName = $server.ComputerName
                 InstanceName = $server.ServiceName
                 SqlInstance  = $server.DomainInstanceName
                 Server       = $server.DomainInstanceName

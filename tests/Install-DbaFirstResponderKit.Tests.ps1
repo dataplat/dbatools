@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 5
+        $paramCount = 7
         $commonParamCount = ([System.Management.Automation.PSCmdlet]::CommonParameters).Count + 2
         [object[]]$params = (Get-ChildItem function:\Install-DbaFirstResponderKit).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Branch', 'Database', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Branch', 'Database', 'Force', 'LocalFile', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -28,7 +28,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Remove-DbaDatabase -SqlInstance $script:instance2 -Database $database -Confirm:$false
         }
 
-        $results = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Branch master
+        $results = Install-DbaFirstResponderKit -SqlInstance $script:instance2 -Database $database -Branch master -Force
 
         It "Installs to specified database: $database" {
             $results[0].Database -eq $database | Should Be $true

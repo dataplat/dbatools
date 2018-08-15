@@ -227,7 +227,7 @@ function Get-DbaUserLevelPermission {
 
                     foreach ($row in $serverDT) {
                         [PSCustomObject]@{
-                            ComputerName       = $server.NetName
+                            ComputerName       = $server.ComputerName
                             InstanceName       = $server.ServiceName
                             SqlInstance        = $server.DomainInstanceName
                             Object             = 'SERVER'
@@ -252,7 +252,7 @@ function Get-DbaUserLevelPermission {
 
                 foreach ($row in $dbDT) {
                     [PSCustomObject]@{
-                        ComputerName       = $server.NetName
+                        ComputerName       = $server.ComputerName
                         InstanceName       = $server.ServiceName
                         SqlInstance        = $server.DomainInstanceName
                         Object             = $db.Name

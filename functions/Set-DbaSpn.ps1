@@ -125,7 +125,7 @@ Displays what would happen trying to set all missing SPNs for sql2016
                 $set = $true
             }
             catch {
-                Write-Message -Message "Could not add SPN. $($_.Exception.Message)" -Level Warning -EnableException $EnableException -ErrorRecord $_ -Target $ServiceAccount
+                Write-Message -Message "Could not add SPN. $($_.Exception.Message)" -Level Warning -EnableException $EnableException.ToBool() -ErrorRecord $_ -Target $ServiceAccount
                 $set = $false
                 $status = "Failed to add SPN"
                 $delegate = $false
@@ -153,7 +153,7 @@ Displays what would happen trying to set all missing SPNs for sql2016
                         $status = "Successfully added constrained delegation"
                     }
                     catch {
-                        Write-Message -Message "Could not add delegation. $($_.Exception.Message)" -Level Warning -EnableException $EnableException -ErrorRecord $_ -Target $ServiceAccount
+                        Write-Message -Message "Could not add delegation. $($_.Exception.Message)" -Level Warning -EnableException $EnableException.ToBool() -ErrorRecord $_ -Target $ServiceAccount
                         $set = $false
                         $status = "Failed to add constrained delegation"
                     }

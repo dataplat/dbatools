@@ -102,7 +102,7 @@ function Get-DbaPolicy {
 
             foreach ($currentpolicy in $allpolicies) {
                 Write-Message -Level Verbose -Message "Processing $currentpolicy"
-                Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
 
