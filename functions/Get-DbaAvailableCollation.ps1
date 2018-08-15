@@ -99,7 +99,7 @@ function Get-DbaAvailableCollation {
 
             $availableCollations = $server.EnumCollations()
             foreach ($collation in $availableCollations) {
-                Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name CodePageName -Value (Get-CodePageDescription $collation.CodePage)

@@ -100,7 +100,7 @@ function Get-DbaRestoreHistory {
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-                $computername = $server.NetName
+                $computername = $server.ComputerName
                 $instancename = $server.ServiceName
                 $servername = $server.DomainInstanceName
 

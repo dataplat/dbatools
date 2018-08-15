@@ -145,7 +145,7 @@ function Get-DbaRegisteredServerGroup {
                     $groups = $server.DatabaseEngineServerGroup.GetDescendantRegisteredServers().Parent | Where-Object Id -in $Id
                 }
             }
-
+            $server.ServerConnection.Disconnect()
             foreach ($groupobject in $groups) {
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $groupobject -MemberType NoteProperty -Name InstanceName -value $server.InstanceName

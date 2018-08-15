@@ -106,7 +106,7 @@ Gets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress
 
                 $UserDefinedFunctions | foreach {
 
-                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name

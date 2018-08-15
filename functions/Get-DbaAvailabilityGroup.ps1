@@ -85,7 +85,7 @@ function Get-DbaAvailabilityGroup {
             }
 
             foreach ($ag in $ags) {
-                Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 

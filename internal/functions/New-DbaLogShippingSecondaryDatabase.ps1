@@ -94,7 +94,7 @@ function New-DbaLogShippingSecondaryDatabase {
     param (
         [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParmeter]$SqlInstance,
+        [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$BufferCount = -1,
         [int]$BlockSize = -1,

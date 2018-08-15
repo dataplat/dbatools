@@ -142,7 +142,7 @@ function Get-DbaAgentJobHistory {
             $tokenrex = [regex]'\$\((?<method>[^()]+)\((?<tok>[^)]+)\)\)|\$\((?<tok>[^)]+)\)'
             $propmap = @{
                 'INST'      = $Server.ServiceName
-                'MACH'      = $Server.NetName
+                'MACH'      = $Server.ComputerName
                 'SQLDIR'    = $Server.InstallDataDirectory
                 'SQLLOGDIR' = $Server.ErrorLogPath
                 #'STEPCT' loop number ?
@@ -246,7 +246,7 @@ function Get-DbaAgentJobHistory {
                         3 { "Canceled" }
                     }
 
-                    Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     $DurationInSeconds = ($execution.RunDuration % 100) + [int]( ($execution.RunDuration % 10000 ) / 100 ) * 60 + [int]( ($execution.RunDuration % 1000000 ) / 10000 ) * 60 * 60
@@ -261,7 +261,7 @@ function Get-DbaAgentJobHistory {
                         try {
                             $outname = $outmap[$execution.JobName][$execution.StepID]
                             $outname = Resolve-JobToken -exec $execution -outcome $outcome -outfile $outname
-                            $outremote = Join-AdminUNC $Server.NetName $outname
+                            $outremote = Join-AdminUNC $Server.ComputerName $outname
                         }
                         catch {
                             $outname = ''

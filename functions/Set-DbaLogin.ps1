@@ -342,7 +342,7 @@ function Set-DbaLogin {
 
                 # Return the results
                 [PSCustomObject]@{
-                    ComputerName           = $server.NetName
+                    ComputerName           = $server.ComputerName
                     InstanceName           = $server.ServiceName
                     SqlInstance            = $server.DomainInstanceName
                     LoginName              = $l.Name

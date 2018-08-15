@@ -76,7 +76,7 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
             $db = $smocert.Parent.Name
 
             $output = [pscustomobject]@{
-                ComputerName = $server.NetName
+                ComputerName = $server.ComputerName
                 InstanceName = $server.ServiceName
                 SqlInstance  = $instance
                 Database     = $db

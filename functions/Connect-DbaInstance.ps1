@@ -245,7 +245,16 @@ function Connect-DbaInstance {
                     $server.ConnectionContext.Connect()
                 }
                 if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
-                else { return $server }
+                else {
+                    if (-not $server.ComputerName) {
+                        $parsedcomputername = $server.NetName
+                        if (-not $parsedcomputername) {
+                            $parsedcomputername = ([dbainstance]$instance).ComputerName
+                        }
+                        Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
+                    }
+                    return $server
+                }
             }
 
             if ($instance.IsConnectionString) { $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject) }
@@ -308,7 +317,16 @@ function Connect-DbaInstance {
                         }
                     }
 
-                    $server.ConnectionContext.Connect()
+                    if ($NonPooled) {
+                        $server.ConnectionContext.Connect()
+                    }
+                    elseif ($authtype -eq "Windows Authentication with Credential") {
+                        # Make it connect in a natural way, hard to explain.
+                        $null = $server.IsMemberOfWsfcCluster
+                    }
+                    else {
+                        $server.ConnectionContext.SqlConnectionObject.Open()
+                    }
                 }
                 catch {
                     $message = $_.Exception.InnerException.InnerException
@@ -353,8 +371,19 @@ function Connect-DbaInstance {
                 }
             }
 
-            if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
-            else { return $server }
+            if ($SqlConnectionOnly) {
+                return $server.ConnectionContext.SqlConnectionObject
+            }
+            else {
+                if (-not $server.ComputerName) {
+                    $parsedcomputername = $server.NetName
+                    if (-not $parsedcomputername) {
+                        $parsedcomputername = ([dbainstance]$instance).ComputerName
+                    }
+                    Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
+                }
+                return $server
+            }
         }
     }
 }

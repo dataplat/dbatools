@@ -108,7 +108,7 @@ function Get-DbaDbForeignKey {
                     }
 
                     foreach ($fk in $tbl.ForeignKeys) {
-                        Add-Member -Force -InputObject $fk -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                        Add-Member -Force -InputObject $fk -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                         Add-Member -Force -InputObject $fk -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                         Add-Member -Force -InputObject $fk -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                         Add-Member -Force -InputObject $fk -MemberType NoteProperty -Name Database -value $db.Name

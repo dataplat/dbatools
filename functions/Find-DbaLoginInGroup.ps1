@@ -101,7 +101,7 @@ function Find-DbaLoginInGroup {
                             $output += [PSCustomObject]@{
                                 SqlInstance        = $server.Name
                                 InstanceName       = $server.ServiceName
-                                ComputerName       = $server.NetName
+                                ComputerName       = $server.ComputerName
                                 Login              = $memberDomain + "\" + $member.SamAccountName
                                 DisplayName        = $member.DisplayName
                                 MemberOf           = $AdGroup

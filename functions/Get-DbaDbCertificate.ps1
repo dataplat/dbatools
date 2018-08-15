@@ -107,7 +107,7 @@ Gets the cert1 certificate within the db1 database
 
                 foreach ($cert in $certs) {
 
-                    Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name Database -value $currentdb.Name

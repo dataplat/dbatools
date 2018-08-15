@@ -252,7 +252,7 @@ function Find-DbaInstance {
                     else {
                         $null = $computersScanned.Add($computer.ComputerName)
                     }
-                    Write-Message -Level Verbose -Message "Processing: $($computer)" -Target $computer -EnableException $EnableException -FunctionName Find-DbaInstance
+                    Write-Message -Level Verbose -Message "Processing: $($computer)" -Target $computer -FunctionName Find-DbaInstance
 
                     #region Null variables to prevent scope lookup on conditional existence
                     $resolution = $null
@@ -351,11 +351,11 @@ function Find-DbaInstance {
                                 }
                             }
                             else {
-                                Write-Message -Level Verbose -Message "Computer $computer could be contacted, but no trace of an SQL Instance was found. Skipping..." -Target $computer -EnableException $EnableException -FunctionName Find-DbaInstance
+                                Write-Message -Level Verbose -Message "Computer $computer could be contacted, but no trace of an SQL Instance was found. Skipping..." -Target $computer -FunctionName Find-DbaInstance
                             }
                         }
                         else {
-                            Write-Message -Level Verbose -Message "Computer $computer could not be contacted, skipping." -Target $computer -EnableException $EnableException -FunctionName Find-DbaInstance
+                            Write-Message -Level Verbose -Message "Computer $computer could not be contacted, skipping." -Target $computer -FunctionName Find-DbaInstance
                         }
 
                         continue
@@ -936,7 +936,7 @@ function Find-DbaInstance {
                         }
                     }
                     catch {
-                        Write-Message -Level Warning -Message "Datasource enumeration failed" -ErrorRecord $_ -EnableException $EnableException
+                        Write-Message -Level Warning -Message "Datasource enumeration failed" -ErrorRecord $_ -EnableException $EnableException.ToBool()
                     }
                 }
                 #endregion Discovery: DataSource Enumeration
@@ -947,7 +947,7 @@ function Find-DbaInstance {
                         Get-DomainSPN -DomainController $DomainController -Credential $Credential -ErrorAction Stop | Invoke-SteppablePipeline -Pipeline $steppablePipeline
                     }
                     catch {
-                        Write-Message -Level Warning -Message "Failed to execute Service Principal Name discovery" -ErrorRecord $_ -EnableException $EnableException
+                        Write-Message -Level Warning -Message "Failed to execute Service Principal Name discovery" -ErrorRecord $_ -EnableException $EnableException.ToBool()
                     }
                 }
                 #endregion Discovery: SPN Search

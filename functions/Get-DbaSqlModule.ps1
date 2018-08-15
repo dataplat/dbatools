@@ -153,7 +153,7 @@ function Get-DbaSqlModule {
 
                 foreach ($row in $server.Query($sql, $db.name)) {
                     [PSCustomObject]@{
-                        ComputerName  = $server.NetName
+                        ComputerName  = $server.ComputerName
                         InstanceName  = $server.ServiceName
                         SqlInstance   = $server.DomainInstanceName
                         Database      = $row.DatabaseName

@@ -263,7 +263,7 @@ EXEC master.sys.sp_help_log_shipping_monitor"
 
                 # Set up the custom object
                 $null = $collection.Add([PSCustomObject]@{
-                        ComputerName          = $server.NetName
+                        ComputerName          = $server.ComputerName
                         InstanceName          = $server.ServiceName
                         SqlInstance           = $server.DomainInstanceName
                         Database              = $result.DatabaseName

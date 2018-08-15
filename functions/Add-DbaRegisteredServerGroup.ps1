@@ -113,6 +113,7 @@ function Add-DbaRegisteredServerGroup {
                     $newgroup.Create()
                     
                     Get-DbaRegisteredServerGroup -SqlInstance $parentserver.ServerConnection.SqlConnectionObject -Group (Get-RegServerGroupReverseParse -object $newgroup)
+                    $parentserver.ServerConnection.Disconnect()
                 }
                 catch {
                     Stop-Function -Message "Failed to add $reggroup on $server" -ErrorRecord $_ -Continue

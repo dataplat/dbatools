@@ -95,7 +95,7 @@ function Test-DbaSqlPath {
                         [pscustomobject]@{
                             SqlInstance  = $server.Name
                             InstanceName = $server.ServiceName
-                            ComputerName = $server.NetName
+                            ComputerName = $server.ComputerName
                             FilePath     = $PathsBatch[$i]
                             FileExists   = $DoesPass
                             IsContainer  = $r[1] -eq $true

@@ -255,7 +255,7 @@ function Get-DbaAgentSchedule {
         foreach ($schedule in $scheduleCollection) {
             $description = Get-ScheduleDescription -Schedule $schedule
 
-            Add-Member -Force -InputObject $schedule -MemberType NoteProperty ComputerName -value $server.NetName
+            Add-Member -Force -InputObject $schedule -MemberType NoteProperty ComputerName -value $server.ComputerName
             Add-Member -Force -InputObject $schedule -MemberType NoteProperty InstanceName -value $server.ServiceName
             Add-Member -Force -InputObject $schedule -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
             Add-Member -Force -InputObject $schedule -MemberType NoteProperty Description -Value $description

@@ -1,4 +1,4 @@
-﻿namespace Sqlcollaborative.Dbatools.dbaSystem
+﻿namespace Sqlcollaborative.Dbatools.Message
 {
     /// <summary>
     /// The various levels of verbosity available.

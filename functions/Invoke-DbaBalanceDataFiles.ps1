@@ -345,7 +345,7 @@ function Invoke-DbaBalanceDataFiles {
                 $dataFilesEnding = Get-DbaDatabaseFile -SqlInstance $server -Database $db.Name | Where-Object { $_.TypeDescription -eq 'ROWS' } | Select-Object ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace | Sort-Object ID
 
                 [pscustomobject]@{
-                    ComputerName   = $server.NetName
+                    ComputerName   = $server.ComputerName
                     InstanceName   = $server.ServiceName
                     SqlInstance    = $server.DomainInstanceName
                     Database       = $db.Name

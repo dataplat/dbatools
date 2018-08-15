@@ -62,7 +62,7 @@ function Get-DbaRegisteredServerStore {
                 Stop-Function -Message "Cannot access Central Management Server on $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            Add-Member -Force -InputObject $store -MemberType NoteProperty -Name ComputerName -value $server.NetName
+            Add-Member -Force -InputObject $store -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
             Add-Member -Force -InputObject $store -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
             Add-Member -Force -InputObject $store -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 

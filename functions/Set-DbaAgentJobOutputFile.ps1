@@ -134,7 +134,7 @@ function Set-DbaAgentJobOutputFile {
                         $jobstep.Refresh()
 
                         [pscustomobject]@{
-                            ComputerName   = $server.NetName
+                            ComputerName   = $server.ComputerName
                             InstanceName   = $server.ServiceName
                             SqlInstance    = $server.DomainInstanceName
                             Job            = $currentJob.Name

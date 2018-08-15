@@ -214,7 +214,7 @@ DROP TABLE #DatabaseID;"
                 foreach ($result in $results) {
                     # Set up the custom object
                     $null = $collection.Add([PSCustomObject]@{
-                            ComputerName   = $server.NetName
+                            ComputerName   = $server.ComputerName
                             InstanceName   = $server.ServiceName
                             SqlInstance    = $server.DomainInstanceName
                             Database       = $result.DatabaseName

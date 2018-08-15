@@ -106,7 +106,7 @@ function Get-DbaDbStoredProcedure {
                         continue
                     }
 
-                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name Database -value $db.Name

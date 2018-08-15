@@ -74,7 +74,7 @@ function Copy-DbaAgentOperator {
         [PSCredential]
         $SourceSqlCredential,
         [parameter(Mandatory = $true)]
-        [DbaInstanceParameter]$Destination,
+        [DbaInstanceParameter[]]$Destination,
         [PSCredential]
         $DestinationSqlCredential,
         [object[]]$Operator,
@@ -85,77 +85,92 @@ function Copy-DbaAgentOperator {
     )
 
     begin {
-
-        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-
+        try {
+            Write-Message -Level Verbose -Message "Connecting to $Source"
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        }
+        catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            return
+        }
         $serverOperator = $sourceServer.JobServer.Operators
-        $destOperator = $destServer.JobServer.Operators
-
-        $failsafe = $destServer.JobServer.AlertSystem | Select-Object FailSafeOperator
     }
     process {
-
-        foreach ($sOperator in $serverOperator) {
-            $operatorName = $sOperator.Name
-
-            $copyOperatorStatus = [pscustomobject]@{
-                SourceServer      = $sourceServer.Name
-                DestinationServer = $destServer.Name
-                Name              = $operatorName
-                Type              = "Agent Operator"
-                Status            = $null
-                Notes             = $null
-                DateTime          = [DbaDateTime](Get-Date)
+        if (Test-FunctionInterrupt) { return }
+        foreach ($destinstance in $Destination) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $destinstance"
+                $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             }
-
-            if ($Operator -and $Operator -notcontains $operatorName -or $ExcludeOperator -in $operatorName) {
-                continue
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-
-            if ($destOperator.Name -contains $sOperator.Name) {
-                if ($force -eq $false) {
-                    $copyOperatorStatus.Status = "Skipped"
-                    $copyOperatorStatus.Notes = "Already exists"
-                    $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Write-Message -Level Verbose -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
+            
+            $destOperator = $destServer.JobServer.Operators
+            $failsafe = $destServer.JobServer.AlertSystem | Select-Object FailSafeOperator
+            foreach ($sOperator in $serverOperator) {
+                $operatorName = $sOperator.Name
+                
+                $copyOperatorStatus = [pscustomobject]@{
+                    SourceServer = $sourceServer.Name
+                    DestinationServer = $destServer.Name
+                    Name         = $operatorName
+                    Type         = "Agent Operator"
+                    Status       = $null
+                    Notes        = $null
+                    DateTime     = [DbaDateTime](Get-Date)
+                }
+                
+                if ($Operator -and $Operator -notcontains $operatorName -or $ExcludeOperator -in $operatorName) {
                     continue
                 }
-                else {
-                    if ($failsafe.FailSafeOperator -eq $operatorName) {
-                        Write-Message -Level Verbose -Message "$operatorName is the failsafe operator. Skipping drop."
+                
+                if ($destOperator.Name -contains $sOperator.Name) {
+                    if ($force -eq $false) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Operator $operatorName exists at destination. Use -Force to drop and migrate.")) {
+                            $copyOperatorStatus.Status = "Skipped"
+                            $copyOperatorStatus.Notes = "Already exists"
+                            $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Write-Message -Level Verbose -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
+                        }
                         continue
                     }
-
-                    if ($Pscmdlet.ShouldProcess($destination, "Dropping operator $operatorName and recreating")) {
-                        try {
-                            Write-Message -Level Verbose -Message "Dropping Operator $operatorName"
-                            $destServer.JobServer.Operators[$operatorName].Drop()
+                    else {
+                        if ($failsafe.FailSafeOperator -eq $operatorName) {
+                            Write-Message -Level Verbose -Message "$operatorName is the failsafe operator. Skipping drop."
+                            continue
                         }
-                        catch {
-                            $copyOperatorStatus.Status = "Failed"
-                            $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
-                            Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+                        
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping operator $operatorName and recreating")) {
+                            try {
+                                Write-Message -Level Verbose -Message "Dropping Operator $operatorName"
+                                $destServer.JobServer.Operators[$operatorName].Drop()
+                            }
+                            catch {
+                                $copyOperatorStatus.Status = "Failed"
+                                $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                
+                                Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue
+                            }
                         }
                     }
                 }
-            }
-
-            if ($Pscmdlet.ShouldProcess($destination, "Creating Operator $operatorName")) {
-                try {
-                    Write-Message -Level Verbose -Message "Copying Operator $operatorName"
-                    $sql = $sOperator.Script() | Out-String
-                    Write-Message -Level Debug -Message $sql
-                    $destServer.Query($sql)
-
-                    $copyOperatorStatus.Status = "Successful"
-                    $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                }
-                catch {
-                    $copyOperatorStatus.Status = "Failed"
-                    $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Stop-Function -Message "Issue creating operator." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
+                
+                if ($Pscmdlet.ShouldProcess($destinstance, "Creating Operator $operatorName")) {
+                    try {
+                        Write-Message -Level Verbose -Message "Copying Operator $operatorName"
+                        $sql = $sOperator.Script() | Out-String
+                        Write-Message -Level Debug -Message $sql
+                        $destServer.Query($sql)
+                        
+                        $copyOperatorStatus.Status = "Successful"
+                        $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
+                    catch {
+                        $copyOperatorStatus.Status = "Failed"
+                        $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Stop-Function -Message "Issue creating operator." -Category InvalidOperation -ErrorRecord $_ -Target $destServer
+                    }
                 }
             }
         }

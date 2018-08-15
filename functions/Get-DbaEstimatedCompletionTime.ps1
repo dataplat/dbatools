@@ -137,7 +137,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
             Write-Message -Level Debug -Message $sql
             foreach ($row in ($server.Query($sql))) {
                 [pscustomobject]@{
-                    ComputerName            = $server.NetName
+                    ComputerName            = $server.ComputerName
                     InstanceName            = $server.ServiceName
                     SqlInstance             = $server.DomainInstanceName
                     Database                = $row.Database

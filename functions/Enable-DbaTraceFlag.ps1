@@ -65,7 +65,7 @@ function Enable-DbaTraceFlag {
             # We could combine all trace flags but the granularity is worth it
             foreach ($tf in $TraceFlag) {
                 $TraceFlagInfo = [PSCustomObject]@{
-                    SourceServer = $server.NetName
+                    SourceServer = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     TraceFlag    = $tf

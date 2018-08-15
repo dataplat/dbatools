@@ -145,7 +145,7 @@ function Find-DbaView {
                             $vwTextFound = $viewText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                             [PSCustomObject]@{
-                                ComputerName   = $server.NetName
+                                ComputerName   = $server.ComputerName
                                 SqlInstance    = $server.ServiceName
                                 Database       = $db.Name
                                 Schema         = $vw.Schema
@@ -177,7 +177,7 @@ function Find-DbaView {
                             $vwTextFound = $viewText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
                             [PSCustomObject]@{
-                                ComputerName   = $server.NetName
+                                ComputerName   = $server.ComputerName
                                 SqlInstance    = $server.ServiceName
                                 Database       = $db.Name
                                 Schema         = $vw.Schema

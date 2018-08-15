@@ -120,7 +120,7 @@ FROM sys.databases
                 [PSCustomObject]@{
                     SqlInstance  = $server.Name
                     InstanceName = $server.ServiceName
-                    ComputerName = $server.NetName
+                    ComputerName = $server.ComputerName
                     DatabaseName = $db.Name
                     RW           = $db_status.RW
                     Status       = $db_status.Status

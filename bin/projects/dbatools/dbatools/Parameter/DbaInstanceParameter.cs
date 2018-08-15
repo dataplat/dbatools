@@ -124,7 +124,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
         public string SqlComputerName
         {
-            get { return "[" + _ComputerName + "]"; }
+            get { return "[" + ComputerName + "]"; }
         }
 
         /// <summary>
@@ -630,9 +630,9 @@ namespace Sqlcollaborative.Dbatools.Parameter
         #endregion Constructors
 
         /// <summary>
-        /// Overrides the regular tostring to show something pleasant and useful
+        /// Overrides the regular <c>ToString()</c> to show something pleasant and useful
         /// </summary>
-        /// <returns>The full SMO name</returns>
+        /// <returns>The <see cref="FullSmoName"/></returns>
         public override string ToString()
         {
             return FullSmoName;

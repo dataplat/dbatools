@@ -114,7 +114,7 @@ function Get-DbaWaitingTask {
                 }
 
                 [PSCustomObject]@{
-                    ComputerName = $server.NetName
+                    ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     Spid         = $row.Spid

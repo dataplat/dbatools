@@ -188,7 +188,7 @@ function Get-DbaTcpPort {
                 $port = $server.Query($sql)
 
                 [PSCustomObject]@{
-                    ComputerName = $server.NetName
+                    ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     Port         = $port.local_tcp_port

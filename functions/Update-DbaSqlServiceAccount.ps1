@@ -218,7 +218,7 @@ function Update-DbaSqlServiceAccount {
                     catch {
                         $outStatus = 'Failed'
                         $outMessage = $_.Exception.Message
-                        Write-Message -Level Warning -Message $_.Exception.Message -EnableException $EnableException
+                        Write-Message -Level Warning -Message $_.Exception.Message -EnableException $EnableException.ToBool()
                     }
                 }
                 else {

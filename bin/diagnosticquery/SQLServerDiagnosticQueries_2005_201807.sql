@@ -1,7 +1,7 @@
 
 -- SQL Server 2005 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: May 2, 2018
+-- Last Modified: July 5, 2018
 -- https://www.sqlserverperformance.wordpress.com/
 -- https://www.sqlskills.com/blogs/glenn/
 -- Twitter: GlennAlanBerry
@@ -672,7 +672,7 @@ AND counter_name = N'Page life expectancy' OPTION (RECOMPILE);
 -- Higher PLE is better. Watch the trend over time, not the absolute value.
 -- This will only return one row for non-NUMA systems.
 
--- Page Life Expectancy isnï¿½t what you thinkï¿½
+-- Page Life Expectancy isn’t what you think…
 -- https://www.sqlskills.com/blogs/paul/page-life-expectancy-isnt-what-you-think/
 
 
@@ -705,13 +705,15 @@ ORDER BY SUM(single_pages_kb) DESC OPTION (RECOMPILE);
 
 
 -- Find single-use, ad-hoc queries that are bloating the plan cache (Query 30) (Ad hoc Queries)
-SELECT TOP(50) [text] AS [QueryText], cp.cacheobjtype, cp.objtype, cp.size_in_bytes/1024 AS [Plan Size in KB]
+SELECT TOP(50) DB_NAME(t.[dbid]) AS [Database Name], t.[text] AS [Query Text], 
+cp.objtype AS [Object Type], cp.cacheobjtype AS [Cache Object Type],  
+cp.size_in_bytes/1024 AS [Plan Size in KB]
 FROM sys.dm_exec_cached_plans AS cp WITH (NOLOCK)
-CROSS APPLY sys.dm_exec_sql_text(plan_handle) 
+CROSS APPLY sys.dm_exec_sql_text(plan_handle) AS t
 WHERE cp.cacheobjtype = N'Compiled Plan' 
 AND cp.objtype IN (N'Adhoc', N'Prepared') 
 AND cp.usecounts = 1
-ORDER BY cp.size_in_bytes DESC OPTION (RECOMPILE);
+ORDER BY cp.size_in_bytes DESC, DB_NAME(t.[dbid]) OPTION (RECOMPILE);
 ------
 
 -- Gives you the text and size of single-use ad-hoc queries that waste space in plan cache
@@ -1144,13 +1146,13 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 
 -- These three Pluralsight Courses go into more detail about how to run these queries and interpret the results
 
--- SQL Server 2014 DMV Diagnostic Queries ï¿½ Part 1 
+-- SQL Server 2014 DMV Diagnostic Queries – Part 1 
 -- https://bit.ly/2plxCer
 
--- SQL Server 2014 DMV Diagnostic Queries ï¿½ Part 2
+-- SQL Server 2014 DMV Diagnostic Queries – Part 2
 -- https://bit.ly/2IuJpzI
 
--- SQL Server 2014 DMV Diagnostic Queries ï¿½ Part 3
+-- SQL Server 2014 DMV Diagnostic Queries – Part 3
 -- https://bit.ly/2FIlCPb
 
 

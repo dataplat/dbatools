@@ -114,7 +114,7 @@ function Invoke-DbaAdvancedRestore {
         [int]$BlockSize,
         [int]$BufferCount,
         [switch]$Continue,
-        [PSCredential]$AzureCredential,
+        [string]$AzureCredential,
         [switch]$WithReplace,
         [switch]$KeepCDC,
         [object[]]$PageRestore,
@@ -234,13 +234,17 @@ function Invoke-DbaAdvancedRestore {
                     Write-Message -Message "Adding device $file" -Level Debug
                     $Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
                     $Device.Name = $file
-                    if ($file -like "http*") {
+                    if ($file.StartsWith("http")) {
                         $Device.devicetype = "URL"
-                        $Restore.CredentialName = $AzureCredential
                     }
                     else {
                         $Device.devicetype = "File"
                     }
+                    
+                    if ($AzureCredential) {
+                        $Restore.CredentialName = $AzureCredential
+                    }
+                    
                     $Restore.FileNumber = $backup.Position
                     $Restore.Devices.Add($Device)
                 }

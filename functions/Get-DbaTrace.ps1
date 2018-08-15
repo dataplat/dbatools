@@ -90,14 +90,14 @@ function Get-DbaTrace {
 
             foreach ($row in $results) {
                 if ($row.Path.ToString().Length -gt 0) {
-                    $remotefile = Join-AdminUnc -servername $server.NetName -filepath $row.path
+                    $remotefile = Join-AdminUnc -servername $server.ComputerName -filepath $row.path
                 }
                 else {
                     $remotefile = $null
                 }
 
                 [PSCustomObject]@{
-                    ComputerName             = $server.NetName
+                    ComputerName             = $server.ComputerName
                     InstanceName             = $server.ServiceName
                     SqlInstance              = $server.DomainInstanceName
                     Id                       = $row.id

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Sqlcollaborative.Dbatools.dbaSystem
+namespace Sqlcollaborative.Dbatools.Message
 {
     /// <summary>
     /// The kind of information the logged entry was.

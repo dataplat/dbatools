@@ -123,7 +123,7 @@ Rename multiple jobs in one go on multiple servers.
 
                         # Set up the custom object
                         $null = $collection.Add([PSCustomObject]@{
-                                ComputerName    = $server.NetName
+                                ComputerName    = $server.ComputerName
                                 InstanceName    = $server.ServiceName
                                 SqlInstance     = $server.DomainInstanceName
                                 CategoryName    = $originalCategoryName

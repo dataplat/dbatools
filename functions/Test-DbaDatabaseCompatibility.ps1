@@ -97,7 +97,7 @@ function Test-DbaDatabaseCompatibility {
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.name) on $instance."
                 [PSCustomObject]@{
-                    ComputerName          = $server.NetName
+                    ComputerName          = $server.ComputerName
                     InstanceName          = $server.ServiceName
                     SqlInstance           = $server.DomainInstanceName
                     ServerLevel           = $serverversion

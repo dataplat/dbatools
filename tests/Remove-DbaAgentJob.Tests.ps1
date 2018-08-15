@@ -2,20 +2,6 @@ $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        $paramCount = 7
-        $defaultParamCount = 13
-        [object[]]$params = (Get-ChildItem function:\Remove-DbaAgentJob).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'KeepHistory', 'KeepUnusedSchedule', 'Mode', 'EnableException'
-        It "Should contain our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
-        }
-        It "Should only contain $paramCount parameters" {
-            $params.Count - $defaultParamCount | Should Be $paramCount
-        }
-    }
-}
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Command removes jobs" {
         BeforeAll {
@@ -55,15 +41,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             (Get-DbaAgentSchedule -SqlInstance $script:instance3 -Schedule dbatoolsci_weekly) | Should Not BeNullOrEmpty
         }
     }
-    Context "Command removes job but not history" {
+    Context "Command removes job but not history and supports piping" {
         BeforeAll {
             $jobId = New-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history | Select-Object -ExpandProperty JobId
             $null = New-DbaAgentJobStep -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history -StepId 1 -StepName dbatoolsci_step1 -Subsystem TransactSql -Command 'select 1'
             $null = Start-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history
             $server = Connect-DbaInstance -SqlInstance $script:instance3
         }
-        $null = Remove-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history -KeepHistory
         It "Should have deleted job: dbatoolsci_testjob_history" {
+            $null = Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history | Remove-DbaAgentJob -KeepHistory
             (Get-DbaAgentJob -SqlInstance $script:instance3 -Job dbatoolsci_testjob_history) | Should BeNullOrEmpty
         }
         It -Skip "Should not have deleted history: dbatoolsci_testjob_history" {

@@ -81,7 +81,7 @@
                 $output = Get-DbaTrace -SqlInstance $server -Id $traceid
                 if (-not $output) {
                     $output = [PSCustomObject]@{
-                        ComputerName            = $server.NetName
+                        ComputerName            = $server.ComputerName
                         InstanceName            = $server.ServiceName
                         SqlInstance             = $server.DomainInstanceName
                         Id                      = $traceid

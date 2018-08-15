@@ -2,10 +2,10 @@
 function Move-DbaRegisteredServerGroup {
     <#
         .SYNOPSIS
-            Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
+             Moves registered server groups around SQL Server Central Management Server (CMS).
 
         .DESCRIPTION
-            Returns an array of Server Groups found in the CMS.
+            Moves registered server groups around SQL Server Central Management Server (CMS).
 
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to.
@@ -115,6 +115,7 @@ function Move-DbaRegisteredServerGroup {
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptMove($groupobject).GetScript())
                     Write-Message -Level Verbose -Message "Connecting to $instance to search for $newname"
                     Get-DbaRegisteredServerGroup -SqlInstance $server -Group $newname
+                    $parentserver.ServerConnection.Disconnect()
                 }
                 catch {
                     Stop-Function -Message "Failed to move $($regserver.Name) to $NewGroup on $($regserver.SqlInstance)" -ErrorRecord $_ -Continue
