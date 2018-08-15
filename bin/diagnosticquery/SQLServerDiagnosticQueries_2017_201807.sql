@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: August 2, 2018
+-- Last Modified: August 14, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -57,26 +57,27 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 ------
 
 -- SQL Server 2017 Builds																		
--- Build			Description			Release Date	URL to KB Article								
--- 14.0.1.246		CTP 1.0				11/30/2016
--- 14.0.100.187		CTP 1.1				12/16/2016
--- 14.0.200.24		CTP 1.2				1/19/2017
--- 14.0.304.138		CTP 1.3				2/17/2017
--- 14.0.405.198		CTP 1.4				3/20/2017
--- 14.0.500.272		CTP 2.0				4/19/2017
--- 14.0.600.250		CTP 2.1				5/17/2017
--- 14.0.800.90		RC1					7/17/2017
--- 14.0.900.75		RC2					8/2/2017
--- 14.0.1000.169	RTM					10/2/2017
--- 14.0.3006.16		CU1					10/24/2017		https://support.microsoft.com/en-us/help/4038634
--- 14.0.3008.27		CU2					11/28/2017		https://support.microsoft.com/en-us/help/4052574
--- 14.0.3015.40		CU3					1/4/2018		https://support.microsoft.com/en-us/help/4052987
--- 14.0.3022.28		CU4					2/20/2018	    https://support.microsoft.com/en-us/help/4056498
--- 14.0.3023.8		CU5					3/20/2018		https://support.microsoft.com/en-us/help/4092643
--- 14.0.3025.34		CU6					4/17/2018	    https://support.microsoft.com/en-us/help/4101464
--- 14.0.3026.27		CU7					5/23/2018		https://support.microsoft.com/en-us/help/4229789
--- 14.0.3029.16		CU8					6/19/2018		https://support.microsoft.com/en-us/help/4338363
--- 14.0.3030.27		CU9					7/19/2018		https://support.microsoft.com/en-us/help/4341265 
+-- Build			Description							Release Date	URL to KB Article								
+-- 14.0.1.246		CTP 1.0								11/30/2016
+-- 14.0.100.187		CTP 1.1								12/16/2016
+-- 14.0.200.24		CTP 1.2								1/19/2017
+-- 14.0.304.138		CTP 1.3								2/17/2017
+-- 14.0.405.198		CTP 1.4								3/20/2017
+-- 14.0.500.272		CTP 2.0								4/19/2017
+-- 14.0.600.250		CTP 2.1								5/17/2017
+-- 14.0.800.90		RC1									7/17/2017
+-- 14.0.900.75		RC2									8/2/2017
+-- 14.0.1000.169	RTM									10/2/2017
+-- 14.0.3006.16		CU1									10/24/2017		https://support.microsoft.com/en-us/help/4038634
+-- 14.0.3008.27		CU2									11/28/2017		https://support.microsoft.com/en-us/help/4052574
+-- 14.0.3015.40		CU3									1/4/2018		https://support.microsoft.com/en-us/help/4052987
+-- 14.0.3022.28		CU4									2/20/2018	    https://support.microsoft.com/en-us/help/4056498
+-- 14.0.3023.8		CU5									3/20/2018		https://support.microsoft.com/en-us/help/4092643
+-- 14.0.3025.34		CU6									4/17/2018	    https://support.microsoft.com/en-us/help/4101464
+-- 14.0.3026.27		CU7									5/23/2018		https://support.microsoft.com/en-us/help/4229789
+-- 14.0.3029.16		CU8									6/19/2018		https://support.microsoft.com/en-us/help/4338363
+-- 14.0.3030.27		CU9									7/19/2018		https://support.microsoft.com/en-us/help/4341265
+-- 14.0.3035.2		CU9 + Security Update				8/13/2018		https://www.microsoft.com/en-us/download/details.aspx?id=57263
 		
 															
 
