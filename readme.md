@@ -50,7 +50,7 @@ Restore-DbaDatabase -SqlInstance $instance -Path "C:\temp\AdventureWorks2012-Ful
 Get-ChildItem -Directory \\workstation\backups\sql2012 | Restore-DbaDatabase -SqlInstance $new
 
 # What about if you need to make a backup? And you are logging in with alternative credentials?
-Get-DbaDatabase -SqlInstance $new -SqlCredential (Get-Credential sa) | Backup-DbaDatabase
+Get-DbaDatabase -SqlInstance $new -SqlCredential sqladmin | Backup-DbaDatabase
 
 # Testing your backups is crazy easy! 
 Start-Process https://dbatools.io/Test-DbaLastBackup
@@ -130,7 +130,7 @@ Get-DbaXEventSession -SqlInstance $new -Session system_health | Read-DbaXEventFi
 
 # Reset-DbaAdmin
 Reset-DbaAdmin -SqlInstance $instance -Login sqladmin -Verbose
-Get-DbaDatabase -SqlInstance $instance -SqlCredential (Get-Credential sqladmin)
+Get-DbaDatabase -SqlInstance $instance -SqlCredential sqladmin
 
 # sp_whoisactive
 Install-DbaWhoIsActive -SqlInstance $instance -Database master
@@ -199,7 +199,7 @@ Get-DbaDbVirtualLogFile -SqlInstance $new -Database db1 | Measure-Object
 By default, all SQL-based commands will login to SQL Server using Trusted/Windows Authentication. To use alternative credentials, including SQL Logins or alternative Windows credentials, use the `-SqlCredential`. This parameter accepts the results of `Get-Credential` which generates a [PSCredential](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/get-credential?view=powershell-5.1) object.
 
 ```powershell
-Get-DbaDatabase -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin)
+Get-DbaDatabase -SqlInstance sql2017 -SqlCredential sqladmin
 ```
 
 <a href="https://dbatools.io/wp-content/uploads/2016/05/cred.jpg"><img class="aligncenter size-full wp-image-6897" src="https://dbatools.io/wp-content/uploads/2016/05/cred.jpg" alt="" width="322" height="261" /></a>
