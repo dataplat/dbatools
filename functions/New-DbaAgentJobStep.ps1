@@ -194,7 +194,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 
                 # Check if the job exists
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
-                    Write-Message -Message "Job $j doesn't exists on $instance" -Warning
+                    Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
                 }
                 else {
                     # Create the job step object
