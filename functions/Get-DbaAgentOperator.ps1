@@ -100,16 +100,16 @@ function Get-DbaAgentOperator {
                 $jobs = $server.JobServer.jobs | Where-Object { $_.OperatorToEmail, $_.OperatorToNetSend, $_.OperatorToPage -contains $operat.Name }
                 $lastemail = [dbadatetime]$operat.LastEmailDate
 
-				$operatAlerts = @()
+                $operatAlerts = @()
                 $alerts = $server.JobServer.alerts
-				foreach($alert in $alerts){                                  
-                    $dtAlert = $alert.EnumNotifications($operat.Name)                   
+                foreach($alert in $alerts){
+                    $dtAlert = $alert.EnumNotifications($operat.Name)
                     if ($dtAlert.Rows.Count -gt 0) {
                         $operatAlerts += $alert.Name
                     }
-					$alertlastemail = [dbadatetime]$alert.LastOccurrenceDate
+                    $alertlastemail = [dbadatetime]$alert.LastOccurrenceDate
                 }
-				
+                
                 Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                 Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
