@@ -106,8 +106,8 @@ function Get-DbaAgentOperator {
                     $dtAlert = $alert.EnumNotifications($operat.Name)
                     if ($dtAlert.Rows.Count -gt 0) {
                         $operatAlerts += $alert.Name
+                        $alertlastemail = [dbadatetime]$alert.LastOccurrenceDate
                     }
-                    $alertlastemail = [dbadatetime]$alert.LastOccurrenceDate
                 }
                 
                 Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
