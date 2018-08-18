@@ -51,9 +51,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             @($results | Where-Object {$_.Database -eq $Database}).Count | Should -BeGreaterThan 1
             @($results | Where-Object {$_.Database -eq $Database2}).Count | Should -Be 0
         }
-        It "Correctly excludes queries" {
-            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Version Info', 'Core Counts', 'Server Properties' -ExcludeQuery 'Core Counts'
+        It "Correctly excludes queries when QueryName and ExcludeQuery parameters are used" {
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -QueryName 'Version Info', 'Core Counts', 'Server Properties' -ExcludeQuery 'Core Counts' -WhatIf
             @($results).Count | Should be 2
+        }
+        It "Correctly excludes queries when only ExcludeQuery parameter is used" {
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance localhost -ExcludeQuery "Missing Index Warnings", "Buffer Usage" -whatif 
+            @($results).Count | Should -BeGreaterThan 0
+            @($results | Where-Object Name -eq "Missing Index Warnings").Count | Should be 0
+            @($results | Where-Object Name -eq "Buffer Usage").Count | Should be 0
         }
 
         $columnnames = 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
