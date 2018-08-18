@@ -56,7 +56,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             @($results).Count | Should be 2
         }
         It "Correctly excludes queries when only ExcludeQuery parameter is used" {
-            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExcludeQuery "Missing Index Warnings", "Buffer Usage" -whatif 
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -ExcludeQuery "Missing Index Warnings", "Buffer Usage" -whatif
             @($results).Count | Should -BeGreaterThan 0
             @($results | Where-Object Name -eq "Missing Index Warnings").Count | Should be 0
             @($results | Where-Object Name -eq "Buffer Usage").Count | Should be 0
