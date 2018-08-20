@@ -285,8 +285,8 @@ function Test-DbaDiskAlignment {
         foreach ($computer in $ComputerName) {
             Write-Message -Level VeryVerbose -Message "Processing: $computer."
 
-            $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
-            $Computer = $computer.ComputerName
+            $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
+            $Computer = $computer.FullComputerName
 
             if (!$Computer) {
                 Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
@@ -306,10 +306,10 @@ function Test-DbaDiskAlignment {
                 Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCOM."
 
                 if (!$Credential) {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore -Credential $Credential
+                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore
                 }
                 else {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore
+                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction Ignore -Credential $Credential
                 }
             }
 
