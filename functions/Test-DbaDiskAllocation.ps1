@@ -22,6 +22,11 @@ function Test-DbaDiskAllocation {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+        .PARAMETER Credential
+            Specifies an alternate Windows account to use when enumerating drives on the server. May require Administrator privileges. To use:
+
+            $cred = Get-Credential, then pass $cred object to the -Credential parameter.
+
         .PARAMETER Detailed
             Output all properties, will be deprecated in 1.0.0 release.
 
@@ -69,7 +74,8 @@ function Test-DbaDiskAllocation {
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [object[]]$ComputerName,
         [switch]$NoSqlCheck,
-        [object]$SqlCredential,
+        [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
         [switch]$Detailed,
         [Alias('Silent')]
         [switch]$EnableException
@@ -184,9 +190,9 @@ function Test-DbaDiskAllocation {
     process {
         foreach ($computer in $ComputerName) {
 
-            $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
+            $computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
             $ipaddr = $computer.IpAddress
-            $Computer = $computer.ComputerName
+            $Computer = $computer.FullComputerName
 
             if (!$Computer) {
                 Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
@@ -205,10 +211,10 @@ function Test-DbaDiskAllocation {
                 Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCOM."
 
                 if (!$Credential) {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
                 }
                 else {
-                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
+                    $cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
                 }
             }
 
