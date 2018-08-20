@@ -195,7 +195,7 @@ function Backup-DbaDatabase {
                 $InputObject = $InputObject | Where-Object Name -notin $ExcludeDatabase
             }
 
-            if ($null -eq $BackupDirectory) {
+            if ($null -eq $BackupDirectory -and $backupfileName -ne 'NUL') {
                 Write-Message -Message 'No backupfolder passed in, setting it to instance default'
                 $BackupDirectory = (Get-DbaDefaultPath -SqlInstance $SqlInstance).Backup
             }
