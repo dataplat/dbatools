@@ -41,5 +41,30 @@ Describe "$commandname Unit Tests" -Tag "UnitTests" {
     
     it "picks values from the properties of the right object in a list" {
         ($object2 | Select-DbaObject -Property 'Tara from List where Foo = Bar').Tara | Should -Be 28
-    }
+	}
+	
+	It "sets the correct properties to show in whitelist mode" {
+		$obj = [PSCustomObject]@{ Foo = "Bar"; Bar = 42; Right = "Left" }
+		$null = $obj | Select-DbaObject -ShowProperty Foo, Bar
+		$obj.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Should -Be 'Foo', 'Bar'
+	}
+	
+	It "sets the correct properties to show in blacklist mode" {
+		$obj = [PSCustomObject]@{ Foo = "Bar"; Bar = 42; Right = "Left" }
+		$null = $obj | Select-DbaObject -ShowExcludeProperty Foo
+		$obj.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Should -Be 'Bar', 'Right'
+	}
+	
+	It "sets the correct typename" {
+		$obj = [PSCustomObject]@{ Foo = "Bar"; Bar = 42; Right = "Left" }
+		$null = $obj | Select-DbaObject -TypeName 'Foo.Bar'
+		$obj.PSObject.TypeNames[0] | Should -Be 'Foo.Bar'
+	}
+	
+	It "adds properties without harming the original object when used with -KeepInputObject" {
+		$item = Get-Item "$PSScriptRoot\Select-DbaObject.Tests.ps1"
+		$modItem = $item | Select-DbaObject "Length as Size size KB:1:1" -KeepInputObject
+		$modItem.GetType().FullName | Should -Be 'System.IO.FileInfo'
+		$modItem.Size | Should -BeLike '* KB'
+	}
 }

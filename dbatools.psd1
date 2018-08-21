@@ -473,7 +473,6 @@
         'Get-DbaResourceGovernorClassifierFunction',
         'Get-DbaErrorLogConfig',
         'Set-DbaErrorLogConfig',
-        'Select-DbaObject',
         'Add-DbaRegisteredServer',
         'Add-DbaRegisteredServerGroup',
         'Export-DbaRegisteredServer',
@@ -489,7 +488,7 @@
     )
 
     # Cmdlets to export from this module
-    CmdletsToExport        = ''
+    CmdletsToExport        = 'Select-DbaObject'
 
     # Variables to export from this module
     VariablesToExport      = ''
