@@ -40,8 +40,9 @@ function Select-DefaultView {
             $paramSplat = @{ }
             
             if ($ExcludeProperty) {
+                $dataRowDefaults = 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
                 $exclusions = New-Object System.Collections.ArrayList
-                $exclusions.AddRange('Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors')
+                $exclusions.AddRange($dataRowDefaults)
                 $exclusions.AddRange($ExcludeProperty)
                 $paramSplat['ShowExcludeProperty'] = $exclusions.ToArray()
             }
