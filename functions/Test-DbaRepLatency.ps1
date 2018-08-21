@@ -70,17 +70,7 @@ function Test-DbaRepLatency {
         [switch]$EnableException
     )
 
-    Begin{
-
-        if ($null -eq [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.RMO")) {
-            Write-Host "Replication management objects not available. Please install SQL Server Management Studio."
-        }
-
-    }
-
     Process{
-
-        if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
 
@@ -173,14 +163,17 @@ function Test-DbaRepLatency {
 
                     $tokenInfo = $pubMon.EnumTracerTokenHistory($tracerTokenId)
 
-                    $timer = 0;
+                    $timer = 0
                 
-                    while($tokenInfo.Tables[0].Rows[0].subscriber_latency -eq [System.DBNull]::Value) {
+                    $continue = $true
+
+                    while(($tokenInfo.Tables[0].Rows[0].subscriber_latency -eq [System.DBNull]::Value) -and $continue ) {
                         if($TimeToLive -and ($timer -gt $TimeToLive)) {
-                            break;
+                            $continue = $false
+                            Stop-Function -Message "TimeToLive has been reached for token: $tracerTokenId" -Continue
                         }                        
 
-                        Start-Sleep -s 1
+                        Start-Sleep -Seconds 1
                         $timer += 1
                         $tokenInfo = $PubMon.EnumTracerTokenHistory($tracerTokenId)
                     }
@@ -196,6 +189,9 @@ function Test-DbaRepLatency {
                                             }
 
                         [PSCustomObject]@{
+                            ComputerName = $server.ComputerName
+                            InstanceName = $server.InstanceName
+                            SqlInstance  = $server.SqlInstance
                             TokenID      = $tracerTokenId
                             TokenCreateDate = $token.PublisherCommitTime
                             PublicationServer  = $publication.Server
@@ -211,20 +207,16 @@ function Test-DbaRepLatency {
                             TotalLatency   = $totalLatency
                         } | Select-DefaultView -ExcludeProperty PublicationType
 
-                    }
 
                     if(!$RetainToken) {
 
                         $pubMon.CleanUpTracerTokenHistory($tracerTokenId)
 
                     }
+
+                    }
                 }
             }
         }
     }
-
-    End {
-
-    }
-
 }
