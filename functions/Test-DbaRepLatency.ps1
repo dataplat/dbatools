@@ -4,7 +4,7 @@ function Test-DbaRepLatency {
     Displays replication latency for all transactional publications for a server or database.
 
     .DESCRIPTION
-    Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber 
+    Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber
     for all transactional publications for a server, database, or publication.
 
     .PARAMETER SqlInstance
@@ -27,7 +27,7 @@ function Test-DbaRepLatency {
     Retains the tracer tokens created for each publication. If unspecified, all tracer tokens created will be discarded.
 
     .PARAMETER DisplayTokenHistory
-    Displays all tracer tokens in each publication. If unspecified, the current tracer token created will be only token displayed.  
+    Displays all tracer tokens in each publication. If unspecified, the current tracer token created will be only token displayed.
 
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -138,7 +138,7 @@ function Test-DbaRepLatency {
                 $pubMon = New-Object Microsoft.SqlServer.Replication.PublicationMonitor
 
                 $pubMon.Name = $publication.PublicationName
-                $pubMon.DistributionDBName = $distributionDatabase 
+                $pubMon.DistributionDBName = $distributionDatabase
                 $pubMon.PublisherName = $publication.Server
                 $pubMon.PublicationDBName = $publication.Database
 
@@ -164,20 +164,20 @@ function Test-DbaRepLatency {
                     $tokenInfo = $pubMon.EnumTracerTokenHistory($tracerTokenId)
 
                     $timer = 0
-                
+
                     $continue = $true
 
                     while(($tokenInfo.Tables[0].Rows[0].subscriber_latency -eq [System.DBNull]::Value) -and $continue ) {
                         if($TimeToLive -and ($timer -gt $TimeToLive)) {
                             $continue = $false
                             Stop-Function -Message "TimeToLive has been reached for token: $tracerTokenId" -Continue
-                        }                        
+                        }
 
                         Start-Sleep -Seconds 1
                         $timer += 1
                         $tokenInfo = $PubMon.EnumTracerTokenHistory($tracerTokenId)
                     }
-                    
+
 
                     foreach($info in $tokenInfo.Tables[0].Rows) {
 
@@ -200,7 +200,7 @@ function Test-DbaRepLatency {
                             PublicationType      = $publication.PublicationType
                             DistributionServer = $distributionServer
                             DistributionDB = $distributionDatabase
-                            SubscriberServer    = $info.subscriber 
+                            SubscriberServer    = $info.subscriber
                             SubscriberDB  = $info.subscriber_db
                             PublisherToDistributorLatency =  $info.distributor_latency
                             DistributorToSubscriberLatency = $info.subscriber_latency
