@@ -49,15 +49,15 @@ function Get-DbaRepPublication {
     [CmdletBinding()]
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [DbaInstanceParameter[]]$SqlInstance, 
+        [DbaInstanceParameter[]]$SqlInstance,
         [object[]]$Database,
         [PSCredential]$SqlCredential,
-        [ValidateSet("Transactional","Merge", "Snapshot")] 
+        [ValidateSet("Transactional", "Merge", "Snapshot")]
         [object[]]$PublicationType,
         [switch]$EnableException
     )
 
-    Begin{
+    Begin {
 
         if ($null -eq [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.RMO")) {
             Write-Host "Replication management objects not available. Please install SQL Server Management Studio."
@@ -65,7 +65,7 @@ function Get-DbaRepPublication {
 
     }
 
-    Process{
+    Process {
 
         if (Test-FunctionInterrupt) { return }
 
@@ -82,35 +82,35 @@ function Get-DbaRepPublication {
 
             $dbList = $server.Databases
 
-            if($Database) {
+            if ($Database) {
                 $dbList = $dbList | Where-Object name -in $Database
             }
 
             $dbList = $dbList | Where-Object { ($_.ID -gt 4) -and ($_.status -ne "Offline") }
 
 
-            foreach($db in $dbList) {
+            foreach ($db in $dbList) {
 
-                if(($db.ReplicationOptions -ne "Published") -and ($db.ReplicationOptions -ne "MergePublished")) {
+                if (($db.ReplicationOptions -ne "Published") -and ($db.ReplicationOptions -ne "MergePublished")) {
                     Write-Message -Level Verbose -Message "Skipping $($db.name). Database is not published."
                 }
 
                 $repDB = Connect-ReplicationDB -Server $server -Database $db
-                
+
                 $pubTypes = $repDB.TransPublications + $repDB.MergePublications
 
-                if($PublicationType) {
+                if ($PublicationType) {
                     $pubTypes = $pubTypes | Where-Object Type -in $PublicationType
                 }
 
-                foreach($pub in $pubTypes) {
+                foreach ($pub in $pubTypes) {
 
                     [PSCustomObject]@{
                         Server = $server.name;
                         Database = $db.name;
                         PublicationName = $pub.Name;
                         PublicationType = $pub.Type
-                    }      
+                    }
                 }
             }
         }
@@ -120,7 +120,9 @@ function Get-DbaRepPublication {
 #Helper Function
 function Connect-ReplicationDB {
     Param (
-        [object]$Server, ##[Microsoft.SqlServer.Management.Smo.SqlSmoObject] $Server, 
+        [object]$Server,
+        ##[Microsoft.SqlServer.Management.Smo.SqlSmoObject] $Server,
+
         [object]$Database
     )
 
@@ -129,7 +131,7 @@ function Connect-ReplicationDB {
     $repDB.Name = $Database.Name
     $repDB.ConnectionContext = $Server.ConnectionContext.SqlConnectionObject
 
-    if(!$repDB.LoadProperties()) {
+    if (!$repDB.LoadProperties()) {
         Write-Message -Level Verbose -Message "Skipping $($Database.Name). Failed to load properties correctly."
     }
 
