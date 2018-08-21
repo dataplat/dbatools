@@ -70,7 +70,7 @@ function Test-DbaRepLatency {
         [switch]$EnableException
     )
 
-    Process{
+    process{
 
         foreach ($instance in $SqlInstance) {
 
