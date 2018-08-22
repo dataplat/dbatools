@@ -2192,6 +2192,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerStore -SqlInstance sqlserver2014a\r\n\r\nReturns a SQL Server Registered Server Store Object from sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerStore -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)\r\n\r\nReturns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaRepPublication",
+        "Description":  "Quickly find all transactional, merge, and snapshot publications on a specific server or database.",
+        "Tags":  "Replication",
+        "Author":  "Colin Douglas",
+        "Synopsis":  "Displays all publications for a server or database.",
+        "Name":  "Get-DbaRepPublication",
+        "Links":  "https://dbatools.io/Get-DbaRepPublication",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRepPublication -SqlInstance sql2008, sqlserver2012\r\n\r\nReturn all publications for servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRepPublication -SqlInstance sql2008 -Database TestDB\r\n\r\nReturn all publications on server sql2008 for only the TestDB database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRepPublication -SqlInstance sql2008 -PublicationType Transactional\r\n\r\nReturn all publications on server sql2008 for all databases that have Transactional publications\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaResourceGovernorClassifierFunction",
         "Description":  "Gets the Resource Governor custom classifier Function which is used for customize the workload groups usage",
         "Tags":  [
@@ -4835,6 +4845,16 @@
         "Name":  "Test-DbaRecoveryModel",
         "Links":  "https://dbatools.io/Test-DbaRecoveryModel",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRecoveryModel -SqlInstance sql2005\r\n\r\nShows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL \r\nrecovery model.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne \"FULL\"}\r\n\r\nOnly shows the databases that are functionally in \u0027simple\u0027 mode.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRecoveryModel -SqlInstance sql2008 -RecoveryModel Bulk_Logged | Sort-Object Server  -Descending\r\n\r\nShows all databases where the configured recovery model is BULK_LOGGED and sort them by server name descending\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRecoveryModel -SqlInstance localhost | Select-Object -Property *\r\n\r\nShows all of the properties for the databases that have Full Recovery Model\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Test-DbaRepLatency",
+        "Description":  "Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber\nfor all transactional publications for a server, database, or publication.",
+        "Tags":  "Replication",
+        "Author":  "Colin Douglas",
+        "Synopsis":  "Displays replication latency for all transactional publications for a server or database.",
+        "Name":  "Test-DbaRepLatency",
+        "Links":  "https://dbatools.io/Test-DbaRepLatency",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRepLatency -SqlInstance sql2008, sqlserver2012\r\n\r\nReturn replication latency for all transactional publications for servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRepLatency -SqlInstance sql2008 -Database TestDB\r\n\r\nReturn replication latency for all transactional publications on server sql2008 for only the TestDB database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRepLatency -SqlInstance sql2008 -Database TestDB -PublicationName TestDB_Pub\r\n\r\nReturn replication latency for the TestDB_Pub publication for the TestDB databasse located on the server sql2008.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaServerName",
