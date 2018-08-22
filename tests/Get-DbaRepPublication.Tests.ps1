@@ -26,7 +26,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
         Context "Code Validation" {
 
-            Mock Connect-ReplicationDB -MockWith { 
+            Mock Connect-ReplicationDB -MockWith {
                 [object]@{
                     Name = 'TestDB'
                     TransPublications = @{
@@ -37,7 +37,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 }
             }
 
-            Mock Connect-SqlInstance -MockWith { 
+            Mock Connect-SqlInstance -MockWith {
                 [object]@{
                     Name      = "MockServerName"
                     ComputerName   = 'MockComputerName'
@@ -66,7 +66,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
             It "Honors the PublicationType parameter" {
 
-                Mock Connect-ReplicationDB -MockWith { 
+                Mock Connect-ReplicationDB -MockWith {
                     [object]@{
                         Name = 'TestDB'
                         TransPublications = @{
