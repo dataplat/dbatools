@@ -47,7 +47,7 @@ function Get-DbaRepPublication {
     Return all publications on server sql2008 for all databases that have Transactional publications
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [DbaInstanceParameter[]]$SqlInstance,
         [object[]]$Database,
@@ -57,17 +57,7 @@ function Get-DbaRepPublication {
         [switch]$EnableException
     )
 
-    Begin {
-
-        if ($null -eq [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.RMO")) {
-            Write-Host "Replication management objects not available. Please install SQL Server Management Studio."
-        }
-
-    }
-
-    Process {
-
-        if (Test-FunctionInterrupt) { return }
+    process {
 
         foreach ($instance in $SqlInstance) {
 
@@ -106,34 +96,16 @@ function Get-DbaRepPublication {
                 foreach ($pub in $pubTypes) {
 
                     [PSCustomObject]@{
-                        Server = $server.name;
-                        Database = $db.name;
-                        PublicationName = $pub.Name;
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.InstanceName
+                        SqlInstance  = $server.SqlInstance
+                        Server = $server.name
+                        Database = $db.name
+                        PublicationName = $pub.Name
                         PublicationType = $pub.Type
                     }
                 }
             }
         }
     }
-}
-
-#Helper Function
-function Connect-ReplicationDB {
-    Param (
-        [object]$Server,
-        ##[Microsoft.SqlServer.Management.Smo.SqlSmoObject] $Server,
-
-        [object]$Database
-    )
-
-    $repDB = New-Object Microsoft.SqlServer.Replication.ReplicationDatabase
-
-    $repDB.Name = $Database.Name
-    $repDB.ConnectionContext = $Server.ConnectionContext.SqlConnectionObject
-
-    if (!$repDB.LoadProperties()) {
-        Write-Message -Level Verbose -Message "Skipping $($Database.Name). Failed to load properties correctly."
-    }
-
-    return $repDB
 }
