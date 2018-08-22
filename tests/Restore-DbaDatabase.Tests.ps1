@@ -8,7 +8,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     $LogFolder = 'C:\temp\logfiles'
     New-Item -ItemType Directory $DataFolder -ErrorAction SilentlyContinue
     New-Item -ItemType Directory $LogFolder -ErrorAction SilentlyContinue
-  
+      
     Context "Properly restores a database on the local drive using Path" {
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak
@@ -764,6 +764,22 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\sql2008-backups\RestoreTimeStripe -DatabaseName StripeTest -DestinationFilePrefix StripeTest
         It "Should backup and restore cleanly" {
             ($results | Where-Object { $_.RestoreComplete -eq $True }).count | Should Be $Results.count
+        }
+    }
+
+    Context "Warn if trying to restore to sql2000" {
+        InModuleScope dbatools {
+            It "Should return advice"{
+                Mock Connect-SQLInstance -MockWith {
+                    return [object]@{
+                        Name      = 'SQLServerName'
+                        ComputerName   = 'SQLServerName'
+                        VersionMajor = 8
+                    } #object
+                } #mock connect-sqlserver
+                $null = Restore-DbaDatabase -SqlInstance SQLServerName -path c:\temp -WarningVariable warnvar
+                $warnvar | Should BeLike '*Due to SQL Server 2000 not returning all the backup headers we cannot restore directly*'
+            }   
         }
     }
     
