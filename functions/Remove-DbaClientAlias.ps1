@@ -13,7 +13,7 @@ function Remove-DbaClientAlias {
     Allows you to login to remote computers using alternative credentials
 
     .PARAMETER Alias
-    The alias to be deleted
+    The alias or array of aliases to be deleted
 
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
