@@ -251,7 +251,7 @@ function Invoke-DbaDbShrink {
                                 if($StepSizeKB -and ($shrinkGap -gt $stepSizeKB)) {
                                     for($i=1; $i -le [int](($shrinkGap)/$stepSizeKB); $i++) {
                                         Write-Message -Level Verbose -Message "Step: $i"
-                                        $shrinkSize = $startingSize - ($stepSizeMB * $i)
+                                        $shrinkSize = $startingSize - (($stepSizeMB*1024) * $i)
                                         if($shrinkSize -lt $desiredFileSize) {
                                             $shrinkSize = $desiredFileSize
                                         }
