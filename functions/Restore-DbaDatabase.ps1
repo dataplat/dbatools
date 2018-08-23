@@ -408,7 +408,7 @@ This will use a SQL Server instance > 2000 to read the headers, and then pass th
 $BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\backups\sql2000\ProdDb
 $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
 '@
-            Stop-Function -Message "$sql2000txt" -Target $RestoreInstance 
+            Stop-Function -Message "$sql2000txt" -Target $RestoreInstance
             return
         }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
