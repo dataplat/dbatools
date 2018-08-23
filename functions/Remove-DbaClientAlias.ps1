@@ -96,18 +96,12 @@ function Remove-DbaClientAlias {
                         $architecture = "64-bit"
                     }
 
-
                     $all = Get-Item -Path $connect
                     foreach ($entry in $all) {
-
                         foreach ($en in $entry) {
                             $e = $entry.ToString().Replace('HKEY_LOCAL_MACHINE', 'HKLM:\')
-
-                            Write-Verbose "Processing $($en.Property)"
                             foreach ($a in $Alias) {
-                                Write-Verbose "Checking $($en.Property) for $a"
                                 if ($en.Property -contains $a) {
-                                    Write-Verbose "Removing $e"
                                     Remove-ItemProperty -Path $e -Name $a
                                 }
                             }
