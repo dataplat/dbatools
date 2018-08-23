@@ -136,6 +136,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-Service | ConvertTo-DbaDataTable\r\n\r\nCreates a DataTable from the output of Get-Service.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eConvertTo-DbaDataTable -InputObject $csv.cheesetypes\r\n\r\nCreates a DataTable from the CSV object $csv.cheesetypes.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$dblist | ConvertTo-DbaDataTable\r\n\r\nCreates a DataTable from the $dblist object passed in via pipeline.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-Process | ConvertTo-DbaDataTable -TimeSpanType TotalSeconds\r\n\r\nCreates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "ConvertTo-DbaTimeline",
+        "Description":  "This function accepts input as pipeline from the following psdbatools functions:\n    Get-DbaAgentJobHistory\n    Get-DbaBackupHistory\n    (more to come...)\nAnd generates Bootstrap based, HTML file with Google Chart Timeline",
+        "Tags":  "Chart",
+        "Author":  "Marcin Gminski (@marcingminski)",
+        "Synopsis":  "Converts InputObject to a html timeline using Google Chart",
+        "Name":  "ConvertTo-DbaTimeline",
+        "Links":  "https://dbatools.io/ConvertTo-DbaTimeline",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql-1 -StartDate \u00272018-08-13 00:00\u0027 -EndDate \u00272018-08-13 23:59\u0027 -NoJobSteps \r\n| ConvertTo-DbaTimeline | Out-File C:\\temp\\DbaAgentJobHistory.html -Encoding ASCII\r\n\r\nCreates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of \r\n2018-08-13\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since \u00272018-08-13 00:00\u0027 | \r\nConvertTo-DbaTimeline | Out-File C:\\temp\\DbaBackupHistory.html -Encoding ASCII\r\n\r\nCreates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the \r\nregistered servers on sqlcm\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$messageParameters = @{\r\n\r\nSubject = \"Backup history for sql2017 and sql2016\"\r\n    Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since \u00272018-08-13 00:00\u0027 | ConvertTo-DbaTimeline\r\n    From = \"dba@ad.local\"\r\n    To = \"dba@ad.local\"\r\n    SmtpServer = \"smtp.ad.local\"\r\n}\r\nSend-MailMessage @messageParameters -BodyAsHtml\r\n\r\nSends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be \r\nsupported in all email clients.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "ConvertTo-DbaXESession",
         "Description":  "Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events.\n\nT-SQL code by: Jonathan M. Kehayias, SQLskills.com. T-SQL can be found in this module directory and at\nhttps://www.sqlskills.com/blogs/jonathan/converting-sql-trace-to-extended-events-in-sql-server-2012/",
         "Tags":  [
@@ -2180,6 +2190,16 @@
         "Name":  "Get-DbaRegisteredServerStore",
         "Links":  "https://dbatools.io/Get-DbaRegisteredServerStore",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerStore -SqlInstance sqlserver2014a\r\n\r\nReturns a SQL Server Registered Server Store Object from sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerStore -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)\r\n\r\nReturns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaRepPublication",
+        "Description":  "Quickly find all transactional, merge, and snapshot publications on a specific server or database.",
+        "Tags":  "Replication",
+        "Author":  "Colin Douglas",
+        "Synopsis":  "Displays all publications for a server or database.",
+        "Name":  "Get-DbaRepPublication",
+        "Links":  "https://dbatools.io/Get-DbaRepPublication",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRepPublication -SqlInstance sql2008, sqlserver2012\r\n\r\nReturn all publications for servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRepPublication -SqlInstance sql2008 -Database TestDB\r\n\r\nReturn all publications on server sql2008 for only the TestDB database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRepPublication -SqlInstance sql2008 -PublicationType Transactional\r\n\r\nReturn all publications on server sql2008 for all databases that have Transactional publications\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaResourceGovernorClassifierFunction",
@@ -4825,6 +4845,16 @@
         "Name":  "Test-DbaRecoveryModel",
         "Links":  "https://dbatools.io/Test-DbaRecoveryModel",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRecoveryModel -SqlInstance sql2005\r\n\r\nShows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL \r\nrecovery model.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne \"FULL\"}\r\n\r\nOnly shows the databases that are functionally in \u0027simple\u0027 mode.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRecoveryModel -SqlInstance sql2008 -RecoveryModel Bulk_Logged | Sort-Object Server  -Descending\r\n\r\nShows all databases where the configured recovery model is BULK_LOGGED and sort them by server name descending\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRecoveryModel -SqlInstance localhost | Select-Object -Property *\r\n\r\nShows all of the properties for the databases that have Full Recovery Model\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Test-DbaRepLatency",
+        "Description":  "Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber\nfor all transactional publications for a server, database, or publication.",
+        "Tags":  "Replication",
+        "Author":  "Colin Douglas",
+        "Synopsis":  "Displays replication latency for all transactional publications for a server or database.",
+        "Name":  "Test-DbaRepLatency",
+        "Links":  "https://dbatools.io/Test-DbaRepLatency",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRepLatency -SqlInstance sql2008, sqlserver2012\r\n\r\nReturn replication latency for all transactional publications for servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRepLatency -SqlInstance sql2008 -Database TestDB\r\n\r\nReturn replication latency for all transactional publications on server sql2008 for only the TestDB database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaRepLatency -SqlInstance sql2008 -Database TestDB -PublicationName TestDB_Pub\r\n\r\nReturn replication latency for the TestDB_Pub publication for the TestDB databasse located on the server sql2008.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaServerName",
