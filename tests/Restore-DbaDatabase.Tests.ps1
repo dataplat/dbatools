@@ -779,7 +779,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 } #mock connect-sqlserver
                 $null = Restore-DbaDatabase -SqlInstance SQLServerName -path c:\temp -WarningVariable warnvar
                 $warnvar | Should BeLike '*Due to SQL Server 2000 not returning all the backup headers we cannot restore directly*'
-            }   
+            }
         }
     }
     
