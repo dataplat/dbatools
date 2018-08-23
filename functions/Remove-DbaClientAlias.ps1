@@ -65,12 +65,26 @@ function Remove-DbaClientAlias {
                     continue
                 }
 
+                if ($basekey -like "*WOW64*") {
+                    $architecture = "32-bit"
+                }
+                else {
+                    $architecture = "64-bit"
+                }
+
                 $all = Get-Item -Path $fullKey
                 foreach ($entry in $all) {
                     $e = $entry.ToString().Replace('HKEY_LOCAL_MACHINE', 'HKLM:\')
                     foreach ($a in $Alias) {
                         if ($entry.Property -contains $a) {
                             Remove-ItemProperty -Path $e -Name $a
+
+                            [PSCustomObject]@{
+                                ComputerName = $computer
+                                Architecture = $architecture
+                                Alias        = $a
+                                Status       = "Removed"
+                            }
                         }
                     }
                 }
@@ -84,8 +98,7 @@ function Remove-DbaClientAlias {
 
             if ($PSCmdlet.ShouldProcess("$($Alias -join ', ') on $computer", "Remove aliases")) {
                 try {
-                    $null = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -Verbose:$false -ArgumentList $Alias
-                    Get-DbaClientAlias -ComputerName $computer
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -Verbose:$false -ArgumentList $Alias
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
