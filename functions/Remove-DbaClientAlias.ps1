@@ -58,16 +58,6 @@ function Remove-DbaClientAlias {
             $scriptblock = {
                 $Alias = $args
 
-                function Get-ItemPropertyValue {
-                    Param (
-                        [parameter()]
-                        [String]$Path,
-                        [parameter()]
-                        [String]$Name
-                    )
-                    Get-ItemProperty -LiteralPath $Path -Name $Name
-                }
-
                 $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
 
                 foreach ($basekey in $basekeys) {
