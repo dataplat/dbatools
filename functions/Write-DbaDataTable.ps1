@@ -126,7 +126,7 @@ function Write-DbaDataTable {
 
         .EXAMPLE
             $passwd = ConvertTo-SecureString "P@ssw0rd" -AsPlainText -Force
-            $AzureCredential = Mew-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
+            $AzureCredential = New-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
             $DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
             Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300
 
