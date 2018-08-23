@@ -46,18 +46,18 @@ function Remove-DbaClientAlias {
         [PSCredential]$Credential,
         [parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [Alias('AliasName')]
-        [string]$Alias,
+        [string[]]$Alias,
         [Alias('Silent')]
         [switch]$EnableException
     )
 
     process {
-
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
 
             $scriptblock = {
-                $Alias = $args[0]
+                $Alias = $args
+
                 function Get-ItemPropertyValue {
                     Param (
                         [parameter()]
@@ -102,11 +102,14 @@ function Remove-DbaClientAlias {
 
                         foreach ($en in $entry) {
                             $e = $entry.ToString().Replace('HKEY_LOCAL_MACHINE', 'HKLM:\')
-                            if ($en.Property -contains $Alias) {
-                                Remove-ItemProperty -Path $e -Name $Alias
-                            }
-                            else {
-                                $en
+
+                            Write-Verbose "Processing $($en.Property)"
+                            foreach ($a in $Alias) {
+                                Write-Verbose "Checking $($en.Property) for $a"
+                                if ($en.Property -contains $a) {
+                                    Write-Verbose "Removing $e"
+                                    Remove-ItemProperty -Path $e -Name $a
+                                }
                             }
                         }
                     }
@@ -117,7 +120,6 @@ function Remove-DbaClientAlias {
                 try {
                     $null = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -Verbose:$false -ArgumentList $Alias
                     Get-DbaClientAlias -ComputerName $computer
-
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
