@@ -31,6 +31,12 @@ function Export-DbaScript {
         .PARAMETER ScriptingOptionsObject
             An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption
 
+        .PARAMETER BatchSeparator
+            Specifies the Batch Separator to use. Default is None
+
+        .PARAMETER NoPrefix
+            Do not include a Prefix    
+        
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed
 
@@ -74,7 +80,19 @@ function Export-DbaScript {
             Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
 
         .EXAMPLE
-            Get-DbaAgentJob -SqlInstance sql2014 | Export-DbaJob -Passthru | ForEach-Object { $_.Replace('sql2014','sql2016') } | Set-Content -Path C:\temp\export.sql
+            Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql -NoPrefix
+
+            Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
+            Suppress the output of a Prefix
+
+        .EXAMPLE
+            Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql -BatchSeparator "GO"
+
+            Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
+            Appends a batch separator at end of each script.
+        
+        .EXAMPLE
+            Get-DbaAgentJob -SqlInstance sql2014 | Export-DbaScript -Passthru | ForEach-Object { $_.Replace('sql2014','sql2016') } | Set-Content -Path C:\temp\export.sql
 
             Exports jobs and replaces all instances of the servername "sql2014" with "sql2016" then writes to C:\temp\export.sql
 
@@ -95,6 +113,8 @@ function Export-DbaScript {
         [string]$Path,
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding = 'UTF8',
+        [string]$BatchSeparator = '',
+        [switch]$NoPrefix,
         [switch]$Passthru,
         [switch]$NoClobber,
         [switch]$Append,
@@ -163,8 +183,13 @@ function Export-DbaScript {
                     }
                 }
 
-                $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)`n`tSee https://dbatools.io/$commandName for more information`n*/"
-
+                if ($NoPrefix) {
+                    $prefix = ""
+                }
+                else {
+                    $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)`n`tSee https://dbatools.io/$commandName for more information`n*/"
+                }
+                    
                 if ($passthru) {
                     $prefix | Out-String
                 }
@@ -186,28 +211,53 @@ function Export-DbaScript {
                     if ($passthru) {
                         if ($ScriptingOptionsObject) {
                             foreach ($script in $scripter.EnumScript($object)) {
+                                if ($BatchSeparator -ne "") {
+                                    $script = "$script`n$BatchSeparator`n"   
+                                }
                                 $script | Out-String
                             }
                         }
                         else {
-                            $object.Script() | Out-String
+                            $script = $object.Script()
+                            if ($BatchSeparator -ne "") {
+                                $script = "$script`n$BatchSeparator`n"   
+                            } 
+                            $script  | Out-String
                         }
                     }
                     else {
                         if ($ScriptingOptionsObject) {
-                            foreach ($script in $scripter.EnumScript($object)) {
-                                $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
+                            if ($ScriptingOptionsObject.ScriptBatchTerminator) {
+                                $ScriptingOptionsObject.AppendToFile = $true
+                                $ScriptingOptionsObject.ToFileOnly = $true
+                                $ScriptingOptionsObject.FileName = $actualPath
+                                $object.Script($ScriptingOptionsObject)
                             }
+                            else {
+                                foreach ($script in $scripter.EnumScript($object)) {
+                                    if ($BatchSeparator -ne "") {
+                                        $script = "$script`n$BatchSeparator`n"   
+                                    }
+                                    $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
+                                }
+                            }
+
                         }
                         else {
-                            $object.Script() | Out-File -FilePath $actualPath -Encoding $encoding -Append
+                            $script = $object.Script()
+                            if ($BatchSeparator -ne "") {
+                                $script = "$script`n$BatchSeparator`n"   
+                            }
+                            $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
                         }
                     }
+
+                    if (!$passthru) {
+                        Write-Message -Level Output -Message "Exported $object on $($server.Name) to $actualPath"
+                    }
+    
                 }
 
-                if (!$passthru) {
-                    Write-Message -Level Output -Message "Exported $object on $($server.Name) to $actualPath"
-                }
             }
             catch {
                 $message = $_.Exception.InnerException.InnerException.InnerException.Message
