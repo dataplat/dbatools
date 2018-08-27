@@ -72,7 +72,7 @@ function Test-DbaPowerPlan {
 
     process {
         foreach ($computer in $ComputerName) {
-            $server = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
+            $server = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
 
             $computerResolved = $server.FullComputerName
 
@@ -93,10 +93,10 @@ function Test-DbaPowerPlan {
                 Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCOM."
 
                 if (!$Credential) {
-                    $cimSession = New-CimSession -ComputerName $computerResolved -SessionOption $sessionOption -ErrorAction SilentlyContinue -Credential $Credential
+                    $cimSession = New-CimSession -ComputerName $computerResolved -SessionOption $sessionOption -ErrorAction SilentlyContinue
                 }
                 else {
-                    $cimSession = New-CimSession -ComputerName $computerResolved -SessionOption $sessionOption -ErrorAction SilentlyContinue
+                    $cimSession = New-CimSession -ComputerName $computerResolved -SessionOption $sessionOption -ErrorAction SilentlyContinue -Credential $Credential
                 }
             }
 

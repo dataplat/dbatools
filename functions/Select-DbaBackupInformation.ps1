@@ -28,6 +28,10 @@ function Select-DbaBackupInformation {
             The Output of Get-RestoreContinuableDatabase while provides 'Database',redo_start_lsn,'FirstRecoveryForkID' values. Used to filter backups to continue a restore on a database
             Sets IgnoreDiffs, and also filters databases to only those within the ContinuePoints object, or the ContinuePoints object AND DatabaseName if both specified
 
+        .PARAMETER LastRestoreType
+            The Output of Get-DbaRestoreHistory -last
+            This is used to check the last type of backup to a database to see if a differential backup can be restored
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -78,16 +82,16 @@ function Select-DbaBackupInformation {
         [string[]]$DatabaseName,
         [string[]]$ServerName,
         [object]$ContinuePoints,
+        [object]$LastRestoreType,
         [switch]$EnableException
     )
     begin {
         $InternalHistory = @()
-
+        $IgnoreFull = $false
         if ((Test-Bound -ParameterName ContinuePoints) -and $null -ne $ContinuePoints) {
             Write-Message -Message "ContinuePoints provided so setting up for a continue" -Level Verbose
-
-            $IgnoreDiffs = $true
             $IgnoreFull = $true
+            $Continue = $True
             if (Test-Bound -ParameterName DatabaseName) {
                 $DatabaseName = $DatabaseName | Where-Object {$_ -in ($ContinuePoints | Select-Object -Property Database).Database}
 
@@ -113,59 +117,111 @@ function Select-DbaBackupInformation {
         }
         if ((Test-Bound -ParameterName DatabaseName) -and '' -ne $DatabaseName) {
             Write-Message -Message "Filtering by DatabaseName" -Level Verbose
-            $InternalHistory = $InternalHistory | Where-Object {$_.Database -in $DatabaseName}
+          #  $InternalHistory = $InternalHistory | Where-Object {$_.Database -in $DatabaseName}
         }
+
         if (Test-Bound -ParameterName ServerName) {
             Write-Message -Message "Filtering by ServerName" -Level Verbose
             $InternalHistory = $InternalHistory | Where-Object {$_.InstanceName -in $servername}
         }
 
         $Databases = ($InternalHistory | Select-Object -Property Database -unique).Database
-        ForEach ($Database in $Databases) {
-            Write-Message -Message "Processing Db $Database" -Level Verbose
-            $DatabaseHistory = $InternalHistory | Where-Object {$_.Database -eq $Database}
+        if ($continue -and $Databases.count -gt 1 -and $DatabaseName.count -gt 1){
+            Stop-Function -Message "Cannot perform continuing restores on multiple databases with renames, exiting"
+            return
+        }
 
-            $dbHistory = @()
-            #Find the Last Full Backup before RestoreTime
-            if ($true -ne $IgnoreFull) {
+
+        ForEach ($Database in $Databases) {
+            #Cope with restores renaming the db
+            # $database = the name of database in the backups being scanned
+            # $databasefilter = the name of the database the backups are being restore to/against
+            if ($null -ne $DatabaseName) {
+                $databasefilter = $DatabaseName
+            }
+            else {
+                $databasefilter = $database
+            }
+            
+            if ($true -eq $Continue){
+                #Test if Database is in a continuing state and the LSN to continue from:
+                if ($Databasefilter -in ($ContinuePoints | Select-Object -Property Database).Database) {
+                    Write-Message -Message "$Database in ContinuePoints, will attmept to continue" -Level verbose
+                    $IgnoreFull = $True
+                    #Check what the last backup restored was
+                    if (($LastRestoreType | Where-Object {$_.Database -eq $Databasefilter}).RestoreType -eq 'Database') {
+                        #Full Backup last restored, so diffs can be used
+                        $IgnoreDiffs = $false
+                    }
+                    else {
+                        #Last restore was a diff or log, so can only restore more logs
+                        $IgnoreDiffs = $true
+                    }
+                }
+                else {
+                    Write-Message -Message "$Database not in ContinuePoints, will attmept normal restore" -Level Warning
+                }
+            }
+
+            $dbhistory = @()
+            $DatabaseHistory = $internalhistory | Where-Object {$_.Database -eq $Database}
+            #For a standard restore, work out the full backup
+            if ($false -eq $IgnoreFull){
                 $Full = $DatabaseHistory | Where-Object {$_.Type -in ('Full', 'Database') -and $_.Start -le $RestoreTime} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
                 $full.Fullname = ($DatabaseHistory | Where-Object {$_.Type -in ('Full', 'Database') -and $_.BackupSetID -eq $Full.BackupSetID}).Fullname
                 $dbHistory += $full
             }
-            #Find the Last diff between Full and RestoreTime
-            if ($true -ne $IgnoreDiffs) {
+            elseif ($true -eq $IgnoreFull -and $false -eq $IgnoreDiffs) {
+                #Fake the Full backup
+                Write-Message -Message "Continuing, so setting a fake full backup from the existing database"
+                $Full = [PsCustomObject]@{
+                        CheckpointLSN = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).differential_base_lsn
+                    }
+            }
+            
+            if ($false -eq $IgnoreDiffs){
+                Write-Message -Message "processing diffs" -Level Verbose
                 $Diff = $DatabaseHistory | Where-Object {$_.Type -in ('Differential', 'Database Differential') -and $_.Start -le $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
                 if ($null -ne $Diff) {
                     $Diff.FullName = ($DatabaseHistory | Where-Object {$_.Type -in ('Differential', 'Database Differential') -and $_.BackupSetID -eq $diff.BackupSetID}).Fullname
                     $dbhistory += $Diff
                 }
             }
-            #Get All t-logs up to restore time
-            if ($IgnoreFull -eq $true) {
-                [bigint]$LogBaseLsn = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).redo_start_lsn
-                $FirstRecoveryForkID = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).FirstRecoveryForkID
-                Write-Message -Message "Continuing, setting fake LastLsn - $LogBaseLSN" -Level Verbose
-            }
-            else {
-                Write-Message -Message "Setting LogBaseLSN" -Level Verbose
+
+            #Sort out the LSN for the log restores
+            if ($null -ne ($dbHistory | Sort-Object -Property LastLsn -Descending | select-object -First 1).lastLsn) {
+                #We have history so use this
                 [bigint]$LogBaseLsn = ($dbHistory | Sort-Object -Property LastLsn -Descending | select-object -First 1).lastLsn.ToString()
                 $FirstRecoveryForkID = $Full.FirstRecoveryForkID
             }
+            else {
+                Write-Message -Message "No full or diff, so attempting to pull from Continue informmation" -Level Verbose
+                try {
+                    [bigint]$LogBaseLsn = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).redo_start_lsn
+                    $FirstRecoveryForkID = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).FirstRecoveryForkID
+                }
+                catch{
+                    Stop-Function -Message "Failed to find LSN or RecoveryForkID for $DatabaseFilter" -Category InvalidOperation -Target $DatabaseFilter
+                }
+            }
 
-            if ($true -ne $IgnoreLogs) {
+            if ($true -eq $IgnoreFull -and $true -eq $IgnoreDiffs){
+                #Set a Fake starting LSN
+            }
+
+            if ($false -eq $IgnoreLogs){
                 $FilteredLogs = $DatabaseHistory | Where-Object {$_.Type -in ('Log', 'Transaction Log') -and $_.Start -le $RestoreTime -and $_.LastLSN.ToString() -ge $LogBaseLsn -and $_.FirstLSN -ne $_.LastLSN}  | Sort-Object -Property LastLsn, FirstLsn
                 $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN, FirstLSN
                 ForEach ($Group in $GroupedLogs) {
                     $Log = $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID} | select-object -First 1
                     $Log.FullName = ($DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}).Fullname
-                    $dbhistory += $Log
-                    #$dbhistory += $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}
+                    #$dbhistory += $Log
+                    $dbhistory += $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}
                 }
                 # Get Last T-log
                 $dbHistory += $DatabaseHistory | Where-Object {$_.Type -in ('Log', 'Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn, FirstLsn  | Select-Object -First 1
             }
-
-            $dbHistory  #| Group-Object -Property BackupSetId # -Unique
+            $dbhistory
         }
     }
 }
