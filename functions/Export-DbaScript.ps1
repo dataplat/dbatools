@@ -35,8 +35,8 @@ function Export-DbaScript {
             Specifies the Batch Separator to use. Default is None
 
         .PARAMETER NoPrefix
-            Do not include a Prefix    
-        
+            Do not include a Prefix
+
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed
 
@@ -90,7 +90,7 @@ function Export-DbaScript {
 
             Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
             Appends a batch separator at end of each script.
-        
+
         .EXAMPLE
             Get-DbaAgentJob -SqlInstance sql2014 | Export-DbaScript -Passthru | ForEach-Object { $_.Replace('sql2014','sql2016') } | Set-Content -Path C:\temp\export.sql
 
@@ -189,7 +189,7 @@ function Export-DbaScript {
                 else {
                     $prefix = "/*`n`tCreated by $executingUser using dbatools $commandName for objects on $serverName at $(Get-Date)`n`tSee https://dbatools.io/$commandName for more information`n*/"
                 }
-                    
+
                 if ($passthru) {
                     $prefix | Out-String
                 }
@@ -212,7 +212,7 @@ function Export-DbaScript {
                         if ($ScriptingOptionsObject) {
                             foreach ($script in $scripter.EnumScript($object)) {
                                 if ($BatchSeparator -ne "") {
-                                    $script = "$script`n$BatchSeparator`n"   
+                                    $script = "$script`n$BatchSeparator`n"
                                 }
                                 $script | Out-String
                             }
@@ -220,8 +220,8 @@ function Export-DbaScript {
                         else {
                             $script = $object.Script()
                             if ($BatchSeparator -ne "") {
-                                $script = "$script`n$BatchSeparator`n"   
-                            } 
+                                $script = "$script`n$BatchSeparator`n"
+                            }
                             $script  | Out-String
                         }
                     }
@@ -236,7 +236,7 @@ function Export-DbaScript {
                             else {
                                 foreach ($script in $scripter.EnumScript($object)) {
                                     if ($BatchSeparator -ne "") {
-                                        $script = "$script`n$BatchSeparator`n"   
+                                        $script = "$script`n$BatchSeparator`n"
                                     }
                                     $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
                                 }
@@ -246,18 +246,16 @@ function Export-DbaScript {
                         else {
                             $script = $object.Script()
                             if ($BatchSeparator -ne "") {
-                                $script = "$script`n$BatchSeparator`n"   
+                                $script = "$script`n$BatchSeparator`n"
                             }
                             $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
                         }
                     }
 
-                    if (!$passthru) {
+                    if (-not $passthru) {
                         Write-Message -Level Output -Message "Exported $object on $($server.Name) to $actualPath"
                     }
-    
                 }
-
             }
             catch {
                 $message = $_.Exception.InnerException.InnerException.InnerException.Message
