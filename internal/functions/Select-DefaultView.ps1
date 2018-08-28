@@ -10,23 +10,30 @@ function Select-DefaultView {
 
     TypeName creates a new type so that we can use ps1xml to modify the output
     #>
-
+    
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline = $true)]
-        [object]$InputObject,
-        [string[]]$Property,
-        [string[]]$ExcludeProperty,
-        [string]$TypeName
+        [object]
+        $InputObject,
+        
+        [string[]]
+        $Property,
+        
+        [string[]]
+        $ExcludeProperty,
+        
+        [string]
+        $TypeName
     )
     process {
-
+        
         if ($null -eq $InputObject) { return }
-
+        
         if ($TypeName) {
             $InputObject.PSObject.TypeNames.Insert(0, "dbatools.$TypeName")
         }
-
+        
         if ($ExcludeProperty) {
             if ($InputObject.GetType().Name.ToString() -eq 'DataRow') {
                 $ExcludeProperty += 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
@@ -54,12 +61,12 @@ function Select-DefaultView {
             }
             $defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$Property)
         }
-
+        
         $standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
-
+        
         # Do not be tempted to not pipe here
         $inputobject | Add-Member -Force -MemberType MemberSet -Name PSStandardMembers -Value $standardmembers -ErrorAction SilentlyContinue
-
+        
         $inputobject
     }
 }
