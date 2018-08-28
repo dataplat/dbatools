@@ -1,8 +1,9 @@
 [CmdletBinding()]
 param(
-    [string] $ProjectPath = "$psscriptroot\projects\dbatools\dbatools.sln",
+    [string] $ProjectPath = (Join-Path $psscriptroot 'projects\dbatools\dbatools.sln'),
     [ValidateSet('ps3', 'ps4', 'Release', 'Debug')]
     [string] $MsbuildConfiguration,
+    [string] $MsbuildOptions = "",
     [Parameter(HelpMessage='Target to run instead of build')]
     [string] $MsbuildTarget = 'Build'
 )
@@ -34,9 +35,8 @@ if (-not (Test-Path $msbuild)) {
     throw "msbuild not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
 }
 
-$msbuildOptions = ""
 if ($env:APPVEYOR -eq 'True') {
-    $msbuildOptions = '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"'
+    $MsbuildOptions = $MsbuildOptions + '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" '
     $msbuildConfiguration = 'Debug'
 
     if (-not (Test-Path "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll")) {
@@ -44,12 +44,14 @@ if ($env:APPVEYOR -eq 'True') {
     }
 }
 
+$MsbuildOptions = $MsbuildOptions + '/logger:BinaryLogger,"{0}";"{1}" ' -f (Join-Path $PSScriptRoot 'StructuredLogger.dll'), (Resolve-Path '..\msbuild.bin.log').Path
+
 if ( -not (Test-Path $ProjectPath)) {
     throw new-object 'System.IO.FileNotFoundException' 'Could not file project or solution', $ProjectPath
 }
 
-Write-Verbose -Message "Building the library with command $msbuild $ProjectPath /p:Configuration=$msbuildConfiguration $msbuildOptions /t:$MsBuildTarget"
-& $msbuild $ProjectPath "/p:Configuration=$msbuildConfiguration" $msbuildOptions "/t:$MsBuildTarget"
+Write-Verbose -Message "Building the library with command $msbuild $ProjectPath /p:Configuration=$msbuildConfiguration $MsbuildOptions /t:$MsBuildTarget"
+& $msbuild $ProjectPath "/p:Configuration=$msbuildConfiguration" $MsbuildOptions "/t:$MsBuildTarget"
 
 if ($MsbuildTarget -eq 'Build') {
     try {

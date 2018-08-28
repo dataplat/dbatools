@@ -9,6 +9,10 @@ before_build:
 build:
   project: bin\projects\dbatools\dbatools.sln
 
+after_build:
+  - ps: Push-AppveyorArtifact msbuild.binlog
+  - ps: Push-AppveyorArtifact msbuild.log
+
 version: 0.9.{build}
 
 cache:
