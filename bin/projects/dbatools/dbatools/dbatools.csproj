@@ -76,6 +76,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\SelectDbaObjectCommand.cs" />
     <Compile Include="Commands\WriteMessageCommand.cs" />
     <Compile Include="Computer\DiskSpace.cs" />
     <Compile Include="Computer\DriveType.cs" />
