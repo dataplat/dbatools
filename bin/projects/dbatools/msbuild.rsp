@@ -7,3 +7,4 @@
 # Log to a file and set options
 /filelogger
 /fileloggerparameters:Verbosity=detailed
+/logger:BinaryLogger,".\bin\StructuredLogger.dll";".\msbuild.binlog"
