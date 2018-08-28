@@ -4,6 +4,121 @@
         <name>dbatools</name>
     </assembly>
     <members>
+        <member name="T:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand">
+            <summary>
+            Implements the Select-DbaObject command
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.InputObject">
+            <summary>
+            The actual input object that is being processed
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Property">
+            <summary>
+            The properties to select. Supports fancy DSL
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ExcludeProperty">
+            <summary>
+            Properties to skip
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ExpandProperty">
+            <summary>
+            A property to expand.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Unique">
+            <summary>
+            Whether to exclude duplicates
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Last">
+            <summary>
+            The last number of items to pick
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.First">
+            <summary>
+            Pick the first n items.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Skip">
+            <summary>
+            Skip n items before picking items
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.SkipLast">
+            <summary>
+            Skip the last n items
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Wait">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.Index">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ShowProperty">
+            <summary>
+            THe properties to display by default
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ShowExcludeProperty">
+            <summary>
+            The properties to NOT display by default
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.TypeName">
+            <summary>
+            The typename to assign to the psobject
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.KeepInputObject">
+            <summary>
+            Keep the original input object, just add to it.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand._NonclonedProperties">
+            <summary>
+            List of properties to NOT clone into the hashtable used against Select-Object
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand._NoAdjustment">
+            <summary>
+            Whether some adjustments to the object need to be done or whether the Select-Object output can be simply passed through.
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand._DisplayPropertySet">
+            <summary>
+            The set controlling what properties will be shown by default
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand._Pipeline">
+            <summary>
+            THe pipeline that is wrapped around Select-Object
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.BeginProcessing">
+            <summary>
+            Implements the begin action of the command
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.ProcessRecord">
+            <summary>
+            Implements the process action of the command
+            </summary>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Commands.SelectDbaObjectCommand.EndProcessing">
+            <summary>
+            Implements the end action of the command
+            </summary>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Commands.WriteMessageCommand">
             <summary>
             Implements the Write-Message command, performing message handling and loggin
