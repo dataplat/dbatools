@@ -138,7 +138,7 @@ function Set-DbaMaxDop {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $servername -Continue
             }
 
-            if (!(Test-SqlSa -SqlInstance $server)) {
+            if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
                 Stop-Function -Message "Not a sysadmin on $server. Skipping." -Category PermissionDenied -ErrorRecord $_ -Target $currentServer -Continue
             }
 
