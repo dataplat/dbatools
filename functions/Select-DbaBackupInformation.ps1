@@ -172,7 +172,7 @@ function Select-DbaBackupInformation {
                     $full.Fullname = ($DatabaseHistory | Where-Object { $_.Type -in ('Full', 'Database') -and $_.BackupSetID -eq $Full.BackupSetID }).Fullname
                 }
                 else {
-                    Stop-Function -Message "Fullname property not found. Please run the command again and add the -Continue switch"
+                    Stop-Function -Message "Fullname property not found. This could mean that a full backup could not be found or the command must be re-run with the -Continue switch."
                     return
                 }
                 $dbHistory += $full
@@ -193,7 +193,7 @@ function Select-DbaBackupInformation {
                         $Diff.FullName = ($DatabaseHistory | Where-Object { $_.Type -in ('Differential', 'Database Differential') -and $_.BackupSetID -eq $diff.BackupSetID }).Fullname
                     }
                     else {
-                        Stop-Function -Message "Fullname property not found. Please run the command again and add the -Continue switch"
+                        Stop-Function -Message "Fullname property not found. This could mean that a full backup could not be found or the command must be re-run with the -Continue switch."
                         return
                     }
                     $dbhistory += $Diff
@@ -230,7 +230,7 @@ function Select-DbaBackupInformation {
                         $Log.FullName = ($DatabaseHistory | Where-Object { $_.BackupSetID -eq $Group.group[0].BackupSetID }).Fullname
                     }
                     else {
-                        Stop-Function -Message "Fullname property not found. Please run the command again and add the -Continue switch"
+                        Stop-Function -Message "Fullname property not found. This could mean that a full backup could not be found or the command must be re-run with the -Continue switch."
                         return
                     }
                     #$dbhistory += $Log
