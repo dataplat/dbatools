@@ -73,12 +73,12 @@ function Get-CoverageIndications($Path, $ModuleBase) {
         # This fails very hard sometimes
         if ($source -and $CBH) {
             $cmdonly = $source.Replace($CBH, '')
-        }
-        foreach ($e in $everyfunction) {
-            # hacky, I know, but every occurrence of any function plus a space kinda denotes usage !?
-            $searchme = "$e "
-            if ($cmdonly.contains($searchme)) {
-                $funcs += $e
+            foreach ($e in $everyfunction) {
+                # hacky, I know, but every occurrence of any function plus a space kinda denotes usage !?
+                $searchme = "$e "
+                if ($cmdonly.contains($searchme)) {
+                    $funcs += $e
+                }
             }
         }
     }
