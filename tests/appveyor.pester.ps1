@@ -70,7 +70,10 @@ function Get-CoverageIndications($Path, $ModuleBase) {
         $f = $everything | Where-Object Name -eq $func_name
         $source = $f.Definition
         $CBH = $CBHRex.match($source).Value
-        $cmdonly = $source.Replace($CBH, '')
+        # This fails very hard sometimes
+        if ($source -and $CBH) {
+            $cmdonly = $source.Replace($CBH, '')
+        }
         foreach ($e in $everyfunction) {
             # hacky, I know, but every occurrence of any function plus a space kinda denotes usage !?
             $searchme = "$e "
