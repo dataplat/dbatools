@@ -296,7 +296,10 @@ function Backup-DbaDatabase {
             $Suffix = "bak"
 
             if ($CompressBackup) {
-                if ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
+                if ($database.EncryptionEnabled) {
+                    Write-Message -Level Warning -Message "$dbname is enabled for encryption, will not compress"
+                    $backup.CompressionOption = 2
+                } elseif ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
                     Write-Message -Level Warning -Message "Compression is not supported with this version/edition of Sql Server"
                 }
                 else {
