@@ -168,7 +168,13 @@ function Select-DbaBackupInformation {
             #For a standard restore, work out the full backup
             if ($false -eq $IgnoreFull){
                 $Full = $DatabaseHistory | Where-Object {$_.Type -in ('Full', 'Database') -and $_.Start -le $RestoreTime} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
-                $full.Fullname = ($DatabaseHistory | Where-Object {$_.Type -in ('Full', 'Database') -and $_.BackupSetID -eq $Full.BackupSetID}).Fullname
+                if ($full.Fullname) {
+                    $full.Fullname = ($DatabaseHistory | Where-Object { $_.Type -in ('Full', 'Database') -and $_.BackupSetID -eq $Full.BackupSetID }).Fullname
+                }
+                else {
+                    Stop-Function -Message "Fullname property not found. This could mean that a full backup could not be found or the command must be re-run with the -Continue switch."
+                    return
+                }
                 $dbHistory += $full
             }
             elseif ($true -eq $IgnoreFull -and $false -eq $IgnoreDiffs) {
@@ -183,7 +189,13 @@ function Select-DbaBackupInformation {
                 Write-Message -Message "processing diffs" -Level Verbose
                 $Diff = $DatabaseHistory | Where-Object {$_.Type -in ('Differential', 'Database Differential') -and $_.Start -le $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
                 if ($null -ne $Diff) {
-                    $Diff.FullName = ($DatabaseHistory | Where-Object {$_.Type -in ('Differential', 'Database Differential') -and $_.BackupSetID -eq $diff.BackupSetID}).Fullname
+                    if ($Diff.FullName) {
+                        $Diff.FullName = ($DatabaseHistory | Where-Object { $_.Type -in ('Differential', 'Database Differential') -and $_.BackupSetID -eq $diff.BackupSetID }).Fullname
+                    }
+                    else {
+                        Stop-Function -Message "Fullname property not found. This could mean that a full backup could not be found or the command must be re-run with the -Continue switch."
+                        return
+                    }
                     $dbhistory += $Diff
                 }
             }
@@ -213,8 +225,14 @@ function Select-DbaBackupInformation {
                 $FilteredLogs = $DatabaseHistory | Where-Object {$_.Type -in ('Log', 'Transaction Log') -and $_.Start -le $RestoreTime -and $_.LastLSN.ToString() -ge $LogBaseLsn -and $_.FirstLSN -ne $_.LastLSN}  | Sort-Object -Property LastLsn, FirstLsn
                 $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN, FirstLSN
                 ForEach ($Group in $GroupedLogs) {
-                    $Log = $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID} | select-object -First 1
-                    $Log.FullName = ($DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}).Fullname
+                    $Log = $DatabaseHistory | Where-Object { $_.BackupSetID -eq $Group.group[0].BackupSetID } | select-object -First 1
+                    if ($Log.FullName) {
+                        $Log.FullName = ($DatabaseHistory | Where-Object { $_.BackupSetID -eq $Group.group[0].BackupSetID }).Fullname
+                    }
+                    else {
+                        Stop-Function -Message "Fullname property not found. This could mean that a full backup could not be found or the command must be re-run with the -Continue switch."
+                        return
+                    }
                     #$dbhistory += $Log
                     $dbhistory += $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}
                 }
