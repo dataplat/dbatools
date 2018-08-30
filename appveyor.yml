@@ -10,10 +10,9 @@ build:
   project: bin\projects\dbatools\dbatools.sln
 
 after_build:
-    # Removed because unencrypted secrets are exposed.
-   -# ps: Push-AppveyorArtifact msbuild.binlog
-  - ps: Push-AppveyorArtifact msbuild.log
-
+    # Removed to prevent credential exposure
+    # - ps: Push-AppveyorArtifact msbuild.binlog
+    
 version: 0.9.{build}
 
 cache:
