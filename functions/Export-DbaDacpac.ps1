@@ -143,9 +143,9 @@ function Export-DbaDacpac {
                     $process = New-Object System.Diagnostics.Process
                     $process.StartInfo = $startprocess
                     $process.Start() | Out-Null
-                    $process.WaitForExit()
                     $stdout = $process.StandardOutput.ReadToEnd()
                     $stderr = $process.StandardError.ReadToEnd()
+                    $process.WaitForExit()
                     Write-Message -level Verbose -Message "StandardOutput: $stdout"
 
                     [pscustomobject]@{
