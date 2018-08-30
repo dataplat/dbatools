@@ -188,11 +188,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Should handle an encrypted database when compression is specified" {
-        $sqlencrypt = 
-@"  
-CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<UseStrongPasswordHere>';  
-go  
-CREATE CERTIFICATE MyServerCert WITH SUBJECT = 'My DEK Certificate';  
+        $sqlencrypt =
+@"
+CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<UseStrongPasswordHere>';
+go
+CREATE CERTIFICATE MyServerCert WITH SUBJECT = 'My DEK Certificate';
 go
 CREATE DATABASE encrypted
 go
@@ -200,13 +200,13 @@ go
         $null = Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Query $sqlencrypt -Database Master
         $createdb =
 @"
-CREATE DATABASE ENCRYPTION KEY  
-WITH ALGORITHM = AES_128  
-ENCRYPTION BY SERVER CERTIFICATE MyServerCert;  
-GO  
-ALTER DATABASE encrypted  
-SET ENCRYPTION ON;  
-GO  
+CREATE DATABASE ENCRYPTION KEY
+WITH ALGORITHM = AES_128
+ENCRYPTION BY SERVER CERTIFICATE MyServerCert;
+GO
+ALTER DATABASE encrypted
+SET ENCRYPTION ON;
+GO
 "@
         $null = Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Query $createdb -Database encrypted
         It "Should not compress an encrypted db" {
@@ -214,11 +214,11 @@ GO
             $results.script | Should -BeLike '*NO_COMPRESSION*'
         }
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database encrypted -confirm:$false
-        $sqldrop = 
+        $sqldrop =
 @"
 drop certificate MyServerCert
 go
-drop master key 
+drop master key
 go
 "@
         $null = Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Query $sqldrop -Database Master
