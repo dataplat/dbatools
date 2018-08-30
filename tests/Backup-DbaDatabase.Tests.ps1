@@ -186,6 +186,43 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should -Be "BACKUP DATABASE [master] TO  DISK = N'c:\notexists\file.bak' WITH NOFORMAT, NOINIT, NOSKIP, REWIND, NOUNLOAD,  STATS = 1"
         }
     }
+
+    Context "Should handle an encrypted database when compression is specified" {
+        $sqlencrypt =
+@"
+CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<UseStrongPasswordHere>';
+go
+CREATE CERTIFICATE MyServerCert WITH SUBJECT = 'My DEK Certificate';
+go
+CREATE DATABASE encrypted
+go
+"@
+        $null = Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query $sqlencrypt -Database Master
+        $createdb =
+@"
+CREATE DATABASE ENCRYPTION KEY
+WITH ALGORITHM = AES_128
+ENCRYPTION BY SERVER CERTIFICATE MyServerCert;
+GO
+ALTER DATABASE encrypted
+SET ENCRYPTION ON;
+GO
+"@
+        $null = Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query $createdb -Database encrypted
+        It "Should not compress an encrypted db" {
+            $results = Backup-DbaDatabase -SqlInstance $script:instance2 -Database encrypted -Compress
+            $results.script | Should -BeLike '*NO_COMPRESSION*'
+        }
+        Remove-DbaDatabase -SqlInstance $script:instance2 -Database encrypted -confirm:$false
+        $sqldrop =
+@"
+drop certificate MyServerCert
+go
+drop master key
+go
+"@
+        $null = Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query $sqldrop -Database Master
+    }
     if ($env:azurepasswd) {
         Context "Azure works" {
             BeforeAll {
