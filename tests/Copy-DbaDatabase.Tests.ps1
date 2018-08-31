@@ -147,7 +147,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         It "Should have renamed a single db"{
             $newname = "copy$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -NewName $newname
-            $results.DestinationDatabase | Should -Be $newname
+            $results[0].DestinationDatabase | Should -Be $newname
             $files  = Get-DbaDatabaseFile -Sqlinstance $script:instance3 -Database $newname
             ($files.PhysicalName -like  "*$newname*").count | Should -Be $files.count
         }
@@ -156,9 +156,9 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
         It "Should prefix databasename and files"{
             $prefix = "copy$(Get-Random)"
-            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -Prefix $newname
-            $results.DestinationDatabase | Should -Be $prefix+$backuprestoredb 
-            $files  = Get-DbaDatabaseFile -Sqlinstance $script:instance3 -Database $newname
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -Prefix $prefix
+            $results[0].DestinationDatabase | Should -Be "$prefix$backuprestoredb" 
+            $files  = Get-DbaDatabaseFile -Sqlinstance $script:instance3 -Database "$prefix$backuprestoredb" 
             ($files.PhysicalName -like  "*$prefix$backuprestoredb*").count | Should -Be $files.count
         } 
     }
