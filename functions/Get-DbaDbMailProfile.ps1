@@ -100,7 +100,7 @@
                 $profiles | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ID, Name, Description, ForceDeleteForActiveProfiles, IsBusyProfile
             }
             catch {
-                Stop-Function -Message "Query failure" -ErrorRecord $_ -Continue
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
