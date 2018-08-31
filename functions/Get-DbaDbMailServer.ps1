@@ -12,9 +12,13 @@
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER Name
+    .PARAMETER Server
         Specifies one or more server(s) to get. If unspecified, all servers will be returned.
 
+    .PARAMETER Account
+        Get only the mail server associated with specific accounts
+
+    
     .PARAMETER InputObject
         Accepts pipeline input from Get-DbaDbMail
     
@@ -60,8 +64,9 @@
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
-        [Alias("Server")]
-        [string[]]$Name,
+        [Alias("Name")]
+        [string[]]$Server,
+        [string[]]$Account,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Mail.SqlMail[]]$InputObject,
         [switch]$EnableException
@@ -79,16 +84,18 @@
         
         foreach ($mailserver in $InputObject) {
             try {
-                $servers = $mailserver.Accounts.MailServers
+                $accounts = $mailserver | Get-DbaDbMailAccount -Account $Account
+                $servers = $accounts.MailServers
                 
-                if ($Name) {
-                    $servers = $servers | Where-Object Name -in $Name
+                if ($Server) {
+                    $servers = $servers | Where-Object Name -in $Server
                 }
                                 
                 $servers | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $mailserver.ComputerName
                 $servers | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
                 $servers | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
-                $servers | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, Port, EnableSsl, ServerType, UserName, UseDefaultCredentials, NoCredentialChange
+                $servers | Add-Member -Force -MemberType NoteProperty -Name Account -value $servers[0].Parent.Name
+                $servers | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Account, Name, Port, EnableSsl, ServerType, UserName, UseDefaultCredentials, NoCredentialChange
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
