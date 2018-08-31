@@ -1,10 +1,10 @@
 ﻿function Get-DbaDbMail {
     <#
     .SYNOPSIS
-        Gets the databaes mail from SQL Server
+        Gets the database mail from SQL Server
 
     .DESCRIPTION
-        Gets the databaes mail from SQL Server
+        Gets the database mail from SQL Server
 
     .PARAMETER SqlInstance
         The SQL Server instance, or instances.
