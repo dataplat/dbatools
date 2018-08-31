@@ -139,4 +139,27 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $dbs[0].Owner -eq $dbs[1].Owner
         }
     }
+    Context "Copying with renames using backup/restore" {
+        BeforeAll {
+            Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $backuprestoredb
+        }
+        It "Should have renamed a single db"{
+            $newname = "copy$(Get-Random)"
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -NewName $newname
+            $results.DestinationDatabase | Should -Be $newname
+            $files  = Get-DbaDatabaseFile -Sqlinstance $script:instance3 -Database $newname
+            ($files.PhysicalName -like  "*$newname*").count | Should -Be $files.count
+        }
+        It "Should warn if trying to rename more than one database"{
+
+        }
+        It "Should prefix databasename and files"{
+            $prefix = "copy$(Get-Random)"
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -Prefix $newname
+            $results.DestinationDatabase | Should -Be $prefix+$backuprestoredb 
+            $files  = Get-DbaDatabaseFile -Sqlinstance $script:instance3 -Database $newname
+            ($files.PhysicalName -like  "*$prefix$backuprestoredb*").count | Should -Be $files.count
+        } 
+    }
 }
