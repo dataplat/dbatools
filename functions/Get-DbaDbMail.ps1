@@ -1,10 +1,10 @@
 ﻿function Get-DbaDbMail {
     <#
     .SYNOPSIS
-        Gets the databaes mail from a SQL instance
+        Gets the databaes mail from SQL Server
 
     .DESCRIPTION
-        Gets the databaes mail from a SQL instance
+        Gets the databaes mail from SQL Server
 
     .PARAMETER SqlInstance
         The SQL Server instance, or instances.
@@ -18,7 +18,7 @@
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: databasemail
+        Tags: databasemail, dbmail, mail
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: MIT https://opensource.org/licenses/MIT
