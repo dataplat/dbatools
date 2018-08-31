@@ -99,7 +99,7 @@
                 $accounts | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ID, Name, DisplayName, Description, EmailAddress, ReplyToAddress, IsBusyAccount, MailServers
             }
             catch {
-                Stop-Function -Message "Query failure" -ErrorRecord $_ -Continue
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
