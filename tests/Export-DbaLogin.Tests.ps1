@@ -79,7 +79,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "Exports to the specified file" {
-        Export-DbaLogin -SqlInstance $script:instance1 -FilePath $outputFile -WarningAction SilentlyContinue
+        Export-DbaLogin -SqlInstance $script:instance1 -Path $outputFile -WarningAction SilentlyContinue
 
         Test-Path -Path $outputFile | Should Be $true
     }

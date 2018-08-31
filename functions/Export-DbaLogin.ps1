@@ -433,7 +433,7 @@ function Export-DbaLogin {
         }
 
         if ($Path) {
-            $sql | Out-File -Encoding UTF8 -Path $Path -Append:$Append -NoClobber:$NoClobber
+            $sql | Out-File -Encoding UTF8 -FilePath $Path -Append:$Append -NoClobber:$NoClobber
             Get-ChildItem $Path
         }
         else {
