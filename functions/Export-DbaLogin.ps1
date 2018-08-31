@@ -21,14 +21,14 @@ function Export-DbaLogin {
         .PARAMETER Database
             The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER FilePath
+        .PARAMETER Path
             The file to write to.
 
         .PARAMETER NoClobber
-            If this switch is enabled, a file already existing at the path specified by FilePath will not be overwritten.
+            If this switch is enabled, a file already existing at the path specified by Path will not be overwritten.
 
         .PARAMETER Append
-            If this switch is enabled, content will be appended to a file already existing at the path specified by FilePath. If the file does not exist, it will be created.
+            If this switch is enabled, content will be appended to a file already existing at the path specified by Path. If the file does not exist, it will be created.
 
         .PARAMETER NoJobs
             If this switch is enabled, Agent job ownership will not be exported.
@@ -64,17 +64,17 @@ function Export-DbaLogin {
             https://dbatools.io/Export-DbaLogin
 
         .EXAMPLE
-            Export-DbaLogin -SqlInstance sql2005 -FilePath C:\temp\sql2005-logins.sql
+            Export-DbaLogin -SqlInstance sql2005 -Path C:\temp\sql2005-logins.sql
 
             Exports the logins for SQL Server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
 
         .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2014a -Exclude realcajun -SqlCredential $scred -FilePath C:\temp\logins.sql -Append
+            Export-DbaLogin -SqlInstance sqlserver2014a -Exclude realcajun -SqlCredential $scred -Path C:\temp\logins.sql -Append
 
             Authenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\temp\logins.sql, and appends to the file if it exists. If not, the file will be created.
 
         .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -FilePath C:\temp\logins.sql
+            Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\temp\logins.sql
 
             Exports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\temp\logins.sql
 
@@ -84,12 +84,12 @@ function Export-DbaLogin {
             Exports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting
 
         .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -FilePath C:\temp\login.sql -ExcludeGoBatchSeparator
+            Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\temp\login.sql -ExcludeGoBatchSeparator
 
             Exports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\login.sql file without the 'GO' batch separator.
 
         .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -FilePath C:\temp\users.sql -DestinationVersion SQLServer2016
+            Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -Path C:\temp\users.sql -DestinationVersion SQLServer2016
 
             Exports login realcajun fron sqlsever2008 to the file C:\temp\users.sql with sintax to run on SQL Server 2016
     #>
@@ -105,8 +105,8 @@ function Export-DbaLogin {
         [object[]]$ExcludeLogin,
         [Alias("Databases")]
         [object[]]$Database,
-        [Alias("OutFile", "Path", "FileName")]
-        [string]$FilePath,
+        [Alias("OutFile", "FilePath", "FileName")]
+        [string]$Path,
         [Alias("NoOverwrite")]
         [switch]$NoClobber,
         [switch]$Append,
@@ -121,11 +121,11 @@ function Export-DbaLogin {
 
     begin {
 
-        if ($FilePath) {
-            if ($FilePath -notlike "*\*") {
-                $FilePath = ".\$filepath"
+        if ($Path) {
+            if ($Path -notlike "*\*") {
+                $Path = ".\$Path"
             }
-            $directory = Split-Path $FilePath
+            $directory = Split-Path $Path
             $exists = Test-Path $directory
 
             if ($exists -eq $false) {
@@ -220,7 +220,7 @@ function Export-DbaLogin {
             }
 
             if ($Pscmdlet.ShouldProcess("Outfile", "Adding T-SQL for login $userName")) {
-                if ($FilePath) {
+                if ($Path) {
                     Write-Message -Level Verbose -Message "Exporting $userName."
                 }
 
@@ -432,9 +432,9 @@ function Export-DbaLogin {
             $sql += "`r`nGO"
         }
 
-        if ($FilePath) {
-            $sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
-            Get-ChildItem $FilePath
+        if ($Path) {
+            $sql | Out-File -Encoding UTF8 -Path $Path -Append:$Append -NoClobber:$NoClobber
+            Get-ChildItem $Path
         }
         else {
             $sql
