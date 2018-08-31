@@ -27,6 +27,9 @@ function Invoke-DbaDiagnosticQuery {
     .PARAMETER ExcludeDatabase
     The database(s) to exclude
 
+    .PARAMETER ExcludeQuery
+    The Queries to exclude
+
     .PARAMETER UseSelectionHelper
     Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified.
 
@@ -139,6 +142,8 @@ function Invoke-DbaDiagnosticQuery {
 
         [object[]]$ExcludeDatabase,
 
+        [object[]]$ExcludeQuery,
+
         [Alias('Credential')]
         [PSCredential]$SqlCredential,
         [System.IO.FileInfo]$Path,
@@ -245,6 +250,14 @@ function Invoke-DbaDiagnosticQuery {
                 }
             }
 
+            if ($version -eq "2016" -and $server.VersionMinor -gt 5026 ) {
+                $version = "2016SP2"
+            }
+
+            if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
+                $version = "AzureSQLDatabase"
+            }
+
             if (!$instanceOnly) {
                 if (-not $Database) {
                     $databases = (Get-DbaDatabase -SqlInstance $server -ExcludeAllSystemDb -ExcludeDatabase $ExcludeDatabase).Name
@@ -260,10 +273,22 @@ function Invoke-DbaDiagnosticQuery {
             if ($UseSelectionHelper -and $first) {
                 $QueryName = Invoke-DiagnosticQuerySelectionHelper $parsedscript
                 $first = $false
+                if ($QueryName.Count -eq 0) {
+                    Write-Message -Level Output -Message "No query selected through SelectionHelper, halting script execution"
+                    return
+                }
             }
+            
+            if ($QueryName.Count -eq 0) {
+                $QueryName = $parsedscript | Select-Object -ExpandProperty QueryName
+            }
+
+            if ($ExcludeQuery) {
+                $QueryName = Compare-Object -ReferenceObject $QueryName -DifferenceObject $ExcludeQuery | Where-Object SideIndicator -eq "<=" | Select-Object -ExpandProperty InputObject
+            }
+
             #since some database level queries can take longer (such as fragmentation) calculate progress with database specific queries * count of databases to run against into context
             $CountOfDatabases = ($databases).Count
-
 
             if ($QueryName.Count -ne 0) {
                 #if running all queries, then calculate total to run by instance queries count + (db specific count * databases to run each against)
@@ -344,7 +369,9 @@ function Invoke-DbaDiagnosticQuery {
                                 DatabaseSpecific = $scriptpart.DBSpecific
                                 Database         = $null
                                 Notes            = $null
-                                Result           = Select-DefaultView -InputObject $result -Property *
+                                #Result           = Select-DefaultView -InputObject $result -Property *
+                                #Not using Select-DefaultView because excluding the fields below doesn't seem to work
+                                Result           = $result | Select-Object * -ExcludeProperty 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
                             }
 
                         }
@@ -399,7 +426,7 @@ function Invoke-DbaDiagnosticQuery {
                                         Name             = $scriptpart.QueryName
                                         Description      = $scriptpart.Description
                                         DatabaseSpecific = $scriptpart.DBSpecific
-                                        Database         = $null
+                                        Database         = $currentdb
                                         Notes            = "Empty Result for this Query"
                                         Result           = $null
                                     }
@@ -410,17 +437,21 @@ function Invoke-DbaDiagnosticQuery {
                                 Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $currentDb) -Target $currentdb -ErrorRecord $_
                             }
 
-                            [pscustomobject]@{
-                                ComputerName     = $server.ComputerName
-                                InstanceName     = $server.ServiceName
-                                SqlInstance      = $server.DomainInstanceName
-                                Number           = $scriptpart.QueryNr
-                                Name             = $scriptpart.QueryName
-                                Description      = $scriptpart.Description
-                                DatabaseSpecific = $scriptpart.DBSpecific
-                                Database         = $currentDb
-                                Notes            = $null
-                                Result           = Select-DefaultView -InputObject $result -Property *
+                            if ($result){
+                                [pscustomobject]@{
+                                    ComputerName     = $server.ComputerName
+                                    InstanceName     = $server.ServiceName
+                                    SqlInstance      = $server.DomainInstanceName
+                                    Number           = $scriptpart.QueryNr
+                                    Name             = $scriptpart.QueryName
+                                    Description      = $scriptpart.Description
+                                    DatabaseSpecific = $scriptpart.DBSpecific
+                                    Database         = $currentDb
+                                    Notes            = $null
+                                    #Result           = Select-DefaultView -InputObject $result -Property *
+                                    #Not using Select-DefaultView because excluding the fields below doesn't seem to work
+                                    Result           = $result | Select-Object * -ExcludeProperty 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
+                                }
                             }
                         }
                         else {

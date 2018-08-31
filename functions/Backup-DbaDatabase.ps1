@@ -135,7 +135,7 @@ function Backup-DbaDatabase {
 
                 Performs a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql credential "dbatoolscred" registered on the sql2016 instance.
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
     param (
         [parameter(ParameterSetName = "Pipe", Mandatory = $true)]
@@ -193,6 +193,11 @@ function Backup-DbaDatabase {
 
             if ($ExcludeDatabase) {
                 $InputObject = $InputObject | Where-Object Name -notin $ExcludeDatabase
+            }
+
+            if ($null -eq $BackupDirectory -and $backupfileName -ne 'NUL') {
+                Write-Message -Message 'No backupfolder passed in, setting it to instance default'
+                $BackupDirectory = (Get-DbaDefaultPath -SqlInstance $SqlInstance).Backup
             }
 
             if ($BackupDirectory.Count -gt 1) {
@@ -291,7 +296,10 @@ function Backup-DbaDatabase {
             $Suffix = "bak"
 
             if ($CompressBackup) {
-                if ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
+                if ($database.EncryptionEnabled) {
+                    Write-Message -Level Warning -Message "$dbname is enabled for encryption, will not compress"
+                    $backup.CompressionOption = 2
+                } elseif ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
                     Write-Message -Level Warning -Message "Compression is not supported with this version/edition of Sql Server"
                 }
                 else {

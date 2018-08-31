@@ -200,7 +200,7 @@ function Set-DbaDbCompression {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                     break
                                 }
-                                foreach ($p in $($obj.PhysicalPartitions | Where-Object {$_.DataCompression -ne $CompressionType})) {
+                                foreach ($p in $($obj.PhysicalPartitions | Where-Object {$_.DataCompression -notin ($CompressionType,'ColumnStore','ColumnStoreArchive')})) {
                                     Write-Message -Level Verbose -Message "Compressing table $($obj.Schema).$($obj.Name)"
                                     $($obj.PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $P.PartitionNumber}).DataCompression = $CompressionType
                                     $obj.Rebuild()
@@ -227,7 +227,7 @@ function Set-DbaDbCompression {
                                     }
                                 }
 
-                                foreach ($index in $($obj.Indexes | Where-Object {!$_.IsMemoryOptimized})) {
+                                foreach ($index in $($obj.Indexes | Where-Object {!$_.IsMemoryOptimized -and $_.IndexType -notmatch 'Columnstore'})) {
                                     if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                         Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                         break

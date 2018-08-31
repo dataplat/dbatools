@@ -6,7 +6,7 @@ function Get-DbaSsisExecutionHistory {
 
         .DESCRIPTION
             This command gets execution history for SSIS executison given one or more instances and can be filtered by Project, Environment,Folder or Status.
-        
+
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to.
             This can be a collection and receive pipeline input to allow the function
@@ -20,14 +20,17 @@ function Get-DbaSsisExecutionHistory {
 
         .PARAMETER Folder
             Specifies a filter by folder
-        
+
         .PARAMETER Environment
             Specifies a filter by environment
 
         .PARAMETER Status
             Specifies a filter by status (created,running,cancelled,failed,pending,halted,succeeded,stopping,completed)
 
-        .PARAMETER EnableException
+        .PARAMETER Since
+            Datetime object used to narrow the results to a date
+
+            .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
@@ -50,7 +53,7 @@ function Get-DbaSsisExecutionHistory {
 
         .EXAMPLE
             Get-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Status Failed,Cancelled
-            
+
             Gets all failed or canceled executions for SMTQ01.
 
         .EXAMPLE
@@ -63,6 +66,7 @@ function Get-DbaSsisExecutionHistory {
         [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [datetime]$Since,
         [ValidateSet("Created", "Running", "Cancelled", "Failed", "Pending", "Halted", "Succeeded", "Stopping", "Completed")]
         [String[]]$Status,
         [String[]]$Project,
@@ -72,6 +76,9 @@ function Get-DbaSsisExecutionHistory {
         [switch]$EnableException
     )
     begin {
+        $params = @{}
+        
+        #build status parameter
         $statuses = @{
             'Created'   = 1
             'Running'   = 2
@@ -85,38 +92,65 @@ function Get-DbaSsisExecutionHistory {
         }
         if ($Status) {
             $csv = ($statuses[$Status] -join ',')
-            $statusq = "AND e.[Status] in ($csv)"
+            $statusq = "`n`t`tAND e.[Status] in ($csv)"
         }
         else {
             $statusq = ''
         }
-        
+
+        #construct parameterized collection predicate for project array
         if ($Project) {
-            $csv = "`"" + ($Project -join '","') + "`""
-            $projectq = "AND e.[ProjectName] in ($csv)"
+            $projectq = "`n`t`tAND ( 1=0 "
+            $i = 0
+            foreach($p in $Project){
+                $i ++
+                $projectq += "`n`t`t`tOR e.[project_name] = @project$i"
+                $params.Add("project$i",$p)
+            }
+            $projectq += "`n`t`t)"
         }
         else {
             $projectq = ''
         }
-        
+
+        #construct parameterized collection predicate for folder array
         if ($Folder) {
-            $csv = "`'" + ($Folder -join "'", "'") + "`'"
-            $folderq = "AND e.[FolderName] in ($csv)"
+            $folderq = "`n`t`tAND ( 1=0 "
+            $i = 0
+            foreach($f in $Folder){
+                $i ++
+                $folderq += "`n`t`t`tOR e.[folder_name] = @folder$i"
+                $params.Add("folder$i" , $f)
+            }
+            $folderq += "`n`t`t)"
         }
         else {
             $folderq = ''
         }
-        
-        if ($Environment) {
-            $csv = "`'" + ($Environment -join "'", "'") + "`'"
-            $environmentq = "AND e.[Environment] in ($csv)"
+
+         #construct parameterized collection predicate for environment array
+         if ($Environment) {
+            $environmentq = "`n`t`tAND ( 1=0 "
+            $i = 0
+            foreach($e in $Environment){
+                $i ++
+                $environmentq += "`n`t`t`tOR e.[environment_name] = @environment$i"
+                $params.Add("environment$i" , $e)
+            }
+            $environmentq += "`n`t`t)"
         }
         else {
             $environmentq = ''
         }
-        
+
+        #construct date filter for since
+        if($Since){
+            $sinceq = "`n`t`tAND e.[start_time] >= @since"
+            $params.Add('since',$Since )
+        }
+
         $sql = "
-            WITH
+        WITH
             cteLoglevel as (
                 SELECT
                     execution_id as ExecutionID,
@@ -161,19 +195,23 @@ function Get-DbaSsisExecutionHistory {
                     ON e.execution_id = l.ExecutionID
                 LEFT OUTER JOIN cteStatus s
                     ON s.[key] = e.status
-            WHERE 1=1
-                $statusq
-                $projectq
-                $folderq
-                $environmentq
-                OPTION  ( RECOMPILE );"
+            WHERE 1=1$statusq$projectq$folderq$environmentq$sinceq
+            OPTION  ( RECOMPILE );
+        "
+
+        #debug verbose output
+        Write-Verbose "`nSQL statement: $sql"
+        $paramout = ($params | Out-String)
+        Write-Verbose "`nParameters:$paramout"
     }
+
+
     process {
         foreach ($instance in $SqlInstance) {
-            $results = Invoke-DbaSqlQuery -SqlInstance $instance -Database SSISDB -Query $sql -as PSObject -SqlCredential $SqlCredential
+            $results = Invoke-DbaSqlQuery -SqlInstance $instance -Database SSISDB -Query $sql -as PSObject -SqlParameters $params -SqlCredential $SqlCredential
             foreach ($row in $results) {
-                $row.start_time = [dbadatetime]$row.StartTime.DateTime
-                $row.end_time = [dbadatetime]$row.EndTime.DateTime
+                $row.StartTime = [dbadatetime]$row.StartTime.DateTime
+                $row.EndTime = [dbadatetime]$row.EndTime.DateTime
                 $row
             }
         }

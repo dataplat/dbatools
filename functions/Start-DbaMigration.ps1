@@ -148,6 +148,9 @@ function Start-DbaMigration {
         .PARAMETER UseLastBackups
             Use the last full, diff and logs instead of performing backups. Note that the backups must exist in a location accessible by all destination servers, such a network share.
 
+        .PARAMETER Continue
+            If specified, will to attempt to restore transaction log backups on top of existing database(s) in Recovering or Standby states. Only usable with -UseLastBackups
+
         .PARAMETER Force
             If migrating users, forces drop and recreate of SQL and Windows logins.
             If migrating databases, deletes existing databases with matching names.
@@ -214,7 +217,7 @@ function Start-DbaMigration {
         [parameter(Position = 5, Mandatory = $true, ParameterSetName = "DbBackup")]
         [switch]$BackupRestore,
         [parameter(Position = 6, ParameterSetName = "DbBackup",
-                   HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
+            HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
         [string]$NetworkShare,
         [parameter(Position = 7, ParameterSetName = "DbBackup")]
         [switch]$WithReplace,
@@ -267,6 +270,7 @@ function Start-DbaMigration {
         [switch]$DisableJobsOnSource,
         [switch]$NoSaRename,
         [switch]$UseLastBackups,
+        [switch]$Continue,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -296,6 +300,10 @@ function Start-DbaMigration {
         }
         if ($DetachAttach -and -not $Reattach -and $Destination.Count -gt 1) {
             Stop-Function -Message "When using -DetachAttach with multiple servers, you must specify -Reattach to reattach database at source"
+            return
+        }
+        if ($Continue -and -not $UseLastBackups) {
+            Stop-Function -Message "-Continue cannot be used without -UseLastBackups"
             return
         }
     }
@@ -361,7 +369,7 @@ function Start-DbaMigration {
             Write-Message -Level Verbose -Message "Migrating databases"
             if ($BackupRestore) {
                 if ($UseLastBackups) {
-                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -UseLastBackups:$UseLastBackups
+                    Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs -UseLastBackups:$UseLastBackups -Continue:$Continue
                 }
                 else {
                     Copy-DbaDatabase -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs

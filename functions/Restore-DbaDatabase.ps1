@@ -285,6 +285,13 @@ function Restore-DbaDatabase {
         If server\instance1 is Enterprise edition this will be done online, if not it will be performed offline
         AllowContinue is required to make sure we cope with existing files
 
+    .EXAMPLE
+        Due to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround
+        This will use a SQL Server instance > 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BacukupHistory object:
+        
+        $BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\backups\sql2000\ProdDb
+        $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
+
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
         Author: Stuart Moore (@napalmgram), stuart-moore.com
@@ -393,6 +400,17 @@ function Restore-DbaDatabase {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
+        if ($RestoreInstance.VersionMajor -eq 8 -and $true -ne $TrustDbBackupHistory){
+$sql2000txt = @'
+Due to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround
+This will use a SQL Server instance > 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BacukupHistory object:
+
+$BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\backups\sql2000\ProdDb
+$BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
+'@
+            Stop-Function -Message "$sql2000txt" -Target $RestoreInstance
+            return
+        }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
             $useDestinationDefaultDirectories = $true
             $paramCount = 0
@@ -458,9 +476,9 @@ function Restore-DbaDatabase {
                 return
             }
             if ($Continue) {
+                Write-Message -Message "Called with continue, so assume we have an existing db in norecovery"
                 $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $RestoreInstance
-                #$WithReplace = $true
-                #$ContinuePoints
+                $LastRestoreType = Get-DbaRestoreHistory -SqlInstance $RestoreInstance -Last
             }
             if (!($PSBoundParameters.ContainsKey("DataBasename"))) {
                 $PipeDatabaseName = $true
@@ -612,8 +630,17 @@ function Restore-DbaDatabase {
             if ($StopAfterGetBackupInformation) {
                 return
             }
+
+            $null = $BackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping
             
-            $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints
+            if (Test-Bound -ParameterName FormatBackupInformation) {
+                Set-Variable -Name $FormatBackupInformation -Value $BackupHistory -Scope Global
+            }
+            if ($StopAfterFormatBackupInformation) {
+                return
+            }
+
+            $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
             
             if (Test-Bound -ParameterName SelectBackupInformation) {
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose
@@ -621,15 +648,6 @@ function Restore-DbaDatabase {
                 
             }
             if ($StopAfterSelectBackupInformation) {
-                return
-            }
-            
-            $null = $FilteredBackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping
-            
-            if (Test-Bound -ParameterName FormatBackupInformation) {
-                Set-Variable -Name $FormatBackupInformation -Value $FilteredBackupHistory -Scope Global
-            }
-            if ($StopAfterFormatBackupInformation) {
                 return
             }
             

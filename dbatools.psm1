@@ -114,7 +114,7 @@ if ($dbatoolsSystemUserNode.SerialImport) { $script:serialImport = $true }
 
 #region Multi File Import
 $script:multiFileImport = $false
-if ($dbatools_serialimport) { $script:multiFileImport = $true }
+if ($dbatools_multiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemSystemNode.MultiFileImport) { $script:multiFileImport = $true }
 if ($dbatoolsSystemUserNode.MultiFileImport) { $script:multiFileImport = $true }
 if (Test-Path -Path "$script:PSModuleRoot\.git") { $script:multiFileImport = $true }
@@ -599,7 +599,12 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"  = "Get-DbaJobCategory"
         "Definition" = "Get-DbaAgentJobCategory"
+    },
+    @{
+        "AliasName"  = "Invoke-DbaDatabaseShrink"
+        "Definition" = "Invoke-DbaDbShrink"
     }
+    
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
 }
@@ -675,8 +680,8 @@ if ($PSCommandPath -like "*.psm1") {
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUQJ90JPTImH7HeH+btRqGYuh3
-# zBSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUzuBEXrAUO3NVvftZe0Zh4NV5
+# 4eeggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -807,22 +812,22 @@ if ($PSCommandPath -like "*.psm1") {
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUUzxKKyToztjxagkjOEXHe34fFcIwDQYJKoZIhvcNAQEBBQAE
-# ggEAdLl53u8PRqbIHabMAimMIphJ2AwoMUT/9nRUjgqi2+dYgXHhn0vUlIYDIstZ
-# yzAlWUvFmmezfD6w/Cnk36KwYhVmO5WK7HyHJEK3qPtt6xRMEPsAj3O6wXYsE1oR
-# 1FBG7jXCLfSqAKGniJYEA6x2T2ktKx/jS/ZoBXxclYvp4eUyGbmngwrW5D0ULrr6
-# tH7d9PV/wGInUR4xWkVvSBSpvF+CD8OU9dMbNfbxQD9NlKhtQVDkX21PLr5lPVPh
-# KgsNChUJG2cNW6jYlKOv4FWYd+WlfVATkohXFyjLzXZlBYO5npEuJSlhHIIdXUKJ
-# +KCMvHzwMis/fIOEfqvWqrQt0KGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUJc2L50QWUHDa0np5rcTx8UP3gDYwDQYJKoZIhvcNAQEBBQAE
+# ggEAX7wLIuvfa8sUpLjhZGLS7eWmJL01TOuSF2aSx2m9ARpzLTFEvitaSoKVZ0+E
+# mkAZZgGXbpPm79U5AXC/yhwD420gpYL6GFgIqZSADoDyToCzYJOvtteMlI1IqKPz
+# JB5G+IxFgNBtTtobtS4cquRb/gKwoLY4AVM/MxTfKvxfcDBxrYmNj1UQuRyrYvpv
+# FhMYEk3S9ou0uI9NXmr2JyfRx8sD1ewB8GWDMjknWTB8EpLfFOK0FlU3vQ4gEwSJ
+# vAWLwUJCqB/R2rsm8DsDY6yMj+HuEKeKmhPlOSrwPd/OU4//t9gXlruXZiyotptL
+# msE0f8cUsWpbwSWvaFjYEMbyv6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwNzIwMjEyMzMwWjAj
-# BgkqhkiG9w0BCQQxFgQUxVmNf8/qwJqBbknJArdBGHb+YGAwDQYJKoZIhvcNAQEB
-# BQAEggEAkM8vLO1nalhSER3mtFf1vd6iiiVH+NLHrrzSu8wo8CF+Ba8swPeC8vS9
-# 2HDEWprdq6ijVre7C33CqBC/GHrTE7X+g+pV+iMwufBVYA60x8vx+kJoi82D/tfA
-# nr2hAfbLQ1CZsKR2LycBOsQJGM1e26tybW2uFDA00j3g1+qlJXs0BAoPolSI46gz
-# SV+bSMWm8ZySxDmiYlM3uSnH6rOpJQXDpp8H3fJA6ueFWNkJXQD1VTVho1HVclz2
-# tmSVULZc2DBUu4du4FyisQr3dAtd3akEVA0jByiTxW4DKNTZViuwArliIZh1g7qW
-# 0fmsduPopsH+zwdWK4Mh5HQsHRouiA==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwODMwMjAyMDU4WjAj
+# BgkqhkiG9w0BCQQxFgQUBWy0ok2bPJiyorhyKDYge/0N7l4wDQYJKoZIhvcNAQEB
+# BQAEggEAWBEMqXxMYZJq9UGz/8CinvjQCzNsXzjtLqHUSPW3aH+2SqS6Ia4j6xu0
+# mpOcRuwInU0Jcz38BQwr5g1CGy1wHyMquxQIO2mCiWQaJQBAYsuS4NJWw3Dexp0D
+# UjmNUKdW553Ze0ZSEYvbwkveqI1aA5kfdBiEjV8tFB7w4kf6cwUi4f05UwWppLgs
+# h/wGnH9Tzs8ldZyJ+B04zvRXPaCaUZb4hdtncfOMCcQsWMksxqSxxIGTaYv2Lqcp
+# bFloDM5uyqiB7WwyVTOcQfZwcLIg32YbwVlF2OBFn2yyjZ2RLKlo0Dkalk2obvFM
+# cqmhT66HT54gp1J15nKcd5K/2sUYRw==
 # SIG # End signature block

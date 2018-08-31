@@ -80,7 +80,7 @@ Describe "$commandName Integration Tests" -Tags "IntegrationTests" {
                 }
             )
         }
-        
+
         It -Skip "SQL Server drive is found in there somewhere" {
             $results = Get-DbaDiskSpace -ComputerName 'MadeUpServer' -CheckForSql -EnableException
             $true | Should -BeIn $results.IsSqlDisk
@@ -92,7 +92,42 @@ Describe "$commandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "CheckForSql returns IsSqlDisk property with a value (likely false)" {
-        It -Skip "SQL Server drive is not found in there somewhere" {
+        Mock -ModuleName 'dbatools' -CommandName 'Get-DbaCmObject' -ParameterFilter { $Query -like '*Win32_Volume*' } -MockWith {
+            return @(
+                @{
+                    Name = 'D:\Data\'
+                    Label = 'Log'
+                    Capacity = 32209043456
+                    Freespace = 11653545984
+                    BlockSize = 65536
+                    FileSystem = 'NTFS'
+                    DriveType = 3
+                    DriveLetter = ''
+                },
+                @{
+                    Name = 'C:\'
+                    Label = 'OS'
+                    Capacity = 32209043456
+                    Freespace = 11653545984
+                    BlockSize = 4096
+                    FileSystem = 'NTFS'
+                    DriveType = 2
+                    DriveLetter = 'C:'
+                },
+                @{
+                    Name = 'T:\'
+                    Label = 'Data'
+                    Capacity = 32209043456
+                    Freespace = 11653545984
+                    BlockSize = 4096
+                    FileSystem = 'NTFS'
+                    DriveType = 2
+                    DriveLetter = 'T:'
+                }
+            )
+        }
+
+        It "SQL Server drive is not found in there somewhere" {
             $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME -CheckForSql -WarningAction SilentlyContinue
             $false | Should BeIn $results.IsSqlDisk
         }

@@ -126,7 +126,7 @@ function Write-DbaDataTable {
 
         .EXAMPLE
             $passwd = ConvertTo-SecureString "P@ssw0rd" -AsPlainText -Force
-            $AzureCredential = Mew-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
+            $AzureCredential = New-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
             $DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
             Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300
 
@@ -492,7 +492,7 @@ function Write-DbaDataTable {
             'System.UInt16'    = 'int';
             'System.Int64'     = 'bigint';
             'System.UInt64'    = 'decimal(20,0)';
-            'System.Decimal'   = 'decimal(20,5)';
+            'System.Decimal'   = 'decimal(38,5)';
             'System.Single'    = 'bigint';
             'System.Double'    = 'float';
             'System.Byte'      = 'tinyint';
@@ -509,7 +509,7 @@ function Write-DbaDataTable {
             'UInt16'           = 'int';
             'Int64'            = 'bigint';
             'UInt64'           = 'decimal(20,0)';
-            'Decimal'          = 'decimal(20,5)';
+            'Decimal'          = 'decimal(38,5)';
             'Single'           = 'bigint';
             'Double'           = 'float';
             'Byte'             = 'tinyint';

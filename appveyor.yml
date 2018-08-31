@@ -9,6 +9,11 @@ before_build:
 build:
   project: bin\projects\dbatools\dbatools.sln
 
+after_build:
+    # Removed to prevent credential exposure
+    # - ps: Push-AppveyorArtifact msbuild.binlog
+    - ps: Push-AppveyorArtifact msbuild.log
+    
 version: 0.9.{build}
 
 cache:
