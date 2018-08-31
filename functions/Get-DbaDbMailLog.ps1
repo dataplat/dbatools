@@ -119,7 +119,7 @@ function Get-DbaDbMailLog {
                 $server.Query($sql) | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, LogDate, EventType, Description, Login
             }
             catch {
-                Stop-Function -Message "Query failure" -InnerErrorRecord $_ -Continue
+                Stop-Function -Message "Failure" -InnerErrorRecord $_ -Continue
             }
         }
     }

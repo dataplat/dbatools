@@ -71,7 +71,7 @@
                 $mailserver | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Profiles, Accounts, ConfigurationValues, Properties
             }
             catch {
-                Stop-Function -Message "Query failure" -ErrorRecord $_ -Continue
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
             }
         }
     }
