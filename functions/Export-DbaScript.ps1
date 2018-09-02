@@ -77,7 +77,7 @@ function Export-DbaScript {
 
         .EXAMPLE
             Get-DbaTable -SqlInstance sql2016 -Database MyDatabase -Table 'dbo.Table1', 'dbo.Table2' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql
-            
+
             Exports only script for 'dbo.Table1' and 'dbo.Table2' in MyDatabase to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
 
         .EXAMPLE
@@ -88,12 +88,12 @@ function Export-DbaScript {
 
         .EXAMPLE
             #Set Scripting Options
-            $options = New-DbaScriptingOption    
+            $options = New-DbaScriptingOption
             $options.ScriptSchema = $true
             $options.IncludeDatabaseContext  = $true
             $options.IncludeHeaders = $false
             $Options.NoCommandTerminator = $false
-            $Options.ScriptBatchTerminator = $true 
+            $Options.ScriptBatchTerminator = $true
             $Options.AnsiFile = $true
 
             Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql -ScriptingOptionsObject $options
@@ -108,12 +108,12 @@ function Export-DbaScript {
 
         .EXAMPLE
             #Set Scripting Options
-            $options = New-DbaScriptingOption    
+            $options = New-DbaScriptingOption
             $options.ScriptSchema = $true
             $options.IncludeDatabaseContext  = $true
             $options.IncludeHeaders = $false
             $Options.NoCommandTerminator = $false
-            $Options.ScriptBatchTerminator = $true 
+            $Options.ScriptBatchTerminator = $true
             $Options.AnsiFile = $true
 
             $Databases = Get-DbaDatabase -SqlInstance sql2016 -ExcludeDatabase master, model, msdb,tempdb
@@ -123,7 +123,7 @@ function Export-DbaScript {
             }
 
             Exports Script for each database on sql2016 excluding system databases
-            Uses Scripting options to ensure Batch Terminator is set 
+            Uses Scripting options to ensure Batch Terminator is set
             Will append the output to the file C:\temp\export.sql if it already exists
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
