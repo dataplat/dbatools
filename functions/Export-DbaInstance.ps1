@@ -183,8 +183,9 @@
             }
             
             if (-not (Test-Bound -ParameterName Path)) {
-                $Path = $instance.Replace('\', '$')
-                $Path = "$Path.sql"
+                $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
+                $mydocs = [Environment]::GetFolderPath('MyDocuments')
+                $path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-instance.sql"
             }
             
             if (-not $ExcludeSpConfigure) {
