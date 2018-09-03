@@ -302,13 +302,13 @@ function Copy-DbaDatabase {
 
                         if ($null -eq $d.physical) {
                             $directory = Get-SqlDefaultPaths $destServer data
-                            $fileName = Split-Path $file.filename -Leaf
+                            $fileName = (Split-Path $file.filename -Leaf).replace($dbname,$destinationdbname)
                             $d.physical = "$directory\$fileName"
                         }
                     }
                     else {
                         $directory = Get-SqlDefaultPaths $destServer data
-                        $fileName = Split-Path $file.filename -Leaf
+                        $fileName = (Split-Path $file.filename -Leaf).replace($dbname,$destinationdbname)
                         $d.physical = "$directory\$fileName"
                     }
                     $d.logical = $file.Name
@@ -601,6 +601,7 @@ function Copy-DbaDatabase {
             $detachresult = Dismount-SqlDatabase $sourceServer $dbName
 
             if ($detachresult) {
+
                 $transfer = Start-SqlFileTransfer $fileStructure $dbName
                 if ($transfer -eq $false) { Write-Warning "Could not copy files."; return "Could not copy files." }
                 $attachresult = Mount-SqlDatabase $destServer $dbName $destfilestructure $dbOwner
@@ -905,6 +906,22 @@ function Copy-DbaDatabase {
                         $DestinationDbName = $dbName
                     }
 
+                    $filestructure.databases[$dbname].Add('DestinationDbName',$DestinationDbName)
+                    ForEach ($key in $out.databases[$dbname].Destination.Keys){
+                        $SplitFileName = Split-Path -Leaf $out.databases[$dbname].Destination[$key].remotefilename
+                        $SplitPath =  Split-Path -Leaf $out.databases[$dbname].Destination[$key].remotefilename
+                        $SplitFileName = $SplitFileName.replace($dbname, $DestinationDbName)
+                        $filestructure.databases[$dbname].Destination.$key.remotefilename = Join-Path $SplitPath $SplitFileName
+                        $SplitFileName = Split-Path -Leaf $out.databases[$dbname].Destination[$key].physical
+                        $SplitPath =  Split-Path -Leaf $out.databases[$dbname].Destination[$key].physical
+                        $SplitFileName = $SplitFileName.replace($dbname, $DestinationDbName)
+                        $filestructure.databases[$dbname].Destination.$key.physical = Join-Path $SplitPath $SplitFileName
+                        
+
+                    }
+
+                    $filestructure 
+                    return
                     $copyDatabaseStatus = [pscustomobject]@{
                         SourceServer = $sourceServer.Name
                         DestinationServer = $destServer.Name
@@ -1101,7 +1118,7 @@ function Copy-DbaDatabase {
                             Write-Message -Level Verbose -Message "Reuse = $ReuseSourceFolderStructure."
                             try {
                                 $msg = $null
-                                $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile:$ReplaceDbNameInFile
+                                $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $DestinationdbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile
                             }
                             catch {
                                 $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
@@ -1179,6 +1196,7 @@ function Copy-DbaDatabase {
                     }
 
                     if ($DetachAttach) {
+
                         $copyDatabaseStatus.Type = "Database (DetachAttach)"
 
                         $sourceFileStructure = New-Object System.Collections.Specialized.StringCollection
