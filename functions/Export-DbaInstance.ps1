@@ -28,11 +28,11 @@
             All Resource Governor objects. Use -NoResourceGovernor to skip.
             All Server Audit Specifications. Use -NoServerAuditSpecifications to skip.
             All Custom Errors (User Defined Messages). Use -NoCustomErrors to skip.
-            
+
         .PARAMETER SqlInstance
             The target SQL Server instances
 
-   
+
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
@@ -41,10 +41,10 @@
 
         .PARAMETER Path
             The path to the export file
-    
+
         .PARAMETER ScriptingOptionsObject
             An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption
-    
+
         .PARAMETER NetworkShare
             Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.
 
@@ -107,6 +107,9 @@
 
         .PARAMETER ExcludeCustomErrors
             If this switch is enabled, Custom Errors (User Defined Messages) will not be exported.
+
+        .PARAMETER IncludeSupportDbs
+            If this switch is enabled, the ReportServer, ReportServerTempDb, SSIDb, and distribution databases will be migrated if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
 
         .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -193,28 +196,28 @@
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             if (-not (Test-Bound -ParameterName Path)) {
                 $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
                 $mydocs = [Environment]::GetFolderPath('MyDocuments')
                 $path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-instance.sql"
             }
-            
+
             if (-not $ExcludeSpConfigure) {
                 Write-Message -Level Verbose -Message "Exporting SQL Server Configuration"
                 Export-DbaSpConfigure -SqlInstance $server -Path $Path
             }
-            
+
             if (-not $ExcludeCustomErrors) {
                 Write-Message -Level Verbose -Message "Exporting custom errors (user defined messages)"
                 Get-DbaCustomError -SqlInstance $server | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
-            
+
             if (-not $ExcludeCredentials) {
                 Write-Message -Level Verbose -Message "Exporting SQL credentials"
                 Export-DbaCredential -SqlInstance $server -Credential $Credential
             }
-            
+
             if (-not $ExcludeDatabaseMail) {
                 Write-Message -Level Verbose -Message "Exporting database mail"
                 Get-DbaDbMailConfig -SqlInstance $server | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
@@ -224,78 +227,78 @@
                 Get-DbaDbMailConfig -SqlInstance $server | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 Get-DbaDbMail -SqlInstance $server | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
-            
+
             if (-not $ExcludeCentralManagementServer) {
                 Write-Message -Level Verbose -Message "Exporting Central Management Server"
                 Export-DbaRegisteredServer -SqlInstance $server -Path $Path
             }
-            
+
             if (-not $ExcludeBackupDevices) {
                 Write-Message -Level Verbose -Message "Exporting Backup Devices"
                 Get-DbaBackupDevice -SqlInstance $server | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
-            
+
             if (-not $ExcludeLinkedServers) {
                 Write-Message -Level Verbose -Message "Exporting linked servers"
                 #Export-DbaLinkedServer -SqlInstance $server
             }
-            
+
             if (-not $ExcludeSystemTriggers) {
                 # Need to make Get-DbaTrigger an SMO object
                 Write-Message -Level Verbose -Message "Exporting System Triggers"
-                #Get-DbaTrigger -SqlInstance $server 
+                #Get-DbaTrigger -SqlInstance $server
             }
-            
+
             if (-not $ExcludeDatabases) {
                 Write-Message -Level Verbose -Message "Exporting database restores"
                 Restore-DbaDatabase -SqlInstance $server -NoRecovery:$NoRecovery -WithReplace:$WithReplace -OutputScriptOnly
             }
-            
+
             if (-not $ExcludeLogins) {
                 Write-Message -Level Verbose -Message "Exporting logins"
                 Export-DbaLogin -SqlInstance $server -FilePath $Path
             }
-            
+
             if (-not $ExcludeAudits) {
                 Write-Message -Level Verbose -Message "Exporting Audits"
                 Get-DbaServerAudit -SqlInstance $server | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
-            
+
             if (-not $ExcludeServerAuditSpecifications) {
                 Write-Message -Level Verbose -Message "Exporting Server Audit Specifications"
                 Get-DbaServerAuditSpecification -SqlInstance $server | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
-            
+
             if (-not $ExcludeEndpoints) {
                 Write-Message -Level Verbose -Message "Exporting Endpoints"
                 Get-DbaEndpoint -SqlInstance $server | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
-            
+
             if (-not $ExcludePolicyManagement) {
                 Write-Message -Level Verbose -Message "Exporting Policy Management"
                 Get-DbaPolicy -SqlInstance $server | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
-            
+
             if (-not $ExcludeResourceGovernor) {
                 Write-Message -Level Verbose -Message "Exporting Resource Governor"
-                
+
                 Get-DbaRgClassifierFunction -SqlInstance $server | Export-DbaScript -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 #Get-DbaResourceGovernor -SqlInstance $server
             }
-            
+
             if (-not $ExcludeSysDbUserObjects) {
                 Write-Message -Level Verbose -Message "Exporting user objects in system databases (this can take a second)."
                 #Get-DbaSysDbUserObject -SqlInstance $server
             }
-            
+
             if (-not $ExcludeExtendedEvents) {
                 Write-Message -Level Verbose -Message "Exporting Extended Events"
                 Get-DbaXESession -SqlInstance $server | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
-            
+
             if (-not $ExcludeAgentServer) {
                 Write-Message -Level Verbose -Message "Exporting job server"
-                
+
                 Get-DbaAgentJobCategory -SqlInstance $instance | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 Get-DbaAgentOperator -SqlInstance $instance | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 Get-DbaAgentAlert -SqlInstance $instance | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
