@@ -142,7 +142,11 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "Copying with renames using backup/restore" {
         BeforeAll {
             Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $backuprestoredb
+            Get-DbaDatabase -SqlInstance $script:instance3 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        }
+        AfterAll {
+            Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+            Get-DbaDatabase -SqlInstance $script:instance3 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false           
         }
         It "Should have renamed a single db"{
             $newname = "copy$(Get-Random)"
@@ -151,15 +155,48 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $files  = Get-DbaDatabaseFile -Sqlinstance $script:instance3 -Database $newname
             ($files.PhysicalName -like  "*$newname*").count | Should -Be $files.count
         }
-        It "Should warn if trying to rename more than one database"{
+
+        It "Should warn if trying to rename and prefix" {
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -NewName $newname -prefix pre -WarningVariable warnvar
+            $warnvar | Should -BeLike "*NewName and Prefix are exclusive options, cannot specify both"
 
         }
+
         It "Should prefix databasename and files"{
-            $prefix = "copy$(Get-Random)"
+            $prefix = "da$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -Prefix $prefix
             $results[0].DestinationDatabase | Should -Be "$prefix$backuprestoredb" 
             $files  = Get-DbaDatabaseFile -Sqlinstance $script:instance3 -Database "$prefix$backuprestoredb" 
             ($files.PhysicalName -like  "*$prefix$backuprestoredb*").count | Should -Be $files.count
         } 
+    }
+    
+    Context "Copying with renames using detachattach" {
+        BeforeAll {
+            Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance3 -Database $backuprestoredb
+        }
+        It "Should have renamed a single db"{
+            $newname = "copy$(Get-Random)"
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -DetachAttach -NewName $newname -Reattach
+            $results[0].DestinationDatabase | Should -Be $newname
+            $files  = Get-DbaDatabaseFile -Sqlinstance $script:instance3 -Database $newname
+            ($files.PhysicalName -like  "*$newname*").count | Should -Be $files.count
+        }
+
+        It "Should prefix databasename and files"{
+            $prefix = "copy$(Get-Random)"
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -DetachAttach -Reattach -Prefix $prefix
+            $results[0].DestinationDatabase | Should -Be "$prefix$backuprestoredb" 
+            $files  = Get-DbaDatabaseFile -Sqlinstance $script:instance3 -Database "$prefix$backuprestoredb" 
+            ($files.PhysicalName -like  "*$prefix$backuprestoredb*").count | Should -Be $files.count
+        } 
+
+        $null = Restore-DbaDatabase -SqlInstance $script:instance2 -path $script:appveyorlabrepo\RestoreTimeClean -useDestinationDefaultDirectories
+        It "Should warn and exit if newname and >1 db specified"{
+            $prefix = "copy$(Get-Random)"
+            $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb, RestoreTimeClean -DetachAttach -Reattach -NewName warn -WarningVariable warnvar
+            $Warnvar | Should -BeLike "*Cannot use NewName when copying multiple databases"
+        }
     }
 }

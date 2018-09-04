@@ -96,8 +96,12 @@ function Copy-DbaDatabase {
             If a single database is being copied, this will be used to rename the database during the copy process. Any occurence of the original database name in the physical file names will be replaced with newname
             If specified with multiple databases a warning will be raised and the copy stopped
 
+            This option is mutually exclusive of Prefix
+
         .PARAMETER Prefix
             All copied database names and physical files will be prefixed with this string
+
+            This option is mutually exclusive of NewName
 
         .PARAMETER SetSourceOffline
             If this switch is enabled, the Source database will be set to Offline after being copied.
@@ -302,13 +306,13 @@ function Copy-DbaDatabase {
 
                         if ($null -eq $d.physical) {
                             $directory = Get-SqlDefaultPaths $destServer data
-                            $fileName = (Split-Path $file.filename -Leaf).replace($dbname,$destinationdbname)
+                            $fileName = Split-Path $file.filename -Leaf
                             $d.physical = "$directory\$fileName"
                         }
                     }
                     else {
                         $directory = Get-SqlDefaultPaths $destServer data
-                        $fileName = (Split-Path $file.filename -Leaf).replace($dbname,$destinationdbname)
+                        $fileName = Split-Path $file.filename -Leaf
                         $d.physical = "$directory\$fileName"
                     }
                     $d.logical = $file.Name
@@ -519,7 +523,7 @@ function Copy-DbaDatabase {
                 [object]$fileStructure,
                 [string]$dbName
             )
-
+            $filestructure
             $copydb = $fileStructure.databases[$dbName]
             $dbsource = $copydb.source
             $dbdestination = $copydb.destination
@@ -553,6 +557,7 @@ function Copy-DbaDatabase {
                         Write-Message -Level Verbose -Message "Start-BitsTransfer did not succeed. Now attempting with Copy-Item - no progress bar will be shown."
                         try {
                             Copy-Item -Path $from -Destination $remotefilename -ErrorAction Stop
+                            $remotefilename
                         }
                         catch {
                             Write-Message -Level Verbose -Message "Access denied. This can happen for a number of reasons including issues with cloned disks."
@@ -585,6 +590,7 @@ function Copy-DbaDatabase {
             $destfilestructure = New-Object System.Collections.Specialized.StringCollection
             $sourceFileStructure = New-Object System.Collections.Specialized.StringCollection
             $dbOwner = $sourceServer.databases[$dbName].owner
+            $destDbName = $fileStructure.databases[$dbName].destinationDbName
 
             if ($null -eq $dbOwner) {
                 try {
@@ -604,7 +610,7 @@ function Copy-DbaDatabase {
 
                 $transfer = Start-SqlFileTransfer $fileStructure $dbName
                 if ($transfer -eq $false) { Write-Warning "Could not copy files."; return "Could not copy files." }
-                $attachresult = Mount-SqlDatabase $destServer $dbName $destfilestructure $dbOwner
+                $attachresult = Mount-SqlDatabase $destServer $destDbName $destfilestructure $dbOwner
 
                 if ($attachresult -eq $true) {
                     # add to added dbs because ATTACH was successful
@@ -648,6 +654,11 @@ function Copy-DbaDatabase {
 
         if (-not $AllDatabases -and -not $IncludeSupportDbs -and -not $Database -and -not $InputObject) {
             Stop-Function -Message "You must specify a -AllDatabases or -Database to continue."
+            return
+        }
+
+        if ((Test-Bound 'NewName') -and (Test-Bound 'Prefix')){
+            Stop-Function -Message "NewName and Prefix are exclusive options, cannot specify both"
             return
         }
 
@@ -863,6 +874,12 @@ function Copy-DbaDatabase {
             Write-Message -Level Verbose -Message "Performing count."
             $dbCount = $databaseList.Count
 
+            if ((Test-Bound 'NewName') -and $dbCount -gt 1){
+                Stop-Function -Message "Cannot use NewName when copying multiple databases"
+                return
+            }
+            
+
             Write-Message -Level Verbose -Message "Building file structure inventory for $dbCount databases."
 
             if ($sourceServer.VersionMajor -eq 8) {
@@ -893,35 +910,37 @@ function Copy-DbaDatabase {
                 foreach ($currentdb in $databaseList) {
                     $dbName = $currentdb.Name
                     $dbOwner = $currentdb.Owner
-
+                    $destinationDbName = $dbName
                     if ((Test-Bound "NewName")){
                         Write-Message -Level Verbose -Message "NewName specified, copying $dbname as $NewName"
-                        $DestinationDbName = $NewName
+                        $destinationDbName = $NewName
+                        $replaceInFile = $True
                     }
-                    elseif ($(Test-Bound "Prefix")){
-                        $DestinationDbName = $prefix+$dbName
-                        Write-Message -Level Verbose -Message "Prefix supplied, copying $dbname as $DestinationDbName"
+                    if ($(Test-Bound "Prefix")){
+                        $destinationDbName = $prefix+$destinationDbName
+                        Write-Message -Level Verbose -Message "Prefix supplied, copying $dbname as $destinationDbName"
                     }
-                    else{
-                        $DestinationDbName = $dbName
+               
+                    $filestructure.databases[$dbname].Add('destinationDbName',$destinationDbName)
+                    ForEach ($key in $filestructure.databases[$dbname].Destination.Keys){
+                        $splitFileName = Split-Path $fileStructure.databases[$dbname].Destination[$key].remotefilename -Leaf
+                        $SplitPath =  Split-Path $fileStructure.databases[$dbname].Destination[$key].remotefilename
+                        if ($replaceInFile){
+                            $splitFileName = $splitFileName.replace($dbname, $destinationDbName)
+                        }
+                        $splitFileName = $prefix+$splitFileName
+                        Write-Verbose "$splitfilename"
+                        $filestructure.databases[$dbname].Destination.$key.remotefilename = Join-Path $SplitPath $splitFileName
+                        $splitFileName = Split-Path $filestructure.databases[$dbname].Destination[$key].physical -Leaf
+                        $SplitPath =  Split-Path $fileStructure.databases[$dbname].Destination[$key].physical
+                        if ($replaceInFile){
+                            $splitFileName = $splitFileName.replace($dbname, $destinationDbName)
+                        }
+                        $splitFileName = $prefix+$splitFileName
+                        $filestructure.databases[$dbname].Destination.$key.physical = Join-Path $SplitPath $splitFileName
+                        Write-Verbose "$splitfilename"
                     }
 
-                    $filestructure.databases[$dbname].Add('DestinationDbName',$DestinationDbName)
-                    ForEach ($key in $out.databases[$dbname].Destination.Keys){
-                        $SplitFileName = Split-Path -Leaf $out.databases[$dbname].Destination[$key].remotefilename
-                        $SplitPath =  Split-Path -Leaf $out.databases[$dbname].Destination[$key].remotefilename
-                        $SplitFileName = $SplitFileName.replace($dbname, $DestinationDbName)
-                        $filestructure.databases[$dbname].Destination.$key.remotefilename = Join-Path $SplitPath $SplitFileName
-                        $SplitFileName = Split-Path -Leaf $out.databases[$dbname].Destination[$key].physical
-                        $SplitPath =  Split-Path -Leaf $out.databases[$dbname].Destination[$key].physical
-                        $SplitFileName = $SplitFileName.replace($dbname, $DestinationDbName)
-                        $filestructure.databases[$dbname].Destination.$key.physical = Join-Path $SplitPath $SplitFileName
-                        
-
-                    }
-
-                    $filestructure 
-                    return
                     $copyDatabaseStatus = [pscustomobject]@{
                         SourceServer = $sourceServer.Name
                         DestinationServer = $destServer.Name
