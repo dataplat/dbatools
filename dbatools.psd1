@@ -470,7 +470,7 @@
         'Get-DbaDbPageInfo',
         'Get-DbaConnection',
         'Test-DbaLoginPassword',
-        'Get-DbaResourceGovernorClassifierFunction',
+        'Get-DbaRgClassifierFunction',
         'Get-DbaErrorLogConfig',
         'Set-DbaErrorLogConfig',
         'Add-DbaRegisteredServer',

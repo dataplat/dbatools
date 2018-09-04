@@ -90,7 +90,7 @@ function Copy-DbaResourceGovernor {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-        $sourceClassifierFunction = Get-DbaResourceGovernorClassifierFunction -SqlInstance $sourceServer
+        $sourceClassifierFunction = Get-DbaRgClassifierFunction -SqlInstance $sourceServer
         
        foreach ($destinstance in $Destination) {
             try {
@@ -100,7 +100,7 @@ function Copy-DbaResourceGovernor {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            $destClassifierFunction = Get-DbaResourceGovernorClassifierFunction -SqlInstance $destServer
+            $destClassifierFunction = Get-DbaRgClassifierFunction -SqlInstance $destServer
             
             $copyResourceGovSetting = [pscustomobject]@{
                 SourceServer = $sourceServer.Name
