@@ -5,7 +5,7 @@
 
         .DESCRIPTION
             Exports credentials INCLUDING PASSWORDS, unless specified otherwise, to sql file.
-    
+
             Requires remote Windows access if exporting the password.
 
         .PARAMETER SqlInstance
@@ -16,12 +16,15 @@
 
         .PARAMETER Credential
             Login to the target OS using alternative credentials. Accepts credential objects (Get-Credential)
-    
+
         .PARAMETER Path
             The path to the exported sql file.
-    
+
         .PARAMETER Identity
             The credentials to export. If unspecified, all credentials will be exported.
+
+        .PARAMETER InputObject
+            Allow credentials to be piped in from Get-DbaCredential
     
         .PARAMETER ExcludePassword,
             Exports the SQL credential without any sensitive information.
@@ -30,7 +33,7 @@
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
         .NOTES
             Tags: Credential
             Website: https://dbatools.io
@@ -43,7 +46,7 @@
             Exports credentials, including passwords, from sql2017 to the file C:\temp\cred.sql
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -66,18 +69,18 @@
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             if ($Identity) {
                 $InputObject = $InputObject | Where-Object Identity -in $Identity
             }
-            
+
             if (!(Test-SqlSa -SqlInstance $instance -SqlCredential $sqlcredential)) {
                 Stop-Function -Message "Not a sysadmin on $instance. Quitting." -Target $instance -Continue
             }
-            
+
             Write-Message -Level Verbose -Message "Getting NetBios name for $instance."
             $sourceNetBios = Resolve-NetBiosName $server
-            
+
             Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $instance."
             try {
                 Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
@@ -86,15 +89,15 @@
                 Stop-Function -Message "Can't connect to registry on $instance." -Target $sourceNetBios -ErrorRecord $_
                 return
             }
-            
+
             if (-not (Test-Bound -ParameterName Path)) {
                 $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
                 $mydocs = [Environment]::GetFolderPath('MyDocuments')
                 $path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-credential.sql"
             }
-            
+
             $sql = @()
-            
+
             if ($ExcludePassword) {
                 Stop-Function -Message "So sorry, there's no other way around it for now. The password has to be exported in plain text."
                 return
@@ -104,7 +107,7 @@
                     $creds = Get-DecryptedObject -SqlInstance $server -Type Credential
                 }
                 catch {
-                    Stop-Function -Continue -Message "Failure" -ErrorRecord $_    
+                    Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                 }
                 foreach ($currentCred in $creds) {
                     $name = $currentCred.Name.Replace("'", "''")
@@ -113,24 +116,17 @@
                     $sql += "CREATE CREDENTIAL $name WITH IDENTITY = N'$identity', SECRET = N'$password'"
                 }
             }
-            
+
             try {
                 Set-Content -Path $path -Value $sql
             }
             catch {
                 Stop-Function -Message "Can't write to $path" -ErrorRecord $_ -Continue
             }
-            
-            
+
+
             Write-Message -Level Verbose -Message "Attempting to migrate $credentialName"
             Get-ChildItem -Path $path
         }
-    }
-    
-    end {
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
-            Write-Message -Level Verbose -Message "Server configuration export finished"
-        }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlSpConfigure
     }
 }

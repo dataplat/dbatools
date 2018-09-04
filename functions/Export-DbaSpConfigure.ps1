@@ -34,7 +34,7 @@ function Export-DbaSpConfigure {
             Exports the SPConfigure settings on sourceserver to the file C:\temp\sp_configure.sql
 
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
