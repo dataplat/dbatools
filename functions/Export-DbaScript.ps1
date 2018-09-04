@@ -73,11 +73,12 @@ function Export-DbaScript {
             Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -Path C:\temp\export.sql -Append
 
             Exports all jobs on the SQL Server sql2016 instance using a trusted connection - Will append the output to the file C:\temp\export.sql if it already exists
+            Script does not include Batch Seperator and will not compile
 
         .EXAMPLE
-            Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql
+            Get-DbaTable -SqlInstance sql2016 -Database MyDatabase -Table 'dbo.Table1', 'dbo.Table2' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql
 
-            Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
+            Exports only script for 'dbo.Table1' and 'dbo.Table2' in MyDatabase to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
 
         .EXAMPLE
             Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql -NoPrefix
@@ -86,7 +87,16 @@ function Export-DbaScript {
             Suppress the output of a Prefix
 
         .EXAMPLE
-            Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql -BatchSeparator "GO"
+            #Set Scripting Options
+            $options = New-DbaScriptingOption
+            $options.ScriptSchema = $true
+            $options.IncludeDatabaseContext  = $true
+            $options.IncludeHeaders = $false
+            $Options.NoCommandTerminator = $false
+            $Options.ScriptBatchTerminator = $true
+            $Options.AnsiFile = $true
+
+            Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql -ScriptingOptionsObject $options
 
             Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
             Appends a batch separator at end of each script.
@@ -97,12 +107,24 @@ function Export-DbaScript {
             Exports jobs and replaces all instances of the servername "sql2014" with "sql2016" then writes to C:\temp\export.sql
 
         .EXAMPLE
+            #Set Scripting Options
             $options = New-DbaScriptingOption
-            $options.ScriptDrops = $false
-            $options.WithDependencies = $true
-            Get-DbaTable -SqlInstance sql2017 -Database PerformanceStore | Export-DbaScript -ScriptingOptionsObject $options
+            $options.ScriptSchema = $true
+            $options.IncludeDatabaseContext  = $true
+            $options.IncludeHeaders = $false
+            $Options.NoCommandTerminator = $false
+            $Options.ScriptBatchTerminator = $true
+            $Options.AnsiFile = $true
 
-            Exports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to $true.
+            $Databases = Get-DbaDatabase -SqlInstance sql2016 -ExcludeDatabase master, model, msdb,tempdb
+
+            foreach ($db in $Databases) {
+                Export-DbaScript -InputObject $db -Path C:\temp\export.sql -Append -Encoding UTF8 -ScriptingOptionsObject $options -NoPrefix
+            }
+
+            Exports Script for each database on sql2016 excluding system databases
+            Uses Scripting options to ensure Batch Terminator is set
+            Will append the output to the file C:\temp\export.sql if it already exists
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
