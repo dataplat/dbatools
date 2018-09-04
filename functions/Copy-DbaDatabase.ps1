@@ -633,7 +633,7 @@ function Copy-DbaDatabase {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         # testing twice for whatif reasons
         if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackups)) {
             Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackups"
@@ -878,7 +878,7 @@ function Copy-DbaDatabase {
                 Stop-Function -Message "Cannot use NewName when copying multiple databases"
                 return
             }
-            
+
 
             Write-Message -Level Verbose -Message "Building file structure inventory for $dbCount databases."
 
@@ -920,7 +920,7 @@ function Copy-DbaDatabase {
                         $destinationDbName = $prefix+$destinationDbName
                         Write-Message -Level Verbose -Message "Prefix supplied, copying $dbname as $destinationDbName"
                     }
-               
+
                     $filestructure.databases[$dbname].Add('destinationDbName',$destinationDbName)
                     ForEach ($key in $filestructure.databases[$dbname].Destination.Keys){
                         $splitFileName = Split-Path $fileStructure.databases[$dbname].Destination[$key].remotefilename -Leaf
@@ -929,7 +929,6 @@ function Copy-DbaDatabase {
                             $splitFileName = $splitFileName.replace($dbname, $destinationDbName)
                         }
                         $splitFileName = $prefix+$splitFileName
-                        Write-Verbose "$splitfilename"
                         $filestructure.databases[$dbname].Destination.$key.remotefilename = Join-Path $SplitPath $splitFileName
                         $splitFileName = Split-Path $filestructure.databases[$dbname].Destination[$key].physical -Leaf
                         $SplitPath =  Split-Path $fileStructure.databases[$dbname].Destination[$key].physical
@@ -938,7 +937,6 @@ function Copy-DbaDatabase {
                         }
                         $splitFileName = $prefix+$splitFileName
                         $filestructure.databases[$dbname].Destination.$key.physical = Join-Path $SplitPath $splitFileName
-                        Write-Verbose "$splitfilename"
                     }
 
                     $copyDatabaseStatus = [pscustomobject]@{
@@ -964,7 +962,7 @@ function Copy-DbaDatabase {
                     if ($currentdb.IsAccessible -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $dbName. Database is inaccessible.")) {
                             Write-Message -Level Verbose -Message "Skipping $dbName. Database is inaccessible."
-                            
+
                             $copyDatabaseStatus.Status = "Skipped"
                             $copyDatabaseStatus.Notes = "Database is not accessible"
                             $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -974,7 +972,7 @@ function Copy-DbaDatabase {
 
                     if ($fsWarning) {
                         $fsRows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and FileType = 'FileStream'")
-                        
+
                         if ($fsRows.Count -gt 0) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $dbName (contains FILESTREAM).")) {
                                 Write-Message -Level Verbose -Message "Skipping $dbName (contains FILESTREAM)."
@@ -989,7 +987,7 @@ function Copy-DbaDatabase {
                     if ($ReuseSourceFolderStructure) {
                         $fgRows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and FileType = 'ROWS'")[0]
                         $remotePath = Split-Path $fgRows.Filename
-                        
+
                         if (!(Test-DbaSqlPath -SqlInstance $destServer -Path $remotePath)) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "$remotePath does not exist on $destinstance and ReuseSourceFolderStructure was specified")) {
                                 # Stop-Function -Message "Cannot resolve $remotePath on $source. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script."
@@ -1009,45 +1007,45 @@ function Copy-DbaDatabase {
                     }
 
                     $dbStatus = $currentdb.Status.ToString()
-                    
+
                     if ($dbStatus.StartsWith("Normal") -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$dbName is not in a Normal state. Skipping.")) {
                             Write-Message -Level Verbose -Message "$dbName is not in a Normal state. Skipping."
-                            
+
                             $copyDatabaseStatus.Status = "Skipped"
                             $copyDatabaseStatus.Notes = "Not in normal state"
                             $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         continue
                     }
-                    
+
                     if ($currentdb.ReplicationOptions -ne "None" -and $DetachAttach -eq $true) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$dbName is part of replication. Skipping.")) {
                             Write-Message -Level Verbose -Message "$dbName is part of replication. Skipping."
-                            
+
                             $copyDatabaseStatus.Status = "Skipped"
                             $copyDatabaseStatus.Notes = "Part of replication"
                             $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         continue
                     }
-                    
+
                     if ($currentdb.IsMirroringEnabled -and !$force -and $DetachAttach) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method.")) {
                             Write-Message -Level Verbose -Message "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
-                            
+
                             $copyDatabaseStatus.Status = "Skipped"
                             $copyDatabaseStatus.Notes = "Database is mirrored"
                             $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
-                        
+
                         continue
                     }
-                    
+
                     if (($null -ne $destServer.Databases[$DestinationdbName]) -and !$force -and !$WithReplace) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$DestinationdbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database.")) {
                             Write-Message -Level Verbose -Message "$DestinationdbName exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
-                            
+
                             $copyDatabaseStatus.Status = "Skipped"
                             $copyDatabaseStatus.Notes = "Already exists"
                             $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
