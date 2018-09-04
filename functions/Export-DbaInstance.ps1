@@ -159,7 +159,6 @@
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
         [string]$Path,
-        [switch]$WithReplace,
         [switch]$NoRecovery,
         [switch]$IncludeSupportDbs,
         [switch]$ExcludeDatabases,
@@ -215,7 +214,7 @@
 
             if (-not $ExcludeCredentials) {
                 Write-Message -Level Verbose -Message "Exporting SQL credentials"
-                Export-DbaCredential -SqlInstance $server -Credential $Credential
+                Export-DbaCredential -SqlInstance $server -Credential $Credential -Path $Path -Append
             }
 
             if (-not $ExcludeDatabaseMail) {
@@ -230,7 +229,7 @@
 
             if (-not $ExcludeCentralManagementServer) {
                 Write-Message -Level Verbose -Message "Exporting Central Management Server"
-                Get-DbaRegisteredServerGroup -SqlInstance $server | Export-DbaScript -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                #Get-DbaRegisteredServerGroup -SqlInstance $server | Export-DbaScript -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 Get-DbaRegisteredServer -SqlInstance $server | Export-DbaScript -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
             
@@ -241,23 +240,23 @@
 
             if (-not $ExcludeLinkedServers) {
                 Write-Message -Level Verbose -Message "Exporting linked servers"
-                #Export-DbaLinkedServer -SqlInstance $server
+                Export-DbaLinkedServer -SqlInstance $server -Path $Path -Credential $Credential -Append
             }
 
             if (-not $ExcludeSystemTriggers) {
                 # Need to make Get-DbaTrigger an SMO object
                 Write-Message -Level Verbose -Message "Exporting System Triggers"
-                #Get-DbaTrigger -SqlInstance $server
+                Get-DbaServerTrigger -SqlInstance $server | Export-DbaScript -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
-
+            
             if (-not $ExcludeDatabases) {
                 Write-Message -Level Verbose -Message "Exporting database restores"
-                Restore-DbaDatabase -SqlInstance $server -NoRecovery:$NoRecovery -WithReplace:$WithReplace -OutputScriptOnly
+                Get-DbaBackupHistory -SqlInstance $server -Last | Restore-DbaDatabase -SqlInstance $server -NoRecovery:$NoRecovery -WithReplace -OutputScriptOnly -WarningAction SilentlyContinue | Out-File -FilePath $path -Append
             }
 
             if (-not $ExcludeLogins) {
                 Write-Message -Level Verbose -Message "Exporting logins"
-                Export-DbaLogin -SqlInstance $server -FilePath $Path
+                Export-DbaLogin -SqlInstance $server -Path $Path -Append
             }
 
             if (-not $ExcludeAudits) {
@@ -272,7 +271,7 @@
 
             if (-not $ExcludeEndpoints) {
                 Write-Message -Level Verbose -Message "Exporting Endpoints"
-                Get-DbaEndpoint -SqlInstance $server | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                #Get-DbaEndpoint -SqlInstance $server | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
 
             if (-not $ExcludePolicyManagement) {
@@ -282,19 +281,21 @@
 
             if (-not $ExcludeResourceGovernor) {
                 Write-Message -Level Verbose -Message "Exporting Resource Governor"
-
+                Get-DbaResourceGovernor -SqlInstance $server | Export-DbaScript -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 Get-DbaRgClassifierFunction -SqlInstance $server | Export-DbaScript -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                #Get-DbaResourceGovernor -SqlInstance $server
+                Get-DbaRgResourcePool -SqlInstance $server | Export-DbaScript -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                Get-DbaRgWorkloadGroup -SqlInstance $server | Export-DbaScript -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
-
             if (-not $ExcludeSysDbUserObjects) {
                 Write-Message -Level Verbose -Message "Exporting user objects in system databases (this can take a second)."
-                #Get-DbaSysDbUserObject -SqlInstance $server
+                #Get-DbaSysDbUserObjectScript -SqlInstance $server | Out-File -FilePath $Path -Append
             }
 
             if (-not $ExcludeExtendedEvents) {
                 Write-Message -Level Verbose -Message "Exporting Extended Events"
-                Get-DbaXESession -SqlInstance $server | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                Get-DbaXESession -SqlInstance $server | Export-DbaScript -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                #Get-DbaXESessionTarget -SqlInstance $server | Export-DbaScript -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                #Get-DbaXESessionTargetFile -SqlInstance $server | Export-DbaScript -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
 
             if (-not $ExcludeAgentServer) {
@@ -303,7 +304,7 @@
                 Get-DbaAgentJobCategory -SqlInstance $instance | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 Get-DbaAgentOperator -SqlInstance $instance | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 Get-DbaAgentAlert -SqlInstance $instance | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                Get-DbaAgentProxy -SqlInstance $instance | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                #Get-DbaAgentProxy -SqlInstance $instance | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 Get-DbaAgentSchedule -SqlInstance $instance | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 Get-DbaAgentJob -SqlInstance $instance | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
             }
