@@ -17,7 +17,7 @@ The database(s) to process - this list is auto-populated from the server. If uns
 
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto-populated from the server
-    
+
 .PARAMETER InputObject
 Allow pipedline input from Get-DbaDatabase
 
@@ -25,7 +25,7 @@ Allow pipedline input from Get-DbaDatabase
 By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/ca
-    
+
 .NOTES
 Tags: Database, Trigger
 
@@ -47,7 +47,7 @@ Get-DbaDatabase -SqlInstance sql2017 -Database supa | Get-DbaDbTrigger
 Returns all triggers for database supa on sql2017
 
 .EXAMPLE
-Get-DbaDbTrigger -SqlInstance sql2017 -Database supa 
+Get-DbaDbTrigger -SqlInstance sql2017 -Database supa
 
 Returns all triggers for database supa on sql2017
 #>
@@ -62,13 +62,13 @@ Returns all triggers for database supa on sql2017
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     process {
         foreach ($Instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $Instance"
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
-        
+
         foreach ($db in $InputObject) {
             try {
                 foreach ($trigger in ($db.Triggers)) {
