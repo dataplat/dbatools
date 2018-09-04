@@ -23,6 +23,9 @@
         .PARAMETER LinkedServer
             The linked server(s) to export. If unspecified, all linked servers will be processed.
     
+        .PARAMETER InputObject
+            Allow credentials to be piped in from Get-DbaLinkedServer
+    
         .PARAMETER ExcludePassword
             Exports the linked server without any sensitive information.
 
@@ -48,7 +51,7 @@
             Exports the linked servers, without passwords, from sql2017 to the file C:\temp\ls.sql
     
     #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
