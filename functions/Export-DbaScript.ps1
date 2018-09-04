@@ -190,7 +190,7 @@ function Export-DbaScript {
             try {
                 $server = $parent
                 if (-not $server) {
-                    $server = $object.Parent    
+                    $server = $object.Parent
                 }
                 $serverName = $server.Name.Replace('\', '$')
 
@@ -249,7 +249,7 @@ function Export-DbaScript {
                             else {
                                 $script = $object.Script()
                             }
-                            
+
                             if ($BatchSeparator -ne "") {
                                 $script = "$script`n$BatchSeparator`n"
                             }
