@@ -14,6 +14,9 @@ Allows you to login to SQL Server using alternative credentials
 
 .PARAMETER InputObject
 Allows input to be piped from Get-DbaResourceGovernor
+
+.PARAMETER Type
+Internal or External
     
 .PARAMETER EnableException
 By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
