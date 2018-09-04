@@ -161,12 +161,15 @@ function Export-DbaScript {
             }
             until (($parent.Urn.Type -eq "Server") -or (-not $parent))
 
-            if (-not $parent) {
+            if (-not $parent -and -not (Get-Member -InputObject $object -Name Create) ) {
                 Stop-Function -Message "Failed to find valid SMO server object in input: $object." -Category InvalidData -Target $object -Continue
             }
 
             try {
                 $server = $parent
+                if (-not $server) {
+                    $server = $object.Parent    
+                }
                 $serverName = $server.Name.Replace('\', '$')
 
                 if ($ScriptingOptionsObject) {
@@ -218,7 +221,13 @@ function Export-DbaScript {
                             }
                         }
                         else {
-                            $script = $object.Script()
+                            if (Get-Member -Name Create -InputObject $object) {
+                                $script = $object.ScriptCreate().GetScript()
+                            }
+                            else {
+                                $script = $object.Script()
+                            }
+                            
                             if ($BatchSeparator -ne "") {
                                 $script = "$script`n$BatchSeparator`n"
                             }
