@@ -26,9 +26,12 @@
         .PARAMETER InputObject
             Allow credentials to be piped in from Get-DbaCredential
     
-        .PARAMETER ExcludePassword,
+        .PARAMETER ExcludePassword
             Exports the SQL credential without any sensitive information.
-
+    
+        .PARAMETER InputObject
+            Allow credentials to be piped in from Get-DbaCredential
+    
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
