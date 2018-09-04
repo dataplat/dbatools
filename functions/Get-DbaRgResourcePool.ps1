@@ -47,10 +47,10 @@ Gets the external resource pools on Sql1 and Sql2/sqlexpress instances
 #>
     [CmdletBinding()]
     param (
-        [parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(ValidateSet = "Internal", "External")]
+        [ValidateSet("Internal", "External")]
         [string]$Type = "Internal",
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.ResourceGovernor[]]$InputObject,

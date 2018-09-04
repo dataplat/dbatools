@@ -29,6 +29,9 @@
         .PARAMETER ExcludePassword
             Exports the linked server without any sensitive information.
 
+        .PARAMETER Append
+            Append to Path
+    
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -61,6 +64,7 @@
         [PSCredential]$Credential,
         [string]$Path,
         [switch]$ExcludePassword,
+        [switch]$Append,
         [Microsoft.SqlServer.Management.Smo.LinkedServer[]]$InputObject,
         [switch]$EnableException
     )
@@ -137,7 +141,12 @@
             }
             
             try {
-                Set-Content -Path $path -Value $sql
+                if ($Append) {
+                    Add-Content -Path $path -Value $sql
+                }
+                else {
+                    Set-Content -Path $path -Value $sql
+                }
                 Get-ChildItem -Path $path
             }
             catch {
