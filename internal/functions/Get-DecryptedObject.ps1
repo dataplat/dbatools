@@ -21,6 +21,7 @@
     
     # Query Service Master Key from the database - remove padding from the key
     # key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
+    Write-Message -Level Verbose -Message "Querying service master key"
     $sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) as smk FROM sys.key_encryptions WHERE key_id=102 and (thumbprint=0x03 or thumbprint=0x0300000001)"
     try {
         $smkbytes = $server.Query($sql).smk
@@ -34,7 +35,8 @@
     $instance = $server.InstanceName
     $serviceInstanceId = $server.ServiceInstanceId
     
-    # Get entropy from the registry - hopefully finds the right SQL server instance
+    Write-Message -Level Verbose -Message "Get entropy from the registry - hopefully finds the right SQL server instance"
+    
     try {
         [byte[]]$entropy = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -argumentlist $serviceInstanceId {
             $serviceInstanceId = $args[0]
@@ -47,7 +49,7 @@
         return
     }
     
-    # Decrypt the service master key
+    Write-Message -Level Verbose -Message "Decrypt the service master key"
     try {
         $serviceKey = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $smkbytes, $Entropy {
             Add-Type -AssemblyName System.Security
@@ -64,6 +66,8 @@
     
     # Choose the encryption algorithm based on the SMK length - 3DES for 2008, AES for 2012
     # Choose IV length based on the algorithm
+    Write-Message -Level Verbose -Message "Choose the encryption algorithm based on the SMK length - 3DES for 2008, AES for 2012"
+    
     if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
         Write-Message -Level Verbose -Message "ServiceKey found: $serviceKey.Length"
         Stop-Function -Message "Unknown key size. Do you have administrative access to the Windows registry on $sourcename? Otherwise, we're out of ideas." -Target $source
@@ -84,6 +88,9 @@
                 Remove header from pwdhash, extract IV (as iv) and ciphertext (as pass)
                 Ignore links with blank credentials (integrated auth ?)
             #>
+    
+    Write-Message -Level Verbose -Message "Query link server password information from the Db."
+    
     try {
         if (-not $server.IsClustered) {
             $connString = "Server=ADMIN:$sourceNetBios\$instance;Trusted_Connection=True"
@@ -126,7 +133,8 @@
     }
     
     Write-Message -Level Debug -Message $sql
-    # Get entropy from the registry
+    Write-Message -Level Verbose -Message "Get entropy from the registry"
+    
     try {
         $results = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $connString, $sql {
             $connString = $args[0]; $sql = $args[1]
@@ -159,7 +167,7 @@
         }
     }
     
-    # Go through each row in results
+    Write-Message -Level Verbose -Message "Go through each row in results"
     foreach ($result in $results) {
         # decrypt the password using the service master key and the extracted IV
         $decryptor.Padding = "None"
