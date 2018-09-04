@@ -12,6 +12,9 @@ The target SQL Server instance(s)
 .PARAMETER SqlCredential
 Allows you to login to SQL Server using alternative credentials
 
+.PARAMETER InputObject
+Allows input to be piped from Get-DbaResourceGovernor
+    
 .PARAMETER EnableException
 By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -30,50 +33,47 @@ https://dbatools.io/Get-DbaRgClassifierFunction
 .EXAMPLE
 Get-DbaRgClassifierFunction -SqlInstance sql2016
 
-Gets the classifier function object of the SqlInstance sql2016
+Gets the classifier function from sql2016
 
 .EXAMPLE
-'Sql1','Sql2/sqlexpress' | Get-DbaRgClassifierFunction
+'Sql1','Sql2/sqlexpress' | Get-DbaResourceGovernor | Get-DbaRgClassifierFunction
 
 Gets the classifier function object on Sql1 and Sql2/sqlexpress instances
 
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.ResourceGovernor[]]$InputObject,
         [switch]$EnableException
     )
-
+    
     process {
         foreach ($instance in $SqlInstance) {
-            try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
+            Write-Message -Level Verbose -Message "Connecting to $instance"
+            $InputObject += Get-DbaResourceGovernor -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        }
+        
+        foreach ($resourcegov in $InputObject) {
+            $server = $resourcegov.Parent
             $classifierFunction = $null
-
-            foreach ($currentFunction in $server.Databases["master"].UserDefinedFunctions)
-            {
+            
+            foreach ($currentFunction in $server.Databases["master"].UserDefinedFunctions) {
                 $fullyQualifiedFunctionName = [string]::Format("[{0}].[{1}]", $currentFunction.Schema, $currentFunction.Name)
-                if ($fullyQualifiedFunctionName -eq $server.ResourceGovernor.ClassifierFunction)
-                {
+                if ($fullyQualifiedFunctionName -eq $InputObject.ClassifierFunction) {
                     $classifierFunction = $currentFunction
                 }
             }
-
+            
             if ($classifierFunction) {
-                Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name ComputerName -value $resourcegov.ComputerName
+                Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name InstanceName -value $resourcegov.InstanceName
+                Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name SqlInstance -value $resourcegov.SqlInstance
                 Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name Database -value 'master'
             }
-
+            
             Select-DefaultView -InputObject $classifierFunction -Property ComputerName, InstanceName, SqlInstance, Database, Schema, CreateDate, DateLastModified, Name, DataType
         }
     }
