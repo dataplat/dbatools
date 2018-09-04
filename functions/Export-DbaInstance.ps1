@@ -336,6 +336,8 @@
                 #$null = Get-DbaAgentProxy -SqlInstance $instance | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 $null = Get-DbaAgentSchedule -SqlInstance $instance | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 $null = Get-DbaAgentJob -SqlInstance $instance | Export-DbaScript  -Path $Path -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                
+                Write-Progress -Activity "Performing Instance Export for $instance" -Completed
             }
         }
     }
