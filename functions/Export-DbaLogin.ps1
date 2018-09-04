@@ -129,7 +129,7 @@ function Export-DbaLogin {
             $exists = Test-Path $directory
 
             if ($exists -eq $false) {
-                Write-Message -Level Warning -Message "Parent directory $directory does not exist."
+                Write-Message -Level Warning -Message "Parent directory $directory does not exist"
             }
         }
 
@@ -205,7 +205,7 @@ function Export-DbaLogin {
             }
 
             if ($userName.StartsWith("##") -or $userName -eq 'sa') {
-                Write-Message -Level Warning -Message "Skipping $userName."
+                Write-Message -Level Warning -Message "Skipping $userName"
                 continue
             }
 
@@ -213,15 +213,15 @@ function Export-DbaLogin {
 
             $userBase = ($userName.Split("\")[0]).ToLower()
             if ($serverName -eq $userBase -or $userName.StartsWith("NT ")) {
-                if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it is a local machine name.")) {
-                    Write-Message -Level Warning -Message "$userName is skipped because it is a local machine name."
+                if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it is a local machine name")) {
+                    Write-Message -Level Warning -Message "$userName is skipped because it is a local machine name"
                     continue
                 }
             }
 
             if ($Pscmdlet.ShouldProcess("Outfile", "Adding T-SQL for login $userName")) {
                 if ($Path) {
-                    Write-Message -Level Verbose -Message "Exporting $userName."
+                    Write-Message -Level Verbose -Message "Exporting $userName"
                 }
 
                 $outsql += "`r`nUSE master`n"
@@ -288,7 +288,7 @@ function Export-DbaLogin {
                 }
                 # This script does not currently support certificate mapped or asymmetric key users.
                 else {
-                    Write-Message -Level Warning -Message "$($sourceLogin.LoginType) logins not supported. $($sourceLogin.Name) skipped."
+                    Write-Message -Level Warning -Message "$($sourceLogin.LoginType) logins not supported. $($sourceLogin.Name) skipped"
                     continue
                 }
 
@@ -381,7 +381,7 @@ function Export-DbaLogin {
                         $outsql += $sql
                     }
                     catch {
-                        Write-Message -Level Warning -Message "User cannot be found in selected database."
+                        Write-Message -Level Warning -Message "User cannot be found in selected database"
                     }
 
                     # Skipping updating dbowner
