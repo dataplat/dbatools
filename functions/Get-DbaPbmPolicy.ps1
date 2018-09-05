@@ -22,7 +22,7 @@ function Get-DbaPbmPolicy {
     By default system objects are filtered out. Use this parameter to INCLUDE them .
 
     .PARAMETER InputObject
-    Allows piping from Get-DbaPbmPolicyStore
+    Allows piping from Get-DbaPbmStore
     
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -71,7 +71,7 @@ function Get-DbaPbmPolicy {
     process {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
-            $InputObject += Get-DbaPbmPolicyStore -SqlInstance $instance -SqlCredential $SqlCredential
+            $InputObject += Get-DbaPbmStore -SqlInstance $instance -SqlCredential $SqlCredential
         }
         foreach ($store in $InputObject) {
             $allpolicies = $store.Policies
