@@ -54,12 +54,14 @@
             $null = $transfer.CopyAllObjects = $false
             $null = $transfer.Options.WithDependencies = $true
             $null = $transfer.ObjectList.Add($schema)
+            $null = $transfer.Options.ScriptBatchTerminator = $true
             try { $transfer.ScriptTransfer() } catch {}
             
             foreach ($table in $tables) {
                 $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
                 $null = $transfer.CopyAllObjects = $false
                 $null = $transfer.Options.WithDependencies = $true
+                $null = $transfer.Options.ScriptBatchTerminator = $true
                 $null = $transfer.ObjectList.Add($table)
                 try { $transfer.ScriptTransfer() } catch {}
             }
@@ -95,6 +97,7 @@
                     $null = $transfer.CopyAllObjects = $false
                     $null = $transfer.Options.WithDependencies = $true
                     $null = $transfer.ObjectList.Add($smobject)
+                    $null = $transfer.Options.ScriptBatchTerminator = $true
                     try { $transfer.ScriptTransfer() } catch {}
                 }
             }
