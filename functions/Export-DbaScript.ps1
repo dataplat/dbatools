@@ -96,7 +96,7 @@ function Export-DbaScript {
             $Options.ScriptBatchTerminator = $true
             $Options.AnsiFile = $true
 
-            Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql -ScriptingOptionsObject $options
+            Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential sqladmin | Export-DbaScript -Path C:\temp\export.sql -ScriptingOptionsObject $options
 
             Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
             Appends a batch separator at end of each script.
