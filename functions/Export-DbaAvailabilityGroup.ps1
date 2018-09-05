@@ -10,7 +10,7 @@ function Export-DbaAvailabilityGroup {
         .PARAMETER SqlInstance
             The SQL Server instance name. SQL Server 2012 and above supported.
 
-        .PARAMETER FilePath
+        .PARAMETER Path
             The directory name where the output files will be written. A sub directory with the format 'ServerName$InstanceName' will be created. A T-SQL scripts named 'AGName.sql' will be created under this subdirectory for each scripted Availability Group.
 
         .PARAMETER AvailabilityGroup
@@ -53,17 +53,17 @@ function Export-DbaAvailabilityGroup {
             Exports all Availability Groups from SQL server "sql2012". Output scripts are written to the Documents\SqlAgExports directory by default.
 
         .EXAMPLE
-            Export-DbaAvailabilityGroup -SqlInstance sql2012 -FilePath C:\temp\availability_group_exports
+            Export-DbaAvailabilityGroup -SqlInstance sql2012 -Path C:\temp\availability_group_exports
 
             Exports all Availability Groups from SQL server "sql2012". Output scripts are written to the C:\temp\availability_group_exports directory.
 
         .EXAMPLE
-            Export-DbaAvailabilityGroup -SqlInstance sql2012 -FilePath 'C:\dir with spaces\availability_group_exports' -AvailabilityGroups AG1,AG2
+            Export-DbaAvailabilityGroup -SqlInstance sql2012 -Path 'C:\dir with spaces\availability_group_exports' -AvailabilityGroups AG1,AG2
 
             Exports Availability Groups AG1 and AG2 from SQL server "sql2012". Output scripts are written to the C:\dir with spaces\availability_group_exports directory.
 
         .EXAMPLE
-            Export-DbaAvailabilityGroup -SqlInstance sql2014 -FilePath C:\temp\availability_group_exports -NoClobber
+            Export-DbaAvailabilityGroup -SqlInstance sql2014 -Path C:\temp\availability_group_exports -NoClobber
 
             Exports all Availability Groups from SQL server "sql2014". Output scripts are written to the C:\temp\availability_group_exports directory. If the export file already exists it will not be overwritten.
     #>
@@ -75,8 +75,8 @@ function Export-DbaAvailabilityGroup {
         [PSCredential]$SqlCredential,
         [object[]]$AvailabilityGroup,
         [object[]]$ExcludeAvailabilityGroup,
-        [Alias("OutputLocation", "Path")]
-        [string]$FilePath = "$([Environment]::GetFolderPath("MyDocuments"))\SqlAgExport",
+        [Alias("OutputLocation", "FilePath")]
+        [string]$Path = "$([Environment]::GetFolderPath("MyDocuments"))\SqlAgExport",
         [switch]$NoClobber,
         [Alias('Silent')]
         [switch]$EnableException
@@ -111,7 +111,7 @@ function Export-DbaAvailabilityGroup {
 
                 # Set and create the OutputLocation if it doesn't exist
                 $sqlinst = $instance.ToString().Replace('\', '$')
-                $outputLocation = "$FilePath\$sqlinst"
+                $outputLocation = "$Path\$sqlinst"
 
                 if (!(Test-Path $outputLocation -PathType Container)) {
                     $null = New-Item -Path $outputLocation -ItemType Directory -Force
