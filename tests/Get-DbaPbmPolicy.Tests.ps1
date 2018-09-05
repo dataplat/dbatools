@@ -48,13 +48,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server.Query("EXEC msdb.dbo.sp_syspolicy_delete_condition @condition_id=$conditionid")
         }
 
-        $results = Get-DbaPolicy -SqlInstance $script:instance2
+        $results = Get-DbaPbmPolicy -SqlInstance $script:instance2
 
         It "returns the test policy" {
             $results.Name -contains 'dbatoolsci_TestPolicy' | Should Be $true
         }
 
-        $results = Get-DbaPolicy -SqlInstance $script:instance2 -Policy dbatoolsci_TestPolicy
+        $results = Get-DbaPbmPolicy -SqlInstance $script:instance2 -Policy dbatoolsci_TestPolicy
 
         It "returns only the test policy named dbatoolsci_TestPolicy" {
             $results.Name -eq 'dbatoolsci_TestPolicy' | Should Be $true
