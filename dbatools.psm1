@@ -612,6 +612,18 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"  = "Backup-DbaDatabaseMasterKey"
         "Definition" = "Backup-DbaDbMasterKey"
+    },
+    @{
+        "AliasName"  = "Get-DbaDatabaseMasterKey"
+        "Definition" = "Get-DbaDbMasterKey"
+    },
+    @{
+        "AliasName"  = "Remove-DbaDatabaseMasterKey"
+        "Definition" = "Remove-DbaDbMasterKey"
+    },
+    @{
+        "AliasName"  = "New-DbaDatabaseMasterKey"
+        "Definition" = "New-DbaDbMasterKey"
     }
     
 ) | ForEach-Object {

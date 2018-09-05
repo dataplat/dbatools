@@ -5,10 +5,10 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Can create a database certificate" {
         BeforeAll {
-            $masterkey = New-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
         }
         AfterAll {
-            $null = $masterkey | Remove-DbaDatabaseMasterKey -Confirm:$false
+            $null = $masterkey | Remove-DbaDbMasterKey -Confirm:$false
         }
 
         $password = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force

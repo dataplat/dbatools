@@ -60,7 +60,7 @@ You will be prompted to securely enter your Service Key Password twice, then a m
                     Stop-Function -Message "Passwords do not match" -Continue
                 }
             }
-            New-DbaDatabaseMasterKey -SqlInstance $instance -Database master -Password $password
+            New-DbaDbMasterKey -SqlInstance $instance -Database master -Password $password
         }
     }
 }
