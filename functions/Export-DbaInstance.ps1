@@ -32,7 +32,6 @@
         .PARAMETER SqlInstance
             The target SQL Server instances
 
-
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
@@ -361,7 +360,6 @@
                 Write-Message -Level Verbose -Message "Exporting job server"
                 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting job server"
-                ## NEEDS MORE GOS
                 $null = Get-DbaAgentJobCategory -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -BatchSeparator 'GO'
                 $null = Get-DbaAgentOperator -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -BatchSeparator 'GO'
                 $null = Get-DbaAgentAlert -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -BatchSeparator 'GO'
