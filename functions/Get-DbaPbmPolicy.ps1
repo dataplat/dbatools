@@ -1,4 +1,4 @@
-function Get-DbaPolicy {
+function Get-DbaPbmPolicy {
     <#
     .SYNOPSIS
     Returns polices from policy based management from an instance.
@@ -21,6 +21,9 @@ function Get-DbaPolicy {
     .PARAMETER IncludeSystemObject
     By default system objects are filtered out. Use this parameter to INCLUDE them .
 
+    .PARAMETER InputObject
+    Allows piping from Get-DbaPbmPolicyStore
+    
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -28,80 +31,74 @@ function Get-DbaPolicy {
 
     .NOTES
     Author: Stephen Bennett (https://sqlnotesfromtheunderground.wordpress.com/)
-    Tags: Policy, PoilcyBasedManagement
+    Tags: Policy, PoilcyBasedManagement, PBM
 
     Website: https://dbatools.io
     Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
     License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-    https://dbatools.io/Get-DbaPolicy
+    https://dbatools.io/Get-DbaPbmPolicy
 
     .EXAMPLE
-    Get-DbaPolicy -SqlInstance sql2016
+    Get-DbaPbmPolicy -SqlInstance sql2016
 
     Returns all policies from sql2016 server
 
     .EXAMPLE
-    Get-DbaPolicy -SqlInstance sql2016 -SqlCredential $cred
+    Get-DbaPbmPolicy -SqlInstance sql2016 -SqlCredential $cred
 
     Uses a credential $cred to connect and return all policies from sql2016 instance
 
     .EXAMPLE
-    Get-DbaPolicy -SqlInstance sql2016 -Category MorningCheck
+    Get-DbaPbmPolicy -SqlInstance sql2016 -Category MorningCheck
 
     Returns all policies from sql2016 server that part of the PolicyCategory MorningCheck
 #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [string[]]$Policy,
         [string[]]$Category,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Dmf.PolicyStore[]]$InputObject,
         [switch]$IncludeSystemObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-
     process {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
-
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-                $sqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $server.ConnectionContext.SqlConnectionObject
-                # DMF is the Declarative Management Framework, Policy Based Management's old name
-                $store = New-Object Microsoft.SqlServer.Management.DMF.PolicyStore $sqlStoreConnection
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
+            $InputObject += Get-DbaPbmPolicyStore -SqlInstance $instance -SqlCredential $SqlCredential
+        }
+        foreach ($store in $InputObject) {
             $allpolicies = $store.Policies
-
+            
             if (-not $IncludeSystemObject) {
-                $allpolicies = $allpolicies | Where-Object { $_.IsSystemObject -eq 0 }
+                $allpolicies = $allpolicies | Where-Object IsSystemObject -eq $false
             }
-
+            
             if ($Category) {
-                $allpolicies = $allpolicies | Where-Object { $_.PolicyCategory -in $Category }
+                $allpolicies = $allpolicies | Where-Object PolicyCategory -in $Category
             }
-
+            
             if ($Policy) {
-                $allpolicies = $allpolicies | Where-Object { $_.Name -in $Policy }
+                $allpolicies = $allpolicies | Where-Object Name -in $Policy
             }
-
+            
             foreach ($currentpolicy in $allpolicies) {
                 Write-Message -Level Verbose -Message "Processing $currentpolicy"
-                Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
-
+                Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty ComputerName -value $store.ComputerName
+                Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty InstanceName -value $store.InstanceName
+                Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty SqlInstance -value $store.SqlInstance
+                
                 Select-DefaultView -InputObject $currentpolicy -ExcludeProperty HelpText, HelpLink, Urn, Properties, Metadata, Parent, IdentityKey, HasScript, PolicyEvaluationStarted, ConnectionProcessingStarted, TargetProcessed, ConnectionProcessingFinished, PolicyEvaluationFinished, PropertyMetadataChanged, PropertyChanged
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaPolicy
     }
 }

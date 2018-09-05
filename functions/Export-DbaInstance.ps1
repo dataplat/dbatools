@@ -329,8 +329,8 @@
             if (-not $ExcludePolicyManagement) {
                 Write-Message -Level Verbose -Message "Exporting Policy Management"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Policy Management"
-                ## NEED TO GET CONDITION
-                $null = Get-DbaPolicy -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-policymanagement.sql" -Append -BatchSeparator 'GO'
+                $null = Get-DbaPbmCondition -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-policymanagement.sql" -Append -BatchSeparator 'GO'
+                $null = Get-DbaPbmPolicy -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-policymanagement.sql" -Append -BatchSeparator 'GO'
                 Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-policymanagement.sql"
             }
 
