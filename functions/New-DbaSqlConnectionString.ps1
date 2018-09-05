@@ -149,7 +149,7 @@
         .EXAMPLE
             $connstring = New-DbaSqlConnectionString sql2016 -ApplicationIntent ReadOnly
 
-            Creates a connection string with ReadOnly ApplicantionIntent.
+            Creates a connection string with ReadOnly ApplicationIntent.
     #>
     [CmdletBinding()]
     param (
