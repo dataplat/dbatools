@@ -135,7 +135,7 @@ function Set-DbaStartupParameter {
         .EXAMPLE
             Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride
 
-            This will remove all trace flags and set SinguleUser to false
+            This will remove all trace flags and set SingleUser to false
 
         .EXAMPLE
             Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8032,8048 -TraceFlagsOverride
@@ -145,7 +145,7 @@ function Set-DbaStartupParameter {
         .EXAMPLE
             Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride -Offline
 
-            This will remove all trace flags and set SinguleUser to false from an offline instance
+            This will remove all trace flags and set SingleUser to false from an offline instance
 
         .EXAMPLE
             Set-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\Sql\ -Offline

@@ -43,7 +43,7 @@ function Test-DbaDatabaseCollation {
         .EXAMPLE
             Test-DbaDatabaseCollation -SqlInstance sqlserver2014a -Database db1, db2
 
-            Returns inforamtion for the db1 and db2 databases on sqlserver2014a.
+            Returns information for the db1 and db2 databases on sqlserver2014a.
 
         .EXAMPLE
             Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Exclude db1
