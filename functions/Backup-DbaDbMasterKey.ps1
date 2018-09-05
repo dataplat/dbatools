@@ -147,6 +147,6 @@ Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas
         }
     }
     end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseMasterKey
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Backup-DbaDatabaseMasterKey
     }
 }
