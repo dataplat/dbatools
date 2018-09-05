@@ -50,6 +50,9 @@
         .PARAMETER NoRecovery
             If this switch is enabled, databases will be left in the No Recovery state to enable further backups to be added.
 
+        .PARAMETER IncludeDbMasterKey
+            Exports the db master key then logs into the server to copy it to the $Path
+    
         .PARAMETER ExcludeDatabases
             If this switch is enabled, databases will not be exported.
 
@@ -156,6 +159,7 @@
         [PSCredential]$Credential,
         [string]$Path,
         [switch]$NoRecovery,
+        [switch]$IncludeDbMasterKey,
         [switch]$IncludeSupportDbs,
         [switch]$ExcludeDatabases,
         [switch]$ExcludeLogins,
