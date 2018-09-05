@@ -1,4 +1,4 @@
-function New-DbaDatabaseMasterKey {
+function New-DbaDbMasterKey {
     <#
 .SYNOPSIS
 Creates a new database master key
@@ -37,12 +37,12 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
-New-DbaDatabaseMasterKey -SqlInstance Server1
+New-DbaDbMasterKey -SqlInstance Server1
 
 You will be prompted to securely enter your password, then a master key will be created in the master database on server1 if it does not exist.
 
 .EXAMPLE
-New-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
+New-DbaDbMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
 
 Suppresses all prompts to install but prompts to securely enter your password and creates a master key in the 'db1' database
 
@@ -100,5 +100,8 @@ Suppresses all prompts to install but prompts to securely enter your password an
                 }
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaDatabaseMasterKey
     }
 }
