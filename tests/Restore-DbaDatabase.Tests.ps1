@@ -8,7 +8,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     $LogFolder = 'C:\temp\logfiles'
     New-Item -ItemType Directory $DataFolder -ErrorAction SilentlyContinue
     New-Item -ItemType Directory $LogFolder -ErrorAction SilentlyContinue
-      
+
     Context "Properly restores a database on the local drive using Path" {
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak
@@ -19,7 +19,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.RestoreComplete | Should Be $true
         }
     }
-    
+
     Context "Ensuring warning is thrown if database already exists" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -WarningVariable warning -WarningAction SilentlyContinue
         It "Should warn" {
@@ -29,7 +29,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results | Should Be $null
         }
     }
-    
+
     Context "Database is properly removed again after withreplace test" {
         Get-DbaProcess $script:instance1 -Database singlerestore | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.Status -eq "Dropped" -or $results.Status -eq $null
         }
     }
-    
+
     Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Properly restores a database on the local drive using piped Get-ChildItem results" {
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1
@@ -50,14 +50,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.RestoreComplete | Should Be $true
         }
     }
-    
+
     Context "Test VerifyOnly works with db in existence" {
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -VerifyOnly
         It "Should have verified Successfully" {
             $results[0] | Should Be "Verify successful"
         }
     }
-    
+
     Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again after gci tests" {
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
@@ -65,11 +65,27 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.Status | Should Be "Dropped"
         }
     }
-    
+
+    Context "Allows continues with Differential Backups" {
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\DoubleDiffing\difftest-full.bak -NoRecovery
+        It "Should restore the root full cleanly" {
+            $results.RestoreComplete | Should -Be $True
+        }
+        $results1 = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\DoubleDiffing\difftest-diff1.bak -NoRecovery -Continue
+        It "Should restore the first diff cleanly" {
+            $results1.RestoreComplete | Should -Be $True
+        }
+        $results2 = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\DoubleDiffing\difftest-diff2.bak -Continue
+        It "Should restore the second diff cleanly" {
+            $results2.RestoreComplete | Should -Be $True
+        }
+
+    }
+
     Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 2
-    
+
     Context "Database is restored with correct renamings" {
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFilePrefix prefix
         It "Should return successful restore with prefix" {
@@ -93,16 +109,16 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             (($Results.RestoredFile -split ',') -match "^prefix.*suffix\.").count | Should be 2
         }
     }
-    
+
     Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again post prefix and suffix tests" {
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
-        
+
     }
-    
+
     Context "Replace databasename in Restored File" {
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DatabaseName Pestering -replaceDbNameInFile -WithReplace
         It "Should return the 2 files swapping singlerestore for pestering (output)" {
@@ -114,18 +130,18 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
-    
+
     Context "Database is properly removed (name change)" {
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database pestering
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
     }
-    
+
     Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 2
-    
+
     Context "Folder restore options" {
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationDataDirectory $DataFolder
         It "Should return successful restore with DestinationDataDirectory" {
@@ -139,7 +155,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                 $file | Should Exist
             }
         }
-        
+
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationDataDirectory $DataFolder -DestinationLogDirectory $LogFolder -WithReplace
         It "Should have moved data file to $DataFolder" {
             (($results.RestoredFileFull -split ',') -like "$DataFolder*").count | Should be 1
@@ -153,14 +169,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
-    
+
     Context "Database is properly removed again after folder options tests" {
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
     }
-    
+
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 2
     Context "Putting all restore file modification options together" {
@@ -183,7 +199,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
-    
+
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 1
     Context "Database is properly removed again after all file mods test" {
@@ -192,12 +208,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.Status | Should Be "Dropped"
         }
     }
-    
+
     Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 5
     Clear-DbaSqlConnectionPool
-    
+
     Context "Properly restores an instance using ola-style backups via pipe" {
         $results = Get-ChildItem $script:appveyorlabrepo\sql2008-backups | Restore-DbaDatabase -SqlInstance $script:instance1
         It "Restored files count should be the right number" {
@@ -208,20 +224,20 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             ($results.count -gt 0) | Should be $True
         }
     }
-    
+
     Context "Database is properly removed again after ola pipe test" {
         Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
-        
+
         It "Should say the status was dropped or null" {
             foreach ($result in $results) {
                 $result.Status -eq "Dropped" -or $result.Status -eq $null
             }
         }
     }
-    
+
     Context "Properly restores an instance using ola-style backups via string" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\sql2008-backups
         It "Restored files count should be the right number" {
@@ -232,20 +248,20 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             ($results.count -gt 0) | Should be $True
         }
     }
-    
+
     Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
-    
+
     Context "All user databases are removed post ola-style test" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         It -Skip "Should say the status was dropped" {
             $results | ForEach-Object { $_.Status | Should Be "Dropped" }
         }
     }
-    
+
     Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 2
-    
+
     Context "RestoreTime setup checks" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appveyorlabrepo\RestoreTimeClean
         $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
@@ -263,20 +279,20 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $sqlResults.maxdt | Should be (get-date "2017-06-01 13:28:43")
         }
     }
-    
+
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 1
-    
+
     Context "All user databases are removed post RestoreTime check" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
-    
+
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 1
-    
+
     Context "RestoreTime point in time" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44")
         $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
@@ -290,21 +306,21 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $sqlResults.maxdt | Should be (get-date "2017-06-01 13:22:43")
         }
     }
-    
+
     Context "All user databases are removed" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         It -Skip "Should say the status was dropped post point in time test" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
-    
+
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 1
-    
+
     Context "RestoreTime point in time with Simple Model" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appveyorlabrepo\sql2008-backups\SimpleRecovery\ -RestoreTime (get-date "2018-04-06 10:37:44")
         $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from SimpleBackTest.dbo.steps"
-        
+
         It "Should have restored 2 files" {
             $results.count | Should be 2
         }
@@ -315,17 +331,17 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $sqlResults.maxdt | Should be (get-date "2018-04-06 10:35:02")
         }
     }
-    
+
     Context "All user databases are removed" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped post point in time test" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
-    
+
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 1
-    
+
     Context "RestoreTime point in time and continue" {
         AfterAll {
             $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
@@ -359,9 +375,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have restored to 2017-06-01 13:28:43" {
             $sqlResults2.maxdt | Should be (get-date "2017-06-01 13:28:43")
         }
-        
-    }
 
+    }
+#>
     Context "RestoreTime point in time and continue with rename" {
         AfterAll {
             $null = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
@@ -395,7 +411,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         It "Should have restored to 2017-06-01 13:28:43" {
             $sqlResults2.maxdt | Should be (get-date "2017-06-01 13:28:43")
         }
-        
+
     }
 
     Context "Continue Restore with Differentials" {
@@ -469,7 +485,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             (Get-DbaDatabase -SqlInstance $script:instance1 | Where-Object {$_.Status -eq 'Recovering'}).count | Should Be 0
         }
     }
- 
+
     Context "Backup DB For next test" {
         $null = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appveyorlabrepo\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44")
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database RestoreTimeClean -BackupDirectory C:\temp
@@ -477,17 +493,17 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.BackupComplete | Should Be $true
         }
     }
-    
+
     Context "All user databases are removed post continue test" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
-    
+
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 1
-    
+
     Get-DbaProcess $script:instance1 | Where-Object Program -match 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
     Context "Check Get-DbaBackupHistory pipes into Restore-DbaDatabase" {
         $history = Get-DbaBackupHistory -SqlInstance $script:instance1 -Database RestoreTimeClean -Last
@@ -497,17 +513,17 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             (($results | Measure-Object).count -gt 0) | Should be $True
         }
     }
-    
+
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 1
-    
+
     Context "All user databases are removed post history test" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
-    
+
     Context "Restores a db with log and file files missing extensions" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appveyorlabrepo\sql2008-backups\Noextension.bak -ErrorVariable Errvar -WarningVariable WarnVar
         It "Should Restore successfully" {
@@ -517,14 +533,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     Clear-DbaSqlConnectionPool
     Start-Sleep -Seconds 1
-    
+
     Context "All user databases are removed post history test" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
-    
+
     Context "Setup for Recovery Tests" {
         $DatabaseName = 'rectest'
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
@@ -540,7 +556,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $check.status | Should Be 'Restoring'
         }
     }
-    
+
     Context "Test recovery via parameter" {
         $DatabaseName = 'rectest'
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Recover -DatabaseName $DatabaseName
@@ -556,7 +572,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             'Normal' -in $check.status | Should Be $True
         }
     }
-    
+
     Context "Setup for Recovery Tests" {
         $DatabaseName = 'rectest'
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
@@ -572,7 +588,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $check.status | Should Be 'Restoring'
         }
     }
-    
+
     Context "Test recovery via pipeline" {
         $DatabaseName = 'rectest'
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName | Restore-DbaDatabase -SqlInstance $script:instance1 -Recover
@@ -588,7 +604,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             'Normal' -in $check.status | Should Be $True
         }
     }
-    
+
     Context "Checking we cope with a port number (#244)" {
         $DatabaseName = 'rectest'
         $results = Restore-DbaDatabase -SqlInstance $script:instance1_detailed -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
@@ -597,14 +613,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             (($results | measure-Object).count -gt 0) | Should be $True
         }
     }
-    
+
     Context "All user databases are removed post port test" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
-    
+
     Context "Checking OutputScriptOnly only outputs script" {
         $DatabaseName = 'rectestSO'
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly
@@ -638,31 +654,31 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Checking Output vs input" {
         $DatabaseName = 'rectestSO'
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -BufferCount 24 -MaxTransferSize 128kb -BlockSize 64kb
-        
+
         It "Should return the destination instance" {
             $results.SqlInstance = $script:instance1
         }
-        
+
         It "Should have a BlockSize of 65536" {
             $results.Script | Should match 'BLOCKSIZE = 65536'
         }
-        
+
         It "Should have a BufferCount of 24" {
             $results.Script | Should match 'BUFFERCOUNT = 24'
         }
-        
+
         It "Should have a MaxTransferSize of 131072" {
             $results.Script | Should match 'MAXTRANSFERSIZE = 131072'
         }
     }
-    
+
     Context "All user databases are removed post Output vs Input test" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
-    
+
     Context "Checking CDC parameter " {
         $output = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -KeepCDC -WithReplace
         It "Should have KEEP_CDC in the SQL" {
@@ -679,7 +695,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $output | Should be $null
         }
     }
-    
+
     Context "Page level restores" {
         Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -confirm:$false
         $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName PageRestore -DestinationFilePrefix PageRestore
@@ -746,10 +762,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             #($null -eq $errvar3) | Should Be $True
             ($null -eq $sqlResults3) | SHould be $False
         }
-        
-        
+
+
     }
-    
+
     Context "Testing Backup to Restore piping" {
         Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName PipeTest -DestinationFilePrefix PipeTest
@@ -758,7 +774,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results.RestoreComplete | Should Be $True
         }
     }
-    
+
     Context "Check we restore striped database" {
         Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\sql2008-backups\RestoreTimeStripe -DatabaseName StripeTest -DestinationFilePrefix StripeTest
@@ -782,7 +798,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
-    
+
     if ($env:azurepasswd) {
         Context "Restores to Azure" {
             BeforeAll {
@@ -801,7 +817,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
-    
+
     if ($env:azurelegacypasswd) {
         Context "Restores to Azure" {
             BeforeAll {
