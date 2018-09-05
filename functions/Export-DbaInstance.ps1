@@ -338,8 +338,8 @@
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Resource Governor"
                 $null = Get-DbaResourceGovernor -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-resourcegov.sql" -Append -BatchSeparator 'GO'
                 $null = Get-DbaRgClassifierFunction -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-resourcegov.sql" -Append -BatchSeparator 'GO'
-                $null = Get-DbaRgResourcePool -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-resourcegov.sql" -Append -BatchSeparator 'GO'
-                $null = Get-DbaRgWorkloadGroup -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-resourcegov.sql" -Append -BatchSeparator 'GO'
+                $null = Get-DbaRgResourcePool -SqlInstance $server | Where-Object Name -notin 'default', 'internal' | Export-DbaScript -Path "$Path\$stepCounter-resourcegov.sql" -Append -BatchSeparator 'GO'
+                $null = Get-DbaRgWorkloadGroup -SqlInstance $server | Where-Object Name -notin 'default','internal' | Export-DbaScript -Path "$Path\$stepCounter-resourcegov.sql" -Append -BatchSeparator 'GO'
                 Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-resourcegov.sql"
             }
             if (-not $ExcludeSysDbUserObjects) {
