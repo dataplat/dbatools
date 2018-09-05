@@ -296,7 +296,7 @@ function Test-DbaLastBackup {
                                     $filename = Split-Path -Path $file.FullName -Leaf
                                     Write-Message -Level Verbose -Message "Processing $filename."
 
-                                    $sourcefile = Join-AdminUnc -servername $instance.ComputerName -filepath $file.Path
+                                    $sourcefile = Join-AdminUnc -servername $instance.ComputerName -filepath "$($file.Path)"
 
                                     if ($instance.IsLocalHost) {
                                         $remotedestdirectory = Join-AdminUnc -servername $instance.ComputerName -filepath $copyPath
