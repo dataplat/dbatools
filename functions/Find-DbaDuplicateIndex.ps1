@@ -175,11 +175,11 @@ function Find-DbaDuplicateIndex {
                 ,CI1.KeyColumns
                 ,CI1.IncludedColumns
                 ,CI1.IndexType
-                ,CSPC.IndexSizeMB
-                ,CSPC.[RowCount]
+                ,COALESCE(CSPC.IndexSizeMB,0) AS 'IndexSizeMB'
+                ,COALESCE(CSPC.[RowCount],0) AS 'RowCount'
                 ,CI1.IsDisabled
             FROM CTE_IndexCols AS CI1
-            INNER JOIN CTE_IndexSpace AS CSPC ON CI1.[object_id] = CSPC.[object_id]
+            LEFT JOIN CTE_IndexSpace AS CSPC ON CI1.[object_id] = CSPC.[object_id]
                 AND CI1.index_id = CSPC.index_id
             WHERE EXISTS (
                     SELECT 1
@@ -260,11 +260,11 @@ function Find-DbaDuplicateIndex {
                 ,CI1.KeyColumns
                 ,CI1.IncludedColumns
                 ,CI1.IndexType
-                ,CSPC.IndexSizeMB
-                ,CSPC.[RowCount]
+                ,COALESCE(CSPC.IndexSizeMB,0) AS 'IndexSizeMB'
+                ,COALESCE(CSPC.[RowCount],0) AS 'RowCount'
                 ,CI1.IsDisabled
             FROM CTE_IndexCols AS CI1
-            INNER JOIN CTE_IndexSpace AS CSPC ON CI1.[object_id] = CSPC.[object_id]
+            LEFT JOIN CTE_IndexSpace AS CSPC ON CI1.[object_id] = CSPC.[object_id]
                 AND CI1.index_id = CSPC.index_id
             WHERE EXISTS (
                     SELECT 1
@@ -357,13 +357,13 @@ function Find-DbaDuplicateIndex {
                 ,CI1.KeyColumns
                 ,CI1.IncludedColumns
                 ,CI1.IndexType
-                ,CSPC.IndexSizeMB
-                ,CSPC.CompressionDescription
-                ,CSPC.[RowCount]
+                ,COALESCE(CSPC.IndexSizeMB,0) AS 'IndexSizeMB'
+                ,COALESCE(CSPC.CompressionDescription, 'NONE') AS 'CompressionDescription'
+                ,COALESCE(CSPC.[RowCount],0) AS 'RowCount'
                 ,CI1.IsDisabled
                 ,CI1.IsFiltered
             FROM CTE_IndexCols AS CI1
-            INNER JOIN CTE_IndexSpace AS CSPC ON CI1.[object_id] = CSPC.[object_id]
+            LEFT JOIN CTE_IndexSpace AS CSPC ON CI1.[object_id] = CSPC.[object_id]
                 AND CI1.index_id = CSPC.index_id
             WHERE EXISTS (
                     SELECT 1
@@ -443,13 +443,13 @@ function Find-DbaDuplicateIndex {
                     ,CI1.KeyColumns
                     ,CI1.IncludedColumns
                     ,CI1.IndexType
-                    ,CSPC.IndexSizeMB
-                    ,CSPC.CompressionDescription
-                    ,CSPC.[RowCount]
+                    ,COALESCE(CSPC.IndexSizeMB,0) AS 'IndexSizeMB'
+                    ,COALESCE(CSPC.CompressionDescription, 'NONE') AS 'CompressionDescription'
+                    ,COALESCE(CSPC.[RowCount],0) AS 'RowCount'
                     ,CI1.IsDisabled
                     ,CI1.IsFiltered
             FROM CTE_IndexCols AS CI1
-                INNER JOIN CTE_IndexSpace AS CSPC
+                LEFT JOIN CTE_IndexSpace AS CSPC
                 ON CI1.[object_id] = CSPC.[object_id]
                 AND CI1.index_id = CSPC.index_id
             WHERE EXISTS (SELECT 1
