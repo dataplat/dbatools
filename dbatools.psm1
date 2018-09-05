@@ -608,6 +608,11 @@ Write-ImportTime -Text "Script: Maintenance"
         "AliasName"  = "Get-DbaPolicy"
         "Definition" = "Get-DbaPbmPolicy"
     }
+     ,
+    @{
+        "AliasName"  = "Backup-DbaDatabaseMasterKey"
+        "Definition" = "Backup-DbaDbMasterKey"
+    }
     
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
