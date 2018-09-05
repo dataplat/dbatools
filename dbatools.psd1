@@ -302,7 +302,7 @@
         'Remove-DbaComputerCertificate',
         'Get-DbaServerInstallDate',
         'Install-DbaFirstResponderKit',
-        'Backup-DbaDatabaseMasterKey',
+        'Backup-DbaDbMasterKey',
         'Get-DbaAgentJobHistory',
         'Get-DbaSsisEnvironmentVariable',
         'Get-DbaSqlManagementObject',
@@ -612,7 +612,8 @@
     'Test-DbaValidLogin',
     'Get-DbaJobCategory',
     'Invoke-DbaDatabaseShrink',
-    'Get-DbaPolicy'
+    'Get-DbaPolicy',
+    'Backup-DbaDatabaseMasterKey'
 
     # List of all modules packaged with this module
     ModuleList             = @()
