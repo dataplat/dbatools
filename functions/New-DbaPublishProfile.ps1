@@ -46,7 +46,7 @@ function New-DbaPublishProfile {
         .EXAMPLE
         New-DbaPublishProfile -SqlInstance sql2017 -SqlCredential (Get-Credential) -Database WorldWideImporters -Path C:\temp
 
-        In this example, a prompt will appear for alternative credentials, tghen a connection will be made to sql2017. Using that connection,
+        In this example, a prompt will appear for alternative credentials, then a connection will be made to sql2017. Using that connection,
         the ConnectionString will be extracted and used within the Publish Profile XML file which will be created at C:\temp\sql2017-WorldWideImporters-publish.xml
 
         .EXAMPLE
