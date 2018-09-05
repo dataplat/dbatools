@@ -405,7 +405,7 @@ function Backup-DbaDatabase {
                             $null = New-DbaSqlDirectory -SqlInstance $server -Path $parentPath
                         }
                         else {
-                            $failreason += "SQL Server cannot check if $parentPath exists. You can try disabiling this check with -IgnoreFileChecks"
+                            $failreason += "SQL Server cannot check if $parentPath exists. You can try disabling this check with -IgnoreFileChecks"
                             $failures += $failreason
                             Write-Message -Level Warning -Message "$failreason"
                         }
@@ -433,13 +433,13 @@ function Backup-DbaDatabase {
                     else {
                         $device.DeviceType = "File"
                     }
-                    
+
                     if ($WithFormat) {
                         Write-Message -Message "WithFormat specified. Ensuring Initialize and SkipTapeHeader are set to true." -Level Verbose
                         $Initialize = $true
                         $SkipTapeHeader = $true
                     }
-                    
+
                     $backup.FormatMedia = $WithFormat
                     $backup.Initialize = $Initialize
                     $backup.SkipTapeHeader = $SkipTapeHeader

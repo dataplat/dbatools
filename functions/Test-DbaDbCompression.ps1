@@ -416,7 +416,7 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
 
             #If SQL Server 2016 SP1 (13.0.4001.0) or higher every version supports compression.
             if ($Server.EngineEdition -ne "EnterpriseOrDeveloper" -and $instanceVersionNumber -lt 13040010) {
-                Stop-Function -Message "Compresison before SQLServer 2016 SP1 (13.0.4001.0) is only supported by enterprise, developer or evaluation edition. $Server has version $($server.VersionString) and edition is $($Server.EngineEdition)." -Target $db -Continue
+                Stop-Function -Message "Compression before SQLServer 2016 SP1 (13.0.4001.0) is only supported by enterprise, developer or evaluation edition. $Server has version $($server.VersionString) and edition is $($Server.EngineEdition)." -Target $db -Continue
             }
             #If IncludeSystemDBs is true, include systemdbs
             #look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.

@@ -55,7 +55,7 @@ function Test-DbaRepLatency {
 
     .EXAMPLE
     Test-DbaRepLatency -SqlInstance sql2008 -Database TestDB -PublicationName TestDB_Pub
-    Return replication latency for the TestDB_Pub publication for the TestDB databasse located on the server sql2008.
+    Return replication latency for the TestDB_Pub publication for the TestDB database located on the server sql2008.
 #>
     [CmdletBinding()]
     Param (
