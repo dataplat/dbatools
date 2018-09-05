@@ -497,7 +497,8 @@
         'Get-DbaResourceGovernor',
         'Get-DbaRgResourcePool',
         'Get-DbaRgWorkloadGroup',
-        'Get-DbaRgClassifierFunction'
+        'Get-DbaRgClassifierFunction',
+        'Export-DbaInstance'
     )
 
     # Cmdlets to export from this module
