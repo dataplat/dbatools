@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.399'
+    ModuleVersion          = '0.9.400'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -169,7 +169,8 @@
         'Write-DbaDataTable',
         'New-DbaDbSnapshot',
         'Restore-DbaDbSnapshot',
-        'Get-DbaTrigger',
+        'Get-DbaServerTrigger',
+        'Get-DbaDbTrigger',
         'Export-DbaUser',
         'Get-DbaDatabaseState',
         'Set-DbaDatabaseState',
@@ -470,7 +471,6 @@
         'Get-DbaDbPageInfo',
         'Get-DbaConnection',
         'Test-DbaLoginPassword',
-        'Get-DbaResourceGovernorClassifierFunction',
         'Get-DbaErrorLogConfig',
         'Set-DbaErrorLogConfig',
         'Add-DbaRegisteredServer',
@@ -491,7 +491,14 @@
         'Get-DbaDbMailAccount',
         'Get-DbaDbMailProfile',
         'Get-DbaDbMailConfig',
-        'Get-DbaDbMailServer'
+        'Get-DbaDbMailServer',
+        'Export-DbaCredential',
+        'Export-DbaInstance',
+        'Export-DbaLinkedServer',
+        'Get-DbaResourceGovernor',
+        'Get-DbaRgResourcePool',
+        'Get-DbaRgWorkloadGroup',
+        'Get-DbaRgClassifierFunction'
     )
 
     # Cmdlets to export from this module
