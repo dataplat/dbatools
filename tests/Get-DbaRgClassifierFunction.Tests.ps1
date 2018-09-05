@@ -22,7 +22,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command works" {
         It "returns the proper classifier function" {
-            $results = Get-DbaResourceGovernorClassifierFunction -SqlInstance $script:instance2
+            $results = Get-DbaRgClassifierFunction -SqlInstance $script:instance2
             $results.Name | Should -Be 'dbatoolsci_fnRG'
         }
     }
