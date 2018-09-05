@@ -72,18 +72,12 @@ function Get-DbaPolicy {
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            try {
                 $sqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $server.ConnectionContext.SqlConnectionObject
                 # DMF is the Declarative Management Framework, Policy Based Management's old name
                 $store = New-Object Microsoft.SqlServer.Management.DMF.PolicyStore $sqlStoreConnection
             }
             catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $allpolicies = $store.Policies
