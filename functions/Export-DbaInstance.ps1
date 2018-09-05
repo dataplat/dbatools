@@ -196,7 +196,7 @@
             param (
                 [int]$StepNumber,
                 [string]$Message,
-                [int]$TotalSteps = 20
+                [int]$TotalSteps = 18
 
             )
             Write-Progress -Activity "Performing Instance Export for $instance" -Status $Message -PercentComplete (($StepNumber / $TotalSteps) * 100)
@@ -256,7 +256,6 @@
                 $null = Get-DbaDbMailAccount -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-dbmail.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 $null = Get-DbaDbMailProfile -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-dbmail.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 $null = Get-DbaDbMailServer -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-dbmail.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                $null = Get-DbaDbMailConfig -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-dbmail.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 $null = Get-DbaDbMail -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-dbmail.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-dbmail.sql"
             }
@@ -264,9 +263,9 @@
             if (-not $ExcludeCentralManagementServer) {
                 Write-Message -Level Verbose -Message "Exporting Central Management Server"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Central Management Server"
-                #$null = Get-DbaRegisteredServerGroup -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-cms.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                $null = Get-DbaRegisteredServer -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-cms.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-cms.sql"
+                $null = Get-DbaRegisteredServerGroup -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-regserver.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                $null = Get-DbaRegisteredServer -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-regserver.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-regserver.sql"
             }
 
             if (-not $ExcludeBackupDevices) {
@@ -283,7 +282,6 @@
             }
 
             if (-not $ExcludeSystemTriggers) {
-                # Need to make Get-DbaTrigger an SMO object
                 Write-Message -Level Verbose -Message "Exporting System Triggers"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting System Triggers"
                 Get-DbaServerTrigger -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-servertriggers.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
@@ -319,7 +317,7 @@
             if (-not $ExcludeEndpoints) {
                 Write-Message -Level Verbose -Message "Exporting Endpoints"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Endpoints"
-                #$null = Get-DbaEndpoint -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-endpoints.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                $null = Get-DbaEndpoint -SqlInstance $server | Where-Object IsSystemObject -eq $false | Export-DbaScript -Path "$Path\$stepCounter-endpoints.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
                 Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-endpoints.sql"
             }
 
@@ -342,7 +340,7 @@
             if (-not $ExcludeSysDbUserObjects) {
                 Write-Message -Level Verbose -Message "Exporting user objects in system databases (this can take a second)."
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting user objects in system databases (this can take a second)."
-                #$null = Get-DbaSysDbUserObjectScript -SqlInstance $server | Out-File -FilePath "$Path\$stepCounter-userobjectsinsysdbs.sql" -Append
+                $null = Get-DbaSysDbUserObjectScript -SqlInstance $server | Out-File -FilePath "$Path\$stepCounter-userobjectsinsysdbs.sql" -Append
                 Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-userobjectsinsysdbs.sql"
             }
 
@@ -350,22 +348,20 @@
                 Write-Message -Level Verbose -Message "Exporting Extended Events"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Extended Events"
                 $null = Get-DbaXESession -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-extendedevents.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                #$null = Get-DbaXESessionTarget -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-extendedevents.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                #$null = Get-DbaXESessionTargetFile -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-extendedevents.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-extendedevents.sql"
+               Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-extendedevents.sql"
             }
 
             if (-not $ExcludeAgentServer) {
                 Write-Message -Level Verbose -Message "Exporting job server"
 
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting job server"
-                $null = Get-DbaAgentJobCategory -SqlInstance $instance | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                $null = Get-DbaAgentOperator -SqlInstance $instance | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                $null = Get-DbaAgentAlert -SqlInstance $instance | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                #$null = Get-DbaAgentProxy -SqlInstance $instance | Export-DbaScript  -Path "$Path\$stepCounter-sqlagent.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                $null = Get-DbaAgentSchedule -SqlInstance $instance | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                $null = Get-DbaAgentJob -SqlInstance $instance | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
-                Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-sqlagent .sql"
+                $null = Get-DbaAgentJobCategory -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                $null = Get-DbaAgentOperator -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                $null = Get-DbaAgentAlert -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                $null = Get-DbaAgentProxy -SqlInstance $server | Export-DbaScript  -Path "$Path\$stepCounter-sqlagent.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                $null = Get-DbaAgentSchedule -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                $null = Get-DbaAgentJob -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -ScriptingOptionsObject $ScriptingOptionsObject
+                Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-sqlagent.sql"
 
                 Write-Progress -Activity "Performing Instance Export for $instance" -Completed
             }
