@@ -603,6 +603,10 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"  = "Invoke-DbaDatabaseShrink"
         "Definition" = "Invoke-DbaDbShrink"
+    },
+    @{
+        "AliasName"  = "Get-DbaPolicy"
+        "Definition" = "Get-DbaPbmPolicy"
     }
     
 ) | ForEach-Object {
