@@ -637,7 +637,16 @@
         "Synopsis":  "Exports SQL Server Availability Groups to a T-SQL file.",
         "Name":  "Export-DbaAvailabilityGroup",
         "Links":  "https://dbatools.io/Export-DbaAvailabilityGroup",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaAvailabilityGroup -SqlInstance sql2012\r\n\r\nExports all Availability Groups from SQL server \"sql2012\". Output scripts are written to the Documents\\SqlAgExports \r\ndirectory by default.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaAvailabilityGroup -SqlInstance sql2012 -FilePath C:\\temp\\availability_group_exports\r\n\r\nExports all Availability Groups from SQL server \"sql2012\". Output scripts are written to the \r\nC:\\temp\\availability_group_exports directory.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaAvailabilityGroup -SqlInstance sql2012 -FilePath \u0027C:\\dir with spaces\\availability_group_exports\u0027 \r\n-AvailabilityGroups AG1,AG2\r\n\r\nExports Availability Groups AG1 and AG2 from SQL server \"sql2012\". Output scripts are written to the C:\\dir with \r\nspaces\\availability_group_exports directory.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaAvailabilityGroup -SqlInstance sql2014 -FilePath C:\\temp\\availability_group_exports -NoClobber\r\n\r\nExports all Availability Groups from SQL server \"sql2014\". Output scripts are written to the \r\nC:\\temp\\availability_group_exports directory. If the export file already exists it will not be overwritten.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaAvailabilityGroup -SqlInstance sql2012\r\n\r\nExports all Availability Groups from SQL server \"sql2012\". Output scripts are written to the Documents\\SqlAgExports \r\ndirectory by default.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaAvailabilityGroup -SqlInstance sql2012 -Path C:\\temp\\availability_group_exports\r\n\r\nExports all Availability Groups from SQL server \"sql2012\". Output scripts are written to the \r\nC:\\temp\\availability_group_exports directory.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaAvailabilityGroup -SqlInstance sql2012 -Path \u0027C:\\dir with spaces\\availability_group_exports\u0027 \r\n-AvailabilityGroups AG1,AG2\r\n\r\nExports Availability Groups AG1 and AG2 from SQL server \"sql2012\". Output scripts are written to the C:\\dir with \r\nspaces\\availability_group_exports directory.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaAvailabilityGroup -SqlInstance sql2014 -Path C:\\temp\\availability_group_exports -NoClobber\r\n\r\nExports all Availability Groups from SQL server \"sql2014\". Output scripts are written to the \r\nC:\\temp\\availability_group_exports directory. If the export file already exists it will not be overwritten.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Export-DbaCredential",
+        "Description":  "Exports credentials INCLUDING PASSWORDS, unless specified otherwise, to sql file.\n\nRequires remote Windows access if exporting the password.",
+        "Tags":  "Credential",
+        "Synopsis":  "Exports credentials INCLUDING PASSWORDS, unless specified otherwise, to sql file.",
+        "Name":  "Export-DbaCredential",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaCredential -SqlInstance sql2017 -Path C:\\temp\\cred.sql\r\n\r\nExports credentials, including passwords, from sql2017 to the file C:\\temp\\cred.sql\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Export-DbaDacpac",
@@ -674,6 +683,15 @@
         "Name":  "Export-DbaExecutionPlan",
         "Links":  "https://dbatools.io/Export-DbaExecutionPlan",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaExecutionPlan -SqlInstance sqlserver2014a\r\n\r\nExports all execution plans for sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaExecutionPlan -SqlInstance sqlserver2014a -Database db1, db2 -SinceLastExecution \u00277/1/2016 10:47:00\u0027\r\n\r\nExports all execution plans for databases db1 and db2 on sqlserver2014a since July 1, 2016 at 10:47 AM.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Export-DbaLinkedServer",
+        "Description":  "Exports linked servers INCLUDING PASSWORDS, unless specified otherwise, to sql file.\n\nRequires remote Windows access if exporting the password.",
+        "Tags":  "LinkedServer",
+        "Synopsis":  "Exports linked servers INCLUDING PASSWORDS, unless specified otherwise, to sql file.",
+        "Name":  "Export-DbaLinkedServer",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaLinkedServer -SqlInstance sql2017 -Path C:\\temp\\ls.sql\r\n\r\nExports the linked servers, including passwords, from sql2017 to the file C:\\temp\\ls.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaLinkedServer -SqlInstance sql2017 -Path C:\\temp\\ls.sql -ExcludePassword\r\n\r\nExports the linked servers, without passwords, from sql2017 to the file C:\\temp\\ls.sql\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Export-DbaLogin",
@@ -724,7 +742,7 @@
         "Synopsis":  "Exports scripts from SQL Management Objects (SMO)",
         "Name":  "Export-DbaScript",
         "Links":  "https://dbatools.io/Export-DbaScript",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript\r\n\r\nExports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename as \r\n.\\sql2016-Job-Export-date.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -Path C:\\temp\\export.sql -Append\r\n\r\nExports all jobs on the SQL Server sql2016 instance using a trusted connection - Will append the output to the file \r\nC:\\temp\\export.sql if it already exists\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, \u0027Hourly Log Backups\u0027 -SqlCredential \r\n(Get-Credential sqladmin) | Export-DbaScript -Path C:\\temp\\export.sql\r\n\r\nExports only syspolicy_purge_history and \u0027Hourly Log Backups\u0027 to C:temp\\export.sql and uses the SQL login \"sqladmin\" to \r\nlogin to sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, \u0027Hourly Log Backups\u0027 -SqlCredential \r\n(Get-Credential sqladmin) | Export-DbaScript -Path C:\\temp\\export.sql -NoPrefix\r\n\r\nExports only syspolicy_purge_history and \u0027Hourly Log Backups\u0027 to C:temp\\export.sql and uses the SQL login \"sqladmin\" to \r\nlogin to sql2016\r\nSuppress the output of a Prefix\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, \u0027Hourly Log Backups\u0027 -SqlCredential \r\n(Get-Credential sqladmin) | Export-DbaScript -Path C:\\temp\\export.sql -BatchSeparator \"GO\"\r\n\r\nExports only syspolicy_purge_history and \u0027Hourly Log Backups\u0027 to C:temp\\export.sql and uses the SQL login \"sqladmin\" to \r\nlogin to sql2016\r\nAppends a batch separator at end of each script.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2014 | Export-DbaScript -Passthru | ForEach-Object { \r\n$_.Replace(\u0027sql2014\u0027,\u0027sql2016\u0027) } | Set-Content -Path C:\\temp\\export.sql\r\n\r\nExports jobs and replaces all instances of the servername \"sql2014\" with \"sql2016\" then writes to C:\\temp\\export.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003e$options = New-DbaScriptingOption\r\n\r\n$options.ScriptDrops = $false\r\n$options.WithDependencies = $true\r\nGet-DbaTable -SqlInstance sql2017 -Database PerformanceStore | Export-DbaScript -ScriptingOptionsObject $options\r\n\r\nExports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to $true.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript\r\n\r\nExports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename as \r\n.\\sql2016-Job-Export-date.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -Path C:\\temp\\export.sql -Append\r\n\r\nExports all jobs on the SQL Server sql2016 instance using a trusted connection - Will append the output to the file \r\nC:\\temp\\export.sql if it already exists\r\nScript does not include Batch Seperator and will not compile\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTable -SqlInstance sql2016 -Database MyDatabase -Table \u0027dbo.Table1\u0027, \u0027dbo.Table2\u0027 -SqlCredential \r\n(Get-Credential sqladmin) | Export-DbaScript -Path C:\\temp\\export.sql\r\n\r\nExports only script for \u0027dbo.Table1\u0027 and \u0027dbo.Table2\u0027 in MyDatabase to C:temp\\export.sql and uses the SQL login \r\n\"sqladmin\" to login to sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, \u0027Hourly Log Backups\u0027 -SqlCredential \r\n(Get-Credential sqladmin) | Export-DbaScript -Path C:\\temp\\export.sql -NoPrefix\r\n\r\nExports only syspolicy_purge_history and \u0027Hourly Log Backups\u0027 to C:temp\\export.sql and uses the SQL login \"sqladmin\" to \r\nlogin to sql2016\r\nSuppress the output of a Prefix\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e#Set Scripting Options\r\n\r\n$options = New-DbaScriptingOption\r\n$options.ScriptSchema = $true\r\n$options.IncludeDatabaseContext  = $true\r\n$options.IncludeHeaders = $false\r\n$Options.NoCommandTerminator = $false\r\n$Options.ScriptBatchTerminator = $true\r\n$Options.AnsiFile = $true\r\n\r\nGet-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, \u0027Hourly Log Backups\u0027 -SqlCredential (Get-Credential \r\nsqladmin) | Export-DbaScript -Path C:\\temp\\export.sql -ScriptingOptionsObject $options\r\n\r\nExports only syspolicy_purge_history and \u0027Hourly Log Backups\u0027 to C:temp\\export.sql and uses the SQL login \"sqladmin\" to \r\nlogin to sql2016\r\nAppends a batch separator at end of each script.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2014 | Export-DbaScript -Passthru | ForEach-Object { \r\n$_.Replace(\u0027sql2014\u0027,\u0027sql2016\u0027) } | Set-Content -Path C:\\temp\\export.sql\r\n\r\nExports jobs and replaces all instances of the servername \"sql2014\" with \"sql2016\" then writes to C:\\temp\\export.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003e#Set Scripting Options\r\n\r\n$options = New-DbaScriptingOption\r\n$options.ScriptSchema = $true\r\n$options.IncludeDatabaseContext  = $true\r\n$options.IncludeHeaders = $false\r\n$Options.NoCommandTerminator = $false\r\n$Options.ScriptBatchTerminator = $true\r\n$Options.AnsiFile = $true\r\n\r\n$Databases = Get-DbaDatabase -SqlInstance sql2016 -ExcludeDatabase master, model, msdb,tempdb\r\n\r\nforeach ($db in $Databases) {\r\n    Export-DbaScript -InputObject $db -Path C:\\temp\\export.sql -Append -Encoding UTF8 -ScriptingOptionsObject $options \r\n-NoPrefix\r\n}\r\n\r\nExports Script for each database on sql2016 excluding system databases\r\nUses Scripting options to ensure Batch Terminator is set\r\nWill append the output to the file C:\\temp\\export.sql if it already exists\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Export-DbaSpConfigure",
@@ -1727,6 +1745,18 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance sql2016\r\n\r\nGets all database Stored Procedures\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -Database db1\r\n\r\nGets the Stored Procedures for the db1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeDatabase db1\r\n\r\nGets the Stored Procedures for all databases except db1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbStoredProcedure -SqlInstance Server1 -ExcludeSystemSp\r\n\r\nGets the Stored Procedures for all databases that are not system objects\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDbStoredProcedure\r\n\r\nGets the Stored Procedures for the databases on Sql1 and Sql2/sqlexpress\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaDbTrigger",
+        "Description":  "Get all existing database triggers on one or more SQL instances.",
+        "Tags":  [
+                     "Database",
+                     "Trigger"
+                 ],
+        "Synopsis":  "Get all existing database triggers on one or more SQL instances.",
+        "Name":  "Get-DbaDbTrigger",
+        "Links":  "https://dbatools.io/Get-DbaDbTrigger",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbTrigger -SqlInstance sql2017\r\n\r\nReturns all database triggers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2017 -Database supa | Get-DbaDbTrigger\r\n\r\nReturns all triggers for database supa on sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbTrigger -SqlInstance sql2017 -Database supa\r\n\r\nReturns all triggers for database supa on sql2017\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaDbVirtualLogFile",
         "Description":  "Having a transaction log file with too many virtual log files (VLFs) can hurt database performance.\n\nToo many VLFs can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.\n\nReferences:\n    http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/\n    http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx\n\nIf you\u0027ve got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.",
         "Tags":  [
@@ -2267,17 +2297,13 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRepPublication -SqlInstance sql2008, sqlserver2012\r\n\r\nReturn all publications for servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRepPublication -SqlInstance sql2008 -Database TestDB\r\n\r\nReturn all publications on server sql2008 for only the TestDB database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRepPublication -SqlInstance sql2008 -PublicationType Transactional\r\n\r\nReturn all publications on server sql2008 for all databases that have Transactional publications\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Get-DbaResourceGovernorClassifierFunction",
-        "Description":  "Gets the Resource Governor custom classifier Function which is used for customize the workload groups usage",
-        "Tags":  [
-                     "Migration",
-                     "ResourceGovernor"
-                 ],
-        "Author":  "Alessandro Alpi (@suxstellino), alessandroalpi.blog",
-        "Synopsis":  "Gets the Resource Governor custom classifier Function",
-        "Name":  "Get-DbaResourceGovernorClassifierFunction",
-        "Links":  "https://dbatools.io/Get-DbaResourceGovernorClassifierFunction",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaResourceGovernorClassifierFunction -SqlInstance sql2016\r\n\r\nGets the classifier function object of the SqlInstance sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaResourceGovernorClassifierFunction\r\n\r\nGets the classifier function object on Sql1 and Sql2/sqlexpress instances\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "CommandName":  "Get-DbaResourceGovernor",
+        "Description":  "Gets the Resource Governor object",
+        "Tags":  "ResourceGovernor",
+        "Synopsis":  "Gets the Resource Governor object",
+        "Name":  "Get-DbaResourceGovernor",
+        "Links":  "https://dbatools.io/Get-DbaResourceGovernor",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaResourceGovernor -SqlInstance sql2016\r\n\r\nGets the resource governor object of the SqlInstance sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaResourceGovernor\r\n\r\nGets the resource governor object on Sql1 and Sql2/sqlexpress instances\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaRestoreHistory",
@@ -2291,6 +2317,37 @@
         "Name":  "Get-DbaRestoreHistory",
         "Links":  "https://dbatools.io/Get-DbaRestoreHistory",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2016\r\n\r\nReturns server name, database, username, restore type, date for all restored databases on sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since \u00277/1/2016 10:47:00\u0027\r\n\r\nReturns restore information only for databases db1 and db2 on sql2016 since July 1, 2016 at 10:47 AM.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2014, sql2016 -Exclude db1\r\n\r\nLots of detailed information for all databases except db1 on sql2014 and sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs | Format-Table\r\n\r\nAdds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and formats the \r\ndata as a table.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaRestoreHistory\r\n\r\nReturns database restore information for every database on every server listed in the Central Management Server on \r\nsql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaRgClassifierFunction",
+        "Description":  "Gets the Resource Governor custom classifier Function which is used for customize the workload groups usage",
+        "Tags":  [
+                     "Migration",
+                     "ResourceGovernor"
+                 ],
+        "Author":  "Alessandro Alpi (@suxstellino), alessandroalpi.blog",
+        "Synopsis":  "Gets the Resource Governor custom classifier Function",
+        "Name":  "Get-DbaRgClassifierFunction",
+        "Links":  "https://dbatools.io/Get-DbaRgClassifierFunction",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRgClassifierFunction -SqlInstance sql2016\r\n\r\nGets the classifier function from sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaResourceGovernor | Get-DbaRgClassifierFunction\r\n\r\nGets the classifier function object on Sql1 and Sql2/sqlexpress instances\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaRgResourcePool",
+        "Description":  "Gets Resource Governor Pool objects, including internal or external",
+        "Tags":  "ResourceGovernor",
+        "Synopsis":  "Gets Resource Governor Pool objects, including internal or external",
+        "Name":  "Get-DbaRgResourcePool",
+        "Links":  "https://dbatools.io/Get-DbaRgResourcePool",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRgResourcePool -SqlInstance sql2016\r\n\r\nGets the internal resource pools on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaResourceGovernor | Get-DbaRgResourcePool\r\n\r\nGets the internal resource pools on Sql1 and Sql2/sqlexpress instances\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaResourceGovernor | Get-DbaRgResourcePool -Type External\r\n\r\nGets the external resource pools on Sql1 and Sql2/sqlexpress instances\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaRgWorkloadGroup",
+        "Description":  "Gets all Resource Governor Pool objects, including both internal and external",
+        "Tags":  "ResourceGovernor",
+        "Synopsis":  "Gets all Resource Governor Pool objects, including both internal and external",
+        "Name":  "Get-DbaRgWorkloadGroup",
+        "Links":  "https://dbatools.io/Get-DbaRgWorkloadGroup",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRgWorkloadGroup -SqlInstance sql2017\r\n\r\nGets the workload groups on sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaResourceGovernor -SqlInstance sql2017 | Get-DbaRgResourcePool | Get-DbaRgWorkloadGroup\r\n\r\nGets the workload groups on sql2017\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaRoleMember",
@@ -2396,6 +2453,18 @@
         "Name":  "Get-DbaServerRole",
         "Links":  "https://dbatools.io/Get-DbaServerRole",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sql2016a\r\n\r\nOutputs list of server-level roles for sql2016a instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sql2017a -ExcludeFixedRole\r\n\r\nOutputs the server-level role(s) that are not fixed roles on sql2017a instance.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaServerTrigger",
+        "Description":  "Get all existing server triggers on one or more SQL instances.",
+        "Tags":  [
+                     "Database",
+                     "Trigger"
+                 ],
+        "Synopsis":  "Get all existing server triggers on one or more SQL instances.",
+        "Name":  "Get-DbaServerTrigger",
+        "Links":  "https://dbatools.io/Get-DbaServerTrigger",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaServerTrigger -SqlInstance sql2017\r\n\r\nReturns all server triggers on sql2017\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaSpConfigure",
@@ -2667,19 +2736,6 @@
         "Name":  "Get-DbaTraceFlag",
         "Links":  "https://dbatools.io/Get-DbaTraceFlag",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTraceFlag -SqlInstance localhost\r\n\r\nReturns all Trace Flag information on the local default SQL Server instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTraceFlag -SqlInstance localhost, sql2016\r\n\r\nReturns all Trace Flag(s) for the local and sql2016 SQL Server instances\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTraceFlag -SqlInstance localhost -TraceFlag 4199,3205\r\n\r\nReturns Trace Flag status for TF 4199 and 3205 for the local SQL Server instance if they are enabled.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-DbaTrigger",
-        "Description":  "Get all existing triggers on one or more SQL instances.\n\nDefault output includes columns ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified.",
-        "Tags":  [
-                     "Database",
-                     "Triggers"
-                 ],
-        "Author":  "Klaas Vandenberghe ( @PowerDBAKlaas )",
-        "Synopsis":  "Get all existing triggers on one or more SQL instances.",
-        "Name":  "Get-DbaTrigger",
-        "Links":  "https://dbatools.io/Get-DbaTrigger",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrigger -SqlInstance ComputerA\\sql987\r\n\r\nReturns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrigger -SqlInstance \u0027ComputerA\\sql987\u0027,\u0027ComputerB\u0027\r\n\r\nReturns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified \r\nfrom two instances.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrigger -SqlInstance ComputerA\\sql987 | Out-Gridview\r\n\r\nReturns a gridview displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e\u0027ComputerA\\sql987\u0027,\u0027ComputerB\u0027 | Get-DbaTrigger | Out-Gridview\r\n\r\nReturns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified \r\nfrom two instances.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaUptime",
