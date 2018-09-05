@@ -284,11 +284,12 @@
             if (-not $ExcludeSystemTriggers) {
                 Write-Message -Level Verbose -Message "Exporting System Triggers"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting System Triggers"
-                Get-DbaServerTrigger -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-servertriggers.sql" -Append -BatchSeparator 'GO'
+                $null = Get-DbaServerTrigger -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-servertriggers.sql" -Append -BatchSeparator 'GO'
                 $triggers = Get-Content -Path "$Path\$stepCounter-servertriggers.sql" -Raw
                 $triggers = $triggers.ToString() -replace 'CREATE TRIGGER', "GO`r`nCREATE TRIGGER"
                 $triggers = $triggers.ToString() -replace 'ENABLE TRIGGER', "GO`r`nENABLE TRIGGER"
-                $triggers | Set-Content -Path "$Path\$stepCounter-servertriggers.sql" -Force
+                $null = $triggers | Set-Content -Path "$Path\$stepCounter-servertriggers.sql" -Force
+                Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-servertriggers.sql"
             }
 
             if (-not $ExcludeDatabases) {
