@@ -65,33 +65,19 @@ function Remove-DbaDbMasterKey {
         [parameter(Mandatory, ParameterSetName = "instanceExplicit")]
         [parameter(Mandatory, ParameterSetName = "instanceAll")]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]
-        $SqlInstance,
-
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
-
+        [DbaInstanceParameter[]]$SqlInstance,
+        [System.Management.Automation.PSCredential]$SqlCredential,
         [parameter(Mandatory, ParameterSetName = "instanceExplicit")]
-        [object[]]
-        $Database,
-
+        [object[]]$Database,
         [parameter(ParameterSetName = "instanceAll")]
-        [object[]]
-        $ExcludeDatabase,
-
+        [object[]]$ExcludeDatabase,
         [parameter(Mandatory, ParameterSetName = "instanceAll")]
-        [switch]
-        $All,
-
+        [switch]$All,
         [parameter(ValueFromPipeline, ParameterSetName = "collection")]
-        [Microsoft.SqlServer.Management.Smo.MasterKey[]]
-        $MasterKeyCollection,
-
-        [DbaMode]
-        $Mode = (Get-DbaConfigValue -Name 'message.mode.default' -Fallback "Strict"),
-
-        [switch]
-        [Alias('Silent')]$EnableException
+        [Microsoft.SqlServer.Management.Smo.MasterKey[]]$MasterKeyCollection,
+        [DbaMode]$Mode = (Get-DbaConfigValue -FullName 'message.mode.default' -Fallback "Strict"),
+        [switch][Alias('Silent')]
+        $EnableException
     )
 
     begin {
