@@ -45,7 +45,7 @@
         }
     }
     catch {
-       Stop-Function -Message "Can't access registry keys on $sourceName. Do you have administrative access to the Windows registry on $sourcename? Otherwise, we're out of ideas." -Target $source
+        Stop-Function -Message "Can't access registry keys on $sourceName. Do you have administrative access to the Windows registry on $SqlInstance Otherwise, we're out of ideas." -Target $source
         return
     }
     
