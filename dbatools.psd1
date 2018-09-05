@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.400'
+    ModuleVersion          = '0.9.401'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -351,7 +351,6 @@
         'Get-DbaAvailableCollation',
         'Get-DbaUserLevelPermission',
         'Get-DbaAgHadr',
-        'Get-DbaPolicy',
         'Find-DbaSimilarTable',
         'Disable-DbaAgHadr',
         'Enable-DbaAgHadr',
@@ -498,7 +497,13 @@
         'Get-DbaRgResourcePool',
         'Get-DbaRgWorkloadGroup',
         'Get-DbaRgClassifierFunction',
-        'Export-DbaInstance'
+        'Export-DbaInstance',
+        'Get-DbaPbmCategory',
+        'Get-DbaPbmCategorySubscription',
+        'Get-DbaPbmCondition',
+        'Get-DbaPbmObjectSet',
+        'Get-DbaPbmPolicy',
+        'Get-DbaPbmStore'
     )
 
     # Cmdlets to export from this module
@@ -606,7 +611,8 @@
     'Get-DbaSqlLog',
     'Test-DbaValidLogin',
     'Get-DbaJobCategory',
-    'Invoke-DbaDatabaseShrink'
+    'Invoke-DbaDatabaseShrink',
+    'Get-DbaPolicy'
 
     # List of all modules packaged with this module
     ModuleList             = @()
