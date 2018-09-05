@@ -265,7 +265,7 @@
         'Get-DbaCmConnection',
         'Get-DbaCmObject',
         'Get-DbaEndpoint',
-        'Get-DbaDatabaseMasterKey',
+        'Get-DbaDbMasterKey',
         'Get-DbaSchemaChangeHistory',
         'Get-DbaServerAudit',
         'Get-DbaServerAuditSpecification',
@@ -274,12 +274,12 @@
         'Restore-DbaDbCertificate',
         'New-DbaDbCertificate',
         'New-DbaCmConnection',
-        'New-DbaDatabaseMasterKey',
+        'New-DbaDbMasterKey',
         'New-DbaServiceMasterKey',
         'New-DbatoolsSupportPackage',
         'Remove-DbaDbCertificate',
         'Remove-DbaCmConnection',
-        'Remove-DbaDatabaseMasterKey',
+        'Remove-DbaDbMasterKey',
         'Set-DbaCmConnection',
         'Set-DbaTcpPort',
         'Test-DbaCmConnection',
@@ -613,7 +613,10 @@
     'Get-DbaJobCategory',
     'Invoke-DbaDatabaseShrink',
     'Get-DbaPolicy',
-    'Backup-DbaDatabaseMasterKey'
+    'Backup-DbaDatabaseMasterKey',
+    'Get-DbaDatabaseMasterKey',
+    'New-DbaDatabaseMasterKey',
+    'Remove-DbaDatabaseMasterKey'
 
     # List of all modules packaged with this module
     ModuleList             = @()

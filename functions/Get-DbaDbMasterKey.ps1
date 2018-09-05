@@ -1,4 +1,4 @@
-function Get-DbaDatabaseMasterKey {
+function Get-DbaDbMasterKey {
     <#
 .SYNOPSIS
 Gets specified database master key
@@ -37,12 +37,12 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
-Get-DbaDatabaseMasterKey -SqlInstance sql2016
+Get-DbaDbMasterKey -SqlInstance sql2016
 
 Gets all master database keys
 
 .EXAMPLE
-Get-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1
+Get-DbaDbMasterKey -SqlInstance Server1 -Database db1
 
 Gets the master key for the db1 database
 
@@ -99,5 +99,8 @@ Gets the master key for the db1 database
                 Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseMasterKey
     }
 }
