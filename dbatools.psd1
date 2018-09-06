@@ -209,8 +209,8 @@
         'Install-DbaWatchUpdate',
         'Watch-DbaUpdate',
         'Uninstall-DbaWatchUpdate',
-        'Get-DbaDbQueryStoreOptions',
-        'Set-DbaDbQueryStoreOptions',
+        'Get-DbaDbQueryStoreOption',
+        'Set-DbaDbQueryStoreOption',
         'Restore-DbaDatabase',
         'Copy-DbaQueryStoreConfig',
         'Get-DbaExecutionPlan',
@@ -664,7 +664,9 @@
     'Export-DbaDacpac',
     'Publish-DbaDacpac',
     'Set-DbaTempDbConfiguration',
-    'Test-DbaTempDbConfiguration'
+    'Test-DbaTempDbConfiguration',
+    'Get-DbaDbQueryStoreOptions',
+    'Set-DbaDbQueryStoreOptions'
 
     # List of all modules packaged with this module
     ModuleList             = @()

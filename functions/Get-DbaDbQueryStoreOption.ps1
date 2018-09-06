@@ -1,5 +1,5 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
-function Get-DbaDbQueryStoreOptions {
+function Get-DbaDbQueryStoreOption {
     <#
         .SYNOPSIS
         Get the Query Store configuration for Query Store enabled databases.
@@ -40,17 +40,17 @@ function Get-DbaDbQueryStoreOptions {
         https://dbatools.io/Get-DbaQueryStoreOptions
 
         .EXAMPLE
-        Get-DbaDbQueryStoreOptions -SqlInstance ServerA\sql
+        Get-DbaDbQueryStoreOption -SqlInstance ServerA\sql
 
         Returns Query Store configuration settings for every database on the ServerA\sql instance.
 
         .EXAMPLE
-        Get-DbaDbQueryStoreOptions -SqlInstance ServerA\sql | Where-Object {$_.ActualState -eq "ReadWrite"}
+        Get-DbaDbQueryStoreOption -SqlInstance ServerA\sql | Where-Object {$_.ActualState -eq "ReadWrite"}
 
         Returns the Query Store configuration for all databases on ServerA\sql where the Query Store feature is in Read/Write mode.
 
         .EXAMPLE
-        Get-DbaDbQueryStoreOptions -SqlInstance localhost | format-table -AutoSize -Wrap
+        Get-DbaDbQueryStoreOption -SqlInstance localhost | format-table -AutoSize -Wrap
 
         Returns Query Store configuration settings for every database on the ServerA\sql instance inside a table format.
 
@@ -97,5 +97,8 @@ function Get-DbaDbQueryStoreOptions {
                 Select-DefaultView -InputObject $QSO -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDbQueryStoreOptions
     }
 }
