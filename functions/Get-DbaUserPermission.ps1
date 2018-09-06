@@ -1,4 +1,4 @@
-function Get-DbaUserLevelPermission {
+function Get-DbaUserPermission {
     <#
     .SYNOPSIS
         Displays detailed permissions information for the server and database roles and securables.
@@ -45,18 +45,18 @@ function Get-DbaUserLevelPermission {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaUserLevelPermission
+        https://dbatools.io/Get-DbaUserPermission
 
     .EXAMPLE
-        Get-DbaUserLevelPermission -SqlInstance sql2008, sqlserver2012
+        Get-DbaUserPermission -SqlInstance sql2008, sqlserver2012
         Check server and database permissions for servers sql2008 and sqlserver2012.
 
     .EXAMPLE
-        Get-DbaUserLevelPermission -SqlInstance sql2008 -Database TestDB
+        Get-DbaUserPermission -SqlInstance sql2008 -Database TestDB
         Check server and database permissions on server sql2008 for only the TestDB database
 
     .EXAMPLE
-        Get-DbaUserLevelPermission -SqlInstance sql2008 -Database TestDB -IncludePublicGuest -IncludeSystemObjects
+        Get-DbaUserPermission -SqlInstance sql2008 -Database TestDB -IncludePublicGuest -IncludeSystemObjects
         Check server and database permissions on server sql2008 for only the TestDB database,
         including public and guest grants, and sys schema objects.
     #>

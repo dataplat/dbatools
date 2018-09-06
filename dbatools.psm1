@@ -229,7 +229,8 @@ Write-ImportTime -Text "Script: Maintenance"
 
 #region Aliases
 # I renamed this function to be more accurate - 1ms
-@(
+# changed to a script var so it can be used in the Rename-DbatoolsCommand
+$script:renames = @(
     @{
         "AliasName"  = "Copy-SqlAgentCategory"
         "Definition" = "Copy-DbaAgentCategory"
@@ -841,8 +842,14 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"  = "Copy-DbaDatabaseMail"
         "Definition" = "Copy-DbaDbMail"
+    },
+    @{
+        "AliasName"  = "Get-DbaUserLevelPermission"
+        "Definition" = "Get-DbaUserPermission"
     }
-) | ForEach-Object {
+)
+
+$script:renames | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
 }
 
