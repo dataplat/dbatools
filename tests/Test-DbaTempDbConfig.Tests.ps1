@@ -19,7 +19,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         #>
         $paramCount = 4
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaTempDbConfig).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Test-DbaTempdbConfig).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'Detailed'
         It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
@@ -32,7 +32,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Command actually works on $script:instance2" {
-        $results = Test-DbaTempDbConfig -SqlInstance $script:instance2
+        $results = Test-DbaTempdbConfig -SqlInstance $script:instance2
         It "Should have correct properties" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Rule,Recommended,CurrentSetting,IsBestPractice,Notes'.Split(',')
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
