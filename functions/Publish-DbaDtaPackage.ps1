@@ -1,4 +1,4 @@
-function Publish-DbaDacpac {
+function Publish-DbaDtaPackage {
     <#
         .SYNOPSIS
             The Publish-Database command takes a dacpac which is the output from an SSDT project and publishes it to a database. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts).
@@ -56,23 +56,23 @@ function Publish-DbaDacpac {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Publish-DbaDacpac
+            https://dbatools.io/Publish-DbaDtaPackage
 
         .EXAMPLE
-            Publish-DbaDacpac -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml
+            Publish-DbaDtaPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml
 
             Updates WideWorldImporters on sql2017 from the sql2016-WideWorldImporters.dacpac using the sql2016-WideWorldImporters-publish.xml publish profile
 
         .EXAMPLE
-            New-DbaPublishProfile -SqlInstance sql2016 -Database db2 -Path C:\temp
-            Export-DbaDacpac -SqlInstance sql2016 -Database db2 | Publish-DbaDacpac -PublishXml C:\temp\sql2016-db2-publish.xml -Database db1, db2 -SqlInstance sql2017
+            New-DbaDtaProfile -SqlInstance sql2016 -Database db2 -Path C:\temp
+            Export-DbaDtaPackage -SqlInstance sql2016 -Database db2 | Publish-DbaDtaPackage -PublishXml C:\temp\sql2016-db2-publish.xml -Database db1, db2 -SqlInstance sql2017
 
             Creates a publish profile at C:\temp\sql2016-db2-publish.xml, exports the .dacpac to $home\Documents\sql2016-db2.dacpac
             then publishes it to the sql2017 server database db2
         
         .EXAMPLE
         $loc = "C:\Users\bob\source\repos\Microsoft.Data.Tools.Msbuild\lib\net46\Microsoft.SqlServer.Dac.dll"
-        Publish-DbaDacpac -SqlInstance "local" -Database WideWorldImporters -Path C:\temp\WideWorldImporters.dacpac -PublishXml C:\temp\WideWorldImporters.publish.xml -DacFxPath $loc
+        Publish-DbaDtaPackage -SqlInstance "local" -Database WideWorldImporters -Path C:\temp\WideWorldImporters.dacpac -PublishXml C:\temp\WideWorldImporters.publish.xml -DacFxPath $loc
   #>
     [CmdletBinding()]
     param (
