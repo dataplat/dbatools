@@ -341,7 +341,7 @@ function Start-DbaMigration {
 
         if (-not $NoDatabaseMail) {
             Write-Message -Level Verbose -Message "Migrating database mail"
-            Copy-DbaDatabaseMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaDbMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if (-not $NoCentralManagementServer) {

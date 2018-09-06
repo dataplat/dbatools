@@ -272,7 +272,7 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"  = "Copy-SqlDatabaseMail"
-        "Definition" = "Copy-DbaDatabaseMail"
+        "Definition" = "Copy-DbaDbMail"
     },
     @{
         "AliasName"  = "Copy-SqlDataCollector"
@@ -830,13 +830,17 @@ Write-ImportTime -Text "Script: Maintenance"
         "AliasName"  = "New-DbaPublishProfile"
         "Definition" = "New-DbaDtaProfile"
     },
-    @{
+    @{ 
         "AliasName"  = "Get-DbaDbQueryStoreOptions"
         "Definition" = "Get-DbaDbQueryStoreOption"
     },
     @{
         "AliasName"  = "Set-DbaDbQueryStoreOptions"
         "Definition" = "Set-DbaDbQueryStoreOption"
+    },
+    @{
+        "AliasName"  = "Copy-DbaDatabaseMail"
+        "Definition" = "Copy-DbaDbMail"
     }
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
