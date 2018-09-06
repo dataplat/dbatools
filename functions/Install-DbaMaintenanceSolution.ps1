@@ -123,7 +123,7 @@ function Install-DbaMaintenanceSolution {
     )
     
     begin {
-        $DbatoolsData = Get-DbaConfigValue -FullName "Path.DbatoolsData"
+        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
         
         $url = "https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip"
         

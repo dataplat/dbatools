@@ -1,4 +1,4 @@
-function Get-DbaConfigValue {
+function Get-DbatoolsConfigValue {
     <#
         .SYNOPSIS
             Returns the configuration value stored under the specified name.
@@ -20,12 +20,12 @@ function Get-DbaConfigValue {
             By specifying this parameter, the function will throw an error if no value was found at all.
 
         .EXAMPLE
-            PS C:\> Get-DbaConfigValue -Name 'System.MailServer'
+            PS C:\> Get-DbatoolsConfigValue -Name 'System.MailServer'
 
             Returns the configured value that was assigned to the key 'System.MailServer'
 
         .EXAMPLE
-            PS C:\> Get-DbaConfigValue -Name 'Default.CoffeeMilk' -Fallback 0
+            PS C:\> Get-DbatoolsConfigValue -Name 'Default.CoffeeMilk' -Fallback 0
 
             Returns the configured value for 'Default.CoffeeMilk'. If no such value is configured, it returns '0' instead.
 

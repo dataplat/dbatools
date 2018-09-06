@@ -87,7 +87,7 @@ function Set-DbaCmConnection {
             Restores the configuration back to system default.
             Configuration elements are the basic behavior controlling settings, such as whether to cache bad credentials, etc.
             These can be configured globally using the dbatools configuration system and overridden locally on a per-connection basis.
-            For a list of all available settings, use "Get-DbaConfig -Module ComputerManagement".
+            For a list of all available settings, use "Get-DbatoolsConfig -Module ComputerManagement".
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -198,7 +198,7 @@ function Set-DbaCmConnection {
         Write-Message -Level InternalComment -Message "Starting execution"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
-        $disable_cache = Get-DbaConfigValue -Name 'ComputerManagement.Cache.Disable.All' -Fallback $false
+        $disable_cache = Get-DbatoolsConfigValue -Name 'ComputerManagement.Cache.Disable.All' -Fallback $false
     }
     PROCESS {
         foreach ($connectionObject in $ComputerName) {
