@@ -116,4 +116,8 @@ Gets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress
             }
         }
     }
+    
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseUdf
+    }
 }
