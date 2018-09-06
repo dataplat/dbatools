@@ -343,5 +343,6 @@ function Invoke-DbaQuery {
             }
         }
         Test-DbaDeprecation -DeprecatedOn '1.0.0' -Alias Invoke-DbaCmd
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaSqlQuery
     }
 }

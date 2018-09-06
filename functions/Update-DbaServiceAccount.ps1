@@ -183,6 +183,8 @@ function Update-DbaServiceAccount {
 
     }
     end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Update-DbaSqlServiceAccount
+        
         foreach ($svc in $svcCollection) {
             if ($serviceObject = Get-DbaService -ComputerName $svc.ComputerName -ServiceName $svc.ServiceName -Credential $Credential -EnableException:$EnableException) {
                 $outMessage = $outStatus = $agent = $null

@@ -54,26 +54,15 @@
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
         [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline = $true)]
-        [Sqlcollaborative.Dbatools.Configuration.Config[]]
-        $Config,
-
+        [Sqlcollaborative.Dbatools.Configuration.Config[]]$Config,
         [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline = $true)]
-        [string[]]
-        $FullName,
-
+        [string[]]$FullName,
         [Parameter(Mandatory = $true, ParameterSetName = "Name", Position = 0)]
-        [string]
-        $Module,
-
+        [string]$Module,
         [Parameter(ParameterSetName = "Name", Position = 1)]
-        [string]
-        $Name = "*",
-
-        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]
-        $Scope = "UserDefault",
-
-        [switch]
-        $EnableException
+        [string]$Name = "*",
+        [Sqlcollaborative.Dbatools.Configuration.ConfigScope]$Scope = "UserDefault",
+        [switch]$EnableException
     )
 
     begin {
@@ -169,6 +158,6 @@
         }
     }
     end {
-
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Register-DbaConfig
     }
 }

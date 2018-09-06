@@ -1,4 +1,4 @@
-function Copy-DbaServerAgent {
+function Copy-DbaAgentServer {
     <#
         .SYNOPSIS
             Copy SQL Server Agent from one server to another.
@@ -50,20 +50,20 @@ function Copy-DbaServerAgent {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Copy-DbaServerAgent
+            https://dbatools.io/Copy-DbaAgentServer
 
         .EXAMPLE
-            Copy-DbaServerAgent -Source sqlserver2014a -Destination sqlcluster
+            Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster
 
             Copies all job server objects from sqlserver2014a to sqlcluster using Windows credentials for authentication. If job objects with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaServerAgent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+            Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
             Copies all job objects from sqlserver2014a to sqlcluster using SQL credentials to authentication to sqlserver2014a and Windows credentials to authenticate to sqlcluster.
 
         .EXAMPLE
-            Copy-DbaServerAgent -Source sqlserver2014a -Destination sqlcluster -WhatIf
+            Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
             Shows what would happen if the command were executed.
     #>
@@ -172,5 +172,6 @@ function Copy-DbaServerAgent {
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlServerAgent
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-DbaSqlServerAgent
     }
 }

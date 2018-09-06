@@ -108,6 +108,9 @@ function Start-DbaService {
         if ($processArray) {
             Update-ServiceStatus -InputObject $processArray -Action 'start' -Timeout $Timeout -EnableException $EnableException
         }
-        else { Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." -Category ObjectNotFound }
+        else {
+            Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." -Category ObjectNotFound
+        }
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Start-DbaSqlService
     }
 }
