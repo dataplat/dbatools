@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.405'
+    ModuleVersion          = '0.9.402'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -70,16 +70,16 @@
         'Start-DbaMigration',
         'Copy-DbaDatabase',
         'Copy-DbaLogin',
-        'Copy-DbaAgentServer',
+        'Copy-DbaSqlServerAgent',
         'Copy-DbaSpConfigure',
         'Copy-DbaLinkedServer',
-        'Copy-DbaDbMail',
-        'Copy-DbaDbAssembly',
-        'Copy-DbaPolicyManagement',
+        'Copy-DbaDatabaseMail',
+        'Copy-DbaDatabaseAssembly',
+        'Copy-DbaSqlPolicyManagement',
         'Copy-DbaAgentSharedSchedule',
         'Copy-DbaAgentOperator',
         'Copy-DbaAgentJob',
-        'Copy-DbaDataCollector',
+        'Copy-DbaSqlDataCollector',
         'Copy-DbaCustomError',
         'Copy-DbaServerAuditSpecification',
         'Copy-DbaEndpoint',
@@ -102,7 +102,7 @@
         'Import-DbaCsvToSql',
         'Copy-DbaAgentCategory',
         'Update-Dbatools',
-        'Test-DbaPath',
+        'Test-DbaSqlPath',
         'Export-DbaLogin',
         'Reset-DbaAdmin',
         'Watch-DbaDbLogin',
@@ -115,8 +115,8 @@
         'Get-DbaDiskSpace',
         'Remove-DbaDatabaseSafely',
         'Show-DbaDatabaseList',
-        'Set-DbaTempdbConfig',
-        'Test-DbaTempdbConfig',
+        'Set-DbaTempDbConfiguration',
+        'Test-DbaTempDbConfiguration',
         'Repair-DbaOrphanUser',
         'Remove-DbaOrphanUser',
         'Find-DbaUnusedIndex',
@@ -124,17 +124,17 @@
         'Test-DbaPowerPlan',
         'Set-DbaPowerPlan',
         'Test-DbaDiskAlignment',
-        'Get-DbaDbSpace',
+        'Get-DbaDatabaseSpace',
         'Get-DbaClusterNode',
-        'Test-DbaDbOwner',
-        'Set-DbaDbOwner',
+        'Test-DbaDatabaseOwner',
+        'Set-DbaDatabaseOwner',
         'Test-DbaJobOwner',
         'Set-DbaJobOwner',
         'Test-DbaDbVirtualLogFile',
         'Get-DbaRestoreHistory',
         'Get-DbaTcpPort',
-        'Test-DbaDbCompatibility',
-        'Test-DbaDbCollation',
+        'Test-DbaDatabaseCompatibility',
+        'Test-DbaDatabaseCollation',
         'Test-DbaConnectionAuthScheme',
         'Test-DbaServerName',
         'Repair-DbaServerName',
@@ -172,8 +172,8 @@
         'Get-DbaServerTrigger',
         'Get-DbaDbTrigger',
         'Export-DbaUser',
-        'Get-DbaDbState',
-        'Set-DbaDbState',
+        'Get-DbaDatabaseState',
+        'Set-DbaDatabaseState',
         'Get-DbaHelpIndex',
         'Get-DbaAgentAlert',
         'Get-DbaAgentOperator',
@@ -195,38 +195,38 @@
         'Remove-DbaSpn',
         'Get-DbaDatabase',
         'Find-DbaUserObject',
-        'Get-DbaService',
+        'Get-DbaSqlService',
         'Get-DbaDependency',
-        'Clear-DbaConnectionPool',
+        'Clear-DbaSqlConnectionPool',
         'Find-DbaCommand',
-        'Get-DbatoolsConfig',
-        'Get-DbatoolsConfigValue',
-        'Set-DbatoolsConfig',
+        'Get-DbaConfig',
+        'Get-DbaConfigValue',
+        'Set-DbaConfig',
         'Get-DbaClientProtocol',
         'Backup-DbaDatabase',
-        'New-DbaDirectory',
+        'New-DbaSqlDirectory',
         'Get-DbaPrivilege',
         'Install-DbaWatchUpdate',
         'Watch-DbaUpdate',
         'Uninstall-DbaWatchUpdate',
-        'Get-DbaDbQueryStoreOption',
-        'Set-DbaDbQueryStoreOption',
+        'Get-DbaDbQueryStoreOptions',
+        'Set-DbaDbQueryStoreOptions',
         'Restore-DbaDatabase',
         'Copy-DbaQueryStoreConfig',
         'Get-DbaExecutionPlan',
         'Export-DbaExecutionPlan',
         'Get-DbaServerProtocol',
         'Get-DbaLocaleSetting',
-        'Get-DbaBuildReference',
+        'Get-DbaSqlBuildReference',
         'Set-DbaSpConfigure',
         'Test-DbaIdentityUsage',
-        'Get-DbaDbAssembly',
+        'Get-DbaDatabaseAssembly',
         'Get-DbaAgentJob',
         'Get-DbaCustomError',
         'Get-DbaCredential',
         'Get-DbaBackupDevice',
         'Get-DbaAgentProxy',
-        'Get-DbaDbEncryption',
+        'Get-DbaDatabaseEncryption',
         'New-DbaSsisCatalog',
         'Remove-DbaDatabase',
         'Get-DbaQueryExecutionTime',
@@ -236,7 +236,7 @@
         'Get-DbaAgentJobOutputFile',
         'Set-DbaAgentJobOutputFile',
         'Test-DbaLinkedServerConnection',
-        'Get-DbaDbFile',
+        'Get-DbaDatabaseFile',
         'Read-DbaTransactionLog',
         'Get-DbaTable',
         'Invoke-DbaDbShrink',
@@ -269,7 +269,7 @@
         'Get-DbaSchemaChangeHistory',
         'Get-DbaServerAudit',
         'Get-DbaServerAuditSpecification',
-        'Get-DbaProductKey',
+        'Get-DbaSqlProductKey',
         'Get-DbatoolsLog',
         'Restore-DbaDbCertificate',
         'New-DbaDbCertificate',
@@ -283,10 +283,10 @@
         'Set-DbaCmConnection',
         'Set-DbaTcpPort',
         'Test-DbaCmConnection',
-        'New-DbaConnectionStringBuilder',
-        'Get-DbaInstanceProperty',
-        'Get-DbaInstanceUserOption',
-        'New-DbaConnectionString',
+        'New-DbaSqlConnectionStringBuilder',
+        'Get-DbaSqlInstanceProperty',
+        'Get-DbaSqlInstanceUserOption',
+        'New-DbaSqlConnectionString',
         'Get-DbaAgentSchedule',
         'Invoke-DbaLogShipping',
         'Read-DbaTraceFile',
@@ -305,23 +305,23 @@
         'Backup-DbaDbMasterKey',
         'Get-DbaAgentJobHistory',
         'Get-DbaSsisEnvironmentVariable',
-        'Get-DbaManagementObject',
-        'Test-DbaManagementObject',
+        'Get-DbaSqlManagementObject',
+        'Test-DbaSqlManagementObject',
         'Get-DbaMaintenanceSolutionLog',
         'Invoke-DbaLogShippingRecovery',
         'Find-DbaTrigger',
         'Find-DbaView',
-        'Invoke-DbaDbUpgrade',
-        'Get-DbaDbUser',
+        'Invoke-DbaDatabaseUpgrade',
+        'Get-DbaDatabaseUser',
         'Get-DbaWindowsLog',
         'Get-DbaErrorLog',
         'Get-DbaAgentLog',
         'Get-DbaDbMailLog',
         'Get-DbaDbMailHistory',
-        'Get-DbaDbView',
-        'Get-DbaDbUdf',
-        'Get-DbaDbPartitionFunction',
-        'Get-DbaDbPartitionScheme',
+        'Get-DbaDatabaseView',
+        'Get-DbaDatabaseUdf',
+        'Get-DbaDatabasePartitionFunction',
+        'Get-DbaDatabasePartitionScheme',
         'Get-DbaDefaultPath',
         'Get-DbaDbStoredProcedure',
         'Test-DbaDbCompression',
@@ -330,7 +330,7 @@
         'Set-DbaPrivilege',
         'Get-DbaAgReplica',
         'Get-DbaAgDatabase',
-        'Get-DbaModule',
+        'Get-DbaSqlModule',
         'Get-DbaRegisteredServerStore',
         'Sync-DbaLoginPermission',
         'Invoke-Sqlcmd2',
@@ -343,13 +343,13 @@
         'Install-DbaMaintenanceSolution',
         'Get-DbaComputerSystem',
         'Get-DbaTraceFlag',
-        'Stop-DbaService',
-        'Start-DbaService',
-        'Restart-DbaService',
+        'Stop-DbaSqlService',
+        'Start-DbaSqlService',
+        'Restart-DbaSqlService',
         'Invoke-DbaCycleErrorLog',
-        'Get-DbaRegistryRoot',
+        'Get-DbaSqlRegistryRoot',
         'Get-DbaAvailableCollation',
-        'Get-DbaUserPermission',
+        'Get-DbaUserLevelPermission',
         'Get-DbaAgHadr',
         'Find-DbaSimilarTable',
         'Disable-DbaAgHadr',
@@ -361,10 +361,10 @@
         'Get-DbaTopResourceUsage',
         'New-DbaLogin',
         'Get-DbaAgListener',
-        'Invoke-DbaDbClone',
+        'Invoke-DbaDatabaseClone',
         'Read-DbaXEFile',
         'Get-DbaDistributor',
-        'Update-DbaServiceAccount',
+        'Update-DbaSqlServiceAccount',
         'Watch-DbaXESession',
         'Disable-DbaTraceFlag',
         'Enable-DbaTraceFlag',
@@ -377,7 +377,7 @@
         'New-DbaXESmartTargetResponse',
         'New-DbaXESmartTarget',
         'Get-DbaDbVirtualLogFile',
-        'Register-DbatoolsConfig',
+        'Register-DbaConfig',
         'Get-DbaBackupInformation',
         'Start-DbaXESession',
         'Stop-DbaXESession',
@@ -393,11 +393,11 @@
         'Invoke-DbaBalanceDataFiles',
         'Select-DbaBackupInformation',
         'Rename-DbaDatabase',
-        'New-DbaDacProfile',
-        'Publish-DbaDacPackage',
-        'Export-DbaDacPackage',
+        'New-DbaPublishProfile',
+        'Publish-DbaDacpac',
+        'Export-DbaDacpac',
         'Copy-DbaTableData',
-        'Invoke-DbaQuery',
+        'Invoke-DbaSqlQuery',
         'Remove-DbaLogin',
         'Get-DbaFileStream',
         'Set-DbaFileStream',
@@ -422,7 +422,7 @@
         'Get-DbaOrphanUser',
         'Get-DbaOpenTransaction',
         'Get-DbaLogShippingError',
-        'Test-DbaBuild',
+        'Test-DbaSqlBuild',
         'Get-DbaXESessionTemplate',
         'ConvertTo-DbaXESession',
         'Start-DbaTrace',
@@ -465,7 +465,7 @@
         'Get-DbaDbForeignKey',
         'Get-DbaDbCheckConstraint',
         'Set-DbaAgentAlert',
-        'Get-DbaFeature',
+        'Get-DbaSqlFeature',
         'Get-DbaWaitResource',
         'Get-DbaDbPageInfo',
         'Get-DbaConnection',
@@ -503,8 +503,7 @@
         'Get-DbaPbmCondition',
         'Get-DbaPbmObjectSet',
         'Get-DbaPbmPolicy',
-        'Get-DbaPbmStore',
-        'Invoke-DbatoolsRenameHelper'
+        'Get-DbaPbmStore'
     )
 
     # Cmdlets to export from this module
@@ -586,7 +585,7 @@
     'Get-DbaQueryStoreConfig',
     'Set-DbaQueryStoreConfig',
     'Get-DbaRegisteredServerName',
-    'Connect-DbaServer',
+    'Connect-DbaSqlServer',
     'Get-DbaInstance',
     'Get-DbaXEventsSession',
     'Get-DbaXEventSession',
@@ -600,7 +599,7 @@
     'Find-DbaDatabaseGrowthEvent',
     'Get-DbaTraceFile',
     'Out-DbaDataTable',
-    'Invoke-DbaCmd',
+    'Invoke-DbaSqlCmd',
     'Get-DbaClusterActiveNode',
     'Test-DbaVirtualLogFile',
     'Test-DbaFullRecoveryModel',
@@ -608,8 +607,8 @@
     'New-DbaDatabaseSnapshot',
     'Remove-DbaDatabaseSnapshot',
     'Restore-DbaDatabaseSnapshot',
-    'Sync-DbaLoginPermission',
-    'Get-DbaLog',
+    'Sync-DbaSqlLoginPermission',
+    'Get-DbaSqlLog',
     'Test-DbaValidLogin',
     'Get-DbaJobCategory',
     'Invoke-DbaDatabaseShrink',
@@ -617,59 +616,7 @@
     'Backup-DbaDatabaseMasterKey',
     'Get-DbaDatabaseMasterKey',
     'New-DbaDatabaseMasterKey',
-    'Remove-DbaDatabaseMasterKey',
-    'Get-DbaDatabaseAssembly',
-    'Copy-DbaDatabaseAssembly',
-    'Get-DbaDatabaseEncryption',
-    'Get-DbaDatabaseFile',
-    'Get-DbaDatabasePartitionFunction',
-    'Get-DbaDatabasePartitionScheme',
-    'Get-DbaDatabaseSpace',
-    'Get-DbaDatabaseState',
-    'Get-DbaDatabaseUdf',
-    'Get-DbaDatabaseUser',
-    'Get-DbaDatabaseView',
-    'Invoke-DbaDatabaseClone',
-    'Invoke-DbaDatabaseUpgrade',
-    'Set-DbaDatabaseOwner',
-    'Set-DbaDatabaseState',
-    'Set-DbaDatabaseList',
-    'Test-DbaDatabaseCollation',
-    'Test-DbaDbCollation',
-    'Test-DbaDatabaseCompatibility',
-    'Test-DbaDatabaseOwner',
-    'Clear-DbaSqlConnectionPool',
-    'Copy-DbaSqlDataCollector',
-    'Copy-DbaSqlPolicyManagement',
-    'Copy-DbaSqlServerAgent',
-    'Get-DbaSqlBuildReference',
-    'Get-DbaSqlFeature',
-    'Get-DbaSqlInstanceProperty',
-    'Get-DbaSqlInstanceUserOption',
-    'Get-DbaSqlManagementObject',
-    'Get-DbaSqlModule',
-    'Get-DbaSqlProductKey',
-    'Get-DbaSqlRegistryRoot',
-    'Get-DbaSqlService',
-    'Invoke-DbaSqlQuery',
-    'New-DbaSqlConnectionString',
-    'New-DbaSqlConnectionStringBuilder',
-    'New-DbaSqlDirectory',
-    'Restart-DbaSqlService',
-    'Start-DbaSqlService',
-    'Stop-DbaSqlService',
-    'Test-DbaSqlBuild',
-    'Test-DbaSqlManagementObject',
-    'Test-DbaSqlPath',
-    'Update-DbaSqlServiceAccount',
-    'Export-DbaDacpac',
-    'Publish-DbaDacpac',
-    'Set-DbaTempDbConfiguration',
-    'Test-DbaTempDbConfiguration',
-    'Get-DbaDbQueryStoreOptions',
-    'Set-DbaDbQueryStoreOptions',
-    'Copy-DbaDatabaseMail',
-    'Get-DbaUserLevelPermission'
+    'Remove-DbaDatabaseMasterKey'
 
     # List of all modules packaged with this module
     ModuleList             = @()
@@ -713,8 +660,8 @@
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUsWJnE9j8WAxgleQMaYpEW+GU
-# nXSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUSDhnHasmAtnLBjp4zvI1y6jc
+# gyyggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -845,22 +792,22 @@
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUGuKuxL8/rhH0RY+Dh17kH6W6czEwDQYJKoZIhvcNAQEBBQAE
-# ggEATK5Ld0DSIhJZOHTDEvhQRBaQuulhd1lEbDGWVN1mnj2gKL+t4QSL5xJEM2Sf
-# Ff5QNZ1kKrDiMQ8nyfmgIgB9fy3DRuuBDy+6ISIa50bVRzMAArGEy4xU6ns3EonK
-# xboTiasxSaoLt/ZiFcizgcZNL/wxoIP4m3r1OW03Qngyy/ARDxB4+M3teuXB3oPF
-# ZJNmCSv19OucAtuwyTET/TX9lnuIxQ6d3FlqLbDQxvxxAWVLt0sdtIui7PGt9hoU
-# zULrKOUAhyKYbkowG5Jf6hcWjPMdkig3f1HhGnT7D7ordmoijowrC5d2xSDIMNj3
-# DBpMKnbyddcSbgwvTc+oHD462KGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUKGCZ+tBvTQUkuwrCPvoZiWVE0QowDQYJKoZIhvcNAQEBBQAE
+# ggEAFvzib6q6r/rwHGPMiBH3w9Xf4J1+kPg7oG6z/P/J64SIfBE/1vRBRpbFHL4L
+# DqbUkfWRSgFX47TVdlG54QP5oiLkS51oUZ1u4h67RTfjxPna+jNJKpE5syF4PUgN
+# yl7LlWaHYOmuKxyCF4xh8xSB8EAoTxlzrt5uem7DvaQ2psd17Oc7Dd+N4fWVhvAQ
+# O4MAbT6Fit4VeCxkvpS/qZa5oQ4RdCiGY/T0YxStPYkTk/+Sumklx1Txce18LJgK
+# HcqZ1sci/U0ofvF8Rl4Lyb73wjbfuxH0Bzbby3Grh1hjjozAJ/1UsCxuskXka0ZP
+# IdUwbRSGc0qp0GU0bITyj217iaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwOTA2MjA0MTI1WjAj
-# BgkqhkiG9w0BCQQxFgQUrDYkCigQ+ABvs/e0JKEqrZwIMZQwDQYJKoZIhvcNAQEB
-# BQAEggEAgTXKE/6fC/WVzNsmsMuco+4n2G+e3jElcs0DkZ18iYXdXi/5RLVpO/Lr
-# 3YnB7iCCHLWO3WCSJjNcvVKmsJtfcmJKDFVxiDvbkCEzF89apenrygzyEo9pyVl5
-# OafST/dpXVO6L6o/OjPWfM7TyeNU2nD4o15BHvnemqyD1ZFOb98VkvWyNzHFX5rf
-# Rgl7sfmnzpxeE+Mtr6JAkFKM0ceFtVfk0KW6Y0hDGM5mYJYy/b0iQeZlf0wHJ+j4
-# TUbwVLiWt6O/7S/yJJCk7TfFP4dOvCx/h9ZcIUk7M9IKjySTote1vwlC0ILt0Kcu
-# vbbfP/wKdtjJ2fsdcWMhc18j86yr6A==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwOTA2MDgxNTIwWjAj
+# BgkqhkiG9w0BCQQxFgQUE095cAIpSTuDyjN/rufUsVz0Y28wDQYJKoZIhvcNAQEB
+# BQAEggEAEe/PdvAaIhgslpbmWk8oc99nTIdbvtJDgOlBPhVYKfXtaTux3UOT6F6/
+# vpadG4htZgoEMW+rB+b/iTUq5YMvKSiEwZZHY2YjSXUZK0CPRoJGiIyxs+EUs3ZB
+# C1K10yczwpZCbdp8l/3zaICq+3czGKu7T6gUCWWsEEMBB9VOgvqerza72lvT15XU
+# eIPw/LDewPX1PXAH0jgcXKWsSqQFe03WFw7ubAGu/2dyHurkBymeaf7GuPElH43U
+# RKzKKebLBld6BhZKKAWRxHaV0uoAjqpWvuOVQ3IAZzFnobNGoPjyJ68xrxvYBjOu
+# GGBMkkmHZvnH7lfOhi/5IoH630PiiA==
 # SIG # End signature block
