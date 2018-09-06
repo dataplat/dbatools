@@ -503,7 +503,8 @@
         'Get-DbaPbmCondition',
         'Get-DbaPbmObjectSet',
         'Get-DbaPbmPolicy',
-        'Get-DbaPbmStore'
+        'Get-DbaPbmStore',
+        'Invoke-DbatoolsRenameHelper'
     )
 
     # Cmdlets to export from this module
