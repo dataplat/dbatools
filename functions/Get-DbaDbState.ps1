@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline#
-function Get-DbaDatabaseState {
+function Get-DbaDbState {
     <#
 .SYNOPSIS
 Gets various options for databases, hereby called "states"
@@ -38,25 +38,25 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-https://dbatools.io/Get-DbaDatabaseState
+https://dbatools.io/Get-DbaDbState
 
 .EXAMPLE
-Get-DbaDatabaseState -SqlInstance sqlserver2014a
+Get-DbaDbState -SqlInstance sqlserver2014a
 
 Gets options for all databases of the sqlserver2014a instance
 
 .EXAMPLE
-Get-DbaDatabaseState -SqlInstance sqlserver2014a -Database HR, Accounting
+Get-DbaDbState -SqlInstance sqlserver2014a -Database HR, Accounting
 
 Gets options for both HR and Accounting database of the sqlserver2014a instance
 
 .EXAMPLE
-Get-DbaDatabaseState -SqlInstance sqlserver2014a -Exclude HR
+Get-DbaDbState -SqlInstance sqlserver2014a -Exclude HR
 
 Gets options for all databases of the sqlserver2014a instance except HR
 
 .EXAMPLE
-'sqlserver2014a', 'sqlserver2014b' | Get-DbaDatabaseState
+'sqlserver2014a', 'sqlserver2014b' | Get-DbaDbState
 
 Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 

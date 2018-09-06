@@ -1,4 +1,4 @@
-function Invoke-DbaDatabaseUpgrade {
+function Invoke-DbaDbUpgrade {
     <#
     .SYNOPSIS
     Take a database and upgrades it to compatibility of the SQL Instance its hosted on. Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/
@@ -64,10 +64,10 @@ function Invoke-DbaDatabaseUpgrade {
 
 
     .LINK
-        https://dbatools.io/Invoke-DbaDatabaseUpgrade
+        https://dbatools.io/Invoke-DbaDbUpgrade
 
     .EXAMPLE
-        Invoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-MSD01 -Database Test
+        Invoke-DbaDbUpgrade -SqlInstance PRD-SQL-MSD01 -Database Test
 
         Runs the below processes against the databases
         -- Puts compatibility of database to level of SQL Instance
@@ -77,19 +77,19 @@ function Invoke-DbaDatabaseUpgrade {
         -- Runs sp_refreshview against every view in the database
 
     .EXAMPLE
-        Invoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -NoRefreshView
+        Invoke-DbaDbUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -NoRefreshView
 
         Runs the upgrade command skipping the sp_refreshview update on all views
 
     .EXAMPLE
-        Invoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -Force
+        Invoke-DbaDbUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -Force
 
         If database Test is already at the correct compatibility, runs every necessary step
 
     .EXAMPLE
-        Get-DbaDatabase -SqlInstance sql2016 | Out-GridView -Passthru | Invoke-DbaDatabaseUpgrade
+        Get-DbaDatabase -SqlInstance sql2016 | Out-GridView -Passthru | Invoke-DbaDbUpgrade
 
-        Get only specific databases using GridView and pass those to Invoke-DbaDatabaseUpgrade
+        Get only specific databases using GridView and pass those to Invoke-DbaDbUpgrade
 #>
     [CmdletBinding(SupportsShouldProcess)]
     Param (

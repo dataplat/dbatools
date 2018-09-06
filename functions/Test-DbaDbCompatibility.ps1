@@ -1,4 +1,4 @@
-function Test-DbaDatabaseCompatibility {
+function Test-DbaDbCompatibility {
     <#
         .SYNOPSIS
             Compares Database Compatibility level to Server Compatibility
@@ -33,25 +33,25 @@ function Test-DbaDatabaseCompatibility {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Test-DbaDatabaseCompatibility
+            https://dbatools.io/Test-DbaDbCompatibility
 
         .EXAMPLE
-            Test-DbaDatabaseCompatibility -SqlInstance sqlserver2014a
+            Test-DbaDbCompatibility -SqlInstance sqlserver2014a
 
             Returns server name, database name and true/false if the compatibility level match for all databases on sqlserver2014a.
 
         .EXAMPLE
-            Test-DbaDatabaseCompatibility -SqlInstance sqlserver2014a -Database db1, db2
+            Test-DbaDbCompatibility -SqlInstance sqlserver2014a -Database db1, db2
 
             Returns detailed information for database and server compatibility level for the db1 and db2 databases on sqlserver2014a.
 
         .EXAMPLE
-            Test-DbaDatabaseCompatibility -SqlInstance sqlserver2014a, sql2016 -Exclude db1
+            Test-DbaDbCompatibility -SqlInstance sqlserver2014a, sql2016 -Exclude db1
 
             Returns detailed information for database and server compatibility level for all databases except db1 on sqlserver2014a and sql2016.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sql2014 | Test-DbaDatabaseCompatibility
+            Get-DbaRegisteredServer -SqlInstance sql2014 | Test-DbaDbCompatibility
 
             Returns db/server compatibility information for every database on every server listed in the Central Management Server on sql2016.
     #>

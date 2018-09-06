@@ -1205,7 +1205,7 @@ function Copy-DbaDatabase {
                                 $dbOwner = Get-SaLoginName -SqlInstance $destServer
                             }
                             Write-Message -Level Verbose -Message "Updating database owner to $dbOwner."
-                            $OwnerResult = Set-DbaDatabaseOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -EnableException
+                            $OwnerResult = Set-DbaDbOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -EnableException
                             if ($OwnerResult.Length -eq 0) {
                                 Write-Message -Level Verbose -Message "Failed to update database owner."
                             }
@@ -1343,7 +1343,7 @@ function Copy-DbaDatabase {
                     if ($SetSourceOffline -and $sourceServer.databases[$DestinationdbName].status -notlike '*offline*') {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Setting $DestinationdbName offline on $source")) {
                             Stop-DbaProcess -SqlInstance $sourceServer -Database $DestinationdbName
-                            Set-DbaDatabaseState -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential -database $DestinationdbName -Offline
+                            Set-DbaDbState -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential -database $DestinationdbName -Offline
                         }
                     }
 

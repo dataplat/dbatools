@@ -56,7 +56,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             select 'PAGE: '+convert(varchar(3),DB_ID())+':1:'+convert(varchar(15),@pageid)
         "
        $page =  (Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $Pagesql).Column1
-       $file = Get-DbaDatabaseFile -SqlInstance $script:instance1 -Database $WaitResourceDB | Where-Object TypeDescription -eq 'ROWS'
+       $file = Get-DbaDbFile -SqlInstance $script:instance1 -Database $WaitResourceDB | Where-Object TypeDescription -eq 'ROWS'
        $results = Get-DbaWaitResource -SqlInstance $script:instance1 -WaitResource $page
        It "Should return databasename $WaitResourceDB" {
            $results.DatabaseName | Should Be $WaitResourceDB

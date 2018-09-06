@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $server.Query("CREATE DATABASE $backuprestoredb; ALTER DATABASE $backuprestoredb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server.Query("CREATE DATABASE $detachattachdb; ALTER DATABASE $detachattachdb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
         $server.Query("CREATE DATABASE $backuprestoredb2; ALTER DATABASE $backuprestoredb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
-        $null = Set-DbaDatabaseOwner -SqlInstance $script:instance2 -Database $backuprestoredb, $detachattachdb -TargetLogin sa
+        $null = Set-DbaDbOwner -SqlInstance $script:instance2 -Database $backuprestoredb, $detachattachdb -TargetLogin sa
     }
     AfterAll {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $backuprestoredb, $detachattachdb, $backuprestoredb2
@@ -152,7 +152,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $newname = "copy$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -NewName $newname
             $results[0].DestinationDatabase | Should -Be $newname
-            $files  = Get-DbaDatabaseFile -Sqlinstance $script:instance3 -Database $newname
+            $files  = Get-DbaDbFile -Sqlinstance $script:instance3 -Database $newname
             ($files.PhysicalName -like  "*$newname*").count | Should -Be $files.count
         }
 
@@ -166,7 +166,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $prefix = "da$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath -Prefix $prefix
             $results[0].DestinationDatabase | Should -Be "$prefix$backuprestoredb"
-            $files  = Get-DbaDatabaseFile -Sqlinstance $script:instance3 -Database "$prefix$backuprestoredb"
+            $files  = Get-DbaDbFile -Sqlinstance $script:instance3 -Database "$prefix$backuprestoredb"
             ($files.PhysicalName -like  "*$prefix$backuprestoredb*").count | Should -Be $files.count
         }
     }
@@ -180,7 +180,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $newname = "copy$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -DetachAttach -NewName $newname -Reattach
             $results[0].DestinationDatabase | Should -Be $newname
-            $files  = Get-DbaDatabaseFile -Sqlinstance $script:instance3 -Database $newname
+            $files  = Get-DbaDbFile -Sqlinstance $script:instance3 -Database $newname
             ($files.PhysicalName -like  "*$newname*").count | Should -Be $files.count
         }
 
@@ -188,7 +188,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $prefix = "copy$(Get-Random)"
             $results = Copy-DbaDatabase -Source $script:instance2 -Destination $script:instance3 -Database $backuprestoredb -DetachAttach -Reattach -Prefix $prefix
             $results[0].DestinationDatabase | Should -Be "$prefix$backuprestoredb"
-            $files  = Get-DbaDatabaseFile -Sqlinstance $script:instance3 -Database "$prefix$backuprestoredb"
+            $files  = Get-DbaDbFile -Sqlinstance $script:instance3 -Database "$prefix$backuprestoredb"
             ($files.PhysicalName -like  "*$prefix$backuprestoredb*").count | Should -Be $files.count
         }
 

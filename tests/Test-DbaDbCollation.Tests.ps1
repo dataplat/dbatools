@@ -16,7 +16,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "confirms the db is the same collation as the server" {
-            $result = Test-DbaDatabaseCollation -SqlInstance $script:instance1 -Database $db1
+            $result = Test-DbaDbCollation -SqlInstance $script:instance1 -Database $db1
             $result.IsEqual
         }
     }

@@ -1,4 +1,4 @@
-function Test-DbaDatabaseCollation {
+function Test-DbaDbCollation {
     <#
         .SYNOPSIS
             Compares Database Collations to Server Collation
@@ -33,25 +33,25 @@ function Test-DbaDatabaseCollation {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Test-DbaDatabaseCollation
+            https://dbatools.io/Test-DbaDbCollation
 
         .EXAMPLE
-            Test-DbaDatabaseCollation -SqlInstance sqlserver2014a
+            Test-DbaDbCollation -SqlInstance sqlserver2014a
 
             Returns server name, database name and true/false if the collations match for all databases on sqlserver2014a.
 
         .EXAMPLE
-            Test-DbaDatabaseCollation -SqlInstance sqlserver2014a -Database db1, db2
+            Test-DbaDbCollation -SqlInstance sqlserver2014a -Database db1, db2
 
             Returns information for the db1 and db2 databases on sqlserver2014a.
 
         .EXAMPLE
-            Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Exclude db1
+            Test-DbaDbCollation -SqlInstance sqlserver2014a, sql2016 -Exclude db1
 
             Returns information for database and server collations for all databases except db1 on sqlserver2014a and sql2016.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sql2016 | Test-DbaDatabaseCollation
+            Get-DbaRegisteredServer -SqlInstance sql2016 | Test-DbaDbCollation
 
             Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016.
     #>

@@ -32,7 +32,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
-        $trueTest = (Get-DbaDatabaseFile -SqlInstance $script:instance2 -Database master)[0].PhysicalName
+        $trueTest = (Get-DbaDbFile -SqlInstance $script:instance2 -Database master)[0].PhysicalName
         if ($trueTest.Length -eq 0) {
             It "has failed setup" {
                 Set-TestInconclusive -message "Setup failed"

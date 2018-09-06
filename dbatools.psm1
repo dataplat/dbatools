@@ -268,7 +268,7 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"    = "Copy-SqlDatabaseAssembly"
-        "Definition"   = "Copy-DbaDatabaseAssembly"
+        "Definition"   = "Copy-DbaDbAssembly"
     },
     @{
         "AliasName"    = "Copy-SqlDatabaseMail"
@@ -492,7 +492,7 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"    = "Get-DbaDatabaseFreeSpace"
-        "Definition"   = "Get-DbaDatabaseSpace"
+        "Definition"   = "Get-DbaDbSpace"
     },
     @{
         "AliasName"    = "Set-DbaQueryStoreConfig"
@@ -601,7 +601,7 @@ Write-ImportTime -Text "Script: Maintenance"
         "Definition" = "Get-DbaAgentJobCategory"
     },
     @{
-        "AliasName"  = "Invoke-DbaDatabaseShrink"
+        "AliasName"  = "Invoke-DbaDbShrink"
         "Definition" = "Invoke-DbaDbShrink"
     },
     @{

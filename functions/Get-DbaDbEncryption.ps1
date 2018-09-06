@@ -1,4 +1,4 @@
-function Get-DbaDatabaseEncryption {
+function Get-DbaDbEncryption {
     <#
         .SYNOPSIS
             Returns a summary of encryption used on databases passed to it.
@@ -34,25 +34,25 @@ function Get-DbaDatabaseEncryption {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Get-DbaDatabaseEncryption
+            https://dbatools.io/Get-DbaDbEncryption
 
         .EXAMPLE
-            Get-DbaDatabaseEncryption -SqlInstance DEV01
+            Get-DbaDbEncryption -SqlInstance DEV01
 
             List all encryption found on the instance by database
 
         .EXAMPLE
-            Get-DbaDatabaseEncryption -SqlInstance DEV01 -Database MyDB
+            Get-DbaDbEncryption -SqlInstance DEV01 -Database MyDB
 
             List all encryption found for the MyDB database.
 
         .EXAMPLE
-            Get-DbaDatabaseEncryption -SqlInstance DEV01 -ExcludeDatabase MyDB
+            Get-DbaDbEncryption -SqlInstance DEV01 -ExcludeDatabase MyDB
 
             List all encryption found for all databases except MyDB.
 
         .EXAMPLE
-            Get-DbaDatabaseEncryption -SqlInstance DEV01 -IncludeSystemDBs
+            Get-DbaDbEncryption -SqlInstance DEV01 -IncludeSystemDBs
 
             List all encryption found for all databases including the system databases.
     #>

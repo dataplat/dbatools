@@ -1,10 +1,10 @@
-function Get-DbaDatabaseUser {
+function Get-DbaDbPartitionScheme {
     <#
 .SYNOPSIS
-Gets database users
+Gets database Partition Schemes
 
 .DESCRIPTION
-Gets database users
+Gets database Partition Schemes
 
 .PARAMETER SqlInstance
 The target SQL Server instance(s)
@@ -18,16 +18,13 @@ To get users from specific database(s)
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto populated from the server
 
-.PARAMETER ExcludeSystemUser
-This switch removes all system objects from the user collection
-
 .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
-Tags: Security, Database
+Tags: Database
 Author: Klaas Vandenberghe ( @PowerDbaKlaas )
 
 Website: https://dbatools.io
@@ -35,29 +32,24 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
-Get-DbaDatabaseUser -SqlInstance sql2016
+Get-DbaDbPartitionScheme -SqlInstance sql2016
 
-Gets all database users
-
-.EXAMPLE
-Get-DbaDatabaseUser -SqlInstance Server1 -Database db1
-
-Gets the users for the db1 database
+Gets all database Partition Schemes
 
 .EXAMPLE
-Get-DbaDatabaseUser -SqlInstance Server1 -ExcludeDatabase db1
+Get-DbaDbPartitionScheme -SqlInstance Server1 -Database db1
 
-Gets the users for all databases except db1
-
-.EXAMPLE
-Get-DbaDatabaseUser -SqlInstance Server1 -ExcludeSystemUser
-
-Gets the users for all databases that are not system objects, like 'dbo', 'guest' or 'INFORMATION_SCHEMA'
+Gets the Partition Schemes for the db1 database
 
 .EXAMPLE
-'Sql1','Sql2/sqlexpress' | Get-DbaDatabaseUser
+Get-DbaDbPartitionScheme -SqlInstance Server1 -ExcludeDatabase db1
 
-Gets the users for the databases on Sql1 and Sql2/sqlexpress
+Gets the Partition Schemes for all databases except db1
+
+.EXAMPLE
+'Sql1','Sql2/sqlexpress' | Get-DbaDbPartitionScheme
+
+Gets the Partition Schemes for the databases on Sql1 and Sql2/sqlexpress
 
 #>
     [CmdletBinding()]
@@ -68,7 +60,6 @@ Gets the users for the databases on Sql1 and Sql2/sqlexpress
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [switch]$ExcludeSystemUser,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -93,25 +84,26 @@ Gets the users for the databases on Sql1 and Sql2/sqlexpress
             }
 
             foreach ($db in $databases) {
-
-                $users = $db.users
-
-                if (!$users) {
-                    Write-Message -Message "No users exist in the $db database on $instance" -Target $db -Level Verbose
+                if (!$db.IsAccessible) {
+                    Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
                     continue
                 }
-                if (Test-Bound -ParameterName ExcludeSystemUser) {
-                    $users = $users | Where-Object { $_.IsSystemObject -eq $false }
+
+                $PartitionSchemes = $db.PartitionSchemes
+
+                if (!$PartitionSchemes) {
+                    Write-Message -Message "No Partition Schemes exist in the $db database on $instance" -Target $db -Level Verbose
+                    continue
                 }
 
-                $users | foreach {
+                $PartitionSchemes | foreach {
 
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
 
-                    Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, Name, Login, LoginType, AuthenticationType, State, HasDbAccess, DefaultSchema
+                    Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, Name, PartitionFunction
                 }
             }
         }

@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Get-DbaDatabaseFile {
+function Get-DbaDbFile {
     <#
     .SYNOPSIS
     Returns detailed information about database files.
@@ -35,17 +35,17 @@ function Get-DbaDatabaseFile {
     License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
-    Get-DbaDatabaseFile -SqlInstance sql2016
+    Get-DbaDbFile -SqlInstance sql2016
 
     Will return an object containing all filegroups and their contained files for every database on the sql2016 SQL Server instance
 
     .EXAMPLE
-    Get-DbaDatabaseFile -SqlInstance sql2016 -Database Impromptu
+    Get-DbaDbFile -SqlInstance sql2016 -Database Impromptu
 
     Will return an object containing all filegroups and their contained files for the Impromptu Database on the sql2016 SQL Server instance
 
     .EXAMPLE
-    Get-DbaDatabaseFile -SqlInstance sql2016 -Database Impromptu, Trading
+    Get-DbaDbFile -SqlInstance sql2016 -Database Impromptu, Trading
 
     Will return an object containing all filegroups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance
 
@@ -156,7 +156,7 @@ function Get-DbaDatabaseFile {
                 }
                 Write-Message -Level Verbose -Message "Querying database $db"
 
-                $version = Test-DbaDatabaseCompatibility -SqlInstance $server -Database $db.Name | Select-Object DatabaseCompatibility
+                $version = Test-DbaDbCompatibility -SqlInstance $server -Database $db.Name | Select-Object DatabaseCompatibility
                 $version = + ($version.DatabaseCompatibility.ToString().replace("Version", "")) / 10
 
                 if ($version -ge 11) {
