@@ -1,4 +1,4 @@
-function New-DbaPublishProfile {
+function New-DbaDtaProfile {
     <#
         .SYNOPSIS
             Creates a new Publish Profile.
@@ -41,16 +41,16 @@ function New-DbaPublishProfile {
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
         .LINK
-            https://dbatools.io/New-DbaPublishProfile
+            https://dbatools.io/New-DbaDtaProfile
 
         .EXAMPLE
-        New-DbaPublishProfile -SqlInstance sql2017 -SqlCredential (Get-Credential) -Database WorldWideImporters -Path C:\temp
+        New-DbaDtaProfile -SqlInstance sql2017 -SqlCredential (Get-Credential) -Database WorldWideImporters -Path C:\temp
 
         In this example, a prompt will appear for alternative credentials, then a connection will be made to sql2017. Using that connection,
         the ConnectionString will be extracted and used within the Publish Profile XML file which will be created at C:\temp\sql2017-WorldWideImporters-publish.xml
 
         .EXAMPLE
-        New-DbaPublishProfile -Database WorldWideImporters -Path C:\temp -ConnectionString "SERVER=(localdb)\MSSQLLocalDB;Integrated Security=True;Database=master"
+        New-DbaDtaProfile -Database WorldWideImporters -Path C:\temp -ConnectionString "SERVER=(localdb)\MSSQLLocalDB;Integrated Security=True;Database=master"
 
         In this example, no connections are made, and a Publish Profile XML would be created at C:\temp\localdb-MSSQLLocalDB-WorldWideImporters-publish.xml
     #>
