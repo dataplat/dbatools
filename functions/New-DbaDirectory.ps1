@@ -57,6 +57,8 @@ function New-DbaDirectory {
         [switch]$EnableException
     )
     
+    Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaSqlDirectory
+    
     foreach ($instance in $SqlInstance) {
         try {
             Write-Message -Level Verbose -Message "Connecting to $instance."
@@ -91,8 +93,5 @@ function New-DbaDirectory {
             Path    = $Path
             Created = $Created
         }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias New-DbaSqlDirectory
     }
 }
