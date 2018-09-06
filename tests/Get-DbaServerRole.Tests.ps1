@@ -33,7 +33,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Mock Stop-Function { } -ModuleName dbatools
         }
         It "Should Call Stop-Function if instance does not exist or connection failure" {
-            Set-DbaConfig -FullName sql.connection.timeout -Value 1
+            Set-DbatoolsConfig -FullName sql.connection.timeout -Value 1
             Get-DbaServerRole -SqlInstance Dummy | Should Be
         }
         It "Validates that Stop Function Mock has been called" {

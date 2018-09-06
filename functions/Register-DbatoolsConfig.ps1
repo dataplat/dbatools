@@ -1,4 +1,4 @@
-﻿function Register-DbaConfig {
+﻿function Register-DbatoolsConfig {
     <#
         .SYNOPSIS
             Registers an existing configuration object in registry.
@@ -10,7 +10,7 @@
 
         .PARAMETER Config
             The configuration object to write to registry.
-            Can be retrieved using Get-DbaConfig.
+            Can be retrieved using Get-DbatoolsConfig.
 
         .PARAMETER FullName
             The full name of the setting to be written to registry.
@@ -37,17 +37,17 @@
             Author: Friedrich Weinmann
 
         .EXAMPLE
-            PS C:\> Get-DbaConfig message.* | Register-DbaConfig
+            PS C:\> Get-DbatoolsConfig message.* | Register-DbatoolsConfig
 
             Retrieves all configuration items that that start with message. and registers them in registry for the current user.
 
         .EXAMPLE
-            PS C:\> Register-DbaConfig -FullName "developer.mode.enable" -Scope SystemDefault
+            PS C:\> Register-DbatoolsConfig -FullName "developer.mode.enable" -Scope SystemDefault
 
             Retrieves the configuration item "developer.mode.enable" and registers it in registry as the default setting for all users on this machine.
 
         .EXAMPLE
-            PS C:\> Register-DbaConfig -Module message -Scope SystemMandatory
+            PS C:\> Register-DbatoolsConfig -Module message -Scope SystemMandatory
 
             Retrieves all configuration items of the module MyModule, then registers them in registry to enforce them for all users on the current system.
     #>

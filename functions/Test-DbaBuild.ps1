@@ -136,7 +136,7 @@ function Test-DbaBuild {
         function Get-DbaBuildReferenceIndex {
             [CmdletBinding()]
 
-            $DbatoolsData = Get-DbaConfigValue -Name 'Path.DbatoolsData'
+            $DbatoolsData = Get-DbatoolsConfigValue -Name 'Path.DbatoolsData'
             $writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
             $result = Get-Content $writable_idxfile -Raw | ConvertFrom-Json
             $result.Data | Select-Object @{ Name = "VersionObject"; Expression = { [version]$_.Version } }, *

@@ -94,7 +94,7 @@ function Get-DbaBuildReference {
             )
 
             $orig_idxfile = "$Moduledirectory\bin\dbatools-buildref-index.json"
-            $DbatoolsData = Get-DbaConfigValue -Name 'Path.DbatoolsData'
+            $DbatoolsData = Get-DbatoolsConfigValue -Name 'Path.DbatoolsData'
             $writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
 
             if (-not (Test-Path $orig_idxfile)) {
@@ -162,7 +162,7 @@ function Get-DbaBuildReference {
                 [bool]
                 $EnableException
             )
-            $url = Get-DbaConfigValue -Name 'assets.sqlbuildreference'
+            $url = Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference'
             try {
                 $WebContent = Invoke-WebRequest $url -ErrorAction Stop
             }

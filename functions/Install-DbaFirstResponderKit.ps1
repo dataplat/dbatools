@@ -99,7 +99,7 @@ function Install-DbaFirstResponderKit {
     )
 
     begin {
-        $DbatoolsData = Get-DbaConfigValue -FullName "Path.DbatoolsData"
+        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
 
         $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
 

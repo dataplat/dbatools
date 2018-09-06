@@ -156,7 +156,7 @@ function Find-DbaCommand {
                     $x = Get-DbaHelp "$command"
                     $helpcoll.Add($x)
                 }
-                # $dest = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
+                # $dest = Get-DbatoolsConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
                 $dest = "$moduleDirectory\bin\dbatools-index.json"
                 $helpcoll | ConvertTo-Json | Out-File $dest -Encoding UTF8
             }
