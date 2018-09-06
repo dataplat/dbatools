@@ -1,4 +1,4 @@
-﻿[
+[
     {
         "CommandName":  "Add-DbaComputerCertificate",
         "Description":  "Adds a computer certificate from a local or remote computer.",
