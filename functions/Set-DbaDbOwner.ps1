@@ -1,4 +1,4 @@
-function Set-DbaDatabaseOwner {
+function Set-DbaDbOwner {
     <#
         .SYNOPSIS
             Sets database owners with a desired login if databases do not match that owner.
@@ -43,20 +43,20 @@ function Set-DbaDatabaseOwner {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Set-DbaDatabaseOwner
+            https://dbatools.io/Set-DbaDbOwner
 
         .EXAMPLE
-            Set-DbaDatabaseOwner -SqlInstance localhost
+            Set-DbaDbOwner -SqlInstance localhost
 
             Sets database owner to 'sa' on all databases where the owner does not match 'sa'.
 
         .EXAMPLE
-            Set-DbaDatabaseOwner -SqlInstance localhost -TargetLogin DOMAIN\account
+            Set-DbaDbOwner -SqlInstance localhost -TargetLogin DOMAIN\account
 
             Sets the database owner to DOMAIN\account on all databases where the owner does not match DOMAIN\account.
 
         .EXAMPLE
-            Set-DbaDatabaseOwner -SqlInstance sqlserver -Database db1, db2
+            Set-DbaDbOwner -SqlInstance sqlserver -Database db1, db2
 
             Sets database owner to 'sa' on the db1 and db2 databases if their current owner does not match 'sa'.
     #>

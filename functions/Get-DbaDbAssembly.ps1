@@ -1,11 +1,11 @@
 #ValidationTags#Messaging,FlowControl,CodeStyle#
-function Get-DbaDatabaseAssembly {
+function Get-DbaDbAssembly {
     <#
         .SYNOPSIS
             Gets SQL Database Assembly information for each instance(s) of SQL Server.
 
         .DESCRIPTION
-            The Get-DbaDatabaseAssembly command gets SQL Database Assembly information for each instance(s) of SQL Server.
+            The Get-DbaDbAssembly command gets SQL Database Assembly information for each instance(s) of SQL Server.
 
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
@@ -27,15 +27,15 @@ function Get-DbaDatabaseAssembly {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Get-DbaDatabaseAssembly
+            https://dbatools.io/Get-DbaDbAssembly
 
         .EXAMPLE
-            Get-DbaDatabaseAssembly -SqlInstance localhost
+            Get-DbaDbAssembly -SqlInstance localhost
 
             Returns all Database Assembly on the local default SQL Server instance
 
         .EXAMPLE
-            Get-DbaDatabaseAssembly -SqlInstance localhost, sql2016
+            Get-DbaDbAssembly -SqlInstance localhost, sql2016
 
             Returns all Database Assembly for the local and sql2016 SQL Server instances
     #>

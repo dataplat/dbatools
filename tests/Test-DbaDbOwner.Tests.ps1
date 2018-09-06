@@ -15,7 +15,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     
     It "return the correct information including database, currentowner and targetowner" {
         $whoami = whoami
-        $results = Test-DbaDatabaseOwner -SqlInstance $script:instance1 -Database $dbname
+        $results = Test-DbaDbOwner -SqlInstance $script:instance1 -Database $dbname
         $results.Database -eq $dbname
         $results.CurrentOwner -eq $whoami
         $results.TargetOwner -eq 'sa'
@@ -33,7 +33,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
         #>
         $paramCount = 7
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaDatabaseOwner).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Test-DbaDbOwner).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'TargetLogin', 'EnableException', 'Detailed'
         It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
@@ -64,7 +64,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                     } #object
                 } #mock connect-sqlserver
                 
-                { Test-DbaDatabaseOwner -SqlInstance 'SQLServerName' } | Should Not throw
+                { Test-DbaDbOwner -SqlInstance 'SQLServerName' } | Should Not throw
             } #It
             It -Skip "Should not return if no wrong owner for default" {
                 Mock Connect-SQLInstance -MockWith {
@@ -86,7 +86,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                     } #object
                 } #mock connect-sqlserver
                 
-                { Test-DbaDatabaseOwner -SqlInstance 'SQLServerName' } | Should Not throw
+                { Test-DbaDbOwner -SqlInstance 'SQLServerName' } | Should Not throw
             } #It
             It -Skip "Should return wrong owner information for one database with no owner specified" {
                 Mock Connect-SQLInstance -MockWith {
@@ -108,7 +108,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                     } #object
                 } #mock connect-sqlserver
                 
-                $Result = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName'
+                $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result[0].SqlInstance | Should Be 'SQLServerName'
                 $Result[0].Database | Should Be 'db1';
                 $Result[0].DBState | Should Be 'Normal';
@@ -136,7 +136,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                     } #object
                 } #mock connect-sqlserver
                 
-                $Result = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName'
+                $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result.SqlInstance | Should Be 'SQLServerName'
                 $Result.Database | Should Be 'db1';
                 $Result.DBState | Should Be 'Normal';
@@ -169,7 +169,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                     } #object
                 } #mock connect-sqlserver
                 
-                $Result = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName'
+                $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result[0].SqlInstance | Should Be 'SQLServerName'
                 $Result[0].Database | Should Be 'db1';
                 $Result[0].DBState | Should Be 'Normal';
@@ -202,7 +202,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                     } #object
                 } #mock connect-sqlserver
                 
-                $Result = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName'
+                $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result[0].SqlInstance | Should Be 'SQLServerName'
                 $Result[1].SqlInstance | Should Be 'SQLServerName'
                 $Result[0].Database | Should Be 'db1';
@@ -243,7 +243,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                 } #mock connect-sqlserver
                 Mock Stop-Function { }
                 
-                $null = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName' -TargetLogin 'WrongLogin'
+                $null = Test-DbaDbOwner -SqlInstance 'SQLServerName' -TargetLogin 'WrongLogin'
                 $assertMockParams = @{
                     'CommandName'  = 'Stop-Function'
                     'Times'        = 1
@@ -276,7 +276,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
                     } #object
                 } #mock connect-sqlserver
                 
-                $Result = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName'
+                $Result = Test-DbaDbOwner -SqlInstance 'SQLServerName'
                 $Result[0].SqlInstance | Should Be 'SQLServerName'
                 $Result[1].SqlInstance | Should Be 'SQLServerName'
                 $Result[0].Database | Should Be 'db1'

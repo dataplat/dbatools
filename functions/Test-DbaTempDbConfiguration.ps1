@@ -116,7 +116,7 @@ function Test-DbaTempDbConfiguration {
             Write-Message -Level Verbose -Message "TF 1118 evaluated"
 
             #get files and log files
-            $tempdbFiles = Get-DbaDatabaseFile -SqlInstance $server -Database tempdb
+            $tempdbFiles = Get-DbaDbFile -SqlInstance $server -Database tempdb
             [array]$dataFiles = $tempdbFiles | Where-Object Type -ne 1
             $logFiles = $tempdbFiles | Where-Object Type -eq 1
             Write-Message -Level Verbose -Message "TempDB file objects gathered"

@@ -1,10 +1,10 @@
-function Get-DbaDatabaseUdf {
+function Get-DbaDbPartitionFunction {
     <#
 .SYNOPSIS
-Gets database User Defined Functions
+Gets database Partition Functions
 
 .DESCRIPTION
-Gets database User Defined Functions
+Gets database Partition Functions
 
 .PARAMETER SqlInstance
 The target SQL Server instance(s)
@@ -13,13 +13,10 @@ The target SQL Server instance(s)
 Allows you to login to SQL Server using alternative credentials
 
 .PARAMETER Database
-To get User Defined Functions from specific database(s)
+To get users from specific database(s)
 
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto populated from the server
-
-.PARAMETER ExcludeSystemUdf
-This switch removes all system objects from the UDF collection
 
 .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -27,7 +24,7 @@ This switch removes all system objects from the UDF collection
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
-Tags: Security, Database
+Tags: Database
 Author: Klaas Vandenberghe ( @PowerDbaKlaas )
 
 Website: https://dbatools.io
@@ -35,29 +32,24 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: MIT https://opensource.org/licenses/MIT
 
 .EXAMPLE
-Get-DbaDatabaseUdf -SqlInstance sql2016
+Get-DbaDbPartitionFunction -SqlInstance sql2016
 
-Gets all database User Defined Functions
-
-.EXAMPLE
-Get-DbaDatabaseUdf -SqlInstance Server1 -Database db1
-
-Gets the User Defined Functions for the db1 database
+Gets all database Partition Functions
 
 .EXAMPLE
-Get-DbaDatabaseUdf -SqlInstance Server1 -ExcludeDatabase db1
+Get-DbaDbPartitionFunction -SqlInstance Server1 -Database db1
 
-Gets the User Defined Functions for all databases except db1
-
-.EXAMPLE
-Get-DbaDatabaseUdf -SqlInstance Server1 -ExcludeSystemUdf
-
-Gets the User Defined Functions for all databases that are not system objects (there can be 100+ system User Defined Functions in each DB)
+Gets the Partition Functions for the db1 database
 
 .EXAMPLE
-'Sql1','Sql2/sqlexpress' | Get-DbaDatabaseUdf
+Get-DbaDbPartitionFunction -SqlInstance Server1 -ExcludeDatabase db1
 
-Gets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress
+Gets the Partition Functions for all databases except db1
+
+.EXAMPLE
+'Sql1','Sql2/sqlexpress' | Get-DbaDbPartitionFunction
+
+Gets the Partition Functions for the databases on Sql1 and Sql2/sqlexpress
 
 #>
     [CmdletBinding()]
@@ -68,7 +60,6 @@ Gets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [switch]$ExcludeSystemUdf,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -93,25 +84,26 @@ Gets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress
             }
 
             foreach ($db in $databases) {
-
-                $UserDefinedFunctions = $db.UserDefinedFunctions
-
-                if (!$UserDefinedFunctions) {
-                    Write-Message -Message "No User Defined Functions exist in the $db database on $instance" -Target $db -Level Verbose
+                if (!$db.IsAccessible) {
+                    Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
                     continue
                 }
-                if (Test-Bound -ParameterName ExcludeSystemUdf) {
-                    $UserDefinedFunctions = $UserDefinedFunctions | Where-Object { $_.IsSystemObject -eq $false }
+
+                $partitionfunctions = $db.partitionfunctions
+
+                if (!$partitionfunctions) {
+                    Write-Message -Message "No Partition Functions exist in the $db database on $instance" -Target $db -Level Verbose
+                    continue
                 }
 
-                $UserDefinedFunctions | foreach {
+                $partitionfunctions | foreach {
 
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
 
-                    Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, Schema, CreateDate, DateLastModified, Name, DataType
+                    Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, Name, NumberOfPartitions
                 }
             }
         }
