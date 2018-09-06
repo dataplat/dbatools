@@ -642,8 +642,8 @@ Write-ImportTime -Text "Script: Maintenance"
         "Definition" = "Get-DbaDbFile"
     },
     @{
-        "AliasName"  = "Get-DbaDatabasePartition"
-        "Definition" = "Get-DbaDbPartition"
+        "AliasName"  = "Get-DbaDatabasePartitionFunction"
+        "Definition" = "Get-DbaDbPartitionFunction"
     },
     @{
         "AliasName"  = "Get-DbaDatabasePartitionScheme"
