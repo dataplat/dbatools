@@ -78,7 +78,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools.cfg > $NULL;
                     }
                     Write-Message -Level Verbose -Message "Getting SQL Service Accounts on $computer"
-                    $SQLServiceAccounts = (Get-DbaSqlService -ComputerName $computer -Type Engine).StartName
+                    $SQLServiceAccounts = (Get-DbaService -ComputerName $computer -Type Engine).StartName
                     if ($SQLServiceAccounts.count -ge 1) {
                         Write-Message -Level Verbose -Message "Setting Privileges on $Computer"
                         Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $BatchLogon, $IFI, $LPIM -ScriptBlock {

@@ -106,7 +106,7 @@ function Copy-DbaSsisCatalog {
             param (
                 [Object]$Computer
             )
-            $result = Get-DbaSqlService -ComputerName $Computer -Type SSIS
+            $result = Get-DbaService -ComputerName $Computer -Type SSIS
             if ($result) {
                 $running = $false
                 foreach ($service in $result) {

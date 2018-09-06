@@ -119,7 +119,7 @@ function Test-DbaBackupInformation {
                 $DBFileCheck = ($RegisteredFileCheck | Where-Object Name -eq $Database).PhysicalName
                 $OtherFileCheck = ($RegisteredFileCheck | Where-Object Name -ne $Database).PhysicalName
                 $DBHistoryPhysicalPaths = ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object PhysicalName -Unique).PhysicalName
-                $DBHistoryPhysicalPathsTest = Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $DBHistoryPhysicalPaths
+                $DBHistoryPhysicalPathsTest = Test-DbaPath -SqlInstance $RestoreInstance -Path $DBHistoryPhysicalPaths
                 $DBHistoryPhysicalPathsExists = ($DBHistoryPhysicalPathsTest | Where-Object FileExists -eq $True).FilePath
                 foreach ($path in $DBHistoryPhysicalPaths) {
                     if (($DBHistoryPhysicalPathsTest | Where-Object FilePath -eq $path).FileExists) {
@@ -141,10 +141,10 @@ function Test-DbaBackupInformation {
                     }
                     else {
                         $ParentPath = Split-Path $path -Parent
-                        if (!(Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $ParentPath) ) {
+                        if (!(Test-DbaPath -SqlInstance $RestoreInstance -Path $ParentPath) ) {
                             $ConfirmMessage = "`n Creating Folder $ParentPath on $SqlInstance `n"
                             if ($Pscmdlet.ShouldProcess("$Path on $SqlInstance `n `n", $ConfirmMessage)) {
-                                if (New-DbaSqlDirectory -SqlInstance $RestoreInstance -Path $ParentPath) {
+                                if (New-DbaDirectory -SqlInstance $RestoreInstance -Path $ParentPath) {
                                     Write-Message -Message "Created Folder $ParentPath on $SqlInstance" -Level Verbose
                                 }
                                 else {
@@ -159,7 +159,7 @@ function Test-DbaBackupInformation {
 
             #Test all backups readable
             $allpaths = $DbHistory | Select-Object -ExpandProperty FullName
-            $allpaths_validity = Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $allpaths
+            $allpaths_validity = Test-DbaPath -SqlInstance $RestoreInstance -Path $allpaths
             foreach ($path in $allpaths_validity) {
                 if ($path.FileExists -eq $false) {
                     Write-Message -Message "Backup File $($path.FilePath) cannot be read" -Level Warning

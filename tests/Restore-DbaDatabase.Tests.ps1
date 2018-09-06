@@ -67,7 +67,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     
     Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 2
     
     Context "Database is restored with correct renamings" {
@@ -123,7 +123,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     
     Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 2
     
     Context "Folder restore options" {
@@ -161,7 +161,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 2
     Context "Putting all restore file modification options together" {
         $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationDataDirectory $DataFolder -DestinationLogDirectory $LogFolder -DestinationFileSuffix Suffix -DestinationFilePrefix prefix
@@ -184,7 +184,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
     Context "Database is properly removed again after all file mods test" {
         $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
@@ -194,9 +194,9 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     
     Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 5
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     
     Context "Properly restores an instance using ola-style backups via pipe" {
         $results = Get-ChildItem $script:appveyorlabrepo\sql2008-backups | Restore-DbaDatabase -SqlInstance $script:instance1
@@ -243,7 +243,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     
     Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 2
     
     Context "RestoreTime setup checks" {
@@ -264,7 +264,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
     
     Context "All user databases are removed post RestoreTime check" {
@@ -274,7 +274,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
     
     Context "RestoreTime point in time" {
@@ -298,7 +298,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
     
     Context "RestoreTime point in time with Simple Model" {
@@ -323,7 +323,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
     
     Context "RestoreTime point in time and continue" {
@@ -485,7 +485,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
     
     Get-DbaProcess $script:instance1 | Where-Object Program -match 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
@@ -498,7 +498,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
     
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
     
     Context "All user databases are removed post history test" {
@@ -515,7 +515,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             (($results | Measure-Object).count -gt 0) | Should be $True
         }
     }
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
     
     Context "All user databases are removed post history test" {

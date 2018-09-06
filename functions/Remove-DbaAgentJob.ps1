@@ -80,7 +80,7 @@ function Remove-DbaAgentJob {
         [object[]]$Job,
         [switch]$KeepHistory,
         [switch]$KeepUnusedSchedule,
-        [DbaMode]$Mode = (Get-DbaConfigValue -FullName 'message.mode.default' -Fallback "Strict"),
+        [DbaMode]$Mode = (Get-DbatoolsConfigValue -FullName 'message.mode.default' -Fallback "Strict"),
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [Alias('Silent')]

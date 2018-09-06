@@ -341,7 +341,7 @@ function Start-DbaMigration {
 
         if (-not $NoDatabaseMail) {
             Write-Message -Level Verbose -Message "Migrating database mail"
-            Copy-DbaDatabaseMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaDbMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if (-not $NoCentralManagementServer) {
@@ -395,7 +395,7 @@ function Start-DbaMigration {
 
         if (-not $NoDataCollector) {
             Write-Message -Level Verbose -Message "Migrating Data Collector collection sets"
-            Copy-DbaSqlDataCollector -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaDataCollector -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if (-not $NoAudits) {
@@ -415,7 +415,7 @@ function Start-DbaMigration {
 
         if (-not $NoPolicyManagement) {
             Write-Message -Level Verbose -Message "Migrating Policy Management"
-            Copy-DbaSqlPolicyManagement -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaPolicyManagement -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if (-not $NoResourceGovernor) {
@@ -437,7 +437,7 @@ function Start-DbaMigration {
 
         if (-not $NoAgentServer) {
             Write-Message -Level Verbose -Message "Migrating job server"
-            Copy-DbaSqlServerAgent -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
+            Copy-DbaAgentServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
         }
     }
 

@@ -24,7 +24,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         $server.Query($sql)
         # generate a login
         $null = Get-DbaDatabase -SqlInstance $script:instance2
-        $null = Get-DbaDatabaseFile -SqlInstance $script:instance2
+        $null = Get-DbaDbFile -SqlInstance $script:instance2
         # Give it a chance to write
         Start-Sleep 2
     }

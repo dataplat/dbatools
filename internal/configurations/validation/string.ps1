@@ -1,4 +1,4 @@
-﻿Register-DbaConfigValidation -Name "string" -ScriptBlock {
+﻿Register-DbatoolsConfigValidation -Name "string" -ScriptBlock {
     Param (
         $Value
     )

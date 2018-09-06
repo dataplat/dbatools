@@ -31,7 +31,7 @@ Describe "$commandName Integration Tests" -Tags "IntegrationTests" {
             return $object
         }
 
-        Mock -ModuleName 'dbatools' -CommandName 'Get-DbaSqlService' -ParameterFilter { $ComputerName.ComputerName -eq 'MadeUpServer' } -MockWith {
+        Mock -ModuleName 'dbatools' -CommandName 'Get-DbaService' -ParameterFilter { $ComputerName.ComputerName -eq 'MadeUpServer' } -MockWith {
             return @(
                 @{
                     ComputerName = 'MadeUpServer'
@@ -87,7 +87,7 @@ Describe "$commandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         Assert-MockCalled -ModuleName 'dbatools' -CommandName 'Get-DbaCmObject' -Times 0
-        Assert-MockCalled -ModuleName 'dbatools' -CommandName 'Get-DbaSqlService' -Times 0
+        Assert-MockCalled -ModuleName 'dbatools' -CommandName 'Get-DbaService' -Times 0
         Assert-MockCalled -ModuleName 'dbatools' -CommandName 'Connect-SqlInstance' -Times 0
     }
 

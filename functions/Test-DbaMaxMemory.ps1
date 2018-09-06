@@ -69,10 +69,10 @@ function Test-DbaMaxMemory {
             try {
                 Write-Message -Level Verbose -Target $instance -Message "Retrieving number of instances from $($instance.ComputerName)"
                 if ($Credential) {
-                    $serverService = Get-DbaSqlService -ComputerName $instance -Credential $Credential -EnableException
+                    $serverService = Get-DbaService -ComputerName $instance -Credential $Credential -EnableException
                 }
                 else {
-                    $serverService = Get-DbaSqlService -ComputerName $instance -EnableException
+                    $serverService = Get-DbaService -ComputerName $instance -EnableException
                 }
                 $instanceCount = ($serverService | Where-Object State -Like Running | Where-Object InstanceName | Group-Object InstanceName | Measure-Object Count).Count
             }

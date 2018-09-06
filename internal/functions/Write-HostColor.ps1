@@ -18,7 +18,7 @@
         The message to write to host.
 
     .PARAMETER DefaultColor
-        Default: (Get-DbaConfigValue -Name "message.infocolor")
+        Default: (Get-DbatoolsConfigValue -Name "message.infocolor")
         The color to write stuff to host in when no (or bad) color-code was specified.
 
     .EXAMPLE
@@ -58,7 +58,7 @@
         $String,
 
         [ConsoleColor]
-        $DefaultColor = (Get-DbaConfigValue -Name "message.infocolor")
+        $DefaultColor = (Get-DbatoolsConfigValue -Name "message.infocolor")
     )
     process {
         foreach ($line in $String) {

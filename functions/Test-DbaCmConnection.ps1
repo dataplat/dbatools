@@ -83,8 +83,8 @@ function Test-DbaCmConnection {
 
     Begin {
         #region Configuration Values
-        $disable_cache = Get-DbaConfigValue -Name "ComputerManagement.Cache.Disable.All" -Fallback $false
-        $disable_badcredentialcache = Get-DbaConfigValue -Name "ComputerManagement.Cache.Disable.BadCredentialList" -Fallback $false
+        $disable_cache = Get-DbatoolsConfigValue -Name "ComputerManagement.Cache.Disable.All" -Fallback $false
+        $disable_badcredentialcache = Get-DbatoolsConfigValue -Name "ComputerManagement.Cache.Disable.BadCredentialList" -Fallback $false
         #endregion Configuration Values
 
         #region Helper Functions
