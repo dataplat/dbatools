@@ -424,7 +424,7 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"  = "Set-SqlTempDbConfiguration"
-        "Definition" = "Set-DbaTempDbConfiguration"
+        "Definition" = "Set-DbaTempDbConfig"
     },
     @{
         "AliasName"  = "Show-SqlDatabaseList"
@@ -476,7 +476,7 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"  = "Test-SqlTempDbConfiguration"
-        "Definition" = "Test-DbaTempDbConfiguration"
+        "Definition" = "Test-DbaTempDbConfig"
     },
     @{
         "AliasName"  = "Watch-SqlDbLogin"
