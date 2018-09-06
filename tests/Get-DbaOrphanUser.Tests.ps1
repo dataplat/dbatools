@@ -29,15 +29,15 @@ CREATE DATABASE dbatoolsci_orphan;
         $server = Connect-DbaInstance -SqlInstance $script:instance1
         $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
         $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
-        $null = Invoke-DbaSqlQuery -SqlInstance $server -Query $loginsq
+        $null = Invoke-DbaQuery -SqlInstance $server -Query $loginsq
         $usersq = @'
 CREATE USER [dbatoolsci_orphan1] FROM LOGIN [dbatoolsci_orphan1];
 CREATE USER [dbatoolsci_orphan2] FROM LOGIN [dbatoolsci_orphan2];
 CREATE USER [dbatoolsci_orphan3] FROM LOGIN [dbatoolsci_orphan3];
 '@
-        Invoke-DbaSqlQuery -SqlInstance $server -Query $usersq -Database dbatoolsci_orphan
+        Invoke-DbaQuery -SqlInstance $server -Query $usersq -Database dbatoolsci_orphan
         $dropOrphan = "DROP LOGIN [dbatoolsci_orphan1];DROP LOGIN [dbatoolsci_orphan2];"
-        Invoke-DbaSqlQuery -SqlInstance $server -Query $dropOrphan
+        Invoke-DbaQuery -SqlInstance $server -Query $dropOrphan
     }
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance1

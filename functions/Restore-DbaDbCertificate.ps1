@@ -103,7 +103,7 @@ Imports all the certificates in the specified path.
                 Stop-Function -Message "Path ($fullname) must be a UNC share when SQL instance is not local." -Continue -Target $fullname
             }
 
-            if (-not (Test-DbaSqlPath -SqlInstance $server -Path $fullname)) {
+            if (-not (Test-DbaPath -SqlInstance $server -Path $fullname)) {
                 Stop-Function -Message "$SqlInstance cannot access $fullname" -Continue -Target $fullname
             }
 

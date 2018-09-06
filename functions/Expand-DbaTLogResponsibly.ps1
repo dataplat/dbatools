@@ -185,7 +185,7 @@ function Expand-DbaTLogResponsibly {
                 $backupdirectory = $server.Settings.BackupDirectory
             }
 
-            $pathexists = Test-DbaSqlPath -SqlInstance $server -Path $backupdirectory
+            $pathexists = Test-DbaPath -SqlInstance $server -Path $backupdirectory
 
             if ($pathexists -eq $false) {
                 Stop-Function -Message "Backup directory does not exist."

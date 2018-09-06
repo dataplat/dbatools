@@ -149,7 +149,7 @@ function Set-DbaTempDbConfiguration {
         Write-Message -Message "Single data file size (MB): $DataFilesizeSingleMB." -Level Verbose
 
         if ($DataPath) {
-            if ((Test-DbaSqlPath -SqlInstance $server -Path $DataPath) -eq $false) {
+            if ((Test-DbaPath -SqlInstance $server -Path $DataPath) -eq $false) {
                 Stop-Function -Message "$datapath is an invalid path."
                 return
             }
@@ -162,7 +162,7 @@ function Set-DbaTempDbConfiguration {
         Write-Message -Message "Using data path: $datapath." -Level Verbose
 
         if ($LogPath) {
-            if ((Test-DbaSqlPath -SqlInstance $server -Path $LogPath) -eq $false) {
+            if ((Test-DbaPath -SqlInstance $server -Path $LogPath) -eq $false) {
                 Stop-Function -Message "$LogPath is an invalid path."
                 return
             }

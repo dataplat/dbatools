@@ -276,7 +276,7 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"  = "Copy-SqlDataCollector"
-        "Definition" = "Copy-DbaSqlDataCollector"
+        "Definition" = "Copy-DbaDataCollector"
     },
     @{
         "AliasName"  = "Copy-SqlEndpoint"
@@ -308,7 +308,7 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"  = "Copy-SqlPolicyManagement"
-        "Definition" = "Copy-DbaSqlPolicyManagement"
+        "Definition" = "Copy-DbaPolicyManagement"
     },
     @{
         "AliasName"  = "Copy-SqlProxyAccount"
@@ -320,7 +320,7 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"  = "Copy-SqlServerAgent"
-        "Definition" = "Copy-DbaSqlServerAgent"
+        "Definition" = "Copy-DbaServerAgent"
     },
     @{
         "AliasName"  = "Copy-SqlServerTrigger"
@@ -384,7 +384,7 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"  = "Get-SqlServerKey"
-        "Definition" = "Get-DbaSqlProductKey"
+        "Definition" = "Get-DbaProductKey"
     },
     @{
         "AliasName"  = "Import-SqlSpConfigure"
@@ -451,7 +451,7 @@ Write-ImportTime -Text "Script: Maintenance"
         "Definition" = "Sync-DbaLoginPermission"
     },
     @{
-        "AliasName"  = "Sync-DbaSqlLoginPermission"
+        "AliasName"  = "Sync-DbaLoginPermission"
         "Definition" = "Sync-DbaLoginPermission"
     },
     @{
@@ -472,7 +472,7 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"  = "Test-SqlPath"
-        "Definition" = "Test-DbaSqlPath"
+        "Definition" = "Test-DbaPath"
     },
     @{
         "AliasName"  = "Test-SqlTempDbConfiguration"
@@ -503,7 +503,7 @@ Write-ImportTime -Text "Script: Maintenance"
         "Definition" = "Get-DbaDbQueryStoreOptions"
     },
     @{
-        "AliasName"  = "Connect-DbaSqlServer"
+        "AliasName"  = "Connect-DbaServer"
         "Definition" = "Connect-DbaInstance"
     },
     @{
@@ -559,8 +559,8 @@ Write-ImportTime -Text "Script: Maintenance"
         "Definition" = "ConvertTo-DbaDataTable"
     },
     @{
-        "AliasName"  = "Invoke-DbaSqlCmd"
-        "Definition" = "Invoke-DbaSqlQuery"
+        "AliasName"  = "Invoke-DbaCmd"
+        "Definition" = "Invoke-DbaQuery"
     },
     @{
         "AliasName"  = "Test-DbaVirtualLogFile"
@@ -588,7 +588,7 @@ Write-ImportTime -Text "Script: Maintenance"
         "Definition" = "Restore-DbaDbSnapshot"
     },
     @{
-        "AliasName"  = "Get-DbaSqlLog"
+        "AliasName"  = "Get-DbaLog"
         "Definition" = "Get-DbaErrorLog"
     }
      ,

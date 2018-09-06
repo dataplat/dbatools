@@ -729,11 +729,11 @@ function Copy-DbaDatabase {
             }
 
             if ($NetworkShare) {
-                if ($(Test-DbaSqlPath -SqlInstance $sourceServer -Path $NetworkShare) -eq $false) {
+                if ($(Test-DbaPath -SqlInstance $sourceServer -Path $NetworkShare) -eq $false) {
                     Write-Message -Level Verbose -Message "$Source may not be able to access $NetworkShare. Trying anyway."
                 }
 
-                if ($(Test-DbaSqlPath -SqlInstance $destServer -Path $NetworkShare) -eq $false) {
+                if ($(Test-DbaPath -SqlInstance $destServer -Path $NetworkShare) -eq $false) {
                     Write-Message -Level Verbose -Message "$destinstance may not be able to access $NetworkShare. Trying anyway."
                 }
 
@@ -988,7 +988,7 @@ function Copy-DbaDatabase {
                         $fgRows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and FileType = 'ROWS'")[0]
                         $remotePath = Split-Path $fgRows.Filename
 
-                        if (!(Test-DbaSqlPath -SqlInstance $destServer -Path $remotePath)) {
+                        if (!(Test-DbaPath -SqlInstance $destServer -Path $remotePath)) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "$remotePath does not exist on $destinstance and ReuseSourceFolderStructure was specified")) {
                                 # Stop-Function -Message "Cannot resolve $remotePath on $source. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script."
                                 $copyDatabaseStatus.Status = "Failed"

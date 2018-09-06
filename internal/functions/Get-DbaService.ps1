@@ -6,7 +6,7 @@ function Get-DbaService {
     .DESCRIPTION
         Uses WMI/CIM to scan for the existance of a specific windows services.
 
-        Use Get-DbaSqlService if you are interested in scanning for sql server services exclusively.
+        Use Get-DbaService if you are interested in scanning for sql server services exclusively.
 
     .PARAMETER ComputerName
         The computer to target. Uses localhost by default.

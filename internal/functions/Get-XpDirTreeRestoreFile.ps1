@@ -49,7 +49,7 @@ function Get-XpDirTreeRestoreFile {
         $Path = $Path + "\"
     }
 
-    if (!(Test-DbaSqlPath -SqlInstance $server -path $path)) {
+    if (!(Test-DbaPath -SqlInstance $server -path $path)) {
         Stop-Function -Message "SqlInstance $SqlInstance cannot access $path" -EnableException $true
     }
     if ($server.VersionMajor -lt 9) {
