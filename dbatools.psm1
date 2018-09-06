@@ -805,11 +805,11 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Export-DbaDacpac"
-        "Definition" = "Export-DbaDtaPackage"
+        "Definition" = "Export-DbaDacPackage"
     },
     @{
         "AliasName"  = "Publish-DbaDacpac"
-        "Definition" = "Publish-DbaDtaPackage"
+        "Definition" = "Publish-DbaDacPackage"
     },
     @{
         "AliasName"  = "Get-DbaConfig"
@@ -829,7 +829,7 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "New-DbaPublishProfile"
-        "Definition" = "New-DbaDtaProfile"
+        "Definition" = "New-DbaDacProfile"
     },
     @{
         "AliasName"  = "Get-DbaDbQueryStoreOptions"

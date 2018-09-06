@@ -13,8 +13,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             INSERT dbo.example
             SELECT top 100 1
             FROM sys.objects")
-        $publishprofile = New-DbaDtaProfile -SqlInstance $script:instance1 -Database $dbname -Path C:\temp
-        $dacpac = Export-DbaDtaPackage -SqlInstance $script:instance1 -Database $dbname
+        $publishprofile = New-DbaDacProfile -SqlInstance $script:instance1 -Database $dbname -Path C:\temp
+        $dacpac = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname
     }
     AfterAll {
         Remove-DbaDatabase -SqlInstance $script:instance1, $script:instance2 -Database $dbname -Confirm:$false
@@ -22,7 +22,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     if ($publishprofile.FileName -or -not $env:appveyor) {
         It "shows that the update is complete" {
-            $results = $dacpac | Publish-DbaDtaPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance $script:instance2
+            $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance $script:instance2
             $results.Result -match 'Update complete.' | Should Be $true
             if (($dacpac).Path) {
                 Remove-Item -Confirm:$false -Path ($dacpac).Path -ErrorAction SilentlyContinue

@@ -1,4 +1,4 @@
-function Export-DbaDtaPackage {
+function Export-DbaDacPackage {
     <#
     .SYNOPSIS
     Exports a dacpac from a server.
@@ -51,15 +51,15 @@ function Export-DbaDtaPackage {
     License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-    https://dbatools.io/Export-DbaDtaPackage
+    https://dbatools.io/Export-DbaDacPackage
 
     .EXAMPLE
-    Export-DbaDtaPackage -SqlInstance sql2016 -Database SharePoint_Config
+    Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config
     Exports the dacpac for SharePoint_Config on sql2016 to $home\Documents\SharePoint_Config.dacpac
 
     .EXAMPLE
     $moreprops = "/p:VerifyExtraction=$true /p:CommandTimeOut=10"
-    Export-DbaDtaPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\temp -ExtendedProperties $moreprops
+    Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\temp -ExtendedProperties $moreprops
 
     Sets the CommandTimeout to 10 then extracts the dacpac for SharePoint_Config on sql2016 to C:\temp\SharePoint_Config.dacpac then verifies extraction.
 
