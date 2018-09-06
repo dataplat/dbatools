@@ -73,7 +73,7 @@
         'Copy-DbaAgentServer',
         'Copy-DbaSpConfigure',
         'Copy-DbaLinkedServer',
-        'Copy-DbaDatabaseMail',
+        'Copy-DbaDbMail',
         'Copy-DbaDbAssembly',
         'Copy-DbaPolicyManagement',
         'Copy-DbaAgentSharedSchedule',
@@ -666,7 +666,8 @@
     'Set-DbaTempDbConfiguration',
     'Test-DbaTempDbConfiguration',
     'Get-DbaDbQueryStoreOptions',
-    'Set-DbaDbQueryStoreOptions'
+    'Set-DbaDbQueryStoreOptions',
+    'Copy-DbaDatabaseMail'
 
     # List of all modules packaged with this module
     ModuleList             = @()
