@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "returns the right results" {
-        $publishprofile = New-DbaDtaProfile -SqlInstance $script:instance1 -Database $dbname
+        $publishprofile = New-DbaDacProfile -SqlInstance $script:instance1 -Database $dbname
         $publishprofile.FileName -match 'publish.xml' | Should Be $true
         Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue
     }
