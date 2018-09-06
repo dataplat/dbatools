@@ -1,5 +1,5 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
-function Set-DbaDbQueryStoreOptions {
+function Set-DbaDbQueryStoreOption {
     <#
         .SYNOPSIS
             Configure Query Store settings for a specific or multiple databases.
@@ -70,22 +70,22 @@ function Set-DbaDbQueryStoreOptions {
             https://dbatools.io/Set-DbaQueryStoreOptions
 
         .EXAMPLE
-            Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode All -CleanupMode Auto -StaleQueryThreshold 100 -AllDatabases
+            Set-DbaDbQueryStoreOption -SqlInstance ServerA\SQL -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode All -CleanupMode Auto -StaleQueryThreshold 100 -AllDatabases
 
             Configure the Query Store settings for all user databases in the ServerA\SQL Instance.
 
         .EXAMPLE
-            Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -FlushInterval 600
+            Set-DbaDbQueryStoreOption -SqlInstance ServerA\SQL -FlushInterval 600
 
             Only configure the FlushInterval setting for all Query Store databases in the ServerA\SQL Instance.
 
         .EXAMPLE
-            Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -Database AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
+            Set-DbaDbQueryStoreOption -SqlInstance ServerA\SQL -Database AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
 
             Configure the Query Store settings for the AdventureWorks database in the ServerA\SQL Instance.
 
         .EXAMPLE
-            Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -Exclude AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
+            Set-DbaDbQueryStoreOption -SqlInstance ServerA\SQL -Exclude AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
 
             Configure the Query Store settings for all user databases except the AdventureWorks database in the ServerA\SQL Instance.
     #>
@@ -211,12 +211,14 @@ function Set-DbaDbQueryStoreOptions {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess("$db on $instance", "Getting results from Get-DbaDbQueryStoreOptions")) {
+                if ($Pscmdlet.ShouldProcess("$db on $instance", "Getting results from Get-DbaDbQueryStoreOption")) {
                     # Display resulting changes
-                    Get-DbaDbQueryStoreOptions -SqlInstance $server -Database $db.name -Verbose:$false
+                    Get-DbaDbQueryStoreOption -SqlInstance $server -Database $db.name -Verbose:$false
                 }
             }
         }
     }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaDbQueryStoreOptions
+    }
 }
-

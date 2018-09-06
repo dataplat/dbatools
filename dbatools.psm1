@@ -496,11 +496,11 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"  = "Set-DbaQueryStoreConfig"
-        "Definition" = "Set-DbaDbQueryStoreOptions"
+        "Definition" = "Set-DbaDbQueryStoreOption"
     },
     @{
         "AliasName"  = "Get-DbaQueryStoreConfig"
-        "Definition" = "Get-DbaDbQueryStoreOptions"
+        "Definition" = "Get-DbaDbQueryStoreOption"
     },
     @{
         "AliasName"  = "Connect-DbaServer"
@@ -829,6 +829,14 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"  = "New-DbaPublishProfile"
         "Definition" = "New-DbaDtaProfile"
+    },
+    @{
+        "AliasName"  = "Get-DbaDbQueryStoreOptions"
+        "Definition" = "Get-DbaDbQueryStoreOption"
+    },
+    @{
+        "AliasName"  = "Set-DbaDbQueryStoreOptions"
+        "Definition" = "Set-DbaDbQueryStoreOption"
     }
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
