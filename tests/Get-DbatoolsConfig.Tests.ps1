@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "returns proper information" {
-        $results = Get-DbaConfig -FullName sql.connection.timeout
+        $results = Get-DbatoolsConfig -FullName sql.connection.timeout
         It "returns a value that is an int" {
             $results.Value -is [int]
         }

@@ -1,4 +1,4 @@
-﻿function Get-DbaConfig {
+﻿function Get-DbatoolsConfig {
     <#
         .SYNOPSIS
             Retrieves configuration elements by name.
@@ -28,12 +28,12 @@
             Author: Friedrich Weinmann
 
         .EXAMPLE
-            PS C:\> Get-DbaConfig 'Mail.To'
+            PS C:\> Get-DbatoolsConfig 'Mail.To'
 
             Retrieves the configuration element for the key "Mail.To"
 
         .EXAMPLE
-            PS C:\> Get-DbaConfig -Force
+            PS C:\> Get-DbatoolsConfig -Force
 
             Retrieve all configuration elements from all modules, even hidden ones.
     #>

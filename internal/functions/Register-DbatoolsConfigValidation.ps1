@@ -1,4 +1,4 @@
-﻿function Register-DbaConfigValidation {
+﻿function Register-DbatoolsConfigValidation {
     <#
         .SYNOPSIS
             Registers a validation scriptblock for use with the configuration system.
@@ -21,7 +21,7 @@
             The scriptblock to register
 
         .EXAMPLE
-            PS C:\> Register-DbaConfigValidation -Name IntPositive -ScriptBlock $scriptblock
+            PS C:\> Register-DbatoolsConfigValidation -Name IntPositive -ScriptBlock $scriptblock
 
             Registers the scriptblock stored in $scriptblock as validation with the name IntPositive
     #>
