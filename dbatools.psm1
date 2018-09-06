@@ -22,7 +22,7 @@ function Import-ModuleFile {
     Param (
         $Path
     )
-    
+
     if ($script:doDotSource) { . $Path }
     else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($Path))), $null, $null) }
 }
@@ -48,11 +48,11 @@ function Write-ImportTime {
         [string]$Text,
         $Timestamp = (Get-Date)
     )
-    
+
     if ($dbatools_disableTimeMeasurements) { return }
-    
+
     if (-not $script:dbatools_ImportPerformance) { $script:dbatools_ImportPerformance = @() }
-    
+
     if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type -eq $null) {
         $script:dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = $timestamp; Action = $Text }
     }
@@ -60,7 +60,7 @@ function Write-ImportTime {
         if ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Count -eq 0) {
             foreach ($entry in $script:dbatools_ImportPerformance) { [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($entry.Action, $entry.Time, ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)))) }
         }
-        
+
         [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($Text, $timestamp, ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))))
     }
 }
@@ -176,21 +176,21 @@ if ($script:multiFileImport) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Internal Commands"
-    
+
     . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
     Write-ImportTime -Text "Registering cmdlets"
-    
+
     # All exported functions
     foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
         . Import-ModuleFile $function.FullName
     }
     Write-ImportTime -Text "Loading Public Commands"
-    
+
 }
 else {
     . "$script:PSModuleRoot\allcommands.ps1"
     Write-ImportTime -Text "Loading Public and Private Commands"
-    
+
     . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\cmdlets.ps1"
     Write-ImportTime -Text "Registering cmdlets"
 }
@@ -831,7 +831,7 @@ $script:renames = @(
         "AliasName"  = "New-DbaPublishProfile"
         "Definition" = "New-DbaDtaProfile"
     },
-    @{ 
+    @{
         "AliasName"  = "Get-DbaDbQueryStoreOptions"
         "Definition" = "Get-DbaDbQueryStoreOption"
     },
@@ -877,7 +877,7 @@ $timeSpent = 0
 while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($script:dbatoolsConfigRunspace.Runspace.RunspaceAvailability -eq 'Busy')) {
     Start-Sleep -Milliseconds 50
     $timeSpent = $timeSpent + 50
-    
+
     if ($timeSpent -ge $timeout) {
         Write-Warning @"
 The module import has hit a timeout while waiting for some background tasks to finish.
