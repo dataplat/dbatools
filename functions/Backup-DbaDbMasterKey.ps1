@@ -95,7 +95,7 @@ Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas
                 Stop-Function -Message "Path discovery failed. Please explicitly specify -Path" -Target $server -Continue
             }
             
-            if (!(Test-DbaPath -SqlInstance $server -Path $Path)) {
+            if (!(Test-DbaSqlPath -SqlInstance $server -Path $Path)) {
                 Stop-Function -Message "$instance cannot access $Path" -Target $server -ErrorRecord $_ -Continue
             }
             
