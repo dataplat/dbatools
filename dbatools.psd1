@@ -349,7 +349,7 @@
         'Invoke-DbaCycleErrorLog',
         'Get-DbaRegistryRoot',
         'Get-DbaAvailableCollation',
-        'Get-DbaUserLevelPermission',
+        'Get-DbaUserPermission',
         'Get-DbaAgHadr',
         'Find-DbaSimilarTable',
         'Disable-DbaAgHadr',
@@ -667,7 +667,8 @@
     'Test-DbaTempDbConfiguration',
     'Get-DbaDbQueryStoreOptions',
     'Set-DbaDbQueryStoreOptions',
-    'Copy-DbaDatabaseMail'
+    'Copy-DbaDatabaseMail',
+    'Get-DbaUserLevelPermission'
 
     # List of all modules packaged with this module
     ModuleList             = @()

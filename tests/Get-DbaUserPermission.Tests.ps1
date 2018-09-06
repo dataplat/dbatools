@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command returns proper info" {
-        $results = Get-DbaUserLevelPermission -SqlInstance $script:instance1 -Database tempdb
+        $results = Get-DbaUserPermission -SqlInstance $script:instance1 -Database tempdb
 
         It "returns results" {
             $results.Count -gt 0 | Should Be $true
