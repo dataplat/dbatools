@@ -181,7 +181,7 @@ function Remove-DbaDatabaseSafely {
             $database = ($sourceserver.databases | Where-Object { $_.IsSystemObject -eq $false -and ($_.Status -match 'Offline') -eq $false }).Name
         }
 
-        if (!(Test-DbaSqlPath -SqlInstance $destserver -Path $backupFolder)) {
+        if (!(Test-DbaPath -SqlInstance $destserver -Path $backupFolder)) {
             $serviceaccount = $destserver.ServiceAccount
             Stop-Function -Message "Can't access $backupFolder Please check if $serviceaccount has permissions." -ErrorRecord $_ -Target $backupFolder
         }

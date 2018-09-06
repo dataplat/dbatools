@@ -204,7 +204,7 @@ function Install-DbaFirstResponderKit {
                     }
                     if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptname in $database.")) {
                         try {
-                            Invoke-DbaSqlQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
+                            Invoke-DbaQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
                         }
                         catch {
                             Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_

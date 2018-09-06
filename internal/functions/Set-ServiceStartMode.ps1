@@ -4,10 +4,10 @@ function Set-ServiceStartMode {
         Internal function. Implements the method that changes startup mode of the SQL Server service.
 
         .DESCRIPTION
-        Accepts objects from Get-DbaSqlService and performs a corresponding action.
+        Accepts objects from Get-DbaService and performs a corresponding action.
 
         .PARAMETER InputObject
-        A collection of services from Get-DbaSqlService.
+        A collection of services from Get-DbaService.
 
         .PARAMETER Mode
         Startup mode of the service: Automatic, Manual or Disabled.
@@ -26,12 +26,12 @@ function Set-ServiceStartMode {
         License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
-        Get-DbaSqlService -ComputerName sql1 | Set-ServiceStartMode -Mode 'Manual'
+        Get-DbaService -ComputerName sql1 | Set-ServiceStartMode -Mode 'Manual'
 
         Sets all SQL services on sql1 to Manual startup.
 
         .EXAMPLE
-        $services = Get-DbaSqlService -ComputerName sql1
+        $services = Get-DbaService -ComputerName sql1
         Set-ServiceStartMode -InputObject $services -Mode 'Automatic'
 
         Sets all SQL services on sql1 to Automatic startup.
@@ -65,7 +65,7 @@ function Set-ServiceStartMode {
             if ($Pscmdlet.ShouldProcess($Wmi, "Changing the Start Mode to $Mode")) {
                 $x = $Wmi.ChangeStartMode($Mode)
                 if ($x.ReturnValue -ne 0) {
-                    Write-Message -Level Warning -FunctionName $callerName -Message ("The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) returned the following message: " + (Get-DbaSQLServiceErrorMessage $x.ReturnValue))
+                    Write-Message -Level Warning -FunctionName $callerName -Message ("The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) returned the following message: " + (Get-DbaServiceErrorMessage $x.ReturnValue))
                 }
             }
         }
