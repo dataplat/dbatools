@@ -29,7 +29,7 @@ function Remove-DbaDbMasterKey {
         Strict: Write a warning (default)
         Lazy:   Write a verbose message
         Report: Create a report object as part of the output
-        The default action can be adjusted by using Set-DbaConfig to change the 'message.mode.default' configuration
+        The default action can be adjusted by using Set-DbatoolsConfig to change the 'message.mode.default' configuration
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -75,7 +75,7 @@ function Remove-DbaDbMasterKey {
         [switch]$All,
         [parameter(ValueFromPipeline, ParameterSetName = "collection")]
         [Microsoft.SqlServer.Management.Smo.MasterKey[]]$MasterKeyCollection,
-        [DbaMode]$Mode = (Get-DbaConfigValue -FullName 'message.mode.default' -Fallback "Strict"),
+        [DbaMode]$Mode = (Get-DbatoolsConfigValue -FullName 'message.mode.default' -Fallback "Strict"),
         [switch][Alias('Silent')]
         $EnableException
     )
@@ -144,7 +144,7 @@ function Remove-DbaDbMasterKey {
                     switch ($Mode) {
                         [DbaMode]::Strict { Stop-Function -Message "Database '$db' does not exist on $instance" -Target $smodb -Continue -ContinueLabel database }
                         [DbaMode]::Lazy {
-                            Write-Message -Level (Get-DbaConfigValue -Name 'message.mode.lazymessagelevel' -Fallback 4) -Message "Database '$db' does not exist on $instance" -Target $smodb
+                            Write-Message -Level (Get-DbatoolsConfigValue -Name 'message.mode.lazymessagelevel' -Fallback 4) -Message "Database '$db' does not exist on $instance" -Target $smodb
                             continue database
                         }
                         [DbaMode]::Report {
@@ -166,7 +166,7 @@ function Remove-DbaDbMasterKey {
                     switch ($Mode.ToString()) {
                         "Strict" { Stop-Function -Message "No master key exists in the $db database on $instance" -Target $smodb -Continue -ContinueLabel database }
                         "Lazy" {
-                            Write-Message -Level (Get-DbaConfigValue -Name 'message.mode.lazymessagelevel' -Fallback 4) -Message "No master key exists in the $db database on $instance" -Target $smodb
+                            Write-Message -Level (Get-DbatoolsConfigValue -Name 'message.mode.lazymessagelevel' -Fallback 4) -Message "No master key exists in the $db database on $instance" -Target $smodb
                             continue database
                         }
                         "Report" {
