@@ -1,4 +1,4 @@
-function Test-DbaTempDbConfig {
+function Test-DbaTempdbConfig {
     <#
         .SYNOPSIS
             Evaluates tempdb against several rules to match best practices.
@@ -38,15 +38,15 @@ function Test-DbaTempDbConfig {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Test-DbaTempDbConfig
+            https://dbatools.io/Test-DbaTempdbConfig
 
         .EXAMPLE
-            Test-DbaTempDbConfig -SqlInstance localhost
+            Test-DbaTempdbConfig -SqlInstance localhost
 
             Checks tempdb on the localhost machine.
 
         .EXAMPLE
-            Test-DbaTempDbConfig -SqlInstance localhost | Select-Object *
+            Test-DbaTempdbConfig -SqlInstance localhost | Select-Object *
 
             Checks tempdb on the localhost machine. All rest results are shown.
     #>

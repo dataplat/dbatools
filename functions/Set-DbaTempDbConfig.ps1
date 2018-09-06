@@ -1,4 +1,4 @@
-function Set-DbaTempDbConfig {
+function Set-DbaTempdbConfig {
     <#
         .SYNOPSIS
             Sets tempdb data and log files according to best practices.
@@ -64,30 +64,30 @@ function Set-DbaTempDbConfig {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Set-DbaTempDbConfig
+            https://dbatools.io/Set-DbaTempdbConfig
 
         .EXAMPLE
-            Set-DbaTempDbConfig -SqlInstance localhost -DataFileSizeMB 1000
+            Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000
 
             Creates tempdb with a number of data files equal to the logical cores where each file is equal to 1000MB divided by the number of logical cores, with a log file of 250MB.
 
         .EXAMPLE
-            Set-DbaTempDbConfig -SqlInstance localhost -DataFileSizeMB 1000 -DataFileCount 8
+            Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000 -DataFileCount 8
 
             Creates tempdb with 8 data files, each one sized at 125MB, with a log file of 250MB.
 
         .EXAMPLE
-            Set-DbaTempDbConfig -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
+            Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
 
             Provides a SQL script output to configure tempdb according to the passed parameters.
 
         .EXAMPLE
-            Set-DbaTempDbConfig -SqlInstance localhost -DataFileSizeMB 1000 -DisableGrowth
+            Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000 -DisableGrowth
 
             Disables the growth for the data and log files.
 
         .EXAMPLE
-            Set-DbaTempDbConfig -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
+            Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
 
             Returns the T-SQL script representing tempdb configuration.
     #>
