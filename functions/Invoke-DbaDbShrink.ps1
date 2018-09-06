@@ -98,25 +98,25 @@ function Invoke-DbaDbShrink {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Invoke-DbaDatabaseShrink
+            https://dbatools.io/Invoke-DbaDbShrink
 
         .EXAMPLE
-            Invoke-DbaDatabaseShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014
+            Invoke-DbaDbShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014
 
             Shrinks Northwind, pubs and Adventureworks2014 to have as little free space as possible.
 
         .EXAMPLE
-            Invoke-DbaDatabaseShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50
+            Invoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50
 
             Shrinks AdventureWorks2014 to have 50% free space. So let's say AdventureWorks2014 was 1GB and it's using 100MB space. The database free space would be reduced to 50MB.
 
         .EXAMPLE
-            Invoke-DbaDatabaseShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSizeMB 25
+            Invoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSizeMB 25
 
             Shrinks AdventureWorks2014 to have 50% free space, runs shrinks in 25MB chunks for improved performance.
 
         .EXAMPLE
-            Invoke-DbaDatabaseShrink -SqlInstance sql2012 -AllUserDatabases
+            Invoke-DbaDbShrink -SqlInstance sql2012 -AllUserDatabases
 
             Shrinks all databases on SQL2012 (not ideal for production)
 
@@ -331,6 +331,6 @@ function Invoke-DbaDbShrink {
         }
     }
     end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaDatabaseShrink
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaDbShrink
     }
 }

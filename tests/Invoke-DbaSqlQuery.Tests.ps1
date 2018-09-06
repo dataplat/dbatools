@@ -84,7 +84,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     <#
     It "supports loose objects (with SqlInstance and database props)" {
-        $dbs = Get-DbaDatabaseState -SqlInstance $script:instance1, $script:instance2
+        $dbs = Get-DbaDbState -SqlInstance $script:instance1, $script:instance2
         $results = $dbs | Invoke-DbaSqlQuery -Query "Select 'hello' as TestColumn, DB_NAME() as dbname"
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'

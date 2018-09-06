@@ -1,4 +1,4 @@
-function Get-DbaDatabaseView {
+function Get-DbaDbView {
     <#
         .SYNOPSIS
             Gets database views for each SqlInstance.
@@ -35,27 +35,27 @@ function Get-DbaDatabaseView {
             License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
-            Get-DbaDatabaseView -SqlInstance sql2016
+            Get-DbaDbView -SqlInstance sql2016
 
             Gets all database views
 
         .EXAMPLE
-            Get-DbaDatabaseView -SqlInstance Server1 -Database db1
+            Get-DbaDbView -SqlInstance Server1 -Database db1
 
             Gets the views for the db1 database
 
         .EXAMPLE
-            Get-DbaDatabaseView -SqlInstance Server1 -ExcludeDatabase db1
+            Get-DbaDbView -SqlInstance Server1 -ExcludeDatabase db1
 
             Gets the views for all databases except db1
 
         .EXAMPLE
-            Get-DbaDatabaseView -SqlInstance Server1 -ExcludeSystemView
+            Get-DbaDbView -SqlInstance Server1 -ExcludeSystemView
 
             Gets the views for all databases that are not system objects (there can be 400+ system views in each DB)
 
         .EXAMPLE
-            'Sql1','Sql2/sqlexpress' | Get-DbaDatabaseView
+            'Sql1','Sql2/sqlexpress' | Get-DbaDbView
 
             Gets the views for the databases on Sql1 and Sql2/sqlexpress
 

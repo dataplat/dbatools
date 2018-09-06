@@ -4,17 +4,17 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Unit Tests" -Tags "UnitTests" {
     Context "Validating Database Input" {
-        Invoke-DbaDatabaseCorruption -SqlInstance $script:instance2 -Database "master" -WarningAction SilentlyContinue -WarningVariable systemwarn
+        Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database "master" -WarningAction SilentlyContinue -WarningVariable systemwarn
         It "Should not allow you to corrupt system databases." {
             $systemwarn -match 'may not corrupt system databases' | Should Be $true
         }
         It "Should fail if more than one database is specified" {
-            { Invoke-DbaDatabaseCorruption -SqlInstance $script:instance2 -Database "Database1", "Database2" -EnableException } | Should Throw
+            { Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database "Database1", "Database2" -EnableException } | Should Throw
         }
     }
 
     Context "It's Confirm impact should be high" {
-        $command = Get-Command Invoke-DbaDatabaseCorruption
+        $command = Get-Command Invoke-DbaDbCorruption
         $metadata = [System.Management.Automation.CommandMetadata]$command
         $metadata.ConfirmImpact | Should Be 'High'
     }
@@ -36,12 +36,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "Require at least a single table in the database specified" {
-        { Invoke-DbaDatabaseCorruption -SqlInstance $server -Database $dbname -EnableException } | Should Throw
+        { Invoke-DbaDbCorruption -SqlInstance $server -Database $dbname -EnableException } | Should Throw
     }
 
     # Creating a table to make sure these are failing for different reasons
     It "Fail if the specified table does not exist" {
-        { Invoke-DbaDatabaseCorruption -SqlInstance $server -Database $dbname -Table "DoesntExist$(New-Guid)" -EnableException } | Should Throw
+        { Invoke-DbaDbCorruption -SqlInstance $server -Database $dbname -Table "DoesntExist$(New-Guid)" -EnableException } | Should Throw
     }
 
     $null = $db.Query("
@@ -51,7 +51,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         FROM sys.objects")
 
     It "Corrupt a single database" {
-        Invoke-DbaDatabaseCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false | Select-Object -ExpandProperty Status | Should be "Corrupted"
+        Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false | Select-Object -ExpandProperty Status | Should be "Corrupted"
     }
 
     It "Causes DBCC CHECKDB to fail" {

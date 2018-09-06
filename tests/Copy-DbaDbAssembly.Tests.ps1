@@ -21,7 +21,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     
     It "copies the sample database assembly" {
-        $results = Copy-DbaDatabaseAssembly -Source $script:instance2 -Destination $script:instance3 -Assembly resolveDNS
+        $results = Copy-DbaDbAssembly -Source $script:instance2 -Destination $script:instance3 -Assembly resolveDNS
         $results.Name -eq "60000:'us_english'", "60000:'Français'"
         $results.Status -eq 'Successful', 'Successful'
     }

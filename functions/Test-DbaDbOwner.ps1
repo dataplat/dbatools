@@ -1,4 +1,4 @@
-function Test-DbaDatabaseOwner {
+function Test-DbaDbOwner {
     <#
         .SYNOPSIS
             Checks database owners against a login to validate which databases do not match that owner.
@@ -42,15 +42,15 @@ function Test-DbaDatabaseOwner {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Test-DbaDatabaseOwner
+            https://dbatools.io/Test-DbaDbOwner
 
         .EXAMPLE
-            Test-DbaDatabaseOwner -SqlInstance localhost
+            Test-DbaDbOwner -SqlInstance localhost
 
             Returns all databases where the owner does not match 'sa'.
 
         .EXAMPLE
-            Test-DbaDatabaseOwner -SqlInstance localhost -TargetLogin 'DOMAIN\account'
+            Test-DbaDbOwner -SqlInstance localhost -TargetLogin 'DOMAIN\account'
 
             Returns all databases where the owner does not match 'DOMAIN\account'.
     #>

@@ -1,4 +1,4 @@
-function Invoke-DbaDatabaseClone {
+function Invoke-DbaDbClone {
     <#
     .SYNOPSIS
         Clones a database schema and statistics
@@ -39,14 +39,14 @@ function Invoke-DbaDatabaseClone {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Invoke-DbaDatabaseClone
+        https://dbatools.io/Invoke-DbaDbClone
 
     .EXAMPLE
-        Invoke-DbaDatabaseClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone
+        Invoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone
         Clones mydb to myclone on sql2016
 
     .EXAMPLE
-        Invoke-DbaDatabaseClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone, myclone2 -UpdateStatistics
+        Invoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone, myclone2 -UpdateStatistics
         Updates the statistics of mydb then clones to myclone and myclone2
 
     #>

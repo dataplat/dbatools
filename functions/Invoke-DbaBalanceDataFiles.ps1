@@ -161,7 +161,7 @@ function Invoke-DbaBalanceDataFiles {
 
             # Loop through each of the databases
             foreach ($db in $DatabaseCollection) {
-                $dataFilesStarting = Get-DbaDatabaseFile -SqlInstance $server -Database $db.Name | Where-Object { $_.TypeDescription -eq 'ROWS' } | Select-Object ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace | Sort-Object ID
+                $dataFilesStarting = Get-DbaDbFile -SqlInstance $server -Database $db.Name | Where-Object { $_.TypeDescription -eq 'ROWS' } | Select-Object ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace | Sort-Object ID
 
                 if (-not $Force) {
                     # Check the amount of disk space available
@@ -203,7 +203,7 @@ function Invoke-DbaBalanceDataFiles {
                     Write-Message -Message "Processing database $db" -Level Verbose
 
                     # Check the datafiles of the database
-                    $dataFiles = Get-DbaDatabaseFile -SqlInstance $instance -Database $db | Where-Object { $_.TypeDescription -eq 'ROWS' }
+                    $dataFiles = Get-DbaDbFile -SqlInstance $instance -Database $db | Where-Object { $_.TypeDescription -eq 'ROWS' }
                     if ($dataFiles.Count -eq 1) {
                         # Set the success flag
                         $success = $false
@@ -342,7 +342,7 @@ function Invoke-DbaBalanceDataFiles {
 
                 # Get the database files after all the alterations
                 Write-Message -Message "Retrieving data files after data move" -Level Verbose
-                $dataFilesEnding = Get-DbaDatabaseFile -SqlInstance $server -Database $db.Name | Where-Object { $_.TypeDescription -eq 'ROWS' } | Select-Object ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace | Sort-Object ID
+                $dataFilesEnding = Get-DbaDbFile -SqlInstance $server -Database $db.Name | Where-Object { $_.TypeDescription -eq 'ROWS' } | Select-Object ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace | Sort-Object ID
 
                 [pscustomobject]@{
                     ComputerName   = $server.ComputerName

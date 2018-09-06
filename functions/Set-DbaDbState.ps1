@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline#
-function Set-DbaDatabaseState {
+function Set-DbaDbState {
     <#
         .SYNOPSIS
             Sets various options for databases, hereby called "states"
@@ -83,35 +83,35 @@ function Set-DbaDatabaseState {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Set-DbaDatabaseState
+            https://dbatools.io/Set-DbaDbState
 
         .EXAMPLE
-            Set-DbaDatabaseState -SqlInstance sqlserver2014a -Database HR -Offline
+            Set-DbaDbState -SqlInstance sqlserver2014a -Database HR -Offline
 
             Sets the HR database as OFFLINE
 
         .EXAMPLE
-            Set-DbaDatabaseState -SqlInstance sqlserver2014a -AllDatabases -Exclude HR -Readonly -Force
+            Set-DbaDbState -SqlInstance sqlserver2014a -AllDatabases -Exclude HR -Readonly -Force
 
             Sets all databases of the sqlserver2014a instance, except for HR, as READ_ONLY
 
         .EXAMPLE
-            Get-DbaDatabaseState -SqlInstance sql2016 | Where-Object Status -eq 'Offline' | Set-DbaDatabaseState -Online
+            Get-DbaDbState -SqlInstance sql2016 | Where-Object Status -eq 'Offline' | Set-DbaDbState -Online
 
             Finds all offline databases and sets them to online
 
         .EXAMPLE
-            Set-DbaDatabaseState -SqlInstance sqlserver2014a -Database HR -SingleUser
+            Set-DbaDbState -SqlInstance sqlserver2014a -Database HR -SingleUser
 
             Sets the HR database as SINGLE_USER
 
         .EXAMPLE
-            Set-DbaDatabaseState -SqlInstance sqlserver2014a -Database HR -SingleUser -Force
+            Set-DbaDbState -SqlInstance sqlserver2014a -Database HR -SingleUser -Force
 
             Sets the HR database as SINGLE_USER, dropping all other connections (and rolling back open transactions)
 
         .EXAMPLE
-            Get-DbaDatabase -SqlInstance sqlserver2014a -Database HR | Set-DbaDatabaseState -SingleUser -Force
+            Get-DbaDatabase -SqlInstance sqlserver2014a -Database HR | Set-DbaDbState -SingleUser -Force
 
             Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping all other connections (and rolling back open transactions)
     #>
@@ -235,7 +235,7 @@ function Set-DbaDatabaseState {
 
         if ($InputObject) {
             if ($InputObject.Database) {
-                # comes from Get-DbaDatabaseState
+                # comes from Get-DbaDbState
                 $dbs += $InputObject.Database
             }
             elseif ($InputObject.Name) {
@@ -273,7 +273,7 @@ function Set-DbaDatabaseState {
             $dbStatuses = @{}
             $server = $db.Parent
             if ($server -notin $dbStatuses.Keys) {
-                $dbStatuses[$server] = Get-DbaDatabaseState -SqlInstance $server
+                $dbStatuses[$server] = Get-DbaDbState -SqlInstance $server
             }
 
             # normalizing properties returned by SMO to something more "fixed"
