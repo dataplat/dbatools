@@ -331,6 +331,6 @@ function Invoke-DbaDbShrink {
         }
     }
     end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaDbShrink
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaDatabaseShrink
     }
 }
