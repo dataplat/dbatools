@@ -123,7 +123,7 @@ function Install-DbaMaintenanceSolution {
     )
     
     begin {
-        $DbatoolsData = Get-DbaConfigValue -FullName "Path.DbatoolsData"
+        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
         
         $url = "https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip"
         
@@ -264,7 +264,7 @@ process {
         }
         
         if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
-            $procs = Get-DbaSqlModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
+            $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
             $table = Get-DbaTable -SqlInstance $server -Database $Database -Table CommandLog -IncludeSystemDBs | Where-Object Database -eq $Database
             
             if ($null -ne $procs -or $null -ne $table) {

@@ -30,11 +30,11 @@ Examples are better than a thousand words:
 
 a) Setting the configuration value
 # Put this in a configuration file in this folder
-Set-DbaConfig -Name 'Path.DbatoolsLog' -Value "$($env:AppData)\PowerShell\dbatools" -Default
+Set-DbatoolsConfig -Name 'Path.DbatoolsLog' -Value "$($env:AppData)\PowerShell\dbatools" -Default
 
 b) Retrieving the configuration value in your function
 # Put this in the function that uses this setting
-$path = Get-DbaConfigValue -Name 'Path.DbatoolsLog' -FallBack $env:temp
+$path = Get-DbatoolsConfigValue -Name 'Path.DbatoolsLog' -FallBack $env:temp
 
 # Explanation #
 #-------------#
@@ -66,9 +66,9 @@ $scriptBlock = {
     function Stop-Function { }
 
     $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\functions\Test-Bound.ps1"))), $null, $null)
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\functions\Register-DbaConfigValidation.ps1"))), $null, $null)
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\functions\Register-DbaConfig.ps1"))), $null, $null)
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\functions\Set-DbaConfig.ps1"))), $null, $null)
+    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\functions\Register-DbatoolsConfigValidation.ps1"))), $null, $null)
+    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\functions\Register-DbatoolsConfig.ps1"))), $null, $null)
+    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\functions\Set-DbatoolsConfig.ps1"))), $null, $null)
     #endregion Helper functions
 
 
@@ -177,7 +177,7 @@ $scriptBlock = {
 
         foreach ($value in $config_hash.Values) {
             try {
-                Set-DbaConfig -Name $value.Name -Value $value.Value -EnableException
+                Set-DbatoolsConfig -Name $value.Name -Value $value.Value -EnableException
                 [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$value.Name.ToLower()].PolicySet = $true
                 [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$value.Name.ToLower()].PolicyEnforced = $value.Enforced
             }

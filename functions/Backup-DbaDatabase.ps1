@@ -400,9 +400,9 @@ function Backup-DbaDatabase {
             if (-not $IgnoreFileChecks -and -not $AzureBaseUrl) {
                 $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
                 foreach ($parentPath in $parentPaths) {
-                    if (-not (Test-DbaSqlPath -SqlInstance $server -Path $parentPath)) {
+                    if (-not (Test-DbaPath -SqlInstance $server -Path $parentPath)) {
                         if (($BuildPath -eq $true) -or ($CreateFolder -eq $True)) {
-                            $null = New-DbaSqlDirectory -SqlInstance $server -Path $parentPath
+                            $null = New-DbaDirectory -SqlInstance $server -Path $parentPath
                         }
                         else {
                             $failreason += "SQL Server cannot check if $parentPath exists. You can try disabling this check with -IgnoreFileChecks"

@@ -245,7 +245,7 @@ function Set-DbaStartupParameter {
                     if ($Force) {
                         $ParameterString += "-d$($newstartup.MasterData);"
                     }
-                    elseif (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterData -Parent)) {
+                    elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterData -Parent)) {
                         $ParameterString += "-d$($newstartup.MasterData);"
                     }
                     else {
@@ -268,7 +268,7 @@ function Set-DbaStartupParameter {
                     if ($Force) {
                         $ParameterString += "-e$($newstartup.ErrorLog);"
                     }
-                    elseif (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
+                    elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
                         $ParameterString += "-e$($newstartup.ErrorLog);"
                     }
                     else {
@@ -291,7 +291,7 @@ function Set-DbaStartupParameter {
                     if ($Force) {
                         $ParameterString += "-l$($newstartup.MasterLog);"
                     }
-                    elseif (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterLog -Parent)) {
+                    elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterLog -Parent)) {
                         $ParameterString += "-l$($newstartup.MasterLog);"
                     }
                     else {

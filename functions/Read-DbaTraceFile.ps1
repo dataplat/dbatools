@@ -257,7 +257,7 @@ function Read-DbaTraceFile {
             foreach ($file in $currentpath) {
                 Write-Message -Level Verbose -Message "Parsing $file"
 
-                $exists = Test-DbaSqlPath -SqlInstance $server -Path $file
+                $exists = Test-DbaPath -SqlInstance $server -Path $file
 
                 if (!$exists) {
                     Write-Message -Level Warning -Message "Path does not exist" -Target $file

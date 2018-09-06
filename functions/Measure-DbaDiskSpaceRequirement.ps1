@@ -63,7 +63,7 @@ function Measure-DbaDiskSpaceRequirement {
             Using a CSV file. You will need to use this header line "Source<tab>Destination<tab>Database<tab>DestinationDatabase".
 
         .EXAMPLE
-            Invoke-DbaSqlCmd -SqlInstance DBA -Database Migrations -Query 'select Source, Destination, Database from dbo.Migrations' `
+            Invoke-DbaCmd -SqlInstance DBA -Database Migrations -Query 'select Source, Destination, Database from dbo.Migrations' `
                 | Measure-DbaDiskSpaceRequirement
 
             Using a SQL table. We are DBA after all!

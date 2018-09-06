@@ -124,7 +124,7 @@ function Test-DbaServerName {
             $rs = $null
             if ($SkipSsrs -eq $false -or $NoWarning -eq $false) {
                 try {
-                    $rs = Get-DbaSqlService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type SSRS -EnableException -WarningAction Stop
+                    $rs = Get-DbaService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type SSRS -EnableException -WarningAction Stop
                 }
                 catch {
                     Write-Message -Level Warning -Message "Unable to pull information on $ssrsService." -ErrorRecord $_ -Target $instance

@@ -187,8 +187,8 @@ function Enable-DbaAgHadr {
             if (Test-Bound -ParameterName Force) {
                 if ($PSCmdlet.ShouldProcess($instance, "Force provided, restarting Engine and Agent service for $instance on $computerFullName")) {
                     try {
-                        $null = Stop-DbaSqlService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
-                        $null = Start-DbaSqlService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
+                        $null = Stop-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
+                        $null = Start-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
                     }
                     catch {
                         Stop-Function -Message "Issue restarting $instance" -Target $instance -Continue

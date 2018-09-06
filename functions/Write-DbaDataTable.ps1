@@ -532,10 +532,10 @@ function Write-DbaDataTable {
         try {
             $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('ConvertTo-DbaDataTable', [System.Management.Automation.CommandTypes]::Function)
             $splatCDDT = @{
-                TimeSpanType   = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.timespantype' -Fallback 'TotalMilliseconds')
-                SizeType       = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.sizetype' -Fallback 'Int64')
-                IgnoreNull     = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.ignorenull' -Fallback $false)
-                Raw            = (Get-DbaConfigValue -FullName 'commands.write-dbadatatable.raw' -Fallback $false)
+                TimeSpanType   = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.timespantype' -Fallback 'TotalMilliseconds')
+                SizeType       = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.sizetype' -Fallback 'Int64')
+                IgnoreNull     = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.ignorenull' -Fallback $false)
+                Raw            = (Get-DbatoolsConfigValue -FullName 'commands.write-dbadatatable.raw' -Fallback $false)
             }
             $scriptCmd = { & $wrappedCmd @splatCDDT }
             $steppablePipeline = $scriptCmd.GetSteppablePipeline()

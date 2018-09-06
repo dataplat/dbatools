@@ -80,7 +80,7 @@ function Install-DbaWhoIsActive {
     )
 
     begin {
-        $DbatoolsData = Get-DbaConfigValue -FullName "Path.DbatoolsData"
+        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$temp\spwhoisactive.zip"
 

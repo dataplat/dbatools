@@ -76,7 +76,7 @@ function New-DbaSsisCatalog {
             }
 
             ## check if SSIS and Engine running on box
-            $services = Get-DbaSqlService -ComputerName $server.ComputerName
+            $services = Get-DbaService -ComputerName $server.ComputerName
 
             $ssisservice = $Services | Where-Object { $_.ServiceType -eq "SSIS" -and $_.State -eq "Running" }
 

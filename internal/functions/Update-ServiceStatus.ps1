@@ -4,7 +4,7 @@ function Update-ServiceStatus {
         Internal function. Sends start/stop request to a SQL Server service and wait for the result.
 
     .DESCRIPTION
-        Accepts objects from Get-DbaSqlService and performs a corresponding action.
+        Accepts objects from Get-DbaService and performs a corresponding action.
 
     .PARAMETER Credential
         Credential object used to connect to the computer as a different user.
@@ -13,7 +13,7 @@ function Update-ServiceStatus {
         How long to wait for the start/stop request completion before moving on.
 
     .PARAMETER InputObject
-        A collection of services from Get-DbaSqlService
+        A collection of services from Get-DbaService
 
     .PARAMETER Action
         Start or stop.
@@ -37,14 +37,14 @@ function Update-ServiceStatus {
         License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE
-        $InputObject = Get-DbaSqlService -ComputerName sql1
+        $InputObject = Get-DbaService -ComputerName sql1
         Update-ServiceStatus -InputObject $InputObject -Action 'stop' -Timeout 30
         Update-ServiceStatus -InputObject $InputObject -Action 'start' -Timeout 30
 
         Restarts SQL services on sql1
 
     .EXAMPLE
-        $InputObject = Get-DbaSqlService -ComputerName sql1
+        $InputObject = Get-DbaService -ComputerName sql1
         $credential = Get-Credential
         Update-ServiceStatus -InputObject $InputObject -Action 'stop' -Timeout 0 -Credential $credential
 
@@ -190,7 +190,7 @@ function Update-ServiceStatus {
                     }
                 }
                 else {
-                    Stop-Function -FunctionName $callerName -Message "Unknown object in pipeline - make sure to use Get-DbaSqlService cmdlet" -EnableException $EnableException
+                    Stop-Function -FunctionName $callerName -Message "Unknown object in pipeline - make sure to use Get-DbaService cmdlet" -EnableException $EnableException
                     Return
                 }
             }
@@ -229,7 +229,7 @@ function Update-ServiceStatus {
                                 -2 { "The service failed to $action." }
                                 -1 { "The attempt to $action the service has timed out." }
                                 0 { "Service was successfully $actionText." }
-                                default { "The attempt to $action the service returned the following error: " + (Get-DBASQLServiceErrorMessage $jobResult.ExitCode) }
+                                default { "The attempt to $action the service returned the following error: " + (Get-DbaServiceErrorMessage $jobResult.ExitCode) }
                             }
                             Add-Member -Force -InputObject $outObject -NotePropertyName Message -NotePropertyValue $message
                             if ($jobResult.ServiceState) { $outObject.State = $jobResult.ServiceState }
