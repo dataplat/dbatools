@@ -96,4 +96,7 @@ Gets the registry root for all instances on server1
             }
         }
     }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlRegistryRoot
+    }
 }

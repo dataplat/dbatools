@@ -40,19 +40,12 @@
     [CmdletBinding(DefaultParameterSetName = "FullName")]
     Param (
         [Parameter(ParameterSetName = "FullName", Position = 0)]
-        [string]
-        $FullName = "*",
-
+        [string]$FullName = "*",
         [Parameter(ParameterSetName = "Module", Position = 1)]
-        [string]
-        $Name = "*",
-
+        [string]$Name = "*",
         [Parameter(ParameterSetName = "Module", Position = 0)]
-        [string]
-        $Module = "*",
-
-        [switch]
-        $Force
+        [string]$Module = "*",
+        [switch]$Force
     )
 
     switch ($PSCmdlet.ParameterSetName) {
@@ -67,4 +60,5 @@
             [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { ("$($_.Module).$($_.Name)" -like $FullName) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
         }
     }
+    Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaConfig
 }

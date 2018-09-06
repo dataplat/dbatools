@@ -320,7 +320,7 @@ Write-ImportTime -Text "Script: Maintenance"
     },
     @{
         "AliasName"  = "Copy-SqlServerAgent"
-        "Definition" = "Copy-DbaServerAgent"
+        "Definition" = "Copy-DbaAgentServer"
     },
     @{
         "AliasName"  = "Copy-SqlServerTrigger"
@@ -569,8 +569,7 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"  = "Test-DbaFullRecoveryModel"
         "Definition" = "Test-DbaRecoveryModel"
-    }
-     ,
+    },
     @{
         "AliasName"  = "Get-DbaDatabaseSnapshot"
         "Definition" = "Get-DbaDbSnapshot"
@@ -590,8 +589,7 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"  = "Get-DbaLog"
         "Definition" = "Get-DbaErrorLog"
-    }
-     ,
+    },
     @{
         "AliasName"  = "Test-DbaValidLogin"
         "Definition" = "Test-DbaWindowsLogin"
@@ -607,8 +605,7 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"  = "Get-DbaPolicy"
         "Definition" = "Get-DbaPbmPolicy"
-    }
-     ,
+    },
     @{
         "AliasName"  = "Backup-DbaDatabaseMasterKey"
         "Definition" = "Backup-DbaDbMasterKey"
@@ -672,8 +669,7 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"  = "Invoke-DbaDatabaseClone"
         "Definition" = "Invoke-DbaDbClone"
-    }
-     ,
+    },
     @{
         "AliasName"  = "Invoke-DbaDatabaseUpgrade"
         "Definition" = "Invoke-DbaDbUpgrade"
@@ -687,8 +683,8 @@ Write-ImportTime -Text "Script: Maintenance"
         "Definition" = "Set-DbaDbState"
     },
     @{
-        "AliasName"  = "Set-DbaDatabaseList"
-        "Definition" = "Set-DbaDbList"
+        "AliasName"  = "Show-DbaDatabaseList"
+        "Definition" = "Show-DbaDbList"
     },
     @{
         "AliasName"  = "Test-DbaDatabaseCollation"
@@ -701,6 +697,138 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"  = "Test-DbaDatabaseOwner"
         "Definition" = "Test-DbaDbOwner"
+    },
+    @{
+        "AliasName"  = "Clear-DbaSqlConnectionPool"
+        "Definition" = "Clear-DbaConnectionPool"
+    },
+    @{
+        "AliasName"  = "Copy-DbaSqlDataCollector"
+        "Definition" = "Copy-DbaDataCollector"
+    },
+    @{
+        "AliasName"  = "Copy-DbaSqlPolicyManagement"
+        "Definition" = "Copy-DbaPolicyManagement"
+    },
+    @{
+        "AliasName"  = "Copy-DbaSqlServerAgent"
+        "Definition" = "Copy-DbaAgentServer"
+    },
+    @{
+        "AliasName"  = "Get-DbaSqlBuildReference"
+        "Definition" = "Get-DbaBuildReference"
+    },
+    @{
+        "AliasName"  = "Get-DbaSqlFeature"
+        "Definition" = "Get-DbaFeature"
+    },
+    @{
+        "AliasName"  = "Get-DbaSqlInstanceProperty"
+        "Definition" = "Get-DbaInstanceProperty"
+    },
+    @{
+        "AliasName"  = "Get-DbaSqlInstanceUserOption"
+        "Definition" = "Get-DbaInstanceUserOption"
+    },
+    @{
+        "AliasName"  = "Get-DbaSqlManagementObject"
+        "Definition" = "Get-DbaManagementObject"
+    },
+    @{
+        "AliasName"  = "Get-DbaSqlModule"
+        "Definition" = "Get-DbaModule"
+    },
+    @{
+        "AliasName"  = "Get-DbaSqlProductKey"
+        "Definition" = "Get-DbaProductKey"
+    },
+    @{
+        "AliasName"  = "Get-DbaSqlRegistryRoot"
+        "Definition" = "Get-DbaRegistryRoot"
+    },
+    @{
+        "AliasName"  = "Get-DbaSqlService"
+        "Definition" = "Get-DbaService"
+    },
+    @{
+        "AliasName"  = "Invoke-DbaSqlQuery"
+        "Definition" = "Invoke-DbaQuery"
+    },
+    @{
+        "AliasName"  = "New-DbaSqlConnectionString"
+        "Definition" = "New-DbaConnectionString"
+    },
+    @{
+        "AliasName"  = "New-DbaSqlConnectionStringBuilder"
+        "Definition" = "New-DbaConnectionStringBuilder"
+    },
+    @{
+        "AliasName"  = "New-DbaSqlDirectory"
+        "Definition" = "New-DbaDirectory"
+    },
+    @{
+        "AliasName"  = "Restart-DbaSqlService"
+        "Definition" = "Restart-DbaService"
+    },
+    @{
+        "AliasName"  = "Start-DbaSqlService"
+        "Definition" = "Start-DbaService"
+    },
+    @{
+        "AliasName"  = "Stop-DbaSqlService"
+        "Definition" = "Stop-DbaService"
+    },
+    @{
+        "AliasName"  = "Test-DbaSqlBuild"
+        "Definition" = "Test-DbaBuild"
+    },
+    @{
+        "AliasName"  = "Test-DbaSqlManagementObject"
+        "Definition" = "Test-DbaManagementObject"
+    },
+    @{
+        "AliasName"  = "Test-DbaSqlPath"
+        "Definition" = "Test-DbaPath"
+    },
+    @{
+        "AliasName"  = "Update-DbaSqlServiceAccount"
+        "Definition" = "Update-DbaServiceAccount"
+    },
+    @{
+        "AliasName"  = "Set-DbaTempDbConfiguration"
+        "Definition" = "Set-DbaTempdbConfig"
+    },
+    @{
+        "AliasName"  = "Test-DbaTempDbConfiguration"
+        "Definition" = "Test-DbaTempdbConfig"
+    },
+    @{
+        "AliasName"  = "Export-DbaDacpac"
+        "Definition" = "Export-DbaDtaPackage"
+    },
+    @{
+        "AliasName"  = "Publish-DbaDacpac"
+        "Definition" = "Publish-DbaDtaPackage"
+    },
+    @{
+        "AliasName"  = "Get-DbaConfig"
+        "Definition" = "Get-DbatoolsConfig"
+    },
+    @{
+        "AliasName"  = "Set-DbaConfig"
+        "Definition" = "Set-DbatoolsConfig"
+    },
+    @{
+        "AliasName"  = "Get-DbaConfigValue"
+        "Definition" = "Get-DbatoolsConfigValue"
+    },
+    @{
+        "AliasName"  = "Register-DbaConfig"
+        "Definition" = "Register-DbatoolsConfig"
+    },
+    @{
+        "AliasName"  = "New-DbaPublishProfile"
+        "Definition" = "New-DbaDtaProfile"
     }
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }

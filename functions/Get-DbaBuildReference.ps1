@@ -299,4 +299,7 @@ function Get-DbaBuildReference {
             } | Select-DefaultView -ExcludeProperty SqlInstance
         }
     }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlBuildReference
+    }
 }

@@ -110,50 +110,26 @@ function Set-DbatoolsConfig {
     [CmdletBinding(DefaultParameterSetName = "FullName")]
     Param (
         [Parameter(ParameterSetName = "FullName", Position = 0, Mandatory = $true)]
-        [string]
-        $FullName,
-
+        [string]$FullName,
         [Parameter(ParameterSetName = "Module", Position = 1, Mandatory = $true)]
-        [string]
-        $Name,
-
+        [string]$Name,
         [Parameter(ParameterSetName = "Module", Position = 0)]
-        [string]
-        $Module,
-
+        [string]$Module,
         [Parameter(ParameterSetName = "FullName", Position = 1)]
         [Parameter(ParameterSetName = "Module", Position = 2)]
         [AllowNull()]
         [AllowEmptyCollection()]
         [AllowEmptyString()]
         $Value,
-
-        [string]
-        $Description,
-
-        [string]
-        $Validation,
-
-        [System.Management.Automation.ScriptBlock]
-        $Handler,
-
-        [switch]
-        $Hidden,
-
-        [switch]
-        $Default,
-
-        [switch]
-        $Initialize,
-
-        [switch]
-        $DisableValidation,
-
-        [switch]
-        $DisableHandler,
-
-        [switch]
-        $EnableException
+        [string]$Description,
+        [string]$Validation,
+        [System.Management.Automation.ScriptBlock]$Handler,
+        [switch]$Hidden,
+        [switch]$Default,
+        [switch]$Initialize,
+        [switch]$DisableValidation,
+        [switch]$DisableHandler,
+        [switch]$EnableException
     )
 
     #region Prepare Names
@@ -276,5 +252,6 @@ function Set-DbatoolsConfig {
             }
         }
     }
+    Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-DbaConfig
     #endregion Regular configuration update
 }

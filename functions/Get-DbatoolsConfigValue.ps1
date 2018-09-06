@@ -38,16 +38,11 @@ function Get-DbatoolsConfigValue {
     Param (
         [Alias('Name')]
         [Parameter(Mandatory = $true)]
-        [string]
-        $FullName,
-
-        [object]
-        $Fallback,
-
-        [switch]
-        $NotNull
+        [string]$FullName,
+        [object]$Fallback,
+        [switch]$NotNull
     )
-
+    Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaConfigValue
     $FullName = $FullName.ToLower()
 
     $temp = $null
