@@ -300,8 +300,8 @@ function Find-DbaInstance {
                     }
 
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SqlService) {
-                        if ($Credential) { $services = Get-DbaSqlService -ComputerName $computer -Credential $Credential -EnableException -ErrorAction Ignore -WarningAction SilentlyCOntinue }
-                        else { $services = Get-DbaSqlService -ComputerName $computer -ErrorAction Ignore -WarningAction SilentlyContinue }
+                        if ($Credential) { $services = Get-DbaService -ComputerName $computer -Credential $Credential -EnableException -ErrorAction Ignore -WarningAction SilentlyCOntinue }
+                        else { $services = Get-DbaService -ComputerName $computer -ErrorAction Ignore -WarningAction SilentlyContinue }
                     }
                     #endregion Gather data
 

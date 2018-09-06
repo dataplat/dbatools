@@ -9,11 +9,11 @@ $TestsRunGroups = @{
     "2016_2017"                 = 'autodetect_$script:instance2,$script:instance3'
     #run on scenario service_restarts - SQL Server service tests that might disrupt other tests
     "service_restarts"             = @(
-        'Start-DbaSqlService',
-        'Stop-DbaSqlService',
-        'Restart-DbaSqlService',
-        'Get-DbaSqlService',
-        'Update-DbaSqlServiceAccount',
+        'Start-DbaService',
+        'Stop-DbaService',
+        'Restart-DbaService',
+        'Get-DbaService',
+        'Update-DbaServiceAccount',
         'Enable-DbaAgHadr',
         'Disable-DbaAgHadr',
         'Reset-DbaAdmin'

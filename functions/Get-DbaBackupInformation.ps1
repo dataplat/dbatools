@@ -219,7 +219,7 @@ function Get-DbaBackupInformation {
                             $f = $f | Select-Object *, @{ Name = "FullName"; Expression = { $f } }
                         }
                         Write-Message -Message "Testing a single file $f " -Level Verbose
-                        if ((Test-DbaSqlPath -Path $f.fullname -SqlInstance $server)) {
+                        if ((Test-DbaPath -Path $f.fullname -SqlInstance $server)) {
                             $files += $f
                         }
                         else {

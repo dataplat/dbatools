@@ -66,7 +66,7 @@
                 try { $transfer.ScriptTransfer() } catch {}
             }
             
-            $userobjects = Get-DbaSqlModule -SqlInstance $server -Database $systemDb -NoSystemObjects | Sort-Object Type
+            $userobjects = Get-DbaModule -SqlInstance $server -Database $systemDb -NoSystemObjects | Sort-Object Type
             Write-Message -Level Verbose -Message "Copying from $systemDb"
             foreach ($userobject in $userobjects) {
                 $name = "[$($userobject.SchemaName)].[$($userobject.Name)]"
@@ -74,7 +74,7 @@
                 $type = get-sqltypename $userobject.Type
                 $userobject.Definition
                 $schema = $userobject.SchemaName
-                $result = Get-DbaSqlModule -SqlInstance $server -NoSystemObjects -Database $db |
+                $result = Get-DbaModule -SqlInstance $server -NoSystemObjects -Database $db |
                 Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
                 $smobject = switch ($userobject.Type) {
                     "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }

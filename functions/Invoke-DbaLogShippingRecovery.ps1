@@ -141,7 +141,7 @@ function Invoke-DbaLogShippingRecovery {
         # Try to get the agent service details
         try {
             # Start the service
-            $agentservice = Get-DbaSqlService -ComputerName $servername | Where-Object {($_.ComputerName -eq $servername) -and ($_.DisplayName -eq "SQL Server Agent ($instancename)")}
+            $agentservice = Get-DbaService -ComputerName $servername | Where-Object {($_.ComputerName -eq $servername) -and ($_.DisplayName -eq "SQL Server Agent ($instancename)")}
         }
         catch {
             # Stop the function when the service was unable to start
@@ -154,7 +154,7 @@ function Invoke-DbaLogShippingRecovery {
 
             if ($Force) {
                 try {
-                    Start-DbaSqlService -ComputerName $servername -InstanceName $instancename -Type Agent -Credential $SqlCredential
+                    Start-DbaService -ComputerName $servername -InstanceName $instancename -Type Agent -Credential $SqlCredential
                 }
                 catch {
                     # Stop the function when the service was unable to start
@@ -176,7 +176,7 @@ function Invoke-DbaLogShippingRecovery {
                 if ($choice -eq 0) {
                     try {
                         # Start the service
-                        Start-DbaSqlService -ComputerName $servername -InstanceName $instancename -Type Agent -Credential $SqlCredential
+                        Start-DbaService -ComputerName $servername -InstanceName $instancename -Type Agent -Credential $SqlCredential
                     }
                     catch {
                         # Stop the function when the service was unable to start
@@ -253,7 +253,7 @@ function Invoke-DbaLogShippingRecovery {
                         # Check if source and destination directory are in sync
                         if ($latestBackupSource.Name -ne $latestBackupDest.Name) {
                             # Check if the backup source directory can be reached
-                            if (Test-DbaSqlPath -SqlInstance $SqlInstance -Path $ls.backup_source_directory -SqlCredential $SqlCredential) {
+                            if (Test-DbaPath -SqlInstance $SqlInstance -Path $ls.backup_source_directory -SqlCredential $SqlCredential) {
 
                                 # Check if the latest file is also the latest copied file
                                 if ($latestBackupSource.Name -ne ([string]$ls.last_copied_file).Split('\')[-1]) {

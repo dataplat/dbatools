@@ -12,12 +12,12 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
                      RETURN N'gOffHoursProcessing'
                 END"
 
-        Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query $sql
-        Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query "ALTER RESOURCE GOVERNOR with (CLASSIFIER_FUNCTION = dbo.dbatoolsci_fnRG); ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER RESOURCE GOVERNOR with (CLASSIFIER_FUNCTION = dbo.dbatoolsci_fnRG); ALTER RESOURCE GOVERNOR RECONFIGURE"
     }
     AfterAll {
-        Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG]"
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG]"
     }
 
     Context "Command works" {
