@@ -89,7 +89,7 @@ function Get-DbaService {
         [switch]$EnableException
     )
 
-    BEGIN {
+    begin {
         #Dictionary to transform service type IDs into the names from Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer.Services.Type
         $ServiceIdMap = @(
             @{ Name = "Engine"; Id = 1 },
@@ -128,7 +128,7 @@ function Get-DbaService {
             }
         }
     }
-    PROCESS {
+    process {
         foreach ($Computer in $ComputerName.ComputerName) {
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
             if ($Server.FullComputerName) {
@@ -228,5 +228,8 @@ function Get-DbaService {
                 Stop-Function -EnableException $EnableException -Message "Failed to connect to $Computer" -Continue
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlService
     }
 }

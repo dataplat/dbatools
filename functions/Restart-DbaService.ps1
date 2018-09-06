@@ -138,6 +138,10 @@ function Restart-DbaService {
                 Update-ServiceStatus -InputObject $services -Action 'restart' -Timeout $Timeout -EnableException $EnableException
             }
         }
-        else { Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." }
+        else {
+            Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters."
+        }
+        
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Restart-DbaSqlService
     }
 }
