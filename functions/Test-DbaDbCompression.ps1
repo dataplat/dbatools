@@ -4,7 +4,7 @@ function Test-DbaDbCompression {
         Returns tables and indexes with preferred compression setting.
      .DESCRIPTION
         This function returns the results of a full table/index compression analysis.
-        This function returns the best option to date for either NONE, Page, or Row Compression.
+        This function returns the estimated best option to date for either NONE, Page, or Row Compression.
         Remember Uptime is critical, the longer uptime, the more accurate the analysis is.
         You would probably be best if you utilized Get-DbaUptime first, before running this command.
 
@@ -24,9 +24,12 @@ function Test-DbaDbCompression {
         to sp_estimate_data_compression_savings no space gains will be attained when compressing, as in the above output example,
         where compressing would grow the affected object.
 
-        Note: Note that this script will execute on the context of the current database.
+        Note: This script will execute on the context of the current database.
         Also be aware that this may take awhile to execute on large objects, because if the IS locks taken by the
         sp_estimate_data_compression_savings cannot be honored, the SP will be blocked.
+        It only consisders Row or Page Compression (not column compression)
+        It only evaluates User Tables
+
 
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -39,6 +42,15 @@ function Test-DbaDbCompression {
 
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is autopopulated from the server
+
+    .PARAMETER Schema
+        Filter to only get specific schemas If unspecified, all schemas will be processed.
+
+    .PARAMETER Table
+        Filter to only get specific tables If unspecified, all User tables will be processed.
+
+    .PARAMETER MaxResultsPerDb
+        Allows you to limit the number of results returned, as some systems can have very large number of tables.  Default value is no restriction.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -58,22 +70,57 @@ function Test-DbaDbCompression {
     .EXAMPLE
         Test-DbaCompression -SqlInstance localhost
 
-        Returns all user database files and free space information for the local host
-
-    .EXAMPLE
-        Test-DbaCompression -SqlInstance ServerA -Database DBName | Out-GridView
-        Returns results of all potential compression options for a single database
-        with the recommendation of either Page or Row into and nicely formatted GridView
+        Returns results of all potential compression options for all databases for the default
+        instance on the local host. Returns the recommendation of either Page, Row or NONE
 
     .EXAMPLE
         Test-DbaCompression -SqlInstance ServerA
+
         Returns results of all potential compression options for all databases
-        with the recommendation of either Page or Row
+        on the instance ServerA with the recommendation of either Page or Row or NONE
+
+    .EXAMPLE
+        Test-DbaCompression -SqlInstance ServerA -Database DBName | Out-GridView
+
+        Returns results of all potential compression options for a single database DBName
+        with the recommendation of either Page or Row or NONE in a nicely formatted GridView
+
     .EXAMPLE
         $cred = Get-Credential sqladmin
-        Test-DbaCompression -SqlInstance ServerA -ExcludeDatabase Database -SqlCredential $cred
+        Test-DbaCompression -SqlInstance ServerA -ExcludeDatabase MyDatabase -SqlCredential $cred
+
+        Returns results of all potential compression options for all databases except MyDatabase
+        on instance ServerA using SQL credentials to authentication to ServerA
+        Returns the recommendation of either Page, Row or NONE
+
+    .EXAMPLE
+        Test-DbaCompression -SqlInstance ServerA, ServerB -MaxResultsPerDb 10
+
         Returns results of all potential compression options for all databases
-        with the recommendation of either Page or Row
+        on ServerA and ServerB. Returns the recommendation of either Page, Row or NONE.
+        Returns results for the top 10 tables by Total Space used per database.
+
+    .EXAMPLE
+        Test-DbaCompression -SqlInstance ServerA -Schema Test -MaxResultsPerDb 10
+
+        Returns results of all potential compression options for all databases on ServerA
+        in Schema Test. Returns results for the top 10 tables by Total Space used per database.
+
+    .EXAMPLE
+        $servers = 'Server1','Server2'
+        $servers | Test-DbaCompression -Database DBName | Out-GridView
+
+        Returns results of all potential compression options for a single database DBName
+        on Server1 or Server2
+        Returns the recommendation of either Page, Row or NONE in a nicely formatted GridView
+
+    .EXAMPLE
+        $cred = Get-Credential sqladmin
+
+        Test-DbaCompression -SqlInstance ServerA -Database MyDB -SqlCredential $cred -Schema Test -Table Test1, Test2
+        Returns results of all potential compression options for objects in Database MyDb on instance ServerA
+        using SQL credentials to authentication to ServerA. Returns the recommendation of
+        either Page, Row or NONE for tables with SchemA Test and name in Test1 or Test2
 
     .EXAMPLE
         $servers = 'Server1','Server2'
@@ -93,12 +140,67 @@ function Test-DbaDbCompression {
         [PSCredential]$SqlCredential,
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
+        [string[]]$Schema,
+        [string[]]$Table,
+        [int]$MaxResultsPerDb,
         [Alias('Silent')]
         [switch]$EnableException
     )
 
     begin {
         Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
+
+        if ($Schema) {
+            $sqlSchemaWhere = "AND s.name IN ('$($Schema -join "','")')"
+        }
+
+        if ($Table) {
+            $sqlTableWhere = "AND t.name IN ('$($Table -join "','")')"
+        }
+
+        if ($MaxResultsPerDb) {
+            $sqlRestrict = "-- remove tables not in Top N
+With TopN(TableName, SchemaName, IndexID, [Partition], RowCounts, TotalSpaceKB, UsedSpaceKB) as
+(
+    SELECT TOP $MaxResultsPerDb
+        t.NAME as TableName,
+        s.Name AS SchemaName,
+        i.index_id AS [IndexID],
+        p.partition_number AS [Partition],
+        SUM(p.rows) AS RowCounts,
+        SUM(a.total_pages) * 8 AS TotalSpaceKB,
+        SUM(a.used_pages) * 8 AS UsedSpaceKB
+    FROM
+        sys.tables t
+    INNER JOIN
+        sys.indexes i ON t.OBJECT_ID = i.object_id
+    INNER JOIN
+        sys.partitions p ON i.object_id = p.OBJECT_ID AND i.index_id = p.index_id
+    INNER JOIN
+        sys.allocation_units a ON p.partition_id = a.container_id
+    LEFT OUTER JOIN
+        sys.schemas s ON t.schema_id = s.schema_id
+    WHERE objectproperty(t.object_id, 'IsUserTable') = 1
+        AND p.data_compression_desc = 'NONE'
+        AND p.rows > 0
+        $sqlSchemaWhere
+        $sqlTableWhere
+    GROUP BY
+        t.Name, s.Name, i.index_id, p.partition_number
+    ORDER BY
+        TotalSpaceKB Desc
+)
+DELETE tdc
+FROM ##testdbacompression tdc
+LEFT JOIN TopN t
+    ON t.SchemaName = tdc.[Schema] COLLATE DATABASE_DEFAULT
+    AND t.TableName = tdc.TableName COLLATE DATABASE_DEFAULT
+    AND t.IndexID = tdc.IndexID
+    AND t.[Partition] = tdc.[Partition]
+WHERE t.IndexID IS NULL;"
+
+        }
+
         $sql = "SET NOCOUNT ON;
 
 IF OBJECT_ID('tempdb..##testdbacompression', 'U') IS NOT NULL
@@ -175,7 +277,11 @@ INNER JOIN sys.partitions p ON x.object_id = p.object_id
 WHERE objectproperty(t.object_id, 'IsUserTable') = 1
     AND p.data_compression_desc = 'NONE'
     AND p.rows > 0
+    $sqlSchemaWhere
+    $sqlTableWhere
 ORDER BY [TableName] ASC;
+
+$sqlRestrict
 
 DECLARE @sqlVersion int
 SELECT @sqlVersion = substring(CONVERT(VARCHAR,SERVERPROPERTY('ProductVersion')),0,CHARINDEX('.',(CONVERT(VARCHAR,SERVERPROPERTY('ProductVersion')))))
@@ -185,8 +291,8 @@ IF @sqlVersion >= '12'
         DELETE tdc
         FROM ##testdbacompression tdc
         INNER JOIN sys.tables t
-            ON SCHEMA_NAME(t.schema_id) = tdc.[Schema]
-            AND t.name = tdc.TableName
+            ON SCHEMA_NAME(t.schema_id) = tdc.[Schema] COLLATE DATABASE_DEFAULT
+            AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
         WHERE t.is_memory_optimized = 1
     END
 IF @sqlVersion >= '13'
@@ -195,8 +301,8 @@ IF @sqlVersion >= '13'
         DELETE tdc
         FROM ##testdbacompression tdc
         INNER JOIN sys.tables t
-            ON SCHEMA_NAME(t.schema_id) = tdc.[Schema]
-            AND t.name = tdc.TableName
+            ON SCHEMA_NAME(t.schema_id) = tdc.[Schema] COLLATE DATABASE_DEFAULT
+            AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
         INNER JOIN sys.columns c
             ON t.object_id = c.object_id
         WHERE encryption_type IS NOT NULL
@@ -207,8 +313,8 @@ IF @sqlVersion >= '14'
         DELETE tdc
         FROM ##testdbacompression tdc
         INNER JOIN sys.tables t
-            ON tdc.[Schema] = SCHEMA_NAME(t.schema_id)
-            AND tdc.TableName = t.name
+            ON tdc.[Schema] = SCHEMA_NAME(t.schema_id) COLLATE DATABASE_DEFAULT
+            AND tdc.TableName = t.name COLLATE DATABASE_DEFAULT
         WHERE (is_node = 1 OR is_edge = 1)
     END
 
@@ -416,10 +522,9 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
 
             #If SQL Server 2016 SP1 (13.0.4001.0) or higher every version supports compression.
             if ($Server.EngineEdition -ne "EnterpriseOrDeveloper" -and $instanceVersionNumber -lt 13040010) {
-                Stop-Function -Message "Compression before SQLServer 2016 SP1 (13.0.4001.0) is only supported by enterprise, developer or evaluation edition. $Server has version $($server.VersionString) and edition is $($Server.EngineEdition)." -Target $db -Continue
+                Stop-Function -Message "Compresison before SQLServer 2016 SP1 (13.0.4001.0) is only supported by enterprise, developer or evaluation edition. $Server has version $($server.VersionString) and edition is $($Server.EngineEdition)." -Target $db -Continue
             }
-            #If IncludeSystemDBs is true, include systemdbs
-            #look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
+            #Filter Database list
             try {
                 $dbs = $server.Databases | Where-Object IsAccessible
 
