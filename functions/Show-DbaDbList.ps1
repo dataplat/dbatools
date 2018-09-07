@@ -1,4 +1,4 @@
-function Show-DbaDatabaseList {
+function Show-DbaDbList {
     <#
         .SYNOPSIS
             Shows a list of databases in a GUI.
@@ -28,15 +28,15 @@ function Show-DbaDatabaseList {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Show-DbaDatabaseList
+            https://dbatools.io/Show-DbaDbList
 
         .EXAMPLE
-            Show-DbaDatabaseList -SqlInstance sqlserver2014a
+            Show-DbaDbList -SqlInstance sqlserver2014a
 
             Shows a GUI list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected database.
 
         .EXAMPLE
-            Show-DbaDatabaseList -Source sqlserver2014a -SqlCredential $cred
+            Show-DbaDbList -Source sqlserver2014a -SqlCredential $cred
 
             Shows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected database.
     #>
