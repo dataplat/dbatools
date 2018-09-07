@@ -1,4 +1,4 @@
-[
+﻿[
     {
         "CommandName":  "Add-DbaComputerCertificate",
         "Description":  "Adds a computer certificate from a local or remote computer.",
@@ -4541,21 +4541,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbatoolsConfig -Name \u0027User\u0027 -Value \"Friedrich\" -Description \"The user under which the show must go on.\"\r\n\r\nCreates a configuration entry named \"User\" with the value \"Friedrich\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbatoolsConfig -Name \u0027mymodule.User\u0027 -Value \"Friedrich\" -Description \"The user under which the show must go \r\non.\" -Handler $scriptBlock -Initialize -Validation String\r\n\r\nCreates a configuration entry ...\r\n- Named \"mymodule.user\"\r\n- With the value \"Friedrich\"\r\n- It adds a description as noted\r\n- It registers the scriptblock stored in $scriptBlock as handler\r\n- It initializes the script. This block only executes the first time a it is run like this. Subsequent calls will be \r\nignored.\r\n- It registers the basic string input type validator\r\nThis is the default example for modules using the configuration system.\r\nNote: While the -Handler parameter is optional, it is important to add it at the initial initialize call, if you are \r\nplanning to add it.\r\nOnly then will the system validate previous settings (such as what a user might have placed in his user profile)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbatoolsConfig \u0027ConfigLink\u0027 \u0027https://www.example.com/config.xml\u0027 \u0027Company\u0027 -Hidden\r\n\r\nCreates a configuration entry named \"ConfigLink\" in the \"Company\" module with the value \r\n\u0027https://www.example.com/config.xml\u0027.\r\nThis entry is hidden from casual discovery using Get-Config.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbatoolsConfig \u0027Network.Firewall\u0027 \u002710.0.0.2\u0027 -Default\r\n\r\nCreates a configuration entry named \"Firewall\" in the \"Network\" module with the value \u002710.0.0.2\u0027\r\nThis is only set, if the setting does not exist yet. If it does, this command will apply no changes.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Show-DbaDatabaseList",
-        "Description":  "Shows a list of databases in a GUI. Returns a string holding the name of the selected database. Hitting cancel returns null.",
-        "Tags":  "Database",
-        "Synopsis":  [
-                         "Show-DbaDbList",
-                         "Shows a list of databases in a GUI."
-                     ],
-        "Name":  [
-                     "Show-DbaDatabaseList",
-                     "Show-DbaDatabaseList"
-                 ],
-        "Links":  "https://dbatools.io/Show-DbaDatabaseList",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eShow-DbaDatabaseList -SqlInstance sqlserver2014a\r\n\r\nShows a GUI list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the \r\nselected database.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eShow-DbaDatabaseList -Source sqlserver2014a -SqlCredential $cred\r\n\r\nShows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected \r\ndatabase.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Show-DbaServerFileSystem",
         "Description":  "Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this function allows you to traverse the remote SQL Server\u0027s file structure.\n\nShow-DbaServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.",
         "Tags":  "Storage",
@@ -4741,14 +4726,8 @@
                      "Login"
                  ],
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  [
-                         "Sync-DbaLoginPermission",
-                         "Copies SQL login permissions from one server to another."
-                     ],
-        "Name":  [
-                     "Sync-DbaLoginPermission",
-                     "Sync-DbaLoginPermission"
-                 ],
+        "Synopsis":  "Copies SQL login permissions from one server to another.",
+        "Name":  "Sync-DbaLoginPermission",
         "Links":  "https://dbatools.io/Sync-DbaLoginPermission",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster\r\n\r\nSyncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. To copy logins and their \r\npermissions, use Copy-SqlLogin.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential \r\n$scred -DestinationSqlCredential $dcred\r\n\r\nCopies all login permissions except for realcajun using SQL Authentication to connect to each server. If a login \r\nalready exists on the destination, the permissions will not be migrated.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSync-DbaLoginPermission -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds\r\n\r\nCopies permissions ONLY for logins netnerds and realcajun.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
