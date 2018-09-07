@@ -70,14 +70,14 @@ function Test-DbaDbCompression {
     .EXAMPLE
         Test-DbaCompression -SqlInstance localhost
 
-        Returns results of all potential compression options for all databases for the default
-        instance on the local host. Returns the recommendation of either Page, Row or NONE
+        Returns results of all potential compression options for all databases for the default instance on the local host.
+        Returns a recommendation of either Page, Row or NO_GAIN
 
     .EXAMPLE
         Test-DbaCompression -SqlInstance ServerA
 
         Returns results of all potential compression options for all databases
-        on the instance ServerA with the recommendation of either Page or Row or NONE
+        on the instance ServerA
 
     .EXAMPLE
         Test-DbaCompression -SqlInstance ServerA -Database DBName | Out-GridView
