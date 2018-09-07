@@ -1,4 +1,4 @@
-function Get-DbaService {
+function Get-InternalService {
     <#
     .SYNOPSIS
         Uses WMI/CIM to scan for the existance of a specific windows services.
@@ -6,7 +6,7 @@ function Get-DbaService {
     .DESCRIPTION
         Uses WMI/CIM to scan for the existance of a specific windows services.
 
-        Use Get-DbaService if you are interested in scanning for sql server services exclusively.
+        Use Get-InternalService if you are interested in scanning for sql server services exclusively.
 
     .PARAMETER ComputerName
         The computer to target. Uses localhost by default.
@@ -29,18 +29,18 @@ function Get-DbaService {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .EXAMPLE
-        Get-DbaService -Name LanmanServer
+        Get-InternalService -Name LanmanServer
 
         Returns information on the LanmanServer service from localhost.
 
     .EXAMPLE
-        Get-ADComputer -Filter * | Get-DbaService -Name Browser
+        Get-ADComputer -Filter * | Get-InternalService -Name Browser
 
         First retrieves all computer accounts from active directory, then scans all of those computers for the browser service.
         Note: THis may take seriously long time, you may also want to filter out computers that are offline before scanning for services.
 
     .EXAMPLE
-        Get-DbaService -ComputerName "server1","server2","server3" -Name Lanman%
+        Get-InternalService -ComputerName "server1","server2","server3" -Name Lanman%
 
         Scans the servers server1, server2 and server3 for all services whose name starts with 'lanman'
 #>
