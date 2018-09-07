@@ -12,7 +12,7 @@
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         
-        .PARAMETER proxy
+        .PARAMETER Proxy
             The proxy to process - this list is auto-populated from the server. If unspecified, all proxies will be processed.
             
         .PARAMETER EnableException
