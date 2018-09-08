@@ -56,7 +56,7 @@ function Get-DbaWindowsLog {
 #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]
         $SqlInstance = $env:COMPUTERNAME,

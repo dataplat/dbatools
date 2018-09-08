@@ -128,9 +128,9 @@ function Get-DbaBackupInformation {
     #>
     [CmdletBinding( DefaultParameterSetName = "Create")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
-        [parameter(Mandatory = $true, ParameterSetName = "Create")]
+        [parameter(Mandatory, ParameterSetName = "Create")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(ParameterSetName = "Create")]

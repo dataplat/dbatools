@@ -387,12 +387,12 @@ function Invoke-DbaLogShipping {
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 
     param(
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Alias("SourceServerInstance", "SourceSqlServerSqlServer", "Source")]
         [object]$SourceSqlInstance,
 
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Alias("DestinationServerInstance", "DestinationSqlServer", "Destination")]
         [object]$DestinationSqlInstance,
@@ -413,10 +413,10 @@ function Invoke-DbaLogShipping {
         [System.Management.Automation.PSCredential]
         $DestinationCredential,
 
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Database,
 
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [string]$BackupNetworkPath,
 
         [parameter(Mandatory = $false)]

@@ -87,11 +87,11 @@ function Read-DbaBackupHeader {
     <# AzureCredential is utilized in this command is not a formal Credential object. #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance]$SqlInstance,
         [PsCredential]$SqlCredential,
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
         [switch]$Simple,
         [switch]$FileList,

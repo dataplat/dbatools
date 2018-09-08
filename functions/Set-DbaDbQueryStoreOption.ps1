@@ -91,7 +91,7 @@ function Set-DbaDbQueryStoreOption {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]

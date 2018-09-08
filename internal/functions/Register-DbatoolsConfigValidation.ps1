@@ -27,11 +27,11 @@
     #>
     [CmdletBinding()]
     Param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [string]
         $Name,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ScriptBlock]
         $ScriptBlock
     )

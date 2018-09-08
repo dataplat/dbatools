@@ -38,7 +38,7 @@ function Remove-DbaCmConnection {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
+        [Parameter(ValueFromPipeline, Mandatory)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName,
 

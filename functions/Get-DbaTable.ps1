@@ -66,7 +66,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 
 #>
     [CmdletBinding()]
-    param ([parameter(ValueFromPipeline, Mandatory = $true)]
+    param ([parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]

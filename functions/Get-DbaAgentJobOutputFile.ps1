@@ -83,8 +83,8 @@ function Get-DbaAgentJobOutputFile {
     [CmdletBinding()]
     param
     (
-        [Parameter(Mandatory = $true, HelpMessage = 'The SQL Server Instance',
-            ValueFromPipeline = $true,
+        [Parameter(Mandatory, HelpMessage = 'The SQL Server Instance',
+            ValueFromPipeline,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false,
             Position = 0)]

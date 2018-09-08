@@ -37,7 +37,7 @@ function Get-DbatoolsConfigValue {
     [CmdletBinding()]
     Param (
         [Alias('Name')]
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [string]$FullName,
         [object]$Fallback,
         [switch]$NotNull

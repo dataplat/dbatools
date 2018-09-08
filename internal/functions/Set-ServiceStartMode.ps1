@@ -40,7 +40,7 @@ function Set-ServiceStartMode {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [string]$Mode,
-        [parameter(ValueFromPipeline = $true, Mandatory = $true)]
+        [parameter(ValueFromPipeline, Mandatory)]
         [object[]]$InputObject
     )
     begin {

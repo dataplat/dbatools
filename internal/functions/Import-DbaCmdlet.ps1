@@ -36,11 +36,11 @@
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [String]
         $Name,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [Type]
         $Type,
         

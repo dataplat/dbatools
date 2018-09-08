@@ -126,7 +126,7 @@ function Set-DbaCmConnection {
     #>
     [CmdletBinding(DefaultParameterSetName = 'Credential')]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
 

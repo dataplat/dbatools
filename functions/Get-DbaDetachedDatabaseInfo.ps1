@@ -39,10 +39,10 @@ function Get-DbaDetachedDatabaseInfo {
 
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("Mdf")]
         [string]$Path,
         [PSCredential]$SqlCredential

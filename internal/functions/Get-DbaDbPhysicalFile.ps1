@@ -23,7 +23,7 @@ function Get-DbaDbPhysicalFile {
     #>
     [CmdletBinding()]
     param(
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]

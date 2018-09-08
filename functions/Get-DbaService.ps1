@@ -73,7 +73,7 @@ function Get-DbaService {
     #>
     [CmdletBinding(DefaultParameterSetName = "Search")]
     Param (
-        [parameter(ValueFromPipeline = $true, Position = 1)]
+        [parameter(ValueFromPipeline, Position = 1)]
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [Parameter(ParameterSetName = "Search")]
@@ -201,7 +201,7 @@ function Get-DbaService {
                                 }
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "ChangeStartMode" -Value {
                                     Param (
-                                        [parameter(Mandatory = $true)]
+                                        [parameter(Mandatory)]
                                         [string]$Mode
                                     )
                                     $supportedModes = @("Automatic", "Manual", "Disabled")

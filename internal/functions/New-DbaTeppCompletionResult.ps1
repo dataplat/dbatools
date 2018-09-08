@@ -28,7 +28,7 @@
             Returns a CompletionResult with the text and tooltip 'master'
     #>
     param (
-        [Parameter(Position = 0, ValueFromPipelineByPropertyName = $true, Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Position = 0, ValueFromPipelineByPropertyName = $true, Mandatory, ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [string]
         $CompletionText,

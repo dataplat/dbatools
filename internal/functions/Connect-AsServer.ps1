@@ -24,7 +24,7 @@ Connects to SSAS on the local server
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [object]$AsServer,
         [switch]$ParameterConnection
     )

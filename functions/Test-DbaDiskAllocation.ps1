@@ -70,7 +70,7 @@ function Test-DbaDiskAllocation {
     [CmdletBinding(SupportsShouldProcess = $true)]
     [OutputType("System.Collections.ArrayList", "System.Boolean")]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [object[]]$ComputerName,
         [switch]$NoSqlCheck,

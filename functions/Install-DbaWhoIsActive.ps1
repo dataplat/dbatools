@@ -66,7 +66,7 @@ function Install-DbaWhoIsActive {
 
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
+        [parameter(Mandatory, ValueFromPipeline, Position = 0)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PsCredential]$SqlCredential,

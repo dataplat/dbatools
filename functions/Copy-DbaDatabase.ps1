@@ -166,7 +166,7 @@ function Copy-DbaDatabase {
         [parameter(Mandatory = $false)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [Alias("Databases")]
@@ -176,7 +176,7 @@ function Copy-DbaDatabase {
         [parameter(ParameterSetName = "DbBackup")]
         [parameter(ParameterSetName = "DbAttachDetach")]
         [switch]$AllDatabases,
-        [parameter(Mandatory = $true, ParameterSetName = "DbBackup")]
+        [parameter(Mandatory, ParameterSetName = "DbBackup")]
         [switch]$BackupRestore,
         [parameter(ParameterSetName = "DbBackup",
                    HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and the SQL Server service accounts for both Source and Destination.")]
@@ -190,7 +190,7 @@ function Copy-DbaDatabase {
         [parameter(ParameterSetName = "DbBackup")]
         [ValidateRange(1, 64)]
         [int]$NumberFiles = 3,
-        [parameter(Mandatory = $true, ParameterSetName = "DbAttachDetach")]
+        [parameter(Mandatory, ParameterSetName = "DbAttachDetach")]
         [switch]$DetachAttach,
         [parameter(ParameterSetName = "DbAttachDetach")]
         [switch]$Reattach,
@@ -252,10 +252,10 @@ function Copy-DbaDatabase {
         #>
             [CmdletBinding()]
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
                 [string]$servername,
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
                 [string]$filepath
 

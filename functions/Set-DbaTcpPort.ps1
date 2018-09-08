@@ -61,12 +61,12 @@ function Set-DbaTcpPort {
     #>
     [CmdletBinding(ConfirmImpact = "High")]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [ValidateRange(1, 65535)]
         [int]$Port,
         [IpAddress[]]$IpAddress,

@@ -61,7 +61,7 @@ function Get-SqlCmdVars {
     [CmdletBinding()]
     param
     (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         $SqlCommandVariableValues,
         [switch]$EnableException
     )

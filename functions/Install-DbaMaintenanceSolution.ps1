@@ -103,7 +103,7 @@ function Install-DbaMaintenanceSolution {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias('ServerInstance', 'SqlServer')]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,

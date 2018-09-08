@@ -84,28 +84,28 @@ function New-DbaLogShippingSecondaryPrimary {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$BackupSourceDirectory,
         [Parameter(Mandatory = $false)]
         [string]$BackupDestinationDirectory,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$CopyJob,
         [int]$FileRetentionPeriod = 14420,
         [string]$MonitorServer,
         [PSCredential]$MonitorCredential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateSet(0, "sqlserver", 1, "windows")]
         [object]$MonitorServerSecurityMode = 1,
         [object]$PrimaryServer,
         [PSCredential]$PrimarySqlCredential,
         [object]$PrimaryDatabase,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$RestoreJob,
         [Alias('Silent')]

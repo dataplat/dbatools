@@ -21,7 +21,7 @@ function Get-SqlDefaultSpConfigure {
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Alias("Version")]
         [object]$SqlVersion

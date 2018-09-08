@@ -93,12 +93,12 @@ function Set-DbaTempdbConfig {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$DataFileCount,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [int]$DataFileSizeMB,
         [int]$LogFileSizeMB,
         [int]$DataFileGrowthMB = 512,

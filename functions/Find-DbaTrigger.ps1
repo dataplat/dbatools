@@ -71,14 +71,14 @@ function Find-DbaTrigger {
     #>
     [CmdletBinding()]
     Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [string]$Pattern,
         [ValidateSet('All', 'Server', 'Database', 'Object')]
         [string]$TriggerLevel = 'All',
