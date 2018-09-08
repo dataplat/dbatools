@@ -44,7 +44,7 @@
         [Alias("ServerInstance", "Instance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$Proxy
+        [string[]]$Proxy,
         [switch]$EnableException
     )
     process {
