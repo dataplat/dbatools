@@ -77,7 +77,7 @@ function Get-DbaUserPermission {
         [switch]$EnableException
     )
 
-    BEGIN {
+    begin {
 
         $sql = [System.IO.File]::ReadAllText("$script:PSModuleRoot\bin\stig.sql")
 
