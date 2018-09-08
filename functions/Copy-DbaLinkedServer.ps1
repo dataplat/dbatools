@@ -7,7 +7,10 @@ function Copy-DbaLinkedServer {
             By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.
 
             Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
-            License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
+
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
         .PARAMETER Source
             Source SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
@@ -139,7 +142,7 @@ function Copy-DbaLinkedServer {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$linkedServerName exists $($destServer.Name). Skipping.")) {
                             $copyLinkedServer.Status = "Skipped"
                             $copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             Write-Message -Level Verbose -Message "$linkedServerName exists $($destServer.Name). Skipping."
                         }
                         continue
@@ -217,7 +220,7 @@ function Copy-DbaLinkedServer {
                 }
             }
         }
-        
+
         if ($null -ne $SourceSqlCredential.Username) {
             Write-Message -Level Verbose -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
         }
@@ -236,7 +239,7 @@ function Copy-DbaLinkedServer {
         }
         Write-Message -Level Verbose -Message "Getting NetBios name for $source."
         $sourceNetBios = Resolve-NetBiosName $sourceserver
-        
+
         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source."
         try {
             Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
@@ -248,7 +251,7 @@ function Copy-DbaLinkedServer {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($destinstance in $Destination) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $destinstance"
@@ -260,7 +263,7 @@ function Copy-DbaLinkedServer {
             if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
                 Stop-Function -Message "Not a sysadmin on $destinstance" -Target $destServer -Continue
             }
-            
+
             # Magic happens here
             Copy-DbaLinkedServers $LinkedServer -Force:$force
         }

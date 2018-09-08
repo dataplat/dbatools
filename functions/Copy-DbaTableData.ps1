@@ -115,7 +115,7 @@ function Copy-DbaTableData {
         .EXAMPLE
             Get-DbaTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaTableData -DestinationTable tb3
 
-            Copies all data from tables tb1 and tb2 in tempdb on sql1 to tb3 in tempdb onsql1
+            Copies all data from tables tb1 and tb2 in tempdb on sql1 to tb3 in tempdb on sql1
 
         .EXAMPLE
             Get-DbaTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaTableData -Destination sql2
