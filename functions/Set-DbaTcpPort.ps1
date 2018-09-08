@@ -57,7 +57,7 @@ function Set-DbaTcpPort {
         .EXAMPLE
             Set-DbaTcpPort -SqlInstance 'SQLDB2014A' ,'SQLDB2016B' -port 1337
 
-            Sets the port number 1337 for IP Addresses on SqlInstance SQLDB2014A and SQLDB2016B
+            Sets the port number 1337 for all IP Addresses on SqlInstance SQLDB2014A and SQLDB2016B
     #>
     [CmdletBinding(ConfirmImpact = "High")]
     Param (
