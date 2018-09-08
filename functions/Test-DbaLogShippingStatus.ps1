@@ -112,14 +112,14 @@ CREATE TABLE #logshippingstatus
     DatabaseName VARCHAR(100) ,
     TimeSinceLastBackup INT ,
     LastBackupFile VARCHAR(255) ,
-    BackupThresshold INT ,
+    BackupThreshold INT ,
     IsBackupAlertEnabled BIT ,
     TimeSinceLastCopy INT ,
     LastCopiedFile VARCHAR(255) ,
     TimeSinceLastRestore INT ,
     LastRestoredFile VARCHAR(255) ,
     LastRestoredLatency INT ,
-    RestoreThresshold INT ,
+    RestoreThreshold INT ,
     IsRestoreAlertEnabled BIT
 );
 
@@ -130,14 +130,14 @@ INSERT INTO #logshippingstatus
     DatabaseName ,
     TimeSinceLastBackup ,
     LastBackupFile ,
-    BackupThresshold ,
+    BackupThreshold ,
     IsBackupAlertEnabled ,
     TimeSinceLastCopy ,
     LastCopiedFile ,
     TimeSinceLastRestore ,
     LastRestoredFile ,
     LastRestoredLatency ,
-    RestoreThresshold ,
+    RestoreThreshold ,
     IsRestoreAlertEnabled
 )
 EXEC master.sys.sp_help_log_shipping_monitor"
@@ -219,8 +219,8 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                             if (-not $result.TimeSinceLastBackup) {
                                 $statusDetails += "The backup has never been executed."
                             }
-                            elseif ($result.TimeSinceLastBackup -ge $result.BackupThresshold) {
-                                $statusDetails += "The backup has not been executed in the last $($result.BackupThresshold) minutes"
+                            elseif ($result.TimeSinceLastBackup -ge $result.BackupThreshold) {
+                                $statusDetails += "The backup has not been executed in the last $($result.BackupThreshold) minutes"
                             }
                         }
                         elseif (-not $result.IsPrimary) {
@@ -228,8 +228,8 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                             if ($null -eq $result.TimeSinceLastRestore) {
                                 $statusDetails += "The restore has never been executed."
                             }
-                            elseif ($result.TimeSinceLastRestore -ge $result.RestoreThresshold) {
-                                $statusDetails += "The restore has not been executed in the last $($result.RestoreThresshold) minutes"
+                            elseif ($result.TimeSinceLastRestore -ge $result.RestoreThreshold) {
+                                $statusDetails += "The restore has not been executed in the last $($result.RestoreThreshold) minutes"
                             }
                         }
                     }
@@ -262,6 +262,7 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                 }
 
                 # Set up the custom object
+                # Includes mispelled properties BackupThresshold and RestoreThresshold for backward compatiability.
                 $null = $collection.Add([PSCustomObject]@{
                         ComputerName          = $server.ComputerName
                         InstanceName          = $server.ServiceName
@@ -270,14 +271,16 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                         InstanceType          = switch ($result.IsPrimary) { $true { "Primary Instance" } $false { "Secondary Instance" } }
                         TimeSinceLastBackup   = $lastBackup
                         LastBackupFile        = $result.LastBackupFile
-                        BackupThresshold      = $result.BackupThresshold
+                        BackupThreshold       = $result.BackupThreshold
+                        BackupThresshold      = $result.BackupThreshold
                         IsBackupAlertEnabled  = $result.IsBackupAlertEnabled
                         TimeSinceLastCopy     = $lastCopy
                         LastCopiedFile        = $result.LastCopiedFile
                         TimeSinceLastRestore  = $lastRestore
                         LastRestoredFile      = $result.LastRestoredFile
                         LastRestoredLatency   = $result.LastRestoredLatency
-                        RestoreThresshold     = $result.RestoreThresshold
+                        RestoreThreshold      = $result.RestoreThreshold
+                        RestoreThresshold     = $result.RestoreThreshold
                         IsRestoreAlertEnabled = $result.IsRestoreAlertEnabled
                         Status                = $statusDetails -join ","
                     })
@@ -288,7 +291,7 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                 return $collection | Select-Object SqlInstance, Database, InstanceType, Status
             }
             else {
-                return $collection
+                return $collection | Select-DefaultView -ExcludeProperty BackupThreshold, RestoreThreshold
             }
         }
     }
