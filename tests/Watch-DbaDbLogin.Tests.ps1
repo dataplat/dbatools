@@ -50,7 +50,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Command actually works" {
         Watch-DbaDbLogin -SqlInstance $script:instance1 -Database $databaseName -Table $tableName -ServersFromFile $testFile -EnableException
-        $result = Get-DbaTable -SqlInstance $script:instance1 -Database $databaseName -Table $tableName -IncludeSystemDBs
+        $result = Get-DbaDbTable -SqlInstance $script:instance1 -Database $databaseName -Table $tableName -IncludeSystemDBs
         It "Should have created table $tableName in database $databaseName" {
             $result.Name | Should Be $tableName
         }
