@@ -32,34 +32,34 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     
     It "copies the table data" {
-        $null = Copy-DbaTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
+        $null = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
         $table1count = $db.Query("select id from dbo.dbatoolsci_example")
         $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
         $table1count.Count | Should -Be $table2count.Count
     }
     
     It "copies the table data to another instance" {
-        $null = Copy-DbaTableData -SqlInstance $script:instance1 -Destination $script:instance2 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example3
+        $null = Copy-DbaDbTableData -SqlInstance $script:instance1 -Destination $script:instance2 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example3
         $table1count = $db.Query("select id from dbo.dbatoolsci_example")
         $table2count = $db2.Query("select id from dbo.dbatoolsci_example3")
         $table1count.Count | Should -Be $table2count.Count
     }
     
     It "supports piping" {
-        $null = Get-DbaTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example | Copy-DbaTableData -DestinationTable dbatoolsci_example2 -Truncate
+        $null = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example2 -Truncate
         $table1count = $db.Query("select id from dbo.dbatoolsci_example")
         $table2count = $db.Query("select id from dbo.dbatoolsci_example2")
         $table1count.Count | Should -Be $table2count.Count
     }
     
     It "supports piping more than one table" {
-        $results = Get-DbaTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaTableData -DestinationTable dbatoolsci_example2
+        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example2
         $results.Count | Should -Be 2
     }
     
     It "opens and closes connections properly" {
         #regression test, see #3468
-        $results = Get-DbaTable -SqlInstance $script:instance1 -Database tempdb -Table 'dbo.dbatoolsci_example', 'dbo.dbatoolsci_example4' | Copy-DbaTableData -Destination $script:instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
+        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table 'dbo.dbatoolsci_example', 'dbo.dbatoolsci_example4' | Copy-DbaDbTableData -Destination $script:instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
         $results.Count | Should -Be 2
         $table1dbcount = $db.Query("select id from dbo.dbatoolsci_example")
         $table4dbcount = $db2.Query("select id from dbo.dbatoolsci_example4")

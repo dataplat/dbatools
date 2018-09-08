@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Copy-DbaTableData {
+function Copy-DbaDbTableData {
     <#
         .SYNOPSIS
             Copies data between SQL Server tables.
@@ -78,7 +78,7 @@ function Copy-DbaTableData {
             Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
 
         .PARAMETER InputObject
-            Enables piping of Table objects from Get-DbaTable
+            Enables piping of Table objects from Get-DbaDbTable
 
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -100,42 +100,42 @@ function Copy-DbaTableData {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Copy-DbaTableData
+            https://dbatools.io/Copy-DbaDbTableData
 
         .EXAMPLE
-            Copy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table
+            Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table
 
             Copies all the data from sql1 to sql2, using the database dbatools_from.
 
         .EXAMPLE
-            Copy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table test_table
+            Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table test_table
 
             Copies all the data from sql1 to sql2, using the database dbatools_from as source and dbatools_dest as destination
 
         .EXAMPLE
-            Get-DbaTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaTableData -DestinationTable tb3
+            Get-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -DestinationTable tb3
 
             Copies all data from tables tb1 and tb2 in tempdb on sql1 to tb3 in tempdb on sql1
 
         .EXAMPLE
-            Get-DbaTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaTableData -Destination sql2
+            Get-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -Destination sql2
 
             Copies data from tbl1 in tempdb on sql1 to tbl1 in tempdb on sql2
             then
             Copies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2
 
         .EXAMPLE
-            Copy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table
+            Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table
 
             Copies all the data from sql1 to sql2, using the database dbatools_from.
 
         .EXAMPLE
-            Copy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+            Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
 
             Copies all the data from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination
 
         .EXAMPLE
-            Copy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+            Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
 
             Copies all the data from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination
 
@@ -227,7 +227,7 @@ function Copy-DbaTableData {
             }
 
             try {
-                $InputObject += Get-DbaTable -SqlInstance $server -Table $Table -Database $Database -EnableException -Verbose:$false
+                $InputObject += Get-DbaDbTable -SqlInstance $server -Table $Table -Database $Database -EnableException -Verbose:$false
             }
             catch {
                 Stop-Function -Message "Unable to determine source table : $Table"
@@ -266,7 +266,7 @@ function Copy-DbaTableData {
             }
 
             try {
-                $desttable = Get-DbaTable -SqlInstance $destServer -Table $DestinationTable -Database $DestinationDatabase -EnableException -Verbose:$false | Select-Object -First 1
+                $desttable = Get-DbaDbTable -SqlInstance $destServer -Table $DestinationTable -Database $DestinationDatabase -EnableException -Verbose:$false | Select-Object -First 1
             }
             catch {
                 Stop-Function -Message "Unable to determine destination table: $DestinationTable"
