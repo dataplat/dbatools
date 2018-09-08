@@ -199,4 +199,7 @@ Returns information on the CommandLog table in the DBA database on both instance
             }
         }
     }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaTable
+    }
 }

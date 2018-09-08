@@ -846,6 +846,18 @@ $script:renames = @(
     @{
         "AliasName"  = "Get-DbaUserLevelPermission"
         "Definition" = "Get-DbaUserPermission"
+    },
+    @{
+        "AliasName"  = "Get-DbaDistributor"
+        "Definition" = "Get-DbaRepDistributor"
+    },
+    @{
+        "AliasName"  = "Get-DbaTable"
+        "Definition" = "Get-DbaDbTable"
+    },
+    @{
+        "AliasName"  = "Copy-DbaTableData"
+        "Definition" = "Copy-DbaDbTableData"
     }
 )
 
