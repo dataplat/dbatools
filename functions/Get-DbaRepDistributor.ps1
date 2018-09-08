@@ -1,4 +1,4 @@
-function Get-DbaDistributor {
+function Get-DbaRepDistributor {
     <#
     .SYNOPSIS
         Gets the information about a replication distributor for a given SQL Server instance.
@@ -25,10 +25,10 @@ function Get-DbaDistributor {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaDistributor
+        https://dbatools.io/Get-DbaRepDistributor
 
     .EXAMPLE
-        Get-DbaDistributor -SqlInstance sql2008, sqlserver2012
+        Get-DbaRepDistributor -SqlInstance sql2008, sqlserver2012
         Retrieve distributor information for servers sql2008 and sqlserver2012.
     #>
     [CmdletBinding()]

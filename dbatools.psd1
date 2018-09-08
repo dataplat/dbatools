@@ -363,7 +363,7 @@
         'Get-DbaAgListener',
         'Invoke-DbaDbClone',
         'Read-DbaXEFile',
-        'Get-DbaDistributor',
+        'Get-DbaRepDistributor',
         'Update-DbaServiceAccount',
         'Watch-DbaXESession',
         'Disable-DbaTraceFlag',
