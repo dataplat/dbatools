@@ -84,7 +84,7 @@ function Reset-DbaAdmin {
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]
         $SqlInstance,
@@ -106,7 +106,7 @@ function Reset-DbaAdmin {
              #>
             [CmdletBinding()]
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [Security.SecureString]
                 $Password
             )
@@ -124,7 +124,7 @@ function Reset-DbaAdmin {
             [OutputType([System.Boolean])]
             [CmdletBinding()]
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [Alias("ServerInstance", "SqlServer")]
                 [DbaInstanceParameter]
                 $SqlInstance,

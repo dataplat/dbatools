@@ -22,10 +22,10 @@ function Invoke-SteppablePipeline
 #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         $InputObject,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         $Pipeline
     )
     

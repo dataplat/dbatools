@@ -57,7 +57,7 @@ function Get-DbaAgListener {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(ValueFromPipeline = $true)]
+        [parameter(ValueFromPipeline)]
         [string[]]$AvailabilityGroup,
         [string[]]$Listener,
         [object[]]$InputObject,

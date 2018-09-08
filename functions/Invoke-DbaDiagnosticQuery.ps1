@@ -133,7 +133,7 @@ function Invoke-DbaDiagnosticQuery {
     [CmdletBinding(SupportsShouldProcess)]
     [outputtype([pscustomobject[]])]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
+        [parameter(Mandatory, ValueFromPipeline, Position = 0)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
 
@@ -168,7 +168,7 @@ function Invoke-DbaDiagnosticQuery {
         function Invoke-DiagnosticQuerySelectionHelper {
             [CmdletBinding()]
             Param (
-                [parameter(Mandatory = $true)]
+                [parameter(Mandatory)]
                 $ParsedScript
             )
 

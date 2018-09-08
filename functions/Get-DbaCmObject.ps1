@@ -69,16 +69,16 @@ function Get-DbaCmObject {
     #>
     [CmdletBinding(DefaultParameterSetName = "Class")]
     param (
-        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Class")]
+        [Parameter(Mandatory, Position = 0, ParameterSetName = "Class")]
         [Alias('Class')]
         [string]
         $ClassName,
 
-        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Query")]
+        [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
         [string]
         $Query,
 
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
 

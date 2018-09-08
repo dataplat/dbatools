@@ -178,7 +178,7 @@ function Import-DbaCsvToSql {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
         [string[]]$Csv,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [object]$SqlCredential,
@@ -277,11 +277,11 @@ function Import-DbaCsvToSql {
             #>
 
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [string[]]$Csv,
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [string]$Delimiter,
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [bool]$FirstRowColumns
             )
 
@@ -317,9 +317,9 @@ function Import-DbaCsvToSql {
                     Array of column data
              #>
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [string[]]$Csv,
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [string]$Delimiter
             )
             $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($csv[0])
@@ -360,14 +360,14 @@ function Import-DbaCsvToSql {
                     Returns an array of existing schema files that have been moved, if any.
              #>
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [string[]]$Csv,
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [string[]]$Columns,
                 [string[]]$ColumnText,
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [string]$Delimiter,
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [bool]$FirstRowColumns
             )
 
@@ -438,9 +438,9 @@ function Import-DbaCsvToSql {
             #>
 
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [string[]]$Csv,
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [string]$Delimiter,
                 [string[]]$Columns,
                 [string[]]$ColumnText,

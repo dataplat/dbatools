@@ -89,10 +89,10 @@ function Invoke-DbaLogShippingRecovery {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param
     (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [object[]]$Database,
         [PSCredential]$SqlCredential,
         [switch]$NoRecovery,

@@ -64,7 +64,7 @@ function Test-DbaServerName {
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,

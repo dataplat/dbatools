@@ -47,7 +47,7 @@ function Get-DbaServerAudit {
     #>
     [CmdletBinding()]
     Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,

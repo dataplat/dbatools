@@ -54,11 +54,11 @@ function Copy-DbaSysDbUserObject {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,

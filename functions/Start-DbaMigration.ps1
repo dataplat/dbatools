@@ -206,15 +206,15 @@ function Start-DbaMigration {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     Param (
-        [parameter(Position = 1, Mandatory = $true)]
+        [parameter(Position = 1, Mandatory)]
         [DbaInstanceParameter]$Source,
-        [parameter(Position = 2, Mandatory = $true)]
+        [parameter(Position = 2, Mandatory)]
         [DbaInstanceParameter[]]$Destination,
-        [parameter(Position = 3, Mandatory = $true, ParameterSetName = "DbAttachDetach")]
+        [parameter(Position = 3, Mandatory, ParameterSetName = "DbAttachDetach")]
         [switch]$DetachAttach,
         [parameter(Position = 4, ParameterSetName = "DbAttachDetach")]
         [switch]$Reattach,
-        [parameter(Position = 5, Mandatory = $true, ParameterSetName = "DbBackup")]
+        [parameter(Position = 5, Mandatory, ParameterSetName = "DbBackup")]
         [switch]$BackupRestore,
         [parameter(Position = 6, ParameterSetName = "DbBackup",
             HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]

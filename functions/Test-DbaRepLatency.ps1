@@ -59,7 +59,7 @@ function Test-DbaRepLatency {
 #>
     [CmdletBinding()]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]] $SqlInstance, #Publisher
         [object[]]$Database,
         [PSCredential]$SqlCredential,

@@ -60,14 +60,14 @@ function Find-DbaDatabase {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [ValidateSet('Name', 'ServiceBrokerGuid', 'Owner')]
         [string]$Property = 'Name',
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [string]$Pattern,
         [switch]$Exact,
         [switch]$Detailed,

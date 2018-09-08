@@ -75,12 +75,12 @@ Remove the schedules using a pipeline
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "instance")]
+        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "instance")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
-        [Parameter(Mandatory = $true, ParameterSetName = "instance")]
+        [Parameter(Mandatory, ParameterSetName = "instance")]
         [ValidateNotNullOrEmpty()]
         [Alias("Schedules")]
         [object[]]$Schedule,

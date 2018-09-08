@@ -52,7 +52,7 @@ function Get-InternalService {
         [string[]]
         $DisplayName,
 
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter[]]
         $ComputerName = $env:COMPUTERNAME,
 

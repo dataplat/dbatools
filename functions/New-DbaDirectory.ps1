@@ -48,10 +48,10 @@ function New-DbaDirectory {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [string]$Path,
         [PSCredential]$SqlCredential,
         [switch]$EnableException
