@@ -403,7 +403,6 @@ function ConvertTo-DbaDataTable {
             #endregion Process Properties
         }
     }
-
     end {
         Write-Message -Level InternalComment -Message "Finished."
          , $datatable

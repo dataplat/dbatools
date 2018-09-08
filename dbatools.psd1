@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.415'
+    ModuleVersion          = '0.9.417'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -238,7 +238,7 @@
         'Test-DbaLinkedServerConnection',
         'Get-DbaDbFile',
         'Read-DbaTransactionLog',
-        'Get-DbaTable',
+        'Get-DbaDbTable',
         'Invoke-DbaDbShrink',
         'Get-DbaEstimatedCompletionTime',
         'Get-DbaLinkedServer',
@@ -363,7 +363,7 @@
         'Get-DbaAgListener',
         'Invoke-DbaDbClone',
         'Read-DbaXEFile',
-        'Get-DbaDistributor',
+        'Get-DbaRepDistributor',
         'Update-DbaServiceAccount',
         'Watch-DbaXESession',
         'Disable-DbaTraceFlag',
@@ -396,7 +396,7 @@
         'New-DbaDacProfile',
         'Publish-DbaDacPackage',
         'Export-DbaDacPackage',
-        'Copy-DbaTableData',
+        'Copy-DbaDbTableData',
         'Invoke-DbaQuery',
         'Remove-DbaLogin',
         'Get-DbaFileStream',
@@ -669,7 +669,10 @@
     'Get-DbaDbQueryStoreOptions',
     'Set-DbaDbQueryStoreOptions',
     'Copy-DbaDatabaseMail',
-    'Get-DbaUserLevelPermission'
+    'Get-DbaUserLevelPermission',
+    'Get-DbaDistributor',
+    'Get-DbaTable',
+    'Copy-DbaTableData'
 
     # List of all modules packaged with this module
     ModuleList             = @()
