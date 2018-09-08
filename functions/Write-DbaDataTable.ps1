@@ -93,13 +93,13 @@ function Write-DbaDataTable {
             https://dbatools.io/Write-DbaDataTable
 
         .EXAMPLE
-            $DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
+            $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
             Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers
 
             Performs a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar will be shown as rows are inserted. If the destination table does not exist, the import will be halted.
 
         .EXAMPLE
-            $DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
+            $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
             $DataTable | Write-DbaDataTable -SqlInstance sql2014 -Table mydb.dbo.customers
 
             Performs a row by row insert of the data in customers.csv. This is significantly slower than a bulk insert and will not show a progress bar.
@@ -107,19 +107,19 @@ function Write-DbaDataTable {
             This method is not recommended. Use -InputObject instead.
 
         .EXAMPLE
-            $DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
+            $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
             Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable
 
             Performs a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.
 
         .EXAMPLE
-            $DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
+            $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
             Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate
 
             Performs a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is prompted again to perform the import.
 
         .EXAMPLE
-            $DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
+            $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
             Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls
 
             Performs a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo was used. NULL values in the destination table will be preserved.
@@ -127,18 +127,18 @@ function Write-DbaDataTable {
         .EXAMPLE
             $passwd = ConvertTo-SecureString "P@ssw0rd" -AsPlainText -Force
             $AzureCredential = New-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
-            $DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
+            $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
             Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300
 
             This performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials.
 
         .EXAMPLE
-            $process = Get-Process | Out-DbaDataTable
+            $process = Get-Process | ConvertTo-DbaDataTable
             Write-DbaDataTable -InputObject $process -SqlInstance sql2014 -Database mydb -Table myprocesses -AutoCreateTable
 
             Creates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table.
 
-            This is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to Out-DbaDataTable.
+            This is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to ConvertTo-DbaDataTable.
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
