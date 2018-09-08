@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "ensuring accuracy of results" {
-        $results = Get-DbaDistributor -SqlInstance $script:instance1
+        $results = Get-DbaRepDistributor -SqlInstance $script:instance1
         It "accurately reports that the distributor is not installed" {
             $results.DistributorInstalled | Should Be $false
         }
