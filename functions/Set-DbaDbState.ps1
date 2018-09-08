@@ -117,7 +117,7 @@ function Set-DbaDbState {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipelineByPropertyName, ParameterSetName = "Server")]
+        [parameter(Mandatory, ValueFromPipelineByPropertyName, ParameterSetName = "Server")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
@@ -139,7 +139,7 @@ function Set-DbaDbState {
         [switch]$Force,
         [Alias('Silent')]
         [switch]$EnableException,
-        [parameter(Mandatory = $true, ValueFromPipeline, ParameterSetName = "Database")]
+        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Database")]
         [PsCustomObject[]]$InputObject
     )
 

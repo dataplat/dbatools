@@ -128,7 +128,7 @@ function Export-DbaScript {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,
         [Alias("ScriptingOptionObject")]
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,

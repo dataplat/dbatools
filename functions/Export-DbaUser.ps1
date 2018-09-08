@@ -110,7 +110,7 @@ function Export-DbaUser {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [OutputType([String])]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]

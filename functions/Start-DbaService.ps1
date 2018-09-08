@@ -80,7 +80,7 @@ function Start-DbaService {
         [string[]]$InstanceName,
         [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS")]
         [string[]]$Type,
-        [parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Service")]
+        [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Service")]
         [Alias("ServiceCollection")]
         [object[]]$InputObject,
         [int]$Timeout = 30,

@@ -54,11 +54,11 @@ function New-DbaSsisCatalog {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Security.SecureString]$Password,
         [string]$SsisCatalog = "SSISDB",
         [Alias('Silent')]

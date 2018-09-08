@@ -62,7 +62,7 @@ function Test-DbaSpn {
     #>
     [cmdletbinding()]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
         [Alias('Silent')]

@@ -51,7 +51,7 @@ function Get-DbaDependency {
     #>
     [CmdletBinding()]
     Param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         $InputObject,
 
         [switch]
@@ -139,7 +139,7 @@ function Get-DbaDependency {
         function Get-DependencyTreeNodeDetail {
             [CmdletBinding()]
             Param (
-                [Parameter(ValueFromPipeline = $true)]
+                [Parameter(ValueFromPipeline)]
                 $SmoObject,
 
                 $Server,
@@ -195,7 +195,7 @@ function Get-DbaDependency {
         function Select-DependencyPrecedence {
             [CmdletBinding()]
             Param (
-                [Parameter(ValueFromPipeline = $true)]
+                [Parameter(ValueFromPipeline)]
                 $Dependency
             )
 

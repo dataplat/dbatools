@@ -32,24 +32,24 @@
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [Sqlcollaborative.Dbatools.Message.MessageLevel]
         $OriginalLevel,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [bool]
         $FromStopFunction,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [AllowNull()]
         [string[]]
         $Tags,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [string]
         $FunctionName,
         
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [string]
         $ModuleName
     )

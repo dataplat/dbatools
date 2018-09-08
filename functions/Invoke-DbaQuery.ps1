@@ -88,7 +88,7 @@ function Invoke-DbaQuery {
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
     Param (
-        [parameter(ValueFromPipeline = $true)]
+        [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]
         $SqlInstance,
@@ -99,18 +99,18 @@ function Invoke-DbaQuery {
 
         [object]$Database,
 
-        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Query")]
+        [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
         [string]
         $Query,
 
         [Int32]
         $QueryTimeout = 600,
 
-        [Parameter(Mandatory = $true, ParameterSetName = "File")]
+        [Parameter(Mandatory, ParameterSetName = "File")]
         [object[]]
         $File,
 
-        [Parameter(Mandatory = $true, ParameterSetName = "SMO")]
+        [Parameter(Mandatory, ParameterSetName = "SMO")]
         [Microsoft.SqlServer.Management.Smo.SqlSmoObject[]]
         $SqlObject,
 
@@ -127,7 +127,7 @@ function Invoke-DbaQuery {
         [switch]
         $MessagesToOutput,
 
-        [parameter(ValueFromPipeline = $true)]
+        [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
 
         [Alias('Silent')]

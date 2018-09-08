@@ -67,18 +67,18 @@ function ConvertTo-DbaDataTable {
     [OutputType([System.Object[]])]
     param (
         [Parameter(Position = 0,
-            Mandatory = $true,
-            ValueFromPipeline = $true)]
+                   Mandatory,
+                   ValueFromPipeline)]
         [AllowNull()]
         [PSObject[]]$InputObject,
         [Parameter(Position = 1)]
         [ValidateSet("Ticks",
-            "TotalDays",
-            "TotalHours",
-            "TotalMinutes",
-            "TotalSeconds",
-            "TotalMilliseconds",
-            "String")]
+                     "TotalDays",
+                     "TotalHours",
+                     "TotalMinutes",
+                     "TotalSeconds",
+                     "TotalMilliseconds",
+                     "String")]
         [ValidateNotNullOrEmpty()]
         [string]$TimeSpanType = "TotalMilliseconds",
         [ValidateSet("Int64", "Int32", "String")]
@@ -102,11 +102,8 @@ function ConvertTo-DbaDataTable {
             [CmdletBinding()]
             param (
                 $type,
-
                 $value,
-
                 $timespantype = 'TotalMilliseconds',
-
                 $sizetype = 'Int64'
             )
 
@@ -204,7 +201,8 @@ function ConvertTo-DbaDataTable {
             [CmdletBinding()]
             Param (
                 $Value,
-                [ValidateSet('Timespan', 'Size')] [string]$Type,
+                [ValidateSet('Timespan', 'Size')]
+                [string]$Type,
                 [string]$SizeType,
                 [string]$TimeSpanType
             )
@@ -408,6 +406,6 @@ function ConvertTo-DbaDataTable {
 
     end {
         Write-Message -Level InternalComment -Message "Finished."
-        , $datatable
+         , $datatable
     }
 }

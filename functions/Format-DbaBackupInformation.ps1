@@ -93,7 +93,7 @@ function Format-DbaBackupInformation {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$BackupHistory,
         [object]$ReplaceDatabaseName,
         [switch]$ReplaceDbNameInFile,

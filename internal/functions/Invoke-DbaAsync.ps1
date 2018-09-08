@@ -46,7 +46,7 @@
         [ValidateNotNullOrEmpty()]
         [Microsoft.SqlServer.Management.Common.ServerConnection]$SQLConnection,
 
-        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Query")]
+        [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
         [string]
         $Query,
 

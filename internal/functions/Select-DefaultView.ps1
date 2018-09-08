@@ -13,7 +13,7 @@ function Select-DefaultView {
     
     [CmdletBinding()]
     param (
-        [parameter(ValueFromPipeline = $true)]
+        [parameter(ValueFromPipeline)]
         [object]
         $InputObject,
         
