@@ -50,7 +50,7 @@ function Set-DbaPrivilege {
         [Alias("cn", "host", "Server")]
         [dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateSet('IFI', 'LPIM', 'BatchLogon')]
         [string[]]$Type,
         [switch][Alias('Silent')]

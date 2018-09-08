@@ -5,7 +5,7 @@ function Test-SqlSa {
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,

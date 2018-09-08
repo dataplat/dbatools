@@ -52,9 +52,9 @@ function Update-ServiceStatus {
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
-        [parameter(ValueFromPipeline = $true, Mandatory = $true)]
+        [parameter(ValueFromPipeline, Mandatory)]
         [object[]]$InputObject,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [string[]]$Action,
         [int]$Timeout = 30,
         [PSCredential] $Credential,

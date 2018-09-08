@@ -91,29 +91,29 @@ function New-DbaLogShippingPrimaryDatabase {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
 
         [System.Management.Automation.PSCredential]
         $SqlCredential,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]$Database,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$BackupDirectory,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$BackupJob,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [int]$BackupRetention,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$BackupShare,
 

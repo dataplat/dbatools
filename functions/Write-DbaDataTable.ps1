@@ -142,7 +142,7 @@ function Write-DbaDataTable {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
-        [Parameter(Position = 0, Mandatory = $true)]
+        [Parameter(Position = 0, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [ValidateNotNull()]
         [DbaInstanceParameter]$SqlInstance,
@@ -152,11 +152,11 @@ function Write-DbaDataTable {
         [PSCredential]$SqlCredential,
         [Parameter(Position = 2)]
         [object]$Database,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("DataTable")]
         [ValidateNotNull()]
         [object]$InputObject,
-        [Parameter(Position = 3, Mandatory = $true)]
+        [Parameter(Position = 3, Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$Table,
         [Parameter(Position = 4)]

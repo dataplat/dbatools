@@ -51,7 +51,7 @@ function Remove-DbaClientAlias {
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
+        [parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
         [Alias('AliasName')]
         [string[]]$Alias,
         [Alias('Silent')]

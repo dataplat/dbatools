@@ -90,14 +90,14 @@ function Repair-DbaOrphanUser {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Mandatory = $false, ValueFromPipeline = $true)]
+        [parameter(Mandatory = $false, ValueFromPipeline)]
         [object[]]$Users,
         [switch]$RemoveNotExisting,
         [switch]$Force,

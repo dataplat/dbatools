@@ -132,11 +132,11 @@ function Set-DbaLogin {
 
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [string[]]$Login,
         [SecureString]$Password,
         [switch]$Unlock,

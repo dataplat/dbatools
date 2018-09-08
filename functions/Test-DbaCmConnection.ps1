@@ -64,7 +64,7 @@ function Test-DbaCmConnection {
         #>
     [CmdletBinding()]
     Param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
 

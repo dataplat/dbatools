@@ -74,7 +74,7 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 #>
     [CmdletBinding()]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]

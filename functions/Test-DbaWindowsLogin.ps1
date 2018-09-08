@@ -63,7 +63,7 @@ function Test-DbaWindowsLogin {
     #>
     [CmdletBinding()]
     Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

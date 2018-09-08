@@ -45,7 +45,7 @@ function Get-DbaStartupParameter {
         https://dbatools.io/Get-DbaStartupParameter
 #>
     [CmdletBinding()]
-    param ([parameter(ValueFromPipeline, Mandatory = $true)]
+    param ([parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("SqlCredential")]

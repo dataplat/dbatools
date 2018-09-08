@@ -127,7 +127,7 @@ function Test-DbaLastBackup {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "Source")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]

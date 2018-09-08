@@ -91,7 +91,7 @@ function Get-DbaDiskSpace {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,

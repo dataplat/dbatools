@@ -5,7 +5,7 @@ function Get-DbaServiceErrorMessage {
 
 #>
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)]
+        [parameter(Mandatory, ValueFromPipeline, Position = 1)]
         [int]$ErrorNumber
     )
     $returnCodes = @("The request was accepted.",

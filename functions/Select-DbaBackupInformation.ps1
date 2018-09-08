@@ -74,7 +74,7 @@ function Select-DbaBackupInformation {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object]$BackupHistory,
         [DateTime]$RestoreTime = (get-date).addmonths(1),
         [switch]$IgnoreLogs,

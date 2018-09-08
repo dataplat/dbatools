@@ -43,7 +43,7 @@ function Clear-DbaConnectionPool {
 #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,

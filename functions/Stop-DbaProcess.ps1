@@ -103,7 +103,7 @@ function Stop-DbaProcess {
         [string[]]$Login,
         [string[]]$Hostname,
         [string[]]$Program,
-        [parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Process")]
+        [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Process")]
         [object[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException

@@ -62,7 +62,7 @@ function New-DbaConnectionStringBuilder {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingUserNameAndPassWordParams", "")]
     param (
-        [Parameter(Mandatory = $false, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $false, ValueFromPipeline)]
         [string[]]$ConnectionString = "",
         [Parameter(Mandatory = $false)]
         [string]$ApplicationName = "dbatools Powershell Module",

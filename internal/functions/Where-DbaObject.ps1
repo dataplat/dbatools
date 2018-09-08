@@ -49,7 +49,7 @@
     #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
+        [Parameter(ValueFromPipeline, Mandatory)]
         [object]
         $InputObject,
 

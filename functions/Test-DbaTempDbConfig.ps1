@@ -52,7 +52,7 @@ function Test-DbaTempdbConfig {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,

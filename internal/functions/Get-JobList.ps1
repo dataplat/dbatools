@@ -56,7 +56,7 @@ function Get-JobList {
     #>
     [cmdletbinding()]
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$JobFilter,
