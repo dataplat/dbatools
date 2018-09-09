@@ -68,7 +68,7 @@ function Get-DbaAgentJobOutputFile {
             on the SERVERNAME instance and Pipe them to Out-GridView
 
         .EXAMPLE
-            (Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME | ogv -PassThru).FileName | Invoke-Item
+            (Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME | Out-GridView -PassThru).FileName | Invoke-Item
 
             This will return the configured paths to the output files for each of the job step of all the Agent Jobs
             on the SERVERNAME instance and Pipe them to Out-GridView and enable you to choose the output
@@ -83,8 +83,8 @@ function Get-DbaAgentJobOutputFile {
     [CmdletBinding()]
     param
     (
-        [Parameter(Mandatory = $true, HelpMessage = 'The SQL Server Instance',
-            ValueFromPipeline = $true,
+        [Parameter(Mandatory, HelpMessage = 'The SQL Server Instance',
+            ValueFromPipeline,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false,
             Position = 0)]

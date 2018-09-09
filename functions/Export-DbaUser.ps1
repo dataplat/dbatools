@@ -79,12 +79,12 @@ function Export-DbaUser {
         .EXAMPLE
             Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -FilePath C:\temp\users.sql
 
-            Exports ONLY users User1 and User2 fron sqlsever2014a to the file  C:\temp\users.sql
+            Exports ONLY users User1 and User2 from sqlsever2014a to the file  C:\temp\users.sql
 
         .EXAMPLE
             Export-DbaUser -SqlInstance sqlserver2008 -User User1 -FilePath C:\temp\users.sql -DestinationVersion SQLServer2016
 
-            Exports user User1 fron sqlsever2008 to the file C:\temp\users.sql with sintax to run on SQL Server 2016
+            Exports user User1 from sqlsever2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
 
         .EXAMPLE
             Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql
@@ -110,7 +110,7 @@ function Export-DbaUser {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [OutputType([String])]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]
@@ -184,7 +184,6 @@ function Export-DbaUser {
         }
         else {
             if ($pipedatabase) {
-                $source = $pipedatabase[0].parent.name
                 $databases = $pipedatabase.name
             }
             else {
@@ -227,7 +226,6 @@ function Export-DbaUser {
                 }
                 else {
                     if ($pipedatabase) {
-                        $source = $pipedatabase[3].parent.name
                         $users = $pipedatabase.name
                     }
                     else {

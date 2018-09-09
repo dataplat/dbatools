@@ -6,7 +6,7 @@ function Get-DbaDbPhysicalFile {
     .DESCRIPTION
     Fastest way to fetch just the paths of the physical files for every database on the instance, also for offline databases.
     Incidentally, it also fetches the paths for MMO and FS filegroups.
-    This is partly already in Get-DbaDatabaseFile, but this internal needs to stay lean and fast, as it's heavily used in top-level functions
+    This is partly already in Get-DbaDbFile, but this internal needs to stay lean and fast, as it's heavily used in top-level functions
 
     .PARAMETER SqlInstance
     SMO object representing the SQL Server to connect to.
@@ -23,7 +23,7 @@ function Get-DbaDbPhysicalFile {
     #>
     [CmdletBinding()]
     param(
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]

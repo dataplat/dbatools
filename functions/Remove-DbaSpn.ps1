@@ -71,10 +71,10 @@ Removes all set SPNs for sql2005 and the relative delegations
 #>
     [cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [Alias("RequiredSPN")]
         [string]$SPN,
-        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
         [Alias("InstanceServiceAccount", "AccountName")]
         [string]$ServiceAccount,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]

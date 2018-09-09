@@ -40,12 +40,12 @@
     try {
         [byte[]]$entropy = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -argumentlist $serviceInstanceId {
             $serviceInstanceId = $args[0]
-            $entropy = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$serviceInstanceId\Security\").Entropy
+            $entropy = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$serviceInstanceId\Security\" -ErrorAction Stop).Entropy
             return $entropy
         }
     }
     catch {
-       Stop-Function -Message "Can't access registry keys on $sourceName. Do you have administrative access to the Windows registry on $sourcename? Otherwise, we're out of ideas." -Target $source
+        Stop-Function -Message "Can't access registry keys on $sourceName. Do you have administrative access to the Windows registry on $SqlInstance Otherwise, we're out of ideas." -Target $source
         return
     }
     

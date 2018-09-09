@@ -10,7 +10,7 @@ function Get-RestoreContinuableDatabase {
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias('Silent')]

@@ -135,7 +135,7 @@ function Set-DbaStartupParameter {
         .EXAMPLE
             Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride
 
-            This will remove all trace flags and set SinguleUser to false
+            This will remove all trace flags and set SingleUser to false
 
         .EXAMPLE
             Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8032,8048 -TraceFlagsOverride
@@ -145,7 +145,7 @@ function Set-DbaStartupParameter {
         .EXAMPLE
             Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride -Offline
 
-            This will remove all trace flags and set SinguleUser to false from an offline instance
+            This will remove all trace flags and set SingleUser to false from an offline instance
 
         .EXAMPLE
             Set-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\Sql\ -Offline
@@ -169,7 +169,7 @@ function Set-DbaStartupParameter {
             After the work has been completed, we can push the original startup parameters back to server1\instance1 and resume normal operation
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
-    param ([parameter(Mandatory = $true)]
+    param ([parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -245,7 +245,7 @@ function Set-DbaStartupParameter {
                     if ($Force) {
                         $ParameterString += "-d$($newstartup.MasterData);"
                     }
-                    elseif (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterData -Parent)) {
+                    elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterData -Parent)) {
                         $ParameterString += "-d$($newstartup.MasterData);"
                     }
                     else {
@@ -268,7 +268,7 @@ function Set-DbaStartupParameter {
                     if ($Force) {
                         $ParameterString += "-e$($newstartup.ErrorLog);"
                     }
-                    elseif (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
+                    elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
                         $ParameterString += "-e$($newstartup.ErrorLog);"
                     }
                     else {
@@ -291,7 +291,7 @@ function Set-DbaStartupParameter {
                     if ($Force) {
                         $ParameterString += "-l$($newstartup.MasterLog);"
                     }
-                    elseif (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterLog -Parent)) {
+                    elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterLog -Parent)) {
                         $ParameterString += "-l$($newstartup.MasterLog);"
                     }
                     else {

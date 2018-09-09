@@ -189,9 +189,9 @@ function Find-DbaInstance {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, ParameterSetName = 'Computer', ValueFromPipeline = $true)]
+        [Parameter(Mandatory, ParameterSetName = 'Computer', ValueFromPipeline)]
         [DbaInstance[]]$ComputerName,
-        [Parameter(Mandatory = $true, ParameterSetName = 'Discover')]
+        [Parameter(Mandatory, ParameterSetName = 'Discover')]
         [Sqlcollaborative.Dbatools.Discovery.DbaInstanceDiscoveryType]$DiscoveryType,
         [System.Management.Automation.PSCredential]$Credential,
         [System.Management.Automation.PSCredential]$SqlCredential,
@@ -230,7 +230,7 @@ function Find-DbaInstance {
         #>
             [CmdletBinding()]
             param (
-                [Parameter(ValueFromPipeline = $true)][DbaInstance[]]$Target,
+                [Parameter(ValueFromPipeline)][DbaInstance[]]$Target,
                 [PSCredential]$Credential,
                 [PSCredential]$SqlCredential,
                 [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]$ScanType,
@@ -300,8 +300,8 @@ function Find-DbaInstance {
                     }
 
                     if ($ScanType -band [Sqlcollaborative.Dbatools.Discovery.DbaInstanceScanType]::SqlService) {
-                        if ($Credential) { $services = Get-DbaSqlService -ComputerName $computer -Credential $Credential -EnableException -ErrorAction Ignore -WarningAction SilentlyCOntinue }
-                        else { $services = Get-DbaSqlService -ComputerName $computer -ErrorAction Ignore -WarningAction SilentlyContinue }
+                        if ($Credential) { $services = Get-DbaService -ComputerName $computer -Credential $Credential -EnableException -ErrorAction Ignore -WarningAction SilentlyCOntinue }
+                        else { $services = Get-DbaService -ComputerName $computer -ErrorAction Ignore -WarningAction SilentlyContinue }
                     }
                     #endregion Gather data
 
@@ -607,7 +607,7 @@ function Find-DbaInstance {
         #>
             [CmdletBinding()]
             param (
-                [Parameter(Mandatory = $true, ValueFromPipeline = $true)][DbaInstance[]]$ComputerName,
+                [Parameter(Mandatory, ValueFromPipeline)][DbaInstance[]]$ComputerName,
                 [int]$UDPTimeOut = 2,
                 [switch]$EnableException
             )
@@ -683,7 +683,7 @@ function Find-DbaInstance {
             [CmdletBinding()]
             param (
                 [DbaInstance]$ComputerName,
-                [Parameter(ValueFromPipeline = $true)][int[]]$Port
+                [Parameter(ValueFromPipeline)][int[]]$Port
             )
 
             begin {

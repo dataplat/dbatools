@@ -1,4 +1,4 @@
-Register-DbaConfigValidation -Name "sizestyle" -ScriptBlock {
+Register-DbatoolsConfigValidation -Name "sizestyle" -ScriptBlock {
     param (
         $Value
     )

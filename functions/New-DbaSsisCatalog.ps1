@@ -54,11 +54,11 @@ function New-DbaSsisCatalog {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Security.SecureString]$Password,
         [string]$SsisCatalog = "SSISDB",
         [Alias('Silent')]
@@ -76,7 +76,7 @@ function New-DbaSsisCatalog {
             }
 
             ## check if SSIS and Engine running on box
-            $services = Get-DbaSqlService -ComputerName $server.ComputerName
+            $services = Get-DbaService -ComputerName $server.ComputerName
 
             $ssisservice = $Services | Where-Object { $_.ServiceType -eq "SSIS" -and $_.State -eq "Running" }
 

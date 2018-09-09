@@ -92,7 +92,7 @@ function New-DbaLogShippingSecondaryDatabase {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -101,21 +101,21 @@ function New-DbaLogShippingSecondaryDatabase {
         [switch]$DisconnectUsers,
         [int]$HistoryRetention = 14420,
         [int]$MaxTransferSize,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$PrimaryServer,
         [PSCredential]$PrimarySqlCredential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]$PrimaryDatabase,
         [int]$RestoreAll = 1,
         [int]$RestoreDelay = 0,
         [ValidateSet(0, 'NoRecovery', 1, 'Standby')]
         [object]$RestoreMode = 0,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [int]$RestoreThreshold,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]$SecondaryDatabase,
         [int]$ThresholdAlert = 14420,

@@ -50,7 +50,7 @@ function Get-DbaSpn {
     #>
     [cmdletbinding()]
     param (
-        [Parameter(Mandatory = $false, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $false, ValueFromPipeline)]
         [string[]]$ComputerName,
         [Parameter(Mandatory = $false)]
         [string[]]$AccountName,

@@ -87,11 +87,11 @@ function Read-DbaBackupHeader {
     <# AzureCredential is utilized in this command is not a formal Credential object. #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance]$SqlInstance,
         [PsCredential]$SqlCredential,
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
         [switch]$Simple,
         [switch]$FileList,
@@ -187,7 +187,7 @@ function Read-DbaBackupHeader {
         Write-Message -Level Verbose -Message "$pathCount unique files to scan."
         Write-Message -Level Verbose -Message "Checking accessibility for all the files."
 
-        $testPath = Test-DbaSqlPath -SqlInstance $server -Path $pathGroup
+        $testPath = Test-DbaPath -SqlInstance $server -Path $pathGroup
 
         #Setup initial session state
         $InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()

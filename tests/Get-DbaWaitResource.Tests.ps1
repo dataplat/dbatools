@@ -22,7 +22,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 go
             "
         
-        Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $sql
+        Invoke-DbaQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $sql
     }
     AfterAll {
         Get-DbaDatabase -SqlInstance $script:instance1 -Database $WaitResourceDB | Remove-DbaDatabase -Confirm:$false
@@ -55,8 +55,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             select @pageid=PagePid from #TmpIndex where PageType=10
             select 'PAGE: '+convert(varchar(3),DB_ID())+':1:'+convert(varchar(15),@pageid)
         "
-       $page =  (Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $Pagesql).Column1
-       $file = Get-DbaDatabaseFile -SqlInstance $script:instance1 -Database $WaitResourceDB | Where-Object TypeDescription -eq 'ROWS'
+       $page =  (Invoke-DbaQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $Pagesql).Column1
+       $file = Get-DbaDbFile -SqlInstance $script:instance1 -Database $WaitResourceDB | Where-Object TypeDescription -eq 'ROWS'
        $results = Get-DbaWaitResource -SqlInstance $script:instance1 -WaitResource $page
        It "Should return databasename $WaitResourceDB" {
            $results.DatabaseName | Should Be $WaitResourceDB
@@ -92,7 +92,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
             select 'KEY: '+convert(varchar(3),db_id())+':'+convert(varchar(30),@hobt_id)+' '+ %%lockres%% from keytest  where col1=1
         "
-        $key = (Invoke-DbaSqlQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $SqlKey).Column1
+        $key = (Invoke-DbaQuery -SqlInstance $script:instance1 -Database $WaitResourceDB -Query $SqlKey).Column1
         $resultskey = Get-DbaWaitResource -SqlInstance $script:instance1 -WaitResource $key -row
         It "Should Return DatabaseName $WaitResourceDB" {
             $results

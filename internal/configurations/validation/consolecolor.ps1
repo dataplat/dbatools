@@ -1,4 +1,4 @@
-﻿Register-DbaConfigValidation -Name "consolecolor" -ScriptBlock {
+﻿Register-DbatoolsConfigValidation -Name "consolecolor" -ScriptBlock {
     Param (
         $Value
     )

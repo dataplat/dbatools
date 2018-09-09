@@ -39,10 +39,10 @@ function Get-DbaDetachedDatabaseInfo {
 
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("Mdf")]
         [string]$Path,
         [PSCredential]$SqlCredential
@@ -56,7 +56,7 @@ function Get-DbaDetachedDatabaseInfo {
             $servername = $server.name
             $serviceaccount = $server.ServiceAccount
 
-            $exists = Test-DbaSqlPath -SqlInstance $server -Path $Path
+            $exists = Test-DbaPath -SqlInstance $server -Path $Path
 
             if ($exists -eq $false) {
                 throw "$servername cannot access the file $path. Does the file exist and does the service account ($serviceaccount) have access to the path?"

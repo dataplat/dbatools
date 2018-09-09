@@ -63,7 +63,7 @@ function Get-DbaSsisExecutionHistory {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [datetime]$Since,
@@ -208,7 +208,7 @@ function Get-DbaSsisExecutionHistory {
 
     process {
         foreach ($instance in $SqlInstance) {
-            $results = Invoke-DbaSqlQuery -SqlInstance $instance -Database SSISDB -Query $sql -as PSObject -SqlParameters $params -SqlCredential $SqlCredential
+            $results = Invoke-DbaQuery -SqlInstance $instance -Database SSISDB -Query $sql -as PSObject -SqlParameters $params -SqlCredential $SqlCredential
             foreach ($row in $results) {
                 $row.StartTime = [dbadatetime]$row.StartTime.DateTime
                 $row.EndTime = [dbadatetime]$row.EndTime.DateTime

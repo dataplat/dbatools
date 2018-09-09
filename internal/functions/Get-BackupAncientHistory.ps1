@@ -25,7 +25,7 @@ function Get-BackupAncientHistory {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]
@@ -36,7 +36,7 @@ function Get-BackupAncientHistory {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    BEGIN {
+    begin {
         try {
             Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance." -Target $SqlInstance
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
@@ -59,7 +59,7 @@ function Get-BackupAncientHistory {
         }
     }
 
-    PROCESS {
+    process {
         foreach ($db in $Database) {
             Write-Message -Level Verbose -Message "Processing database $db"
             $sql = "

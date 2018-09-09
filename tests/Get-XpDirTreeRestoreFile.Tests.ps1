@@ -6,7 +6,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     InModuleScope dbatools {
         #mock Connect-SqlInstance { $true }
-        mock Test-DbaSqlPath { $true }
+        mock Test-DbaPath { $true }
 
         Context "Test Connection and User Rights" {
             It "Should throw on an invalid SQL Connection" {
@@ -15,7 +15,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException $true } | Should Throw
             }
             It "Should throw if SQL Server can't see the path" {
-                Mock Test-DbaSqlPath { $false }
+                Mock Test-DbaPath { $false }
                 Mock Connect-SqlInstance { [DbaInstanceParameter]"bad\bad" }
                 { Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException $true } | Should Throw
             }

@@ -77,8 +77,8 @@ function Format-DbaBackupInformation {
         .EXAMPLE
             $History | Format-DbaBackupInformation -ReplaceDatabaseName @{'OldB'='NewDb';'ProdHr'='DevHr'}
 
-            Will change all occurences of original database name in the backup history (names and restore paths) using the mapping in the hashtable.
-            In this example any occurance of OldDb will be replaced with NewDb and ProdHr with DevPR
+            Will change all occurrences of original database name in the backup history (names and restore paths) using the mapping in the hashtable.
+            In this example any occurence of OldDb will be replaced with NewDb and ProdHr with DevPR
 
         .EXAMPLE
             $History | Format-DbaBackupInformation -DataFileDirectory 'D:\DataFiles\' -LogFileDirectory 'E:\LogFiles\
@@ -93,7 +93,7 @@ function Format-DbaBackupInformation {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$BackupHistory,
         [object]$ReplaceDatabaseName,
         [switch]$ReplaceDbNameInFile,
@@ -108,7 +108,7 @@ function Format-DbaBackupInformation {
         [hashtable]$FileMapping,
         [switch]$EnableException
     )
-    Begin {
+    begin {
 
         Write-Message -Message "Starting" -Level Verbose
         if ($null -ne $ReplaceDatabaseName) {
@@ -139,7 +139,7 @@ function Format-DbaBackupInformation {
     }
 
 
-    Process {
+    process {
 
         ForEach ($History in $BackupHistory) {
             if ("OriginalDatabase" -notin $History.PSobject.Properties.name) {
@@ -164,13 +164,11 @@ function Format-DbaBackupInformation {
 
             if ($ReplaceDatabaseNameType -eq 'single' -and $ReplaceDatabaseName -ne '' ) {
                 $History.Database = $ReplaceDatabaseName
-                $ReplaceMentName = $ReplaceDatabaseName
                 Write-Message -Message "New DbName (String) = $($History.Database)" -Level Verbose
             }
             elseif ($ReplaceDatabaseNameType -eq 'multi') {
                 if ($null -ne $ReplaceDatabaseName[$History.Database]) {
                     $History.Database = $ReplaceDatabaseName[$History.Database]
-                    $ReplacementName = $ReplaceDatabaseName[$History.Database]
                     Write-Message -Message "New DbName (Hash) = $($History.Database)" -Level Verbose
                 }
             }

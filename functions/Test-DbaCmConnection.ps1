@@ -64,7 +64,7 @@ function Test-DbaCmConnection {
         #>
     [CmdletBinding()]
     Param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
 
@@ -81,10 +81,10 @@ function Test-DbaCmConnection {
         [Alias('Silent')]$EnableException
     )
 
-    Begin {
+    begin {
         #region Configuration Values
-        $disable_cache = Get-DbaConfigValue -Name "ComputerManagement.Cache.Disable.All" -Fallback $false
-        $disable_badcredentialcache = Get-DbaConfigValue -Name "ComputerManagement.Cache.Disable.BadCredentialList" -Fallback $false
+        $disable_cache = Get-DbatoolsConfigValue -Name "ComputerManagement.Cache.Disable.All" -Fallback $false
+        $disable_badcredentialcache = Get-DbatoolsConfigValue -Name "ComputerManagement.Cache.Disable.BadCredentialList" -Fallback $false
         #endregion Configuration Values
 
         #region Helper Functions
@@ -233,7 +233,7 @@ function Test-DbaCmConnection {
         }
         #endregion Helper Functions
     }
-    Process {
+    process {
         foreach ($ConnectionObject in $ComputerName) {
             if (-not $ConnectionObject.Success) { Stop-Function -Message "Failed to interpret input: $($ConnectionObject.Input)" -Category InvalidArgument -Target $ConnectionObject.Input -Continue}
 
@@ -323,7 +323,7 @@ function Test-DbaCmConnection {
             $con
         }
     }
-    End {
+    end {
 
     }
 }

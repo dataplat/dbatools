@@ -82,7 +82,7 @@ function Get-DbaErrorLog {
         #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
@@ -97,7 +97,7 @@ function Get-DbaErrorLog {
         [switch]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaSqlLog
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaLog
     }
     process {
         foreach ($instance in $SqlInstance) {

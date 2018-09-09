@@ -206,15 +206,15 @@ function Start-DbaMigration {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     Param (
-        [parameter(Position = 1, Mandatory = $true)]
+        [parameter(Position = 1, Mandatory)]
         [DbaInstanceParameter]$Source,
-        [parameter(Position = 2, Mandatory = $true)]
+        [parameter(Position = 2, Mandatory)]
         [DbaInstanceParameter[]]$Destination,
-        [parameter(Position = 3, Mandatory = $true, ParameterSetName = "DbAttachDetach")]
+        [parameter(Position = 3, Mandatory, ParameterSetName = "DbAttachDetach")]
         [switch]$DetachAttach,
         [parameter(Position = 4, ParameterSetName = "DbAttachDetach")]
         [switch]$Reattach,
-        [parameter(Position = 5, Mandatory = $true, ParameterSetName = "DbBackup")]
+        [parameter(Position = 5, Mandatory, ParameterSetName = "DbBackup")]
         [switch]$BackupRestore,
         [parameter(Position = 6, ParameterSetName = "DbBackup",
             HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
@@ -341,7 +341,7 @@ function Start-DbaMigration {
 
         if (-not $NoDatabaseMail) {
             Write-Message -Level Verbose -Message "Migrating database mail"
-            Copy-DbaDatabaseMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaDbMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if (-not $NoCentralManagementServer) {
@@ -395,7 +395,7 @@ function Start-DbaMigration {
 
         if (-not $NoDataCollector) {
             Write-Message -Level Verbose -Message "Migrating Data Collector collection sets"
-            Copy-DbaSqlDataCollector -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaDataCollector -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if (-not $NoAudits) {
@@ -415,7 +415,7 @@ function Start-DbaMigration {
 
         if (-not $NoPolicyManagement) {
             Write-Message -Level Verbose -Message "Migrating Policy Management"
-            Copy-DbaSqlPolicyManagement -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            Copy-DbaPolicyManagement -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
 
         if (-not $NoResourceGovernor) {
@@ -437,7 +437,7 @@ function Start-DbaMigration {
 
         if (-not $NoAgentServer) {
             Write-Message -Level Verbose -Message "Migrating job server"
-            Copy-DbaSqlServerAgent -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
+            Copy-DbaAgentServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
         }
     }
 
