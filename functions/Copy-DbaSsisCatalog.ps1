@@ -85,9 +85,9 @@ function Copy-DbaSsisCatalog {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential,
@@ -106,7 +106,7 @@ function Copy-DbaSsisCatalog {
             param (
                 [Object]$Computer
             )
-            $result = Get-DbaSqlService -ComputerName $Computer -Type SSIS
+            $result = Get-DbaService -ComputerName $Computer -Type SSIS
             if ($result) {
                 $running = $false
                 foreach ($service in $result) {

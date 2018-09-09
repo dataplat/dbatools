@@ -63,7 +63,7 @@ function Test-DbaNetworkLatency {
     [CmdletBinding()]
     [OutputType([System.Object[]])]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,

@@ -67,7 +67,7 @@ function Get-DbaDbVirtualLogFile {
     #>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
-    param ([parameter(ValueFromPipeline, Mandatory = $true)]
+    param ([parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

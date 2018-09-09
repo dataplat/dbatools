@@ -69,11 +69,11 @@ function Copy-DbaServerAudit {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]
         $SourceSqlCredential,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]
         $DestinationSqlCredential,
@@ -160,7 +160,7 @@ function Copy-DbaServerAudit {
                     }
                 }
                 
-                if ($null -ne ($currentAudit.Filepath) -and -not (Test-DbaSqlPath -SqlInstance $destServer -Path $currentAudit.Filepath)) {
+                if ($null -ne ($currentAudit.Filepath) -and -not (Test-DbaPath -SqlInstance $destServer -Path $currentAudit.Filepath)) {
                     if ($Force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$($currentAudit.Filepath) does not exist on $destinstance. Skipping $auditName. Specify -Force to create the directory.")) {
                             $copyAuditStatus.Status = "Skipped"
@@ -180,7 +180,7 @@ function Copy-DbaServerAudit {
                         if ((Test-Path $rootUnc) -eq $true) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Creating directory $($currentAudit.Filepath)")) {
                                 try {
-                                    $null = New-DbaSqlDirectory -SqlInstance $destServer -Path $currentAudit.Filepath -EnableException
+                                    $null = New-DbaDirectory -SqlInstance $destServer -Path $currentAudit.Filepath -EnableException
                                 }
                                 catch {
                                     Write-Message -Level Warning -Message "Couldn't create directory $($currentAudit.Filepath). Using default data directory."

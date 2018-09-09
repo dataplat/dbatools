@@ -67,7 +67,7 @@ function Test-DbaDbVirtualLogFile {
     #>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
-    param ([parameter(ValueFromPipeline, Mandatory = $true)]
+    param ([parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -104,7 +104,7 @@ function Test-DbaDbVirtualLogFile {
             foreach ($db in $dbs) {
                 try {
                     $data = Get-DbaDbVirtualLogFile -SqlInstance $server -Database $db.Name
-                    $logFile = Get-DbaDatabaseFile -SqlInstance $server -Database $db.Name | Where-Object Type -eq 1
+                    $logFile = Get-DbaDbFile -SqlInstance $server -Database $db.Name | Where-Object Type -eq 1
 
                     $active = $data | Where-Object Status -eq 2
                     $inactive = $data | Where-Object Status -eq 0

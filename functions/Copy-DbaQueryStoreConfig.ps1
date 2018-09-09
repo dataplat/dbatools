@@ -64,12 +64,12 @@ function Copy-DbaQueryStoreConfig {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object]$SourceDatabase,
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [object[]]$DestinationDatabase,
@@ -94,7 +94,7 @@ function Copy-DbaQueryStoreConfig {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             # Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
-            $SourceQSConfig = Get-DbaDbQueryStoreOptions -SqlInstance $sourceServer -Database $SourceDatabase
+            $SourceQSConfig = Get-DbaDbQueryStoreOption -SqlInstance $sourceServer -Database $SourceDatabase
             
             if (!$DestinationDatabase -and !$Exclude -and !$AllDatabases) {
                 Stop-Function -Message "You must specify databases to execute against using either -DestinationDatabase, -Exclude or -AllDatabases." -Continue
@@ -149,7 +149,7 @@ function Copy-DbaQueryStoreConfig {
                     Write-Message -Message "Executing Set-DbaQueryStoreConfig." -Level Verbose
                     # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
                     try {
-                        $null = Set-DbaDbQueryStoreOptions -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential `
+                        $null = Set-DbaDbQueryStoreOption -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential `
                                                         -Database $db.name `
                                                         -State $SourceQSConfig.ActualState `
                                                         -FlushInterval $SourceQSConfig.FlushInterval `

@@ -54,17 +54,19 @@
             $null = $transfer.CopyAllObjects = $false
             $null = $transfer.Options.WithDependencies = $true
             $null = $transfer.ObjectList.Add($schema)
+            $null = $transfer.Options.ScriptBatchTerminator = $true
             try { $transfer.ScriptTransfer() } catch {}
             
             foreach ($table in $tables) {
                 $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
                 $null = $transfer.CopyAllObjects = $false
                 $null = $transfer.Options.WithDependencies = $true
+                $null = $transfer.Options.ScriptBatchTerminator = $true
                 $null = $transfer.ObjectList.Add($table)
                 try { $transfer.ScriptTransfer() } catch {}
             }
             
-            $userobjects = Get-DbaSqlModule -SqlInstance $server -Database $systemDb -NoSystemObjects | Sort-Object Type
+            $userobjects = Get-DbaModule -SqlInstance $server -Database $systemDb -NoSystemObjects | Sort-Object Type
             Write-Message -Level Verbose -Message "Copying from $systemDb"
             foreach ($userobject in $userobjects) {
                 $name = "[$($userobject.SchemaName)].[$($userobject.Name)]"
@@ -72,7 +74,7 @@
                 $type = get-sqltypename $userobject.Type
                 $userobject.Definition
                 $schema = $userobject.SchemaName
-                $result = Get-DbaSqlModule -SqlInstance $server -NoSystemObjects -Database $db |
+                $result = Get-DbaModule -SqlInstance $server -NoSystemObjects -Database $db |
                 Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
                 $smobject = switch ($userobject.Type) {
                     "VIEW" { $smodb.Views.Item($userobject.Name, $userobject.SchemaName) }
@@ -95,6 +97,7 @@
                     $null = $transfer.CopyAllObjects = $false
                     $null = $transfer.Options.WithDependencies = $true
                     $null = $transfer.ObjectList.Add($smobject)
+                    $null = $transfer.Options.ScriptBatchTerminator = $true
                     try { $transfer.ScriptTransfer() } catch {}
                 }
             }

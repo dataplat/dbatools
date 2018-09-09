@@ -6,12 +6,12 @@ Internal function. Returns dictionary object that contains file structures for S
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true, Position = 0)]
+        [Parameter(Mandatory, Position = 0)]
         [ValidateNotNullOrEmpty()]
         [object]$SqlInstance,
-        [Parameter(Mandatory = $true, Position = 1)]
+        [Parameter(Mandatory, Position = 1)]
         [string]$dbname,
-        [Parameter(Mandatory = $true, Position = 2)]
+        [Parameter(Mandatory, Position = 2)]
         [object]$filelist,
         [Parameter(Mandatory = $false, Position = 3)]
         [bool]$ReuseSourceFolderStructure,

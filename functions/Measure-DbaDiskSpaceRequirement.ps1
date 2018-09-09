@@ -63,20 +63,20 @@ function Measure-DbaDiskSpaceRequirement {
             Using a CSV file. You will need to use this header line "Source<tab>Destination<tab>Database<tab>DestinationDatabase".
 
         .EXAMPLE
-            Invoke-DbaSqlCmd -SqlInstance DBA -Database Migrations -Query 'select Source, Destination, Database from dbo.Migrations' `
+            Invoke-DbaCmd -SqlInstance DBA -Database Migrations -Query 'select Source, Destination, Database from dbo.Migrations' `
                 | Measure-DbaDiskSpaceRequirement
 
             Using a SQL table. We are DBA after all!
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
         [DbaInstanceParameter]$Source,
-        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
         [string]$Database,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [PSCredential]$SourceSqlCredential,
-        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
         [DbaInstanceParameter]$Destination,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName = $true)]
         [string]$DestinationDatabase,
@@ -93,7 +93,7 @@ function Measure-DbaDiskSpaceRequirement {
         function Get-MountPoint {
             [CmdletBinding()]
             param(
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 $computerName,
                 [PSCredential]$credential
             )
@@ -103,9 +103,9 @@ function Measure-DbaDiskSpaceRequirement {
         function Get-MountPointFromPath {
             [CmdletBinding()]
             param(
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 $path,
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 $computerName,
                 [PSCredential]$credential
             )
@@ -133,10 +133,10 @@ function Measure-DbaDiskSpaceRequirement {
         function Get-MountPointFromDefaultPath {
             [CmdletBinding()]
             param(
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [ValidateSet('Log', 'Data')]
                 $DefaultPathType,
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 $SqlInstance,
                 [PSCredential]$SqlCredential,
                 # Could probably use the computer defined in SqlInstance but info was already available from the caller

@@ -35,17 +35,17 @@
         .EXAMPLE
             Get-DbaPlanCache -SqlInstance sql2017
 
-            Returns the single use plan cashe usage information for SQL Server instance 2017
+            Returns the single use plan cache usage information for SQL Server instance 2017
 
         .EXAMPLE
             Get-DbaPlanCache -SqlInstance sql2017
 
-            Returns the single use plan cashe usage information for SQL Server instance 2017
+            Returns the single use plan cache usage information for SQL Server instance 2017
 
         .EXAMPLE
             Get-DbaPlanCache -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin)
 
-            Returns the single use plan cashe usage information for SQL Server instance 2017 using login 'sqladmin'
+            Returns the single use plan cache usage information for SQL Server instance 2017 using login 'sqladmin'
     #>
         [CmdletBinding()]
         Param (

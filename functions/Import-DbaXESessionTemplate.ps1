@@ -160,8 +160,8 @@
 
                     Write-Message -Level Verbose -Message "$TargetFilePath does not exist on $server, creating now."
                     try {
-                        if (-not (Test-DbaSqlPath -SqlInstance $server -Path $TargetFilePath)) {
-                            $null = New-DbaSqlDirectory -SqlInstance $server -Path $TargetFilePath
+                        if (-not (Test-DbaPath -SqlInstance $server -Path $TargetFilePath)) {
+                            $null = New-DbaDirectory -SqlInstance $server -Path $TargetFilePath
                         }
                     }
                     catch {

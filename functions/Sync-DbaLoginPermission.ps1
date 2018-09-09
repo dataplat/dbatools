@@ -65,11 +65,11 @@ function Sync-DbaLoginPermission {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$Source,
         [PSCredential]
         $SourceSqlCredential,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstanceParameter]$Destination,
         [PSCredential]
         $DestinationSqlCredential,
@@ -82,7 +82,7 @@ function Sync-DbaLoginPermission {
         function Sync-Only {
             [CmdletBinding()]
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
                 [object]$sourceServer,
                 [object]$destServer,
@@ -150,6 +150,6 @@ function Sync-DbaLoginPermission {
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-SqlLoginPermissions
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-SqlLoginPermission
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-DbaSqlLoginPermission
     }
 }

@@ -42,7 +42,7 @@ function Show-DbaServerFileSystem {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [object]$SqlCredential

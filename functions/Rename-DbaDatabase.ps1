@@ -784,7 +784,7 @@ function Rename-DbaDatabase {
                     }
                     else {
                         if ($PSCmdlet.ShouldProcess($db, "File Rename required, setting db offline")) {
-                            $SetState = Set-DbaDatabaseState -SqlInstance $server -Database $db.Name -Offline -Force
+                            $SetState = Set-DbaDbState -SqlInstance $server -Database $db.Name -Offline -Force
                             if ($SetState.Status -ne 'OFFLINE') {
                                 Write-Message -Level Warning -Message "Setting db offline failed, You are in charge of moving the files to the new location"
                                 # because it was impossible to set the database offline
@@ -818,7 +818,7 @@ function Rename-DbaDatabase {
                                 }
                                 if (!$failed) {
                                     if ($PSCmdlet.ShouldProcess($db, "Setting database online")) {
-                                        $SetState = Set-DbaDatabaseState -SqlInstance $server -Database $db.Name -Online -Force
+                                        $SetState = Set-DbaDbState -SqlInstance $server -Database $db.Name -Online -Force
                                         if ($SetState.Status -ne 'ONLINE') {
                                             Write-Message -Level Warning -Message "Setting db online failed"
                                             # because renames were done, but the database didn't wake up

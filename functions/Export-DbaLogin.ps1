@@ -91,11 +91,11 @@ function Export-DbaLogin {
         .EXAMPLE
             Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -Path C:\temp\users.sql -DestinationVersion SQLServer2016
 
-            Exports login realcajun fron sqlsever2008 to the file C:\temp\users.sql with sintax to run on SQL Server 2016
+            Exports login realcajun from sqlsever2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]
@@ -135,25 +135,6 @@ function Export-DbaLogin {
 
         $outsql = @()
 
-        $versions = @{
-            'SQLServer2000'        = 'Version80'
-            'SQLServer2005'        = 'Version90'
-            'SQLServer2008/2008R2' = 'Version100'
-            'SQLServer2012'        = 'Version110'
-            'SQLServer2014'        = 'Version120'
-            'SQLServer2016'        = 'Version130'
-            'SQLServer2017'        = 'Version140'
-        }
-
-        $versionsNumbers = @{
-            '8'  = 'Version80'
-            '9'  = 'Version90'
-            '10' = 'Version100'
-            '11' = 'Version110'
-            '12' = 'Version120'
-            '13' = 'Version130'
-            '14' = 'Version140'
-        }
     }
     process {
         if (Test-FunctionInterrupt) {
@@ -162,14 +143,6 @@ function Export-DbaLogin {
 
         Write-Message -Level Verbose -Message "Connecting to $sqlinstance."
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
-
-        if ([string]::IsNullOrEmpty($destinationVersion)) {
-            #Get compatibility level for scripting the objects
-            $scriptVersion = $versionsNumbers[$server.VersionMajor.ToString()]
-        }
-        else {
-            $scriptVersion = $versions[$destinationVersion]
-        }
 
         if ($NoDatabases -eq $false -or $Database) {
             # if we got a database or a list of databases passed

@@ -110,7 +110,7 @@ function Remove-DbaDatabaseSafely {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]
@@ -125,7 +125,7 @@ function Remove-DbaDatabaseSafely {
         [parameter(Mandatory = $false)]
         [Alias("NoCheck")]
         [switch]$NoDbccCheckDb,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [string]$BackupFolder,
         [parameter(Mandatory = $false)]
         [string]$CategoryName = 'Rationalisation',
@@ -181,7 +181,7 @@ function Remove-DbaDatabaseSafely {
             $database = ($sourceserver.databases | Where-Object { $_.IsSystemObject -eq $false -and ($_.Status -match 'Offline') -eq $false }).Name
         }
 
-        if (!(Test-DbaSqlPath -SqlInstance $destserver -Path $backupFolder)) {
+        if (!(Test-DbaPath -SqlInstance $destserver -Path $backupFolder)) {
             $serviceaccount = $destserver.ServiceAccount
             Stop-Function -Message "Can't access $backupFolder Please check if $serviceaccount has permissions." -ErrorRecord $_ -Target $backupFolder
         }
@@ -304,16 +304,16 @@ function Remove-DbaDatabaseSafely {
             #>
 
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
                 [object]$server,
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
                 [string]$dbname,
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [string]$backupfile,
                 [string]$filetype = 'Database',
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [object]$filestructure,
                 [switch]$norecovery,
                 [PSCredential]$sqlCredential,

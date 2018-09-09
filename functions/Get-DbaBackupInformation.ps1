@@ -128,9 +128,9 @@ function Get-DbaBackupInformation {
     #>
     [CmdletBinding( DefaultParameterSetName = "Create")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
-        [parameter(Mandatory = $true, ParameterSetName = "Create")]
+        [parameter(Mandatory, ParameterSetName = "Create")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(ParameterSetName = "Create")]
@@ -219,7 +219,7 @@ function Get-DbaBackupInformation {
                             $f = $f | Select-Object *, @{ Name = "FullName"; Expression = { $f } }
                         }
                         Write-Message -Message "Testing a single file $f " -Level Verbose
-                        if ((Test-DbaSqlPath -Path $f.fullname -SqlInstance $server)) {
+                        if ((Test-DbaPath -Path $f.fullname -SqlInstance $server)) {
                             $files += $f
                         }
                         else {

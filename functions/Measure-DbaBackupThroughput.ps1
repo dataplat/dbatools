@@ -89,7 +89,7 @@ function Measure-DbaBackupThroughput {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "Instance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]

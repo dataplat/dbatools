@@ -46,7 +46,7 @@ function Get-DbaClusterNode {
 
     #>
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,

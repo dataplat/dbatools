@@ -302,14 +302,14 @@ function Restore-DbaDatabase {
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Restore")]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "Restore")]
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "RestorePage")]
+        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Restore")]
+        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "RestorePage")]
         [object[]]$Path,
-        [parameter(ValueFromPipeline = $true)]
+        [parameter(ValueFromPipeline)]
         [Alias("Name")]
         [object[]]$DatabaseName,
         [parameter(ParameterSetName = "Restore")]
@@ -381,9 +381,9 @@ function Restore-DbaDatabase {
         [switch]$StopAfterFormatBackupInformation,
         [string]$TestBackupInformation,
         [switch]$StopAfterTestBackupInformation,
-        [parameter(Mandatory = $true, ParameterSetName = "RestorePage")]
+        [parameter(Mandatory, ParameterSetName = "RestorePage")]
         [object]$PageRestore,
-        [parameter(Mandatory = $true, ParameterSetName = "RestorePage")]
+        [parameter(Mandatory, ParameterSetName = "RestorePage")]
         [string]$PageRestoreTailFolder,
         [int]$StatementTimeout = 0
 
@@ -466,7 +466,7 @@ $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
                 }
             }
             if ('' -ne $StandbyDirectory) {
-                if (!(Test-DbaSqlPath -Path $StandbyDirectory -SqlInstance $RestoreInstance)) {
+                if (!(Test-DbaPath -Path $StandbyDirectory -SqlInstance $RestoreInstance)) {
                     Stop-Function -Message "$SqlSever cannot see the specified Standby Directory $StandbyDirectory" -Target $SqlInstance
                     return
                 }
@@ -559,7 +559,7 @@ $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
                 $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
-                if (-not (Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {
+                if (-not (Test-DbaPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {
                     Stop-Function -Message "Instance $RestoreInstance cannot read $PageRestoreTailFolder, cannot proceed" -Target $PageRestoreTailFolder
                     return
                 }

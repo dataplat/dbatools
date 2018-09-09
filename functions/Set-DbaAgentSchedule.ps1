@@ -123,15 +123,15 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [object[]]$Job,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory, ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [string]$ScheduleName,
         [Parameter(Mandatory = $false)]

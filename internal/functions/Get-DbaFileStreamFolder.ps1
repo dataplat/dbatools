@@ -47,7 +47,7 @@ function Get-DbaFileStreamFolder {
         [switch]$EnableException
     )
 
-    BEGIN {
+    begin {
         try {
             Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance." -Target $SqlInstance
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
@@ -57,7 +57,7 @@ function Get-DbaFileStreamFolder {
         }
     }
 
-    PROCESS {
+    process {
         $sql = "select d.name as 'dbname', mf.Physical_Name from sys.master_files mf inner join sys.databases d on mf.database_id = d.database_id
         where mf.type=2"
         $databases = @()
