@@ -262,7 +262,6 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                 }
 
                 # Set up the custom object
-                # Includes mispelled properties BackupThresshold and RestoreThresshold for backward compatiability.
                 $null = $collection.Add([PSCustomObject]@{
                         ComputerName          = $server.ComputerName
                         InstanceName          = $server.ServiceName
@@ -272,7 +271,6 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                         TimeSinceLastBackup   = $lastBackup
                         LastBackupFile        = $result.LastBackupFile
                         BackupThreshold       = $result.BackupThreshold
-                        BackupThresshold      = $result.BackupThreshold
                         IsBackupAlertEnabled  = $result.IsBackupAlertEnabled
                         TimeSinceLastCopy     = $lastCopy
                         LastCopiedFile        = $result.LastCopiedFile
@@ -280,7 +278,6 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                         LastRestoredFile      = $result.LastRestoredFile
                         LastRestoredLatency   = $result.LastRestoredLatency
                         RestoreThreshold      = $result.RestoreThreshold
-                        RestoreThresshold     = $result.RestoreThreshold
                         IsRestoreAlertEnabled = $result.IsRestoreAlertEnabled
                         Status                = $statusDetails -join ","
                     })
@@ -291,7 +288,7 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                 return $collection | Select-Object SqlInstance, Database, InstanceType, Status
             }
             else {
-                return $collection | Select-DefaultView -ExcludeProperty BackupThreshold, RestoreThreshold
+                return $collection
             }
         }
     }
