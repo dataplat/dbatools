@@ -36,9 +36,15 @@ function Get-DbaClientAlias {
             Get-DbaClientAlias -ComputerName workstationx
 
             Gets all SQL Server client aliases on Workstationx
+
+        .EXAMPLE
+            'Server1', 'Server2' | Get-DbaClientAlias
+
+            Gets all SQL Server client aliases on Server1 and Server2
 #>
         [CmdletBinding()]
     Param (
+        [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias('Silent')]
