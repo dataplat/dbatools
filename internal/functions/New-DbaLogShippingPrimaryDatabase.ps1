@@ -94,50 +94,32 @@ function New-DbaLogShippingPrimaryDatabase {
         [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
-
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
-
+        [System.Management.Automation.PSCredential]$SqlCredential,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]$Database,
-
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$BackupDirectory,
-
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$BackupJob,
-
         [Parameter(Mandatory)]
         [int]$BackupRetention,
-
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$BackupShare,
-
         [int]$BackupThreshold = 60,
-
         [switch]$CompressBackup,
-
-        [int]ThresholdAlert = 14420,
-
+        [int]$ThresholdAlert = 14420,
         [int]$HistoryRetention = 14420,
-
         [string]$MonitorServer,
-
         [ValidateSet(0, "sqlserver", 1, "windows")]
         [object]$MonitorServerSecurityMode = 1,
-
-        [System.Management.Automation.PSCredential]
-        $MonitorCredential,
-
+        [System.Management.Automation.PSCredential]$MonitorCredential,
         [switch]$ThresholdAlertEnabled,
-
         [Alias('Silent')]
         [switch]$EnableException,
-
         [switch]$Force
     )
 
