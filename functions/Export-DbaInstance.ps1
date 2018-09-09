@@ -187,7 +187,10 @@
                 Stop-Function -Message "Path must be a directory"
             }
         }
-               
+        
+        $options = New-DbaScriptingOption
+        $options.IncludeHeaders = $false
+        
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         $started = Get-Date
         function Write-ProgressHelper {
@@ -288,7 +291,7 @@
             if (-not $ExcludeSystemTriggers) {
                 Write-Message -Level Verbose -Message "Exporting System Triggers"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting System Triggers"
-                $null = Get-DbaServerTrigger -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-servertriggers.sql" -Append -BatchSeparator 'GO'
+                $null = Get-DbaServerTrigger -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-servertriggers.sql" -Append -BatchSeparator 'GO' -ScriptingOptionsObject $options
                 $triggers = Get-Content -Path "$Path\$stepCounter-servertriggers.sql" -Raw
                 $triggers = $triggers.ToString() -replace 'CREATE TRIGGER', "GO`r`nCREATE TRIGGER"
                 $triggers = $triggers.ToString() -replace 'ENABLE TRIGGER', "GO`r`nENABLE TRIGGER"
