@@ -24,7 +24,7 @@ function Find-DbaUnusedIndex {
         .PARAMETER ExcludeDatabase
             Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-        .PARAMETER FilePath
+        .PARAMETER Path
             Specifies the path of a file to write the DROP statements to.
 
         .PARAMETER NoClobber
@@ -59,12 +59,12 @@ function Find-DbaUnusedIndex {
             https://dbatools.io/Find-DbaUnusedIndex
 
         .EXAMPLE
-            Find-DbaUnusedIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-UnusedIndexes.sql
+            Find-DbaUnusedIndex -SqlInstance sql2005 -Path C:\temp\sql2005-UnusedIndexes.sql
 
             Generates the SQL statements to drop the selected unused indexes on server "sql2005". The statements are written to the file "C:\temp\sql2005-UnusedIndexes.sql"
 
         .EXAMPLE
-            Find-DbaUnusedIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-UnusedIndexes.sql -Append
+            Find-DbaUnusedIndex -SqlInstance sql2005 -Path C:\temp\sql2005-UnusedIndexes.sql -Append
 
             Generates the SQL statements to drop the selected unused indexes on server "sql2005". The statements are written to the file "C:\temp\sql2005-UnusedIndexes.sql", appending if the file already exists.
 
@@ -99,8 +99,8 @@ function Find-DbaUnusedIndex {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [Alias("OutFile", "Path")]
-        [string]$FilePath,
+        [Alias("OutFile", "FilePath")]
+        [string]$Path,
         [switch]$NoClobber,
         [switch]$Append,
         [switch]$IgnoreUptime,
@@ -150,11 +150,11 @@ function Find-DbaUnusedIndex {
                 AND user_lookups = 0
                 AND i.type_desc NOT IN ('HEAP', 'CLUSTERED COLUMNSTORE')"
 
-        if ($FilePath.Length -gt 0) {
-            if ($FilePath -notlike "*\*") {
-                $FilePath = ".\$FilePath"
+        if ($Path.Length -gt 0) {
+            if ($Path -notlike "*\*") {
+                $Path = ".\$Path"
             }
-            $directory = Split-Path $FilePath
+            $directory = Split-Path $Path
             $exists = Test-Path $directory
 
             if ($exists -eq $false) {
@@ -164,7 +164,7 @@ function Find-DbaUnusedIndex {
         }
 
         Write-Message -Level Output -Message "Connecting to SQL Server."
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 9
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -238,7 +238,7 @@ function Find-DbaUnusedIndex {
                         if ($indexesToDrop.Count -gt 0 -or !([string]::IsNullOrEmpty($indexesToDrop))) {
 
                             foreach ($index in $indexesToDrop) {
-                                if ($FilePath.Length -gt 0) {
+                                if ($Path.Length -gt 0) {
                                     Write-Message -Level Output -Message "Exporting $($index.TableName).$($index.IndexName)"
                                     $sqlout += "USE [$($index.DatabaseName)]`r`n"
                                     $sqlout += "GO`r`n"
@@ -249,8 +249,8 @@ function Find-DbaUnusedIndex {
                                 }
                             }
 
-                            if ($FilePath.Length -gt 0) {
-                                $sqlout | Out-File -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                            if ($Path.Length -gt 0) {
+                                $sqlout | Out-File -FilePath $Path -Append:$Append -NoClobber:$NoClobber
                             }
                             else {
                                 $indexesToDrop
@@ -271,8 +271,8 @@ function Find-DbaUnusedIndex {
             if ($scriptGenerated) {
                 Write-Message -Level Warning -Message "Confirm the generated script before execute!"
             }
-            if ($FilePath.Length -gt 0) {
-                Write-Message -Level Output -Message "Script generated to $FilePath"
+            if ($Path.Length -gt 0) {
+                Write-Message -Level Output -Message "Script generated to $Path"
             }
         }
         else {
