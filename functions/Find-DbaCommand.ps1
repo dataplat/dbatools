@@ -117,6 +117,9 @@ function Find-DbaCommand {
             ## fetch the synopsis
             $thebase.Synopsis = $thishelp.Synopsis
 
+            ## fetch the syntax
+            $thebase.Syntax = $thishelp.Syntax | Out-String -Width 120
+
             ## store notes
             $as = $thishelp.AlertSet | Out-String -Width 120
 
