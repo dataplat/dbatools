@@ -58,14 +58,14 @@ function Export-DbaExecutionPlan {
             https://dbatools.io/Export-DbaExecutionPlan
 
         .EXAMPLE
-            Export-DbaExecutionPlan -SqlInstance sqlserver2014a
+            Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Path C:\Temp
 
-            Exports all execution plans for sqlserver2014a.
+            Exports all execution plans for sqlserver2014a. Files saved in to C:\Temp
 
         .EXAMPLE
-            Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Database db1, db2 -SinceLastExecution '7/1/2016 10:47:00'
+            Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Database db1, db2 -SinceLastExecution '2016-07-01 10:47:00' -Path C:\Temp
 
-            Exports all execution plans for databases db1 and db2 on sqlserver2014a since July 1, 2016 at 10:47 AM.
+            Exports all execution plans for databases db1 and db2 on sqlserver2014a since July 1, 2016 at 10:47 AM. Files saved in to C:\Temp
     #>
     [cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
     param (
