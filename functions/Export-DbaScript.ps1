@@ -237,7 +237,7 @@ function Export-DbaScript {
                         if ($ScriptingOptionsObject) {
                             foreach ($script in $scripter.EnumScript($object)) {
                                 if ($BatchSeparator -ne "") {
-                                    $script = "$script`n$BatchSeparator`n"
+                                    $script = "$script`r`n$BatchSeparator`r`n"
                                 }
                                 $script | Out-String
                             }
@@ -251,7 +251,7 @@ function Export-DbaScript {
                             }
 
                             if ($BatchSeparator -ne "") {
-                                $script = "$script`n$BatchSeparator`n"
+                                $script = "$script`r`n$BatchSeparator`r`n"
                             }
                             $script  | Out-String
                         }
@@ -267,7 +267,7 @@ function Export-DbaScript {
                             else {
                                 foreach ($script in $scripter.EnumScript($object)) {
                                     if ($BatchSeparator -ne "") {
-                                        $script = "$script`n$BatchSeparator`n"
+                                        $script = "$script`r`n$BatchSeparator`r`n"
                                     }
                                     $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
                                 }
@@ -282,7 +282,7 @@ function Export-DbaScript {
                                 $script = $object.Script()
                             }
                             if ($BatchSeparator -ne "") {
-                                $script = "$script`n$BatchSeparator`n"
+                                $script = "$script`r`n$BatchSeparator`r`n"
                             }
                             $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
                         }
