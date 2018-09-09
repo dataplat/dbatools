@@ -38,7 +38,7 @@ function New-DbaLogShippingPrimaryDatabase {
         .PARAMETER CompressBackup
             Enables the use of backup compression
 
-        .PARAMETER ThressAlert
+        .PARAMETER ThresholdAlert
             Is the length of time, in minutes, when the alert is to be raised when the backup threshold is exceeded.
             The default is 14,420.
 
@@ -121,7 +121,7 @@ function New-DbaLogShippingPrimaryDatabase {
 
         [switch]$CompressBackup,
 
-        [int]$ThressAlert = 14420,
+        [int]ThresholdAlert = 14420,
 
         [int]$HistoryRetention = 14420,
 
@@ -241,7 +241,7 @@ function New-DbaLogShippingPrimaryDatabase {
     if ($MonitorServer) {
         $Query += ",@monitor_server = N'$MonitorServer'
             ,@monitor_server_security_mode = $MonitorServerSecurityMode
-            ,@threshold_alert = $ThressAlert
+            ,@threshold_alert = $ThresholdAlert
             ,@threshold_alert_enabled = $ThresholdAlertEnabled"
     }
 
