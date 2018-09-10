@@ -29,7 +29,7 @@ function Export-DbaUser {
             To say to which version the script should be generated. If not specified will use database compatibility level
 
         .PARAMETER Path
-            Specifies the path of a file to write the script to.
+            Specifies the full path of a file to write the script to.
 
         .PARAMETER NoClobber
             Do not overwrite file
