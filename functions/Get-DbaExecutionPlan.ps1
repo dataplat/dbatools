@@ -4,7 +4,7 @@ function Get-DbaExecutionPlan {
 Gets execution plans and metadata
 
 .DESCRIPTION
-Gets execution plans and metadata. Can pipe to Export-DbaExecutionPlan :D
+Gets execution plans and metadata. Can pipe to Export-DbaExecutionPlan
 
 Thanks to
     https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/
