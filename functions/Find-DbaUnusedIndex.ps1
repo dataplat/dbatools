@@ -25,7 +25,7 @@ function Find-DbaUnusedIndex {
             Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
         .PARAMETER Path
-            Specifies the path of a file to write the DROP statements to.
+            Specifies the full path of a file to write the DROP statements to.
 
         .PARAMETER NoClobber
             If this switch is enabled, the output file will not be overwritten.
