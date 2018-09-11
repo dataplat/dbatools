@@ -19,6 +19,7 @@ function Get-DbaDefaultPath {
 
     .NOTES
         Tags: Config
+        Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: MIT https://opensource.org/licenses/MIT
@@ -40,7 +41,7 @@ function Get-DbaDefaultPath {
 #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]

@@ -13,14 +13,14 @@
     function Update-TeppCache {
         [CmdletBinding()]
         Param (
-            [Parameter(ValueFromPipeline = $true)]
+            [Parameter(ValueFromPipeline)]
             $ServerAccess
         )
 
         begin {
 
         }
-        Process {
+        process {
             if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUdaterStopper) { break }
 
             foreach ($instance in $ServerAccess) {

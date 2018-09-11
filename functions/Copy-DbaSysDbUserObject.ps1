@@ -39,7 +39,7 @@ function Copy-DbaSysDbUserObject {
 
         .NOTES
             Tags: Migration, SystemDatabase, UserObject
-
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -54,11 +54,11 @@ function Copy-DbaSysDbUserObject {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,

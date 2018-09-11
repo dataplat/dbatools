@@ -37,7 +37,7 @@ function Get-DbaDbVirtualLogFile {
 
         .NOTES
             Tags: VLF, Database, LogFile
-
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -67,7 +67,7 @@ function Get-DbaDbVirtualLogFile {
     #>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
-    param ([parameter(ValueFromPipeline, Mandatory = $true)]
+    param ([parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

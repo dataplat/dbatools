@@ -114,7 +114,7 @@ function New-DbaLogin {
         [parameter(ParameterSetName = "MapToCertificate")]
         [parameter(ParameterSetName = "MapToAsymmetricKey")]
         [string[]]$Login,
-        [parameter(ValueFromPipeline = $true)]
+        [parameter(ValueFromPipeline)]
         [parameter(ParameterSetName = "Password")]
         [parameter(ParameterSetName = "PasswordHash")]
         [parameter(ParameterSetName = "MapToCertificate")]

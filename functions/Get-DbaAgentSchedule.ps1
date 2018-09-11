@@ -43,7 +43,7 @@ function Get-DbaAgentSchedule {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "Instance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Schedules")]
@@ -56,7 +56,7 @@ function Get-DbaAgentSchedule {
     begin {
         function Get-ScheduleDescription {
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [ValidateNotNullOrEmpty()]
                 [object]$Schedule
 

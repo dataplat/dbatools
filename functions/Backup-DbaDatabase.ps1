@@ -138,7 +138,7 @@ function Backup-DbaDatabase {
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
     param (
-        [parameter(ParameterSetName = "Pipe", Mandatory = $true)]
+        [parameter(ParameterSetName = "Pipe", Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
@@ -149,7 +149,7 @@ function Backup-DbaDatabase {
         [switch]$CopyOnly,
         [ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
         [string]$Type = 'Database',
-        [parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(ParameterSetName = "NoPipe", Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$CreateFolder,
         [int]$FileCount = 0,

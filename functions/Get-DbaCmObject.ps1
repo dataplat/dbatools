@@ -69,16 +69,16 @@ function Get-DbaCmObject {
     #>
     [CmdletBinding(DefaultParameterSetName = "Class")]
     param (
-        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Class")]
+        [Parameter(Mandatory, Position = 0, ParameterSetName = "Class")]
         [Alias('Class')]
         [string]
         $ClassName,
 
-        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Query")]
+        [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
         [string]
         $Query,
 
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
 
@@ -101,7 +101,7 @@ function Get-DbaCmObject {
         [Alias('Silent')]$EnableException
     )
 
-    Begin {
+    begin {
         #region Configuration Values
         $disable_cache = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableCache
 
@@ -110,7 +110,7 @@ function Get-DbaCmObject {
 
         $ParSet = $PSCmdlet.ParameterSetName
     }
-    Process {
+    process {
         :main foreach ($connectionObject in $ComputerName) {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret input: $($connectionObject.Input)" -Category InvalidArgument -Target $connectionObject.Input -Continue -SilentlyContinue:$SilentlyContinue }
 
@@ -380,7 +380,7 @@ function Get-DbaCmObject {
             }
         }
     }
-    End {
+    end {
 
     }
 }

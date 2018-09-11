@@ -56,7 +56,7 @@ function Export-DbaScript {
 
         .NOTES
             Tags: Migration, Backup, Export
-
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -76,7 +76,7 @@ function Export-DbaScript {
             Script does not include Batch Seperator and will not compile
 
         .EXAMPLE
-            Get-DbaTable -SqlInstance sql2016 -Database MyDatabase -Table 'dbo.Table1', 'dbo.Table2' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql
+            Get-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table 'dbo.Table1', 'dbo.Table2' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql
 
             Exports only script for 'dbo.Table1' and 'dbo.Table2' in MyDatabase to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
 
@@ -128,7 +128,7 @@ function Export-DbaScript {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,
         [Alias("ScriptingOptionObject")]
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
@@ -237,7 +237,7 @@ function Export-DbaScript {
                         if ($ScriptingOptionsObject) {
                             foreach ($script in $scripter.EnumScript($object)) {
                                 if ($BatchSeparator -ne "") {
-                                    $script = "$script`n$BatchSeparator`n"
+                                    $script = "$script`r`n$BatchSeparator`r`n"
                                 }
                                 $script | Out-String
                             }
@@ -251,7 +251,7 @@ function Export-DbaScript {
                             }
 
                             if ($BatchSeparator -ne "") {
-                                $script = "$script`n$BatchSeparator`n"
+                                $script = "$script`r`n$BatchSeparator`r`n"
                             }
                             $script  | Out-String
                         }
@@ -267,7 +267,7 @@ function Export-DbaScript {
                             else {
                                 foreach ($script in $scripter.EnumScript($object)) {
                                     if ($BatchSeparator -ne "") {
-                                        $script = "$script`n$BatchSeparator`n"
+                                        $script = "$script`r`n$BatchSeparator`r`n"
                                     }
                                     $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
                                 }
@@ -282,7 +282,7 @@ function Export-DbaScript {
                                 $script = $object.Script()
                             }
                             if ($BatchSeparator -ne "") {
-                                $script = "$script`n$BatchSeparator`n"
+                                $script = "$script`r`n$BatchSeparator`r`n"
                             }
                             $script | Out-File -FilePath $actualPath -Encoding $encoding -Append
                         }

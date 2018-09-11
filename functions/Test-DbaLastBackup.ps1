@@ -82,7 +82,7 @@ function Test-DbaLastBackup {
 
         .NOTES
             Tags: DisasterRecovery, Backup, Restore
-
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -127,7 +127,7 @@ function Test-DbaLastBackup {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "Source")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]

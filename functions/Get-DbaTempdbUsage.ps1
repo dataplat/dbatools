@@ -25,8 +25,9 @@ function Get-DbaTempdbUsage {
 
         .NOTES
             Tags: Tempdb, Space
-            dbatools PowerShell module (https://dbatools.io)
-            Copyright (C) 2016 Chrissy LeMaire
+            Author: Chrissy LeMaire (@cl), netnerds.net
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -39,7 +40,7 @@ function Get-DbaTempdbUsage {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

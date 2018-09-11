@@ -132,7 +132,7 @@ function Expand-DbaTLogResponsibly {
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Default')]
     param (
-        [parameter(Position = 1, Mandatory = $true)]
+        [parameter(Position = 1, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(Position = 3)]
@@ -141,15 +141,15 @@ function Expand-DbaTLogResponsibly {
         [object[]]$Database,
         [parameter(Position = 4)]
         [object[]]$ExcludeDatabase,
-        [parameter(Position = 5, Mandatory = $true)]
+        [parameter(Position = 5, Mandatory)]
         [int]$TargetLogSizeMB,
         [parameter(Position = 6)]
         [int]$IncrementSizeMB = -1,
         [parameter(Position = 7)]
         [int]$LogFileId = -1,
-        [parameter(Position = 8, ParameterSetName = 'Shrink', Mandatory = $true)]
+        [parameter(Position = 8, ParameterSetName = 'Shrink', Mandatory)]
         [switch]$ShrinkLogFile,
-        [parameter(Position = 9, ParameterSetName = 'Shrink', Mandatory = $true)]
+        [parameter(Position = 9, ParameterSetName = 'Shrink', Mandatory)]
         [int]$ShrinkSizeMB,
         [parameter(Position = 10, ParameterSetName = 'Shrink')]
         [AllowEmptyString()]

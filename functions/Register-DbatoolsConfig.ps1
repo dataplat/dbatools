@@ -53,11 +53,11 @@
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
-        [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline = $true)]
+        [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Configuration.Config[]]$Config,
-        [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline = $true)]
+        [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline)]
         [string[]]$FullName,
-        [Parameter(Mandatory = $true, ParameterSetName = "Name", Position = 0)]
+        [Parameter(Mandatory, ParameterSetName = "Name", Position = 0)]
         [string]$Module,
         [Parameter(ParameterSetName = "Name", Position = 1)]
         [string]$Name = "*",

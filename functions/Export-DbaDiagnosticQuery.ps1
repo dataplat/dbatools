@@ -55,7 +55,7 @@ function Export-DbaDiagnosticQuery {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,
         [ValidateSet("Excel", "Csv")]
         [string]$ConvertTo = "Csv",
@@ -94,9 +94,9 @@ function Export-DbaDiagnosticQuery {
         Function Remove-InvalidFileNameChars {
             [CmdletBinding()]
             param (
-                [Parameter(Mandatory = $true,
+                [Parameter(Mandatory,
                     Position = 0,
-                    ValueFromPipeline = $true,
+                    ValueFromPipeline,
                     ValueFromPipelineByPropertyName = $true)]
                 [String]$Name
             )
@@ -116,7 +116,6 @@ function Export-DbaDiagnosticQuery {
             $SqlInstance = $row.SqlInstance.Replace("\", "$")
             $dbname = $row.Database
             $number = $row.Number
-            $note = $row.Note
 
             if ($null -eq $result) {
                 Stop-Function -Message "Result was empty for $name" -Target $result -Continue

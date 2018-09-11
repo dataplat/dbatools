@@ -25,7 +25,7 @@ function Get-DbaComputerSystem {
             Tags: ServerInfo
             Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
 
-            Website: https: //dbatools.io
+            Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
@@ -49,7 +49,7 @@ function Get-DbaComputerSystem {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,

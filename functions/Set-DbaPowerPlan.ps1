@@ -36,9 +36,9 @@ function Set-DbaPowerPlan {
         .NOTES
             Tags: PowerPlan, OS, Configure
             Requires: WMI access to servers
-
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
+            Author: Chrissy LeMaire (@cl), netnerds.net
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -57,7 +57,7 @@ function Set-DbaPowerPlan {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [object[]]$ComputerName,
         [ValidateSet('High Performance', 'Balanced', 'Power saver')]

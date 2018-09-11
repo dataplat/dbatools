@@ -93,7 +93,7 @@ function Format-DbaBackupInformation {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$BackupHistory,
         [object]$ReplaceDatabaseName,
         [switch]$ReplaceDbNameInFile,
@@ -108,7 +108,7 @@ function Format-DbaBackupInformation {
         [hashtable]$FileMapping,
         [switch]$EnableException
     )
-    Begin {
+    begin {
 
         Write-Message -Message "Starting" -Level Verbose
         if ($null -ne $ReplaceDatabaseName) {
@@ -139,7 +139,7 @@ function Format-DbaBackupInformation {
     }
 
 
-    Process {
+    process {
 
         ForEach ($History in $BackupHistory) {
             if ("OriginalDatabase" -notin $History.PSobject.Properties.name) {

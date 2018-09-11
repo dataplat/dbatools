@@ -23,7 +23,7 @@ function Get-DbaDetachedDatabaseInfo {
 
         .NOTES
             Tags: Database, Detach
-
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -39,10 +39,10 @@ function Get-DbaDetachedDatabaseInfo {
 
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("Mdf")]
         [string]$Path,
         [PSCredential]$SqlCredential

@@ -92,7 +92,7 @@ function New-DbaLogShippingSecondaryDatabase {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -101,21 +101,21 @@ function New-DbaLogShippingSecondaryDatabase {
         [switch]$DisconnectUsers,
         [int]$HistoryRetention = 14420,
         [int]$MaxTransferSize,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$PrimaryServer,
         [PSCredential]$PrimarySqlCredential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]$PrimaryDatabase,
         [int]$RestoreAll = 1,
         [int]$RestoreDelay = 0,
         [ValidateSet(0, 'NoRecovery', 1, 'Standby')]
         [object]$RestoreMode = 0,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [int]$RestoreThreshold,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [object]$SecondaryDatabase,
         [int]$ThresholdAlert = 14420,
@@ -227,7 +227,7 @@ function New-DbaLogShippingSecondaryDatabase {
     # Execute the query to add the log shipping primary
     if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance"))) {
         try {
-            Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Output
+            Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
             $ServerSecondary.Query($Query)
         }
@@ -237,6 +237,6 @@ function New-DbaLogShippingSecondaryDatabase {
         }
     }
 
-    Write-Message -Message "Finished adding the secondary database $SecondaryDatabase to log shipping." -Level Output
+    Write-Message -Message "Finished adding the secondary database $SecondaryDatabase to log shipping." -Level Verbose
 
 }

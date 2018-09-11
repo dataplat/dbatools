@@ -1,4 +1,4 @@
-function Get-DbaTable {
+function Get-DbaDbTable {
     <#
 .SYNOPSIS
 Returns a summary of information on the tables
@@ -42,31 +42,31 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-https://dbatools.io/Get-DbaTable
+https://dbatools.io/Get-DbaDbTable
 
 .EXAMPLE
-Get-DbaTable -SqlInstance DEV01 -Database Test1
+Get-DbaDbTable -SqlInstance DEV01 -Database Test1
 Return all tables in the Test1 database
 
 .EXAMPLE
-Get-DbaTable -SqlInstance DEV01 -Database MyDB -Table MyTable
+Get-DbaDbTable -SqlInstance DEV01 -Database MyDB -Table MyTable
 Return only information on the table MyTable from the database MyDB
 
 .EXAMPLE
-Get-DbaTable -SqlInstance DEV01 -Table MyTable
+Get-DbaDbTable -SqlInstance DEV01 -Table MyTable
 Returns information on table called MyTable if it exists in any database on the server, under any schema
 
 .EXAMPLE
-Get-DbaTable -SqlInstance DEV01 -Table dbo.[First.Table]
+Get-DbaDbTable -SqlInstance DEV01 -Table dbo.[First.Table]
 Returns information on table called First.Table on schema dbo if it exists in any database on the server
 
 .EXAMPLE
-'localhost','localhost\namedinstance' | Get-DbaTable -Database DBA -Table Commandlog
+'localhost','localhost\namedinstance' | Get-DbaDbTable -Database DBA -Table Commandlog
 Returns information on the CommandLog table in the DBA database on both instances localhost and the named instance localhost\namedinstance
 
 #>
     [CmdletBinding()]
-    param ([parameter(ValueFromPipeline, Mandatory = $true)]
+    param ([parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
@@ -198,5 +198,8 @@ Returns information on the CommandLog table in the DBA database on both instance
                 }
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaTable
     }
 }

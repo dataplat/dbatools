@@ -302,14 +302,14 @@ function Restore-DbaDatabase {
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Restore")]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "Restore")]
-        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "RestorePage")]
+        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Restore")]
+        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "RestorePage")]
         [object[]]$Path,
-        [parameter(ValueFromPipeline = $true)]
+        [parameter(ValueFromPipeline)]
         [Alias("Name")]
         [object[]]$DatabaseName,
         [parameter(ParameterSetName = "Restore")]
@@ -381,9 +381,9 @@ function Restore-DbaDatabase {
         [switch]$StopAfterFormatBackupInformation,
         [string]$TestBackupInformation,
         [switch]$StopAfterTestBackupInformation,
-        [parameter(Mandatory = $true, ParameterSetName = "RestorePage")]
+        [parameter(Mandatory, ParameterSetName = "RestorePage")]
         [object]$PageRestore,
-        [parameter(Mandatory = $true, ParameterSetName = "RestorePage")]
+        [parameter(Mandatory, ParameterSetName = "RestorePage")]
         [string]$PageRestoreTailFolder,
         [int]$StatementTimeout = 0
 
