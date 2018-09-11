@@ -331,6 +331,7 @@ function Invoke-DbaLogShippingRecovery {
                 }
             }
             Write-Progress -Activity $activity -Completed
+            $stepCounter = 0
         }
     }
 }
