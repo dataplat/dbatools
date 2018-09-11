@@ -1303,7 +1303,7 @@ function Import-DbaCsvToSql {
         Write-Output "[*] Total Elapsed Time for bulk insert: $totaltime seconds"
     }
 
-    End {
+    end {
         # Close everything just in case & ignore errors
         try {
             if ($oleconn.connection) {$null = $oleconn.close(); $null = $oleconn.dispose()}

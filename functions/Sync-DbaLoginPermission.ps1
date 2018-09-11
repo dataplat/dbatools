@@ -38,9 +38,6 @@ function Sync-DbaLoginPermission {
         .NOTES
             Tags: Migration, Login
             Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: sysadmin access on SQL Servers
-            Limitations: Does not support Application Roles yet
-
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT

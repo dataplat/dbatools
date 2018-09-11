@@ -34,7 +34,7 @@ Prompts you for confirmation before executing any changing operations within the
 
 .NOTES
 Tags: Delete, Databases
-
+Author: Chrissy LeMaire (@cl), netnerds.net
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: MIT https://opensource.org/licenses/MIT
