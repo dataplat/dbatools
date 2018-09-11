@@ -248,7 +248,7 @@ function New-DbaLogShippingPrimaryDatabase {
     # Execute the query to add the log shipping primary
     if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for primary database $Database on $SqlInstance"))) {
         try {
-            Write-Message -Message "Configuring logshipping for primary database $Database." -Level Output
+            Write-Message -Message "Configuring logshipping for primary database $Database." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
             $server.Query($Query)
         }
@@ -258,6 +258,6 @@ function New-DbaLogShippingPrimaryDatabase {
         }
     }
 
-    Write-Message -Message "Finished adding the primary database $Database to log shipping." -Level Output
+    Write-Message -Message "Finished adding the primary database $Database to log shipping." -Level Verbose
 
 }

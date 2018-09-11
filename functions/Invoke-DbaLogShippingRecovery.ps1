@@ -187,7 +187,7 @@ function Invoke-DbaLogShippingRecovery {
                 foreach ($ls in $logshipping_details) {
                     $secondarydb = $ls.secondary_database
 
-                    $recoverResult = ""
+                    $recoverResult = "Success"
                     $comment = ""
                     $jobOutputs = @()
 
@@ -314,7 +314,6 @@ function Invoke-DbaLogShippingRecovery {
                                         $query = "RESTORE DATABASE [$secondarydb] WITH RECOVERY"
                                         $server.Query($query)
 
-                                        $recoverResult = "Successfull"
                                     }
                                     catch{
                                         $recoverResult = "Failed"
