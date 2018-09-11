@@ -291,7 +291,14 @@ function Restore-DbaDatabase {
         
         $BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\backups\sql2000\ProdDb
         $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
+    .EXAMPLE
+        Restore-DbaDatabase -SqlInstance server1\instance1 -Path "C:\Temp\devops_prod_full.bak" -DatabaseName "DevOps_DEV" -ReplaceDbNameInFile
+        Rename-DbaDatabase -SqlInstance server1\instance1 -Database "DevOps_DEV" -LogicalName "<DBN>_<FT>"
 
+        This will restore the database from the "C:\Temp\devopsdb_full.bak" file, with the new name "DevOps_DEV" and
+        store the different physical files with the new name. It will use the system default configured data and log locations.
+        After the restore the logical names of the database files will be renamed with the 
+        "DevOps_DEV_ROWS" for MDF/NDF and "DevOps_DEV_LOG" for LDF        
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
         Author: Stuart Moore (@napalmgram), stuart-moore.com
