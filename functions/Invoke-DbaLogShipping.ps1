@@ -668,7 +668,7 @@ function Invoke-DbaLogShipping {
         # Check the instance if it is a named instance
         $SourceServerName, $SourceInstanceName = $SourceSqlInstance.Split("\")
 
-        if ($SourceInstanceName -eq $null) {
+        if ($null -eq $SourceInstanceName) {
             $SourceInstanceName = "MSSQLSERVER"
         }
 
@@ -1042,7 +1042,7 @@ function Invoke-DbaLogShipping {
 
             $DestinationServerName, $DestinationInstanceName = $destInstance.Split("\")
 
-            if ($DestinationInstanceName -eq $null) {
+            if ($null -eq $DestinationInstanceName) {
                 $DestinationInstanceName = "MSSQLSERVER"
             }
 
@@ -1114,11 +1114,15 @@ function Invoke-DbaLogShipping {
                                     Write-Message -Message "Copy destination $CopyDestinationFolder created." -Level Verbose
                                 }
                                 catch {
+                                    $setupResult = "Failed"
+                                    $comment = "Something went wrong creating the copy destination folder"
                                     Stop-Function -Message "Something went wrong creating the copy destination folder $CopyDestinationFolder. `n$_" -Target $destInstance -ErrorRecord $_
                                     return
                                 }
                             }
                             1 {
+                                $setupResult = "Failed"
+                                $comment = "Copy destination is a mandatory parameter"
                                 Stop-Function -Message "Copy destination is a mandatory parameter. Please make sure the value is entered." -Target $destInstance
                                 return
                             }
@@ -1132,6 +1136,8 @@ function Invoke-DbaLogShipping {
                             Write-Message -Message "Copy destination $CopyDestinationFolder created." -Level Verbose
                         }
                         catch {
+                            $setupResult = "Failed"
+                            $comment = "Something went wrong creating the copy destination folder"
                             Stop-Function -Message "Something went wrong creating the copy destination folder $CopyDestinationFolder. `n$_" -Target $destInstance -ErrorRecord $_
                             return
                         }
@@ -1141,10 +1147,14 @@ function Invoke-DbaLogShipping {
 
             Write-Message -Message "Testing copy destination path $CopyDestinationFolder" -Level Verbose
             if ((Test-DbaPath -Path $CopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
+                $setupResult = "Failed"
+                $comment = "Copy destination folder $CopyDestinationFolder is not valid or can't be reached"
                 Stop-Function -Message "Copy destination folder $CopyDestinationFolder is not valid or can't be reached." -Target $destInstance
                 return
             }
             elseif ($CopyDestinationFolder.StartsWith("\\") -and $CopyDestinationFolder -notmatch $RegexUnc) {
+                $setupResult = "Failed"
+                $comment = "Copy destination folder $CopyDestinationFolder has to be in the form of \\server\share"
                 Stop-Function -Message "Copy destination folder $CopyDestinationFolder has to be in the form of \\server\share." -Target $destInstance
                 return
             }
@@ -1154,6 +1164,8 @@ function Invoke-DbaLogShipping {
                     $SecondaryDatabaseSuffix = "_LS"
                 }
                 else {
+                    $setupResult = "Failed"
+                    $comment = "Destination database is the same as source database"
                     Stop-Function -Message "Destination database is the same as source database.`nPlease check the secondary server, database prefix or suffix or use -Force to set the secondary databse using a suffix." -Target $SourceSqlInstance
                     return
                 }
@@ -1165,6 +1177,8 @@ function Invoke-DbaLogShipping {
                 if ($StandbyDirectory) {
                     # Check if the path is reachable for the destination server
                     if ((Test-DbaPath -Path $StandbyDirectory -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
+                        $setupResult = "Failed"
+                        $comment = "The directory $StandbyDirectory cannot be reached by the destination instance"
                         Stop-Function -Message "The directory $StandbyDirectory cannot be reached by the destination instance. Please check the permission and credentials." -Target $destInstance
                         return
                     }
@@ -1174,6 +1188,8 @@ function Invoke-DbaLogShipping {
                     Write-Message -Message "Stand-by directory was not set. Setting it to $StandbyDirectory" -Level Verbose
                 }
                 else {
+                    $setupResult = "Failed"
+                    $comment = "Please set the parameter -StandbyDirectory when using -Standby"
                     Stop-Function -Message "Please set the parameter -StandbyDirectory when using -Standby" -Target $SourceSqlInstance
                     return
                 }
@@ -1206,7 +1222,7 @@ function Invoke-DbaLogShipping {
                 # Check is the database is already initialized an check if the database exists on the secondary instance
                 if ($NoInitialization -and ($DestinationServer.Databases.Name -notcontains $SecondaryDatabase)) {
                     $setupResult = "Failed"
-                    $comment = "Database $db is not in FULL recovery mode"
+                    $comment = "Database $SecondaryDatabase needs to be initialized before log shipping setting can continue"
 
                     Stop-Function -Message "Database $SecondaryDatabase needs to be initialized before log shipping setting can continue." -Target $SourceSqlInstance -Continue
                 }
