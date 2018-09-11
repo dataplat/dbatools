@@ -111,7 +111,7 @@ function Invoke-DbaLogShippingRecovery {
     process {
         foreach ($instance in $SqlInstance) {
             if (-not $Force -and -not $Database) {
-                Stop-Function -Message "You must specify a -Database or -Force for all databases" -Target $instance
+                Stop-Function -Message "You must specify a -Database or -Force for all databases" -Target $server.name
                 return
             }
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
@@ -127,12 +127,12 @@ function Invoke-DbaLogShippingRecovery {
                 $agentStatus = $server.Query("SELECT COUNT(*) as AgentCount FROM master.dbo.sysprocesses WITH (nolock) WHERE Program_Name LIKE 'SQLAgent%'")
                 
                 if ($agentStatus.AgentCount -lt 1) {
-                    Stop-Function -Message "The agent service is not in a running state. Please start the service." -ErrorRecord $_ -Target $instance
+                    Stop-Function -Message "The agent service is not in a running state. Please start the service." -ErrorRecord $_ -Target $server.name
                     return
                 }
             }
             catch {
-                Stop-Function -Message "Unable to get SQL Server Agent Service status" -ErrorRecord $_ -Target $instance
+                Stop-Function -Message "Unable to get SQL Server Agent Service status" -ErrorRecord $_ -Target $server.name
                 return
             }
             # Query for retrieving the log shipping information
@@ -152,7 +152,7 @@ function Invoke-DbaLogShippingRecovery {
                 $logshipping_details = $server.Query($query)
             }
             catch {
-                Stop-Function -Message "Error retrieving the log shipping details: $($_.Exception.Message)" -ErrorRecord $_ -Target $instance
+                Stop-Function -Message "Error retrieving the log shipping details: $($_.Exception.Message)" -ErrorRecord $_ -Target $server.name
                 return
             }
             
@@ -177,7 +177,7 @@ function Invoke-DbaLogShippingRecovery {
                         Write-Message -Message "Started Recovery for $secondarydb" -Level Verbose
                         
                         # Start the job to get the latest files
-                        if ($PSCmdlet.ShouldProcess($instance, ("Starting copy job $($ls.copyjob)"))) {
+                        if ($PSCmdlet.ShouldProcess($server.name, ("Starting copy job $($ls.copyjob)"))) {
                             Write-Message -Message "Starting copy job $($ls.copyjob)" -Level Verbose
                             
                             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting copy job"
@@ -187,7 +187,7 @@ function Invoke-DbaLogShippingRecovery {
                             catch {
                                 $recoverResult = "Failed"
                                 $comment = "Something went wrong starting the copy job $($ls.copyjob)"
-                                Stop-Function -Message "Something went wrong starting the copy job.`n$($_)" -ErrorRecord $_ -Target $instance
+                                Stop-Function -Message "Something went wrong starting the copy job.`n$($_)" -ErrorRecord $_ -Target $server.name
                             }
                             
                             if ($recoverResult -ne 'Failed') {
@@ -223,7 +223,7 @@ function Invoke-DbaLogShippingRecovery {
                         if ($recoverResult -ne 'Failed') {
                             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Disabling copy job"
                             
-                            if ($PSCmdlet.ShouldProcess($instance, "Disabling copy job $($ls.copyjob)")) {
+                            if ($PSCmdlet.ShouldProcess($server.name, "Disabling copy job $($ls.copyjob)")) {
                                 try {
                                     Write-Message -Message "Disabling copy job $($ls.copyjob)" -Level Verbose
                                     $null = Set-DbaAgentJob -SqlInstance $server -Job $ls.copyjob -Disabled
@@ -231,7 +231,7 @@ function Invoke-DbaLogShippingRecovery {
                                 catch {
                                     $recoverResult = "Failed"
                                     $comment = "Something went wrong disabling the copy job."
-                                    Stop-Function -Message "Something went wrong disabling the copy job.`n$($_)" -ErrorRecord $_ -Target $instance
+                                    Stop-Function -Message "Something went wrong disabling the copy job.`n$($_)" -ErrorRecord $_ -Target $server.name
                                 }
                             }
                         }
@@ -240,14 +240,14 @@ function Invoke-DbaLogShippingRecovery {
                             # Start the restore job
                             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting restore job"
                             
-                            if ($PSCmdlet.ShouldProcess($instance, ("Starting restore job " + $ls.restorejob))) {
+                            if ($PSCmdlet.ShouldProcess($server.name, ("Starting restore job " + $ls.restorejob))) {
                                 Write-Message -Message "Starting restore job $($ls.restorejob)" -Level Verbose
                                 try {
                                     $null = Start-DbaAgentJob -SqlInstance $server -Job $ls.restorejob
                                 }
                                 catch {
                                     $comment = "Something went wrong starting the restore job."
-                                    Stop-Function -Message "Something went wrong starting the restore job.`n$($_)" -ErrorRecord $_ -Target $instance
+                                    Stop-Function -Message "Something went wrong starting the restore job.`n$($_)" -ErrorRecord $_ -Target $server.name
                                 }
                                 
                                 Write-Message -Message "Waiting for the restore action to complete.." -Level Verbose
@@ -276,7 +276,7 @@ function Invoke-DbaLogShippingRecovery {
                         
                         if ($recoverResult -ne 'Failed') {
                             # Disable the log shipping restore job on the secondary instance
-                            if ($PSCmdlet.ShouldProcess($instance, "Disabling restore job $($ls.restorejob)")) {
+                            if ($PSCmdlet.ShouldProcess($server.name, "Disabling restore job $($ls.restorejob)")) {
                                 try {
                                     Write-Message -Message ("Disabling restore job " + $ls.restorejob) -Level Verbose
                                     $null = Set-DbaAgentJob -SqlInstance $server -Job $ls.restorejob -Disabled
@@ -284,7 +284,7 @@ function Invoke-DbaLogShippingRecovery {
                                 catch {
                                     $recoverResult = "Failed"
                                     $comment = "Something went wrong disabling the restore job."
-                                    Stop-Function -Message "Something went wrong disabling the restore job.`n$($_)" -ErrorRecord $_ -Target $instance
+                                    Stop-Function -Message "Something went wrong disabling the restore job.`n$($_)" -ErrorRecord $_ -Target $server.name
                                 }
                             }
                         }
