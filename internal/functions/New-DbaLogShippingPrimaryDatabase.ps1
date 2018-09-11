@@ -167,9 +167,9 @@ function New-DbaLogShippingPrimaryDatabase {
     }
 
     # Check the MonitorServer
-    if ($Force -and -not $MonitorServer) {
+    if (-not $MonitorServer -and $Force) {
+        Write-Message -Message "Setting monitor server to $SqlInstance." -Level Verbose
         $MonitorServer = $SqlInstance
-        Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
     }
 
     # Check the MonitorServerSecurityMode if it's SQL Server authentication

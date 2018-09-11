@@ -144,7 +144,7 @@ function New-DbaLogShippingSecondaryPrimary {
     }
 
     # Check the MonitorServer
-    if ($Force -and -not $MonitorServer) {
+    if (-not $MonitorServer -and $Force) {
         $MonitorServer = $SqlInstance
         Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
     }
