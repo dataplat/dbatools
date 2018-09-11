@@ -50,7 +50,8 @@ function Export-DbaExecutionPlan {
 
         .NOTES
             Tags: Performance, ExecutionPlan
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Author: Chrissy LeMaire (@cl), netnerds.net
+            Website: https://dbatools.io
             Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
 

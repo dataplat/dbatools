@@ -21,7 +21,8 @@ function Show-DbaServerFileSystem {
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
         .NOTES
-            Tags: Storage
+            Tags: Storage, FileSystem
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
