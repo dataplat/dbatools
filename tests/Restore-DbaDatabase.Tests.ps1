@@ -281,7 +281,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
 
     Context "All user databases are removed post RestoreTime check" {
@@ -291,7 +291,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
 
     Context "RestoreTime point in time" {
@@ -315,7 +315,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
 
     Context "RestoreTime point in time with Simple Model" {
@@ -340,7 +340,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
 
     Context "RestoreTime point in time and continue" {
@@ -515,7 +515,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
 
     Context "All user databases are removed post history test" {
