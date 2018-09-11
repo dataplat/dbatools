@@ -216,9 +216,15 @@ function Invoke-DbaLogShippingRecovery {
 
                             Write-Message -Message "Waiting for the copy action to complete.." -Level Verbose
 
-                            while (($latestBackupSource.Name -ne ([string]$latestcopy.last_copied_file).Split('\')[-1])) {
+                            # Get the job status
+                            $jobStatus = Get-DbaAgentJob -SqlInstance $sqlinstance -Job $ls.copyjob | Select-Object CurrentRunStatus, LastRunOutCome
+
+                            while ($jobStatus.CurrentRunStatus -ne 'Idle') {
                                 # Sleep for while to let the files be copied
                                 Start-Sleep -Seconds $Delay
+
+                                # Get the job status
+                                $jobStatus = Get-DbaAgentJob -SqlInstance $sqlinstance -Job $ls.copyjob | Select-Object CurrentRunStatus, LastRunOutCome
 
                                 # Again get the latest file to check if the process can continue
                                 $latestcopy = $server.Query($query)
@@ -228,7 +234,7 @@ function Invoke-DbaLogShippingRecovery {
                             $latestcopy = $server.Query($query)
 
                             # Check the lat outcome of the job
-                            if ($server.JobServer.Jobs[$ls.copyjob].LastRunOutcome -eq 'Failed') {
+                            if ($jobStatus.LastRunOutcome -eq 'Failed') {
                                 Stop-Function -Message "The copy job for database $db failed. Please check the error log." -Continue
                             }
 
@@ -266,9 +272,15 @@ function Invoke-DbaLogShippingRecovery {
 
                                 Write-Message -Message "Waiting for the restore action to complete.." -Level Verbose
 
-                                while ($latestBackupSource.Name -ne [string]($latestrestore.last_restored_file).Split('\')[-1]) {
+                                # Get the job status
+                                $jobStatus = Get-DbaAgentJob -SqlInstance $sqlinstance -Job $ls.restorejob | Select-Object CurrentRunStatus, LastRunOutCome
+
+                                while ($jobStatus.CurrentRunStatus -ne 'Idle') {
                                     # Sleep for while to let the files be copied
                                     Start-Sleep -Seconds $Delay
+
+                                    # Get the job status
+                                    $jobStatus = Get-DbaAgentJob -SqlInstance $sqlinstance -Job $ls.restorejob | Select-Object CurrentRunStatus, LastRunOutCome
 
                                     # Again get the latest file to check if the process can continue
                                     $latestrestore = $server.Query($query)
@@ -278,7 +290,7 @@ function Invoke-DbaLogShippingRecovery {
                                 $latestrestore = $server.Query($query)
 
                                 # Check the lat outcome of the job
-                                if ($server.JobServer.Jobs[$ls.restorejob].LastRunOutcome -eq 'Failed') {
+                                if ($jobStatus.LastRunOutcome -eq 'Failed') {
                                     Stop-Function -Message "The restore job for database $db failed. Please check the error log." -Continue
                                 }
                             }
