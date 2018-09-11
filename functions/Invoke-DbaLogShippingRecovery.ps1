@@ -104,6 +104,10 @@ function Invoke-DbaLogShippingRecovery {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [int]$Delay = 5
     )
+    begin {
+        $totalSteps = 5
+        $stepCounter = 0
+    }
     process {
         foreach ($instance in $SqlInstance) {
             if (-not $Force -and -not $Database) {
@@ -116,9 +120,11 @@ function Invoke-DbaLogShippingRecovery {
         # Loop through all the databases
         foreach ($db in $InputObject) {
             $server = $db.Parent
+            $activity = "Performing log shipping recovery for $($db.Name) on $($server.Name)"
             # Try to get the agent service details
             try {
                 # Get the service details
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Ensuring SQL Agent is started"
                 $agentStatus = $server.Query("SELECT COUNT(*) as AgentCount FROM master.dbo.sysprocesses WITH (nolock) WHERE Program_Name LIKE 'SQLAgent%'")
                 
                 if ($agentStatus.AgentCount -lt 1) {
@@ -143,6 +149,7 @@ function Invoke-DbaLogShippingRecovery {
             # Retrieve the log shipping information from the secondary instance
             try {
                 Write-Message -Message "Retrieving log shipping information from the secondary instance" -Level Verbose
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Retrieving log shipping information from the secondary instance"
                 $logshipping_details = $server.Query($query)
             }
             catch {
@@ -173,6 +180,8 @@ function Invoke-DbaLogShippingRecovery {
                         # Start the job to get the latest files
                         if ($PSCmdlet.ShouldProcess($instance, ("Starting copy job $($ls.copyjob)"))) {
                             Write-Message -Message "Starting copy job $($ls.copyjob)" -Level Verbose
+                            
+                            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting copy job"
                             try {
                                 $null = Start-DbaAgentJob -SqlInstance $instance -SqlCredential $SqlCredential -Job $ls.copyjob
                             }
@@ -213,6 +222,8 @@ function Invoke-DbaLogShippingRecovery {
                         
                         # Disable the log shipping copy job on the secondary instance
                         if ($recoverResult -ne 'Failed') {
+                            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Disabling copy job"
+                            
                             if ($PSCmdlet.ShouldProcess($instance, "Disabling copy job $($ls.copyjob)")) {
                                 try {
                                     Write-Message -Message "Disabling copy job $($ls.copyjob)" -Level Verbose
@@ -228,6 +239,8 @@ function Invoke-DbaLogShippingRecovery {
                         
                         if ($recoverResult -ne 'Failed') {
                             # Start the restore job
+                            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting restore job"
+                            
                             if ($PSCmdlet.ShouldProcess($instance, ("Starting restore job " + $ls.restorejob))) {
                                 Write-Message -Message "Starting restore job $($ls.restorejob)" -Level Verbose
                                 try {
@@ -314,9 +327,10 @@ function Invoke-DbaLogShippingRecovery {
                             Comment      = $comment
                         }
                         
-                    } # database in restorable mode
-                } # foreach ls details
-            } # ls details are not null
-        } # foreach database
-    } # process
+                    }
+                }
+            }
+            Write-Progress -Activity $activity -Completed
+        }
+    }
 }
