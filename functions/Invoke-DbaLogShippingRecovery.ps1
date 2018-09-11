@@ -28,9 +28,6 @@ function Invoke-DbaLogShippingRecovery {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Credential
-            Login to the target host using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
         .PARAMETER NoRecovery
             Allows you to choose to not restore the database to a functional state (Normal) in the final steps of the process.
             By default the database is restored to a functional state (Normal).
@@ -98,7 +95,6 @@ function Invoke-DbaLogShippingRecovery {
         [Parameter(ValueFromPipeline = $true)]
         [object[]]$Database,
         [PSCredential]$SqlCredential,
-        [PSCredential]$Credential,
         [switch]$NoRecovery,
         [Alias('Silent')]
         [switch]$EnableException,
