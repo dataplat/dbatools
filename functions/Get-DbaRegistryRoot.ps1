@@ -19,7 +19,7 @@ Allows you to login to $ComputerName using alternative Windows credentials
 
 .NOTES
 Tags: Configuration, Registry
-
+Author: Chrissy LeMaire (@cl), netnerds.net
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: MIT https://opensource.org/licenses/MIT

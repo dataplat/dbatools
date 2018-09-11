@@ -37,6 +37,7 @@ function Get-DbaDependency {
         .NOTES
             Tags: Database, Dependent, Dependency, Object
             dbatools PowerShell module (https://dbatools.io)
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
 
@@ -67,7 +68,7 @@ function Get-DbaDependency {
         [Alias('Silent')]$EnableException
     )
 
-    Begin {
+    begin {
         #region Utility functions
         function Get-DependencyTree {
             [CmdletBinding()]
@@ -150,7 +151,7 @@ function Get-DbaDependency {
                 $AllowSystemObjects
             )
 
-            Begin {
+            begin {
                 $scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter
                 $options = New-Object Microsoft.SqlServer.Management.Smo.ScriptingOptions
                 $options.DriAll = $true
@@ -199,22 +200,22 @@ function Get-DbaDependency {
                 $Dependency
             )
 
-            Begin {
+            begin {
                 $list = @()
             }
-            Process {
+            process {
                 foreach ($dep in $Dependency) {
                     # Killing the pipeline is generally a bad idea, but since we have to group and sort things, we have not really a choice
                     $list += $dep
                 }
             }
-            End {
+            end {
                 $list | Group-Object -Property Object | ForEach-Object { $_.Group | Sort-Object -Property Tier -Descending | Select-Object -First 1 } | Sort-Object Tier
             }
         }
         #endregion Utility functions
     }
-    Process {
+    process {
         foreach ($Item in $InputObject) {
             Write-Message -EnableException $EnableException -Level Verbose -Message "Processing: $Item"
             if ($null -eq $Item.urn) {

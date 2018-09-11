@@ -73,6 +73,9 @@ function Reset-DbaAdmin {
         .NOTES
             Tags: WSMan
             Author: Chrissy LeMaire (@cl), netnerds.net
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
             Requires: Admin access to server (not SQL Services),
             Remoting must be enabled and accessible if $SqlInstance is not local
 

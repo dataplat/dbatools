@@ -26,7 +26,6 @@ function Get-DbaAgentOperator {
         .NOTES
             Tags: Agent, Operator
             Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT

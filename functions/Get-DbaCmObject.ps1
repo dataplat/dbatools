@@ -101,7 +101,7 @@ function Get-DbaCmObject {
         [Alias('Silent')]$EnableException
     )
 
-    Begin {
+    begin {
         #region Configuration Values
         $disable_cache = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableCache
 
@@ -110,7 +110,7 @@ function Get-DbaCmObject {
 
         $ParSet = $PSCmdlet.ParameterSetName
     }
-    Process {
+    process {
         :main foreach ($connectionObject in $ComputerName) {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret input: $($connectionObject.Input)" -Category InvalidArgument -Target $connectionObject.Input -Continue -SilentlyContinue:$SilentlyContinue }
 
@@ -380,7 +380,7 @@ function Get-DbaCmObject {
             }
         }
     }
-    End {
+    end {
 
     }
 }
