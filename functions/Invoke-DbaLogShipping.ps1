@@ -1446,7 +1446,7 @@ function Invoke-DbaLogShipping {
                             $LastBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -Databases $($db.Name) -LastFull -Credential $SourceSqlCredential
 
                             # Check if there was a last backup
-                            if ($LastBackup -ne $null) {
+                            if ($null -eq $LastBackup) {
                                 # Test the path to the backup
                                 Write-Message -Message "Testing last backup path $(($LastBackup[-1]).Path[-1])" -Level Verbose
                                 if ((Test-DbaPath -Path ($LastBackup[-1]).Path[-1] -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
