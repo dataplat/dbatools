@@ -37,7 +37,7 @@ Database object piped in from Get-DbaDatabase
 
 .NOTES
 Tags: Certificate, Database
-
+Author: Chrissy LeMaire (@cl), netnerds.net
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: MIT https://opensource.org/licenses/MIT

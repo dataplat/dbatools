@@ -123,7 +123,7 @@
 
         .NOTES
             Tags: Export
-            Author: Chrissy LeMaire
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Limitations:     Doesn't cover what it doesn't cover (certificates, etc)
                             SQL Server 2000 login exports have some limitations (server perms aren't exported)
                             SQL Server 2000 databases cannot be directly exported to SQL Server 2012 and above.

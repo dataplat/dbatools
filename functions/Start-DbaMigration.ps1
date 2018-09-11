@@ -171,11 +171,7 @@ function Start-DbaMigration {
 
         .NOTES
             Tags: Migration
-            Author: Chrissy LeMaire
-            Limitations:     Doesn't cover what it doesn't cover (certificates, etc)
-                            SQL Server 2000 login migrations have some limitations (server perms aren't migrated)
-                            SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
-                            Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
