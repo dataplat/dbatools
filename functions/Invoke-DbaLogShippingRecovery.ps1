@@ -105,7 +105,7 @@ function Invoke-DbaLogShippingRecovery {
         [int]$Delay = 5
     )
     begin {
-        $totalSteps = 5
+        $totalSteps = 4
         $stepCounter = 0
     }
     process {
@@ -124,7 +124,6 @@ function Invoke-DbaLogShippingRecovery {
             # Try to get the agent service details
             try {
                 # Get the service details
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Ensuring SQL Agent is started"
                 $agentStatus = $server.Query("SELECT COUNT(*) as AgentCount FROM master.dbo.sysprocesses WITH (nolock) WHERE Program_Name LIKE 'SQLAgent%'")
                 
                 if ($agentStatus.AgentCount -lt 1) {
