@@ -43,7 +43,7 @@ function Add-DbaRegisteredServer {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Author: Chrissy LeMaire (@cl)
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Tags: RegisteredServer, CMS
 
             Website: https://dbatools.io

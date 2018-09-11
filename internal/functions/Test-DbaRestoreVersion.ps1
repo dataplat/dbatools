@@ -37,10 +37,10 @@ function Test-DbaRestoreVersion {
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [object[]]$FilteredRestoreFiles,
         [PSCredential]$SqlCredential,
         [switch]$SystemDatabaseRestore

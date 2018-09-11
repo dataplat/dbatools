@@ -28,7 +28,7 @@ function Get-DbaServerRole {
             Tags: ServerRole, Security
             Original Author: Shawn Melton (@wsmelton)
 
-            Website: https: //dbatools.io
+            Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
@@ -47,7 +47,7 @@ function Get-DbaServerRole {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [object[]]$ServerRole,

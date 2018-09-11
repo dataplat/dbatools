@@ -75,7 +75,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = Invoke-DbaQuery -SqlInstance $script:instance1, $script:instance2 -Database tempdb -Query $cleanup
         $CloudQuery = 'https://raw.githubusercontent.com/sqlcollaborative/appveyor-lab/master/sql2016-startup/ola/CommandLog.sql'
         $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -File $CloudQuery
-        $smoobj = Get-Dbatable -SqlInstance $script:instance1 -Database tempdb  | Where-Object Name -eq 'CommandLog'
+        $smoobj = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb  | Where-Object Name -eq 'CommandLog'
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -SqlObject $smoobj
         $check = "SELECT name FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')"
         $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $check

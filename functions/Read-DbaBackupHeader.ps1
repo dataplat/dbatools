@@ -32,8 +32,9 @@ function Read-DbaBackupHeader {
 
         .NOTES
             Tags: DisasterRecovery, Backup, Restore
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
+            Author: Chrissy LeMaire (@cl), netnerds.net
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -87,11 +88,11 @@ function Read-DbaBackupHeader {
     <# AzureCredential is utilized in this command is not a formal Credential object. #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance]$SqlInstance,
         [PsCredential]$SqlCredential,
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$Path,
         [switch]$Simple,
         [switch]$FileList,

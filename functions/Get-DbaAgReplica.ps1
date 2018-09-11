@@ -51,11 +51,11 @@ function Get-DbaAgReplica {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(ValueFromPipeline = $true)]
+        [parameter(ValueFromPipeline)]
         [object[]]$AvailabilityGroup,
         [object[]]$Replica,
         [Alias('Silent')]

@@ -63,7 +63,7 @@ function Get-DbaSsisExecutionHistory {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [datetime]$Since,

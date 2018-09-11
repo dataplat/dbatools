@@ -62,7 +62,7 @@ function Get-DbaUserPermission {
     #>
     [CmdletBinding()]
     Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -77,7 +77,7 @@ function Get-DbaUserPermission {
         [switch]$EnableException
     )
 
-    BEGIN {
+    begin {
 
         $sql = [System.IO.File]::ReadAllText("$script:PSModuleRoot\bin\stig.sql")
 
@@ -279,5 +279,8 @@ function Get-DbaUserPermission {
                 #Sashay Away
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaUserLevelPermission
     }
 }

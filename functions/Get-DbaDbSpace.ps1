@@ -59,7 +59,7 @@ function Get-DbaDbSpace {
             Returns database files and free space information for the db1 and db2 on localhost.
     #>
     [CmdletBinding()]
-    param ([parameter(ValueFromPipeline, Mandatory = $true)]
+    param ([parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,

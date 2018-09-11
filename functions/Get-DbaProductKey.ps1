@@ -56,7 +56,7 @@ Gets SQL Server versions, editions and product keys for all instances within eac
         Function Unlock-SqlInstanceKey {
             [CmdletBinding()]
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter(Mandatory)]
                 [byte[]]$data,
                 [int]$version
             )

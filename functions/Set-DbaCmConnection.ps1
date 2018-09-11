@@ -126,7 +126,7 @@ function Set-DbaCmConnection {
     #>
     [CmdletBinding(DefaultParameterSetName = 'Credential')]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
 
@@ -194,13 +194,13 @@ function Set-DbaCmConnection {
         [Alias('Silent')]$EnableException
     )
 
-    BEGIN {
+    begin {
         Write-Message -Level InternalComment -Message "Starting execution"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
         $disable_cache = Get-DbatoolsConfigValue -Name 'ComputerManagement.Cache.Disable.All' -Fallback $false
     }
-    PROCESS {
+    process {
         foreach ($connectionObject in $ComputerName) {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret computername input: $($connectionObject.InputObject)" -Category InvalidArgument -Target $connectionObject.InputObject -Continue }
             Write-Message -Level VeryVerbose -Message "Processing computer: $($connectionObject.Connection.ComputerName)"
@@ -283,7 +283,7 @@ function Set-DbaCmConnection {
             $connection
         }
     }
-    END {
+    end {
         Write-Message -Level InternalComment -Message "Stopping execution"
     }
 }

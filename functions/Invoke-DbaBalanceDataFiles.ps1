@@ -84,7 +84,7 @@ function Invoke-DbaBalanceDataFiles {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
-        [parameter(ParameterSetName = "Pipe", Mandatory = $true)]
+        [parameter(ParameterSetName = "Pipe", Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Databases")]

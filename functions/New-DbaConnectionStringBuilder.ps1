@@ -40,9 +40,10 @@ function New-DbaConnectionStringBuilder {
         .NOTES
             Author: zippy1981
             Tags: SqlBuild, ConnectionString, Connection
-
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2017 Chrissy LeMaire
+            Tags: RegisteredServer, CMS
+            Author: Chrissy LeMaire (@cl), netnerds.net
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -62,7 +63,7 @@ function New-DbaConnectionStringBuilder {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingUserNameAndPassWordParams", "")]
     param (
-        [Parameter(Mandatory = $false, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $false, ValueFromPipeline)]
         [string[]]$ConnectionString = "",
         [Parameter(Mandatory = $false)]
         [string]$ApplicationName = "dbatools Powershell Module",

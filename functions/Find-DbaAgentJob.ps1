@@ -64,7 +64,7 @@ function Find-DbaAgentJob {
             https://dbatools.io/Find-DbaAgentJob
 
         .EXAMPLE
-            Find-DbaAgentJob -SqlInstance Dev01 -JobName backup*
+            Find-DbaAgentJob -SqlInstance Dev01 -JobName *backup*
 
             Returns all agent job(s) that have backup in the name
 
@@ -91,7 +91,7 @@ function Find-DbaAgentJob {
         .EXAMPLE
             Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 -Exclude "Yearly - RollUp Workload", "SMS - Notification"
 
-            Returns all agent jobs that havent ran in the last 10 ignoring jobs "Yearly - RollUp Workload" and "SMS - Notification"
+            Returns all agent jobs that havent ran in the last 10 days ignoring jobs "Yearly - RollUp Workload" and "SMS - Notification"
 
         .EXAMPLE
             Find-DbaAgentJob -SqlInstance Dev01 -Category "REPL-Distribution", "REPL-Snapshot" -Detailed | Format-Table -AutoSize -Wrap
@@ -99,9 +99,9 @@ function Find-DbaAgentJob {
             Returns all job/s on Dev01 that are in either category "REPL-Distribution" or "REPL-Snapshot" with detailed output
 
         .EXAMPLE
-            Find-DbaAgentJob -SqlInstance Dev01, Dev02 -IsFailed -Since '7/1/2016 10:47:00'
+            Find-DbaAgentJob -SqlInstance Dev01, Dev02 -IsFailed -Since '2016-07-01 10:47:00'
 
-            Returns all agent job(s) that have failed since July of 2016 (and still have history in msdb)
+            Returns all agent job(s) on Dev01 and Dev02 that have failed since July of 2016 (and still have history in msdb)
 
         .EXAMPLE
             Get-DbaRegisteredServer -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -IsNotScheduled | Format-Table -AutoSize -Wrap
@@ -110,7 +110,7 @@ function Find-DbaAgentJob {
     #>
     [CmdletBinding()]
     Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]

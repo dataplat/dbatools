@@ -2,7 +2,7 @@ function Resolve-IpAddress {
     # Uses the Beard's method to resolve IPs
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlInstance", "ComputerName", "SqlServer")]
         [object]$Server
     )

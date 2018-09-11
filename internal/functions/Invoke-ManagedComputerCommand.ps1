@@ -27,11 +27,11 @@ function Invoke-ManagedComputerCommand {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [Alias("Server")]
         [dbainstanceparameter]$ComputerName,
         [PSCredential]$Credential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [scriptblock]$ScriptBlock,
         [string[]]$ArgumentList,
         [switch][Alias('Silent')]

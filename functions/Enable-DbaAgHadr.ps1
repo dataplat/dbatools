@@ -51,7 +51,7 @@ function Enable-DbaAgHadr {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
@@ -97,7 +97,7 @@ function Enable-DbaAgHadr {
     #>
             [CmdletBinding()]
             param (
-                [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+                [parameter(Mandatory, ValueFromPipeline)]
                 [Alias("ServerInstance", "SqlServer")]
                 [DbaInstanceParameter[]]$SqlInstance,
                 [PSCredential]$Credential,

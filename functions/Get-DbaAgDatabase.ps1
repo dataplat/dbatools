@@ -55,11 +55,11 @@ function Get-DbaAgDatabase {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(ValueFromPipeline = $true)]
+        [parameter(ValueFromPipeline)]
         [object[]]$AvailabilityGroup,
         [object[]]$Database,
         [Alias('Silent')]

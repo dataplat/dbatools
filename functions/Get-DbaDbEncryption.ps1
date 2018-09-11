@@ -57,7 +57,7 @@ function Get-DbaDbEncryption {
             List all encryption found for all databases including the system databases.
     #>
     [CmdletBinding()]
-    param ([parameter(ValueFromPipeline, Mandatory = $true)]
+    param ([parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

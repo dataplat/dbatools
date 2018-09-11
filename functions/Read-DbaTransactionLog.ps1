@@ -50,11 +50,11 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
-        [parameter(Position = 0, Mandatory = $true)]
+        [parameter(Position = 0, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [object]$Database,
         [Switch]$IgnoreLimit,
         [Alias('Silent')]

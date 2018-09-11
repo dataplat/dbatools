@@ -84,28 +84,28 @@ function New-DbaLogShippingSecondaryPrimary {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$BackupSourceDirectory,
         [Parameter(Mandatory = $false)]
         [string]$BackupDestinationDirectory,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$CopyJob,
         [int]$FileRetentionPeriod = 14420,
         [string]$MonitorServer,
         [PSCredential]$MonitorCredential,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateSet(0, "sqlserver", 1, "windows")]
         [object]$MonitorServerSecurityMode = 1,
         [object]$PrimaryServer,
         [PSCredential]$PrimarySqlCredential,
         [object]$PrimaryDatabase,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$RestoreJob,
         [Alias('Silent')]
@@ -144,7 +144,7 @@ function New-DbaLogShippingSecondaryPrimary {
     }
 
     # Check the MonitorServer
-    if ($Force -and -not $MonitorServer) {
+    if (-not $MonitorServer -and $Force) {
         $MonitorServer = $SqlInstance
         Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
     }
@@ -217,7 +217,7 @@ function New-DbaLogShippingSecondaryPrimary {
     # Execute the query to add the log shipping primary
     if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping making settings for the primary database to secondary database on $SqlInstance"))) {
         try {
-            Write-Message -Message "Configuring logshipping making settings for the primary database." -Level Output
+            Write-Message -Message "Configuring logshipping making settings for the primary database." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
             $ServerSecondary.Query($Query)
         }
@@ -227,5 +227,5 @@ function New-DbaLogShippingSecondaryPrimary {
         }
     }
 
-    Write-Message -Message "Finished configuring of secondary database to primary database $PrimaryDatabase." -Level Output
+    Write-Message -Message "Finished configuring of secondary database to primary database $PrimaryDatabase." -Level Verbose
 }

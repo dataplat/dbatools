@@ -23,7 +23,7 @@ function Clear-DbaConnectionPool {
 
     .NOTES
         Tags: Connection
-
+        Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: MIT https://opensource.org/licenses/MIT
@@ -43,7 +43,7 @@ function Clear-DbaConnectionPool {
 #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,

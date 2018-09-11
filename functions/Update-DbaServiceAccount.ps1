@@ -85,10 +85,10 @@ function Update-DbaServiceAccount {
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "InputObject")]
+        [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "InputObject")]
         [Alias("ServiceCollection")]
         [object[]]$InputObject,
-        [parameter(ParameterSetName = "ServiceName", Position = 1, Mandatory = $true)]
+        [parameter(ParameterSetName = "ServiceName", Position = 1, Mandatory)]
         [Alias("Name", "Service")]
         [string[]]$ServiceName,
         [Alias("User")]

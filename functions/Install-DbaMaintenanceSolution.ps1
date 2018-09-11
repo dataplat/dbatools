@@ -103,7 +103,7 @@ function Install-DbaMaintenanceSolution {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias('ServerInstance', 'SqlServer')]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -265,7 +265,7 @@ process {
         
         if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
             $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
-            $table = Get-DbaTable -SqlInstance $server -Database $Database -Table CommandLog -IncludeSystemDBs | Where-Object Database -eq $Database
+            $table = Get-DbaDbTable -SqlInstance $server -Database $Database -Table CommandLog -IncludeSystemDBs | Where-Object Database -eq $Database
             
             if ($null -ne $procs -or $null -ne $table) {
                 Stop-Function -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."

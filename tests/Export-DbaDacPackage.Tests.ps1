@@ -20,7 +20,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
     }
 
-    if ((Get-DbaTable -SqlInstance $script:instance1 -Database $dbname -Table example)) {
+    if ((Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table example)) {
         # Sometimes appveyor bombs
         It "exports a dacpac" {
             $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname

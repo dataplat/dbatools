@@ -28,6 +28,7 @@ function Test-DbaDbCompatibility {
 
         .NOTES
             Tags: Database, Compatibility
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -58,7 +59,7 @@ function Test-DbaDbCompatibility {
     [CmdletBinding()]
     [OutputType("System.Collections.ArrayList")]
     Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,

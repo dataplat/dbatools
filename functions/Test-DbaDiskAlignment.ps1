@@ -80,7 +80,7 @@ function Test-DbaDiskAlignment {
             https://dbatools.io/Test-DbaDiskAlignment
     #>
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [object[]]$ComputerName,
         [switch]$Detailed,
