@@ -139,72 +139,25 @@ function Invoke-DbaLogShippingRecovery {
                 $databases = $server.databases | Where-Object Name -in $database
             }
         }
-    }
 
-    process {
         # Try to get the agent service details
         try {
             # Start the service
-            $agentservice = Get-DbaSqlService -ComputerName $servername -Credential $Credential | Where-Object {($_.ComputerName -eq $servername) -and ($_.DisplayName -eq "SQL Server Agent ($instancename)")}
+            $agentStatus = $server.Query("SELECT COUNT(*) as AgentCount FROM master.dbo.sysprocesses WITH (nolock) WHERE Program_Name LIKE 'SQLAgent%'")
+
+            if($agentStatus.AgentCount -gt 0){
+                # Stop the function when the service was unable to start
+                Stop-Function -Message "The agent service is not in a running state. Please start the service." -ErrorRecord $_ -Target $sqlinstance
+                return
+            }
         }
         catch {
-            # Stop the function when the service was unable to start
             Stop-Function -Message "Unable to get SQL Server Agent Service status" -ErrorRecord $_ -Target $sqlinstance
             return
         }
+    }
 
-        # Check if the service is running
-        if ($agentservice.State -ne 'Running') {
-
-            if ($Force) {
-                try {
-                    Start-DbaSqlService -ComputerName $servername -InstanceName $instancename -Type Agent -Credential $Credential
-                }
-                catch {
-                    # Stop the function when the service was unable to start
-                    Stop-Function -Message "Unable to start SQL Server Agent Service" -ErrorRecord $_ -Target $sqlinstance
-                    return
-                }
-            }
-            # If the force switch and the silent switch are not set
-            elseif (!$Force -and !$EnableException) {
-                # Set up the parts for the user choice
-                $Title = "SQL Server Agent is not running"
-                $Info = "Do you want to start the SQL Server Agent service?"
-
-                $Options = [System.Management.Automation.Host.ChoiceDescription[]] @("&Start", "&Quit")
-                [int]$Defaultchoice = 0
-                $choice = $host.UI.PromptForChoice($Title, $Info, $Options, $Defaultchoice)
-
-                # Check the given option
-                if ($choice -eq 0) {
-                    try {
-                        # Start the service
-                        Start-DbaSqlService -ComputerName $servername -InstanceName $instancename -Type Agent -Credential $Credential
-                    }
-                    catch {
-                        # Stop the function when the service was unable to start
-                        Stop-Function -Message "Unable to start SQL Server Agent Service" -ErrorRecord $_ -Target $sqlinstance
-                        return
-                    }
-                }
-                else {
-                    Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -ErrorRecord $_ -Target $sqlinstance
-                    return
-                }
-            }
-            # If the force switch it not set and the silent switch is set
-            elseif (!$Force -and $EnableException) {
-                Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -ErrorRecord $_ -Target $sqlinstance
-                return
-            }
-            # If nothing else matches and the agent service is not started
-            else {
-                Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -ErrorRecord $_ -Target $sqlinstance
-                return
-            }
-
-        }
+    process {
 
         Write-Message -Message "Started Log Shipping Recovery" -Level Output
 
