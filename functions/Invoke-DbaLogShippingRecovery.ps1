@@ -340,7 +340,6 @@ function Invoke-DbaLogShippingRecovery {
                             SqlInstance = $server.SqlInstance
                             Database = $secondarydb
                             RecoverResult = $recoverResult
-                            JobResult = $jobOutputs
                             Comment = $comment
                         }
 
