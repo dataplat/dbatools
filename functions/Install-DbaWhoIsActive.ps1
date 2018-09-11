@@ -56,6 +56,8 @@ function Install-DbaWhoIsActive {
             Install-DbaWhoIsActive -SqlInstance $instances -Database master
 
         .NOTES
+            Tags: AdamMechanic, WhoIsActive, SpWhoIsActive
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT

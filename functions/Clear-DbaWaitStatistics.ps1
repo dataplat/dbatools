@@ -25,6 +25,7 @@ function Clear-DbaWaitStatistics {
 
     .NOTES
         Tags: WaitStatistic
+        Author: Chrissy LeMaire (@cl)
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: MIT https://opensource.org/licenses/MIT

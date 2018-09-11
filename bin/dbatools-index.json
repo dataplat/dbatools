@@ -4,6 +4,7 @@
         "Description":  "Adds a computer certificate from a local or remote computer.",
         "Tags":  "Certificate",
         "Syntax":  "\r\nAdd-DbaComputerCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Password] \r\n\u003cSecureString\u003e] [[-Certificate] \u003cX509Certificate2[]\u003e] [[-Path] \u003cString\u003e] [[-Store] \u003cString\u003e] [[-Folder] \u003cString\u003e] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Adds a computer certificate - useful for older systems.",
         "Name":  "Add-DbaComputerCertificate",
         "Links":  null,
@@ -14,6 +15,7 @@
         "Description":  "Adds a Performance Data Collector Counter.",
         "Tags":  "PerfMon",
         "Syntax":  "\r\nAdd-DbaPfDataCollectorCounter [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] \r\n[[-CollectorSet] \u003cString[]\u003e] [[-Collector] \u003cString[]\u003e] [-Counter] \u003cObject[]\u003e [[-InputObject] \u003cObject[]\u003e] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Adds a Performance Data Collector Counter.",
         "Name":  "Add-DbaPfDataCollectorCounter",
         "Links":  "https://dbatools.io/Add-DbaPfDataCollectorCounter",
@@ -27,7 +29,7 @@
                      "CMS"
                  ],
         "Syntax":  "\r\nAdd-DbaRegisteredServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-ServerName] \r\n\u003cString\u003e [[-Name] \u003cString\u003e] [[-Description] \u003cString\u003e] [[-Group] \u003cObject\u003e] [[-InputObject] \u003cServerGroup[]\u003e] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire (@cl)",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Adds registered servers to SQL Server Central Management Server (CMS)",
         "Name":  "Add-DbaRegisteredServer",
         "Links":  "https://dbatools.io/Add-DbaRegisteredServer",
@@ -41,7 +43,7 @@
                      "CMS"
                  ],
         "Syntax":  "\r\nAdd-DbaRegisteredServerGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Name] \r\n\u003cString\u003e [[-Description] \u003cString\u003e] [[-Group] \u003cString\u003e] [[-InputObject] \u003cServerGroup[]\u003e] [-EnableException] [-WhatIf] \r\n[-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire (@cl)",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Adds registered server groups to SQL Server Central Management Server (CMS)",
         "Name":  "Add-DbaRegisteredServerGroup",
         "Links":  "https://dbatools.io/Add-DbaRegisteredServerGroup",
@@ -84,6 +86,7 @@
                      "Database"
                  ],
         "Syntax":  "\r\nBackup-DbaDbMasterKey [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \r\n\u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-Password] \u003cSecureString\u003e] [[-Path] \r\n\u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Backs up specified database master key.",
         "Name":  "Backup-DbaDbMasterKey",
         "Links":  null,
@@ -94,6 +97,7 @@
         "Description":  "This command resets (or empties) the connection pool.\n\nIf there are connections in use at the time of the call, they are marked appropriately and will be discarded (instead of being returned to the pool) when Close() is called on them.\n\nRef: https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.clearallpools(v=vs.110).aspx",
         "Tags":  "Connection",
         "Syntax":  "\r\nClear-DbaConnectionPool [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Resets (or empties) the connection pool.",
         "Name":  "Clear-DbaConnectionPool",
         "Links":  "https://dbatools.io/Clear-DbaConnectionPool",
@@ -115,6 +119,7 @@
         "Description":  "Reset the aggregated statistics - basically just executes DBCC SQLPERF (N\u0027sys.dm_os_wait_stats\u0027, CLEAR)",
         "Tags":  "WaitStatistic",
         "Syntax":  "\r\nClear-DbaWaitStatistics [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl)",
         "Synopsis":  "Clears wait statistics",
         "Name":  "Clear-DbaWaitStatistics",
         "Links":  "https://dbatools.io/Clear-DbaWaitStatistics",
@@ -128,6 +133,7 @@
                      "Connection"
                  ],
         "Syntax":  "\r\nConnect-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] \r\n[[-AccessToken] \u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] \r\n[[-ConnectTimeout] \u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [-IsActiveDirectoryUniversalAuth] \r\n[[-LockTimeout] \u003cInt32\u003e] [[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [-MultipleActiveResultSets] \r\n[-MultiSubnetFailover] [[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] \r\n[[-PooledConnectionLifetime] \u003cInt32\u003e] [[-SqlExecutionModes] \u003cString\u003e] [[-StatementTimeout] \u003cInt32\u003e] \r\n[-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] [[-AppendConnectionString] \u003cString\u003e] [-SqlConnectionOnly] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Creates a robust SMO SQL Server object.",
         "Name":  "Connect-DbaInstance",
         "Links":  "https://dbatools.io/Connect-DbaInstance",
@@ -166,6 +172,7 @@
                      "ExtendedEvent"
                  ],
         "Syntax":  "\r\nConvertTo-DbaXESession [-InputObject] \u003cObject[]\u003e [-Name] \u003cString\u003e [-OutputScriptOnly] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events.",
         "Name":  "ConvertTo-DbaXESession",
         "Links":  null,
@@ -562,6 +569,7 @@
                      "UserObject"
                  ],
         "Syntax":  "\r\nCopy-DbaSysDbUserObject [-Source] \u003cDbaInstanceParameter\u003e [[-SourceSqlCredential] \u003cPSCredential\u003e] [-Destination] \r\n\u003cDbaInstanceParameter[]\u003e [[-DestinationSqlCredential] \u003cPSCredential\u003e] [-Force] [-Classic] [-EnableException] [-WhatIf] \r\n[-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Imports all user objects found in source SQL Server\u0027s master, msdb and model databases to the destination.",
         "Name":  "Copy-DbaSysDbUserObject",
         "Links":  "https://dbatools.io/Copy-DbaSysDbUserObject",
@@ -576,6 +584,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nCopy-DbaXESessionTemplate [[-Path] \u003cString[]\u003e] [[-Destination] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Copies non-Microsoft templates from the dbatools template repository (\\bin\\xetemplates\\) to $home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates.",
         "Name":  "Copy-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Copy-DbaXESessionTemplate",
@@ -601,6 +610,7 @@
         "Description":  "Disables Force Encryption for a SQL Server instance. Note that this requires access to the Windows Server, not the SQL instance itself.\n\nThis setting is found in Configuration Manager.",
         "Tags":  "Certificate",
         "Syntax":  "\r\nDisable-DbaForceNetworkEncryption [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Disables Force Encryption for a SQL Server instance",
         "Name":  "Disable-DbaForceNetworkEncryption",
         "Links":  null,
@@ -622,6 +632,7 @@
         "Description":  "This command detaches one or more SQL Server databases. If necessary, -Force can be used to break mirrors and remove databases from availability groups prior to detaching.",
         "Tags":  "Database",
         "Syntax":  "\r\nDismount-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-UpdateStatistics] [-Force] [-EnableException] [-WhatIf] \r\n[-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nDismount-DbaDatabase -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -Database \u003cString\u003e \r\n[-UpdateStatistics] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nDismount-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] -InputObject \u003cDatabase[]\u003e [-UpdateStatistics] [-Force] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Detach a SQL Server Database.",
         "Name":  "Dismount-DbaDatabase",
         "Links":  "https://dbatools.io/Dismount-DbaDatabase",
@@ -647,6 +658,7 @@
         "Description":  "Enables Force Encryption for a SQL Server instance. Note that this requires access to the Windows Server, not the SQL instance itself.\n\nThis setting is found in Configuration Manager.",
         "Tags":  "Certificate",
         "Syntax":  "\r\nEnable-DbaForceNetworkEncryption [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Enables Force Encryption for a SQL Server instance.",
         "Name":  "Enable-DbaForceNetworkEncryption",
         "Links":  null,
@@ -697,6 +709,7 @@
         "Description":  "Exports credentials INCLUDING PASSWORDS, unless specified otherwise, to sql file.\n\nRequires remote Windows access if exporting the password.",
         "Tags":  "Credential",
         "Syntax":  "\r\nExport-DbaCredential [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Identity] \u003cString[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] \r\n[[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [-ExcludePassword] [-Append] [[-InputObject] \u003cCredential[]\u003e] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Exports credentials INCLUDING PASSWORDS, unless specified otherwise, to sql file.",
         "Name":  "Export-DbaCredential",
         "Links":  null,
@@ -736,6 +749,7 @@
                      "ExecutionPlan"
                  ],
         "Syntax":  "\r\nExport-DbaExecutionPlan [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\r\n\r\nExport-DbaExecutionPlan -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] \r\n[-ExcludeDatabase \u003cObject[]\u003e] -Path \u003cString\u003e [-SinceCreation \u003cDateTime\u003e] [-SinceLastExecution \u003cDateTime\u003e] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nExport-DbaExecutionPlan [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] -Path \u003cString\u003e -PipedObject \u003cObject[]\u003e \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Exports execution plans to disk.",
         "Name":  "Export-DbaExecutionPlan",
         "Links":  "https://dbatools.io/Export-DbaExecutionPlan",
@@ -746,7 +760,7 @@
         "Description":  "Export-DbaInstance consolidates most of the export scripts in dbatools into one command.  This is useful when you\u0027re looking to Export entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It Exports:\n\nAll user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -NoDatabases to skip.\nAll logins. Use -NoLogins to skip.\nAll database mail objects. Use -NoDatabaseMail\nAll credentials. Use -NoCredentials to skip.\nAll objects within the Job Server (SQL Agent). Use -NoAgentServer to skip.\nAll linked servers. Use -NoLinkedServers to skip.\nAll groups and servers within Central Management Server. Use -NoCentralManagementServer to skip.\nAll SQL Server configuration objects (everything in sp_configure). Use -NoSpConfigure to skip.\nAll user objects in system databases. Use -NoSysDbUserObjects to skip.\nAll system triggers. Use -NoSystemTriggers to skip.\nAll system backup devices. Use -NoBackupDevices to skip.\nAll Audits. Use -NoAudits to skip.\nAll Endpoints. Use -NoEndpoints to skip.\nAll Extended Events. Use -NoExtendedEvents to skip.\nAll Policy Management objects. Use -NoPolicyManagement to skip.\nAll Resource Governor objects. Use -NoResourceGovernor to skip.\nAll Server Audit Specifications. Use -NoServerAuditSpecifications to skip.\nAll Custom Errors (User Defined Messages). Use -NoCustomErrors to skip.",
         "Tags":  "Export",
         "Syntax":  "\r\nExport-DbaInstance [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \r\n\u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [-NoRecovery] [-IncludeDbMasterKey] [-IncludeSupportDbs] [-ExcludeDatabases] \r\n[-ExcludeLogins] [-ExcludeAgentServer] [-ExcludeCredentials] [-ExcludeLinkedServers] [-ExcludeSpConfigure] \r\n[-ExcludeCentralManagementServer] [-ExcludeDatabaseMail] [-ExcludeSysDbUserObjects] [-ExcludeSystemTriggers] \r\n[-ExcludeBackupDevices] [-ExcludeAudits] [-ExcludeEndpoints] [-ExcludeExtendedEvents] [-ExcludePolicyManagement] \r\n[-ExcludeResourceGovernor] [-ExcludeServerAuditSpecifications] [-ExcludeCustomErrors] [[-BatchSeparator] \u003cString\u003e] \r\n[[-ScriptingOption] \u003cScriptingOptions\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Exports SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,\nCentral Management Server objects, server configuration settings (sp_configure), user objects in systems databases,\nsystem triggers and backup devices from one SQL Server to another.\n\nFor more granular control, please use one of the -Exclude parameters and use the other functions available within the dbatools module.",
         "Name":  "Export-DbaInstance",
         "Links":  "https://dbatools.io/Export-DbaInstance",
@@ -757,6 +771,7 @@
         "Description":  "Exports linked servers INCLUDING PASSWORDS, unless specified otherwise, to sql file.\n\nRequires remote Windows access if exporting the password.",
         "Tags":  "LinkedServer",
         "Syntax":  "\r\nExport-DbaLinkedServer [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-LinkedServer] \u003cString[]\u003e] [[-SqlCredential] \r\n\u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] [-ExcludePassword] [-Append] [[-InputObject] \r\n\u003cLinkedServer[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Exports linked servers INCLUDING PASSWORDS, unless specified otherwise, to sql file.",
         "Name":  "Export-DbaLinkedServer",
         "Links":  null,
@@ -784,6 +799,7 @@
                      "DataCollector"
                  ],
         "Syntax":  "\r\nExport-DbaPfDataCollectorSetTemplate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] \r\n[[-CollectorSet] \u003cString[]\u003e] [[-Path] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Exports a new Data Collector Set XML Template.",
         "Name":  "Export-DbaPfDataCollectorSetTemplate",
         "Links":  "https://dbatools.io/Export-DbaPfDataCollectorSetTemplate",
@@ -797,7 +813,7 @@
                      "CMS"
                  ],
         "Syntax":  "\r\nExport-DbaRegisteredServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \r\n\u003cObject[]\u003e] [[-Path] \u003cString\u003e] [[-CredentialPersistenceType] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire (@cl)",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Exports registered servers and registered server groups to file",
         "Name":  "Export-DbaRegisteredServer",
         "Links":  "https://dbatools.io/Export-DbaRegisteredServer",
@@ -812,6 +828,7 @@
                      "Export"
                  ],
         "Syntax":  "\r\nExport-DbaScript [-InputObject] \u003cObject[]\u003e [[-ScriptingOptionsObject] \u003cScriptingOptions\u003e] [[-Path] \u003cString\u003e] \r\n[[-Encoding] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [-NoPrefix] [-Passthru] [-NoClobber] [-Append] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Exports scripts from SQL Management Objects (SMO)",
         "Name":  "Export-DbaScript",
         "Links":  "https://dbatools.io/Export-DbaScript",
@@ -826,6 +843,7 @@
                      "Configuration"
                  ],
         "Syntax":  "\r\nExport-DbaSpConfigure [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Path] \u003cString\u003e] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Exports advanced sp_configure global configuration options to sql file.",
         "Name":  "Export-DbaSpConfigure",
         "Links":  null,
@@ -869,6 +887,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nExport-DbaXESessionTemplate [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Session] \r\n\u003cObject[]\u003e] [[-Path] \u003cString\u003e] [[-InputObject] \u003cSession[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Exports an XESession XML Template.",
         "Name":  "Export-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Export-DbaXESessionTemplate",
@@ -1199,6 +1218,7 @@
         "Description":  "Gets the \"SQL Agent Error Log\" of an instance. Returns all 10 error logs by default.",
         "Tags":  "Logging",
         "Syntax":  "\r\nGet-DbaAgentLog [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-LogNumber] \u003cInt32[]\u003e] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets the \"SQL Agent Error Log\" of an instance",
         "Name":  "Get-DbaAgentLog",
         "Links":  "https://dbatools.io/Get-DbaAgentLog",
@@ -1226,7 +1246,7 @@
                      "SMO"
                  ],
         "Syntax":  "\r\nGet-DbaAgentProxy [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Proxy \u003cString[]\u003e] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire ( @cl )",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns all SQL Agent proxies on a SQL Server Agent.",
         "Name":  "Get-DbaAgentProxy",
         "Links":  "https://dbatools.io/Get-DbaAgentProxy",
@@ -1374,6 +1394,7 @@
         "Description":  "Creates/updates a SQL Server alias by altering HKLM:\\SOFTWARE\\Microsoft\\MSSQLServer\\Client",
         "Tags":  "Alias",
         "Syntax":  "\r\nGet-DbaClientAlias [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Creates/updates a sql alias for the specified server - mimics cliconfg.exe",
         "Name":  "Get-DbaClientAlias",
         "Links":  "https://dbatools.io/Get-DbaClientAlias",
@@ -1399,6 +1420,7 @@
                      "FCI"
                  ],
         "Syntax":  "\r\nGet-DbaClusterNode [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-ActiveNode] [-Detailed] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns the node(s) of a SQL Cluster.",
         "Name":  "Get-DbaClusterNode",
         "Links":  "https://dbatools.io/Get-DbaClusterNode",
@@ -1437,6 +1459,7 @@
         "Description":  "Gets computer certificates on localhost that are candidates for using with SQL Server\u0027s network encryption",
         "Tags":  "Certificate",
         "Syntax":  "\r\nGet-DbaComputerCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Store] \r\n\u003cString\u003e] [[-Folder] \u003cString\u003e] [[-Path] \u003cString\u003e] [[-Thumbprint] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Simplifies finding computer certificates that are candidates for using with SQL Server\u0027s network encryption",
         "Name":  "Get-DbaComputerCertificate",
         "Links":  null,
@@ -1458,6 +1481,7 @@
         "Description":  "Returns a bunch of information from dm_exec_connections which, according to Microsoft:\n\"Returns information about the connections established to this instance of SQL Server and the details of each connection. Returns server wide connection information for SQL Server. Returns current database connection information for SQL Database.\"",
         "Tags":  "Connection",
         "Syntax":  "\r\nGet-DbaConnection [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns a bunch of information from dm_exec_connections.",
         "Name":  "Get-DbaConnection",
         "Links":  "https://dbatools.io/Get-DbaConnection",
@@ -1468,6 +1492,7 @@
         "Description":  "\"If there are a lot of processes running on your instance and the CPU is very high,\nthen it\u0027s hard to find the exact process eating up your CPU using just the SQL Server\ntools. One way to correlate the data between what is running within SQL Server and at\nthe Windows level is to use SPID and KPID values to get the exact process.\"\n\nThis command automates that process.\n\nReferences: https://www.mssqltips.com/sqlservertip/2454/how-to-find-out-how-much-cpu-a-sql-server-process-is-really-using/\n\nNote: This command returns results from all SQL instances on the destionation server but the process\ncolumn is specific to -SqlInstance passed.",
         "Tags":  "CPU",
         "Syntax":  "\r\nGet-DbaCpuUsage [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \r\n\u003cPSCredential\u003e] [[-Threshold] \u003cInt32\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Provides detailed CPU usage information about a SQL Server\u0027s process",
         "Name":  "Get-DbaCpuUsage",
         "Links":  "https://dbatools.io/Get-DbaCpuUsage",
@@ -1525,6 +1550,7 @@
         "Description":  "Gets database certificates",
         "Tags":  "Certificate",
         "Syntax":  "\r\nGet-DbaDbCertificate [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] \r\n[[-ExcludeDatabase] \u003cObject[]\u003e] [[-Certificate] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets database certificates",
         "Name":  "Get-DbaDbCertificate",
         "Links":  null,
@@ -1619,6 +1645,7 @@
                      "mail"
                  ],
         "Syntax":  "\r\nGet-DbaDbMail [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets the database mail from SQL Server",
         "Name":  "Get-DbaDbMail",
         "Links":  "https://dbatools.io/Get-DbaDbMail",
@@ -1633,6 +1660,7 @@
                      "mail"
                  ],
         "Syntax":  "\r\nGet-DbaDbMailAccount [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Account] \r\n\u003cString[]\u003e] [[-ExcludeAccount] \u003cString[]\u003e] [[-InputObject] \u003cSqlMail[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets database mail accounts from SQL Server",
         "Name":  "Get-DbaDbMailAccount",
         "Links":  "https://dbatools.io/Get-DbaDbMailAccount",
@@ -1647,6 +1675,7 @@
                      "mail"
                  ],
         "Syntax":  "\r\nGet-DbaDbMailConfig [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] \r\n[[-InputObject] \u003cSqlMail[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets database mail configs from SQL Server",
         "Name":  "Get-DbaDbMailConfig",
         "Links":  "https://dbatools.io/Get-DbaDbMailConfig",
@@ -1655,8 +1684,13 @@
     {
         "CommandName":  "Get-DbaDbMailHistory",
         "Description":  "Gets the history of mail sent from a SQL instance",
-        "Tags":  "Logging",
+        "Tags":  [
+                     "databasemail",
+                     "dbmail",
+                     "mail"
+                 ],
         "Syntax":  "\r\nGet-DbaDbMailHistory [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Since] \u003cDateTime\u003e] \r\n[[-Status] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets the history of mail sent from a SQL instance",
         "Name":  "Get-DbaDbMailHistory",
         "Links":  "https://dbatools.io/Get-DbaDbMailHistory",
@@ -1665,8 +1699,13 @@
     {
         "CommandName":  "Get-DbaDbMailLog",
         "Description":  "Gets the DBMail log from a SQL instance",
-        "Tags":  "Logging",
+        "Tags":  [
+                     "databasemail",
+                     "dbmail",
+                     "mail"
+                 ],
         "Syntax":  "\r\nGet-DbaDbMailLog [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Since] \u003cDateTime\u003e] \r\n[[-Type] \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets the DBMail log from a SQL instance",
         "Name":  "Get-DbaDbMailLog",
         "Links":  "https://dbatools.io/Get-DbaDbMailLog",
@@ -1681,6 +1720,7 @@
                      "mail"
                  ],
         "Syntax":  "\r\nGet-DbaDbMailProfile [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Profile] \r\n\u003cString[]\u003e] [[-ExcludeProfile] \u003cString[]\u003e] [[-InputObject] \u003cSqlMail[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets database mail profiles from SQL Server",
         "Name":  "Get-DbaDbMailProfile",
         "Links":  "https://dbatools.io/Get-DbaDbMailProfile",
@@ -1695,6 +1735,7 @@
                      "mail"
                  ],
         "Syntax":  "\r\nGet-DbaDbMailServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Server] \u003cString[]\u003e] \r\n[[-Account] \u003cString[]\u003e] [[-InputObject] \u003cSqlMail[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets database mail servers from SQL Server",
         "Name":  "Get-DbaDbMailServer",
         "Links":  "https://dbatools.io/Get-DbaDbMailServer",
@@ -1708,6 +1749,7 @@
                      "Database"
                  ],
         "Syntax":  "\r\nGet-DbaDbMasterKey [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] \r\n[[-ExcludeDatabase] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets specified database master key",
         "Name":  "Get-DbaDbMasterKey",
         "Links":  null,
@@ -1721,6 +1763,7 @@
                      "Page"
                  ],
         "Syntax":  "\r\nGet-DbaDbPageInfo [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] \r\n[[-Schema] \u003cString[]\u003e] [[-Table] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Get-DbaDbPageInfo will return page information for a database",
         "Name":  "Get-DbaDbPageInfo",
         "Links":  "https://dbatools.io/Get-DbaDbPageInfo",
@@ -1866,6 +1909,7 @@
                      "Trigger"
                  ],
         "Syntax":  "\r\nGet-DbaDbTrigger [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] \r\n[[-ExcludeDatabase] \u003cObject[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Get all existing database triggers on one or more SQL instances.",
         "Name":  "Get-DbaDbTrigger",
         "Links":  "https://dbatools.io/Get-DbaDbTrigger",
@@ -1922,6 +1966,7 @@
                      "LogFile"
                  ],
         "Syntax":  "\r\nGet-DbaDbVirtualLogFile [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \r\n\u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-IncludeSystemDBs] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns database virtual log file information for database files on a SQL instance.",
         "Name":  "Get-DbaDbVirtualLogFile",
         "Links":  "https://dbatools.io/Get-DbaDbVirtualLogFile",
@@ -1932,6 +1977,7 @@
         "Description":  "Gets the default SQL Server paths for data, logs and backups",
         "Tags":  "Config",
         "Syntax":  "\r\nGet-DbaDefaultPath [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets the default SQL Server paths for data, logs and backups",
         "Name":  "Get-DbaDefaultPath",
         "Links":  "https://dbatools.io/Get-DbaDefaultPath",
@@ -1947,6 +1993,7 @@
                      "Object"
                  ],
         "Syntax":  "\r\nGet-DbaDependency [[-InputObject] \u003cObject\u003e] [-AllowSystemObjects] [-Parents] [-IncludeSelf] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Finds object dependencies and their relevant creation scripts.",
         "Name":  "Get-DbaDependency",
         "Links":  "https://dbatools.io/Get-DbaDependency",
@@ -1960,6 +2007,7 @@
                      "Detach"
                  ],
         "Syntax":  "\r\nGet-DbaDetachedDatabaseInfo [-SqlInstance] \u003cDbaInstanceParameter\u003e [-Path] \u003cString\u003e [[-SqlCredential] \u003cPSCredential\u003e] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Get detailed information about detached SQL Server database files.",
         "Name":  "Get-DbaDetachedDatabaseInfo",
         "Links":  "https://dbatools.io/Get-DbaDetachedDatabaseInfo",
@@ -2012,6 +2060,7 @@
                      "ErrorLog"
                  ],
         "Syntax":  "\r\nGet-DbaErrorLog [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-LogNumber] \u003cInt32[]\u003e] \r\n[[-Source] \u003cObject[]\u003e] [[-Text] \u003cString\u003e] [[-After] \u003cDateTime\u003e] [[-Before] \u003cDateTime\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets the \"SQL Error Log\" of an instance",
         "Name":  "Get-DbaErrorLog",
         "Links":  "https://dbatools.io/Get-DbaErrorLog",
@@ -2036,6 +2085,7 @@
         "Description":  "Gets execution and estimated completion time information for queries\n\nPercent complete will show for the following commands\n\nALTER INDEX REORGANIZE\nAUTO_SHRINK option with ALTER DATABASE\nBACKUP DATABASE\nDBCC CHECKDB\nDBCC CHECKFILEGROUP\nDBCC CHECKTABLE\nDBCC INDEXDEFRAG\nDBCC SHRINKDATABASE\nDBCC SHRINKFILE\nRECOVERY\nRESTORE DATABASE\nROLLBACK\nTDE ENCRYPTION\n\nFor additional information, check out https://blogs.sentryone.com/loriedwards/patience-dm-exec-requests/ and https://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-exec-requests-transact-sql",
         "Tags":  "Database",
         "Syntax":  "\r\nGet-DbaEstimatedCompletionTime [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \r\n\u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets execution and estimated completion time information for queries",
         "Name":  "Get-DbaEstimatedCompletionTime",
         "Links":  "https://dbatools.io/Get-DbaEstimatedCompletionTime",
@@ -2046,6 +2096,7 @@
         "Description":  "Gets execution plans and metadata. Can pipe to Export-DbaExecutionPlan :D\n\nThanks to\n    https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/\n    and\n    http://www.scarydba.com/2017/02/13/export-plans-cache-sqlplan-file/\nfor the idea and query.",
         "Tags":  "Performance",
         "Syntax":  "\r\nGet-DbaExecutionPlan [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] \r\n[[-ExcludeDatabase] \u003cObject[]\u003e] [[-SinceCreation] \u003cDateTime\u003e] [[-SinceLastExecution] \u003cDateTime\u003e] \r\n[-ExcludeEmptyQueryPlan] [-Force] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets execution plans and metadata",
         "Name":  "Get-DbaExecutionPlan",
         "Links":  "https://dbatools.io/Get-DbaExecutionPlan",
@@ -2059,7 +2110,7 @@
                      "Component"
                  ],
         "Syntax":  "\r\nGet-DbaFeature [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire (@cl)",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)",
         "Name":  "Get-DbaFeature",
         "Links":  "https://dbatools.io/Get-DbaFeature",
@@ -2081,6 +2132,7 @@
         "Description":  "Gets Force Encryption settings for a SQL Server instance. Note that this requires access to the Windows Server - not the SQL instance itself.\n\nThis setting is found in Configuration Manager.",
         "Tags":  "Certificate",
         "Syntax":  "\r\nGet-DbaForceNetworkEncryption [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets Force Encryption settings for a SQL Server instance",
         "Name":  "Get-DbaForceNetworkEncryption",
         "Links":  null,
@@ -2238,6 +2290,7 @@
                      "Memory"
                  ],
         "Syntax":  "\r\nGet-DbaMaxMemory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets the \u0027Max Server Memory\u0027 configuration setting and the memory of the server.  Works on SQL Server 2000-2014.",
         "Name":  "Get-DbaMaxMemory",
         "Links":  "https://dbatools.io/Get-DbaMaxMemory",
@@ -2298,6 +2351,7 @@
         "Description":  "Gets computer certificates on localhost that are candidates for using with SQL Server\u0027s network encryption",
         "Tags":  "Certificate",
         "Syntax":  "\r\nGet-DbaNetworkCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Simplifies finding computer certificates that are candidates for using with SQL Server\u0027s network encryption",
         "Name":  "Get-DbaNetworkCertificate",
         "Links":  null,
@@ -2313,6 +2367,7 @@
                      "ActivityMonitor"
                  ],
         "Syntax":  "\r\nGet-DbaOpenTransaction [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Displays all open transactions.",
         "Name":  "Get-DbaOpenTransaction",
         "Links":  "https://dbatools.io/Get-DbaOpenTransaction",
@@ -2369,6 +2424,7 @@
                      "PBM"
                  ],
         "Syntax":  "\r\nGet-DbaPbmCategory [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Category] \u003cString[]\u003e] \r\n[[-InputObject] \u003cPolicyStore[]\u003e] [-ExcludeSystemObject] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns policy categories from policy based management from an instance.",
         "Name":  "Get-DbaPbmCategory",
         "Links":  "https://dbatools.io/Get-DbaPbmCategory",
@@ -2383,6 +2439,7 @@
                      "PBM"
                  ],
         "Syntax":  "\r\nGet-DbaPbmCategorySubscription [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] \r\n[[-InputObject] \u003cPolicyStore[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns policy category subscriptions from policy based management from an instance.",
         "Name":  "Get-DbaPbmCategorySubscription",
         "Links":  "https://dbatools.io/Get-DbaPbmCategorySubscription",
@@ -2397,6 +2454,7 @@
                      "PBM"
                  ],
         "Syntax":  "\r\nGet-DbaPbmCondition [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Condition] \r\n\u003cString[]\u003e] [[-InputObject] \u003cPolicyStore[]\u003e] [-IncludeSystemObject] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns conditions from policy based management from an instance.",
         "Name":  "Get-DbaPbmCondition",
         "Links":  "https://dbatools.io/Get-DbaPbmCondition",
@@ -2411,6 +2469,7 @@
                      "PBM"
                  ],
         "Syntax":  "\r\nGet-DbaPbmObjectSet [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-ObjectSet] \r\n\u003cString[]\u003e] [[-InputObject] \u003cPolicyStore[]\u003e] [-IncludeSystemObject] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns object sets from policy based management.",
         "Name":  "Get-DbaPbmObjectSet",
         "Links":  "https://dbatools.io/Get-DbaPbmObjectSet",
@@ -2440,6 +2499,7 @@
                      "PBM"
                  ],
         "Syntax":  "\r\nGet-DbaPbmStore [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns the policy based management store.",
         "Name":  "Get-DbaPbmStore",
         "Links":  "https://dbatools.io/Get-DbaPbmStore",
@@ -2468,6 +2528,7 @@
                      "PerfCounter"
                  ],
         "Syntax":  "\r\nGet-DbaPfAvailableCounter [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Pattern] \r\n\u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gathers list of all available counters on local or remote machines.",
         "Name":  "Get-DbaPfAvailableCounter",
         "Links":  "https://dbatools.io/Get-DbaPfAvailableCounter",
@@ -2476,8 +2537,13 @@
     {
         "CommandName":  "Get-DbaPfDataCollector",
         "Description":  "Gets Performance Monitor Data Collectors.",
-        "Tags":  "PerfMon",
+        "Tags":  [
+                     "Performance",
+                     "DataCollector",
+                     "PerfCounter"
+                 ],
         "Syntax":  "\r\nGet-DbaPfDataCollector [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CollectorSet] \r\n\u003cString[]\u003e] [[-Collector] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets Performance Monitor Data Collectors.",
         "Name":  "Get-DbaPfDataCollector",
         "Links":  "https://dbatools.io/Get-DbaPfDataCollector",
@@ -2486,8 +2552,13 @@
     {
         "CommandName":  "Get-DbaPfDataCollectorCounter",
         "Description":  "Gets Performance Counters.",
-        "Tags":  "PerfMon",
+        "Tags":  [
+                     "Performance",
+                     "DataCollector",
+                     "PerfCounter"
+                 ],
         "Syntax":  "\r\nGet-DbaPfDataCollectorCounter [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] \r\n[[-CollectorSet] \u003cString[]\u003e] [[-Collector] \u003cString[]\u003e] [[-Counter] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets Performance Counters.",
         "Name":  "Get-DbaPfDataCollectorCounter",
         "Links":  "https://dbatools.io/Get-DbaPfDataCollectorCounter",
@@ -2496,8 +2567,13 @@
     {
         "CommandName":  "Get-DbaPfDataCollectorCounterSample",
         "Description":  "Gets Performance Counter Samples.",
-        "Tags":  "PerfMon",
+        "Tags":  [
+                     "Performance",
+                     "DataCollector",
+                     "PerfCounter"
+                 ],
         "Syntax":  "\r\nGet-DbaPfDataCollectorCounterSample [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] \r\n[[-CollectorSet] \u003cString[]\u003e] [[-Collector] \u003cString[]\u003e] [[-Counter] \u003cString[]\u003e] [-Continuous] [[-ListSet]] \r\n[[-MaxSamples] \u003cInt32\u003e] [[-SampleInterval] \u003cInt32\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets Performance Counter Samples.",
         "Name":  "Get-DbaPfDataCollectorCounterSample",
         "Links":  "https://dbatools.io/Get-DbaPfDataCollectorCounterSample",
@@ -2506,8 +2582,13 @@
     {
         "CommandName":  "Get-DbaPfDataCollectorSet",
         "Description":  "Gets Performance Monitor Data Collector Set.",
-        "Tags":  "PerfMon",
+        "Tags":  [
+                     "Performance",
+                     "DataCollector",
+                     "PerfCounter"
+                 ],
         "Syntax":  "\r\nGet-DbaPfDataCollectorSet [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CollectorSet] \r\n\u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets Performance Monitor Data Collector Set.",
         "Name":  "Get-DbaPfDataCollectorSet",
         "Links":  "https://dbatools.io/Get-DbaPfDataCollectorSet",
@@ -2522,6 +2603,7 @@
                      "PerfCounter"
                  ],
         "Syntax":  "\r\nGet-DbaPfDataCollectorSetTemplate [[-Path] \u003cString[]\u003e] [[-Pattern] \u003cString\u003e] [[-Template] \u003cString[]\u003e] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Parses Perf Monitor templates. Defaults to parsing templates in the dbatools template repository (\\bin\\perfmontemplates\\).",
         "Name":  "Get-DbaPfDataCollectorSetTemplate",
         "Links":  "https://dbatools.io/Get-DbaPfDataCollectorSetTemplate",
@@ -2624,6 +2706,7 @@
                      "CMS"
                  ],
         "Syntax":  "\r\nGet-DbaRegisteredServerStore [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns a SQL Server Registered Server Store Object",
         "Name":  "Get-DbaRegisteredServerStore",
         "Links":  "https://dbatools.io/Get-DbaRegisteredServerStore",
@@ -2637,6 +2720,7 @@
                      "Registry"
                  ],
         "Syntax":  "\r\nGet-DbaRegistryRoot [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer",
         "Name":  "Get-DbaRegistryRoot",
         "Links":  null,
@@ -2669,6 +2753,7 @@
         "Description":  "Gets the Resource Governor object",
         "Tags":  "ResourceGovernor",
         "Syntax":  "\r\nGet-DbaResourceGovernor [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets the Resource Governor object",
         "Name":  "Get-DbaResourceGovernor",
         "Links":  "https://dbatools.io/Get-DbaResourceGovernor",
@@ -2707,6 +2792,7 @@
         "Description":  "Gets Resource Governor Pool objects, including internal or external",
         "Tags":  "ResourceGovernor",
         "Syntax":  "\r\nGet-DbaRgResourcePool [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Type] \u003cString\u003e] \r\n[[-InputObject] \u003cResourceGovernor[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets Resource Governor Pool objects, including internal or external",
         "Name":  "Get-DbaRgResourcePool",
         "Links":  "https://dbatools.io/Get-DbaRgResourcePool",
@@ -2717,6 +2803,7 @@
         "Description":  "Gets all Resource Governor Pool objects, including both internal and external",
         "Tags":  "ResourceGovernor",
         "Syntax":  "\r\nGet-DbaRgWorkloadGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \r\n\u003cResourcePool[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets all Resource Governor Pool objects, including both internal and external",
         "Name":  "Get-DbaRgWorkloadGroup",
         "Links":  "https://dbatools.io/Get-DbaRgWorkloadGroup",
@@ -2843,6 +2930,7 @@
                      "Trigger"
                  ],
         "Syntax":  "\r\nGet-DbaServerTrigger [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Get all existing server triggers on one or more SQL instances.",
         "Name":  "Get-DbaServerTrigger",
         "Links":  "https://dbatools.io/Get-DbaServerTrigger",
@@ -2928,6 +3016,7 @@
                      "Memory"
                  ],
         "Syntax":  "\r\nGet-DbaStartupParameter [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [-Simple] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Displays values for a detailed list of SQL Server Startup Parameters.",
         "Name":  "Get-DbaStartupParameter",
         "Links":  "https://dbatools.io/Get-DbaStartupParameter",
@@ -2955,6 +3044,7 @@
                      "tcp"
                  ],
         "Syntax":  "\r\nGet-DbaTcpPort [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Detailed] [-ExcludeIpv6] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns the TCP port used by the specified SQL Server.",
         "Name":  "Get-DbaTcpPort",
         "Links":  "https://dbatools.io/Get-DbaTcpPort",
@@ -2968,6 +3058,7 @@
                      "Space"
                  ],
         "Syntax":  "\r\nGet-DbaTempdbUsage [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets Tempdb usage for running queries.",
         "Name":  "Get-DbaTempdbUsage",
         "Links":  "https://dbatools.io/Get-DbaTempdbUsage",
@@ -3015,6 +3106,7 @@
                      "Performance"
                  ],
         "Syntax":  "\r\nGet-DbaTopResourceUsage [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] \r\n[-ExcludeDatabase \u003cObject[]\u003e] [-Type \u003cString[]\u003e] [-Limit \u003cInt32\u003e] [-EnableException] [-ExcludeSystem] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns the top 20 resource consumers for cached queries based on four different metrics: duration, frequency, IO, and CPU.",
         "Name":  "Get-DbaTopResourceUsage",
         "Links":  "https://dbatools.io/Get-DbaTopResourceUsage",
@@ -3105,6 +3197,7 @@
         "Description":  "This command is based off of Paul Randal\u0027s post \"Wait statistics, or please tell me where it hurts\"\n\nReturns:\n            WaitType\n            Category\n            WaitSeconds\n            ResourceSeconds\n            SignalSeconds\n            WaitCount\n            Percentage\n            AverageWaitSeconds\n            AverageResourceSeconds\n            AverageSignalSeconds\n            URL\n\nReference: https://www.sqlskills.com/blogs/paul/wait-statistics-or-please-tell-me-where-it-hurts/",
         "Tags":  "WaitStatistic",
         "Syntax":  "\r\nGet-DbaWaitStatistic [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Threshold \u003cInt32\u003e] \r\n[-IncludeIgnorable] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Displays wait statistics",
         "Name":  "Get-DbaWaitStatistic",
         "Links":  "https://dbatools.io/Get-DbaWaitStatistic",
@@ -3130,6 +3223,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nGet-DbaXEObject [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Type \u003cString[]\u003e] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets a list of trace(s) from specified SQL Server instance(s).",
         "Name":  "Get-DbaXEObject",
         "Links":  null,
@@ -3159,6 +3253,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nGet-DbaXESessionTarget [-SqlCredential \u003cPSCredential\u003e] [-Session \u003cString[]\u003e] [-Target \u003cString[]\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\nGet-DbaXESessionTarget -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Session \u003cString[]\u003e] \r\n[-Target \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\nGet-DbaXESessionTarget [-SqlCredential \u003cPSCredential\u003e] [-Session \u003cString[]\u003e] [-Target \u003cString[]\u003e] -InputObject \r\n\u003cSession[]\u003e [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Get a list of Extended Events Session Targets from the specified SQL Server instance(s).",
         "Name":  "Get-DbaXESessionTarget",
         "Links":  "https://dbatools.io/Get-DbaXESessionTarget",
@@ -3173,6 +3268,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nGet-DbaXESessionTemplate [[-Path] \u003cString[]\u003e] [[-Pattern] \u003cString\u003e] [[-Template] \u003cString[]\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\\bin\\xetemplates\\).",
         "Name":  "Get-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Get-DbaXESessionTemplate",
@@ -3187,6 +3283,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nGet-DbaXESmartTarget [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets an XESmartTarget PowerShell Job created by Start-DbaXESmartTarget.",
         "Name":  "Get-DbaXESmartTarget",
         "Links":  "https://dbatools.io/Get-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -3201,6 +3298,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nGet-DbaXEStore [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Get a Extended Events store",
         "Name":  "Get-DbaXEStore",
         "Links":  "https://dbatools.io/Get-DbaXEStore",
@@ -3226,6 +3324,7 @@
                      "PerfCounter"
                  ],
         "Syntax":  "\r\nImport-DbaPfDataCollectorSetTemplate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] \r\n[[-DisplayName] \u003cString\u003e] [-SchedulesEnabled] [[-RootPath] \u003cString\u003e] [-Segment] [[-SegmentMaxDuration] \u003cInt32\u003e] \r\n[[-SegmentMaxSize] \u003cInt32\u003e] [[-Subdirectory] \u003cString\u003e] [[-SubdirectoryFormat] \u003cInt32\u003e] [[-SubdirectoryFormatPattern] \r\n\u003cString\u003e] [[-Task] \u003cString\u003e] [-TaskRunAsSelf] [[-TaskArguments] \u003cString\u003e] [[-TaskUserTextArguments] \u003cString\u003e] \r\n[-StopOnCompletion] [[-Path] \u003cString[]\u003e] [[-Template] \u003cString[]\u003e] [[-Instance] \u003cString[]\u003e] [-EnableException] [-WhatIf] \r\n[-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Imports a new Performance Monitor Data Collector Set Template either from the dbatools repository or a file you specify.",
         "Name":  "Import-DbaPfDataCollectorSetTemplate",
         "Links":  "https://dbatools.io/Import-DbaPfDataCollectorSetTemplate",
@@ -3239,7 +3338,7 @@
                      "CMS"
                  ],
         "Syntax":  "\r\nImport-DbaRegisteredServer [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Path] \r\n\u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Group] \u003cObject\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire (@cl)",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)",
         "Name":  "Import-DbaRegisteredServer",
         "Links":  "https://dbatools.io/Import-DbaRegisteredServer",
@@ -3248,7 +3347,9 @@
     {
         "CommandName":  "Import-DbaSpConfigure",
         "Description":  "Updates sp_configure settings on destination server.",
+        "Tags":  "sp_configure",
         "Syntax":  "\r\nImport-DbaSpConfigure [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nImport-DbaSpConfigure [-Source \u003cDbaInstanceParameter\u003e] [-Destination \u003cDbaInstanceParameter\u003e] [-SourceSqlCredential \r\n\u003cPSCredential\u003e] [-DestinationSqlCredential \u003cPSCredential\u003e] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nImport-DbaSpConfigure [-SqlInstance \u003cDbaInstanceParameter\u003e] [-Path \u003cString\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Force] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Updates sp_configure settings on destination server.",
         "Name":  "Import-DbaSpConfigure",
         "Links":  null,
@@ -3263,6 +3364,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nImport-DbaXESessionTemplate [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \r\n\u003cString\u003e] [[-Path] \u003cString[]\u003e] [[-Template] \u003cString[]\u003e] [[-TargetFilePath] \u003cString\u003e] [[-TargetFileMetadataPath] \r\n\u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Imports a new XESession XML Template",
         "Name":  "Import-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Import-DbaXESessionTemplate",
@@ -3302,6 +3404,7 @@
         "Description":  "Adds the scheduled task to support Watch-DbaUpdate.",
         "Tags":  "Module",
         "Syntax":  "\r\nInstall-DbaWatchUpdate [[-TaskName] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Adds the scheduled task to support Watch-DbaUpdate.",
         "Name":  "Install-DbaWatchUpdate",
         "Links":  "https://dbatools.io/Install-DbaWatchUpdate",
@@ -3310,7 +3413,13 @@
     {
         "CommandName":  "Install-DbaWhoIsActive",
         "Description":  "This command downloads, extracts and installs sp_WhoisActive with Adam\u0027s permission. To read more about sp_WhoisActive, please visit http://whoisactive.com and http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx\n\nPlease consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate\n\nNote that you will be prompted a bunch of times to confirm an action.",
+        "Tags":  [
+                     "AdamMechanic",
+                     "WhoIsActive",
+                     "SpWhoIsActive"
+                 ],
         "Syntax":  "\r\nInstall-DbaWhoIsActive [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-LocalFile \u003cString\u003e] \r\n[-Database \u003cObject\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Automatically installs or updates sp_WhoisActive by Adam Machanic.",
         "Name":  "Install-DbaWhoIsActive",
         "Links":  "https://dbatools.io/Install-DbaWhoIsActive",
@@ -3395,6 +3504,7 @@
                      "Database"
                  ],
         "Syntax":  "\r\nInvoke-DbaDbShrink [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] \r\n[[-ExcludeDatabase] \u003cObject[]\u003e] [-AllUserDatabases] [[-PercentFreeSpace] \u003cInt32\u003e] [[-ShrinkMethod] \u003cString\u003e] \r\n[[-FileType] \u003cString\u003e] [[-StepSizeMB] \u003cInt32\u003e] [[-StatementTimeout] \u003cInt32\u003e] [-LogsOnly] [-ExcludeIndexStats] \r\n[-ExcludeUpdateUsage] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Shrinks all files in a database. This is a command that should rarely be used.\n\n- Shrinks can cause severe index fragmentation (to the tune of 99%)\n- Shrinks can cause massive growth in the database\u0027s transaction log\n- Shrinks can require a lot of time and system resources to perform data movement",
         "Name":  "Invoke-DbaDbShrink",
         "Links":  "https://dbatools.io/Invoke-DbaDbShrink",
@@ -3460,6 +3570,7 @@
                      "Relog"
                  ],
         "Syntax":  "\r\nInvoke-DbaPfRelog [[-Path] \u003cString[]\u003e] [[-Destination] \u003cString\u003e] [[-Type] \u003cString\u003e] [-Append] [-AllowClobber] \r\n[[-PerformanceCounter] \u003cString[]\u003e] [[-PerformanceCounterPath] \u003cString\u003e] [[-Interval] \u003cInt32\u003e] [[-BeginTime] \u003cDateTime\u003e] \r\n[[-EndTime] \u003cDateTime\u003e] [[-ConfigPath] \u003cString\u003e] [-Summary] [[-InputObject] \u003cObject[]\u003e] [-Multithread] [-AllTime] \r\n[-Raw] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Pipeline-compatible wrapper for the relog command which is available on modern Windows platforms.",
         "Name":  "Invoke-DbaPfRelog",
         "Links":  "https://dbatools.io/Invoke-DbaPfRelog",
@@ -3483,6 +3594,7 @@
         "CommandName":  "Invoke-DbatoolsRenameHelper",
         "Description":  "Older dbatools command names have been changed. This script helps keep up.",
         "Syntax":  "\r\nInvoke-DbatoolsRenameHelper [-InputObject] \u003cFileInfo[]\u003e [[-Encoding] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Older dbatools command names have been changed. This script helps keep up.",
         "Name":  "Invoke-DbatoolsRenameHelper",
         "Links":  "https://dbatools.io/Invoke-DbatoolsRenameHelper",
@@ -3497,6 +3609,7 @@
                      "SpWhoIsActive"
                  ],
         "Syntax":  "\r\nInvoke-DbaWhoIsActive [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject\u003e] \r\n[[-Filter] \u003cString\u003e] [[-FilterType] \u003cString\u003e] [[-NotFilter] \u003cString\u003e] [[-NotFilterType] \u003cString\u003e] [-ShowOwnSpid] \r\n[-ShowSystemSpids] [[-ShowSleepingSpids] \u003cInt32\u003e] [-GetFullInnerText] [[-GetPlans] \u003cInt32\u003e] [-GetOuterCommand] \r\n[-GetTransactionInfo] [[-GetTaskInfo] \u003cInt32\u003e] [-GetLocks] [-GetAverageTime] [-GetAdditonalInfo] [-FindBlockLeaders] \r\n[[-DeltaInterval] \u003cInt32\u003e] [[-OutputColumnList] \u003cString\u003e] [[-SortOrder] \u003cString\u003e] [[-FormatOutput] \u003cInt32\u003e] \r\n[[-DestinationTable] \u003cString\u003e] [-ReturnSchema] [[-Schema] \u003cString\u003e] [-Help] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Outputs results of Adam Machanic\u0027s sp_WhoIsActive DataTable",
         "Name":  "Invoke-DbaWhoIsActive",
         "Links":  "https://dbatools.io/Invoke-DbaWhoIsActive",
@@ -3511,6 +3624,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nInvoke-DbaXeReplay [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] \r\n[[-Event] \u003cString[]\u003e] [-InputObject] \u003cObject\u003e [-Raw] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "This command replays events from Read-DbaXEFile on one or more target servers",
         "Name":  "Invoke-DbaXeReplay",
         "Links":  null,
@@ -3536,6 +3650,7 @@
                      "Database"
                  ],
         "Syntax":  "\r\nMeasure-DbaBackupThroughput [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \r\n\u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-Since \u003cDateTime\u003e] [-Last] [-Type \u003cString\u003e] [-DeviceType \u003cString[]\u003e] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Determines how quickly SQL Server is backing up databases to media.",
         "Name":  "Measure-DbaBackupThroughput",
         "Links":  "https://dbatools.io/Measure-DbaBackupThroughput",
@@ -3561,6 +3676,7 @@
         "Description":  "This command will attach a SQL Server database.",
         "Tags":  "Database",
         "Syntax":  "\r\nMount-DbaDatabase [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString[]\u003e \r\n[[-FileStructure] \u003cStringCollection\u003e] [[-DatabaseOwner] \u003cString\u003e] [[-AttachOption] \u003cString\u003e] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Attach a SQL Server Database - aliased to Attach-DbaDatabase",
         "Name":  "Mount-DbaDatabase",
         "Links":  "https://dbatools.io/Mount-DbaDatabase",
@@ -3574,7 +3690,7 @@
                      "CMS"
                  ],
         "Syntax":  "\r\nMove-DbaRegisteredServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \r\n\u003cString[]\u003e] [[-ServerName] \u003cString[]\u003e] [[-NewGroup] \u003cString\u003e] [[-InputObject] \u003cRegisteredServer[]\u003e] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire (@cl)",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Moves registered servers around SQL Server Central Management Server (CMS)",
         "Name":  "Move-DbaRegisteredServer",
         "Links":  "https://dbatools.io/Move-DbaRegisteredServer",
@@ -3588,7 +3704,7 @@
                      "CMS"
                  ],
         "Syntax":  "\r\nMove-DbaRegisteredServerGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Group] \r\n\u003cString[]\u003e] [-NewGroup] \u003cString\u003e [[-InputObject] \u003cServerGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire (@cl)",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Moves registered server groups around SQL Server Central Management Server (CMS).",
         "Name":  "Move-DbaRegisteredServerGroup",
         "Links":  "https://dbatools.io/Move-DbaRegisteredServerGroup",
@@ -3672,6 +3788,7 @@
         "Description":  "Creates/updates a SQL Server alias by altering HKLM:\\SOFTWARE\\Microsoft\\MSSQLServer\\Client",
         "Tags":  "Alias",
         "Syntax":  "\r\nNew-DbaClientAlias [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-ServerName] \r\n\u003cDbaInstanceParameter[]\u003e [-Alias] \u003cString\u003e [[-Protocol] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Creates/updates a sql alias for the specified server - mimics cliconfg.exe",
         "Name":  "New-DbaClientAlias",
         "Links":  "https://dbatools.io/New-DbaClientAlias",
@@ -3696,6 +3813,7 @@
         "Description":  "Creates a new computer certificate - self-signed or signed by an Active Directory CA, using the Web Server certificate.\n\nBy default, a key with a length of 1024 and a friendly name of the machines FQDN is generated.\n\nThis command was originally intended to help automate the process so that SSL certificates can be available for enforcing encryption on connections.\n\nIt makes a lot of assumptions - namely, that your account is allowed to auto-enroll and that you have permission to do everything it needs to do ;)\n\nReferences:\nhttp://sqlmag.com/sql-server/7-steps-ssl-encryption\nhttps://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/\nhttps://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/\n\nThe certificate is generated using AD\u0027s webserver SSL template on the client machine and pushed to the remote machine.",
         "Tags":  "Certificate",
         "Syntax":  "\r\nNew-DbaComputerCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CaServer] \r\n\u003cString\u003e] [[-CaName] \u003cString\u003e] [[-ClusterInstanceName] \u003cString\u003e] [[-Password] \u003cSecureString\u003e] [[-FriendlyName] \r\n\u003cString\u003e] [[-CertificateTemplate] \u003cString\u003e] [[-KeyLength] \u003cInt32\u003e] [[-Store] \u003cString\u003e] [[-Folder] \u003cString\u003e] [[-Dns] \r\n\u003cString[]\u003e] [-SelfSigned] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Creates a new computer certificate useful for Forcing Encryption",
         "Name":  "New-DbaComputerCertificate",
         "Links":  null,
@@ -3710,6 +3828,7 @@
                      "ConnectionString"
                  ],
         "Syntax":  "\r\nNew-DbaConnectionString [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [[-AccessToken] \r\n\u003cString\u003e] [[-ApplicationIntent] \u003cString\u003e] [[-BatchSeparator] \u003cString\u003e] [[-ClientName] \u003cString\u003e] [[-ConnectTimeout] \r\n\u003cInt32\u003e] [-EncryptConnection] [[-FailoverPartner] \u003cString\u003e] [-IsActiveDirectoryUniversalAuth] [[-LockTimeout] \u003cInt32\u003e] \r\n[[-MaxPoolSize] \u003cInt32\u003e] [[-MinPoolSize] \u003cInt32\u003e] [-MultipleActiveResultSets] [-MultiSubnetFailover] \r\n[[-NetworkProtocol] \u003cString\u003e] [-NonPooledConnection] [[-PacketSize] \u003cInt32\u003e] [[-PooledConnectionLifetime] \u003cInt32\u003e] \r\n[[-SqlExecutionModes] \u003cString\u003e] [[-StatementTimeout] \u003cInt32\u003e] [-TrustServerCertificate] [[-WorkstationId] \u003cString\u003e] \r\n[[-AppendConnectionString] \u003cString\u003e] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Builds or extracts a SQL Server Connection String",
         "Name":  "New-DbaConnectionString",
         "Links":  "https://dbatools.io/New-DbaConnectionString",
@@ -3735,6 +3854,7 @@
         "Description":  "Creates a new credential",
         "Tags":  "Certificate",
         "Syntax":  "\r\nNew-DbaCredential [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cObject[]\u003e] \r\n[-Identity] \u003cString[]\u003e [[-Password] \u003cSecureString\u003e] [[-MappedClassType] \u003cString\u003e] [[-ProviderName] \u003cString\u003e] [-Force] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Creates a new SQL Server credential",
         "Name":  "New-DbaCredential",
         "Links":  null,
@@ -3756,6 +3876,7 @@
         "Description":  "Creates a new database certificate. If no database is specified, the certificate will be created in master.",
         "Tags":  "Certificate",
         "Syntax":  "\r\nNew-DbaDbCertificate [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] \r\n[[-Database] \u003cObject[]\u003e] [[-Subject] \u003cString[]\u003e] [[-StartDate] \u003cDateTime\u003e] [[-ExpirationDate] \u003cDateTime\u003e] \r\n[-ActiveForServiceBrokerDialog] [[-Password] \u003cSecureString\u003e] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Creates a new database certificate",
         "Name":  "New-DbaDbCertificate",
         "Links":  null,
@@ -3766,6 +3887,7 @@
         "Description":  "Creates a new database master key. If no database is specified, the master key will be created in master.",
         "Tags":  "Certificate",
         "Syntax":  "\r\nNew-DbaDbMasterKey [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] \r\n[-Password] \u003cSecureString\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Creates a new database master key",
         "Name":  "New-DbaDbMasterKey",
         "Links":  null,
@@ -3835,6 +3957,7 @@
                      "DR"
                  ],
         "Syntax":  "\r\nNew-DbaScriptingOption [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Creates a new Microsoft.SqlServer.Management.Smo.ScriptingOptions object",
         "Name":  "New-DbaScriptingOption",
         "Links":  "https://dbatools.io/New-DbaScriptingOption\nhttps://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.scriptingoptions.aspx",
@@ -3845,6 +3968,7 @@
         "Description":  "Creates a new service master key in the master database",
         "Tags":  "Certificate",
         "Syntax":  "\r\nNew-DbaServiceMasterKey [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Password] \r\n\u003cSecureString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Creates a new service master key",
         "Name":  "New-DbaServiceMasterKey",
         "Links":  null,
@@ -3885,6 +4009,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nNew-DbaXESession [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Creates a new XESession object - for the dogged.",
         "Name":  "New-DbaXESession",
         "Links":  "https://dbatools.io/New-DbaXESession",
@@ -3899,6 +4024,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nNew-DbaXESmartCsvWriter [-OutputFile] \u003cString\u003e [-Overwrite] [[-Event] \u003cString[]\u003e] [[-OutputColumn] \u003cString[]\u003e] \r\n[[-Filter] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "This Response type is used to write Extended Events to a CSV file.",
         "Name":  "New-DbaXESmartCsvWriter",
         "Links":  "https://dbatools.io/New-DbaXESmartCsvWriter\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -3913,6 +4039,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nNew-DbaXESmartEmail [-SmtpServer] \u003cString\u003e [-Sender] \u003cString\u003e [-To] \u003cString[]\u003e [[-Cc] \u003cString[]\u003e] [[-Bcc] \u003cString[]\u003e] \r\n[[-Credential] \u003cPSCredential\u003e] [-Subject] \u003cString\u003e [-Body] \u003cString\u003e [[-Attachment] \u003cString\u003e] [[-AttachmentFileName] \r\n\u003cString\u003e] [[-PlainText] \u003cString\u003e] [[-Event] \u003cString[]\u003e] [[-Filter] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "This Response type can be used to send an email each time an event is captured.",
         "Name":  "New-DbaXESmartEmail",
         "Links":  "https://dbatools.io/New-DbaXESmartEmail\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -3927,6 +4054,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nNew-DbaXESmartQueryExec [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \r\n\u003cString\u003e] [[-Query] \u003cString\u003e] [-EnableException] [[-Event] \u003cString[]\u003e] [[-Filter] \u003cString\u003e] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "This Response type executes a T-SQL command against a target database whenever an event is recorded.",
         "Name":  "New-DbaXESmartQueryExec",
         "Links":  "https://dbatools.io/New-DbaXESmartQueryExec\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -3941,6 +4069,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nNew-DbaXESmartReplay [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] \r\n[[-Event] \u003cString[]\u003e] [[-Filter] \u003cString\u003e] [[-DelaySeconds] \u003cInt32\u003e] [-StopOnError] [[-ReplayIntervalSeconds] \u003cInt32\u003e] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "This Response type can be used to replay execution related events to a target SQL Server instance.",
         "Name":  "New-DbaXESmartReplay",
         "Links":  "https://dbatools.io/New-DbaXESmartReplay\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -3955,6 +4084,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nNew-DbaXESmartTableWriter [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \r\n\u003cString\u003e [-Table] \u003cString\u003e [-AutoCreateTargetTable] [[-UploadIntervalSeconds] \u003cInt32\u003e] [[-Event] \u003cString[]\u003e] \r\n[[-OutputColumn] \u003cString[]\u003e] [[-Filter] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "This Response type is used to write Extended Events to a database table.",
         "Name":  "New-DbaXESmartTableWriter",
         "Links":  "https://dbatools.io/New-DbaXESmartTableWriter\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -3983,6 +4113,7 @@
                      "Audit"
                  ],
         "Syntax":  "\r\nRead-DbaAuditFile [-Path] \u003cObject[]\u003e [-Exact] [-Raw] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Read Audit details from a sqlaudit file.",
         "Name":  "Read-DbaAuditFile",
         "Links":  "https://dbatools.io/Read-DbaAuditFile",
@@ -3997,6 +4128,7 @@
                      "Restore"
                  ],
         "Syntax":  "\r\nRead-DbaBackupHeader [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Path] \u003cObject[]\u003e \r\n[-Simple] [-FileList] [[-AzureCredential] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Reads and displays detailed information about a SQL Server backup.",
         "Name":  "Read-DbaBackupHeader",
         "Links":  "https://dbatools.io/Read-DbaBackupHeader",
@@ -4010,6 +4142,7 @@
                      "Trace"
                  ],
         "Syntax":  "\r\nRead-DbaTraceFile [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Path \u003cString[]\u003e] [-Database \r\n\u003cString[]\u003e] [-Login \u003cString[]\u003e] [-Spid \u003cInt32[]\u003e] [-EventClass \u003cString[]\u003e] [-ObjectType \u003cString[]\u003e] [-Error \u003cInt32[]\u003e] \r\n[-EventSequence \u003cInt32[]\u003e] [-TextData \u003cString[]\u003e] [-ApplicationName \u003cString[]\u003e] [-ObjectName \u003cString[]\u003e] [-Where \r\n\u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Reads SQL Server trace files",
         "Name":  "Read-DbaTraceFile",
         "Links":  null,
@@ -4039,6 +4172,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nRead-DbaXEFile [-Path] \u003cObject[]\u003e [-Exact] [-Raw] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Read XEvents from a xel or xem file.",
         "Name":  "Read-DbaXEFile",
         "Links":  "https://dbatools.io/Read-DbaXEFile",
@@ -4137,6 +4271,7 @@
         "Description":  "Removes a SQL Server alias by altering HKLM:\\SOFTWARE\\Microsoft\\MSSQLServer\\Client",
         "Tags":  "Alias",
         "Syntax":  "\r\nRemove-DbaClientAlias [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-Alias] \u003cString[]\u003e \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Removes a sql alias for the specified server - mimics cliconfg.exe",
         "Name":  "Remove-DbaClientAlias",
         "Links":  "https://dbatools.io/Remove-DbaClientAlias",
@@ -4161,6 +4296,7 @@
         "Description":  "Removes a computer certificate from a local or remote compuer",
         "Tags":  "Certificate",
         "Syntax":  "\r\nRemove-DbaComputerCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-Thumbprint] \r\n\u003cString[]\u003e [[-Store] \u003cString\u003e] [[-Folder] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Removes a computer certificate - useful for removing easily certs from remote computers",
         "Name":  "Remove-DbaComputerCertificate",
         "Links":  null,
@@ -4174,6 +4310,7 @@
                      "Databases"
                  ],
         "Syntax":  "\r\nRemove-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] [-IncludeSystemDb] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\r\n\r\nRemove-DbaDatabase -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -Database \u003cObject[]\u003e \r\n[-IncludeSystemDb] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nRemove-DbaDatabase [-SqlCredential \u003cPSCredential\u003e] -InputObject \u003cDatabase[]\u003e [-IncludeSystemDb] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Drops a database, hopefully even the really stuck ones.",
         "Name":  "Remove-DbaDatabase",
         "Links":  "https://dbatools.io/Remove-DbaDatabase",
@@ -4198,6 +4335,7 @@
         "Description":  "Deletes specified database certificate",
         "Tags":  "Certificate",
         "Syntax":  "\r\nRemove-DbaDbCertificate [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nRemove-DbaDbCertificate -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -Database \u003cObject[]\u003e \r\n-Certificate \u003cObject[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nRemove-DbaDbCertificate [-SqlCredential \u003cPSCredential\u003e] [-InputObject \u003cCertificate[]\u003e] [-EnableException] [-WhatIf] \r\n[-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Deletes specified database certificate",
         "Name":  "Remove-DbaDbCertificate",
         "Links":  null,
@@ -4208,6 +4346,7 @@
         "Description":  "Deletes specified database master key.",
         "Tags":  "Certificate",
         "Syntax":  "\r\nRemove-DbaDbMasterKey [-SqlCredential \u003cPSCredential\u003e] [-Mode {Strict | Lazy | Report}] [-EnableException] [-WhatIf] \r\n[-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nRemove-DbaDbMasterKey -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ExcludeDatabase \r\n\u003cObject[]\u003e] -All [-Mode {Strict | Lazy | Report}] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nRemove-DbaDbMasterKey -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -Database \u003cObject[]\u003e [-Mode \r\n{Strict | Lazy | Report}] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nRemove-DbaDbMasterKey [-SqlCredential \u003cPSCredential\u003e] [-MasterKeyCollection \u003cMasterKey[]\u003e] [-Mode {Strict | Lazy | \r\nReport}] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Deletes specified database master key",
         "Name":  "Remove-DbaDbMasterKey",
         "Links":  null,
@@ -4248,9 +4387,10 @@
         "Description":  "Tries a bunch of different ways to remove a Login or two or more.",
         "Tags":  [
                      "Delete",
-                     "Logins"
+                     "Login"
                  ],
         "Syntax":  "\r\nRemove-DbaLogin [-SqlCredential \u003cPSCredential\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nRemove-DbaLogin -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -Login \u003cString[]\u003e [-Force] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nRemove-DbaLogin [-SqlCredential \u003cPSCredential\u003e] -InputObject \u003cLogin[]\u003e [-Force] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Drops a Login",
         "Name":  "Remove-DbaLogin",
         "Links":  "https://dbatools.io/Remove-DbaLogin",
@@ -4261,6 +4401,7 @@
         "Description":  "Removes the network certificate for SQL Server instance. This setting is found in Configuration Manager.",
         "Tags":  "Certificate",
         "Syntax":  "\r\nRemove-DbaNetworkCertificate [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Removes the network certificate for SQL Server instance",
         "Name":  "Remove-DbaNetworkCertificate",
         "Links":  null,
@@ -4287,6 +4428,7 @@
         "Description":  "Removes a Performance Data Collector Counter.",
         "Tags":  "PerfMon",
         "Syntax":  "\r\nRemove-DbaPfDataCollectorCounter [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] \r\n[[-CollectorSet] \u003cString[]\u003e] [[-Collector] \u003cString[]\u003e] [-Counter] \u003cObject[]\u003e [[-InputObject] \u003cObject[]\u003e] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Removes a Performance Data Collector Counter.",
         "Name":  "Remove-DbaPfDataCollectorCounter",
         "Links":  "https://dbatools.io/Remove-DbaPfDataCollectorCounter",
@@ -4297,6 +4439,7 @@
         "Description":  "Removes a Performance Monitor Data Collector Set. When removing data collector sets from the local instance, Run As Admin is required.",
         "Tags":  "PerfMon",
         "Syntax":  "\r\nRemove-DbaPfDataCollectorSet [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CollectorSet] \r\n\u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Removes a Performance Monitor Data Collector Set",
         "Name":  "Remove-DbaPfDataCollectorSet",
         "Links":  "https://dbatools.io/Remove-DbaPfDataCollectorSet",
@@ -4310,7 +4453,7 @@
                      "CMS"
                  ],
         "Syntax":  "\r\nRemove-DbaRegisteredServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \r\n\u003cString[]\u003e] [[-ServerName] \u003cString[]\u003e] [[-Group] \u003cString[]\u003e] [[-InputObject] \u003cRegisteredServer[]\u003e] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire (@cl)",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Removes registered servers found in SQL Server Central Management Server (CMS).",
         "Name":  "Remove-DbaRegisteredServer",
         "Links":  "https://dbatools.io/Remove-DbaRegisteredServer",
@@ -4324,7 +4467,7 @@
                      "CMS"
                  ],
         "Syntax":  "\r\nRemove-DbaRegisteredServerGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \r\n\u003cString[]\u003e] [[-InputObject] \u003cServerGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire (@cl)",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).",
         "Name":  "Remove-DbaRegisteredServerGroup",
         "Links":  "https://dbatools.io/Remove-DbaRegisteredServerGroup",
@@ -4349,6 +4492,7 @@
                      "Trace"
                  ],
         "Syntax":  "\r\nRemove-DbaTrace [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Id] \u003cInt32[]\u003e] \r\n[[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Stops and closes the specified trace and deletes its definition from the server.",
         "Name":  "Remove-DbaTrace",
         "Links":  null,
@@ -4363,6 +4507,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nRemove-DbaXESession [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -Session \u003cObject[]\u003e \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nRemove-DbaXESession [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -AllSessions \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nRemove-DbaXESession -InputObject \u003cSession[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Removes Extended Events sessions.",
         "Name":  "Remove-DbaXESession",
         "Links":  "https://dbatools.io/Remove-DbaXESession",
@@ -4377,6 +4522,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nRemove-DbaXESmartTarget [-InputObject] \u003cObject[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Removes an XESmartTarget PowerShell Job.",
         "Name":  "Remove-DbaXESmartTarget",
         "Links":  "https://dbatools.io/Remove-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -4423,6 +4569,7 @@
         "Description":  "When a SQL Server\u0027s host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.\n\nThis command renames @@SERVERNAME to match with the Windows name. The new name is automatically determined. It does not matter if you use an alias to connect to the SQL instance.\n\nIf the automatically determined new name matches the old name, the command will not run.\n\nhttps://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/",
         "Tags":  "SPN",
         "Syntax":  "\r\nRepair-DbaServerName [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-AutoFix] [-Force] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Renames @@SERVERNAME to match with the Windows name.",
         "Name":  "Repair-DbaServerName",
         "Links":  "https://dbatools.io/Repair-DbaServerName",
@@ -4792,6 +4939,7 @@
                      "Memory"
                  ],
         "Syntax":  "\r\nSet-DbaMaxMemory [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [[-MaxMB] \u003cInt32\u003e] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Sets SQL Server \u0027Max Server Memory\u0027 configuration setting to a new value then displays information this setting.",
         "Name":  "Set-DbaMaxMemory",
         "Links":  "https://dbatools.io/Set-DbaMaxMemory",
@@ -4802,6 +4950,7 @@
         "Description":  "Sets the network certificate for SQL Server instance. This setting is found in Configuration Manager.\n\nThis command also grants read permissions for the service account on the certificate\u0027s private key.\n\nReferences:\nhttp://sqlmag.com/sql-server/7-steps-ssl-encryption\nhttps://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/\nhttps://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/",
         "Tags":  "Certificate",
         "Syntax":  "\r\nSet-DbaNetworkCertificate [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nSet-DbaNetworkCertificate [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -Certificate \r\n\u003cX509Certificate2\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nSet-DbaNetworkCertificate [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-Credential \u003cPSCredential\u003e] -Thumbprint \u003cString\u003e \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Sets the network certificate for SQL Server instance",
         "Name":  "Set-DbaNetworkCertificate",
         "Links":  null,
@@ -4816,6 +4965,7 @@
                      "Configure"
                  ],
         "Syntax":  "\r\nSet-DbaPowerPlan [-ComputerName] \u003cObject[]\u003e [[-PowerPlan] \u003cString\u003e] [[-CustomPowerPlan] \u003cString\u003e] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Sets the SQL Server OS\u0027s Power Plan.",
         "Name":  "Set-DbaPowerPlan",
         "Links":  "https://dbatools.io/Set-DbaPowerPlan",
@@ -4919,8 +5069,12 @@
     {
         "CommandName":  "Show-DbaDbList",
         "Description":  "Shows a list of databases in a GUI. Returns a string holding the name of the selected database. Hitting cancel returns null.",
-        "Tags":  "Database",
+        "Tags":  [
+                     "Database",
+                     "FileSystem"
+                 ],
         "Syntax":  "\r\nShow-DbaDbList [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Title] \u003cString\u003e] [[-Header] \r\n\u003cString\u003e] [[-DefaultDb] \u003cString\u003e] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Shows a list of databases in a GUI.",
         "Name":  "Show-DbaDbList",
         "Links":  "https://dbatools.io/Show-DbaDbList",
@@ -4929,8 +5083,12 @@
     {
         "CommandName":  "Show-DbaServerFileSystem",
         "Description":  "Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this function allows you to traverse the remote SQL Server\u0027s file structure.\n\nShow-DbaServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.",
-        "Tags":  "Storage",
+        "Tags":  [
+                     "Storage",
+                     "FileSystem"
+                 ],
         "Syntax":  "\r\nShow-DbaServerFileSystem [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cObject\u003e] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Shows file system on remote SQL Server in a local GUI and returns the selected directory name",
         "Name":  "Show-DbaServerFileSystem",
         "Links":  "https://dbatools.io/Show-DbaServerFileSystem",
@@ -4944,6 +5102,7 @@
                      "Agent"
                  ],
         "Syntax":  "\r\nStart-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] \r\n[-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nStart-DbaAgentJob -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \r\n\u003cString[]\u003e] [-AllJobs] [-Wait] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\r\n\r\nStart-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] -InputObject \u003cJob[]\u003e \r\n[-AllJobs] [-Wait] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Starts a running SQL Server Agent Job.",
         "Name":  "Start-DbaAgentJob",
         "Links":  "https://dbatools.io/Start-DbaAgentJob",
@@ -4954,7 +5113,7 @@
         "Description":  "Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you\u0027re looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:\n\nAll user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -NoDatabases to skip.\nAll logins. Use -NoLogins to skip.\nAll database mail objects. Use -NoDatabaseMail\nAll credentials. Use -NoCredentials to skip.\nAll objects within the Job Server (SQL Agent). Use -NoAgentServer to skip.\nAll linked servers. Use -NoLinkedServers to skip.\nAll groups and servers within Central Management Server. Use -NoCentralManagementServer to skip.\nAll SQL Server configuration objects (everything in sp_configure). Use -NoSpConfigure to skip.\nAll user objects in system databases. Use -NoSysDbUserObjects to skip.\nAll system triggers. Use -NoSystemTriggers to skip.\nAll system backup devices. Use -NoBackupDevices to skip.\nAll Audits. Use -NoAudits to skip.\nAll Endpoints. Use -NoEndpoints to skip.\nAll Extended Events. Use -NoExtendedEvents to skip.\nAll Policy Management objects. Use -NoPolicyManagement to skip.\nAll Resource Governor objects. Use -NoResourceGovernor to skip.\nAll Server Audit Specifications. Use -NoServerAuditSpecifications to skip.\nAll Custom Errors (User Defined Messages). Use -NoCustomErrors to skip.\nCopies All Data Collector collection sets. Does not configure the server. Use -NoDataCollector to skip.\n\nThis script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.\n\nBy default, databases will be migrated to the destination SQL Server\u0027s default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.",
         "Tags":  "Migration",
         "Syntax":  "\r\nStart-DbaMigration [-Source] \u003cDbaInstanceParameter\u003e [-Destination] \u003cDbaInstanceParameter[]\u003e [[-SourceSqlCredential] \r\n\u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [-NoDatabases] [-NoLogins] [-NoAgentServer] \r\n[-NoCredentials] [-NoLinkedServers] [-NoSpConfigure] [-NoCentralManagementServer] [-NoDatabaseMail] \r\n[-NoSysDbUserObjects] [-NoSystemTriggers] [-NoBackupDevices] [-NoAudits] [-NoEndpoints] [-NoExtendedEvents] \r\n[-NoPolicyManagement] [-NoResourceGovernor] [-NoServerAuditSpecifications] [-NoCustomErrors] [-NoDataCollector] \r\n[-DisableJobsOnDestination] [-DisableJobsOnSource] [-NoSaRename] [-UseLastBackups] [-Continue] [-Force] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nStart-DbaMigration [-Source] \u003cDbaInstanceParameter\u003e [-Destination] \u003cDbaInstanceParameter[]\u003e [-DetachAttach] \r\n[[-Reattach]] [[-SetSourceReadOnly]] [[-ReuseSourceFolderStructure]] [[-IncludeSupportDbs]] [[-SourceSqlCredential] \r\n\u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] [-NoDatabases] [-NoLogins] [-NoAgentServer] \r\n[-NoCredentials] [-NoLinkedServers] [-NoSpConfigure] [-NoCentralManagementServer] [-NoDatabaseMail] \r\n[-NoSysDbUserObjects] [-NoSystemTriggers] [-NoBackupDevices] [-NoAudits] [-NoEndpoints] [-NoExtendedEvents] \r\n[-NoPolicyManagement] [-NoResourceGovernor] [-NoServerAuditSpecifications] [-NoCustomErrors] [-NoDataCollector] \r\n[-DisableJobsOnDestination] [-DisableJobsOnSource] [-NoSaRename] [-UseLastBackups] [-Continue] [-Force] \r\n[-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nStart-DbaMigration [-Source] \u003cDbaInstanceParameter\u003e [-Destination] \u003cDbaInstanceParameter[]\u003e [-BackupRestore] \r\n[[-NetworkShare] \u003cString\u003e] [[-WithReplace]] [[-NoRecovery]] [[-SetSourceReadOnly]] [[-ReuseSourceFolderStructure]] \r\n[[-IncludeSupportDbs]] [[-SourceSqlCredential] \u003cPSCredential\u003e] [[-DestinationSqlCredential] \u003cPSCredential\u003e] \r\n[-NoDatabases] [-NoLogins] [-NoAgentServer] [-NoCredentials] [-NoLinkedServers] [-NoSpConfigure] \r\n[-NoCentralManagementServer] [-NoDatabaseMail] [-NoSysDbUserObjects] [-NoSystemTriggers] [-NoBackupDevices] [-NoAudits] \r\n[-NoEndpoints] [-NoExtendedEvents] [-NoPolicyManagement] [-NoResourceGovernor] [-NoServerAuditSpecifications] \r\n[-NoCustomErrors] [-NoDataCollector] [-DisableJobsOnDestination] [-DisableJobsOnSource] [-NoSaRename] [-UseLastBackups] \r\n[-Continue] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Migrates SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,\nCentral Management Server objects, server configuration settings (sp_configure), user objects in systems databases,\nsystem triggers and backup devices from one SQL Server to another.\n\nFor more granular control, please use one of the -No parameters and use the other functions available within the dbatools module.",
         "Name":  "Start-DbaMigration",
         "Links":  "https://dbatools.io/Start-DbaMigration",
@@ -4965,6 +5124,7 @@
         "Description":  "Starts Performance Monitor Data Collector Set.",
         "Tags":  "PerfMon",
         "Syntax":  "\r\nStart-DbaPfDataCollectorSet [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CollectorSet] \r\n\u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-NoWait] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Starts Performance Monitor Data Collector Set.",
         "Name":  "Start-DbaPfDataCollectorSet",
         "Links":  "https://dbatools.io/Start-DbaPfDataCollectorSet",
@@ -4994,6 +5154,7 @@
                      "Trace"
                  ],
         "Syntax":  "\r\nStart-DbaTrace [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Id] \u003cInt32[]\u003e] \r\n[[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Starts SQL Server traces",
         "Name":  "Start-DbaTrace",
         "Links":  null,
@@ -5023,6 +5184,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nStart-DbaXESmartTarget [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString\u003e] \r\n[-Session] \u003cString\u003e [-FailOnProcessingError] [[-Responder] \u003cObject[]\u003e] [[-Template] \u003cString[]\u003e] [-NotAsJob] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "XESmartTarget runs as a client application for an Extended Events session running on a SQL Server instance.",
         "Name":  "Start-DbaXESmartTarget",
         "Links":  "https://dbatools.io/Start-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -5036,6 +5198,7 @@
                      "Agent"
                  ],
         "Syntax":  "\r\nStop-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-Wait] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nStop-DbaAgentJob -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \r\n\u003cString[]\u003e] [-Wait] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nStop-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] -InputObject \u003cJob[]\u003e \r\n[-Wait] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Stops a running SQL Server Agent Job.",
         "Name":  "Stop-DbaAgentJob",
         "Links":  "https://dbatools.io/Stop-DbaAgentJob",
@@ -5046,6 +5209,7 @@
         "Description":  "Stops Performance Monitor Data Collector Set.",
         "Tags":  "PerfMon",
         "Syntax":  "\r\nStop-DbaPfDataCollectorSet [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CollectorSet] \r\n\u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-NoWait] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Stops Performance Monitor Data Collector Set.",
         "Name":  "Stop-DbaPfDataCollectorSet",
         "Links":  "https://dbatools.io/Stop-DbaPfDataCollectorSet",
@@ -5056,6 +5220,7 @@
         "Description":  "This command kills all spids associated with a spid, login, host, program or database.\n\nIf you are attempting to kill your own login sessions, the process performing the kills will be skipped.",
         "Tags":  "Processes",
         "Syntax":  "\r\nStop-DbaProcess [-SqlCredential \u003cPSCredential\u003e] [-Spid \u003cInt32[]\u003e] [-ExcludeSpid \u003cInt32[]\u003e] [-Database \u003cString[]\u003e] \r\n[-Login \u003cString[]\u003e] [-Hostname \u003cString[]\u003e] [-Program \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\r\n\r\nStop-DbaProcess -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-Spid \u003cInt32[]\u003e] [-ExcludeSpid \r\n\u003cInt32[]\u003e] [-Database \u003cString[]\u003e] [-Login \u003cString[]\u003e] [-Hostname \u003cString[]\u003e] [-Program \u003cString[]\u003e] [-EnableException] \r\n[-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\nStop-DbaProcess [-SqlCredential \u003cPSCredential\u003e] [-Spid \u003cInt32[]\u003e] [-ExcludeSpid \u003cInt32[]\u003e] [-Database \u003cString[]\u003e] \r\n[-Login \u003cString[]\u003e] [-Hostname \u003cString[]\u003e] [-Program \u003cString[]\u003e] -InputObject \u003cObject[]\u003e [-EnableException] [-WhatIf] \r\n[-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "This command finds and kills SQL Server processes.",
         "Name":  "Stop-DbaProcess",
         "Links":  "https://dbatools.io/Stop-DbaProcess",
@@ -5085,6 +5250,7 @@
                      "Trace"
                  ],
         "Syntax":  "\r\nStop-DbaTrace [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Id] \u003cInt32[]\u003e] \r\n[[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Stops SQL Server traces",
         "Name":  "Stop-DbaTrace",
         "Links":  null,
@@ -5114,6 +5280,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nStop-DbaXESmartTarget [-InputObject] \u003cObject[]\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Stops an XESmartTarget PowerShell Job. Useful if you want to run a target, but not right now.",
         "Name":  "Stop-DbaXESmartTarget",
         "Links":  "https://dbatools.io/Stop-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
@@ -5182,7 +5349,7 @@
                      "Connection"
                  ],
         "Syntax":  "\r\nTest-DbaConnection [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-SqlCredential] \r\n\u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Tests the connection to a single instance.",
         "Name":  "Test-DbaConnection",
         "Links":  null,
@@ -5196,6 +5363,7 @@
                      "Kerberos"
                  ],
         "Syntax":  "\r\nTest-DbaConnectionAuthScheme [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Kerberos] \r\n[-Ntlm] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns the transport protocol and authentication scheme of the connection. This is useful to determine if your connection is using Kerberos.",
         "Name":  "Test-DbaConnectionAuthScheme",
         "Links":  "https://dbatools.io/Test-DbaConnectionAuthScheme",
@@ -5209,6 +5377,7 @@
                      "Collation"
                  ],
         "Syntax":  "\r\nTest-DbaDbCollation [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] \r\n[[-ExcludeDatabase] \u003cObject[]\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Compares Database Collations to Server Collation",
         "Name":  "Test-DbaDbCollation",
         "Links":  "https://dbatools.io/Test-DbaDbCollation",
@@ -5222,6 +5391,7 @@
                      "Compatibility"
                  ],
         "Syntax":  "\r\nTest-DbaDbCompatibility [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] \r\n[[-ExcludeDatabase] \u003cObject[]\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Compares Database Compatibility level to Server Compatibility",
         "Name":  "Test-DbaDbCompatibility",
         "Links":  "https://dbatools.io/Test-DbaDbCompatibility",
@@ -5265,6 +5435,7 @@
                      "Database"
                  ],
         "Syntax":  "\r\nTest-DbaDbVirtualLogFile [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \r\n\u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-IncludeSystemDBs] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Returns calculations on the database virtual log files for database on a SQL instance.",
         "Name":  "Test-DbaDbVirtualLogFile",
         "Links":  "https://dbatools.io/Test-DbaDbVirtualLogFile",
@@ -5289,6 +5460,7 @@
                      "Storage"
                  ],
         "Syntax":  "\r\nTest-DbaDiskAllocation [-ComputerName] \u003cObject[]\u003e [-NoSqlCheck] [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \r\n\u003cPSCredential\u003e] [-Detailed] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Checks all disks on a computer to see if they are formatted with allocation units of 64KB.",
         "Name":  "Test-DbaDiskAllocation",
         "Links":  "https://dbatools.io/Test-DbaDiskAllocation",
@@ -5299,7 +5471,7 @@
         "Description":  "Tests how disks are performing.\n\nThis command uses a query from Rich Benner which was adapted from David Pless\u0027s article:\nhttps://blogs.msdn.microsoft.com/dpless/2010/12/01/leveraging-sys-dm_io_virtual_file_stats/\nhttps://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql",
         "Tags":  "Performance",
         "Syntax":  "\r\nTest-DbaDiskSpeed [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] \r\n[-ExcludeDatabase \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
-        "Author":  "Chrissy LeMaire",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Tests how disks are performing.",
         "Name":  "Test-DbaDiskSpeed",
         "Links":  "https://dbatools.io/Test-DbaDiskSpeed",
@@ -5344,6 +5516,7 @@
                      "Restore"
                  ],
         "Syntax":  "\r\nTest-DbaLastBackup [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] \r\n[[-ExcludeDatabase] \u003cObject[]\u003e] [[-Destination] \u003cDbaInstanceParameter\u003e] [[-DestinationCredential] \u003cObject\u003e] \r\n[[-DataDirectory] \u003cString\u003e] [[-LogDirectory] \u003cString\u003e] [[-Prefix] \u003cString\u003e] [-VerifyOnly] [-NoCheck] [-NoDrop] \r\n[-CopyFile] [[-CopyPath] \u003cString\u003e] [[-MaxMB] \u003cInt32\u003e] [-IncludeCopyOnly] [-IgnoreLogBackup] [[-AzureCredential] \r\n\u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Quickly and easily tests the last set of full backups for a server.",
         "Name":  "Test-DbaLastBackup",
         "Links":  "https://dbatools.io/Test-DbaLastBackup",
@@ -5413,6 +5586,7 @@
                      "Memory"
                  ],
         "Syntax":  "\r\nTest-DbaMaxMemory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Credential \u003cPSCredential\u003e] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Calculates the recommended value for SQL Server \u0027Max Server Memory\u0027 configuration setting. Works on SQL Server 2000-2014.",
         "Name":  "Test-DbaMaxMemory",
         "Links":  "https://dbatools.io/Test-DbaMaxMemory",
@@ -5437,6 +5611,7 @@
                      "Network"
                  ],
         "Syntax":  "\r\nTest-DbaNetworkLatency [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Query] \u003cString\u003e] \r\n[[-Count] \u003cInt32\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Tests how long a query takes to return from SQL Server",
         "Name":  "Test-DbaNetworkLatency",
         "Links":  "https://dbatools.io/Test-DbaNetworkLatency",
@@ -5475,6 +5650,7 @@
         "Description":  "Checks the Power Plan settings on a computer against best practices recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server\u0027s name and an isBestPractice field are returned.\n\nReferences:\nhttps://support.microsoft.com/en-us/kb/2207548\nhttp://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/",
         "Tags":  "PowerPlan",
         "Syntax":  "\r\nTest-DbaPowerPlan [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CustomPowerPlan] \r\n\u003cString\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Checks the Power Plan settings for compliance with best practices, which recommend High Performance for SQL Server.",
         "Name":  "Test-DbaPowerPlan",
         "Links":  "https://dbatools.io/Test-DbaPowerPlan",
@@ -5513,6 +5689,7 @@
                      "ServerName"
                  ],
         "Syntax":  "\r\nTest-DbaServerName [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Detailed] [-ExcludeSsrs] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Tests to see if it\u0027s possible to easily rename the server at the SQL Server instance level, or if it even needs to be changed.",
         "Name":  "Test-DbaServerName",
         "Links":  "https://dbatools.io/Test-DbaServerName",
@@ -5565,6 +5742,7 @@
                      "Module"
                  ],
         "Syntax":  "\r\nUninstall-DbaWatchUpdate [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.",
         "Name":  "Uninstall-DbaWatchUpdate",
         "Links":  "https://dbatools.io/Uninstall-DbaWatchUpdate",
@@ -5591,6 +5769,7 @@
         "Description":  "Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.",
         "Tags":  "Module",
         "Syntax":  "\r\nUpdate-Dbatools [-Development] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.",
         "Name":  "Update-Dbatools",
         "Links":  "https://dbatools.io/Update-DbaTools",
@@ -5615,6 +5794,7 @@
                      "Module"
                  ],
         "Syntax":  "\r\nWatch-DbaUpdate [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once per release.",
         "Name":  "Watch-DbaUpdate",
         "Links":  "https://dbatools.io/Watch-DbaUpdate",
@@ -5629,6 +5809,7 @@
                      "XEvent"
                  ],
         "Syntax":  "\r\nWatch-DbaXESession [-SqlCredential \u003cPSCredential\u003e] [-Session \u003cString\u003e] [-Raw] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\nWatch-DbaXESession -SqlInstance \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-Session \u003cString\u003e] [-Raw] \r\n[-EnableException] [\u003cCommonParameters\u003e]\r\n\r\nWatch-DbaXESession [-SqlCredential \u003cPSCredential\u003e] [-Session \u003cString\u003e] -InputObject \u003cSession\u003e [-Raw] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Watch live XEvent Data as it happens",
         "Name":  "Watch-DbaXESession",
         "Links":  "https://dbatools.io/Watch-DbaXESession",

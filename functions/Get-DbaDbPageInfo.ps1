@@ -33,6 +33,7 @@ function Get-DbaDbPageInfo {
 
         .NOTES
             Tags: Database, Page
+            Author: Chrissy LeMaire (@cl), netnerds.net
             dbatools PowerShell module (https://dbatools.io)
             Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT

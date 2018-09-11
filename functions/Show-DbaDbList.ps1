@@ -22,7 +22,8 @@ function Show-DbaDbList {
             Specify a database to have selected when the window appears.
 
         .NOTES
-            Tags: Database
+            Tags: Database, FileSystem
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
