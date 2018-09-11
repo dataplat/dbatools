@@ -202,7 +202,7 @@ function Invoke-DbaLogShippingRecovery {
                         if ($PSCmdlet.ShouldProcess($sqlinstance, ("Starting copy job $($ls.copyjob)"))) {
                             Write-Message -Message "Starting copy job $($ls.copyjob)" -Level Verbose
                             try {
-                                Start-DbaAgentJob -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Job $ls.copyjob
+                                $null = Start-DbaAgentJob -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Job $ls.copyjob
                             }
                             catch {
                                 $recoverResult = "Failed"
@@ -259,7 +259,7 @@ function Invoke-DbaLogShippingRecovery {
                             if ($PSCmdlet.ShouldProcess($sqlinstance, ("Starting restore job " + $ls.restorejob))) {
                                 Write-Message -Message "Starting restore job $($ls.restorejob)" -Level Verbose
                                 try {
-                                    Start-DbaAgentJob -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Job $ls.restorejob
+                                    $null = Start-DbaAgentJob -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Job $ls.restorejob
                                 }
                                 catch {
                                     $comment = "Something went wrong starting the restore job."
@@ -336,7 +336,7 @@ function Invoke-DbaLogShippingRecovery {
                         [PSCustomObject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.InstanceName
-                            SqlInstance = $server.SqlInstance
+                            SqlInstance = $server.DomainInstanceName
                             Database = $secondarydb
                             RecoverResult = $recoverResult
                             Comment = $comment
