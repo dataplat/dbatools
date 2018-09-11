@@ -1169,7 +1169,7 @@ function Invoke-DbaLogShipping {
         # Loop through each of the databases
         foreach ($db in $DatabaseCollection) {
 
-            $setupResult = "Successfull"
+            $setupResult = "Success"
             $comment = ""
 
             # Check the status of the database
@@ -1852,10 +1852,13 @@ function Invoke-DbaLogShipping {
             Write-Message -Message "Completed configuring log shipping for database $db" -Level Verbose
 
             [PSCustomObject]@{
-                ComputerName = $server.ComputerName
-                InstanceName = $server.InstanceName
-                SqlInstance = $server.SqlInstance
+                PrimaryServer = $SourceServer.ComputerName
+                PrimaryInstanceName = $SourceServer.InstanceName
+                PrimarySqlInstance = $SourceServer.SqlInstance
                 PrimaryDatabase = $($db.Name)
+                SecondaryServer = $DestinationServer.ComputerName
+                SecondaryInstanceName = $DestinationServer.InstanceName
+                SecondarySqlInstance = $DestinationServer.SqlInstance
                 SecondaryDatabase = $SecondaryDatabase
                 Result = $setupResult
                 Comment = $comment
