@@ -66,7 +66,7 @@ function Get-DbaAgentJob {
         .EXAMPLE
             $servers | Get-DbaAgentJob | Out-GridView -Passthru | Start-DbaAgentJob -WhatIf
 
-            Find all of your Jobs from servers in the $server collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
+            Find all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
     #>
     [CmdletBinding()]
     param (
