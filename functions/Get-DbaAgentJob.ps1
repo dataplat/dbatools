@@ -58,7 +58,7 @@ function Get-DbaAgentJob {
 
             Returns all SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.
 
-        .EXAMPLEa
+        .EXAMPLE
             Get-DbaAgentJob -SqlInstance localhost -NoDisabledJobs
 
             Returns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.
