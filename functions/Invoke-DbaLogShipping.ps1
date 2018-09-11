@@ -1232,7 +1232,7 @@ function Invoke-DbaLogShipping {
 
                     Invoke-Command2 -Credential $SourceCredential -ScriptBlock {
                         Write-Message -Message "Creating backup folder $DatabaseBackupNetworkPath" -Level Verbose
-                        New-Item -Path $DatabaseBackupNetworkPath -ItemType Directory -Credential $SourceCredential -Force:$Force | Out-Null
+                        $null = New-Item -Path $DatabaseBackupNetworkPath -ItemType Directory -Credential $SourceCredential -Force:$Force
                     }
                 }
                 catch {
@@ -1336,7 +1336,7 @@ function Invoke-DbaLogShipping {
                             try {
                                 Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
                                     Write-Message -Message "Creating data folder $DatabaseRestoreDataFolder" -Level Verbose
-                                    New-Item -Path $DatabaseRestoreDataFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                    $null = New-Item -Path $DatabaseRestoreDataFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force
                                 }
                             }
                             catch {
@@ -1355,7 +1355,7 @@ function Invoke-DbaLogShipping {
 
                                 Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
                                     Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
-                                    New-Item -Path $DatabaseRestoreLogFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                    $null = New-Item -Path $DatabaseRestoreLogFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force
                                 }
                             }
                             catch {
@@ -1443,7 +1443,7 @@ function Invoke-DbaLogShipping {
                     try {
                         Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
                             Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
-                            New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                            $null = New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force
                         }
                     }
                     catch {
@@ -1558,7 +1558,7 @@ function Invoke-DbaLogShipping {
                         Write-Message -Message "Start database restore" -Level Output
                         if ($NoRecovery -or (-not $Standby)) {
                             if ($Force) {
-                                Restore-DbaDatabase -SqlServer $DestinationSqlInstance `
+                                $null = Restore-DbaDatabase -SqlServer $DestinationSqlInstance `
                                     -SqlCredential $DestinationSqlCredential `
                                     -Path $BackupPath `
                                     -DestinationFilePrefix $SecondaryDatabasePrefix `
@@ -1568,10 +1568,10 @@ function Invoke-DbaLogShipping {
                                     -DatabaseName $SecondaryDatabase `
                                     -DirectoryRecurse `
                                     -NoRecovery `
-                                    -WithReplace | Out-Null
+                                    -WithReplace
                             }
                             else {
-                                Restore-DbaDatabase -SqlServer $DestinationSqlInstance `
+                                $null = Restore-DbaDatabase -SqlServer $DestinationSqlInstance `
                                     -SqlCredential $DestinationSqlCredential `
                                     -Path $BackupPath `
                                     -DestinationFilePrefix $SecondaryDatabasePrefix `
@@ -1580,7 +1580,7 @@ function Invoke-DbaLogShipping {
                                     -DestinationLogDirectory $DatabaseRestoreLogFolder `
                                     -DatabaseName $SecondaryDatabase `
                                     -DirectoryRecurse `
-                                    -NoRecovery | Out-Null
+                                    -NoRecovery
                             }
                         }
 
@@ -1591,7 +1591,7 @@ function Invoke-DbaLogShipping {
 
                             # Check if credentials need to be used
                             if ($DestinationSqlCredential) {
-                                Restore-DbaDatabase -ServerInstance $DestinationSqlInstance `
+                                $null = Restore-DbaDatabase -ServerInstance $DestinationSqlInstance `
                                     -SqlCredential $DestinationSqlCredential `
                                     -Path $BackupPath `
                                     -DestinationFilePrefix $SecondaryDatabasePrefix `
@@ -1603,7 +1603,7 @@ function Invoke-DbaLogShipping {
                                     -StandbyDirectory $StandbyDirectory
                             }
                             else {
-                                Restore-DbaDatabase -ServerInstance $DestinationSqlInstance `
+                                $null = Restore-DbaDatabase -ServerInstance $DestinationSqlInstance `
                                     -Path $BackupPath `
                                     -DestinationFilePrefix $SecondaryDatabasePrefix `
                                     -DestinationFileSuffix $SecondaryDatabaseSuffix `
@@ -1648,11 +1648,11 @@ function Invoke-DbaLogShipping {
 
                     # Check if the backup job needs to be enabled or disabled
                     if ($BackupScheduleDisabled) {
-                        Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Disabled
+                        $null = Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Disabled
                         Write-Message -Message "Disabling backup job $DatabaseBackupJob" -Level Output
                     }
                     else {
-                        Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Enabled
+                        $null = Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Enabled
                         Write-Message -Message "Enabling backup job $DatabaseBackupJob" -Level Output
                     }
 
@@ -1762,18 +1762,18 @@ function Invoke-DbaLogShipping {
 
                     # Check if the copy job needs to be enabled or disabled
                     if ($CopyScheduleDisabled) {
-                        Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Disabled
+                        $null = Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Disabled
                     }
                     else {
-                        Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Enabled
+                        $null = Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Enabled
                     }
 
                     # Check if the restore job needs to be enabled or disabled
                     if ($RestoreScheduleDisabled) {
-                        Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseRestoreJob -Disabled
+                        $null = Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseRestoreJob -Disabled
                     }
                     else {
-                        Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseRestoreJob -Enabled
+                        $null = Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseRestoreJob -Enabled
                     }
 
                 }
