@@ -4,7 +4,7 @@ function Get-DbaExecutionPlan {
 Gets execution plans and metadata
 
 .DESCRIPTION
-Gets execution plans and metadata. Can pipe to Export-DbaExecutionPlan :D
+Gets execution plans and metadata. Can pipe to Export-DbaExecutionPlan
 
 Thanks to
     https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/
@@ -89,16 +89,6 @@ Gets super detailed information for execution plans on only for AdventureWorks20
         [switch]$EnableException
     )
 
-    begin {
-
-        if ($SinceCreation -ne $null) {
-            $SinceCreation = $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss")
-        }
-
-        if ($SinceLastExecution -ne $null) {
-            $SinceLastExecution = $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss")
-        }
-    }
     process {
 
         foreach ($instance in $sqlinstance) {
@@ -132,7 +122,7 @@ Gets super detailed information for execution plans on only for AdventureWorks20
                         CROSS APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
                         CROSS APPLY sys.dm_exec_sql_text(deqs.plan_handle) AS execText"
 
-                if ($ExcludeDatabase -or $Database -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true) {
+                if ($ExcludeDatabase -or $Database -or $SinceCreation -or $SinceLastExecution -or $ExcludeEmptyQueryPlan -eq $true) {
                     $where = " WHERE "
                 }
 
@@ -145,12 +135,12 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 
                 if ($null -ne $SinceCreation) {
                     Write-Message -Level Verbose -Message "Adding creation time"
-                    $wherearray += " creation_time >= '$SinceCreation' "
+                    $wherearray += " creation_time >= '" + $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss") + "' "
                 }
 
                 if ($null -ne $SinceLastExecution) {
                     Write-Message -Level Verbose -Message "Adding last exectuion time"
-                    $wherearray += " last_execution_time >= '$SinceLastExecution' "
+                    $wherearray += " last_execution_time >= '" + $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss") + "' "
                 }
 
                 if ($ExcludeDatabase) {
