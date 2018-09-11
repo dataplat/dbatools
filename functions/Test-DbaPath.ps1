@@ -25,11 +25,8 @@ function Test-DbaPath {
         .NOTES
             Tags: Path, ServiceAccount
             Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: Admin access to server (not SQL Services),
-            Remoting must be enabled and accessible if $SqlInstance is not local
-
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
