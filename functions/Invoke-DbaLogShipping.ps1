@@ -1852,13 +1852,7 @@ function Invoke-DbaLogShipping {
             Write-Message -Message "Completed configuring log shipping for database $db" -Level Verbose
 
             [PSCustomObject]@{
-                PrimaryServer = $SourceServer.ComputerName
-                PrimaryInstanceName = $SourceServer.InstanceName
-                PrimarySqlInstance = $SourceServer.SqlInstance
                 PrimaryDatabase = $($db.Name)
-                SecondaryServer = $DestinationServer.ComputerName
-                SecondaryInstanceName = $DestinationServer.InstanceName
-                SecondarySqlInstance = $DestinationServer.SqlInstance
                 SecondaryDatabase = $SecondaryDatabase
                 Result = $setupResult
                 Comment = $comment
