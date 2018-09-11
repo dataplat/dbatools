@@ -120,6 +120,7 @@ function Invoke-DbaLogShippingRecovery {
         # Loop through all the databases
         foreach ($db in $InputObject) {
             $server = $db.Parent
+            $instance = $server.Name
             $activity = "Performing log shipping recovery for $($db.Name) on $($server.Name)"
             # Try to get the agent service details
             try {
@@ -182,7 +183,7 @@ function Invoke-DbaLogShippingRecovery {
                             
                             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting copy job"
                             try {
-                                $null = Start-DbaAgentJob -SqlInstance $server -Job $ls.copyjob
+                                $null = Start-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.copyjob
                             }
                             catch {
                                 $recoverResult = "Failed"
@@ -196,14 +197,14 @@ function Invoke-DbaLogShippingRecovery {
                                 Write-Message -Message "Waiting for the copy action to complete.." -Level Verbose
                                 
                                 # Get the job status
-                                $jobStatus = Get-DbaAgentJob -SqlInstance $server -Job $ls.copyjob
+                                $jobStatus = Get-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.copyjob
                                 
                                 while ($jobStatus.CurrentRunStatus -ne 'Idle') {
                                     # Sleep for while to let the files be copied
                                     Start-Sleep -Seconds $Delay
                                     
                                     # Get the job status
-                                    $jobStatus = Get-DbaAgentJob -SqlInstance $server -Job $ls.copyjob
+                                    $jobStatus = Get-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.copyjob
                                 }
                                 
                                 # Check the lat outcome of the job
@@ -226,7 +227,7 @@ function Invoke-DbaLogShippingRecovery {
                             if ($PSCmdlet.ShouldProcess($server.name, "Disabling copy job $($ls.copyjob)")) {
                                 try {
                                     Write-Message -Message "Disabling copy job $($ls.copyjob)" -Level Verbose
-                                    $null = Set-DbaAgentJob -SqlInstance $server -Job $ls.copyjob -Disabled
+                                    $null = Set-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.copyjob -Disabled
                                 }
                                 catch {
                                     $recoverResult = "Failed"
@@ -243,7 +244,7 @@ function Invoke-DbaLogShippingRecovery {
                             if ($PSCmdlet.ShouldProcess($server.name, ("Starting restore job " + $ls.restorejob))) {
                                 Write-Message -Message "Starting restore job $($ls.restorejob)" -Level Verbose
                                 try {
-                                    $null = Start-DbaAgentJob -SqlInstance $server -Job $ls.restorejob
+                                    $null = Start-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.restorejob
                                 }
                                 catch {
                                     $comment = "Something went wrong starting the restore job."
@@ -253,14 +254,14 @@ function Invoke-DbaLogShippingRecovery {
                                 Write-Message -Message "Waiting for the restore action to complete.." -Level Verbose
                                 
                                 # Get the job status
-                                $jobStatus = Get-DbaAgentJob -SqlInstance $server -Job $ls.restorejob
+                                $jobStatus = Get-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.restorejob
                                 
                                 while ($jobStatus.CurrentRunStatus -ne 'Idle') {
                                     # Sleep for while to let the files be copied
                                     Start-Sleep -Seconds $Delay
                                     
                                     # Get the job status
-                                    $jobStatus = Get-DbaAgentJob -SqlInstance $server -Job $ls.restorejob
+                                    $jobStatus = Get-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.restorejob
                                 }
                                 
                                 # Check the lat outcome of the job
@@ -279,7 +280,7 @@ function Invoke-DbaLogShippingRecovery {
                             if ($PSCmdlet.ShouldProcess($server.name, "Disabling restore job $($ls.restorejob)")) {
                                 try {
                                     Write-Message -Message ("Disabling restore job " + $ls.restorejob) -Level Verbose
-                                    $null = Set-DbaAgentJob -SqlInstance $server -Job $ls.restorejob -Disabled
+                                    $null = Set-DbaAgentJob -SqlInstance $instance -SqlCredential $sqlcredential -Job $ls.restorejob -Disabled
                                 }
                                 catch {
                                     $recoverResult = "Failed"
@@ -330,6 +331,7 @@ function Invoke-DbaLogShippingRecovery {
                 }
             }
             Write-Progress -Activity $activity -Completed
+            $stepCounter = 0
         }
     }
 }
