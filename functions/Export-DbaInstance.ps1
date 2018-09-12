@@ -212,7 +212,7 @@
             param (
                 [int]$StepNumber,
                 [string]$Message,
-                [int]$TotalSteps = 18
+                [int]$TotalSteps = 20
 
             )
             Write-Progress -Activity "Performing Instance Export for $instance" -Status $Message -PercentComplete (($StepNumber / $TotalSteps) * 100)
