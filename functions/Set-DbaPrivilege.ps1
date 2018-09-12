@@ -92,45 +92,80 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                             $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                             $tempfile = "$temp\secpolByDbatools.cfg"
                             if ('BatchLogon' -in $Type) {
-                                $BLline = Get-Content $tempfile | Where-Object { $_ -match "SeBatchLogonRight" }
+
                                 ForEach ($acc in $SQLServiceAccounts) {
                                     $SID = Convert-UserNameToSID -Acc $acc;
-                                    if ($BLline -notmatch $SID) {
-                                        (Get-Content $tempfile) -replace "SeBatchLogonRight = ", "SeBatchLogonRight = *$SID," |
-                                        Set-Content $tempfile
-                                        Write-Verbose "Added $acc to Batch Logon Privileges on $env:ComputerName"
+                                    $BLline = Get-Content $tempfile | Where-Object { $_ -match "SeBatchLogonRight" }
+                                    if ($BLLine) {
+                                        if ($BLline -notmatch $SID) {
+                                            (Get-Content $tempfile) -replace "SeBatchLogonRight = ", "SeBatchLogonRight = *$SID," |
+                                            Set-Content $tempfile
+                                            Write-Verbose "Added $acc to Batch Logon Privileges on $env:ComputerName"
+                                        }
+                                        else {
+                                            Write-Warning "$acc already has Batch Logon Privilege on $env:ComputerName"
+                                        }
                                     }
                                     else {
-                                        Write-Warning "$acc already has Batch Logon Privilege on $env:ComputerName"
+                                        #here-strings require the tabbing to get all messed up.
+                                        $NewContent = @"
+[Privilege Rights]
+SeBatchLoginRight = *$SID
+"@
+                                        (Get-Content $tempfile) -replace "[Privilege Rights]", $NewContent | Set-Content $tempfile
+                                        Write-Verbose "Added new line for Batch Logon Privilege Privileges and granted $acc the privilege on $env:ComputerName" 
                                     }
                                 }
                             }
                             if ('IFI' -in $Type) {
-                                $IFIline = Get-Content $tempfile | Where-Object { $_ -match "SeManageVolumePrivilege" }
                                 ForEach ($acc in $SQLServiceAccounts) {
                                     $SID = Convert-UserNameToSID -Acc $acc;
-                                    if ($IFIline -notmatch $SID) {
-                                        (Get-Content $tempfile) -replace "SeManageVolumePrivilege = ", "SeManageVolumePrivilege = *$SID," |
-                                        Set-Content $tempfile
-                                        Write-Verbose "Added $acc to Instant File Initialization Privileges on $env:ComputerName"
-                                    }
+                                    $IFIline = Get-Content $tempfile | Where-Object { $_ -match "SeManageVolumePrivilege" }
+                                    if ($IFILine) {
+                                        if ($IFIline -notmatch $SID) {
+                                            (Get-Content $tempfile) -replace "SeManageVolumePrivilege = ", "SeManageVolumePrivilege = *$SID," |
+                                            Set-Content $tempfile
+                                            Write-Verbose "Added $acc to Instant File Initialization Privileges on $env:ComputerName"
+                                        }
+                                        else {
+                                            Write-Warning "$acc already has Instant File Initialization Privilege on $env:ComputerName"
+                                        }
+                                    }    
                                     else {
-                                        Write-Warning "$acc already has Instant File Initialization Privilege on $env:ComputerName"
+                                    
+                                        #here-strings require the tabbing to get all messed up.
+                                        $NewContent = @"
+[Privilege Rights]
+SeManageVolumePrivilege = *$SID
+"@
+                                        (Get-Content $tempfile) -replace "[Privilege Rights]", $NewContent | Set-Content $tempfile
+                                        Write-Verbose "Added new line for Instant File Initialization Privileges and granted $acc the privilege on $env:ComputerName" 
                                     }
                                 }
                             }
                             if ('LPIM' -in $Type) {
-                                $LPIMline = Get-Content $tempfile | Where-Object { $_ -match "SeLockMemoryPrivilege" }
                                 ForEach ($acc in $SQLServiceAccounts) {
                                     $SID = Convert-UserNameToSID -Acc $acc;
-                                    if ($LPIMline -notmatch $SID) {
-                                        (Get-Content $tempfile) -replace "SeLockMemoryPrivilege = ", "SeLockMemoryPrivilege = *$SID," |
-                                        Set-Content $tempfile
-                                        Write-Verbose "Added $acc to Lock Pages in Memory Privileges on $env:ComputerName"
-                                    }
+                                    $LPIMline = Get-Content $tempfile | Where-Object { $_ -match "SeLockMemoryPrivilege" }
+                                    if ($LPIMline) {
+                                        if ($LPIMline -notmatch $SID) {
+                                            (Get-Content $tempfile) -replace "SeLockMemoryPrivilege = ", "SeLockMemoryPrivilege = *$SID," |
+                                            Set-Content $tempfile
+                                            Write-Verbose "Added $acc to Lock Pages in Memory Privileges on $env:ComputerName"
+                                        }
+                                        else {
+                                            Write-Warning "$acc already has Lock Pages in Memory Privilege on $env:ComputerName"
+                                        }
+                                    }               
                                     else {
-                                        Write-Warning "$acc already has Lock Pages in Memory Privilege on $env:ComputerName"
-                                    }
+                                        #here-strings require the tabbing to get all messed up.
+                                        $NewContent = @"
+[Privilege Rights]
+SeLockMemoryPrivilege = *$SID
+"@
+                                        (Get-Content $tempfile) -replace "[Privilege Rights]", $NewContent | Set-Content $tempfile
+                                        Write-Verbose "Added new line for Lock Pages In Memory Privileges and granted $acc the privilege on $env:ComputerName" 
+                                    }       
                                 }
                             }
                             $null = secedit /configure /cfg $tempfile /db secedit.sdb /areas USER_RIGHTS /overwrite /quiet
