@@ -1,0 +1,29 @@
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
+   <event_session name="Deadlock Graphs" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="false" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+    <templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->Everyday Extended Events</templateCategory>
+    <templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Deadlock Graphs</templateName>
+    <templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Captures deadlock information. Careful, the Deadlock tab is sneaky!</templateDescription>
+      <event package="sqlserver" name="database_xml_deadlock_report">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="database_name" />
+         <action package="sqlserver" name="plan_handle" />
+         <action package="sqlserver" name="sql_text" />
+      </event>
+      <event package="sqlserver" name="xml_deadlock_report">
+         <action package="sqlserver" name="client_app_name" />
+         <action package="sqlserver" name="client_hostname" />
+         <action package="sqlserver" name="database_id" />
+         <action package="sqlserver" name="database_name" />
+         <action package="sqlserver" name="plan_handle" />
+         <action package="sqlserver" name="sql_text" />
+      </event>
+      <target package="package0" name="event_file">
+         <parameter name="filename" value="capture_deadlock_graphs" />
+      </target>
+   </event_session>
+</event_sessions>

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Sqlcollaborative.Dbatools.Utility
 {
@@ -134,6 +136,15 @@ namespace Sqlcollaborative.Dbatools.Utility
         public DbaDateTimeBase(DateTime Timestamp)
         {
             _timestamp = Timestamp;
+        }
+
+        /// <summary>
+        /// Parses a string into a datetime object.
+        /// </summary>
+        /// <param name="Time">The time-string to parse</param>
+        public DbaDateTimeBase(string Time)
+        {
+            _timestamp = ParseDateTime(Time);
         }
 
         /// <summary>
@@ -635,7 +646,56 @@ namespace Sqlcollaborative.Dbatools.Utility
             return _timestamp.ToUniversalTime();
         }
 
+        /// <summary>
+        /// Parses input string into datetime
+        /// </summary>
+        /// <param name="Value">The string to parse</param>
+        /// <returns>The resultant datetime.</returns>
+        internal static DateTime ParseDateTime(string Value)
+        {
+            if (String.IsNullOrWhiteSpace(Value))
+                throw new ArgumentNullException("Cannot parse empty string!");
 
+            try { return DateTime.Parse(Value, CultureInfo.CurrentCulture); }
+            catch { }
+            try { return DateTime.Parse(Value, CultureInfo.InvariantCulture); }
+            catch { }
+
+            bool positive = !(Value.Contains("-"));
+            string tempValue = Value.Replace("-", "").Trim();
+            bool date = UtilityHost.IsLike(tempValue, "D *");
+            if (date)
+                tempValue = tempValue.Substring(2);
+            TimeSpan timeResult = new TimeSpan();
+
+            foreach (string element in tempValue.Split(' '))
+            {
+                if (Regex.IsMatch(element, @"^\d+$"))
+                    timeResult = timeResult.Add(new TimeSpan(0, 0, Int32.Parse(element)));
+                else if (UtilityHost.IsLike(element, "*ms") && Regex.IsMatch(element, @"^\d+ms$", RegexOptions.IgnoreCase))
+                    timeResult = timeResult.Add(new TimeSpan(0, 0, 0, 0, Int32.Parse(Regex.Match(element, @"^(\d+)ms$", RegexOptions.IgnoreCase).Groups[1].Value)));
+                else if (UtilityHost.IsLike(element, "*s") && Regex.IsMatch(element, @"^\d+s$", RegexOptions.IgnoreCase))
+                    timeResult = timeResult.Add(new TimeSpan(0, 0, Int32.Parse(Regex.Match(element, @"^(\d+)s$", RegexOptions.IgnoreCase).Groups[1].Value)));
+                else if (UtilityHost.IsLike(element, "*m") && Regex.IsMatch(element, @"^\d+m$", RegexOptions.IgnoreCase))
+                    timeResult = timeResult.Add(new TimeSpan(0, Int32.Parse(Regex.Match(element, @"^(\d+)m$", RegexOptions.IgnoreCase).Groups[1].Value), 0));
+                else if (UtilityHost.IsLike(element, "*h") && Regex.IsMatch(element, @"^\d+h$", RegexOptions.IgnoreCase))
+                    timeResult = timeResult.Add(new TimeSpan(Int32.Parse(Regex.Match(element, @"^(\d+)h$", RegexOptions.IgnoreCase).Groups[1].Value), 0, 0));
+                else if (UtilityHost.IsLike(element, "*d") && Regex.IsMatch(element, @"^\d+d$", RegexOptions.IgnoreCase))
+                    timeResult = timeResult.Add(new TimeSpan(Int32.Parse(Regex.Match(element, @"^(\d+)d$", RegexOptions.IgnoreCase).Groups[1].Value), 0, 0, 0));
+                else
+                    throw new ArgumentException(String.Format("Failed to parse as timespan: {0} at {1}", Value, element));
+            }
+
+            DateTime result;
+            if (!positive)
+                result = DateTime.Now.Add(timeResult.Negate());
+            else
+                result = DateTime.Now.Add(timeResult);
+
+            if (date)
+                return result.Date;
+            return result;
+        }
         #endregion Methods
 
         #region Operators

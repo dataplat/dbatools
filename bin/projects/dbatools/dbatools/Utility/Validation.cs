@@ -98,8 +98,9 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// Tests whether a given string is a valid instance name.
         /// </summary>
         /// <param name="InstanceName">The name to test. MAY contain server name, but will NOT test the server.</param>
+        /// <param name="Lenient">Setting this to true will make the validation ignore default and mssqlserver as illegal names (as they are illegal names for named instances, but legal for targeting)</param>
         /// <returns>Whether the name is legal</returns>
-        public static bool IsValidInstanceName(string InstanceName)
+        public static bool IsValidInstanceName(string InstanceName, bool Lenient = false)
         {
             string temp;
             if (InstanceName.Split('\\').Length == 1) { temp = InstanceName; }
@@ -108,8 +109,11 @@ namespace Sqlcollaborative.Dbatools.Utility
 
             if (Regex.IsMatch(temp, RegexHelper.SqlReservedKeyword, RegexOptions.IgnoreCase)) { return false; }
 
-            if (temp.ToLower() == "default") { return false; }
-            if (temp.ToLower() == "mssqlserver") { return false; }
+            if (!Lenient)
+            {
+                if (temp.ToLower() == "default") { return false; }
+                if (temp.ToLower() == "mssqlserver") { return false; }
+            }
 
             if (!Regex.IsMatch(temp, RegexHelper.InstanceName, RegexOptions.IgnoreCase)) { return false; }
 

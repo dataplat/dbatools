@@ -1,55 +1,56 @@
-﻿function Remove-DbaCmConnection {
+function Remove-DbaCmConnection {
     <#
-    .SYNOPSIS
-    Removes connection objects from the connection cache used for remote computer management.
+        .SYNOPSIS
+            Removes connection objects from the connection cache used for remote computer management.
 
-    .DESCRIPTION
-    Removes connection objects from the connection cache used for remote computer management.
+        .DESCRIPTION
+            Removes connection objects from the connection cache used for remote computer management.
 
-    .PARAMETER ComputerName
-    The computer whose connection to remove.
-    Accepts both text as well as the output of Get-DbaCmConnection.
+        .PARAMETER ComputerName
+            The computer whose connection to remove.
+            Accepts both text as well as the output of Get-DbaCmConnection.
 
-    .PARAMETER Silent
-    Replaces user friendly yellow warnings with bloody red exceptions of doom!
-    Use this if you want the function to throw terminating errors you want to catch.
-	
-	.NOTES
-	Original Author: Fred Winmann (@FredWeinmann)
-	Tags: ComputerManagement
-	
-	Website: https://dbatools.io
-	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-	.LINK
-	https://dbatools.io/Remove-DbaCmConnection
+        .NOTES
+            Tags: ComputerManagement, CIM
+            Author: Fred Winmann (@FredWeinmann)
 
-    .EXAMPLE
-    Remove-DbaCmConnection -ComputerName sql2014
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    Removes the cached connection to the server sql2014 from the cache.
+        .LINK
+            https://dbatools.io/Remove-DbaCmConnection
 
-    .EXAMPLE
-    Get-DbaCmConnection | Remove-DbaCmConnection
+        .EXAMPLE
+            Remove-DbaCmConnection -ComputerName sql2014
 
-    Clears the entire connection cache.
+            Removes the cached connection to the server sql2014 from the cache.
+
+        .EXAMPLE
+            Get-DbaCmConnection | Remove-DbaCmConnection
+
+            Clears the entire connection cache.
     #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
+        [Parameter(ValueFromPipeline, Mandatory)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName,
 
         [switch]
-        $Silent
+        [Alias('Silent')]$EnableException
     )
 
-    BEGIN {
+    begin {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
     }
-    PROCESS {
+    process {
         foreach ($connectionObject in $ComputerName) {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret computername input: $($connectionObject.InputObject)" -Category InvalidArgument -Target $connectionObject.InputObject -Continue }
             Write-Message -Level VeryVerbose -Message "Removing from connection cache: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection.ComputerName
@@ -62,7 +63,7 @@
             }
         }
     }
-    END {
+    end {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }

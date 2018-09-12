@@ -1,188 +1,223 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-
 function Set-DbaStartupParameter {
-<#
-.SYNOPSIS
-Sets the Startup Parameters for a SQL Server instance
+    <#
+        .SYNOPSIS
+            Sets the Startup Parameters for a SQL Server instance
 
-.DESCRIPTION
-Modifies the startup parameters for a specified SQL Server Instance
+        .DESCRIPTION
+            Modifies the startup parameters for a specified SQL Server Instance
 
-For full details of what each parameter does, please refer to this MSDN article - https://msdn.microsoft.com/en-us/library/ms190737(v=sql.105).aspx
+            For full details of what each parameter does, please refer to this MSDN article - https://msdn.microsoft.com/en-us/library/ms190737(v=sql.105).aspx
 
-.PARAMETER SqlInstance
-The SQL Server instance to be modified
+        .PARAMETER SqlInstance
+            The SQL Server instance to be modified
 
-.PARAMETER SqlCredential
-Windows or Sql Login Credential with permission to log into the SQL instance
+            If the Sql Instance is offline path parameters will be ignored as we cannot test the instance's access to the path. If you want to force this to work then please use the Force switch
 
-.PARAMETER Credential
-Windows Credential with permission to log on to the server running the SQL instance
+        .PARAMETER SqlCredential
+            Windows or Sql Login Credential with permission to log into the SQL instance
 
-.PARAMETER MasterData
-Path to the data file for the Master database
+        .PARAMETER Credential
+            Windows Credential with permission to log on to the server running the SQL instance
 
-.PARAMETER MasterLog
-Path to the log file for the Master database
+        .PARAMETER MasterData
+            Path to the data file for the Master database
 
-.PARAMETER ErrorLog
-path to the SQL Server error log file 
+            Will be ignored if SqlInstance is offline or the Offline switch is set. To override this behaviour use the Force switch. This is to ensure you understand the risk as we cannot validate the path if the instance is offline
 
-.PARAMETER TraceFlags
-A comma seperated list of TraceFlags to be applied at SQL Server startup
-By default these will be appended to any existing trace flags set
+        .PARAMETER MasterLog
+            Path to the log file for the Master database
 
-.PARAMETER CommandPromptStart
-	
-Shortens startup time when starting SQL Server from the command prompt. Typically, the SQL Server Database Engine starts as a service by calling the Service Control Manager. 
-Because the SQL Server Database Engine does not start as a service when starting from the command prompt
+            Will be ignored if SqlInstance is offline or the Offline switch is set. To override this behaviour use the Force switch. This is to ensure you understand the risk as we cannot validate the path if the instance is offline
 
-.PARAMETER MinimalStart
-	
-Starts an instance of SQL Server with minimal configuration. This is useful if the setting of a configuration value (for example, over-committing memory) has 
-prevented the server from starting. Starting SQL Server in minimal configuration mode places SQL Server in single-user mode
+        .PARAMETER ErrorLog
+            Path to the SQL Server error log file
 
-.PARAMETER MemoryToReserve
-Specifies an integer number of megabytes (MB) of memory that SQL Server will leave available for memory allocations within the SQL Server process, 
-but outside the SQL Server memory pool. The memory outside of the memory pool is the area used by SQL Server for loading items such as extended procedure .dll files, 
-the OLE DB providers referenced by distributed queries, and automation objects referenced in Transact-SQL statements. The default is 256 MB.
+            Will be ignored if SqlInstance is offline or the Offline switch is set. To override this behaviour use the Force switch. This is to ensure you understand the risk as we cannot validate the path if the instance is offline
 
-.PARAMETER SingleUser
-Start Sql Server in single user mode
+        .PARAMETER TraceFlags
+            A comma separated list of TraceFlags to be applied at SQL Server startup
+            By default these will be appended to any existing trace flags set
 
-.PARAMETER NoLoggingToWinEvents
-Don't use Windows Application events log
+        .PARAMETER CommandPromptStart
+            Shortens startup time when starting SQL Server from the command prompt. Typically, the SQL Server Database Engine starts as a service by calling the Service Control Manager.
+            Because the SQL Server Database Engine does not start as a service when starting from the command prompt
 
-.PARAMETER StartAsNamedInstance
-Allows you to start a named instance of SQL Server
+        .PARAMETER MinimalStart
+            Starts an instance of SQL Server with minimal configuration. This is useful if the setting of a configuration value (for example, over-committing memory) has
+            prevented the server from starting. Starting SQL Server in minimal configuration mode places SQL Server in single-user mode
 
-.PARAMETER DisableMonitoring
-Disables the following monitoring features:
+        .PARAMETER MemoryToReserve
+            Specifies an integer number of megabytes (MB) of memory that SQL Server will leave available for memory allocations within the SQL Server process,
+            but outside the SQL Server memory pool. The memory outside of the memory pool is the area used by SQL Server for loading items such as extended procedure .dll files,
+            the OLE DB providers referenced by distributed queries, and automation objects referenced in Transact-SQL statements. The default is 256 MB.
 
-SQL Server performance monitor counters
-Keeping CPU time and cache-hit ratio statistics
-Collecting information for the DBCC SQLPERF command
-Collecting information for some dynamic management views
-Many extended-events event points
+        .PARAMETER SingleUser
+            Start Sql Server in single user mode
 
-** Warning *\* When you use the –x startup option, the information that is available for you to diagnose performance and functional problems with SQL Server is greatly reduced.
-	
-.PARAMETER SingleUserDetails
-The username for single user
-	
-.PARAMETER IncreasedExtents
-Increases the number of extents that are allocated for each file in a filegroup. 
+        .PARAMETER NoLoggingToWinEvents
+            Don't use Windows Application events log
 
-.PARAMETER TraceFlagsOverride
-Overrides the default behaviour and replaces any existing trace flags. If not trace flags specified will just remove existing ones
+        .PARAMETER StartAsNamedInstance
+            Allows you to start a named instance of SQL Server
 
-.PARAMETER StartUpConfig
-Pass in a previously saved SQL Instance startUpconfig
-using this parameter will set TraceFlagsOverride to true, so existing Trace Flags will be overridden
+        .PARAMETER DisableMonitoring
+            Disables the following monitoring features:
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+            SQL Server performance monitor counters
+            Keeping CPU time and cache-hit ratio statistics
+            Collecting information for the DBCC SQLPERF command
+            Collecting information for some dynamic management views
+            Many extended-events event points
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+            ** Warning *\* When you use the -x startup option, the information that is available for you to diagnose performance and functional problems with SQL Server is greatly reduced.
 
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
+        .PARAMETER SingleUserDetails
+            The username for single user
 
-.NOTES
-Original Author: Stuart Moore (@napalmgram), stuart-moore.com
+        .PARAMETER IncreasedExtents
+            Increases the number of extents that are allocated for each file in a filegroup.
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+        .PARAMETER TraceFlagsOverride
+            Overrides the default behaviour and replaces any existing trace flags. If not trace flags specified will just remove existing ones
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+        .PARAMETER StartUpConfig
+            Pass in a previously saved SQL Instance startup config
+            using this parameter will set TraceFlagsOverride to true, so existing Trace Flags will be overridden
 
-.EXAMPLE 
-Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser
+        .PARAMETER Offline
+            Setting this switch will try perform the requested actions without connect to the SQL Server Instance, this will speed things up if you know the Instance is offline.
 
-Will configure the SQL Instance server1\instance1 to startup up in Single User mode at next startup
-	
-.EXAMPLE 
-Set-DbaStartupParameter -SqlInstance sql2016 -IncreasedExtents
+            When working offline, path inputs (MasterData, MasterLog and ErrorLog) will be ignored, unless Force is specified
 
-Will configure the SQL Instance sql2016 to IncreasedExtents = True (-E)
+        .PARAMETER Force
+            By default we test the values passed in via MasterData, MasterLog, ErrorLog
 
-.EXAMPLE 
-Set-DbaStartupParameter -SqlInstance sql2016  -IncreasedExtents:$false -WhatIf
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
 
-Shows what would happen if you attempted to configure the SQL Instance sql2016 to IncreasedExtents = False (no -E)
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
-.EXAMPLE
-Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8032,8048
-This will appened Trace Flags 8032 and 8048 to the startup parameters
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.EXAMPLE
-Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride
-This will remove all trace flags and set SinguleUser to false
-	
-.EXAMPLE
-Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8032,8048 -TraceFlagsOverride
+        .NOTES
+            Tags: Service, Startup, Parameter, Configure
+            Author: Stuart Moore (@napalmgram), stuart-moore.com
 
-This will set Trace Flags 8032 and 8048 to the startup parameters, removing any existing Trace Flags
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE
+        .EXAMPLE
+            Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser
 
-$StartupConfig = Get-DbaStartupParameter -SqlInstance server1\instance1
-Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -NoLoggingToWinEvents
-#Restart your SQL instance with the tool of choice
-#Do Some work
-Set-DbaStartupParameter -SqlInstance server1\instance1 -StartUpConfig $StartUpConfig
-#Restart your SQL instance with the tool of choice and you're back to normal
+            Will configure the SQL Instance server1\instance1 to startup up in Single User mode at next startup
 
-In this example we take a copy of the existing startup configuration of server1\instance1
+        .EXAMPLE
+            Set-DbaStartupParameter -SqlInstance sql2016 -IncreasedExtents
 
-We then change the startup parameters ahead of some work
+            Will configure the SQL Instance sql2016 to IncreasedExtents = True (-E)
 
-After the work has been completed, we can push the original startup parameters back to server1\instance1 and resume normal operation
+        .EXAMPLE
+            Set-DbaStartupParameter -SqlInstance sql2016  -IncreasedExtents:$false -WhatIf
 
-#>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
-	param ([parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[PSCredential]$Credential,
-		[string]$MasterData,
-		[string]$MasterLog,
-		[string]$ErrorLog,
-		[string[]]$TraceFlags,
-		[switch]$CommandPromptStart,
-		[switch]$MinimalStart,
-		[int]$MemoryToReserve,
-		[switch]$SingleUser,
-		[string]$SingleUserDetails,
-		[switch]$NoLoggingToWinEvents,
-		[switch]$StartAsNamedInstance,
-		[switch]$DisableMonitoring,
-		[switch]$IncreasedExtents,
-		[switch]$TraceFlagsOverride,
-		[object]$StartUpConfig,
-		[switch]$Silent
-        
+            Shows what would happen if you attempted to configure the SQL Instance sql2016 to IncreasedExtents = False (no -E)
+
+        .EXAMPLE
+            Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8032,8048
+
+            This will append Trace Flags 8032 and 8048 to the startup parameters
+
+        .EXAMPLE
+            Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride
+
+            This will remove all trace flags and set SingleUser to false
+
+        .EXAMPLE
+            Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8032,8048 -TraceFlagsOverride
+
+            This will set Trace Flags 8032 and 8048 to the startup parameters, removing any existing Trace Flags
+
+        .EXAMPLE
+            Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride -Offline
+
+            This will remove all trace flags and set SingleUser to false from an offline instance
+
+        .EXAMPLE
+            Set-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\Sql\ -Offline
+
+            This will attempt to change the ErrorLog path to c:\sql\. However, with the offline switch this will not happen. To force it, use the -Force switch like so:
+
+            Set-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\Sql\ -Offline -Force
+
+        .EXAMPLE
+            $StartupConfig = Get-DbaStartupParameter -SqlInstance server1\instance1
+            Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -NoLoggingToWinEvents
+            #Restart your SQL instance with the tool of choice
+            #Do Some work
+            Set-DbaStartupParameter -SqlInstance server1\instance1 -StartUpConfig $StartUpConfig
+            #Restart your SQL instance with the tool of choice and you're back to normal
+
+            In this example we take a copy of the existing startup configuration of server1\instance1
+
+            We then change the startup parameters ahead of some work
+
+            After the work has been completed, we can push the original startup parameters back to server1\instance1 and resume normal operation
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    param ([parameter(Mandatory)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
+        [string]$MasterData,
+        [string]$MasterLog,
+        [string]$ErrorLog,
+        [string[]]$TraceFlags,
+        [switch]$CommandPromptStart,
+        [switch]$MinimalStart,
+        [int]$MemoryToReserve,
+        [switch]$SingleUser,
+        [string]$SingleUserDetails,
+        [switch]$NoLoggingToWinEvents,
+        [switch]$StartAsNamedInstance,
+        [switch]$DisableMonitoring,
+        [switch]$IncreasedExtents,
+        [switch]$TraceFlagsOverride,
+        [object]$StartUpConfig,
+        [switch]$Offline,
+        [switch]$Force,
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
-        try {
-            Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance" -Target $SqlInstance
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+
+        if (-not $Offline) {
+            try {
+                Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance" -Target $SqlInstance
+                $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            }
+            catch {
+                Write-Message -Level Warning -Message "Failed to connect to $SqlInstance, will try to work with just WMI. Path options will be ignored unless Force was indicated"
+                $Server = $SqlInstance
+                $Offline = $true
+            }
         }
-        catch {
-            Stop-Function -Message "Failed to process Instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
-            return
+        else {
+            Write-Message -Level Verbose -Message "Offline switch set, proceeding with just WMI"
+            $Server = $SqlInstance
         }
-        
+
         #Get Current parameters:
         $currentstartup = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential
         $originalparamstring = $currentstartup.ParameterString
-        
+
         Write-Message -Level Output -Message "Original startup parameter string: $originalparamstring"
-        
+
         if ('startUpconfig' -in $PsBoundParameters.keys) {
             Write-Message -Level VeryVerbose -Message "StartupObject passed in"
             $newstartup = $StartUpConfig
@@ -197,44 +232,72 @@ After the work has been completed, we can push the original startup parameters b
                 }
             }
         }
-        
+
         if (!($currentstartup.SingleUser)) {
-            
+
             if ($newstartup.Masterdata.length -gt 0) {
-                if (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterData -Parent)) {
-                    $ParameterString += "-d$($newstartup.MasterData);"
+                if ($Offline -and -not $Force) {
+                    Write-Message -Level Warning -Message "Working offline, skipping untested MasterData path"
+                    $ParameterString += "-d$($CurrentStartup.MasterData);"
+
                 }
                 else {
-                    Stop-Function -Message "Specified folder for Master Data file is not reachable by instance $SqlInstance"
-                    return
+                    if ($Force) {
+                        $ParameterString += "-d$($newstartup.MasterData);"
+                    }
+                    elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterData -Parent)) {
+                        $ParameterString += "-d$($newstartup.MasterData);"
+                    }
+                    else {
+                        Stop-Function -Message "Specified folder for Master Data file is not reachable by instance $SqlInstance"
+                        return
+                    }
                 }
             }
             else {
                 Stop-Function -Message "MasterData value must be provided"
                 return
             }
-            
+
             if ($newstartup.ErrorLog.length -gt 0) {
-                if (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
-                    $ParameterString += "-e$($newstartup.ErrorLog);"
+                if ($Offline -and -not $Force) {
+                    Write-Message -Level Warning -Message "Working offline, skipping untested ErrorLog path"
+                    $ParameterString += "-e$($CurrentStartup.ErrorLog);"
                 }
                 else {
-                    Stop-Function -Message "Specified folder for ErrorLog  file is not reachable by $SqlInstance"
-                    return
+                    if ($Force) {
+                        $ParameterString += "-e$($newstartup.ErrorLog);"
+                    }
+                    elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
+                        $ParameterString += "-e$($newstartup.ErrorLog);"
+                    }
+                    else {
+                        Stop-Function -Message "Specified folder for ErrorLog  file is not reachable by $SqlInstance"
+                        return
+                    }
                 }
             }
             else {
                 Stop-Function -Message "ErrorLog value must be provided"
                 return
             }
-            
+
             if ($newstartup.MasterLog.Length -gt 0) {
-                if (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterLog -Parent)) {
-                    $ParameterString += "-l$($newstartup.MasterLog);"
+                if ($offline -and -not $Force) {
+                    Write-Message -Level Warning -Message "Working offline, skipping untested MasterLog path"
+                    $ParameterString += "-l$($CurrentStartup.MasterLog);"
                 }
                 else {
-                    Stop-Function -Message "Specified folder for Master Log  file is not reachable by $SqlInstance"
-                    return
+                    if ($Force) {
+                        $ParameterString += "-l$($newstartup.MasterLog);"
+                    }
+                    elseif (Test-DbaPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterLog -Parent)) {
+                        $ParameterString += "-l$($newstartup.MasterLog);"
+                    }
+                    else {
+                        Stop-Function -Message "Specified folder for Master Log  file is not reachable by $SqlInstance"
+                        return
+                    }
                 }
             }
             else {
@@ -243,7 +306,7 @@ After the work has been completed, we can push the original startup parameters b
             }
         }
         else {
-            
+
             Write-Message -Level Verbose -Message "Sql instance is presently configured for single user, skipping path validation"
             if ($newstartup.MasterData.Length -gt 0) {
                 $ParameterString += "-d$($newstartup.MasterData);"
@@ -267,7 +330,7 @@ After the work has been completed, we can push the original startup parameters b
                 return
             }
         }
-        
+
         if ($newstartup.CommandPromptStart) {
             $ParameterString += "-c;"
         }
@@ -314,8 +377,7 @@ After the work has been completed, we can push the original startup parameters b
                 if ($null -eq $TraceFlags) { $TraceFlags = '' }
                 $oldflags = @($currentstartup.TraceFlags) -split ',' | Where-Object { $_ -ne 'None' }
                 $newflags = $TraceFlags
-                $newflags = $oldflags + $newflags
-                $newstartup.TraceFlags = ($oldFlags + $newflags | Sort-Object -Unique) -join ','
+                $newstartup.TraceFlags = (@($oldFlags) + @($newflags) | Sort-Object -Unique) -join ','
             }
             elseif ($TraceFlagsOverride) {
                 $newstartup.TraceFlags = ''
@@ -328,25 +390,25 @@ After the work has been completed, we can push the original startup parameters b
                 $ParameterString += (($newstartup.TraceFlags.split(',') | ForEach-Object { "-T$_" }) -join ';') + ";"
             }
         }
-        
+
         $instance = $SqlInstance.ComputerName
         $instancename = $SqlInstance.InstanceName
-        Write-Message -Level Verbose -Message "Attempting to connect to $instancename on $instance"
-        
+        Write-Message -Level Verbose -Message "Connecting to $instancename on $instance"
+
         if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
-        
+
         $displayname = "SQL Server ($instancename)"
-        
+
         if ($originalparamstring -eq "$ParameterString" -or "$originalparamstring;" -eq "$ParameterString") {
             Stop-Function -Message "New parameter string would be the same as the old parameter string. Nothing to do." -Target $ParameterString
             return
         }
-        
+
         $Scriptblock = {
             $instance = $args[0]
             $displayname = $args[1]
             $ParameterString = $args[2]
-            
+
             $wmisvc = $wmi.Services | Where-Object { $_.DisplayName -eq $displayname }
             $wmisvc.StartupParameters = $ParameterString
             $wmisvc.Alter()
@@ -358,22 +420,22 @@ After the work has been completed, we can push the original startup parameters b
                 $false
             }
         }
-        
+
         if ($pscmdlet.ShouldProcess("Setting Sql Server start parameters on $SqlInstance to $ParameterString")) {
             try {
                 if ($Credential) {
-                    $response = Invoke-ManagedComputerCommand -Server $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -Silent
-                    $output = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential -Silent
+                    $response = Invoke-ManagedComputerCommand -ComputerName $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
+                    $output = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential -EnableException
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 }
                 else {
-                    $response = Invoke-ManagedComputerCommand -Server $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -Silent
-                    $output = Get-DbaStartupParameter -SqlInstance $server -Silent
+                    $response = Invoke-ManagedComputerCommand -ComputerName $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
+                    $output = Get-DbaStartupParameter -SqlInstance $server -EnableException
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 }
-                
+
                 $output
-                
+
                 Write-Message -Level Output -Message "Startup parameters changed on $SqlInstance. You must restart SQL Server for changes to take effect."
             }
             catch {

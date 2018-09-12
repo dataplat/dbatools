@@ -1,91 +1,79 @@
-Function Watch-DbaUpdate
-{
-<# 
-.SYNOPSIS 
-Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
+function Watch-DbaUpdate {
+    <#
+        .SYNOPSIS
+            Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once per release.
 
-.DESCRIPTION 
-Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
-	
-Anyone know how to make it clickable so that it opens an URL?
+        .DESCRIPTION
+            Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
 
-.NOTES
-Tags: JustForFun
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+            Anyone know how to make it clickable so that it opens an URL?
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+        .NOTES
+            Tags: JustForFun, Module
+            Author: Chrissy LeMaire (@cl), netnerds.net
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+        .LINK
+            https://dbatools.io/Watch-DbaUpdate
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+        .EXAMPLE
+            Watch-DbaUpdate
 
-.LINK 
-https://dbatools.io/Watch-DbaUpdate
+            Watches the gallery for updates to dbatools.
+    #>
+    [cmdletbinding()]
+    param()
+    process {
+        if (([Environment]::OSVersion).Version.Major -lt 10) {
+            Write-Warning "This command only supports Windows 10 and higher."
+            return
+        }
 
-.EXAMPLE   
-Watch-DbaUpdate
+        if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue)) {
+            Install-DbaWatchUpdate
+        }
 
-Watches the gallery for updates to dbatools.
-#>	
+        # leave this in for the scheduled task
+        $module = Get-Module -Name dbatools
 
-	PROCESS
-	{
-		if (([Environment]::OSVersion).Version.Major -lt 10)
-		{
-			Write-Warning "This command only supports Windows 10 and above"
-			return
-		}
-		
-		if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue))
-		{
-			Install-DbaWatchUpdate
-		}
-		
-		# leave this in for the scheduled task
-		$module = Get-Module -Name dbatools
-		
-		if (!$module)
-		{
-			Import-Module dbatools
-			$module = Get-Module -Name dbatools
-		}
-		
-		$galleryversion = (Find-Module -Name dbatools -Repository PSGallery).Version
-		$localversion = $module.Version
-		
-		if ($galleryversion -le $localversion) { return }
-		
-		$file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
-		
-		$new = [pscustomobject]@{
-			NotifyVersion = $galleryversion
-		}
-		
-		# now that notifications stay until they are checked, we just have to keep
-		# track of the last version we notified about
-		
-		if (Test-Path $file)
-		{
-			$old = Import-Clixml -Path $file -ErrorAction SilentlyContinue
-			
-			if ($galleryversion -gt $old.NotifyVersion)
-			{
-				Export-Clixml -InputObject $new -Path $file
-				Show-Notification
-			}
-		}
-		else
-		{
-			$directory = Split-Path $file
-			
-			if (!(Test-Path $directory))
-			{
-				$null = New-Item -ItemType Directory -Path $directory
-			}
-			
-			Export-Clixml -InputObject $new -Path $file
-			Show-Notification
-		}
-	}
+        if (-not $module) {
+            Import-Module dbatools
+            $module = Get-Module -Name dbatools
+        }
+
+        $galleryVersion = (Find-Module -Name dbatools -Repository PSGallery).Version
+        $localVersion = $module.Version
+
+        if ($galleryVersion -le $localVersion) { return }
+
+        $file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
+
+        $new = [PSCustomObject]@{
+            NotifyVersion = $galleryVersion
+        }
+
+        # now that notifications stay until they are checked, we just have to keep
+        # track of the last version we notified about
+
+        if (Test-Path $file) {
+            $old = Import-Clixml -Path $file -ErrorAction SilentlyContinue
+
+            if ($galleryVersion -gt $old.NotifyVersion) {
+                Export-Clixml -InputObject $new -Path $file
+                Show-Notification -GalleryVersion $galleryVersion
+            }
+        }
+        else {
+            $directory = Split-Path $file
+
+            if (!(Test-Path $directory)) {
+                $null = New-Item -ItemType Directory -Path $directory
+            }
+
+            Export-Clixml -InputObject $new -Path $file
+            Show-Notification -GalleryVersion $galleryVersion
+        }
+    }
 }

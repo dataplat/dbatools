@@ -1,70 +1,66 @@
-Function Update-DbaTools
-{
-<#
-.SYNOPSIS
-Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Update-Dbatools {
+    <#
+        .SYNOPSIS
+            Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
 
-.DESCRIPTION
-Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
+        .DESCRIPTION
+            Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
 
-.PARAMETER Development
-Installs the current development branch of dbatools instead of the latest release.
+        .PARAMETER Development
+            If this switch is enabled, the current development branch will be installed. By default, the latest official release is installed.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+        .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.NOTES 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+        .NOTES
+            Tags: Module
+            Author: Chrissy LeMaire (@cl), netnerds.net
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+        .LINK
+            https://dbatools.io/Update-DbaTools
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+        .EXAMPLE
+            Update-Dbatools
 
-.LINK
-https://dbatools.io/Update-dbatools
+            Updates dbatools. Deletes current copy and replaces it with freshest copy.
 
-.EXAMPLE
-Update-DbaTools
+        .EXAMPLE
+            Update-Dbatools -dev
 
-Updates dbatools. Deletes current copy and replaces it with freshest copy.
-
-.EXAMPLE
-Update-DbaTools -dev
-
-Updates dbatools to the current development branch. Deletes current copy and replaces it with latest from github
-
-#>	
-[CmdletBinding(SupportsShouldProcess=$true,ConfirmImpact="Low")]
-param(
-	[parameter(Mandatory=$false)]
-	[Alias("dev","devbranch")]
-	[switch]$Development
-)
-	$MyModuleBase = (Get-Module -name dbatools).ModuleBase;
-	$InstallScript = join-path -path $MyModuleBase -ChildPath "install.ps1";
-	if($Development) {
-		Write-Verbose "Installing dev/beta channel via $Installscript";
-		if ($PSCmdlet.ShouldProcess("development branch","Updating dbatools")) {
-			& $InstallScript -beta;
-		}
-	}
-	else {
-		Write-Verbose "Installing release version via $Installscript"
-		if ($PSCmdlet.ShouldProcess("release branch","Updating dbatools")) {
-			& $InstallScript;
-		}
-	}
+            Updates dbatools to the current development branch. Deletes current copy and replaces it with latest from github.
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    param(
+        [parameter(Mandatory = $false)]
+        [Alias("dev", "devbranch")]
+        [switch]$Development,
+        [Alias('Silent')]
+        [switch]$EnableException
+    )
+    $MyModuleBase = [SqlCollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase
+    $InstallScript = join-path -path $MyModuleBase -ChildPath "install.ps1";
+    if ($Development) {
+        Write-Message -Level Verbose -Message "Installing dev/beta channel via $Installscript.";
+        if ($PSCmdlet.ShouldProcess("development branch", "Updating dbatools")) {
+            & $InstallScript -beta;
+        }
+    }
+    else {
+        Write-Message -Level Verbose -Message "Installing release version via $Installscript."
+        if ($PSCmdlet.ShouldProcess("release branch", "Updating dbatools")) {
+            & $InstallScript;
+        }
+    }
 }

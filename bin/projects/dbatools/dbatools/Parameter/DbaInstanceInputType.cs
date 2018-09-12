@@ -18,6 +18,26 @@
         /// <summary>
         /// A live smo server object was bound
         /// </summary>
-        Server
+        Server,
+
+        /// <summary>
+        /// A Central Management Server RegisteredServer SMO object was bound
+        /// </summary>
+        RegisteredServer,
+
+        /// <summary>
+        /// An actual connection string was specified. Connection strings are directly reused for SMO connections
+        /// </summary>
+        ConnectionString,
+
+        /// <summary>
+        /// A connection string pointing at a local, file-based DB
+        /// </summary>
+        ConnectionStringLocalDB,
+
+        /// <summary>
+        /// An already established sql connection to was created outside of SMO
+        /// </summary>
+        SqlConnection
     }
 }

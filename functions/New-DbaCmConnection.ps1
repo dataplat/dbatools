@@ -1,4 +1,4 @@
-﻿function New-DbaCmConnection {
+function New-DbaCmConnection {
     <#
         .SYNOPSIS
             Generates a connection object for use in remote computer management.
@@ -59,17 +59,18 @@
             Specify a set of options to use when connecting to the target computer using CIM over DCOM.
             Use 'New-CimSessionOption' to create such an object.
 
-        .PARAMETER Silent
-            Replaces user friendly yellow warnings with bloody red exceptions of doom!
-            Use this if you want the function to throw terminating errors you want to catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: ComputerManagement
-            Original Author: Fred Winmann (@FredWeinmann)
+            Tags: ComputerManagement, CIM
+            Author: Fred Winmann (@FredWeinmann)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/New-DbaCmConnection
@@ -90,7 +91,7 @@
 
             Gathers a list of computers from a text file, then creates and registers connections for each of them, setting them to ...
             - use the credentials stored in $cred
-            - use the opzions stored in $options when connecting using CIM over WinRM
+            - use the options stored in $options when connecting using CIM over WinRM
             - not store credentials that are known to not work
             - to ignore explicitly specified credentials
 
@@ -98,7 +99,7 @@
     #>
     [CmdletBinding(DefaultParameterSetName = 'Credential')]
     param (
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
         [Parameter(ParameterSetName = "Credential")]
@@ -127,14 +128,14 @@
         [Microsoft.Management.Infrastructure.Options.DComSessionOptions]
         $CimDCOMOptions,
         [switch]
-        $Silent
+        [Alias('Silent')]$EnableException
     )
 
     begin {
         Write-Message -Level InternalComment -Message "Starting execution"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
-        $disable_cache = Get-DbaConfigValue -Name 'ComputerManagement.Cache.Disable.All' -Fallback $false
+        $disable_cache = Get-DbatoolsConfigValue -Name 'ComputerManagement.Cache.Disable.All' -Fallback $false
     }
     process {
         foreach ($connectionObject in $ComputerName) {

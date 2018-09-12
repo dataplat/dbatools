@@ -1,24 +1,24 @@
 if (-not (Get-Command -Name Register-ArgumentCompleter -ErrorAction Ignore))
 {
-    
+
     #############################################################################
     #
     # TabExpansionPlusPlus
     #
     #
-    
+
 <#
 Copyright (c) 2013, Jason Shirk
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met: 
+modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer. 
+   list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright notice,
    this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution. 
+   and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -32,17 +32,17 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #>
-    
+
     # Save off the previous tab completion so it can be restored if this module
     # is removed.
     $oldTabExpansion = $function:TabExpansion
     $oldTabExpansion2 = $function:TabExpansion2
-    
+
     [bool]$updatedTypeData = $false
-    
-    
+
+
     #region Exported utility functions for completers
-    
+
     #############################################################################
     #
     # Helper function to create a new completion results
@@ -53,34 +53,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             [ValidateNotNullOrEmpty()]
             [string]
             $CompletionText,
-            
+
             [Parameter(Position = 1, ValueFromPipelineByPropertyName)]
             [string]
             $ToolTip,
-            
+
             [Parameter(Position = 2, ValueFromPipelineByPropertyName)]
             [string]
             $ListItemText,
-            
+
             [System.Management.Automation.CompletionResultType]
             $CompletionResultType = [System.Management.Automation.CompletionResultType]::ParameterValue,
-            
+
             [Parameter(Mandatory = $false)]
             [switch]
             $NoQuotes = $false
         )
-        
+
         process
         {
             $toolTipToUse = if ($ToolTip -eq '') { $CompletionText }
             else { $ToolTip }
             $listItemToUse = if ($ListItemText -eq '') { $CompletionText }
             else { $ListItemText }
-            
+
             # If the caller explicitly requests that quotes
             # not be included, via the -NoQuotes parameter,
             # then skip adding quotes.
-            
+
             if ($CompletionResultType -eq [System.Management.Automation.CompletionResultType]::ParameterValue -and -not $NoQuotes)
             {
                 # Add single quotes for the caller in case they are needed.
@@ -88,7 +88,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 # the argument.  If we end up with too many tokens, or if
                 # the parser found something expandable in the results, we
                 # know quotes are needed.
-                
+
                 $tokens = $null
                 $null = [System.Management.Automation.Language.Parser]::ParseInput("echo $CompletionText", [ref]$tokens, [ref]$null)
                 if ($tokens.Length -ne 3 -or
@@ -101,9 +101,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             return New-Object System.Management.Automation.CompletionResult `
             ($CompletionText, $listItemToUse, $CompletionResultType, $toolTipToUse.Trim())
         }
-        
+
     }
-    
+
     #############################################################################
     #
     # .SYNOPSIS
@@ -119,24 +119,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             [ValidateNotNullOrEmpty()]
             [string[]]
             ${Name},
-            
+
             [Parameter(ParameterSetName = 'CmdletSet', ValueFromPipelineByPropertyName)]
             [string[]]
             ${Verb},
-            
+
             [Parameter(ParameterSetName = 'CmdletSet', ValueFromPipelineByPropertyName)]
             [string[]]
             ${Noun},
-            
+
             [Parameter(ValueFromPipelineByPropertyName)]
             [string[]]
             ${Module},
-            
+
             [ValidateNotNullOrEmpty()]
             [Parameter(Mandatory)]
             [string]
             ${ParameterName})
-        
+
         begin
         {
             $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('Get-Command', [System.Management.Automation.CommandTypes]::Cmdlet)
@@ -153,7 +153,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             $steppablePipeline.End()
         }
     }
-    
+
     #############################################################################
     #
     function Set-CompletionPrivateData
@@ -162,22 +162,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             [ValidateNotNullOrEmpty()]
             [string]
             $Key,
-            
+
             [object]
             $Value,
-            
+
             [ValidateNotNullOrEmpty()]
             [int]
             $ExpirationSeconds = 604800
         )
-        
+
         $Cache = [PSCustomObject]@{
             Value = $Value
             ExpirationTime = (Get-Date).AddSeconds($ExpirationSeconds)
         }
         $completionPrivateData[$key] = $Cache
     }
-    
+
     #############################################################################
     #
     function Get-CompletionPrivateData
@@ -186,34 +186,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             [ValidateNotNullOrEmpty()]
             [string]
             $Key)
-        
+
         if (!$Key)
         { return $completionPrivateData }
-        
+
         $cacheValue = $completionPrivateData[$key]
         if ((Get-Date) -lt $cacheValue.ExpirationTime)
         {
             return $cacheValue.Value
         }
     }
-    
+
     #############################################################################
     #
     function Get-CompletionWithExtension
     {
         param ([string]
             $lastWord,
-            
+
             [string[]]
             $extensions)
-        
+
         [System.Management.Automation.CompletionCompleters]::CompleteFilename($lastWord) |
         Where-Object {
             # Use ListItemText because it won't be quoted, CompletionText might be
             [System.IO.Path]::GetExtension($_.ListItemText) -in $extensions
         }
     }
-    
+
     #############################################################################
     #
     function New-CommandTree
@@ -225,32 +225,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             [ValidateNotNullOrEmpty()]
             [string]
             $Completion,
-            
+
             [Parameter(Position = 1, Mandatory, ParameterSetName = 'Default')]
             [Parameter(Position = 1, Mandatory, ParameterSetName = 'Argument')]
             [string]
             $Tooltip,
-            
+
             [Parameter(ParameterSetName = 'Argument')]
             [switch]
             $Argument,
-            
+
             [Parameter(Position = 2, ParameterSetName = 'Default')]
             [Parameter(Position = 1, ParameterSetName = 'ScriptBlockSet')]
             [scriptblock]
             $SubCommands,
-            
+
             [Parameter(Position = 0, Mandatory, ParameterSetName = 'ScriptBlockSet')]
             [scriptblock]
             $CompletionGenerator
         )
-        
+
         $actualSubCommands = $null
         if ($null -ne $SubCommands)
         {
             $actualSubCommands = [NativeCommandTreeNode[]](& $SubCommands)
         }
-        
+
         switch ($PSCmdlet.ParameterSetName)
         {
             'Default' {
@@ -266,20 +266,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             }
         }
     }
-    
+
     #############################################################################
     #
     function Get-CommandTreeCompletion
     {
         param ($wordToComplete,
-            
+
             $commandAst,
-            
+
             [NativeCommandTreeNode[]]
             $CommandTree)
-        
+
         $commandElements = $commandAst.CommandElements
-        
+
         # Skip the first command element - it's the command name
         # Iterate through the remaining elements, stopping early
         # if we find the element that matches $wordToComplete.
@@ -295,14 +295,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 # though we were in firewall context.
                 continue
             }
-            
+
             if ($commandElements[$i].Value -eq $wordToComplete)
             {
                 $CommandTree = $CommandTree |
                 Where-Object { $_.Command -like "$wordToComplete*" -or $_.CompletionGenerator -ne $null }
                 break
             }
-            
+
             foreach ($subCommand in $CommandTree)
             {
                 if ($subCommand.Command -eq $commandElements[$i].Value)
@@ -315,7 +315,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 }
             }
         }
-        
+
         if ($null -ne $CommandTree)
         {
             $CommandTree | ForEach-Object {
@@ -332,11 +332,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             }
         }
     }
-    
+
     #endregion Exported utility functions for completers
-    
+
     #region Exported functions
-    
+
     #############################################################################
     #
     # .SYNOPSIS
@@ -421,30 +421,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             [Parameter(ParameterSetName = "PowerShellSet")]
             [string[]]
             $CommandName = "",
-            
+
             [Parameter(ParameterSetName = "PowerShellSet", Mandatory)]
             [string]
             $ParameterName = "",
-            
+
             [Parameter(Mandatory)]
             [scriptblock]
             $ScriptBlock,
-            
+
             [string]
             $Description,
-            
+
             [Parameter(ParameterSetName = "NativeSet")]
             [switch]
             $Native)
-        
+
         $fnDefn = $ScriptBlock.Ast -as [System.Management.Automation.Language.FunctionDefinitionAst]
         if (!$Description)
         {
-            # See if the script block is really a function, if so, use the function name.        
+            # See if the script block is really a function, if so, use the function name.
             $Description = if ($fnDefn -ne $null) { $fnDefn.Name }
             else { "" }
         }
-        
+
         if ($MyInvocation.ScriptName -ne (& { $MyInvocation.ScriptName }))
         {
             # Make an unbound copy of the script block so it has access to TabExpansionPlusPlus when invoked.
@@ -459,22 +459,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 $ScriptBlock = $ScriptBlock.Ast.GetScriptBlock() # Don't reparse, just get a new ScriptBlock.
             }
         }
-        
+
         foreach ($command in $CommandName)
         {
             if ($command -and $ParameterName)
             {
                 $command += ":"
             }
-            
+
             $key = if ($Native) { 'NativeArgumentCompleters' }
             else { 'CustomArgumentCompleters' }
             $tabExpansionOptions[$key]["${command}${ParameterName}"] = $ScriptBlock
-            
+
             $tabExpansionDescriptions["${command}${ParameterName}$Native"] = $Description
         }
     }
-    
+
     #############################################################################
     #
     # .SYNOPSIS
@@ -503,34 +503,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             [string]
             $CommandName
              ,
-            
+
             [Parameter(Mandatory, Position = 2, ParameterSetName = 'PS')]
             [string]
             $ParameterName
              ,
-            
+
             [Parameter(ParameterSetName = 'PS')]
             [System.Management.Automation.Language.CommandAst]
             $commandAst
              ,
-            
+
             [Parameter(ParameterSetName = 'PS')]
             [Hashtable]
             $FakeBoundParameters = @{ }
              ,
-            
+
             [Parameter(Mandatory, Position = 1, ParameterSetName = 'NativeCommand')]
             [string]
             $NativeCommand
              ,
-            
+
             [Parameter(Position = 2, ParameterSetName = 'NativeCommand')]
             [Parameter(Position = 3, ParameterSetName = 'PS')]
             [string]
             $WordToComplete = ''
-            
+
         )
-        
+
         if ($PSCmdlet.ParameterSetName -eq 'NativeCommand')
         {
             $Tokens = $null
@@ -555,7 +555,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             & $completer $CommandName $ParameterName $WordToComplete $commandAst $FakeBoundParameters
         }
     }
-    
+
     #############################################################################
     #
     # .SYNOPSIS
@@ -563,7 +563,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     # PowerShell session.
     #
     # .PARAMETER Name
-    # The name of the argument complete to retrieve. This parameter supports 
+    # The name of the argument complete to retrieve. This parameter supports
     # wildcards (asterisk).
     #
     # .EXAMPLE
@@ -573,7 +573,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         [CmdletBinding()]
         param ([string[]]
             $Name = '*')
-        
+
         if (!$updatedTypeData)
         {
             # Define the default display properties for the objects returned by Get-ArgumentCompleter
@@ -581,7 +581,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             Update-TypeData -TypeName 'TabExpansionPlusPlus.ArgumentCompleter' -DefaultDisplayPropertySet $properties -Force
             $updatedTypeData = $true
         }
-        
+
         function WriteCompleters
         {
             function WriteCompleter($command, $parameter, $native, $scriptblock)
@@ -601,15 +601,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             ScriptBlock = $scriptblock
                             File = if ($scriptblock.File) { Split-Path -Leaf -Path $scriptblock.File }
                         }
-                        
+
                         $completer.PSTypeNames.Add('TabExpansionPlusPlus.ArgumentCompleter')
                         Write-Output $completer
-                        
+
                         break
                     }
                 }
             }
-            
+
             foreach ($pair in $tabExpansionOptions.CustomArgumentCompleters.GetEnumerator())
             {
                 if ($pair.Key -match '^(.*):(.*)$')
@@ -622,19 +622,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     $parameter = $pair.Key
                     $command = ""
                 }
-                
+
                 WriteCompleter $command $parameter $false $pair.Value
             }
-            
+
             foreach ($pair in $tabExpansionOptions.NativeArgumentCompleters.GetEnumerator())
             {
                 WriteCompleter $pair.Key '' $true $pair.Value
             }
         }
-        
+
         WriteCompleters | Sort-Object -Property Native, Command, Parameter
     }
-    
+
     #############################################################################
     #
     # .SYNOPSIS
@@ -661,17 +661,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         'AppendBackslash')]
             [string]
             $Option,
-            
+
             [object]
             $Value = $true)
-        
+
         $tabExpansionOptions[$option] = $value
     }
-    
+
     #endregion Exported functions
-    
+
     #region Internal utility functions
-    
+
     #############################################################################
     #
     # This function checks if an attribute argument's name can be completed.
@@ -685,14 +685,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         param (
             [System.Management.Automation.Language.Ast]
             $ast,
-            
+
             [int]
             $offset
         )
-        
+
         $results = @()
         $matchIndex = -1
-        
+
         try
         {
             # We want to find any NamedAttributeArgumentAst objects where the Ast extent includes $offset
@@ -702,12 +702,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 $offset -le $ast.Extent.EndOffset
             }
             $asts = $ast.FindAll($offsetInExtentPredicate, $true)
-            
+
             $attributeType = $null
             $attributeArgumentName = ""
             $replacementIndex = $offset
             $replacementLength = 0
-            
+
             $attributeArg = $asts | Where-Object { $_ -is [System.Management.Automation.Language.NamedAttributeArgumentAst] } | Select-Object -First 1
             if ($null -ne $attributeArg)
             {
@@ -725,7 +725,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     $attributeType = $attributeAst.TypeName.GetReflectionAttributeType()
                 }
             }
-            
+
             if ($null -ne $attributeType)
             {
                 $results = $attributeType.GetProperties('Public,Instance') |
@@ -739,7 +739,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     $propName = $_.Name
                     New-CompletionResult $propName -ToolTip "$propType $propName" -CompletionResultType Property
                 }
-                
+
                 return [PSCustomObject]@{
                     Results = $results
                     ReplacementIndex = $replacementIndex
@@ -749,7 +749,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         }
         catch { }
     }
-    
+
     #############################################################################
     #
     # This function completes native commands options starting with - or --
@@ -761,11 +761,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         param (
             [System.Management.Automation.Language.Ast]
             $ast,
-            
+
             [int]
             $offset
         )
-        
+
         $results = @()
         $replacementIndex = $offset
         $replacementLength = 0
@@ -786,7 +786,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 {
                     $nativeCommand = [System.IO.Path]::GetFileNameWithoutExtension($command.CommandElements[0].Value)
                     $nativeCompleter = $tabExpansionOptions.NativeArgumentCompleters[$nativeCommand]
-                    
+
                     if ($nativeCompleter)
                     {
                         $results = @(& $nativeCompleter $option.ToString() $command)
@@ -800,17 +800,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             }
         }
         catch { }
-        
+
         return [PSCustomObject]@{
             Results = $results
             ReplacementIndex = $replacementIndex
             ReplacementLength = $replacementLength
         }
     }
-    
-    
+
+
     #endregion Internal utility functions
-    
+
     #############################################################################
     #
     # This function is partly a copy of the V3 TabExpansion2, adding a few
@@ -824,29 +824,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             [Parameter(ParameterSetName = 'ScriptInputSet', Mandatory, Position = 0)]
             [string]
             $inputScript,
-            
+
             [Parameter(ParameterSetName = 'ScriptInputSet', Mandatory, Position = 1)]
             [int]
             $cursorColumn,
-            
+
             [Parameter(ParameterSetName = 'AstInputSet', Mandatory, Position = 0)]
             [System.Management.Automation.Language.Ast]
             $ast,
-            
+
             [Parameter(ParameterSetName = 'AstInputSet', Mandatory, Position = 1)]
             [System.Management.Automation.Language.Token[]]
             $tokens,
-            
+
             [Parameter(ParameterSetName = 'AstInputSet', Mandatory, Position = 2)]
             [System.Management.Automation.Language.IScriptPosition]
             $positionOfCursor,
-            
+
             [Parameter(ParameterSetName = 'ScriptInputSet', Position = 2)]
             [Parameter(ParameterSetName = 'AstInputSet', Position = 3)]
             [Hashtable]
             $options = $null
         )
-        
+
         if ($null -ne $options)
         {
             $options += $tabExpansionOptions
@@ -855,7 +855,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         {
             $options = $tabExpansionOptions
         }
-        
+
         if ($psCmdlet.ParameterSetName -eq 'ScriptInputSet')
         {
             $results = [System.Management.Automation.CommandCompletion]::CompleteInput(
@@ -871,7 +871,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <#positionOfCursor#>                $positionOfCursor,
             <#options#>                $options)
         }
-        
+
         if ($results.CompletionMatches.Count -eq 0)
         {
             # Built-in didn't succeed, try our own completions here.
@@ -883,7 +883,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             {
                 $cursorColumn = $positionOfCursor.Offset
             }
-            
+
             # workaround PowerShell bug that case it to not invoking native completers for - or --
             # making it hard to complete options for many commands
             $nativeCommandResults = TryNativeCommandOptionCompletion -ast $ast -offset $cursorColumn
@@ -901,7 +901,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     $results.CompletionMatches.Add($_)
                 }
             }
-            
+
             $attributeResults = TryAttributeArgumentCompletion $ast $cursorColumn
             if ($null -ne $attributeResults)
             {
@@ -918,7 +918,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 }
             }
         }
-        
+
         if ($options.ExcludeHiddenFiles)
         {
             foreach ($result in @($results.CompletionMatches))
@@ -952,11 +952,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     {
                         $lastChar = $completionText[-2]
                     }
-                    
+
                     if ($lastChar -ne '\')
                     {
                         $null = $results.CompletionMatches.Remove($result)
-                        
+
                         if ($lastIsQuote)
                         {
                             $completionText =
@@ -967,7 +967,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         {
                             $completionText = $completionText + '\'
                         }
-                        
+
                         $updatedResult = New-Object System.Management.Automation.CompletionResult `
                         ($completionText, $result.ListItemText, $result.ResultType, $result.ToolTip)
                         $results.CompletionMatches.Add($updatedResult)
@@ -975,7 +975,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 }
             }
         }
-        
+
         if ($results.CompletionMatches.Count -eq 0)
         {
             # No results, if this module has overridden another TabExpansion2 function, call it
@@ -986,16 +986,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 return (& $oldTabExpansion2 @PSBoundParameters)
             }
         }
-        
+
         return $results
     }
-    
-    
+
+
     #############################################################################
     #
     # Main
     #
-    
+
     Add-Type @"
 using System;
 using System.Management.Automation;
@@ -1040,7 +1040,7 @@ public class NativeCommandTreeNode
     public NativeCommandTreeNode[] SubCommands { get; private set; }
 }
 "@
-    
+
     # Custom completions are saved in this hashtable
     $tabExpansionOptions = @{
         CustomArgumentCompleters = @{ }

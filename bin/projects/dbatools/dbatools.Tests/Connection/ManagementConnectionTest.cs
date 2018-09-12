@@ -15,7 +15,7 @@ namespace Sqlcollaborative.Dbatools.Connection
             Assert.IsFalse(mgmtCn.DisableBadCredentialCache);
             Assert.IsFalse(mgmtCn.DisableCimPersistence);
             Assert.IsFalse(mgmtCn.DisableCredentialAutoRegister);
-            Assert.AreEqual(ManagementConnectionType.None, mgmtCn.DisabledConnectionTypes);
+            Assert.AreEqual(ManagementConnectionType.Wmi | ManagementConnectionType.PowerShellRemoting, mgmtCn.DisabledConnectionTypes);
             Assert.IsFalse(mgmtCn.EnableCredentialFailover);
             Assert.IsFalse(mgmtCn.OverrideExplicitCredential);
             Assert.IsFalse(mgmtCn.UseWindowsCredentials);

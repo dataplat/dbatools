@@ -1,0 +1,2070 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  Microsoft.Data.Tools.Schema.SqlTasks.targets.targets
+
+  WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+            created a backup copy.  Incorrect changes to this file will make it
+            impossible to load or build your projects from the command-line or the IDE.
+
+  Copyright (C) Microsoft Corporation. All rights reserved.
+  -->
+
+<Project InitialTargets="CheckRequiredProperties" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  
+  <!--Calculation of the VS install path-->
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '15.0'">
+    <VsIdePath>$(VsInstallRoot)\Common7\IDE</VsIdePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '14.0'">
+    <VsIdePath>$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VisualStudio\14.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\WDExpress\14.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VWDExpress\14.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VisualStudio\14.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\WDExpress\14.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VWDExpress\14.0@InstallDir)</VsIdePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'">
+    <VsIdePath>$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VisualStudio\12.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\WDExpress\12.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VWDExpress\12.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VisualStudio\12.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\WDExpress\12.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VWDExpress\12.0@InstallDir)</VsIdePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '11.0'">
+    <VsIdePath>$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VisualStudio\11.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\WDExpress\11.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VWDExpress\11.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VisualStudio\11.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\WDExpress\11.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VWDExpress\11.0@InstallDir)</VsIdePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VsIdePath)' == ''">
+    <!--VisualStudioVersion is not set.  Check all VS versions starting with the highest-->
+    <VsIdePath>$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VisualStudio\15.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\WDExpress\15.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VWDExpress\15.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VisualStudio\15.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\WDExpress\15.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VWDExpress\15.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VisualStudio\14.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\WDExpress\14.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VWDExpress\14.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VisualStudio\14.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\WDExpress\14.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VWDExpress\14.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VisualStudio\12.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\WDExpress\12.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VWDExpress\12.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VisualStudio\12.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\WDExpress\12.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VWDExpress\12.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VisualStudio\11.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\WDExpress\11.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Microsoft\VWDExpress\11.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VisualStudio\11.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\WDExpress\11.0@InstallDir)</VsIdePath>
+    <VsIdePath Condition=" $(VsIdePath) == ''" >$(Registry:HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\VWDExpress\11.0@InstallDir)</VsIdePath>
+  </PropertyGroup>
+
+  <!--Calculation of the system dac install path-->
+  <PropertyGroup>
+    <ReferencePath Condition="$(SSDTPath) != ''">$(ReferencePath);$(SSDTPath)</ReferencePath>
+    <DacPacRootPath>$(VsIdePath)</DacPacRootPath>
+    <SqlServerRedistPath Condition="'$(SSDTPath)' != ''">$(SSDTPath)</SqlServerRedistPath>
+    <SqlServerRedistPath Condition="'$(SqlServerRedistPath)' == ''">$(VsIdePath)\Extensions\Microsoft\SQLDB\Dac\140</SqlServerRedistPath>
+  </PropertyGroup>
+   <!--
+   Task declarations
+   -->
+  <UsingTask TaskName="SqlBuildTask" AssemblyFile="$(SqlServerRedistPath)\Microsoft.Data.Tools.Schema.Tasks.Sql.dll" />
+  <UsingTask TaskName="SqlDeployTask" AssemblyFile="$(SqlServerRedistPath)\Microsoft.Data.Tools.Schema.Tasks.Sql.dll" />
+  <UsingTask TaskName="SqlModelResolutionTask" AssemblyFile="$(SqlServerRedistPath)\Microsoft.Data.Tools.Schema.Tasks.Sql.dll" />
+  <UsingTask TaskName="SqlPublishTask" AssemblyFile="$(SqlServerRedistPath)\Microsoft.Data.Tools.Schema.Tasks.Sql.dll" />
+  <UsingTask TaskName="SqlScriptDependenciesTask" AssemblyFile="$(SqlServerRedistPath)\Microsoft.Data.Tools.Schema.Tasks.Sql.dll" />
+  <UsingTask TaskName="SqlStaticCodeAnalysisTask" AssemblyFile="$(SqlServerRedistPath)\Microsoft.Data.Tools.Schema.Tasks.Sql.dll" />
+  <UsingTask TaskName="SqlSchemaCompareTask" AssemblyFile="$(SqlServerRedistPath)\Microsoft.Data.Tools.Schema.Tasks.Sql.dll" />
+
+
+  <!--
+   This targets overrides the default behavior in the commons target. This will make the IDE to not automatically run the csc/vb compile task 
+   even when the inputs and outputs are not out of date. This allows incremental build for C# and VB code.
+   -->
+  <Target Name="_ComputeNonExistentFileProperty" />
+
+  <!--
+   Properties that must be set in the main project file (before using this .TARGETS file) can
+   be checked here.  This is also set as the initial target.
+   -->
+  <Target Name="CheckRequiredProperties" />
+
+  <!--
+   Define OutputPath if it is not already defined.  If we don't do this then _CheckForInvalidConfigurationAndPlatform will fail
+   when trying to resolve the path to assemblies
+   -->
+  <PropertyGroup Condition=" '$(OutputPath)' == '' ">
+    <OutputPath>.\bin\Output\</OutputPath>
+  </PropertyGroup>
+
+  <!--
+   Define properties that must be set before importing .Net .targets.
+   -->
+  <PropertyGroup>
+    <AddAdditionalExplicitAssemblyReferences>false</AddAdditionalExplicitAssemblyReferences>
+    <OutputType>Library</OutputType>
+    <TargetExt>.dll</TargetExt>
+    <TargetLanguage Condition="'$(TargetLanguage)' == ''">CS</TargetLanguage>
+    <DefineConstants Condition=" '$(TargetLanguage)' == 'CS' And '$(DefineTrace)' == 'true' And '$(DefineConstants)' != ''">TRACE;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(TargetLanguage)' == 'CS' And '$(DefineTrace)' == 'true' And '$(DefineConstants)' == ''">TRACE</DefineConstants>
+    <DefineConstants Condition=" '$(TargetLanguage)' == 'CS' And '$(DefineDebug)' == 'true' And '$(DefineConstants)' != ''">DEBUG;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(TargetLanguage)' == 'CS' And '$(DefineDebug)' == 'true' And '$(DefineConstants)' == ''">DEBUG</DefineConstants>
+  </PropertyGroup>
+
+  <!--
+   Import the appropriate targets file based on language.
+   -->
+  <Import Condition="'$(TargetLanguage)' == 'CS'" Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Condition="'$(TargetLanguage)' == 'VB'" Project="$(MSBuildBinPath)\Microsoft.VisualBasic.targets" />
+  
+  <PropertyGroup>
+    <SsdtTargetsParentPath>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT</SsdtTargetsParentPath>
+  </PropertyGroup>
+
+  <!--
+   These are the build and deployment contributors to run.  This should be a semi-colon delimited list of 
+   build/deployment contributor ids or full names.
+   -->
+  <PropertyGroup>
+    <BuildContributors>$(BuildContributors);</BuildContributors>
+    <DeploymentContributors>$(DeploymentContributors);</DeploymentContributors>
+  </PropertyGroup>
+
+  <!--
+   These arguments are passed to each build/deployment contributor
+   -->
+  <PropertyGroup>
+    <ContributorArguments>ConfigurationName=$(ConfigurationName);$(ContributorArguments)</ContributorArguments>
+  </PropertyGroup>
+  
+  <!--
+  Conditional import of powertools targets file
+  -->
+  <Import Project="$(SsdtTargetsParentPath)\Microsoft.Data.Tools.Schema.SqlPowerTools.targets" 
+          Condition="Exists('$(SsdtTargetsParentPath)\Microsoft.Data.Tools.Schema.SqlPowerTools.targets')"/>
+
+  <!--
+   This makes the project files a dependency of all targets so that a rebuild occurs if they change
+   -->
+  <PropertyGroup>
+    <MSBuildAllProjects>
+      $(MSBuildAllProjects);
+      $(SsdtTargetsParentPath)\Microsoft.Data.Tools.Schema.SqlTasks.targets
+    </MSBuildAllProjects>
+  </PropertyGroup>
+
+  <!--
+   Defines default options associated with SQL specific targets
+   -->
+  <PropertyGroup>
+    <CacheTargetModel Condition="'$(CacheTargetModel)' == ''">true</CacheTargetModel>
+    <UpdateDatabase  Condition="'$(UpdateDatabase)' == ''">true</UpdateDatabase>
+    <GenerateSqlClrDdl Condition="'$(GenerateSqlClrDdl)' == ''">true</GenerateSqlClrDdl>
+    <ForceDeployment Condition="'$(ForceDeployment)' == ''">true</ForceDeployment>
+    <ValidateCasingOnIdentifiers Condition=" '$(ValidateCasingOnIdentifiers)' == '' ">true</ValidateCasingOnIdentifiers>
+    <DefaultSchema Condition=" '$(DefaultSchema)' == '' ">dbo</DefaultSchema>
+    <GenerateSqlClrSymbols Condition="'$(GenerateSqlClrSymbols)' == ''">true</GenerateSqlClrSymbols>
+    <CmdLineInMemoryStorage Condition="'$(CmdLineInMemoryStorage)' == ''">false</CmdLineInMemoryStorage>
+  </PropertyGroup>
+
+  <!--
+   Defines properties associated with SQL specific targets
+   -->
+  <PropertyGroup>
+    <!-- Required -->
+    <SqlTargetName Condition="'$(SqlTargetName)' == ''">$(MSBuildProjectName)</SqlTargetName>
+    <SqlTargetFile Condition="'$(SqlTargetFile)' == ''">$(SqlTargetName).dacpac</SqlTargetFile>
+    <TargetDatabase Condition="'$(TargetDatabase)' == ''">$(MSBuildProjectName)</TargetDatabase>
+    <DeployScriptFileName Condition="'$(DeployScriptFileName)' == ''">$(SqlTargetName).sql</DeployScriptFileName>
+    <PublishScriptFileName Condition="'$(PublishScriptFileName)' == ''">$(MSBuildProjectName).publish.sql</PublishScriptFileName>
+
+    <!-- Fixed -->
+    <AssemblyAttributesFile>$(BaseIntermediateOutputPath)\_autogenerated_sqldb$(DefaultLanguageSourceExtension)</AssemblyAttributesFile>
+    <CreateScriptFileName>$(SqlTargetName)_Create.sql</CreateScriptFileName>
+
+    <!-- If IntermediateOutputPath is rooted then use it, otherwise append $(ProjectDir) -->
+    <GeneratedFilesIntermediatePath Condition=" $([System.IO.Path]::IsPathRooted($(IntermediateOutputPath))) ">$(IntermediateOutputPath)</GeneratedFilesIntermediatePath>
+    <GeneratedFilesIntermediatePath Condition=" '$(GeneratedFilesIntermediatePath)' == '' ">$(ProjectDir)$(IntermediateOutputPath)</GeneratedFilesIntermediatePath>
+    
+    <IntermediateTargetFullFileName>$(GeneratedFilesIntermediatePath)$(TargetFileName)</IntermediateTargetFullFileName>
+    
+    <!-- Conditional -->
+    <IntermediateSymbolsFullFileName Condition="'$(GenerateSqlClrSymbols)'=='true' and '$(_DebugSymbolsProduced)'=='true' and '$(IntermediateSymbolsFullFileName)'==''">$(GeneratedFilesIntermediatePath)$(TargetName).pdb</IntermediateSymbolsFullFileName>
+
+    <CreateScriptFilePath Condition=" '$(CreateScriptFilePath)' == '' ">$(TargetDir)$(CreateScriptFileName)</CreateScriptFilePath>
+    <DacFilePath Condition=" '$(DacFilePath)' == '' ">$(TargetDir)$(DacTargetFileName)</DacFilePath>
+    <DeployScriptFilePath Condition=" '$(DeployScriptFilePath)' == '' ">$(TargetDir)$(DeployScriptFileName)</DeployScriptFilePath>
+    <PublishScriptFilePath Condition=" '$(PublishScriptFilePath)' == '' ">$(TargetDir)$(PublishScriptFileName)</PublishScriptFilePath>
+    <SqlTargetPath Condition=" '$(SqlTargetPath)' == '' ">$(TargetDir)$(SqlTargetFile)</SqlTargetPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <IntermediateSymbolsPath Include="$(IntermediateSymbolsFullFileName)" />
+    <OutputSymbolsPath Include="@(IntermediateSymbolsPath->'$(TargetDir)%(Filename)%(Extension)')" Condition="'$(_DebugSymbolsProduced)'=='true'"/>
+  </ItemGroup>
+
+  <!--
+   Define DAC specific properties
+   -->
+  <PropertyGroup>
+    <DacApplicationName Condition="'$(DacApplicationName)' == ''">$(SqlTargetName)</DacApplicationName>
+    <DacVersion Condition="'$(DacVersion)' == ''">1.0.0.0</DacVersion>
+    <DacDownlevelVersion>.2.0</DacDownlevelVersion>
+    <DacTargetExtension>.dacpac</DacTargetExtension>
+    <DacTargetFileName>$(SqlTargetName)$(DacDownlevelVersion)$(DacTargetExtension)</DacTargetFileName>
+  </PropertyGroup>
+
+  <!--
+   Defines items associated with SQL specific targets
+   -->
+  <ItemGroup>
+    <DacFile Include="$(DacFilePath)" />
+    <DeployScriptFile Include="$(DeployScriptFilePath)" />
+    <PublishScriptFile Include="$(PublishScriptFilePath)" />
+    <SqlTarget Include="$(SqlTargetPath)" />
+  </ItemGroup>
+
+  <!--
+   Target Definition: All
+   -->
+  <PropertyGroup>
+    <AllDependsOn>
+      Build;
+      Deploy
+    </AllDependsOn>
+  </PropertyGroup>
+
+  <Target Name="All" DependsOnTargets="$(AllDependsOn)" />
+
+  <!--
+   Target Definition: CreateManifestResourceNames
+
+   This overrides an imported target in order to disallow the embedding
+   of .resx resources as part of a .sqlproj.
+   -->
+
+  <Target Name="CreateManifestResourceNames" />
+
+  <!--===========================================================================-->
+  <!-- Build Targets -->
+  <!--===========================================================================-->
+
+  <!--
+   Target Definition: GetSqlTargetPath
+   Dependency Of:     ResolveArtifactReferences
+
+   This stand-alone target returns the path of the sql file produced by the project.
+   -->
+  <Target Name="GetSqlTargetPath" Returns="$(SqlTargetPath)" />
+
+  <!--
+   Target Definition: GetSqlSymbolsPath
+   Dependency Of:     ResolveArtifactReferences
+
+   This stand-alone target returns the path of the symbols file produced by the project.
+   -->
+  <Target Name="GetSqlSymbolsPath" Returns="@(OutputSymbolsPath)" />
+
+  <!--
+   Target Definition: ResolveArtifactReferences
+   Dependency Of:     Build
+                      StaticCodeAnalysis
+
+   Resolve all artifact and resolved project references.
+   -->
+  <Target Name="ResolveArtifactReferences">
+
+    <PropertyGroup>
+      <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">false</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
+    </PropertyGroup>
+
+    <!-- SQLPROJ: Capture sql project reference and copy locally for privat project references -->
+    <MSBuild Condition="'%(Extension)' == '.sqlproj'"
+         Projects="@(ProjectReferenceWithConfiguration)"
+         Targets="GetTargetPath;GetSqlTargetPath"
+         BuildInParallel="$(BuildInParallel)"
+         Properties="%(ProjectReferenceWithConfiguration.SetConfiguration);%(ProjectReferenceWithConfiguration.SetPlatform)"
+         ContinueOnError="!$(BuildingProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="_AllSqlReferenceTargetPath" />
+      <Output TaskParameter="TargetOutputs" ItemName="ReferenceCopyLocalPaths" Condition="'%(ProjectReferenceWithConfiguration.Private)' != 'false'" />
+    </MSBuild>
+
+    <!-- SQLPROJ: Copy symbols for private project reference -->
+    <MSBuild Condition="'%(Extension)' == '.sqlproj' and '%(ProjectReferenceWithConfiguration.Private)' != 'false'"
+         Projects="@(ProjectReferenceWithConfiguration)"
+         Targets="GetSqlSymbolsPath"
+         BuildInParallel="$(BuildInParallel)"
+         Properties="%(ProjectReferenceWithConfiguration.SetConfiguration);%(ProjectReferenceWithConfiguration.SetPlatform)"
+         ContinueOnError="!$(BuildingProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="ReferenceCopyLocalPaths" />
+    </MSBuild>
+
+    <!-- *PROJ: Always capture references for anything other than a .sqlproj reference -->
+    <MSBuild Condition="'%(Extension)' != '.sqlproj'"
+             Projects="@(ProjectReferenceWithConfiguration)"
+             Targets="GetTargetPath"
+             BuildInParallel="$(BuildInParallel)"
+             Properties="%(ProjectReferenceWithConfiguration.SetConfiguration); %(ProjectReferenceWithConfiguration.SetPlatform)"
+             ContinueOnError="!$(BuildingProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="_AllSqlReferenceTargetPath" />
+    </MSBuild>
+
+    <ItemGroup>
+      <SqlReferencePath Include="@(_AllSqlReferenceTargetPath)" Condition="'@(_AllSqlReferenceTargetPath)'!=''"/>
+      <SqlReferencePath Include="@(ReferencePath)" Condition="'@(ReferencePath)'!=''"/>
+      <SqlReferencePath Include="@(ArtifactReference)" Condition="'@(ArtifactReference)'!=''"/>
+      <ReferenceCopyLocalPaths Include="@(ArtifactReference)" Condition="'@(ArtifactReference)'!='' AND '%(ArtifactReference.Private)' != 'false'"/>
+      <SqlCmdVariables Include="@(SqlCmdVariable)" Condition="'@(SqlCmdVariable)'!=''"/>
+    </ItemGroup>
+
+  </Target>
+
+  <!--
+   Target Definition: GenerateSqlTargetFrameworkMoniker
+   Dependency Of:     Build
+
+   Emit an empty code file into a temporary source file in order to satisfy the compiler.
+   -->
+  <PropertyGroup>
+    <GenerateSqlTargetFrameworkMoniker Condition="'$(GenerateSqlTargetFrameworkMoniker)' == ''">true</GenerateSqlTargetFrameworkMoniker>
+    <!-- Clean if GenerateSqlTargetFrameworkMonikerPath is specified... -->
+    <GenerateSqlTargetFrameworkMonikerClean Condition="'$(GenerateSqlTargetFrameworkMonikerClean)' == '' and '$(GenerateSqlTargetFrameworkMonikerPath)' != ''">true</GenerateSqlTargetFrameworkMonikerClean>
+    <!-- ...otherwise, default the path to the temp directory -->
+    <GenerateSqlTargetFrameworkMonikerPath Condition="'$(GenerateSqlTargetFrameworkMonikerPath)' == ''">$([System.IO.Path]::Combine('$([System.IO.Path]::GetTempPath())','$(TargetFrameworkMoniker).SqlClrAttributes$(DefaultLanguageSourceExtension)'))</GenerateSqlTargetFrameworkMonikerPath>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(GenerateSqlTargetFrameworkMonikerClean)' == 'true'">
+    <Clean Include="$(GenerateSqlTargetFrameworkMonikerPath)" />
+  </ItemGroup>
+
+  <Target Name="GenerateSqlTargetFrameworkMoniker"
+          Condition="'$(GenerateSqlTargetFrameworkMoniker)' == 'true'"
+          BeforeTargets="BeforeCompile"
+          DependsOnTargets="PrepareForBuild;GetReferenceAssemblyPaths"
+          Inputs="$(MSBuildToolsPath)\Microsoft.Common.targets"
+          Outputs="$(GenerateSqlTargetFrameworkMonikerPath)">
+
+    <PropertyGroup Condition="'$(TargetLanguage)' == 'CS'">
+      <SqlTargetFrameworkMonikerText Condition="'$(SqlTargetFrameworkMonikerText)' == ''">
+        // &lt;autogenerated /&gt;
+      </SqlTargetFrameworkMonikerText>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TargetLanguage)' == 'VB'">
+      <SqlTargetFrameworkMonikerText Condition="'$(SqlTargetFrameworkMonikerText)' == ''">
+        ''autogenerated
+        Option Strict Off
+        Option Explicit On
+      </SqlTargetFrameworkMonikerText>
+    </PropertyGroup>
+
+    <!--
+     This is a file shared between projects so we have to take care to handle simultaneous
+     writes (by ContinueOnError) and a race between clean from one project and build from another
+     (by not adding to FileWrites so it doesn't clean)
+     -->
+    <WriteLinesToFile Condition="'$(SqlTargetFrameworkMonikerText)' != ''"
+                      ContinueOnError="true"
+                      File="$(GenerateSqlTargetFrameworkMonikerPath)"
+                      Lines="$(SqlTargetFrameworkMonikerText)"
+                      Overwrite="true" />
+
+    <ItemGroup Condition="'$(SqlTargetFrameworkMonikerText)' != ''">
+      <!--
+       Do not put in FileWrites: this is a file shared between projects in %temp%.
+       Cleaning it would create a race between projects during rebuild
+       -->
+      <Compile Include="$(GenerateSqlTargetFrameworkMonikerPath)" />
+    </ItemGroup>
+
+  </Target>
+
+  <!--
+   Target Definition: SqlStudioSourceFilesToCopy
+   Dependency Of:     GetCopyToOutputDirectoryItems
+
+   Integrate the file types in our project system (Build, None, PostDeploy, PreDeploy)
+   with the source files in Microsoft.Common.targets.
+   -->
+  <PropertyGroup>
+    <GetCopyToOutputDirectoryItemsDependsOn>
+      $(GetCopyToOutputDirectoryItemsDependsOn);
+      SqlStudioSourceFilesToCopy
+    </GetCopyToOutputDirectoryItemsDependsOn>
+  </PropertyGroup>
+
+  <Target Name="SqlStudioSourceFilesToCopy">
+
+    <ItemGroup>
+      <_BuildItemsToCopy Include="@(Build)" Condition="'%(Build.CopyToOutputDirectory)'=='Always' or '%(Build.CopyToOutputDirectory)'=='PreserveNewest'"/>
+    </ItemGroup>
+
+    <AssignTargetPath Files="@(_BuildItemsToCopy)" RootFolder="$(MSBuildProjectDirectory)">
+      <Output TaskParameter="AssignedFiles" ItemName="_SqlStudioItemsToCopyWithTargetPath" />
+    </AssignTargetPath>
+
+    <ItemGroup>
+      <_NoneItemsToCopy Include="@(None)" Condition="'%(None.CopyToOutputDirectory)'=='Always' or '%(None.CopyToOutputDirectory)'=='PreserveNewest'"/>
+    </ItemGroup>
+
+    <AssignTargetPath Files="@(_NoneItemsToCopy)" RootFolder="$(MSBuildProjectDirectory)">
+      <Output TaskParameter="AssignedFiles" ItemName="_SqlStudioItemsToCopyWithTargetPath" />
+    </AssignTargetPath>
+
+    <ItemGroup>
+      <_PreDeployItemsToCopy Include="@(PreDeploy)" Condition="'%(PreDeploy.CopyToOutputDirectory)'=='Always' or '%(PreDeploy.CopyToOutputDirectory)'=='PreserveNewest'"/>
+    </ItemGroup>
+
+    <AssignTargetPath Files="@(_PreDeployItemsToCopy)" RootFolder="$(MSBuildProjectDirectory)">
+      <Output TaskParameter="AssignedFiles" ItemName="_SqlStudioItemsToCopyWithTargetPath" />
+    </AssignTargetPath>
+
+    <AssignTargetPath Files="@(_DataMotionScriptItemsToCopy)" RootFolder="$(MSBuildProjectDirectory)">
+      <Output TaskParameter="AssignedFiles" ItemName="_SqlStudioItemsToCopyWithTargetPath" />
+    </AssignTargetPath>
+
+    <ItemGroup>
+      <_PostDeployItemsToCopy Include="@(PostDeploy)" Condition="'%(PostDeploy.CopyToOutputDirectory)'=='Always' or '%(PostDeploy.CopyToOutputDirectory)'=='PreserveNewest'"/>
+    </ItemGroup>
+
+    <AssignTargetPath Files="@(_PostDeployItemsToCopy)" RootFolder="$(MSBuildProjectDirectory)">
+      <Output TaskParameter="AssignedFiles" ItemName="_SqlStudioItemsToCopyWithTargetPath" />
+    </AssignTargetPath>
+
+    <ItemGroup>
+      <_BuildExtensionConfigurationItemsToCopy Include="@(BuildExtensionConfiguration)" Condition="'%(BuildExtensionConfiguration.CopyToOutputDirectory)'=='Always' or '%(BuildExtensionConfiguration.CopyToOutputDirectory)'=='PreserveNewest'"/>
+    </ItemGroup>
+
+    <AssignTargetPath Files="@(_BuildExtensionConfigurationItemsToCopy)" RootFolder="$(MSBuildProjectDirectory)">
+      <Output TaskParameter="AssignedFiles" ItemName="_SqlStudioItemsToCopyWithTargetPath" />
+    </AssignTargetPath>
+
+    <ItemGroup>
+      <_DeploymentExtensionConfigurationItemsToCopy Include="@(DeploymentExtensionConfiguration)" Condition="'%(DeploymentExtensionConfiguration.CopyToOutputDirectory)'=='Always' or '%(DeploymentExtensionConfiguration.CopyToOutputDirectory)'=='PreserveNewest'"/>
+    </ItemGroup>
+
+    <AssignTargetPath Files="@(_DeploymentExtensionConfigurationItemsToCopy)" RootFolder="$(MSBuildProjectDirectory)">
+      <Output TaskParameter="AssignedFiles" ItemName="_SqlStudioItemsToCopyWithTargetPath" />
+    </AssignTargetPath>
+    
+    <ItemGroup>
+      <AllItemsFullPathWithTargetPath Include="@(_SqlStudioItemsToCopyWithTargetPath->'%(FullPath)')" />
+      <_SourceItemsToCopyToOutputDirectoryAlways Include="@(_SqlStudioItemsToCopyWithTargetPath->'%(FullPath)')" Condition="'%(_SqlStudioItemsToCopyWithTargetPath.CopyToOutputDirectory)'=='Always'" />
+      <_SourceItemsToCopyToOutputDirectory Include="@(_SqlStudioItemsToCopyWithTargetPath->'%(FullPath)')" Condition="'%(_SqlStudioItemsToCopyWithTargetPath.CopyToOutputDirectory)'=='PreserveNewest'" />
+    </ItemGroup>
+
+  </Target>
+
+  <!--
+   Target Definition: _SetupSqlBuildInputs.
+   Dependency Of:     SqlBuild
+   
+   Defines the default inputs to the build task as SqlBuildInputItem.  Additional
+   inputs to the build task they should be added to SqlBuildInputItem.
+   -->
+  <Target Name="_SetupSqlBuildInputs" Outputs="@(SqlBuildInputItem)">
+
+    <SqlModelResolutionTask>
+      <Output TaskParameter="Include" ItemName="__SqlBuildInputItem" />
+    </SqlModelResolutionTask>
+
+    <ItemGroup>
+      <__SqlBuildInputItem Include="@(MSBuildAllProjects)"/>
+      <__SqlBuildInputItem Include="@(Build)"/>
+      <__SqlBuildInputItem Include="@(MSBuildProjectFullPath)"/>
+      <__SqlBuildInputItem Include="@(SqlReferencePath)"/>
+      <__SqlBuildInputItem Include="$(MSBuildProjectFullPath).user" Condition="Exists('$(MSBuildProjectFullPath).user')"/>
+      <__SqlBuildInputItem Include="$(IntermediateTargetFullFileName)" Condition="Exists('$(IntermediateTargetFullFileName)')"/>
+      <__SqlBuildInputItem Include="$(IntermediateSymbolsFullFileName)" Condition="Exists('$(IntermediateSymbolsFullFileName)')"/>
+      <__SqlBuildInputItem Include="@(PostDeploy)"/>
+      <__SqlBuildInputItem Include="@(PreDeploy)"/>
+      <__SqlBuildInputItem Include="@(RefactorLog)"/>
+      <__SqlBuildInputItem Include="@(BuildExtensionConfiguration)"/>
+      <__SqlBuildInputItem Include="@(DeploymentExtensionConfiguration)"/>
+    </ItemGroup>
+
+    <SqlScriptDependenciesTask
+      PostdeployItem="@(PostDeploy->'%(FullPath)')"
+      PredeployItem="@(PreDeploy->'%(FullPath)')"
+      BuildExtensionConfiguration="@(BuildExtensionConfiguration)"
+      DeploymentExtensionConfiguration="@(DeploymentExtensionConfiguration)"
+      SqlCmdVariables="@(SqlCmdVariables)">
+
+      <Output TaskParameter="DependentFiles" ItemName="__SqlBuildInputItem" />
+    </SqlScriptDependenciesTask>
+
+    <ItemGroup>
+      <SqlBuildInputItem Include="@(__SqlBuildInputItem->'%(FullPath)')"/>
+    </ItemGroup>
+
+  </Target>
+
+  <!--
+   Target Definition: _SetupSqlBuildOutputs
+   Dependency Of:     SqlBuild
+
+   Defines the default outputs of a database build.  Additional outputs
+   should be added as SqlBuildOutputItem definitions.
+   -->
+  <PropertyGroup>
+    <!-- Specify targets in order to provide additional outputs -->
+    <SetupSqlBuildOutputsDependsOn />
+  </PropertyGroup>
+
+  <Target Name="_SetupSqlBuildOutputs"
+          Outputs="@(SqlBuildOutputItem)"
+          DependsOnTargets="$(SetupSqlBuildOutputsDependsOn)">
+    <ItemGroup>
+      <_SqlBuildOutputItem Include="@(SqlTarget)"/>
+      <_SqlBuildOutputItem Include="@(DacFile)" Condition="$(GenerateDac) == true"/>
+      <_SqlBuildOutputItem Include="@(CreateScriptFilePath)" Condition="$(GenerateCreateScript) == true"/>
+    </ItemGroup>
+    <ItemGroup>
+      <SqlBuildOutputItem Include="@(_SqlBuildOutputItem->'%(FullPath)')"/>
+      <FileWrites Include="@(_SqlBuildOutputItem->'%(FullPath)')"/>
+    </ItemGroup>
+  </Target>
+
+
+  <!--
+   Target Definition: SqlBuild
+   Dependency Of:     Build
+   -->
+  <PropertyGroup>
+    <SqlBuildDependsOn>
+      _SetupSqlBuildInputs;
+      _SetupSqlBuildOutputs;
+    </SqlBuildDependsOn>
+  </PropertyGroup>
+
+  <Target Name="SqlBuild"
+          Inputs="@(SqlBuildInputItem->'%(FullPath)')"
+          Outputs="@(SqlBuildOutputItem)"
+          DependsOnTargets="$(SqlBuildDependsOn)">
+
+	<PropertyGroup>
+		<AutoCreateStatisticsIncremental Condition="'$(AutoCreateStatisticsIncremental)' == ''" >$(AutoUpdateStatisticsIncremental)</AutoCreateStatisticsIncremental>
+	</PropertyGroup>
+
+    <SqlBuildTask
+      PostdeployItem="@(PostDeploy->'%(FullPath)')"
+      PredeployItem="@(PreDeploy->'%(FullPath)')"
+      RefactorLog="@(RefactorLog->'%(FullPath)')"
+      SqlTarget="@(SqlTarget)"
+
+      ContributorArguments="$(ContributorArguments)"
+      
+      BuildExtensionConfiguration="@(BuildExtensionConfiguration)"
+      BuildContributors="$(BuildContributors)"
+      DeploymentExtensionConfiguration="@(DeploymentExtensionConfiguration)"
+      DeploymentContributors="$(DeploymentContributors)"
+      
+      ConnectionString="$(TargetConnectionString)"
+      CreateScriptFileName="$(CreateScriptFileName)"
+      DacApplicationName="$(DacApplicationName)"
+      DacDescription="$(DacDescription)"
+      DacFile="@(DacFile)"
+      DacVersion="$(DacVersion)"
+      DatabaseName="$(TargetDatabase)"
+      DatabaseSchemaProviderName="$(DSP)"
+      DefaultSchema="$(DefaultSchema)"
+      DeploymentScriptName="$(DeployScriptFileName)"
+      DeployToDatabase="$(UpdateDatabase)"
+      GenerateCreateScript="$(GenerateCreateScript)"
+      GenerateDac="$(GenerateDac)"
+      ImplicitDllAssemblyName="$(AssemblyName)"
+      ImplicitDllAssemblyOwner="$(AssemblyOwner)"
+      ImplicitDllFileName="$(IntermediateTargetFullFileName)"
+      ImplicitDllSymbolsFileName="$(IntermediateSymbolsFullFileName)"
+      ImplicitDllGenerateSqlClrDdl="$(GenerateSqlClrDdl)"
+      ImplicitDllIsVisible="$(IsVisible)"
+      ImplicitDllPermissionSet="$(PermissionSet)"
+      IntermediateDirectory="$(GeneratedFilesIntermediatePath)"
+      ModelCollation="$(ModelCollation)"
+      OutputDirectory="$(TargetDir)"
+      PreserveHeaderComments="$(PreserveHeaderComments)"
+      Source="@(Build->'%(FullPath)')"
+      SqlCmdVariables="@(SqlCmdVariables)"
+      SqlReferencePath="@(SqlReferencePath)"
+      SuppressTSqlWarnings="$(SuppressTSqlWarnings)"
+      TreatTSqlWarningsAsErrors="$(TreatTSqlWarningsAsErrors)"
+      ValidateCasingOnIdentifiers="$(ValidateCasingOnIdentifiers)"
+      CmdLineInMemoryStorage="$(CmdLineInMemoryStorage)"
+      DefaultCollation="$(DefaultCollation)"
+      AnsiNullDefault="$(AnsiNullDefault)"
+      AnsiNulls="$(AnsiNulls)"
+      AnsiPadding="$(AnsiPadding)"
+      AnsiWarnings="$(AnsiWarnings)"
+      ArithAbort="$(ArithAbort)"
+      ConcatNullYieldsNull="$(ConcatNullYieldsNull)"
+      QuotedIdentifier="$(QuotedIdentifier)"
+      NumericRoundAbort="$(NumericRoundAbort)"
+      RecursiveTriggersEnabled="$(RecursiveTriggersEnabled)"
+      DatabaseChaining="$(DatabaseChaining)"
+      DatabaseState="$(DatabaseState)"
+      UpdateOptions="$(UpdateOptions)"
+      CloseCursorOnCommitEnabled="$(CloseCursorOnCommitEnabled)"
+      DefaultCursor="$(DefaultCursor)"
+      AutoClose="$(AutoClose)"
+      AutoCreateStatistics="$(AutoCreateStatistics)"
+      AutoShrink="$(AutoShrink)"
+      AutoUpdateStatistics="$(AutoUpdateStatistics)"
+      TornPageDetection="$(TornPageDetection)"
+      DatabaseAccess="$(DatabaseAccess)"
+      Recovery="$(Recovery)"
+      EnableFullTextSearch="$(EnableFullTextSearch)"
+      DefaultFilegroup="$(DefaultFilegroup)"
+      Trustworthy="$(Trustworthy)"
+      AutoUpdateStatisticsAsynchronously="$(AutoUpdateStatisticsAsynchronously)"
+      PageVerify="$(PageVerify)"
+      ServiceBrokerOption="$(ServiceBrokerOption)"
+      DateCorrelationOptimizationOn="$(DateCorrelationOptimizationOn)"
+      Parameterization="$(Parameterization)"
+      AllowSnapshotIsolation="$(AllowSnapshotIsolation)"
+      ReadCommittedSnapshot="$(ReadCommittedSnapshot)"
+      VardecimalStorageFormatOn="$(VardecimalStorageFormatOn)"
+      SupplementalLoggingOn="$(SupplementalLoggingOn)"
+      CompatibilityMode="$(CompatibilityMode)"
+      DefaultFileStreamFilegroup="$(DefaultFileStreamFilegroup)"
+      IsChangeTrackingOn="$(IsChangeTrackingOn)"
+      IsChangeTrackingAutoCleanupOn="$(IsChangeTrackingAutoCleanupOn)"
+      ChangeTrackingRetentionPeriod="$(ChangeTrackingRetentionPeriod)"
+      ChangeTrackingRetentionUnit="$(ChangeTrackingRetentionUnit)"
+      IsEncryptionOn="$(IsEncryptionOn)"
+      IsBrokerPriorityHonored="$(IsBrokerPriorityHonored)"
+      Containment="$(Containment)"
+      DatabaseDefaultLanguage="$(DatabaseDefaultLanguage)"
+      DatabaseDefaultFulltextLanguage="$(DatabaseDefaultFulltextLanguage)"
+      IsNestedTriggersOn="$(IsNestedTriggersOn)"
+      IsTransformNoiseWordsOn="$(IsTransformNoiseWordsOn)"
+      TwoDigitYearCutoff="$(TwoDigitYearCutoff)"
+      NonTransactedFileStreamAccess="$(NonTransactedFileStreamAccess)"
+      FileStreamDirectoryName="$(FileStreamDirectoryName)"
+      TargetRecoveryTimePeriod="$(TargetRecoveryTimePeriod)"
+      TargetRecoveryTimeUnit="$(TargetRecoveryTimeUnit)"
+      DelayedDurability="$(DelayedDurability)"
+      AutoCreateStatisticsIncremental="$(AutoCreateStatisticsIncremental)"
+      MemoryOptimizedElevateToSnapshot="$(MemoryOptimizedElevateToSnapshot)"
+      QueryStoreCaptureMode="$(QueryStoreCaptureMode)"
+      QueryStoreDesiredState="$(QueryStoreDesiredState)"
+      QueryStoreFlushInterval="$(QueryStoreFlushInterval)"
+      QueryStoreStatsInterval="$(QueryStoreStatsInterval)"
+      QueryStoreMaxPlansPerQuery="$(QueryStoreMaxPlansPerQuery)"
+      QueryStoreStaleQueryThreshold="$(QueryStoreStaleQueryThreshold)"
+      QueryStoreMaxStorageSize="$(QueryStoreMaxStorageSize)"
+      DbScopedConfigLegacyCardinalityEstimation="$(DbScopedConfigLegacyCardinalityEstimation)"
+      DbScopedConfigLegacyCardinalityEstimationSecondary="$(DbScopedConfigLegacyCardinalityEstimationSecondary)"
+      DbScopedConfigMaxDOP="$(DbScopedConfigMaxDOP)"
+      DbScopedConfigMaxDOPSecondary="$(DbScopedConfigMaxDOPSecondary)"
+      DbScopedConfigParameterSniffing="$(DbScopedConfigParameterSniffing)"
+      DbScopedConfigParameterSniffingSecondary="$(DbScopedConfigParameterSniffingSecondary)"
+      DbScopedConfigOptimizerHotfixes="$(DbScopedConfigOptimizerHotfixes)"
+      DbScopedConfigOptimizerHotfixesSecondary="$(DbScopedConfigOptimizerHotfixesSecondary)"
+      TemporalHistoryRetentionEnabled="$(TemporalHistoryRetentionEnabled)"
+      AdditionalDeploymentContributorArguments="$(AdditionalDeploymentContributorArguments)"
+      AdditionalDeploymentContributors="$(AdditionalDeploymentContributors)"
+      AllowDropBlockingAssemblies="$(AllowDropBlockingAssemblies)"
+      AllowIncompatiblePlatform="$(AllowIncompatiblePlatform)"
+      AllowUnsafeRowLevelSecurityDataMovement="$(AllowUnsafeRowLevelSecurityDataMovement)"
+      BackupDatabaseBeforeChanges="$(BackupDatabaseBeforeChanges)"
+      BlockOnPossibleDataLoss="$(BlockOnPossibleDataLoss)"
+      BlockWhenDriftDetected="$(BlockWhenDriftDetected)"
+      CommentOutSetVarDeclarations="$(CommentOutSetVarDeclarations)"
+      CompareUsingTargetCollation="$(CompareUsingTargetCollation)"
+      CreateNewDatabase="$(CreateNewDatabase)"
+      DeployDatabaseInSingleUserMode="$(DeployDatabaseInSingleUserMode)"
+      DisableAndReenableDdlTriggers="$(DisableAndReenableDdlTriggers)"
+      DoNotAlterChangeDataCaptureObjects="$(DoNotAlterChangeDataCaptureObjects)"
+      DoNotAlterReplicatedObjects="$(DoNotAlterReplicatedObjects)"
+      DoNotDropAggregates="$(DoNotDropAggregates)"
+      DoNotDropApplicationRoles="$(DoNotDropApplicationRoles)"
+      DoNotDropAssemblies="$(DoNotDropAssemblies)"
+      DoNotDropAsymmetricKeys="$(DoNotDropAsymmetricKeys)"
+      DoNotDropAudits="$(DoNotDropAudits)"
+      DoNotDropBrokerPriorities="$(DoNotDropBrokerPriorities)"
+      DoNotDropCertificates="$(DoNotDropCertificates)"
+      DoNotDropClrUserDefinedTypes="$(DoNotDropClrUserDefinedTypes)"
+      DoNotDropColumnEncryptionKeys="$(DoNotDropColumnEncryptionKeys)"
+      DoNotDropColumnMasterKeys="$(DoNotDropColumnMasterKeys)"
+      DoNotDropContracts="$(DoNotDropContracts)"
+      DoNotDropCredentials="$(DoNotDropCredentials)"
+      DoNotDropCryptographicProviders="$(DoNotDropCryptographicProviders)"
+      DoNotDropDatabaseAuditSpecifications="$(DoNotDropDatabaseAuditSpecifications)"
+      DoNotDropDatabaseRoles="$(DoNotDropDatabaseRoles)"
+      DoNotDropDatabaseScopedCredentials="$(DoNotDropDatabaseScopedCredentials)"
+      DoNotDropDatabaseTriggers="$(DoNotDropDatabaseTriggers)"
+      DoNotDropDefaults="$(DoNotDropDefaults)"
+      DoNotDropEndpoints="$(DoNotDropEndpoints)"
+      DoNotDropErrorMessages="$(DoNotDropErrorMessages)"
+      DoNotDropEventNotifications="$(DoNotDropEventNotifications)"
+      DoNotDropEventSessions="$(DoNotDropEventSessions)"
+      DoNotDropExtendedProperties="$(DoNotDropExtendedProperties)"
+      DoNotDropExternalDataSources="$(DoNotDropExternalDataSources)"
+      DoNotDropExternalFileFormats="$(DoNotDropExternalFileFormats)"
+      DoNotDropExternalTables="$(DoNotDropExternalTables)"
+      DoNotDropFilegroups="$(DoNotDropFilegroups)"
+      DoNotDropFileTables="$(DoNotDropFileTables)"
+      DoNotDropFullTextCatalogs="$(DoNotDropFullTextCatalogs)"
+      DoNotDropFullTextStoplists="$(DoNotDropFullTextStoplists)"
+      DoNotDropLinkedServerLogins="$(DoNotDropLinkedServerLogins)"
+      DoNotDropLinkedServers="$(DoNotDropLinkedServers)"
+      DoNotDropLogins="$(DoNotDropLogins)"
+      DoNotDropMessageTypes="$(DoNotDropMessageTypes)"
+      DoNotDropPartitionFunctions="$(DoNotDropPartitionFunctions)"
+      DoNotDropPartitionSchemes="$(DoNotDropPartitionSchemes)"
+      DoNotDropPermissions="$(DoNotDropPermissions)"
+      DoNotDropQueues="$(DoNotDropQueues)"
+      DoNotDropRemoteServiceBindings="$(DoNotDropRemoteServiceBindings)"
+      DoNotDropRoleMembership="$(DoNotDropRoleMembership)"
+      DoNotDropRoutes="$(DoNotDropRoutes)"
+      DoNotDropRules="$(DoNotDropRules)"
+      DoNotDropScalarValuedFunctions="$(DoNotDropScalarValuedFunctions)"
+      DoNotDropSearchPropertyLists="$(DoNotDropSearchPropertyLists)"
+      DoNotDropSecurityPolicies="$(DoNotDropSecurityPolicies)"
+      DoNotDropSequences="$(DoNotDropSequences)"
+      DoNotDropServerAuditSpecifications="$(DoNotDropServerAuditSpecifications)"
+      DoNotDropServerRoleMembership="$(DoNotDropServerRoleMembership)"
+      DoNotDropServerRoles="$(DoNotDropServerRoles)"
+      DoNotDropServerTriggers="$(DoNotDropServerTriggers)"
+      DoNotDropServices="$(DoNotDropServices)"
+      DoNotDropSignatures="$(DoNotDropSignatures)"
+      DoNotDropStoredProcedures="$(DoNotDropStoredProcedures)"
+      DoNotDropSymmetricKeys="$(DoNotDropSymmetricKeys)"
+      DoNotDropSynonyms="$(DoNotDropSynonyms)"
+      DoNotDropTables="$(DoNotDropTables)"
+      DoNotDropTableValuedFunctions="$(DoNotDropTableValuedFunctions)"
+      DoNotDropUserDefinedDataTypes="$(DoNotDropUserDefinedDataTypes)"
+      DoNotDropUserDefinedTableTypes="$(DoNotDropUserDefinedTableTypes)"
+      DoNotDropUsers="$(DoNotDropUsers)"
+      DoNotDropViews="$(DoNotDropViews)"
+      DoNotDropXmlSchemaCollections="$(DoNotDropXmlSchemaCollections)"
+      DropConstraintsNotInSource="$(DropConstraintsNotInSource)"
+      DropDmlTriggersNotInSource="$(DropDmlTriggersNotInSource)"
+      DropExtendedPropertiesNotInSource="$(DropExtendedPropertiesNotInSource)"
+      DropIndexesNotInSource="$(DropIndexesNotInSource)"
+      DropObjectsNotInSource="$(DropObjectsNotInSource)"
+      DropPermissionsNotInSource="$(DropPermissionsNotInSource)"
+      DropRoleMembersNotInSource="$(DropRoleMembersNotInSource)"
+      DropStatisticsNotInSource="$(DropStatisticsNotInSource)"
+      ExcludeAggregates="$(ExcludeAggregates)"
+      ExcludeApplicationRoles="$(ExcludeApplicationRoles)"
+      ExcludeAssemblies="$(ExcludeAssemblies)"
+      ExcludeAsymmetricKeys="$(ExcludeAsymmetricKeys)"
+      ExcludeAudits="$(ExcludeAudits)"
+      ExcludeBrokerPriorities="$(ExcludeBrokerPriorities)"
+      ExcludeCertificates="$(ExcludeCertificates)"
+      ExcludeClrUserDefinedTypes="$(ExcludeClrUserDefinedTypes)"
+      ExcludeColumnEncryptionKeys="$(ExcludeColumnEncryptionKeys)"
+      ExcludeColumnMasterKeys="$(ExcludeColumnMasterKeys)"
+      ExcludeContracts="$(ExcludeContracts)"
+      ExcludeCredentials="$(ExcludeCredentials)"
+      ExcludeCryptographicProviders="$(ExcludeCryptographicProviders)"
+      ExcludeDatabaseAuditSpecifications="$(ExcludeDatabaseAuditSpecifications)"
+      ExcludeDatabaseRoles="$(ExcludeDatabaseRoles)"
+      ExcludeDatabaseScopedCredentials="$(ExcludeDatabaseScopedCredentials)"
+      ExcludeDatabaseTriggers="$(ExcludeDatabaseTriggers)"
+      ExcludeDefaults="$(ExcludeDefaults)"
+      ExcludeEndpoints="$(ExcludeEndpoints)"
+      ExcludeErrorMessages="$(ExcludeErrorMessages)"
+      ExcludeEventNotifications="$(ExcludeEventNotifications)"
+      ExcludeEventSessions="$(ExcludeEventSessions)"
+      ExcludeExternalDataSources="$(ExcludeExternalDataSources)"
+      ExcludeExternalFileFormats="$(ExcludeExternalFileFormats)"
+      ExcludeExternalTables="$(ExcludeExternalTables)"
+      ExcludeFilegroups="$(ExcludeFilegroups)"
+      ExcludeFileTables="$(ExcludeFileTables)"
+      ExcludeFullTextCatalogs="$(ExcludeFullTextCatalogs)"
+      ExcludeFullTextStoplists="$(ExcludeFullTextStoplists)"
+      ExcludeLinkedServerLogins="$(ExcludeLinkedServerLogins)"
+      ExcludeLinkedServers="$(ExcludeLinkedServers)"
+      ExcludeLogins="$(ExcludeLogins)"
+      ExcludeMessageTypes="$(ExcludeMessageTypes)"
+      ExcludePartitionFunctions="$(ExcludePartitionFunctions)"
+      ExcludePartitionSchemes="$(ExcludePartitionSchemes)"
+      ExcludeQueues="$(ExcludeQueues)"
+      ExcludeRemoteServiceBindings="$(ExcludeRemoteServiceBindings)"
+      ExcludeRoutes="$(ExcludeRoutes)"
+      ExcludeRules="$(ExcludeRules)"
+      ExcludeScalarValuedFunctions="$(ExcludeScalarValuedFunctions)"
+      ExcludeSearchPropertyLists="$(ExcludeSearchPropertyLists)"
+      ExcludeSecurityPolicies="$(ExcludeSecurityPolicies)"
+      ExcludeSequences="$(ExcludeSequences)"
+      ExcludeServerAuditSpecifications="$(ExcludeServerAuditSpecifications)"
+      ExcludeServerRoleMembership="$(ExcludeServerRoleMembership)"
+      ExcludeServerRoles="$(ExcludeServerRoles)"
+      ExcludeServerTriggers="$(ExcludeServerTriggers)"
+      ExcludeServices="$(ExcludeServices)"
+      ExcludeSignatures="$(ExcludeSignatures)"
+      ExcludeStoredProcedures="$(ExcludeStoredProcedures)"
+      ExcludeSymmetricKeys="$(ExcludeSymmetricKeys)"
+      ExcludeSynonyms="$(ExcludeSynonyms)"
+      ExcludeTables="$(ExcludeTables)"
+      ExcludeTableValuedFunctions="$(ExcludeTableValuedFunctions)"
+      ExcludeUserDefinedDataTypes="$(ExcludeUserDefinedDataTypes)"
+      ExcludeUserDefinedTableTypes="$(ExcludeUserDefinedTableTypes)"
+      ExcludeUsers="$(ExcludeUsers)"
+      ExcludeViews="$(ExcludeViews)"
+      ExcludeXmlSchemaCollections="$(ExcludeXmlSchemaCollections)"
+      GenerateSmartDefaults="$(GenerateSmartDefaults)"
+      IgnoreAnsiNulls="$(IgnoreAnsiNulls)"
+      IgnoreAuthorizer="$(IgnoreAuthorizer)"
+      IgnoreColumnCollation="$(IgnoreColumnCollation)"
+      IgnoreColumnOrder="$(IgnoreColumnOrder)"
+      IgnoreComments="$(IgnoreComments)"
+      IgnoreCryptographicProviderFilePath="$(IgnoreCryptographicProviderFilePath)"
+      IgnoreDdlTriggerOrder="$(IgnoreDdlTriggerOrder)"
+      IgnoreDdlTriggerState="$(IgnoreDdlTriggerState)"
+      IgnoreDefaultSchema="$(IgnoreDefaultSchema)"
+      IgnoreDmlTriggerOrder="$(IgnoreDmlTriggerOrder)"
+      IgnoreDmlTriggerState="$(IgnoreDmlTriggerState)"
+      IgnoreExtendedProperties="$(IgnoreExtendedProperties)"
+      IgnoreFileAndLogFilePath="$(IgnoreFileAndLogFilePath)"
+      IgnoreFilegroupPlacement="$(IgnoreFilegroupPlacement)"
+      IgnoreFileSize="$(IgnoreFileSize)"
+      IgnoreFillFactor="$(IgnoreFillFactor)"
+      IgnoreFullTextCatalogFilePath="$(IgnoreFullTextCatalogFilePath)"
+      IgnoreIdentitySeed="$(IgnoreIdentitySeed)"
+      IgnoreIncrement="$(IgnoreIncrement)"
+      IgnoreIndexOptions="$(IgnoreIndexOptions)"
+      IgnoreIndexPadding="$(IgnoreIndexPadding)"
+      IgnoreKeywordCasing="$(IgnoreKeywordCasing)"
+      IgnoreLockHintsOnIndexes="$(IgnoreLockHintsOnIndexes)"
+      IgnoreLoginSids="$(IgnoreLoginSids)"
+      IgnoreNotForReplication="$(IgnoreNotForReplication)"
+      IgnoreObjectPlacementOnPartitionScheme="$(IgnoreObjectPlacementOnPartitionScheme)"
+      IgnorePartitionSchemes="$(IgnorePartitionSchemes)"
+      IgnorePermissions="$(IgnorePermissions)"
+      IgnoreQuotedIdentifiers="$(IgnoreQuotedIdentifiers)"
+      IgnoreRoleMembership="$(IgnoreRoleMembership)"
+      IgnoreRouteLifetime="$(IgnoreRouteLifetime)"
+      IgnoreSemicolonBetweenStatements="$(IgnoreSemicolonBetweenStatements)"
+      IgnoreTableOptions="$(IgnoreTableOptions)"
+      IgnoreUserSettingsObjects="$(IgnoreUserSettingsObjects)"
+      IgnoreWhitespace="$(IgnoreWhitespace)"
+      IgnoreWithNocheckOnCheckConstraints="$(IgnoreWithNocheckOnCheckConstraints)"
+      IgnoreWithNocheckOnForeignKeys="$(IgnoreWithNocheckOnForeignKeys)"
+      IncludeCompositeObjects="$(IncludeCompositeObjects)"
+      IncludeTransactionalScripts="$(IncludeTransactionalScripts)"
+      NoAlterStatementsToChangeCLRTypes="$(NoAlterStatementsToChangeCLRTypes)"
+      PopulateFilesOnFileGroups="$(PopulateFilesOnFileGroups)"
+      RegisterDataTierApplication="$(RegisterDataTierApplication)"
+      ScriptDatabaseCollation="$(ScriptDatabaseCollation)"
+      ScriptDatabaseCompatibility="$(ScriptDatabaseCompatibility)"
+      ScriptDatabaseOptions="$(ScriptDatabaseOptions)"
+      ScriptDeployStateChecks="$(ScriptDeployStateChecks)"
+      ScriptFileSize="$(ScriptFileSize)"
+      ScriptNewConstraintValidation="$(ScriptNewConstraintValidation)"
+      ScriptRefreshModule="$(ScriptRefreshModule)"
+      TargetDatabaseName="$(TargetDatabaseName)"
+      TreatVerificationErrorsAsWarnings="$(TreatVerificationErrorsAsWarnings)"
+      UnmodifiableObjectWarnings="$(UnmodifiableObjectWarnings)"
+      VerifyCollationCompatibility="$(VerifyCollationCompatibility)"
+      VerifyDeployment="$(VerifyDeployment)"
+      >
+      <Output TaskParameter="IntermediateFileWrites" ItemName="FileWrites"/>
+    </SqlBuildTask>
+
+  </Target>
+
+  <!--
+   Target Definition: SqlSchemaCompare
+    -->
+  
+    <Target Name="SqlSchemaCompare">
+    <SqlSchemaCompareTask 
+      SqlScmpFilePath="$(SqlScmpFilePath)"
+      XmlOutput="$(XmlOutput)"
+      XsdPath="$(XsdPath)"
+      Source="$(Source)"
+      Target="$(Target)"
+      TextOutput="$(TextOutput)"
+      SelectedObjectsFilePath="$(SelectedObjectsFilePath)"
+      Deploy="$(Deploy)"
+      OnlyTopLevelItems="$(OnlyTopLevelItem)"
+      GroupBy ="$(GroupBy)"
+      ShowEqualObjects="$(ShowEqualObjects)" 
+      ShowUndeployableObjects ="$(ShowUndeployableObjects)"
+      Timeout ="$(Timeout)"
+      ExcludedTypes ="$(ExcludedTypes)"
+      OutputInclusionState = "$(OutputInclusionState)"
+      OutputOrdering = "$(OutputOrdering)"
+      OutputRefactoring ="$(OutputRefactoring)"
+      IgnorePropertyFileNameValue ="$(IgnorePropertyFileNameValue)"
+      AdditionalDeploymentContributorArguments="$(AdditionalDeploymentContributorArguments)"
+      AdditionalDeploymentContributors="$(AdditionalDeploymentContributors)"
+      AllowDropBlockingAssemblies="$(AllowDropBlockingAssemblies)"
+      AllowIncompatiblePlatform="$(AllowIncompatiblePlatform)"
+      AllowUnsafeRowLevelSecurityDataMovement="$(AllowUnsafeRowLevelSecurityDataMovement)"
+      BackupDatabaseBeforeChanges="$(BackupDatabaseBeforeChanges)"
+      BlockOnPossibleDataLoss="$(BlockOnPossibleDataLoss)"
+      BlockWhenDriftDetected="$(BlockWhenDriftDetected)"
+      CommentOutSetVarDeclarations="$(CommentOutSetVarDeclarations)"
+      CompareUsingTargetCollation="$(CompareUsingTargetCollation)"
+      CreateNewDatabase="$(CreateNewDatabase)"
+      DeployDatabaseInSingleUserMode="$(DeployDatabaseInSingleUserMode)"
+      DisableAndReenableDdlTriggers="$(DisableAndReenableDdlTriggers)"
+      DoNotAlterChangeDataCaptureObjects="$(DoNotAlterChangeDataCaptureObjects)"
+      DoNotAlterReplicatedObjects="$(DoNotAlterReplicatedObjects)"
+      DoNotDropAggregates="$(DoNotDropAggregates)"
+      DoNotDropApplicationRoles="$(DoNotDropApplicationRoles)"
+      DoNotDropAssemblies="$(DoNotDropAssemblies)"
+      DoNotDropAsymmetricKeys="$(DoNotDropAsymmetricKeys)"
+      DoNotDropAudits="$(DoNotDropAudits)"
+      DoNotDropBrokerPriorities="$(DoNotDropBrokerPriorities)"
+      DoNotDropCertificates="$(DoNotDropCertificates)"
+      DoNotDropClrUserDefinedTypes="$(DoNotDropClrUserDefinedTypes)"
+      DoNotDropColumnEncryptionKeys="$(DoNotDropColumnEncryptionKeys)"
+      DoNotDropColumnMasterKeys="$(DoNotDropColumnMasterKeys)"
+      DoNotDropContracts="$(DoNotDropContracts)"
+      DoNotDropCredentials="$(DoNotDropCredentials)"
+      DoNotDropCryptographicProviders="$(DoNotDropCryptographicProviders)"
+      DoNotDropDatabaseAuditSpecifications="$(DoNotDropDatabaseAuditSpecifications)"
+      DoNotDropDatabaseRoles="$(DoNotDropDatabaseRoles)"
+      DoNotDropDatabaseScopedCredentials="$(DoNotDropDatabaseScopedCredentials)"
+      DoNotDropDatabaseTriggers="$(DoNotDropDatabaseTriggers)"
+      DoNotDropDefaults="$(DoNotDropDefaults)"
+      DoNotDropEndpoints="$(DoNotDropEndpoints)"
+      DoNotDropErrorMessages="$(DoNotDropErrorMessages)"
+      DoNotDropEventNotifications="$(DoNotDropEventNotifications)"
+      DoNotDropEventSessions="$(DoNotDropEventSessions)"
+      DoNotDropExtendedProperties="$(DoNotDropExtendedProperties)"
+      DoNotDropExternalDataSources="$(DoNotDropExternalDataSources)"
+      DoNotDropExternalFileFormats="$(DoNotDropExternalFileFormats)"
+      DoNotDropExternalTables="$(DoNotDropExternalTables)"
+      DoNotDropFilegroups="$(DoNotDropFilegroups)"
+      DoNotDropFileTables="$(DoNotDropFileTables)"
+      DoNotDropFullTextCatalogs="$(DoNotDropFullTextCatalogs)"
+      DoNotDropFullTextStoplists="$(DoNotDropFullTextStoplists)"
+      DoNotDropLinkedServerLogins="$(DoNotDropLinkedServerLogins)"
+      DoNotDropLinkedServers="$(DoNotDropLinkedServers)"
+      DoNotDropLogins="$(DoNotDropLogins)"
+      DoNotDropMessageTypes="$(DoNotDropMessageTypes)"
+      DoNotDropPartitionFunctions="$(DoNotDropPartitionFunctions)"
+      DoNotDropPartitionSchemes="$(DoNotDropPartitionSchemes)"
+      DoNotDropPermissions="$(DoNotDropPermissions)"
+      DoNotDropQueues="$(DoNotDropQueues)"
+      DoNotDropRemoteServiceBindings="$(DoNotDropRemoteServiceBindings)"
+      DoNotDropRoleMembership="$(DoNotDropRoleMembership)"
+      DoNotDropRoutes="$(DoNotDropRoutes)"
+      DoNotDropRules="$(DoNotDropRules)"
+      DoNotDropScalarValuedFunctions="$(DoNotDropScalarValuedFunctions)"
+      DoNotDropSearchPropertyLists="$(DoNotDropSearchPropertyLists)"
+      DoNotDropSecurityPolicies="$(DoNotDropSecurityPolicies)"
+      DoNotDropSequences="$(DoNotDropSequences)"
+      DoNotDropServerAuditSpecifications="$(DoNotDropServerAuditSpecifications)"
+      DoNotDropServerRoleMembership="$(DoNotDropServerRoleMembership)"
+      DoNotDropServerRoles="$(DoNotDropServerRoles)"
+      DoNotDropServerTriggers="$(DoNotDropServerTriggers)"
+      DoNotDropServices="$(DoNotDropServices)"
+      DoNotDropSignatures="$(DoNotDropSignatures)"
+      DoNotDropStoredProcedures="$(DoNotDropStoredProcedures)"
+      DoNotDropSymmetricKeys="$(DoNotDropSymmetricKeys)"
+      DoNotDropSynonyms="$(DoNotDropSynonyms)"
+      DoNotDropTables="$(DoNotDropTables)"
+      DoNotDropTableValuedFunctions="$(DoNotDropTableValuedFunctions)"
+      DoNotDropUserDefinedDataTypes="$(DoNotDropUserDefinedDataTypes)"
+      DoNotDropUserDefinedTableTypes="$(DoNotDropUserDefinedTableTypes)"
+      DoNotDropUsers="$(DoNotDropUsers)"
+      DoNotDropViews="$(DoNotDropViews)"
+      DoNotDropXmlSchemaCollections="$(DoNotDropXmlSchemaCollections)"
+      DropConstraintsNotInSource="$(DropConstraintsNotInSource)"
+      DropDmlTriggersNotInSource="$(DropDmlTriggersNotInSource)"
+      DropExtendedPropertiesNotInSource="$(DropExtendedPropertiesNotInSource)"
+      DropIndexesNotInSource="$(DropIndexesNotInSource)"
+      DropObjectsNotInSource="$(DropObjectsNotInSource)"
+      DropPermissionsNotInSource="$(DropPermissionsNotInSource)"
+      DropRoleMembersNotInSource="$(DropRoleMembersNotInSource)"
+      DropStatisticsNotInSource="$(DropStatisticsNotInSource)"
+      ExcludeAggregates="$(ExcludeAggregates)"
+      ExcludeApplicationRoles="$(ExcludeApplicationRoles)"
+      ExcludeAssemblies="$(ExcludeAssemblies)"
+      ExcludeAsymmetricKeys="$(ExcludeAsymmetricKeys)"
+      ExcludeAudits="$(ExcludeAudits)"
+      ExcludeBrokerPriorities="$(ExcludeBrokerPriorities)"
+      ExcludeCertificates="$(ExcludeCertificates)"
+      ExcludeClrUserDefinedTypes="$(ExcludeClrUserDefinedTypes)"
+      ExcludeColumnEncryptionKeys="$(ExcludeColumnEncryptionKeys)"
+      ExcludeColumnMasterKeys="$(ExcludeColumnMasterKeys)"
+      ExcludeContracts="$(ExcludeContracts)"
+      ExcludeCredentials="$(ExcludeCredentials)"
+      ExcludeCryptographicProviders="$(ExcludeCryptographicProviders)"
+      ExcludeDatabaseAuditSpecifications="$(ExcludeDatabaseAuditSpecifications)"
+      ExcludeDatabaseRoles="$(ExcludeDatabaseRoles)"
+      ExcludeDatabaseScopedCredentials="$(ExcludeDatabaseScopedCredentials)"
+      ExcludeDatabaseTriggers="$(ExcludeDatabaseTriggers)"
+      ExcludeDefaults="$(ExcludeDefaults)"
+      ExcludeEndpoints="$(ExcludeEndpoints)"
+      ExcludeErrorMessages="$(ExcludeErrorMessages)"
+      ExcludeEventNotifications="$(ExcludeEventNotifications)"
+      ExcludeEventSessions="$(ExcludeEventSessions)"
+      ExcludeExternalDataSources="$(ExcludeExternalDataSources)"
+      ExcludeExternalFileFormats="$(ExcludeExternalFileFormats)"
+      ExcludeExternalTables="$(ExcludeExternalTables)"
+      ExcludeFilegroups="$(ExcludeFilegroups)"
+      ExcludeFileTables="$(ExcludeFileTables)"
+      ExcludeFullTextCatalogs="$(ExcludeFullTextCatalogs)"
+      ExcludeFullTextStoplists="$(ExcludeFullTextStoplists)"
+      ExcludeLinkedServerLogins="$(ExcludeLinkedServerLogins)"
+      ExcludeLinkedServers="$(ExcludeLinkedServers)"
+      ExcludeLogins="$(ExcludeLogins)"
+      ExcludeMessageTypes="$(ExcludeMessageTypes)"
+      ExcludePartitionFunctions="$(ExcludePartitionFunctions)"
+      ExcludePartitionSchemes="$(ExcludePartitionSchemes)"
+      ExcludeQueues="$(ExcludeQueues)"
+      ExcludeRemoteServiceBindings="$(ExcludeRemoteServiceBindings)"
+      ExcludeRoutes="$(ExcludeRoutes)"
+      ExcludeRules="$(ExcludeRules)"
+      ExcludeScalarValuedFunctions="$(ExcludeScalarValuedFunctions)"
+      ExcludeSearchPropertyLists="$(ExcludeSearchPropertyLists)"
+      ExcludeSecurityPolicies="$(ExcludeSecurityPolicies)"
+      ExcludeSequences="$(ExcludeSequences)"
+      ExcludeServerAuditSpecifications="$(ExcludeServerAuditSpecifications)"
+      ExcludeServerRoleMembership="$(ExcludeServerRoleMembership)"
+      ExcludeServerRoles="$(ExcludeServerRoles)"
+      ExcludeServerTriggers="$(ExcludeServerTriggers)"
+      ExcludeServices="$(ExcludeServices)"
+      ExcludeSignatures="$(ExcludeSignatures)"
+      ExcludeStoredProcedures="$(ExcludeStoredProcedures)"
+      ExcludeSymmetricKeys="$(ExcludeSymmetricKeys)"
+      ExcludeSynonyms="$(ExcludeSynonyms)"
+      ExcludeTables="$(ExcludeTables)"
+      ExcludeTableValuedFunctions="$(ExcludeTableValuedFunctions)"
+      ExcludeUserDefinedDataTypes="$(ExcludeUserDefinedDataTypes)"
+      ExcludeUserDefinedTableTypes="$(ExcludeUserDefinedTableTypes)"
+      ExcludeUsers="$(ExcludeUsers)"
+      ExcludeViews="$(ExcludeViews)"
+      ExcludeXmlSchemaCollections="$(ExcludeXmlSchemaCollections)"
+      GenerateSmartDefaults="$(GenerateSmartDefaults)"
+      IgnoreAnsiNulls="$(IgnoreAnsiNulls)"
+      IgnoreAuthorizer="$(IgnoreAuthorizer)"
+      IgnoreColumnCollation="$(IgnoreColumnCollation)"
+      IgnoreColumnOrder="$(IgnoreColumnOrder)"
+      IgnoreComments="$(IgnoreComments)"
+      IgnoreCryptographicProviderFilePath="$(IgnoreCryptographicProviderFilePath)"
+      IgnoreDdlTriggerOrder="$(IgnoreDdlTriggerOrder)"
+      IgnoreDdlTriggerState="$(IgnoreDdlTriggerState)"
+      IgnoreDefaultSchema="$(IgnoreDefaultSchema)"
+      IgnoreDmlTriggerOrder="$(IgnoreDmlTriggerOrder)"
+      IgnoreDmlTriggerState="$(IgnoreDmlTriggerState)"
+      IgnoreExtendedProperties="$(IgnoreExtendedProperties)"
+      IgnoreFileAndLogFilePath="$(IgnoreFileAndLogFilePath)"
+      IgnoreFilegroupPlacement="$(IgnoreFilegroupPlacement)"
+      IgnoreFileSize="$(IgnoreFileSize)"
+      IgnoreFillFactor="$(IgnoreFillFactor)"
+      IgnoreFullTextCatalogFilePath="$(IgnoreFullTextCatalogFilePath)"
+      IgnoreIdentitySeed="$(IgnoreIdentitySeed)"
+      IgnoreIncrement="$(IgnoreIncrement)"
+      IgnoreIndexOptions="$(IgnoreIndexOptions)"
+      IgnoreIndexPadding="$(IgnoreIndexPadding)"
+      IgnoreKeywordCasing="$(IgnoreKeywordCasing)"
+      IgnoreLockHintsOnIndexes="$(IgnoreLockHintsOnIndexes)"
+      IgnoreLoginSids="$(IgnoreLoginSids)"
+      IgnoreNotForReplication="$(IgnoreNotForReplication)"
+      IgnoreObjectPlacementOnPartitionScheme="$(IgnoreObjectPlacementOnPartitionScheme)"
+      IgnorePartitionSchemes="$(IgnorePartitionSchemes)"
+      IgnorePermissions="$(IgnorePermissions)"
+      IgnoreQuotedIdentifiers="$(IgnoreQuotedIdentifiers)"
+      IgnoreRoleMembership="$(IgnoreRoleMembership)"
+      IgnoreRouteLifetime="$(IgnoreRouteLifetime)"
+      IgnoreSemicolonBetweenStatements="$(IgnoreSemicolonBetweenStatements)"
+      IgnoreTableOptions="$(IgnoreTableOptions)"
+      IgnoreUserSettingsObjects="$(IgnoreUserSettingsObjects)"
+      IgnoreWhitespace="$(IgnoreWhitespace)"
+      IgnoreWithNocheckOnCheckConstraints="$(IgnoreWithNocheckOnCheckConstraints)"
+      IgnoreWithNocheckOnForeignKeys="$(IgnoreWithNocheckOnForeignKeys)"
+      IncludeCompositeObjects="$(IncludeCompositeObjects)"
+      IncludeTransactionalScripts="$(IncludeTransactionalScripts)"
+      NoAlterStatementsToChangeCLRTypes="$(NoAlterStatementsToChangeCLRTypes)"
+      PopulateFilesOnFileGroups="$(PopulateFilesOnFileGroups)"
+      RegisterDataTierApplication="$(RegisterDataTierApplication)"
+      ScriptDatabaseCollation="$(ScriptDatabaseCollation)"
+      ScriptDatabaseCompatibility="$(ScriptDatabaseCompatibility)"
+      ScriptDatabaseOptions="$(ScriptDatabaseOptions)"
+      ScriptDeployStateChecks="$(ScriptDeployStateChecks)"
+      ScriptFileSize="$(ScriptFileSize)"
+      ScriptNewConstraintValidation="$(ScriptNewConstraintValidation)"
+      ScriptRefreshModule="$(ScriptRefreshModule)"
+      TargetDatabaseName="$(TargetDatabaseName)"
+      TreatVerificationErrorsAsWarnings="$(TreatVerificationErrorsAsWarnings)"
+      UnmodifiableObjectWarnings="$(UnmodifiableObjectWarnings)"
+      VerifyCollationCompatibility="$(VerifyCollationCompatibility)"
+      VerifyDeployment="$(VerifyDeployment)"
+      >
+      <Output TaskParameter="OutputPath" ItemName="SchemaCompareOutputPath"/>
+    </SqlSchemaCompareTask>    
+  </Target>
+
+  <Target Name="SqlPrepareForRun">
+    <Message Importance="High" Text="$(MSBuildProjectName) -&gt; $(SqlTargetPath)" />
+  </Target>
+  
+  <!--
+   Target Definition: Build
+   Dependency Of:     All
+   -->
+  <PropertyGroup>
+    <BuildDependsOn>
+      BuildOnlySettings;
+      BeforeBuild;
+      PrepareForBuild;
+      PreBuildEvent;
+      ResolveReferences;
+      ResolveArtifactReferences;
+      GenerateSqlTargetFrameworkMoniker;
+      ResolveKeySource;
+      CoreCompile;
+      GenerateSerializationAssemblies;
+      SqlBuild;
+      GetTargetPath;
+      PrepareForRun;
+      SqlPrepareForRun;
+      IncrementalClean;
+      PostBuildEvent;
+      AfterBuild;
+    </BuildDependsOn>
+  </PropertyGroup>
+
+  <Target Name="Build" DependsOnTargets="$(BuildDependsOn)" Returns="$(TargetPath)">
+    <!--
+     If the project is unloaded we need to cache the results of all external entry points. Most
+     of these targets don't do actual work but we need to make sure that the result of the targets is
+     in the cache.
+     -->
+    <CallTarget Targets="GetCopyToOutputDirectoryItems" UseResultsCache="true" Condition="'$(UnloadProjectsOnCompletion)'=='true'" />
+    <CallTarget Targets="GetNativeManifest" UseResultsCache="true" Condition="'$(UnloadProjectsOnCompletion)'=='true'" />
+    <CallTarget Targets="GetTargetPath" UseResultsCache="true" Condition="'$(UnloadProjectsOnCompletion)'=='true'" />
+
+    <OnError ExecuteTargets="_TimeStampAfterCompile;PostBuildEvent" Condition="'$(RunPostBuildEvent)'=='Always' or '$(RunPostBuildEvent)'=='OnOutputUpdated'" />
+    <OnError ExecuteTargets="_CleanRecordFileWrites" />
+
+  </Target>
+
+  <!--===========================================================================-->
+  <!-- Project Output Group Targets -->
+  <!--===========================================================================-->
+
+  <!--
+   Target Definition: BuiltSqlProjectOutputGroup
+   Dependency Of:     AllProjectOutputGroups
+   -->
+  <PropertyGroup>
+    <BuiltSqlProjectOutputGroupDependsOn>
+      $(BuiltProjectOutputGroupDependsOn);
+      _SetupSqlBuildOutputs
+    </BuiltSqlProjectOutputGroupDependsOn>
+  </PropertyGroup>
+
+  <Target Name="BuiltSqlProjectOutputGroup"
+          Outputs="@(BuiltSqlProjectOutputGroupOutput)"
+          DependsOnTargets="$(BuiltSqlProjectOutputGroupDependsOn)">
+    <ItemGroup>
+      <_BuiltSqlProjectOutputGroupOutputIntermediate Include="@(SqlBuildOutputItem)"/>
+    </ItemGroup>
+    <ItemGroup>
+      <BuiltProjectOutputGroupOutput Include="@(_BuiltSqlProjectOutputGroupOutputIntermediate->'%(FullPath)')"/>
+    </ItemGroup>
+  </Target>
+
+  <!--
+   Target Definition: SourceFilesProjectOutputGroup
+   Dependency Of:     AllProjectOutputGroups
+
+   Overrides the SourceFilesProjectOutputGroup target.
+   -->
+  <PropertyGroup>
+    <SourceFilesProjectOutputGroupDependsOn>
+      $(SourceFilesProjectOutputGroupDependsOn);
+      _SetupSqlBuildInputs
+    </SourceFilesProjectOutputGroupDependsOn>
+  </PropertyGroup>
+
+  <Target Name="SourceFilesProjectOutputGroup"
+          Outputs="@(SourceFilesProjectOutputGroupOutput)"
+          DependsOnTargets="$(SourceFilesProjectOutputGroupDependsOn)">
+
+    <ItemGroup>
+      <AdditionalSourceFile Include="@(__SqlBuildInputItem->'%(FullPath)')"/>
+    </ItemGroup>
+
+    <AssignTargetPath Files="@(Build)" RootFolder="$(MSBuildProjectDirectory)">
+      <Output TaskParameter="AssignedFiles" ItemName="__Source" />
+    </AssignTargetPath>
+
+    <AssignTargetPath Files="@(AdditionalSourceFile)"
+                RootFolder="$(MSBuildProjectDirectory)"
+                Condition="Exists(@(AdditionalSourceFiles))">
+      <Output TaskParameter="AssignedFiles" ItemName="__AdditionalSourceFile" />
+    </AssignTargetPath>
+
+    <ItemGroup>
+      <SourceFilesProjectOutputGroupOutput Include="@(__Source->'%(FullPath)')"/>
+      <SourceFilesProjectOutputGroupOutput Include="@(__AdditionalSourceFile->'%(FullPath)')" Condition="Exists(@(AdditionalSourceFiles))"/>
+      <SourceFilesProjectOutputGroupOutput Include="$(MSBuildProjectFullPath)">
+        <TargetPath>$(ProjectFileName)</TargetPath>
+      </SourceFilesProjectOutputGroupOutput>
+    </ItemGroup>
+
+  </Target>
+
+  <!--
+   Target Definition: AllProjectOutputGroups
+
+   The targets below drive output groups, which provide generic information about a
+   project's inputs (e.g., content files, compilation sources, etc.) and built outputs
+   (e.g., built EXE/DLL, PDB, XML documentation files, etc.)
+
+   Each target may produce two kinds of items:  outputs and dependencies.  Outputs are
+   items from the current project; dependencies are items that are brought into the
+   current project as a result of referencing other projects or components.
+
+   For both outputs and dependencies, the Include attribute
+   specifies the location of the output/dependency; it must be a full path.  Any number
+   of additional attributes may be placed on an output/dependency item.
+   -->
+  <PropertyGroup>
+    <AllProjectOutputGroupsDependsOn>
+      BuiltProjectOutputGroup;
+      BuiltSqlProjectOutputGroup;
+      DebugSymbolsProjectOutputGroup;
+      DocumentationProjectOutputGroup;
+      SatelliteDllsProjectOutputGroup;
+      SourceFilesProjectOutputGroup;
+      ContentFilesProjectOutputGroup;
+      SGenFilesOutputGroup;
+    </AllProjectOutputGroupsDependsOn>
+
+    <!--
+    These groups are defined so the IDE can refresh a particular IVsOutputGroup without having to
+    recalculate all other output groups.
+    -->
+    <AllProjectOutputGroupsDependsOn Condition=" '$(OutputGroupBeingCalculated)' == 'Built' " >
+      BuiltProjectOutputGroup;
+      BuiltSqlProjectOutputGroup;
+    </AllProjectOutputGroupsDependsOn>
+    <AllProjectOutputGroupsDependsOn Condition=" '$(OutputGroupBeingCalculated)' == 'ContentFiles' " >
+      ContentFilesProjectOutputGroup;
+    </AllProjectOutputGroupsDependsOn>
+    <AllProjectOutputGroupsDependsOn Condition=" '$(OutputGroupBeingCalculated)' == 'LocalizedResourceDlls' " >
+      SatelliteDllsProjectOutputGroup;
+    </AllProjectOutputGroupsDependsOn>
+    <AllProjectOutputGroupsDependsOn Condition=" '$(OutputGroupBeingCalculated)' == 'Documentation' " >
+      DocumentationProjectOutputGroup;
+    </AllProjectOutputGroupsDependsOn>
+    <AllProjectOutputGroupsDependsOn Condition=" '$(OutputGroupBeingCalculated)' == 'Symbols' " >
+      DebugSymbolsProjectOutputGroup;
+    </AllProjectOutputGroupsDependsOn>
+    <AllProjectOutputGroupsDependsOn Condition=" '$(OutputGroupBeingCalculated)' == 'SourceFiles' " >
+      SourceFilesProjectOutputGroup;
+    </AllProjectOutputGroupsDependsOn>
+    <AllProjectOutputGroupsDependsOn Condition=" '$(OutputGroupBeingCalculated)' == 'XmlSerializer' " >
+      SGenFilesOutputGroup;
+    </AllProjectOutputGroupsDependsOn>
+  </PropertyGroup>
+
+  <Target Name="AllProjectOutputGroups" DependsOnTargets="$(AllProjectOutputGroupsDependsOn)" />
+
+
+  <!--===========================================================================-->
+  <!-- Static Code Analysis (SCA) Targets -->
+  <!--===========================================================================-->
+
+  <!--
+   Target Definition: SqlStaticCodeAnalysis
+
+   Dependency Of:     StaticCodeAnalysis
+   -->
+  <Target Name="SqlStaticCodeAnalysis">
+
+	<PropertyGroup>
+		<AutoCreateStatisticsIncremental Condition="'$(AutoCreateStatisticsIncremental)' == ''" >$(AutoUpdateStatisticsIncremental)</AutoCreateStatisticsIncremental>
+	</PropertyGroup>
+
+    <SqlStaticCodeAnalysisTask CodeAnalysisRules="$(SqlCodeAnalysisRules)"
+                               DatabaseSchemaProviderName="$(DSP)"
+                               ImplicitDllAssemblyName="$(AssemblyName)"
+                               ImplicitDllAssemblyOwner="$(AssemblyOwner)"
+                               ImplicitDllFileName="$(IntermediateTargetFullFileName)"
+                               ImplicitDllGenerateSqlClrDdl="$(GenerateSqlClrDdl)"
+                               ImplicitDllIsVisible="$(IsVisible)"
+                               ImplicitDllPermissionSet="$(PermissionSet)"
+                               ModelCollation="$(ModelCollation)"
+                               ProjectFolder="$(MSBuildProjectDirectory)"
+                               ResultsFile="$(ResultsFile)"
+                               Source="@(Build)"
+                               SqlReferencePath="@(SqlReferencePath)"
+                               StaticCodeAnalysisSucceededFile="$(StaticCodeAnalysisSucceededFile)"
+                               SuppressTSqlWarnings="$(SuppressTSqlWarnings)"
+                               TreatTSqlWarningsAsErrors="$(TreatTSqlWarningsAsErrors)"
+                               DefaultCollation="$(DefaultCollation)"
+      AnsiNullDefault="$(AnsiNullDefault)"
+      AnsiNulls="$(AnsiNulls)"
+      AnsiPadding="$(AnsiPadding)"
+      AnsiWarnings="$(AnsiWarnings)"
+      ArithAbort="$(ArithAbort)"
+      ConcatNullYieldsNull="$(ConcatNullYieldsNull)"
+      QuotedIdentifier="$(QuotedIdentifier)"
+      NumericRoundAbort="$(NumericRoundAbort)"
+      RecursiveTriggersEnabled="$(RecursiveTriggersEnabled)"
+      DatabaseChaining="$(DatabaseChaining)"
+      DatabaseState="$(DatabaseState)"
+      UpdateOptions="$(UpdateOptions)"
+      CloseCursorOnCommitEnabled="$(CloseCursorOnCommitEnabled)"
+      DefaultCursor="$(DefaultCursor)"
+      AutoClose="$(AutoClose)"
+      AutoCreateStatistics="$(AutoCreateStatistics)"
+      AutoShrink="$(AutoShrink)"
+      AutoUpdateStatistics="$(AutoUpdateStatistics)"
+      TornPageDetection="$(TornPageDetection)"
+      DatabaseAccess="$(DatabaseAccess)"
+      Recovery="$(Recovery)"
+      EnableFullTextSearch="$(EnableFullTextSearch)"
+      DefaultFilegroup="$(DefaultFilegroup)"
+      Trustworthy="$(Trustworthy)"
+      AutoUpdateStatisticsAsynchronously="$(AutoUpdateStatisticsAsynchronously)"
+      PageVerify="$(PageVerify)"
+      ServiceBrokerOption="$(ServiceBrokerOption)"
+      DateCorrelationOptimizationOn="$(DateCorrelationOptimizationOn)"
+      Parameterization="$(Parameterization)"
+      AllowSnapshotIsolation="$(AllowSnapshotIsolation)"
+      ReadCommittedSnapshot="$(ReadCommittedSnapshot)"
+      VardecimalStorageFormatOn="$(VardecimalStorageFormatOn)"
+      SupplementalLoggingOn="$(SupplementalLoggingOn)"
+      CompatibilityMode="$(CompatibilityMode)"
+      DefaultFileStreamFilegroup="$(DefaultFileStreamFilegroup)"
+      IsChangeTrackingOn="$(IsChangeTrackingOn)"
+      IsChangeTrackingAutoCleanupOn="$(IsChangeTrackingAutoCleanupOn)"
+      ChangeTrackingRetentionPeriod="$(ChangeTrackingRetentionPeriod)"
+      ChangeTrackingRetentionUnit="$(ChangeTrackingRetentionUnit)"
+      IsEncryptionOn="$(IsEncryptionOn)"
+      IsBrokerPriorityHonored="$(IsBrokerPriorityHonored)"
+      Containment="$(Containment)"
+      DatabaseDefaultLanguage="$(DatabaseDefaultLanguage)"
+      DatabaseDefaultFulltextLanguage="$(DatabaseDefaultFulltextLanguage)"
+      IsNestedTriggersOn="$(IsNestedTriggersOn)"
+      IsTransformNoiseWordsOn="$(IsTransformNoiseWordsOn)"
+      TwoDigitYearCutoff="$(TwoDigitYearCutoff)"
+      NonTransactedFileStreamAccess="$(NonTransactedFileStreamAccess)"
+      FileStreamDirectoryName="$(FileStreamDirectoryName)"
+      TargetRecoveryTimePeriod="$(TargetRecoveryTimePeriod)"
+      TargetRecoveryTimeUnit="$(TargetRecoveryTimeUnit)"
+      DelayedDurability="$(DelayedDurability)"
+      AutoCreateStatisticsIncremental="$(AutoCreateStatisticsIncremental)"
+      MemoryOptimizedElevateToSnapshot="$(MemoryOptimizedElevateToSnapshot)"
+      QueryStoreCaptureMode="$(QueryStoreCaptureMode)"
+      QueryStoreDesiredState="$(QueryStoreDesiredState)"
+      QueryStoreFlushInterval="$(QueryStoreFlushInterval)"
+      QueryStoreStatsInterval="$(QueryStoreStatsInterval)"
+      QueryStoreMaxPlansPerQuery="$(QueryStoreMaxPlansPerQuery)"
+      QueryStoreStaleQueryThreshold="$(QueryStoreStaleQueryThreshold)"
+      QueryStoreMaxStorageSize="$(QueryStoreMaxStorageSize)"
+      DbScopedConfigLegacyCardinalityEstimation="$(DbScopedConfigLegacyCardinalityEstimation)"
+      DbScopedConfigLegacyCardinalityEstimationSecondary="$(DbScopedConfigLegacyCardinalityEstimationSecondary)"
+      DbScopedConfigMaxDOP="$(DbScopedConfigMaxDOP)"
+      DbScopedConfigMaxDOPSecondary="$(DbScopedConfigMaxDOPSecondary)"
+      DbScopedConfigParameterSniffing="$(DbScopedConfigParameterSniffing)"
+      DbScopedConfigParameterSniffingSecondary="$(DbScopedConfigParameterSniffingSecondary)"
+      DbScopedConfigOptimizerHotfixes="$(DbScopedConfigOptimizerHotfixes)"
+      DbScopedConfigOptimizerHotfixesSecondary="$(DbScopedConfigOptimizerHotfixesSecondary)"
+      TemporalHistoryRetentionEnabled="$(TemporalHistoryRetentionEnabled)"
+                               CmdLineInMemoryStorage="$(CmdLineInMemoryStorage)"
+                               />
+
+  </Target>
+
+  <!--
+   Target Definition: StaticCodeAnalysis
+   -->
+  <PropertyGroup>
+    <ResultsFile Condition=" '$(ResultsFile)' == '' ">$(TargetDir)$(SqlTargetName).StaticCodeAnalysis.Results.xml</ResultsFile>
+    <StaticCodeAnalysisSucceededFile Condition=" '$(StaticCodeAnalysisSucceededFile)' == '' ">$(TargetDir)$(SqlTargetName)_StaticCodeAnalysisSucceededFile</StaticCodeAnalysisSucceededFile>
+    <StaticCodeAnalysisDependsOn>
+      _SetupSqlBuildInputs;
+      ResolveReferences;
+      ResolveArtifactReferences;
+      SqlStaticCodeAnalysis
+    </StaticCodeAnalysisDependsOn>
+  </PropertyGroup>
+
+  <Target Name="StaticCodeAnalysis" DependsOnTargets="$(StaticCodeAnalysisDependsOn)" />
+
+  <!--
+   Target Definition: SqlRunCodeAnalysis
+   Dependency Of:     PrepareForRun
+
+   Add SqlRunCodeAnalysis to PrepareForRunDependsOn so that it would be called from Microsoft.Common.Targets
+   -->
+  <PropertyGroup>
+    <PrepareForRunDependsOn>
+      $(PrepareForRunDependsOn);
+      SqlRunCodeAnalysis
+    </PrepareForRunDependsOn>
+  </PropertyGroup>
+
+  <!--
+   Set our Sql CA property to that of the language property.  Also we set the inputs to FxCopCmd.exe to
+   empty so it won't run against our SQL CLR assembly.
+   -->
+  <PropertyGroup>
+    <RunSqlCodeAnalysisOnce Condition="'$(RunCodeAnalysisOnce)' == 'true'">true</RunSqlCodeAnalysisOnce>
+    <RunCodeAnalysisInputs></RunCodeAnalysisInputs>
+  </PropertyGroup>
+
+  <Target Name="SqlRunCodeAnalysis"
+          Condition="'$(RunSqlCodeAnalysis)'=='true' or '$(RunSqlCodeAnalysisOnce)'=='true'"
+          Inputs="@(SqlBuildInputItem)"
+          Outputs="$(ResultsFile);$(StaticCodeAnalysisSucceededFile)">
+
+    <CallTarget Targets="StaticCodeAnalysis" />
+
+  </Target>
+
+  <!--
+   Target Definition: CleanStaticCodeAnalysis
+   Dependency Of:     Clean
+
+   Delete code analysis log file and Sql Target file during clean and rebuild.
+   -->
+  <PropertyGroup>
+    <CleanDependsOn>
+      $(CleanDependsOn);
+      CleanStaticCodeAnalysis;
+    </CleanDependsOn>
+  </PropertyGroup>
+
+  <Target Name="CleanStaticCodeAnalysis">
+    <Delete Files="$(ResultsFile)" />
+    <Delete Files="$(StaticCodeAnalysisSucceededFile)" />
+  </Target>
+
+
+  <!--===========================================================================-->
+  <!-- Deploy Targets -->
+  <!--===========================================================================-->
+
+  <!--
+   Target Definition: _SetupSqlDeployInputs
+   Dependency Of:     SqlDeploy
+-->
+  <Target Name="_SetupSqlDeployInputs" Outputs="@(SqlDeployInputItem)">
+    <ItemGroup>
+      <SqlDeployInputItem Include="@(SqlTarget->'%(FullPath)')"/>
+      <SqlDeployInputItem Include="ForceScriptRecalculation.txt" Condition="'$(ForceDeployment)' == 'true'"/>
+    </ItemGroup>
+  </Target>
+
+  <!--
+   Target Definition: _SetupSqlDeployOutputs
+   Dependency Of:     SqlDeploy
+   -->
+  <Target Name="_SetupSqlDeployOutputs" Outputs="@(SqlDeployOutputItem)">
+    <ItemGroup>
+      <SqlDeployOutputItem Include="@(DeployScriptFile->'%(FullPath)')"/>
+    </ItemGroup>
+  </Target>
+
+  <!--
+   Target Definition: SqlDeploy
+   Dependency Of:     Deploy
+   -->
+  <PropertyGroup>
+    <SqlDeployDependsOn>
+      _SetupSqlDeployInputs;
+      _SetupSqlDeployOutputs
+    </SqlDeployDependsOn>
+  </PropertyGroup>
+
+  <Target Name="SqlDeploy"
+          Inputs="@(SqlDeployInputItem)"
+          Outputs="@(SqlDeployOutputItem)"
+          DependsOnTargets="$(SqlDeployDependsOn)">
+
+    <SqlDeployTask
+      CacheTargetModel="$(CacheTargetModel)"
+      ConnectionString="$(TargetConnectionString)"
+      DatabaseName="$(TargetDatabase)"
+      ScriptFile="@(DeployScriptFile)"
+      SourceModel="@(SqlTarget)"
+      SqlCommandVariableOverrides="@(SqlCmdVariable)"
+      UpdateDatabase="$(UpdateDatabase)"
+      CmdLineInMemoryStorage="$(CmdLineInMemoryStorage)"
+      AdditionalDeploymentContributorArguments="$(AdditionalDeploymentContributorArguments)"
+      AdditionalDeploymentContributors="$(AdditionalDeploymentContributors)"
+      AllowDropBlockingAssemblies="$(AllowDropBlockingAssemblies)"
+      AllowIncompatiblePlatform="$(AllowIncompatiblePlatform)"
+      AllowUnsafeRowLevelSecurityDataMovement="$(AllowUnsafeRowLevelSecurityDataMovement)"
+      BackupDatabaseBeforeChanges="$(BackupDatabaseBeforeChanges)"
+      BlockOnPossibleDataLoss="$(BlockOnPossibleDataLoss)"
+      BlockWhenDriftDetected="$(BlockWhenDriftDetected)"
+      CommentOutSetVarDeclarations="$(CommentOutSetVarDeclarations)"
+      CompareUsingTargetCollation="$(CompareUsingTargetCollation)"
+      CreateNewDatabase="$(CreateNewDatabase)"
+      DeployDatabaseInSingleUserMode="$(DeployDatabaseInSingleUserMode)"
+      DisableAndReenableDdlTriggers="$(DisableAndReenableDdlTriggers)"
+      DoNotAlterChangeDataCaptureObjects="$(DoNotAlterChangeDataCaptureObjects)"
+      DoNotAlterReplicatedObjects="$(DoNotAlterReplicatedObjects)"
+      DoNotDropAggregates="$(DoNotDropAggregates)"
+      DoNotDropApplicationRoles="$(DoNotDropApplicationRoles)"
+      DoNotDropAssemblies="$(DoNotDropAssemblies)"
+      DoNotDropAsymmetricKeys="$(DoNotDropAsymmetricKeys)"
+      DoNotDropAudits="$(DoNotDropAudits)"
+      DoNotDropBrokerPriorities="$(DoNotDropBrokerPriorities)"
+      DoNotDropCertificates="$(DoNotDropCertificates)"
+      DoNotDropClrUserDefinedTypes="$(DoNotDropClrUserDefinedTypes)"
+      DoNotDropColumnEncryptionKeys="$(DoNotDropColumnEncryptionKeys)"
+      DoNotDropColumnMasterKeys="$(DoNotDropColumnMasterKeys)"
+      DoNotDropContracts="$(DoNotDropContracts)"
+      DoNotDropCredentials="$(DoNotDropCredentials)"
+      DoNotDropCryptographicProviders="$(DoNotDropCryptographicProviders)"
+      DoNotDropDatabaseAuditSpecifications="$(DoNotDropDatabaseAuditSpecifications)"
+      DoNotDropDatabaseRoles="$(DoNotDropDatabaseRoles)"
+      DoNotDropDatabaseScopedCredentials="$(DoNotDropDatabaseScopedCredentials)"
+      DoNotDropDatabaseTriggers="$(DoNotDropDatabaseTriggers)"
+      DoNotDropDefaults="$(DoNotDropDefaults)"
+      DoNotDropEndpoints="$(DoNotDropEndpoints)"
+      DoNotDropErrorMessages="$(DoNotDropErrorMessages)"
+      DoNotDropEventNotifications="$(DoNotDropEventNotifications)"
+      DoNotDropEventSessions="$(DoNotDropEventSessions)"
+      DoNotDropExtendedProperties="$(DoNotDropExtendedProperties)"
+      DoNotDropExternalDataSources="$(DoNotDropExternalDataSources)"
+      DoNotDropExternalFileFormats="$(DoNotDropExternalFileFormats)"
+      DoNotDropExternalTables="$(DoNotDropExternalTables)"
+      DoNotDropFilegroups="$(DoNotDropFilegroups)"
+      DoNotDropFileTables="$(DoNotDropFileTables)"
+      DoNotDropFullTextCatalogs="$(DoNotDropFullTextCatalogs)"
+      DoNotDropFullTextStoplists="$(DoNotDropFullTextStoplists)"
+      DoNotDropLinkedServerLogins="$(DoNotDropLinkedServerLogins)"
+      DoNotDropLinkedServers="$(DoNotDropLinkedServers)"
+      DoNotDropLogins="$(DoNotDropLogins)"
+      DoNotDropMessageTypes="$(DoNotDropMessageTypes)"
+      DoNotDropPartitionFunctions="$(DoNotDropPartitionFunctions)"
+      DoNotDropPartitionSchemes="$(DoNotDropPartitionSchemes)"
+      DoNotDropPermissions="$(DoNotDropPermissions)"
+      DoNotDropQueues="$(DoNotDropQueues)"
+      DoNotDropRemoteServiceBindings="$(DoNotDropRemoteServiceBindings)"
+      DoNotDropRoleMembership="$(DoNotDropRoleMembership)"
+      DoNotDropRoutes="$(DoNotDropRoutes)"
+      DoNotDropRules="$(DoNotDropRules)"
+      DoNotDropScalarValuedFunctions="$(DoNotDropScalarValuedFunctions)"
+      DoNotDropSearchPropertyLists="$(DoNotDropSearchPropertyLists)"
+      DoNotDropSecurityPolicies="$(DoNotDropSecurityPolicies)"
+      DoNotDropSequences="$(DoNotDropSequences)"
+      DoNotDropServerAuditSpecifications="$(DoNotDropServerAuditSpecifications)"
+      DoNotDropServerRoleMembership="$(DoNotDropServerRoleMembership)"
+      DoNotDropServerRoles="$(DoNotDropServerRoles)"
+      DoNotDropServerTriggers="$(DoNotDropServerTriggers)"
+      DoNotDropServices="$(DoNotDropServices)"
+      DoNotDropSignatures="$(DoNotDropSignatures)"
+      DoNotDropStoredProcedures="$(DoNotDropStoredProcedures)"
+      DoNotDropSymmetricKeys="$(DoNotDropSymmetricKeys)"
+      DoNotDropSynonyms="$(DoNotDropSynonyms)"
+      DoNotDropTables="$(DoNotDropTables)"
+      DoNotDropTableValuedFunctions="$(DoNotDropTableValuedFunctions)"
+      DoNotDropUserDefinedDataTypes="$(DoNotDropUserDefinedDataTypes)"
+      DoNotDropUserDefinedTableTypes="$(DoNotDropUserDefinedTableTypes)"
+      DoNotDropUsers="$(DoNotDropUsers)"
+      DoNotDropViews="$(DoNotDropViews)"
+      DoNotDropXmlSchemaCollections="$(DoNotDropXmlSchemaCollections)"
+      DropConstraintsNotInSource="$(DropConstraintsNotInSource)"
+      DropDmlTriggersNotInSource="$(DropDmlTriggersNotInSource)"
+      DropExtendedPropertiesNotInSource="$(DropExtendedPropertiesNotInSource)"
+      DropIndexesNotInSource="$(DropIndexesNotInSource)"
+      DropObjectsNotInSource="$(DropObjectsNotInSource)"
+      DropPermissionsNotInSource="$(DropPermissionsNotInSource)"
+      DropRoleMembersNotInSource="$(DropRoleMembersNotInSource)"
+      DropStatisticsNotInSource="$(DropStatisticsNotInSource)"
+      ExcludeAggregates="$(ExcludeAggregates)"
+      ExcludeApplicationRoles="$(ExcludeApplicationRoles)"
+      ExcludeAssemblies="$(ExcludeAssemblies)"
+      ExcludeAsymmetricKeys="$(ExcludeAsymmetricKeys)"
+      ExcludeAudits="$(ExcludeAudits)"
+      ExcludeBrokerPriorities="$(ExcludeBrokerPriorities)"
+      ExcludeCertificates="$(ExcludeCertificates)"
+      ExcludeClrUserDefinedTypes="$(ExcludeClrUserDefinedTypes)"
+      ExcludeColumnEncryptionKeys="$(ExcludeColumnEncryptionKeys)"
+      ExcludeColumnMasterKeys="$(ExcludeColumnMasterKeys)"
+      ExcludeContracts="$(ExcludeContracts)"
+      ExcludeCredentials="$(ExcludeCredentials)"
+      ExcludeCryptographicProviders="$(ExcludeCryptographicProviders)"
+      ExcludeDatabaseAuditSpecifications="$(ExcludeDatabaseAuditSpecifications)"
+      ExcludeDatabaseRoles="$(ExcludeDatabaseRoles)"
+      ExcludeDatabaseScopedCredentials="$(ExcludeDatabaseScopedCredentials)"
+      ExcludeDatabaseTriggers="$(ExcludeDatabaseTriggers)"
+      ExcludeDefaults="$(ExcludeDefaults)"
+      ExcludeEndpoints="$(ExcludeEndpoints)"
+      ExcludeErrorMessages="$(ExcludeErrorMessages)"
+      ExcludeEventNotifications="$(ExcludeEventNotifications)"
+      ExcludeEventSessions="$(ExcludeEventSessions)"
+      ExcludeExternalDataSources="$(ExcludeExternalDataSources)"
+      ExcludeExternalFileFormats="$(ExcludeExternalFileFormats)"
+      ExcludeExternalTables="$(ExcludeExternalTables)"
+      ExcludeFilegroups="$(ExcludeFilegroups)"
+      ExcludeFileTables="$(ExcludeFileTables)"
+      ExcludeFullTextCatalogs="$(ExcludeFullTextCatalogs)"
+      ExcludeFullTextStoplists="$(ExcludeFullTextStoplists)"
+      ExcludeLinkedServerLogins="$(ExcludeLinkedServerLogins)"
+      ExcludeLinkedServers="$(ExcludeLinkedServers)"
+      ExcludeLogins="$(ExcludeLogins)"
+      ExcludeMessageTypes="$(ExcludeMessageTypes)"
+      ExcludePartitionFunctions="$(ExcludePartitionFunctions)"
+      ExcludePartitionSchemes="$(ExcludePartitionSchemes)"
+      ExcludeQueues="$(ExcludeQueues)"
+      ExcludeRemoteServiceBindings="$(ExcludeRemoteServiceBindings)"
+      ExcludeRoutes="$(ExcludeRoutes)"
+      ExcludeRules="$(ExcludeRules)"
+      ExcludeScalarValuedFunctions="$(ExcludeScalarValuedFunctions)"
+      ExcludeSearchPropertyLists="$(ExcludeSearchPropertyLists)"
+      ExcludeSecurityPolicies="$(ExcludeSecurityPolicies)"
+      ExcludeSequences="$(ExcludeSequences)"
+      ExcludeServerAuditSpecifications="$(ExcludeServerAuditSpecifications)"
+      ExcludeServerRoleMembership="$(ExcludeServerRoleMembership)"
+      ExcludeServerRoles="$(ExcludeServerRoles)"
+      ExcludeServerTriggers="$(ExcludeServerTriggers)"
+      ExcludeServices="$(ExcludeServices)"
+      ExcludeSignatures="$(ExcludeSignatures)"
+      ExcludeStoredProcedures="$(ExcludeStoredProcedures)"
+      ExcludeSymmetricKeys="$(ExcludeSymmetricKeys)"
+      ExcludeSynonyms="$(ExcludeSynonyms)"
+      ExcludeTables="$(ExcludeTables)"
+      ExcludeTableValuedFunctions="$(ExcludeTableValuedFunctions)"
+      ExcludeUserDefinedDataTypes="$(ExcludeUserDefinedDataTypes)"
+      ExcludeUserDefinedTableTypes="$(ExcludeUserDefinedTableTypes)"
+      ExcludeUsers="$(ExcludeUsers)"
+      ExcludeViews="$(ExcludeViews)"
+      ExcludeXmlSchemaCollections="$(ExcludeXmlSchemaCollections)"
+      GenerateSmartDefaults="$(GenerateSmartDefaults)"
+      IgnoreAnsiNulls="$(IgnoreAnsiNulls)"
+      IgnoreAuthorizer="$(IgnoreAuthorizer)"
+      IgnoreColumnCollation="$(IgnoreColumnCollation)"
+      IgnoreColumnOrder="$(IgnoreColumnOrder)"
+      IgnoreComments="$(IgnoreComments)"
+      IgnoreCryptographicProviderFilePath="$(IgnoreCryptographicProviderFilePath)"
+      IgnoreDdlTriggerOrder="$(IgnoreDdlTriggerOrder)"
+      IgnoreDdlTriggerState="$(IgnoreDdlTriggerState)"
+      IgnoreDefaultSchema="$(IgnoreDefaultSchema)"
+      IgnoreDmlTriggerOrder="$(IgnoreDmlTriggerOrder)"
+      IgnoreDmlTriggerState="$(IgnoreDmlTriggerState)"
+      IgnoreExtendedProperties="$(IgnoreExtendedProperties)"
+      IgnoreFileAndLogFilePath="$(IgnoreFileAndLogFilePath)"
+      IgnoreFilegroupPlacement="$(IgnoreFilegroupPlacement)"
+      IgnoreFileSize="$(IgnoreFileSize)"
+      IgnoreFillFactor="$(IgnoreFillFactor)"
+      IgnoreFullTextCatalogFilePath="$(IgnoreFullTextCatalogFilePath)"
+      IgnoreIdentitySeed="$(IgnoreIdentitySeed)"
+      IgnoreIncrement="$(IgnoreIncrement)"
+      IgnoreIndexOptions="$(IgnoreIndexOptions)"
+      IgnoreIndexPadding="$(IgnoreIndexPadding)"
+      IgnoreKeywordCasing="$(IgnoreKeywordCasing)"
+      IgnoreLockHintsOnIndexes="$(IgnoreLockHintsOnIndexes)"
+      IgnoreLoginSids="$(IgnoreLoginSids)"
+      IgnoreNotForReplication="$(IgnoreNotForReplication)"
+      IgnoreObjectPlacementOnPartitionScheme="$(IgnoreObjectPlacementOnPartitionScheme)"
+      IgnorePartitionSchemes="$(IgnorePartitionSchemes)"
+      IgnorePermissions="$(IgnorePermissions)"
+      IgnoreQuotedIdentifiers="$(IgnoreQuotedIdentifiers)"
+      IgnoreRoleMembership="$(IgnoreRoleMembership)"
+      IgnoreRouteLifetime="$(IgnoreRouteLifetime)"
+      IgnoreSemicolonBetweenStatements="$(IgnoreSemicolonBetweenStatements)"
+      IgnoreTableOptions="$(IgnoreTableOptions)"
+      IgnoreUserSettingsObjects="$(IgnoreUserSettingsObjects)"
+      IgnoreWhitespace="$(IgnoreWhitespace)"
+      IgnoreWithNocheckOnCheckConstraints="$(IgnoreWithNocheckOnCheckConstraints)"
+      IgnoreWithNocheckOnForeignKeys="$(IgnoreWithNocheckOnForeignKeys)"
+      IncludeCompositeObjects="$(IncludeCompositeObjects)"
+      IncludeTransactionalScripts="$(IncludeTransactionalScripts)"
+      NoAlterStatementsToChangeCLRTypes="$(NoAlterStatementsToChangeCLRTypes)"
+      PopulateFilesOnFileGroups="$(PopulateFilesOnFileGroups)"
+      RegisterDataTierApplication="$(RegisterDataTierApplication)"
+      ScriptDatabaseCollation="$(ScriptDatabaseCollation)"
+      ScriptDatabaseCompatibility="$(ScriptDatabaseCompatibility)"
+      ScriptDatabaseOptions="$(ScriptDatabaseOptions)"
+      ScriptDeployStateChecks="$(ScriptDeployStateChecks)"
+      ScriptFileSize="$(ScriptFileSize)"
+      ScriptNewConstraintValidation="$(ScriptNewConstraintValidation)"
+      ScriptRefreshModule="$(ScriptRefreshModule)"
+      TargetDatabaseName="$(TargetDatabaseName)"
+      TreatVerificationErrorsAsWarnings="$(TreatVerificationErrorsAsWarnings)"
+      UnmodifiableObjectWarnings="$(UnmodifiableObjectWarnings)"
+      VerifyCollationCompatibility="$(VerifyCollationCompatibility)"
+      VerifyDeployment="$(VerifyDeployment)"
+      />
+
+  </Target>
+
+  <!--
+   Target Definition: BeforeDeploy
+   Dependency Of:     Deploy
+   -->
+  <Target Name="BeforeDeploy" />
+
+  <!--
+   Target Definition: AfterDeploy
+   Dependency Of:     Deploy
+   -->
+  <Target Name="AfterDeploy" />
+
+  <!--
+   Target Definition: PreDeployEvent
+   Dependency Of:     Deploy
+   -->
+  <Target Name="PreDeployEvent"
+          Condition="'$(PreDeployEvent)'!='' And Exists($(TargetDir))">
+
+    <Exec WorkingDirectory="$(TargetDir)" Command="$(PreDeployEvent)" />
+
+  </Target>
+
+  <!--
+   Target Definition: PostDeployEvent
+   Dependency Of:     Deploy
+   -->
+  <Target Name="PostDeployEvent"
+          Condition="'$(PostDeployEvent)'!='' And Exists($(TargetDir))">
+
+    <Exec WorkingDirectory="$(TargetDir)" Command="$(PostDeployEvent)" />
+
+  </Target>
+
+  <!--
+   Target Definition: Deploy
+   Dependency Of:     All
+   -->
+  <PropertyGroup>
+    <DeployDependsOn>
+      BeforeDeploy;
+      PreDeployEvent;
+      SqlDeploy;
+      PostDeployEvent;
+      AfterDeploy
+    </DeployDependsOn>
+  </PropertyGroup>
+
+  <Target Name="Deploy" DependsOnTargets="$(DeployDependsOn)">
+
+    <OnError ExecuteTargets="PostDeployEvent" Condition="'$(RunPostDeployEvent)'=='Always'" />
+
+  </Target>
+
+
+  <!--===========================================================================-->
+  <!-- Publish Targets -->
+  <!--===========================================================================-->
+
+  <!--
+   Target Definition: _SetupSqlPublishInputs
+   Dependency Of:     SqlPublish
+-->
+  <Target Name="_SetupSqlPublishInputs" Outputs="@(SqlPublishInputItem)">
+
+    <ItemGroup>
+      <__SqlPublishInputItem Include="@(SqlTarget)"/>
+      <__SqlPublishInputItem Include="$(SqlPublishProfilePath)" Condition="'$(SqlPublishProfilePath)' != ''"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <SqlPublishInputItem Include="@(__SqlPublishInputItem->'%(FullPath)')"/>
+      <SqlPublishInputItem Include="ForceScriptRecalculation.txt" Condition="'$(ForceDeployment)' == 'true'"/>
+    </ItemGroup>
+
+  </Target>
+
+  <!--
+   Target Definition: _SetupSqlPublishOutputs
+   Dependency Of:     SqlPublish
+   -->
+  <Target Name="_SetupSqlPublishOutputs" Outputs="@(SqlPublishOutputItem)">
+    <ItemGroup>
+      <SqlPublishOutputItem Include="@(PublishScriptFile->'%(FullPath)')"/>
+    </ItemGroup>
+  </Target>
+
+  <!--
+   Target Definition: SqlPublish
+   Dependency Of:     Publish
+   -->
+  <PropertyGroup>
+    <SqlPublishDependsOn>
+      _SetupSqlPublishInputs;
+      _SetupSqlPublishOutputs
+    </SqlPublishDependsOn>
+  </PropertyGroup>
+
+  <Target Name="SqlPublish"
+          Inputs="@(SqlPublishInputItem)"
+          Outputs="@(SqlPublishOutputItem)"
+          DependsOnTargets="$(SqlPublishDependsOn)">
+
+    <SqlPublishTask
+      CacheTargetModel="$(CacheTargetModel)"
+      SqlPublishProfilePath="$(SqlPublishProfilePath)"
+      ScriptFile="@(PublishScriptFile)"
+      SourceModel="@(SqlTarget)"
+      UpdateDatabase="$(UpdateDatabase)"
+      Publish_TargetConnectionString="$(Publish_TargetConnectionString)"
+      CmdLineInMemoryStorage="$(CmdLineInMemoryStorage)"
+      AdditionalDeploymentContributorArguments="$(Publish_AdditionalDeploymentContributorArguments)"
+      AdditionalDeploymentContributors="$(Publish_AdditionalDeploymentContributors)"
+      AllowDropBlockingAssemblies="$(Publish_AllowDropBlockingAssemblies)"
+      AllowIncompatiblePlatform="$(Publish_AllowIncompatiblePlatform)"
+      AllowUnsafeRowLevelSecurityDataMovement="$(Publish_AllowUnsafeRowLevelSecurityDataMovement)"
+      BackupDatabaseBeforeChanges="$(Publish_BackupDatabaseBeforeChanges)"
+      BlockOnPossibleDataLoss="$(Publish_BlockOnPossibleDataLoss)"
+      BlockWhenDriftDetected="$(Publish_BlockWhenDriftDetected)"
+      CommentOutSetVarDeclarations="$(Publish_CommentOutSetVarDeclarations)"
+      CompareUsingTargetCollation="$(Publish_CompareUsingTargetCollation)"
+      CreateNewDatabase="$(Publish_CreateNewDatabase)"
+      DeployDatabaseInSingleUserMode="$(Publish_DeployDatabaseInSingleUserMode)"
+      DisableAndReenableDdlTriggers="$(Publish_DisableAndReenableDdlTriggers)"
+      DoNotAlterChangeDataCaptureObjects="$(Publish_DoNotAlterChangeDataCaptureObjects)"
+      DoNotAlterReplicatedObjects="$(Publish_DoNotAlterReplicatedObjects)"
+      DoNotDropAggregates="$(Publish_DoNotDropAggregates)"
+      DoNotDropApplicationRoles="$(Publish_DoNotDropApplicationRoles)"
+      DoNotDropAssemblies="$(Publish_DoNotDropAssemblies)"
+      DoNotDropAsymmetricKeys="$(Publish_DoNotDropAsymmetricKeys)"
+      DoNotDropAudits="$(Publish_DoNotDropAudits)"
+      DoNotDropBrokerPriorities="$(Publish_DoNotDropBrokerPriorities)"
+      DoNotDropCertificates="$(Publish_DoNotDropCertificates)"
+      DoNotDropClrUserDefinedTypes="$(Publish_DoNotDropClrUserDefinedTypes)"
+      DoNotDropColumnEncryptionKeys="$(Publish_DoNotDropColumnEncryptionKeys)"
+      DoNotDropColumnMasterKeys="$(Publish_DoNotDropColumnMasterKeys)"
+      DoNotDropContracts="$(Publish_DoNotDropContracts)"
+      DoNotDropCredentials="$(Publish_DoNotDropCredentials)"
+      DoNotDropCryptographicProviders="$(Publish_DoNotDropCryptographicProviders)"
+      DoNotDropDatabaseAuditSpecifications="$(Publish_DoNotDropDatabaseAuditSpecifications)"
+      DoNotDropDatabaseRoles="$(Publish_DoNotDropDatabaseRoles)"
+      DoNotDropDatabaseScopedCredentials="$(Publish_DoNotDropDatabaseScopedCredentials)"
+      DoNotDropDatabaseTriggers="$(Publish_DoNotDropDatabaseTriggers)"
+      DoNotDropDefaults="$(Publish_DoNotDropDefaults)"
+      DoNotDropEndpoints="$(Publish_DoNotDropEndpoints)"
+      DoNotDropErrorMessages="$(Publish_DoNotDropErrorMessages)"
+      DoNotDropEventNotifications="$(Publish_DoNotDropEventNotifications)"
+      DoNotDropEventSessions="$(Publish_DoNotDropEventSessions)"
+      DoNotDropExtendedProperties="$(Publish_DoNotDropExtendedProperties)"
+      DoNotDropExternalDataSources="$(Publish_DoNotDropExternalDataSources)"
+      DoNotDropExternalFileFormats="$(Publish_DoNotDropExternalFileFormats)"
+      DoNotDropExternalTables="$(Publish_DoNotDropExternalTables)"
+      DoNotDropFilegroups="$(Publish_DoNotDropFilegroups)"
+      DoNotDropFileTables="$(Publish_DoNotDropFileTables)"
+      DoNotDropFullTextCatalogs="$(Publish_DoNotDropFullTextCatalogs)"
+      DoNotDropFullTextStoplists="$(Publish_DoNotDropFullTextStoplists)"
+      DoNotDropLinkedServerLogins="$(Publish_DoNotDropLinkedServerLogins)"
+      DoNotDropLinkedServers="$(Publish_DoNotDropLinkedServers)"
+      DoNotDropLogins="$(Publish_DoNotDropLogins)"
+      DoNotDropMessageTypes="$(Publish_DoNotDropMessageTypes)"
+      DoNotDropPartitionFunctions="$(Publish_DoNotDropPartitionFunctions)"
+      DoNotDropPartitionSchemes="$(Publish_DoNotDropPartitionSchemes)"
+      DoNotDropPermissions="$(Publish_DoNotDropPermissions)"
+      DoNotDropQueues="$(Publish_DoNotDropQueues)"
+      DoNotDropRemoteServiceBindings="$(Publish_DoNotDropRemoteServiceBindings)"
+      DoNotDropRoleMembership="$(Publish_DoNotDropRoleMembership)"
+      DoNotDropRoutes="$(Publish_DoNotDropRoutes)"
+      DoNotDropRules="$(Publish_DoNotDropRules)"
+      DoNotDropScalarValuedFunctions="$(Publish_DoNotDropScalarValuedFunctions)"
+      DoNotDropSearchPropertyLists="$(Publish_DoNotDropSearchPropertyLists)"
+      DoNotDropSecurityPolicies="$(Publish_DoNotDropSecurityPolicies)"
+      DoNotDropSequences="$(Publish_DoNotDropSequences)"
+      DoNotDropServerAuditSpecifications="$(Publish_DoNotDropServerAuditSpecifications)"
+      DoNotDropServerRoleMembership="$(Publish_DoNotDropServerRoleMembership)"
+      DoNotDropServerRoles="$(Publish_DoNotDropServerRoles)"
+      DoNotDropServerTriggers="$(Publish_DoNotDropServerTriggers)"
+      DoNotDropServices="$(Publish_DoNotDropServices)"
+      DoNotDropSignatures="$(Publish_DoNotDropSignatures)"
+      DoNotDropStoredProcedures="$(Publish_DoNotDropStoredProcedures)"
+      DoNotDropSymmetricKeys="$(Publish_DoNotDropSymmetricKeys)"
+      DoNotDropSynonyms="$(Publish_DoNotDropSynonyms)"
+      DoNotDropTables="$(Publish_DoNotDropTables)"
+      DoNotDropTableValuedFunctions="$(Publish_DoNotDropTableValuedFunctions)"
+      DoNotDropUserDefinedDataTypes="$(Publish_DoNotDropUserDefinedDataTypes)"
+      DoNotDropUserDefinedTableTypes="$(Publish_DoNotDropUserDefinedTableTypes)"
+      DoNotDropUsers="$(Publish_DoNotDropUsers)"
+      DoNotDropViews="$(Publish_DoNotDropViews)"
+      DoNotDropXmlSchemaCollections="$(Publish_DoNotDropXmlSchemaCollections)"
+      DropConstraintsNotInSource="$(Publish_DropConstraintsNotInSource)"
+      DropDmlTriggersNotInSource="$(Publish_DropDmlTriggersNotInSource)"
+      DropExtendedPropertiesNotInSource="$(Publish_DropExtendedPropertiesNotInSource)"
+      DropIndexesNotInSource="$(Publish_DropIndexesNotInSource)"
+      DropObjectsNotInSource="$(Publish_DropObjectsNotInSource)"
+      DropPermissionsNotInSource="$(Publish_DropPermissionsNotInSource)"
+      DropRoleMembersNotInSource="$(Publish_DropRoleMembersNotInSource)"
+      DropStatisticsNotInSource="$(Publish_DropStatisticsNotInSource)"
+      ExcludeAggregates="$(Publish_ExcludeAggregates)"
+      ExcludeApplicationRoles="$(Publish_ExcludeApplicationRoles)"
+      ExcludeAssemblies="$(Publish_ExcludeAssemblies)"
+      ExcludeAsymmetricKeys="$(Publish_ExcludeAsymmetricKeys)"
+      ExcludeAudits="$(Publish_ExcludeAudits)"
+      ExcludeBrokerPriorities="$(Publish_ExcludeBrokerPriorities)"
+      ExcludeCertificates="$(Publish_ExcludeCertificates)"
+      ExcludeClrUserDefinedTypes="$(Publish_ExcludeClrUserDefinedTypes)"
+      ExcludeColumnEncryptionKeys="$(Publish_ExcludeColumnEncryptionKeys)"
+      ExcludeColumnMasterKeys="$(Publish_ExcludeColumnMasterKeys)"
+      ExcludeContracts="$(Publish_ExcludeContracts)"
+      ExcludeCredentials="$(Publish_ExcludeCredentials)"
+      ExcludeCryptographicProviders="$(Publish_ExcludeCryptographicProviders)"
+      ExcludeDatabaseAuditSpecifications="$(Publish_ExcludeDatabaseAuditSpecifications)"
+      ExcludeDatabaseRoles="$(Publish_ExcludeDatabaseRoles)"
+      ExcludeDatabaseScopedCredentials="$(Publish_ExcludeDatabaseScopedCredentials)"
+      ExcludeDatabaseTriggers="$(Publish_ExcludeDatabaseTriggers)"
+      ExcludeDefaults="$(Publish_ExcludeDefaults)"
+      ExcludeEndpoints="$(Publish_ExcludeEndpoints)"
+      ExcludeErrorMessages="$(Publish_ExcludeErrorMessages)"
+      ExcludeEventNotifications="$(Publish_ExcludeEventNotifications)"
+      ExcludeEventSessions="$(Publish_ExcludeEventSessions)"
+      ExcludeExternalDataSources="$(Publish_ExcludeExternalDataSources)"
+      ExcludeExternalFileFormats="$(Publish_ExcludeExternalFileFormats)"
+      ExcludeExternalTables="$(Publish_ExcludeExternalTables)"
+      ExcludeFilegroups="$(Publish_ExcludeFilegroups)"
+      ExcludeFileTables="$(Publish_ExcludeFileTables)"
+      ExcludeFullTextCatalogs="$(Publish_ExcludeFullTextCatalogs)"
+      ExcludeFullTextStoplists="$(Publish_ExcludeFullTextStoplists)"
+      ExcludeLinkedServerLogins="$(Publish_ExcludeLinkedServerLogins)"
+      ExcludeLinkedServers="$(Publish_ExcludeLinkedServers)"
+      ExcludeLogins="$(Publish_ExcludeLogins)"
+      ExcludeMessageTypes="$(Publish_ExcludeMessageTypes)"
+      ExcludePartitionFunctions="$(Publish_ExcludePartitionFunctions)"
+      ExcludePartitionSchemes="$(Publish_ExcludePartitionSchemes)"
+      ExcludeQueues="$(Publish_ExcludeQueues)"
+      ExcludeRemoteServiceBindings="$(Publish_ExcludeRemoteServiceBindings)"
+      ExcludeRoutes="$(Publish_ExcludeRoutes)"
+      ExcludeRules="$(Publish_ExcludeRules)"
+      ExcludeScalarValuedFunctions="$(Publish_ExcludeScalarValuedFunctions)"
+      ExcludeSearchPropertyLists="$(Publish_ExcludeSearchPropertyLists)"
+      ExcludeSecurityPolicies="$(Publish_ExcludeSecurityPolicies)"
+      ExcludeSequences="$(Publish_ExcludeSequences)"
+      ExcludeServerAuditSpecifications="$(Publish_ExcludeServerAuditSpecifications)"
+      ExcludeServerRoleMembership="$(Publish_ExcludeServerRoleMembership)"
+      ExcludeServerRoles="$(Publish_ExcludeServerRoles)"
+      ExcludeServerTriggers="$(Publish_ExcludeServerTriggers)"
+      ExcludeServices="$(Publish_ExcludeServices)"
+      ExcludeSignatures="$(Publish_ExcludeSignatures)"
+      ExcludeStoredProcedures="$(Publish_ExcludeStoredProcedures)"
+      ExcludeSymmetricKeys="$(Publish_ExcludeSymmetricKeys)"
+      ExcludeSynonyms="$(Publish_ExcludeSynonyms)"
+      ExcludeTables="$(Publish_ExcludeTables)"
+      ExcludeTableValuedFunctions="$(Publish_ExcludeTableValuedFunctions)"
+      ExcludeUserDefinedDataTypes="$(Publish_ExcludeUserDefinedDataTypes)"
+      ExcludeUserDefinedTableTypes="$(Publish_ExcludeUserDefinedTableTypes)"
+      ExcludeUsers="$(Publish_ExcludeUsers)"
+      ExcludeViews="$(Publish_ExcludeViews)"
+      ExcludeXmlSchemaCollections="$(Publish_ExcludeXmlSchemaCollections)"
+      GenerateSmartDefaults="$(Publish_GenerateSmartDefaults)"
+      IgnoreAnsiNulls="$(Publish_IgnoreAnsiNulls)"
+      IgnoreAuthorizer="$(Publish_IgnoreAuthorizer)"
+      IgnoreColumnCollation="$(Publish_IgnoreColumnCollation)"
+      IgnoreColumnOrder="$(Publish_IgnoreColumnOrder)"
+      IgnoreComments="$(Publish_IgnoreComments)"
+      IgnoreCryptographicProviderFilePath="$(Publish_IgnoreCryptographicProviderFilePath)"
+      IgnoreDdlTriggerOrder="$(Publish_IgnoreDdlTriggerOrder)"
+      IgnoreDdlTriggerState="$(Publish_IgnoreDdlTriggerState)"
+      IgnoreDefaultSchema="$(Publish_IgnoreDefaultSchema)"
+      IgnoreDmlTriggerOrder="$(Publish_IgnoreDmlTriggerOrder)"
+      IgnoreDmlTriggerState="$(Publish_IgnoreDmlTriggerState)"
+      IgnoreExtendedProperties="$(Publish_IgnoreExtendedProperties)"
+      IgnoreFileAndLogFilePath="$(Publish_IgnoreFileAndLogFilePath)"
+      IgnoreFilegroupPlacement="$(Publish_IgnoreFilegroupPlacement)"
+      IgnoreFileSize="$(Publish_IgnoreFileSize)"
+      IgnoreFillFactor="$(Publish_IgnoreFillFactor)"
+      IgnoreFullTextCatalogFilePath="$(Publish_IgnoreFullTextCatalogFilePath)"
+      IgnoreIdentitySeed="$(Publish_IgnoreIdentitySeed)"
+      IgnoreIncrement="$(Publish_IgnoreIncrement)"
+      IgnoreIndexOptions="$(Publish_IgnoreIndexOptions)"
+      IgnoreIndexPadding="$(Publish_IgnoreIndexPadding)"
+      IgnoreKeywordCasing="$(Publish_IgnoreKeywordCasing)"
+      IgnoreLockHintsOnIndexes="$(Publish_IgnoreLockHintsOnIndexes)"
+      IgnoreLoginSids="$(Publish_IgnoreLoginSids)"
+      IgnoreNotForReplication="$(Publish_IgnoreNotForReplication)"
+      IgnoreObjectPlacementOnPartitionScheme="$(Publish_IgnoreObjectPlacementOnPartitionScheme)"
+      IgnorePartitionSchemes="$(Publish_IgnorePartitionSchemes)"
+      IgnorePermissions="$(Publish_IgnorePermissions)"
+      IgnoreQuotedIdentifiers="$(Publish_IgnoreQuotedIdentifiers)"
+      IgnoreRoleMembership="$(Publish_IgnoreRoleMembership)"
+      IgnoreRouteLifetime="$(Publish_IgnoreRouteLifetime)"
+      IgnoreSemicolonBetweenStatements="$(Publish_IgnoreSemicolonBetweenStatements)"
+      IgnoreTableOptions="$(Publish_IgnoreTableOptions)"
+      IgnoreUserSettingsObjects="$(Publish_IgnoreUserSettingsObjects)"
+      IgnoreWhitespace="$(Publish_IgnoreWhitespace)"
+      IgnoreWithNocheckOnCheckConstraints="$(Publish_IgnoreWithNocheckOnCheckConstraints)"
+      IgnoreWithNocheckOnForeignKeys="$(Publish_IgnoreWithNocheckOnForeignKeys)"
+      IncludeCompositeObjects="$(Publish_IncludeCompositeObjects)"
+      IncludeTransactionalScripts="$(Publish_IncludeTransactionalScripts)"
+      NoAlterStatementsToChangeCLRTypes="$(Publish_NoAlterStatementsToChangeCLRTypes)"
+      PopulateFilesOnFileGroups="$(Publish_PopulateFilesOnFileGroups)"
+      RegisterDataTierApplication="$(Publish_RegisterDataTierApplication)"
+      ScriptDatabaseCollation="$(Publish_ScriptDatabaseCollation)"
+      ScriptDatabaseCompatibility="$(Publish_ScriptDatabaseCompatibility)"
+      ScriptDatabaseOptions="$(Publish_ScriptDatabaseOptions)"
+      ScriptDeployStateChecks="$(Publish_ScriptDeployStateChecks)"
+      ScriptFileSize="$(Publish_ScriptFileSize)"
+      ScriptNewConstraintValidation="$(Publish_ScriptNewConstraintValidation)"
+      ScriptRefreshModule="$(Publish_ScriptRefreshModule)"
+      TargetDatabaseName="$(Publish_TargetDatabaseName)"
+      TreatVerificationErrorsAsWarnings="$(Publish_TreatVerificationErrorsAsWarnings)"
+      UnmodifiableObjectWarnings="$(Publish_UnmodifiableObjectWarnings)"
+      VerifyCollationCompatibility="$(Publish_VerifyCollationCompatibility)"
+      VerifyDeployment="$(Publish_VerifyDeployment)"
+      />
+
+  </Target>
+
+  <!--
+   Target Definition: BeforePublish
+   Dependency Of:     Publish
+   -->
+  <Target Name="BeforePublish" />
+
+  <!--
+   Target Definition: AfterPublish
+   Dependency Of:     Publish
+   -->
+  <Target Name="AfterPublish" />
+
+  <!--
+   Target Definition: PrePublishEvent
+   Dependency Of:     Publish
+   -->
+  <Target Name="PrePublishEvent"
+          Condition="'$(PrePublishEvent)'!='' And Exists($(TargetDir))">
+
+    <Exec WorkingDirectory="$(TargetDir)" Command="$(PrePublishEvent)" />
+
+  </Target>
+
+  <!--
+   Target Definition: PostPublishEvent
+   Dependency Of:     Publish
+   -->
+  <Target Name="PostPublishEvent"
+          Condition="'$(PostPublishEvent)'!='' And Exists($(TargetDir))">
+
+    <Exec WorkingDirectory="$(TargetDir)" Command="$(PostPublishEvent)" />
+
+  </Target>
+
+  <!--
+   Target Definition: Publish
+   -->
+  <PropertyGroup>
+    <PublishDependsOn>
+      BeforePublish;
+      PrePublishEvent;
+      SqlPublish;
+      PostPublishEvent;
+      AfterPublish
+    </PublishDependsOn>
+  </PropertyGroup>
+
+  <Target Name="Publish" DependsOnTargets="$(PublishDependsOn)">
+
+    <OnError ExecuteTargets="PostPublishEvent" Condition="'$(RunPostPublishEvent)'=='Always'" />
+
+  </Target>
+
+</Project>

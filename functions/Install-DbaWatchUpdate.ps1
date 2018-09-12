@@ -1,92 +1,104 @@
-Function Install-DbaWatchUpdate
-{
-<# 
-.SYNOPSIS 
-Adds the scheduled task to support Watch-DbaUpdate
+function Install-DbaWatchUpdate {
+    <#
+        .SYNOPSIS
+            Adds the scheduled task to support Watch-DbaUpdate.
 
-.DESCRIPTION 
-Adds the scheduled task to support Watch-DbaUpdate.
+        .DESCRIPTION
+            Adds the scheduled task to support Watch-DbaUpdate.
 
-.NOTES
-Tags: JustForFun
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+        .PARAMETER TaskName
+            Provide custom name for the Scheduled Task
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+        .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.LINK 
-https://dbatools.io/Install-DbaWatchUpdate
+        .NOTES
+            Tags: Module
+            Author: Chrissy LeMaire (@cl), netnerds.net
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE   
-Install-DbaWatchUpdate
+        .LINK
+            https://dbatools.io/Install-DbaWatchUpdate
 
-Adds the scheduled task needed by Watch-DbaUpdate
-#>
-	PROCESS
-	{
-		if (([Environment]::OSVersion).Version.Major -lt 10)
-		{
-			Write-Warning "This command only supports Windows 10 and above"
-			return
-		}
-		
-		$script = {
-			try
-			{
-				# create a task, check every 3 hours
-				$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -NoLogo -NonInteractive -WindowStyle Hidden Watch-DbaUpdate'
-				$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Hours 1)
-				$principal = New-ScheduledTaskPrincipal -LogonType S4U -UserId (whoami)
-				$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
-				$task = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
-			}
-			catch
-			{
-				# keep movin
-			}
-		}
-		
-		if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue))
-		{
-			# Needs admin creds to setup the kind of PowerShell window that doesn't appear for a millisecond
-			# which is a millisecond too long
-			If (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
-			{
-				Write-Warning "Watch-DbaUpdate runs as a Scheduled Task which must be created. This will only happen once."
-				Start-Process powershell -Verb runAs -ArgumentList Install-DbaWatchUpdate -Wait
-			}
-			
-			try
-			{
-				Invoke-Command -ScriptBlock $script -ErrorAction Stop
-				
-				if ((Get-Location).Path -ne "$env:windir\system32")
-				{
-					$module = Get-Module -Name dbatools
-					Write-Warning "Task created! A notication should appear momentarily. Here's something cute to look at in the interim."
-					Show-Notification -title "dbatools wants you" -text "come hang out at dbatools.io/slack"
-				}
-			}
-			catch
-			{
-				Write-Warning "Couldn't create scheduled task :("
-				return
-			}
-			
-			# doublecheck
-			if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue))
-			{
-				Write-Warning "Couldn't create scheduled task :("
-			}
-		}
-		else
-		{
-			Write-Output "Watch-DbaUpdate is already installed :)"
-			Write-Output "And by already isntalled, we mean it's a scheduled task called 'dbatools version check'"
-		}
-	}
+        .EXAMPLE
+            Install-DbaWatchUpdate
+
+            Adds the scheduled task needed by Watch-DbaUpdate
+
+        .EXAMPLE
+            Install-DbaWatchUpdate -TaskName MyScheduledTask
+
+            Will create the scheduled task as the name MyScheduledTask
+    #>
+    [cmdletbinding(SupportsShouldProcess)]
+    param(
+        [string]$TaskName = 'dbatools version check',
+        [switch]$EnableException
+    )
+    process {
+        if ($PSCmdlet.ShouldProcess($env:COMPUTERNAME, "Validate Version of OS") ) {
+            if (([Environment]::OSVersion).Version.Major -lt 10) {
+                Stop-Function -Message "This command only supports Windows 10 and above"
+            }
+        }
+        $script = {
+            try {
+                # create a task, check every 3 hours
+                $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -NoLogo -NonInteractive -WindowStyle Hidden Watch-DbaUpdate'
+                $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date -RepetitionInterval (New-TimeSpan -Hours 1)
+                $principal = New-ScheduledTaskPrincipal -LogonType S4U -UserId (whoami)
+                $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd
+                $task = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
+            }
+            catch {
+                # keep moving
+            }
+        }
+
+        if ($null -eq (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue)) {
+            # Needs admin creds to setup the kind of PowerShell window that doesn't appear for a millisecond
+            # which is a millisecond too long
+            if ($PSCmdlet.ShouldProcess($env:COMPUTERNAME, "Validate running in RunAs mode")) {
+                if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+                    Write-Message -Level Warning -Message "This command has to run using RunAs mode (privileged) to create the Scheduled Task. This will only happen once."
+                    if ($PSCmdlet.ShouldProcess($env:COMPUTERNAME, "Starting process in RunAs mode") ) {
+                        Start-Process powershell -Verb runAs -ArgumentList Install-DbaWatchUpdate -Wait
+                    }
+                }
+
+            }
+            if ($PSCmdlet.ShouldProcess($env:COMPUTERNAME, "Creating scheduled task $TaskName")) {
+                try {
+                    Invoke-Command -ScriptBlock $script -ErrorAction Stop
+
+                    if ((Get-Location).Path -ne "$env:WINDIR\system32") {
+                        Write-Message -Level Output -Message "Scheduled Task [$TaskName] created! A notification should appear momentarily. Here's something cute to look at in the interim."
+                        Show-Notification -Title "dbatools wants you" -Text "come hang out at dbatools.io/slack"
+                    }
+                }
+                catch {
+                    Stop-Function -Message "Could not create scheduled task $TaskName" -Target $env:COMPUTERNAME -ErrorRecord $_
+                }
+            }
+            if ($PSCmdlet.ShouldProcess($env:COMPUTERNAME, "Checking scheduled task was created")) {
+                # double check
+                if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue)) {
+                    Write-Message -Level Warning -Message "Scheduled Task was not created."
+                }
+            }
+        }
+        else {
+            Write-Message -Level Output -Message "Scheduled Task $TaskName is already installed on this machine."
+        }
+    }
 }

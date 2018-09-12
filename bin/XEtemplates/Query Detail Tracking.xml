@@ -1,0 +1,135 @@
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
+  <event_session name="Query Detail Tracking" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+    <templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->Query Execution</templateCategory>
+    <templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Query Detail Tracking</templateName>
+    <templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Collects detailed statement and error information. You can use this template to track each statement has executed on your system as a result of query batches or stored procedures and then track errors back to the specific statement that caused them. This template also collects the query hash and query plan hash for every statement it tracks. All statement events are collected in this session so collection size may be very large. To reduce the collection size consider using the Query Detail Sampling template, which already includes a filter.</templateDescription>
+    <event package="sqlserver" name="error_reported">
+      <action package="sqlserver" name="client_app_name" />
+      <action package="sqlserver" name="database_id" />
+      <action package="sqlserver" name="query_hash" />
+      <action package="sqlserver" name="session_id" />
+      <predicate>
+        <and>
+          <leaf>
+            <comparator name="greater_than_uint64" package="package0"></comparator>
+            <global name="database_id" package="sqlserver"></global>
+            <value>4</value>
+          </leaf>
+          <leaf>
+            <comparator name="equal_boolean" package="package0"></comparator>
+            <global name="is_system" package="sqlserver"></global>
+            <value>false</value>
+          </leaf>
+        </and>
+      </predicate>
+    </event>
+    <event package="sqlserver" name="module_end">
+      <action package="sqlserver" name="client_app_name" />
+      <action package="sqlserver" name="database_id" />
+      <action package="sqlserver" name="query_hash" />
+      <action package="sqlserver" name="session_id" />
+      <parameter name="collect_statement" value="1" />
+      <predicate>
+        <and>
+          <leaf>
+            <comparator name="greater_than_uint64" package="package0"></comparator>
+            <global name="database_id" package="sqlserver"></global>
+            <value>4</value>
+          </leaf>
+          <leaf>
+            <comparator name="equal_boolean" package="package0"></comparator>
+            <global name="is_system" package="sqlserver"></global>
+            <value>false</value>
+          </leaf>
+        </and>
+      </predicate>
+    </event>
+    <event package="sqlserver" name="rpc_completed">
+      <action package="sqlserver" name="client_app_name" />
+      <action package="sqlserver" name="database_id" />
+      <action package="sqlserver" name="query_hash" />
+      <action package="sqlserver" name="session_id" />
+      <predicate>
+        <and>
+          <leaf>
+            <comparator name="greater_than_uint64" package="package0"></comparator>
+            <global name="database_id" package="sqlserver"></global>
+            <value>4</value>
+          </leaf>
+          <leaf>
+            <comparator name="equal_boolean" package="package0"></comparator>
+            <global name="is_system" package="sqlserver"></global>
+            <value>false</value>
+          </leaf>
+        </and>
+      </predicate>
+    </event>
+    <event package="sqlserver" name="sp_statement_completed">
+      <action package="sqlserver" name="client_app_name" />
+      <action package="sqlserver" name="database_id" />
+      <action package="sqlserver" name="query_hash" />
+      <action package="sqlserver" name="query_plan_hash" />
+      <action package="sqlserver" name="session_id" />
+      <parameter name="collect_object_name" value="1" />
+      <predicate>
+        <and>
+          <leaf>
+            <comparator name="greater_than_uint64" package="package0"></comparator>
+            <global name="database_id" package="sqlserver"></global>
+            <value>4</value>
+          </leaf>
+          <leaf>
+            <comparator name="equal_boolean" package="package0"></comparator>
+            <global name="is_system" package="sqlserver"></global>
+            <value>false</value>
+          </leaf>
+        </and>
+      </predicate>
+    </event>
+    <event package="sqlserver" name="sql_batch_completed">
+      <action package="sqlserver" name="client_app_name" />
+      <action package="sqlserver" name="database_id" />
+      <action package="sqlserver" name="query_hash" />
+      <action package="sqlserver" name="session_id" />
+      <predicate>
+        <and>
+          <leaf>
+            <comparator name="greater_than_uint64" package="package0"></comparator>
+            <global name="database_id" package="sqlserver"></global>
+            <value>4</value>
+          </leaf>
+          <leaf>
+            <comparator name="equal_boolean" package="package0"></comparator>
+            <global name="is_system" package="sqlserver"></global>
+            <value>false</value>
+          </leaf>
+        </and>
+      </predicate>
+    </event>
+    <event package="sqlserver" name="sql_statement_completed">
+      <action package="sqlserver" name="client_app_name" />
+      <action package="sqlserver" name="database_id" />
+      <action package="sqlserver" name="query_hash" />
+      <action package="sqlserver" name="query_plan_hash" />
+      <action package="sqlserver" name="session_id" />
+      <predicate>
+        <and>
+          <leaf>
+            <comparator name="greater_than_uint64" package="package0"></comparator>
+            <global name="database_id" package="sqlserver"></global>
+            <value>4</value>
+          </leaf>
+          <leaf>
+            <comparator name="equal_boolean" package="package0"></comparator>
+            <global name="is_system" package="sqlserver"></global>
+            <value>false</value>
+          </leaf>
+        </and>
+      </predicate>
+    </event>
+    <target package="package0" name="ring_buffer" />
+  </event_session>
+</event_sessions>

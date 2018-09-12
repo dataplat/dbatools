@@ -1,0 +1,37 @@
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
+  <event_session name="Connection Detail Tracking" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+    <templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->System Monitoring</templateCategory>
+    <templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Connection Detail Tracking</templateName>
+    <templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Tracks connection activity for a server. Normal connection activity is tracked using the login and logout events, and problems are recorded using the connectivity_ring_buffer_recorded event.</templateDescription>
+    <event package="sqlserver" name="connectivity_ring_buffer_recorded">
+      <action package="sqlserver" name="client_app_name" />
+      <action package="sqlserver" name="client_connection_id" />
+      <action package="sqlserver" name="client_hostname" />
+      <action package="sqlserver" name="context_info" />
+      <action package="sqlserver" name="server_principal_name" />
+      <action package="sqlserver" name="session_id" />
+    </event>
+    <event package="sqlserver" name="login">
+      <action package="sqlserver" name="client_app_name" />
+      <action package="sqlserver" name="client_connection_id" />
+      <action package="sqlserver" name="client_hostname" />
+      <action package="sqlserver" name="context_info" />
+      <action package="sqlserver" name="server_instance_name" />
+      <action package="sqlserver" name="server_principal_name" />
+      <parameter name="collect_options_text" value="1" />
+    </event>
+    <event package="sqlserver" name="logout">
+      <action package="sqlserver" name="client_app_name" />
+      <action package="sqlserver" name="client_connection_id" />
+      <action package="sqlserver" name="client_hostname" />
+      <action package="sqlserver" name="context_info" />
+      <action package="sqlserver" name="server_instance_name" />
+      <action package="sqlserver" name="server_principal_name" />
+      <action package="sqlserver" name="session_id" />
+    </event>
+    <target package="package0" name="ring_buffer" />
+  </event_session>
+</event_sessions>
