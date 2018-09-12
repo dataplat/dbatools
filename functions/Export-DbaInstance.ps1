@@ -269,13 +269,6 @@
                 Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-serverroles.sql"
             }
             
-            if (-not $ExcludeAvailabilityGroups) {
-                Write-Message -Level Verbose -Message "Exporting availability group"
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting availability groups"
-                $null = Get-DbaAvailabilityGroup -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-availabilitygroups.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
-                Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-availabilitygroups.sql"
-            }            
-            
             if (-not $ExcludeCredentials) {
                 Write-Message -Level Verbose -Message "Exporting SQL credentials"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting SQL credentials"
@@ -402,9 +395,16 @@
                 $null = Get-DbaAgentSchedule -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 $null = Get-DbaAgentJob -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-sqlagent.sql"
-
-                Write-Progress -Activity "Performing Instance Export for $instance" -Completed
             }
+            
+            if (-not $ExcludeAvailabilityGroups) {
+                Write-Message -Level Verbose -Message "Exporting availability group"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting availability groups"
+                $null = Get-DbaAvailabilityGroup -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-availabilitygroups.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
+                Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-availabilitygroups.sql"
+            }
+            
+            Write-Progress -Activity "Performing Instance Export for $instance" -Completed
         }
     }
     end {
