@@ -223,7 +223,7 @@ go
 "@
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $sqldrop -Database Master
     }
-    if ($env:azurepasswd) {
+    if ($env:azurepasswd1) {
         Context "Azure works" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
