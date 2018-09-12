@@ -16,7 +16,7 @@ Login to the target instance using alternative credentials. Windows and SQL Auth
 
 .PARAMETER SqlCms
 Deprecated, pipe in from Get-DbaRegisteredServer
-    
+
 .PARAMETER ServersFromFile
 Deprecated, pipe in from Get-Content
 
@@ -51,7 +51,7 @@ Gets SQL Server versions, editions and product keys for all instances within eac
         [string]$ServersFromFile,
         [switch]$EnableException
     )
-    
+
     begin {
         Function Unlock-SqlInstanceKey {
             [CmdletBinding()]
@@ -83,23 +83,26 @@ Gets SQL Server versions, editions and product keys for all instances within eac
             return $productKey
         }
     }
-    
+
     process {
         if ($SqlCms) {
             Stop-Function -Message "Please pipe in servers using Get-DbaRegisteredServer instead"
             return
         }
-        
+
         If ($ServersFromFile) {
             Stop-Function -Message "Please pipe in servers using Get-Content instead"
             return
         }
-        
-        $basepath = "SOFTWARE\Microsoft\Microsoft SQL Server"
-        
+
         foreach ($instance in $SqlInstance) {
             $computerName = $instance.ComputerName
-            
+            try {
+                $regRoots = Get-DbaRegistryRoot -ComputerName $computerName -EnableException
+            }
+            catch {
+                Stop-Function -Message "Can't access registry for $computerName. Is the Remote Registry service started?" -Continue
+            }
             if ($instance.IsLocalhost) {
                 $localmachine = [Microsoft.Win32.RegistryHive]::LocalMachine
                 $defaultview = [Microsoft.Win32.RegistryView]::Default
@@ -111,7 +114,7 @@ Gets SQL Server versions, editions and product keys for all instances within eac
                 catch {
                     Stop-Function -Message "Can't resolve $computerName. Skipping." -Continue
                 }
-                
+
                 try {
                     $reg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey("LocalMachine", $ipaddr)
                 }
@@ -119,83 +122,57 @@ Gets SQL Server versions, editions and product keys for all instances within eac
                     Stop-Function -Message "Can't access registry for $computerName. Is the Remote Registry service started?" -Continue
                 }
             }
-            
-            $instanceNames = $reg.OpenSubKey("$basepath\Instance Names\SQL", $false)
-            
-            if ($instanceNames -eq $null) {
+
+            if (-not($regRoots)) {
                 Stop-Function -Message "No instances found on $computerName. Skipping." -Continue
             }
-            
+
             # Get Product Keys for all instances on the server.
-            foreach ($instanceName in $instanceNames.GetValueNames()) {
-                if ($instanceName -eq "MSSQLSERVER") {
-                    $SqlInstanceName = $instance
-                }
-                else {
-                    $SqlInstanceName = "$instance\$instanceName"
-                }
-                
-                $subkeys = $reg.OpenSubKey("$basepath", $false)
-                $instancekey = $subkeys.GetSubKeynames() | Where-Object { $_ -like "*.$instanceName" }
-                if ($null -eq $instancekey) { $instancekey = $instanceName } # SQL 2k5
-                
-                # Cluster instance hostnames are required for SMO connection
-                $cluster = $reg.OpenSubKey("$basepath\$instancekey\Cluster", $false)
-                if ($cluster -ne $null) {
-                    $clustername = $cluster.GetValue("ClusterName")
-                    if ($instanceName -eq "MSSQLSERVER") {
-                        $SqlInstanceName = $clustername
-                    }
-                    else {
-                        $SqlInstanceName = "$clustername\$instanceName"
-                    }
-                }
-                
-                Write-Message -Level Verbose -Message "Connecting to $SqlInstanceName"
+            foreach ($instanceReg in $regRoots) {
+
+                Write-Message -Level Verbose -Message "Connecting to $($instanceReg.SqlInstance)"
                 try {
                     Write-Message -Level Verbose -Message "Connecting to $instance"
-                    $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
+                    $server = Connect-SqlInstance -SqlInstance $instanceReg.SqlInstance -SqlCredential $SqlCredential -MinimumVersion 10
                 }
                 catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instanceReg.SqlInstance -Continue
                 }
-                
+
                 $servicePack = $server.ProductLevel
                 Write-Message -Level Debug -Message "$instance $instanceName version is $($server.VersionMajor)"
-                
+
                 switch ($server.VersionMajor) {
                     9 {
                         $sqlversion = "SQL Server 2005 $servicePack"
-                        $findkeys = $reg.OpenSubKey("$basepath\90\ProductID", $false)
+                        $findkeys = $reg.OpenSubKey("$($instanceReg.Path)\ProductID", $false)
                         foreach ($findkey in $findkeys.GetValueNames()) {
                             if ($findkey -like "DigitalProductID*") {
-                                $key = "$basepath\90\ProductID\$findkey"
+                                $key = @("$($instanceReg.Path)\ProductID\$findkey")
                             }
                         }
                     }
                     10 {
                         $sqlversion = "SQL Server 2008 $servicePack"
-                        $key = "$basepath\MSSQL10"
                         if ($server.VersionMinor -eq 50) {
-                            $key += "_50"
                             $sqlversion = "SQL Server 2008 R2 $servicePack"
                         }
-                        $key += ".$instanceName\Setup\DigitalProductID"
+                        $key = @("$($instanceReg.Path)\Setup\DigitalProductID")
                     }
                     11 {
-                        $key = "$basepath\110\Tools\Setup\DigitalProductID"
+                        $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
                         $sqlversion = "SQL Server 2012 $servicePack"
                     }
                     12 {
-                        $key = "$basepath\120\Tools\Setup\DigitalProductID"
+                        $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
                         $sqlversion = "SQL Server 2014 $servicePack"
                     }
                     13 {
-                        $key = "$basepath\130\Tools\Setup\DigitalProductID"
+                        $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
                         $sqlversion = "SQL Server 2016 $servicePack"
                     }
                     14 {
-                        $key = "$basepath\140\Tools\ClientSetup\DigitalProductID"
+                        $key = @("$($instanceReg.Path)\Setup\DigitalProductID", "$($instanceReg.Path)\ClientSetup\DigitalProductID")
                         $sqlversion = "SQL Server 2017 $servicePack"
                     }
                     default {
@@ -203,25 +180,37 @@ Gets SQL Server versions, editions and product keys for all instances within eac
                     }
                 }
                 if ($server.Edition -notlike "*Express*") {
-                    try {
-                        $subkey = Split-Path $key
-                        $binaryvalue = Split-Path $key -leaf
-                        $binarykey = $($reg.OpenSubKey($subkey)).GetValue($binaryvalue)
+                    $sqlkey = ''
+                    foreach ($k in $key) {
+                        $subkey = Split-Path $k
+                        $binaryvalue = Split-Path $k -Leaf
+                        try {
+                            $binarykey = $($reg.OpenSubKey($subkey)).GetValue($binaryvalue)
+                            break
+                        }
+                        catch {
+                            $binarykey = $null
+                        }
                     }
-                    catch {
-                        $sqlkey = "Could not connect to $computername"
+
+                    if ($null -eq $binarykey) {
+                        $sqlkey = "Could not read Product Key from registry on $computername"
                     }
-                    try {
-                        $sqlkey = Unlock-SqlInstanceKey $binarykey $server.VersionMajor
+                    else {
+                        try {
+                            $sqlkey = Unlock-SqlInstanceKey $binarykey $server.VersionMajor
+                        }
+                        catch {
+                            $sqlkey = "Unable to unlock key"
+                        }
                     }
-                    catch { }
                 }
                 else {
                     $sqlkey = "SQL Server Express Edition"
                 }
-                
+
                 [pscustomobject]@{
-                    "SQL Instance" = $SqlInstanceName
+                    "SQL Instance" = $server.DomainInstanceName
                     "SQL Version"  = $sqlversion
                     "SQL Edition"  = $server.Edition
                     "Product Key"  = $sqlkey
@@ -233,7 +222,7 @@ Gets SQL Server versions, editions and product keys for all instances within eac
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlServerKey
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaSqlProductKey
-        
+
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Parameter CMSStore
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Parameter ServersFromFile
     }
