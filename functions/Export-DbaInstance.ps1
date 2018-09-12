@@ -10,24 +10,26 @@
         .DESCRIPTION
             Export-DbaInstance consolidates most of the export scripts in dbatools into one command.  This is useful when you're looking to Export entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It Exports:
 
-            All user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -NoDatabases to skip.
-            All logins. Use -NoLogins to skip.
-            All database mail objects. Use -NoDatabaseMail
-            All credentials. Use -NoCredentials to skip.
-            All objects within the Job Server (SQL Agent). Use -NoAgentServer to skip.
-            All linked servers. Use -NoLinkedServers to skip.
-            All groups and servers within Central Management Server. Use -NoCentralManagementServer to skip.
-            All SQL Server configuration objects (everything in sp_configure). Use -NoSpConfigure to skip.
-            All user objects in system databases. Use -NoSysDbUserObjects to skip.
-            All system triggers. Use -NoSystemTriggers to skip.
-            All system backup devices. Use -NoBackupDevices to skip.
-            All Audits. Use -NoAudits to skip.
-            All Endpoints. Use -NoEndpoints to skip.
-            All Extended Events. Use -NoExtendedEvents to skip.
-            All Policy Management objects. Use -NoPolicyManagement to skip.
-            All Resource Governor objects. Use -NoResourceGovernor to skip.
-            All Server Audit Specifications. Use -NoServerAuditSpecifications to skip.
-            All Custom Errors (User Defined Messages). Use -NoCustomErrors to skip.
+            All user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -ExcludeDatabases to skip.
+            All logins. Use -ExcludeLogins to skip.
+            All database mail objects. Use -ExcludeDatabaseMail
+            All credentials. Use -ExcludeCredentials to skip.
+            All objects within the Job Server (SQL Agent). Use -ExcludeAgentServer to skip.
+            All linked servers. Use -ExcludeLinkedServers to skip.
+            All groups and servers within Central Management Server. Use -ExcludeCentralManagementServer to skip.
+            All SQL Server configuration objects (everything in sp_configure). Use -ExcludeSpConfigure to skip.
+            All user objects in system databases. Use -ExcludeSysDbUserObjects to skip.
+            All system triggers. Use -ExcludeSystemTriggers to skip.
+            All system backup devices. Use -ExcludeBackupDevices to skip.
+            All Audits. Use -ExcludeAudits to skip.
+            All Endpoints. Use -ExcludeEndpoints to skip.
+            All Extended Events. Use -ExcludeExtendedEvents to skip.
+            All Policy Management objects. Use -ExcludePolicyManagement to skip.
+            All Resource Governor objects. Use -ExcludeResourceGovernor to skip.
+            All Server Audit Specifications. Use -ExcludeServerAuditSpecifications to skip.
+            All Custom Errors (User Defined Messages). Use -ExcludeCustomErrors to skip.
+            All Server Roles. Use -ExcludeServerRoles to skip.
+            All Availability Groups. Use -ExcludeAvailabilityGroups to skip.
 
         .PARAMETER SqlInstance
             The target SQL Server instances
@@ -45,71 +47,77 @@
             Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.
 
         .PARAMETER WithReplace
-            If this switch is enabled, databases are restored from backup using WITH REPLACE. This is useful if you want to stage some complex file paths.
+            If this switch is used, databases are restored from backup using WITH REPLACE. This is useful if you want to stage some complex file paths.
 
         .PARAMETER NoRecovery
-            If this switch is enabled, databases will be left in the No Recovery state to enable further backups to be added.
+            If this switch is used, databases will be left in the No Recovery state to enable further backups to be added.
 
         .PARAMETER IncludeDbMasterKey
             Exports the db master key then logs into the server to copy it to the $Path
     
         .PARAMETER ExcludeDatabases
-            If this switch is enabled, databases will not be exported.
+            If this switch is used, databases will not be exported.
 
         .PARAMETER ExcludeLogins
-            If this switch is enabled, Logins will not be exported.
+            If this switch is used, Logins will not be exported.
 
         .PARAMETER ExcludeAgentServer
-            If this switch is enabled, SQL Agent jobs will not be exported.
+            If this switch is used, SQL Agent jobs will not be exported.
 
         .PARAMETER ExcludeCredentials
-            If this switch is enabled, Credentials will not be exported.
+            If this switch is used, Credentials will not be exported.
 
         .PARAMETER ExcludeLinkedServers
-            If this switch is enabled, Linked Servers will not be exported.
+            If this switch is used, Linked Servers will not be exported.
 
         .PARAMETER ExcludeSpConfigure
-            If this switch is enabled, options configured via sp_configure will not be exported.
+            If this switch is used, options configured via sp_configure will not be exported.
 
         .PARAMETER ExcludeCentralManagementServer
-            If this switch is enabled, Central Management Server will not be exported.
+            If this switch is used, Central Management Server will not be exported.
 
         .PARAMETER ExcludeDatabaseMail
-            If this switch is enabled, Database Mail will not be exported.
+            If this switch is used, Database Mail will not be exported.
 
         .PARAMETER ExcludeSysDbUserObjects
-            If this switch is enabled, user objects found in the master, msdb and model databases will not be exported.
+            If this switch is used, user objects found in the master, msdb and model databases will not be exported.
 
         .PARAMETER ExcludeSystemTriggers
-            If this switch is enabled, System Triggers will not be exported.
+            If this switch is used, System Triggers will not be exported.
 
         .PARAMETER ExcludeBackupDevices
-            If this switch is enabled, Backup Devices will not be exported.
+            If this switch is used, Backup Devices will not be exported.
 
         .PARAMETER ExcludeAudits
-            If this switch is enabled, Audits will not be exported.
+            If this switch is used, Audits will not be exported.
 
         .PARAMETER ExcludeEndpoints
-            If this switch is enabled, Endpoints will not be exported.
+            If this switch is used, Endpoints will not be exported.
 
         .PARAMETER ExcludeExtendedEvents
-            If this switch is enabled, Extended Events will not be exported.
+            If this switch is used, Extended Events will not be exported.
 
         .PARAMETER ExcludePolicyManagement
-            If this switch is enabled, Policy-Based Management will not be exported.
+            If this switch is used, Policy-Based Management will not be exported.
 
         .PARAMETER ExcludeResourceGovernor
-            If this switch is enabled, Resource Governor will not be exported.
+            If this switch is used, Resource Governor will not be exported.
 
         .PARAMETER ExcludeServerAuditSpecifications
-            If this switch is enabled, the Server Audit Specification will not be exported.
+            If this switch is used, the Server Audit Specification will not be exported.
 
         .PARAMETER ExcludeCustomErrors
-            If this switch is enabled, Custom Errors (User Defined Messages) will not be exported.
+            If this switch is used, Custom Errors (User Defined Messages) will not be exported.
 
+        .PARAMETER ExcludeServerRoles
+            If this switch is used, Server Roles will not be exported.
+            
         .PARAMETER IncludeSupportDbs
-            If this switch is enabled, the ReportServer, ReportServerTempDb, SSIDb, and distribution databases will be migrated if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
-
+            If this switch is used, the ReportServer, ReportServerTempDb, SSIDb, and distribution databases will be migrated if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
+        
+        .PARAMETER ExcludeAvailabilityGroups
+            If this switch is used, Availability Groups will not be exported.
+    
         .PARAMETER BatchSeparator
             Batch separator for scripting output. "GO" by default.
     
@@ -179,6 +187,8 @@
         [switch]$ExcludeResourceGovernor,
         [switch]$ExcludeServerAuditSpecifications,
         [switch]$ExcludeCustomErrors,
+        [switch]$ExcludeServerRoles,
+        [switch]$ExcludeAvailabilityGroups,
         [string]$BatchSeparator = 'GO',
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOption,
         [switch]$EnableException
@@ -251,7 +261,21 @@
                 $null = Get-DbaCustomError -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-customererrors.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-customererrors.sql"
             }
-
+            
+            if (-not $ExcludeServerRoles) {
+                Write-Message -Level Verbose -Message "Exporting server roles"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting server roles"
+                $null = Get-DbaServerRole -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-serverroles.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
+                Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-serverroles.sql"
+            }
+            
+            if (-not $ExcludeAvailabilityGroups) {
+                Write-Message -Level Verbose -Message "Exporting availability group"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting availability groups"
+                $null = Get-DbaAvailabilityGroup -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-availabilitygroups.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
+                Get-ChildItem -ErrorAction SilentlyContinue -Path "$Path\$stepCounter-availabilitygroups.sql"
+            }            
+            
             if (-not $ExcludeCredentials) {
                 Write-Message -Level Verbose -Message "Exporting SQL credentials"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting SQL credentials"
