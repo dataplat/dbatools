@@ -25,9 +25,9 @@ function Test-DbaDbCompression {
         where compressing would grow the affected object.
 
         Note: This script will execute on the context of the current database.
-        Also be aware that this may take awhile to execute on large objects, because if the IS locks taken by the
+        Also be aware that this may take a while to execute on large objects, because if the IS locks taken by the
         sp_estimate_data_compression_savings cannot be honored, the SP will be blocked.
-        It only consisders Row or Page Compression (not column compression)
+        It only considers Row or Page Compression (not column compression)
         It only evaluates User Tables
 
 
@@ -53,11 +53,11 @@ function Test-DbaDbCompression {
         Allows you to limit the number of results returned, as some systems can have very large number of tables.  Default value is no restriction.
 
     .PARAMETER RankBy
-        Allows you to specify the field used for ranking when determing the MaxResultsPerDB
+        Allows you to specify the field used for ranking when determining the MaxResultsPerDB
         Can be either TotalPages, UsedPages or TotalRows with default of TotalPages. Only applies when MaxResultsPerDb is used.
 
     .PARAMETER FilterBy
-        Allows you to specify level of filtering when determing the MaxResultsPerDB
+        Allows you to specify level of filtering when determining the MaxResultsPerDB
         Can be at either Table, Index or Partition level with default of Partition. Only applies when MaxResultsPerDb is used.
 
     .PARAMETER EnableException
@@ -66,7 +66,7 @@ function Test-DbaDbCompression {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .INPUTS
-        Accepts a DbaInstanceParameter. Any colection of SQL Server Instance names or SMO objects can be piped to command.
+        Accepts a DbaInstanceParameter. Any collection of SQL Server Instance names or SMO objects can be piped to command.
 
     .OUTPUTS
         Returns a PsCustomObject with following fields: ComputerName, InstanceName, SqlInstance, Database, IndexName, Partition, IndexID, PercentScan, PercentUpdate, RowEstimatePercentOriginal, PageEstimatePercentOriginal, CompressionTypeRecommendation, SizeCurrent, SizeRequested, PercentCompression
@@ -156,7 +156,7 @@ function Test-DbaDbCompression {
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
