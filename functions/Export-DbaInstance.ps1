@@ -343,7 +343,7 @@
             if ($Exclude -notcontains 'ReplicationSettings') {
                 Write-Message -Level Verbose -Message "Exporting replication settings"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting replication settings"
-                $null = Get-DbaRepServer -SqlInstance $instance -SqlCredential $SqlCredential -WarningAction SilentlyContinue | Export-DbaRepServerSetting -Path "$Path\$stepCounter-replication.sql"
+                $null = Export-DbaRepServerSetting -SqlInstance $instance -SqlCredential $SqlCredential -Path "$Path\$stepCounter-replication.sql"
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$stepCounter-replication.sql"
             }
             
