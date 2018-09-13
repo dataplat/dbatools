@@ -56,12 +56,12 @@ function Export-DbaRepServerSetting {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Path,
         [object[]]$ScriptOption,
+		[Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Replication.ReplicationServer[]]$InputObject,
         [switch]$EnableException
     )
