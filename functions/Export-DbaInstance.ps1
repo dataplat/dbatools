@@ -306,6 +306,7 @@
                 Write-Message -Level Verbose -Message "Exporting Policy Management"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Policy Management"
                 $null = Get-DbaPbmCondition -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-policymanagement.sql" -Append -BatchSeparator $BatchSeparator
+                $null = Get-DbaPbmObjectSet -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-policymanagement.sql" -Append -BatchSeparator $BatchSeparator
                 $null = Get-DbaPbmPolicy -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-policymanagement.sql" -Append -BatchSeparator $BatchSeparator
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$stepCounter-policymanagement.sql"
             }
