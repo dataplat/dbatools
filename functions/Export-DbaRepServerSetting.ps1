@@ -2,10 +2,10 @@
 function Export-DbaRepServerSetting {
     <#
         .SYNOPSIS
-            Exports replication server settings to file. 
+            Exports replication server settings to file.
 
         .DESCRIPTION
-            Exports replication server settings to file. By default, these settings include: 
+            Exports replication server settings to file. By default, these settings include:
 
             Articles
             PublisherSideSubscriptions
@@ -36,7 +36,7 @@ function Export-DbaRepServerSetting {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
         .NOTES
             Tags: Replication
             Website: https://dbatools.io
@@ -48,7 +48,7 @@ function Export-DbaRepServerSetting {
             Export-DbaSpConfigure -SqlInstance sql2017 -Path C:\temp\replication.sql
 
             Exports the SPConfigure settings on sql2017 to the file C:\temp\replication.sql
-        
+
         .EXAMPLE
             Get-DbaRepServer -SqlInstance sql2017 | Export-DbaRepServerSettings -Path C:\temp\replication.sql
 
@@ -61,7 +61,7 @@ function Export-DbaRepServerSetting {
         [PSCredential]$SqlCredential,
         [string]$Path,
         [object[]]$ScriptOption,
-		[Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Replication.ReplicationServer[]]$InputObject,
         [switch]$EnableException
     )
@@ -69,7 +69,7 @@ function Export-DbaRepServerSetting {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRepServer -SqlInstance $instance -SqlCredential $sqlcredential
         }
-            
+
         foreach ($repserver in $InputObject) {
             $server = $repserver.SqlServerName
             if (-not (Test-Bound -ParameterName Path)) {
