@@ -8,7 +8,7 @@ function Test-DbaDbCompression {
         Remember Uptime is critical, the longer uptime, the more accurate the analysis is.
         You would probably be best if you utilized Get-DbaUptime first, before running this command.
 
-        Test-DbaCompression script derived from GitHub and the tigertoolbox
+        Test-DbaDbCompression script derived from GitHub and the tigertoolbox
         (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
         In the output, you will find the following information:
         Column Percent_Update shows the percentage of update operations on a specific table, index, or partition,
@@ -49,16 +49,16 @@ function Test-DbaDbCompression {
     .PARAMETER Table
         Filter to only get specific tables If unspecified, all User tables will be processed.
 
-    .PARAMETER MaxResultsPerDb
+    .PARAMETER ResultSize
         Allows you to limit the number of results returned, as some systems can have very large number of tables.  Default value is no restriction.
 
-    .PARAMETER RankBy
-        Allows you to specify the field used for ranking when determining the MaxResultsPerDB
-        Can be either TotalPages, UsedPages or TotalRows with default of TotalPages. Only applies when MaxResultsPerDb is used.
+    .PARAMETER Rank
+        Allows you to specify the field used for ranking when determining the ResultSize
+        Can be either TotalPages, UsedPages or TotalRows with default of TotalPages. Only applies when ResultSize is used.
 
     .PARAMETER FilterBy
-        Allows you to specify level of filtering when determining the MaxResultsPerDB
-        Can be at either Table, Index or Partition level with default of Partition. Only applies when MaxResultsPerDb is used.
+        Allows you to specify level of filtering when determining the ResultSize
+        Can be at either Table, Index or Partition level with default of Partition. Only applies when ResultSize is used.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -79,50 +79,46 @@ function Test-DbaDbCompression {
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Test-DbaCompression
+        https://dbatools.io/Test-DbaDbCompression
 
     .EXAMPLE
-        Test-DbaCompression -SqlInstance localhost
+        Test-DbaDbCompression -SqlInstance localhost
 
-        Returns results of all potential compression options for all databases for the default instance on the local host.
-        Returns a recommendation of either Page, Row or NO_GAIN
-
-    .EXAMPLE
-        Test-DbaCompression -SqlInstance ServerA
-
-        Returns results of all potential compression options for all databases
-        on the instance ServerA
+        Returns results of all potential compression options for all databases for the default instance on the local host. Returns a recommendation of either Page, Row or NO_GAIN
 
     .EXAMPLE
-        Test-DbaCompression -SqlInstance ServerA -Database DBName | Out-GridView
+        Test-DbaDbCompression -SqlInstance ServerA
 
-        Returns results of all potential compression options for a single database DBName
-        with the recommendation of either Page or Row or NO_GAIN in a nicely formatted GridView
+        Returns results of all potential compression options for all databases on the instance ServerA
+
+    .EXAMPLE
+        Test-DbaDbCompression -SqlInstance ServerA -Database DBName | Out-GridView
+
+        Returns results of all potential compression options for a single database DBName with the recommendation of either Page or Row or NO_GAIN in a nicely formatted GridView
 
     .EXAMPLE
         $cred = Get-Credential sqladmin
-        Test-DbaCompression -SqlInstance ServerA -ExcludeDatabase MyDatabase -SqlCredential $cred
+        Test-DbaDbCompression -SqlInstance ServerA -ExcludeDatabase MyDatabase -SqlCredential $cred
 
-        Returns results of all potential compression options for all databases except MyDatabase
-        on instance ServerA using SQL credentials to authentication to ServerA
+        Returns results of all potential compression options for all databases except MyDatabase on instance ServerA using SQL credentials to authentication to ServerA.
         Returns the recommendation of either Page, Row or NO_GAIN
 
     .EXAMPLE
-        Test-DbaCompression -SqlInstance ServerA -Schema Test -Table MyTable
+        Test-DbaDbCompression -SqlInstance ServerA -Schema Test -Table MyTable
 
-        Returns results of all potential compression options for the Table Test.MyTable in instance ServerA
-        on ServerA and ServerB. Returns the recommendation of either Page, Row or NO_GAIN.
-        Returns a result for each partiton of any Heap, Clustered or NonClustered index
+        Returns results of all potential compression options for the Table Test.MyTable in instance ServerA on ServerA and ServerB.
+        Returns the recommendation of either Page, Row or NO_GAIN.
+        Returns a result for each partiton of any Heap, Clustered or NonClustered index.
 
     .EXAMPLE
-        Test-DbaCompression -SqlInstance ServerA, ServerB -MaxResultsPerDb 10
+        Test-DbaDbCompression -SqlInstance ServerA, ServerB -ResultSize 10
 
-        Returns results of all potential compression options for all databases
-        on ServerA and ServerB. Returns the recommendation of either Page, Row or NO_GAIN.
+        Returns results of all potential compression options for all databases on ServerA and ServerB.
+        Returns the recommendation of either Page, Row or NO_GAIN.
         Returns results for the top 10 partitions by TotalPages used per database.
 
     .EXAMPLE
-        ServerA | Test-DbaCompression -Schema Test -MaxResultsPerDb 10 -RankBy UsedPages -FilterBy Table
+        ServerA | Test-DbaDbCompression -Schema Test -ResultSize 10 -Rank UsedPages -FilterBy Table
 
         Returns results of all potential compression options for all databases on ServerA containing a schema Test
         Returns results for the top 10 Tables by Used Pages per database.
@@ -130,26 +126,24 @@ function Test-DbaDbCompression {
 
     .EXAMPLE
         $servers = 'Server1','Server2'
-        $servers | Test-DbaCompression -Database DBName | Out-GridView
+        $servers | Test-DbaDbCompression -Database DBName | Out-GridView
 
-        Returns results of all potential compression options for a single database DBName
-        on Server1 or Server2
+        Returns results of all potential compression options for a single database DBName on Server1 or Server2
         Returns the recommendation of either Page, Row or NO_GAIN in a nicely formatted GridView
 
     .EXAMPLE
         $cred = Get-Credential sqladmin
 
-        Test-DbaCompression -SqlInstance ServerA -Database MyDB -SqlCredential $cred -Schema Test -Table Test1, Test2
+        Test-DbaDbCompression -SqlInstance ServerA -Database MyDB -SqlCredential $cred -Schema Test -Table Test1, Test2
 
-        Returns results of all potential compression options for objects in Database MyDb on instance ServerA
-        using SQL credentials to authentication to ServerA. Returns the recommendation of
-        either Page, Row or NO_GAIN for tables with SchemA Test and name in Test1 or Test2
+        Returns results of all potential compression options for objects in Database MyDb on instance ServerA using SQL credentials to authentication to ServerA.
+        Returns the recommendation of either Page, Row or NO_GAIN for tables with SchemA Test and name in Test1 or Test2
 
     .EXAMPLE
         $servers = 'Server1','Server2'
         foreach ($svr in $servers)
         {
-            Test-DbaCompression -SqlInstance $svr | Export-Csv -Path C:\temp\CompressionAnalysisPAC.csv -Append
+            Test-DbaDbCompression -SqlInstance $svr | Export-Csv -Path C:\temp\CompressionAnalysisPAC.csv -Append
         }
 
         This produces a full analysis of all your servers listed and is pushed to a csv for you to analyze.
@@ -164,9 +158,9 @@ function Test-DbaDbCompression {
         [object[]]$ExcludeDatabase,
         [string[]]$Schema,
         [string[]]$Table,
-        [int]$MaxResultsPerDb,
+        [int]$ResultSize,
         [ValidateSet('TotalPages', 'UsedPages', 'TotalRows')]
-        [string]$RankBy = 'TotalPages',
+        [string]$Rank = 'TotalPages',
         [ValidateSet('Partition', 'Index', 'Table')]
         [string]$FilterBy = 'Partition',
         [Alias('Silent')]
@@ -184,8 +178,8 @@ function Test-DbaDbCompression {
             $sqlTableWhere = "AND t.name IN ('$($Table -join "','")')"
         }
 
-        if ($MaxResultsPerDb) {
-            $sqlOrderBy = switch ( $RankBy )
+        if ($ResultSize) {
+            $sqlOrderBy = switch ( $Rank )
             {
                 UsedPages { 'UsedSpaceKB' }
                 TotalRows { 'RowCounts' }
@@ -212,42 +206,42 @@ function Test-DbaDbCompression {
             }
 
             $sqlRestrict = "-- remove tables not in Top N
-With TopN(SchemaName, TableName, IndexID, [Partition], RowCounts, TotalSpaceKB, UsedSpaceKB) as
-(
-    SELECT TOP $MaxResultsPerDb
-        s.Name AS SchemaName,
-        t.NAME as TableName,
-        $indexSQL,
-        $partitionSQL,
-        SUM(p.rows) AS RowCounts,
-        SUM(a.total_pages) * 8 AS TotalSpaceKB,
-        SUM(a.used_pages) * 8 AS UsedSpaceKB
-    FROM
-        sys.tables t
-    INNER JOIN
-        sys.indexes i ON t.OBJECT_ID = i.object_id
-    INNER JOIN
-        sys.partitions p ON i.object_id = p.OBJECT_ID AND i.index_id = p.index_id
-    INNER JOIN
-        sys.allocation_units a ON p.partition_id = a.container_id
-    LEFT OUTER JOIN
-        sys.schemas s ON t.schema_id = s.schema_id
-    WHERE objectproperty(t.object_id, 'IsUserTable') = 1
-        AND p.data_compression_desc = 'NONE'
-        AND p.rows > 0
-        $sqlSchemaWhere
-        $sqlTableWhere
-    GROUP BY
-        $groupBySQL
-    ORDER BY
-        $sqlOrderBy Desc
-)
-DELETE tdc
-FROM ##testdbacompression tdc
-LEFT JOIN TopN t
-    ON t.SchemaName = tdc.[Schema] COLLATE DATABASE_DEFAULT
-    $sqlJoinFiltered
-WHERE t.IndexID IS NULL;"
+                With TopN(SchemaName, TableName, IndexID, [Partition], RowCounts, TotalSpaceKB, UsedSpaceKB) as
+                (
+                    SELECT TOP $ResultSize
+                        s.Name AS SchemaName,
+                        t.NAME as TableName,
+                        $indexSQL,
+                        $partitionSQL,
+                        SUM(p.rows) AS RowCounts,
+                        SUM(a.total_pages) * 8 AS TotalSpaceKB,
+                        SUM(a.used_pages) * 8 AS UsedSpaceKB
+                    FROM
+                        sys.tables t
+                    INNER JOIN
+                        sys.indexes i ON t.OBJECT_ID = i.object_id
+                    INNER JOIN
+                        sys.partitions p ON i.object_id = p.OBJECT_ID AND i.index_id = p.index_id
+                    INNER JOIN
+                        sys.allocation_units a ON p.partition_id = a.container_id
+                    LEFT OUTER JOIN
+                        sys.schemas s ON t.schema_id = s.schema_id
+                    WHERE objectproperty(t.object_id, 'IsUserTable') = 1
+                        AND p.data_compression_desc = 'NONE'
+                        AND p.rows > 0
+                        $sqlSchemaWhere
+                        $sqlTableWhere
+                    GROUP BY
+                        $groupBySQL
+                    ORDER BY
+                        $sqlOrderBy Desc
+                )
+                DELETE tdc
+                FROM ##testdbacompression tdc
+                LEFT JOIN TopN t
+                    ON t.SchemaName = tdc.[Schema] COLLATE DATABASE_DEFAULT
+                    $sqlJoinFiltered
+                WHERE t.IndexID IS NULL;"
 
         }
 
