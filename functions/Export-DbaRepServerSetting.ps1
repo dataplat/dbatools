@@ -5,17 +5,7 @@ function Export-DbaRepServerSetting {
             Exports replication server settings to file.
 
         .DESCRIPTION
-            Exports replication server settings to file. By default, these settings include:
-
-            Articles
-            PublisherSideSubscriptions
-            CreateSnapshotAgent
-            Go
-            EnableReplicationDB
-            IncludePublicationAccesses
-            IncludeCreateLogreaderAgent
-            IncludeCreateQueuereaderAgent
-            IncludeSubscriberSideSubscriptions
+            Exports replication server settings to file.
 
         .PARAMETER SqlInstance
             The target SQL Server instance or instances
@@ -96,7 +86,7 @@ function Export-DbaRepServerSetting {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRepServer -SqlInstance $instance -SqlCredential $sqlcredential
         }
-
+        
         foreach ($repserver in $InputObject) {
             $server = $repserver.SqlServerName
             if (-not (Test-Bound -ParameterName Path)) {
@@ -104,18 +94,13 @@ function Export-DbaRepServerSetting {
                 $mydocs = [Environment]::GetFolderPath('MyDocuments')
                 $path = "$mydocs\$($server.replace('\', '$'))-$timenow-replication.sql"
             }
-
+            
             if (-not $ScriptOption) {
                 $out = $repserver.Script([Microsoft.SqlServer.Replication.ScriptOptions]::Creation `
-            -bor  [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeArticles `
-            -bor  [Microsoft.SqlServer.Replication.ScriptOptions]::IncludePublisherSideSubscriptions `
-            -bor  [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeCreateSnapshotAgent `
-            -bor  [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeGo `
-            -bor  [Microsoft.SqlServer.Replication.ScriptOptions]::EnableReplicationDB `
-            -bor  [Microsoft.SqlServer.Replication.ScriptOptions]::IncludePublicationAccesses `
-            -bor  [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeCreateLogreaderAgent `
-            -bor  [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeCreateQueuereaderAgent `
-            -bor  [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeSubscriberSideSubscriptions)
+                    -bor [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeAll `
+                    -bor [Microsoft.SqlServer.Replication.ScriptOptions]::EnableReplicationDB `
+                    -bor [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeInstallDistributor
+                )
             }
             else {
                 $out = $repserver.Script($scriptOption)
