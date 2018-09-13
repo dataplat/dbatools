@@ -118,6 +118,9 @@
         .PARAMETER ExcludeAvailabilityGroups
             If this switch is used, Availability Groups will not be exported.
     
+        .PARAMETER ExcludeReplicationSettings
+            If this switch is used, Availability Groups will not be exported.
+    
         .PARAMETER BatchSeparator
             Batch separator for scripting output. "GO" by default.
     
@@ -189,6 +192,7 @@
         [switch]$ExcludeCustomErrors,
         [switch]$ExcludeServerRoles,
         [switch]$ExcludeAvailabilityGroups,
+        [switch]$ExcudeReplicationSettings,
         [string]$BatchSeparator = 'GO',
         [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOption,
         [switch]$EnableException
@@ -212,7 +216,7 @@
             param (
                 [int]$StepNumber,
                 [string]$Message,
-                [int]$TotalSteps = 20
+                [int]$TotalSteps = 21
 
             )
             Write-Progress -Activity "Performing Instance Export for $instance" -Status $Message -PercentComplete (($StepNumber / $TotalSteps) * 100)
@@ -372,13 +376,7 @@
                 $null = Get-DbaRgWorkloadGroup -SqlInstance $server | Where-Object Name -notin 'default','internal' | Export-DbaScript -Path "$Path\$stepCounter-resourcegov.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$stepCounter-resourcegov.sql"
             }
-            if (-not $ExcludeSysDbUserObjects) {
-                Write-Message -Level Verbose -Message "Exporting user objects in system databases (this can take a minute)."
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting user objects in system databases (this can take a minute)."
-                $null = Get-DbaSysDbUserObjectScript -SqlInstance $server | Out-File -FilePath "$Path\$stepCounter-userobjectsinsysdbs.sql" -Append
-                Get-ChildItem -ErrorAction Ignore -Path "$Path\$stepCounter-userobjectsinsysdbs.sql"
-            }
-
+            
             if (-not $ExcludeExtendedEvents) {
                 Write-Message -Level Verbose -Message "Exporting Extended Events"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Extended Events"
@@ -397,6 +395,20 @@
                 $null = Get-DbaAgentSchedule -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 $null = Get-DbaAgentJob -SqlInstance $server | Export-DbaScript -Path "$Path\$stepCounter-sqlagent.sql" -Append -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption
                 Get-ChildItem -ErrorAction Ignore -Path "$Path\$stepCounter-sqlagent.sql"
+            }
+            
+            if (-not $ExcludeReplicationSettings) {
+                Write-Message -Level Verbose -Message "Exporting replication settings"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting replication settings"
+                $null = Get-DbaRepServer -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaRepServerSetting -Path "$Path\$stepCounter-replication.sql"
+                Get-ChildItem -ErrorAction Ignore -Path "$Path\$stepCounter-replication.sql"
+            }
+            
+            if (-not $ExcludeSysDbUserObjects) {
+                Write-Message -Level Verbose -Message "Exporting user objects in system databases (this can take a minute)."
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting user objects in system databases (this can take a minute)."
+                $null = Get-DbaSysDbUserObjectScript -SqlInstance $server | Out-File -FilePath "$Path\$stepCounter-userobjectsinsysdbs.sql" -Append
+                Get-ChildItem -ErrorAction Ignore -Path "$Path\$stepCounter-userobjectsinsysdbs.sql"
             }
             
             if (-not $ExcludeAvailabilityGroups) {
