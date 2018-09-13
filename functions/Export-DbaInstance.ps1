@@ -13,7 +13,7 @@
             This is useful when you're looking to Export entire instances. It less flexible than using the underlying functions. 
             Think of it as an easy button. Unless an -Exclude is specified, it exports:
 
-            All user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this).
+            All databases.
             All logins.
             All database mail objects.
             All credentials.
@@ -134,7 +134,6 @@
         [string]$Path,
         [switch]$NoRecovery,
         [switch]$IncludeDbMasterKey,
-        [switch]$IncludeSupportDbs,
         [ValidateSet('Databases', 'Logins', 'AgentServer', 'Credentials', 'LinkedServers', 'SpConfigure', 'CentralManagementServer', 'DatabaseMail', 'SysDbUserObjects', 'SystemTriggers', 'BackupDevices', 'Audits', 'Endpoints', 'ExtendedEvents', 'PolicyManagement', 'ResourceGovernor', 'ServerAuditSpecifications', 'CustomErrors', 'ServerRoles', 'AvailabilityGroups', 'ReplicationSettings')]
         [string[]]$Exclude,
         [string]$BatchSeparator = 'GO',
