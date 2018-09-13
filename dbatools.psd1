@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.418'
+    ModuleVersion          = '0.9.419'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -504,7 +504,9 @@
         'Get-DbaPbmObjectSet',
         'Get-DbaPbmPolicy',
         'Get-DbaPbmStore',
-        'Invoke-DbatoolsRenameHelper'
+        'Invoke-DbatoolsRenameHelper',
+        'Export-DbaRepServerSetting',
+        'Get-DbaRepServer'
     )
 
     # Cmdlets to export from this module
