@@ -26,6 +26,9 @@ function Export-DbaRepServerSetting {
         .PARAMETER Path
             Specifies the path to a file which will contain the output.
 
+        .PARAMETER ScriptOption
+            Not real sure how to use this yet
+
         .PARAMETER InputObject
             Allows piping from Get-DbaRepServer
 
