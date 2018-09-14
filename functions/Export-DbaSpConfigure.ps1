@@ -16,12 +16,11 @@ function Export-DbaSpConfigure {
         .PARAMETER Path
             Specifies the path to a file which will contain the sp_configure queries necessary to replicate the configuration settings on another instance. This file is suitable for input into Import-DbaSPConfigure.
 
-    
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
         .NOTES
             Tags: SpConfig, Configure, Configuration
             Website: https://dbatools.io
@@ -53,39 +52,50 @@ function Export-DbaSpConfigure {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             if (-not (Test-Bound -ParameterName Path)) {
                 $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
                 $mydocs = [Environment]::GetFolderPath('MyDocuments')
                 $path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
             }
-            
+
+            $ShowAdvancedOptions = $server.Configuration.ShowAdvancedOptions.ConfigValue
+
             try {
                 Set-Content -Path $path "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE"
             }
             catch {
                 Stop-Function -Message "Can't write to $path" -ErrorRecord $_ -Continue
             }
-            
-            $server.Configuration.ShowAdvancedOptions.ConfigValue = $true
-            $server.Configuration.Alter($true)
+
+            if($ShowAdvancedOptions -eq 0) {
+                try {
+                    $server.Configuration.ShowAdvancedOptions.ConfigValue = $true
+                    $server.Configuration.Alter($true)
+                }
+                catch {
+                    Stop-Function -Message "Can't set 'show advanced options' to 1 on instance $instance" -ErrorRecord $_ -Continue
+                }
+            }
             foreach ($sourceprop in $server.Configuration.Properties) {
                 $displayname = $sourceprop.DisplayName
                 $configvalue = $sourceprop.ConfigValue
                 Add-Content -Path $path "EXEC sp_configure '$displayname' , $configvalue;"
             }
-            Add-Content -Path $path "EXEC sp_configure 'show advanced options' , 0;"
-            Add-Content -Path $Path "RECONFIGURE WITH OVERRIDE"
-            $server.Configuration.ShowAdvancedOptions.ConfigValue = $false
-            $server.Configuration.Alter($true)
+            IF($ShowAdvancedOptions -eq 0) {
+                Add-Content -Path $path "EXEC sp_configure 'show advanced options' , 0;"
+                Add-Content -Path $Path "RECONFIGURE WITH OVERRIDE"
+
+                $server.Configuration.ShowAdvancedOptions.ConfigValue = $false
+                $server.Configuration.Alter($true)
+            }
             Get-ChildItem -Path $path
         }
     }
-    
+
     end {
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
-            Write-Message -Level Verbose -Message "Server configuration export finished"
-        }
+        Write-Message -Level Verbose -Message "Server configuration export finished"
+
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlSpConfigure
     }
 }
