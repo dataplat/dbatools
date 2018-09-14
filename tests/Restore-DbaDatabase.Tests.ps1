@@ -800,7 +800,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    if ($env:azurepasswd) {
+    if ($env:azurepasswd1) {
         Context "Restores to Azure" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -819,7 +819,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    if ($env:azurelegacypasswd) {
+    if ($env:azurelegacypasswd1) {
         Context "Restores to Azure" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
