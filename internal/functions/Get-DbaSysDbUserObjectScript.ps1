@@ -55,9 +55,12 @@
             $null = $transfer.Options.WithDependencies = $true
             $null = $transfer.ObjectList.Add($schema)
             $null = $transfer.Options.ScriptBatchTerminator = $true
-            try { $transfer.ScriptTransfer() } catch {}
+            try { $transfer.ScriptTransfer() }
+            catch { }
+            Write-Output "GO"
             
             foreach ($table in $tables) {
+                Write-Output "GO"
                 $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
                 $null = $transfer.CopyAllObjects = $false
                 $null = $transfer.Options.WithDependencies = $true
@@ -69,6 +72,7 @@
             $userobjects = Get-DbaModule -SqlInstance $server -Database $systemDb -NoSystemObjects | Sort-Object Type
             Write-Message -Level Verbose -Message "Copying from $systemDb"
             foreach ($userobject in $userobjects) {
+                Write-Output "GO"
                 $name = "[$($userobject.SchemaName)].[$($userobject.Name)]"
                 $db = $userobject.Database
                 $type = get-sqltypename $userobject.Type
