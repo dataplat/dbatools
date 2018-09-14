@@ -107,10 +107,13 @@ function Export-DbaRepServerSetting {
             }
             
             if ($Passthru) {
+                "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-String
                 $out | Out-String
             }
             
             if ($Path) {
+                
+                "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-File -FilePath $path -Encoding $encoding -Append
                 $out | Out-File -FilePath $path -Encoding $encoding -Append
             }
         }
