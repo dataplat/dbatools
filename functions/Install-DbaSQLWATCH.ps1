@@ -203,4 +203,14 @@ function Install-DbaSQLWATCH{
             Write-Message -Level Verbose -Message "Finished installing/updating SQLWATCH in $database on $instance."
         }
     }
+
+    end {        
+        #notify user of location to PowerBI file
+        Get-ChildItem $LocalCachedCopy -Recurse -include *.pbit,*.pdf | ForEach-Object { Move-Item -Path $PSitem -Destination $LocalCachedCopy }
+        Write-PSFMessage -Level Host -Message "A Power BI dashboard file has been created on your computer at $LocalCachedCopy"
+
+        #delete downloaded files
+        Write-PSFMessage -Level Verbose -Message "Removing downloaded files from $LocalCachedCopy"
+        Remove-Item -Path $LocalCachedCopy -Exclude *.pbit,*.pdf -Force -Recurse
+    }
 }
