@@ -187,7 +187,19 @@ function Install-DbaSQLWATCH{
             }
 
             Write-Message -Level Verbose -Message "Starting installing/updating SQLWATCH in $database on $instance."
-            # Install/Update SQLWATCH using its DACPAC
+
+            try {
+                $DacPacPath = Get-ChildItem -Filter "SQLWATCH.dacpac" -Path $LocalCachedCopy -Recurse | Select-Object -ExpandProperty FullName
+                $PublishOptions = @{
+                    RegisterDataTierApplication = $true
+                }
+                $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCachedCopy -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
+                Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
+            }
+            catch {
+                Stop-Function -Message "DACPAC failed to publish." -ErrorRecord $_ -Target $instance -Continue
+            }
+
             Write-Message -Level Verbose -Message "Finished installing/updating SQLWATCH in $database on $instance."
         }
     }
