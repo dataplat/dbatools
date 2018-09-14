@@ -15,7 +15,10 @@ function Get-DbaSpConfigure {
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Name
-            Return only specific configurations -- auto-populated from source server
+            Return only specific configurations.
+
+        .PARAMETER ExcludeName
+            Exclude specific configurations.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -44,14 +47,14 @@ function Get-DbaSpConfigure {
             Returns system configuration information on multiple instances piped into the function
 
         .EXAMPLE
-            Get-DbaSpConfigure -SqlInstance localhost
+            Get-DbaSpConfigure -SqlInstance sql2012 -Name 'max server memory (MB)'
 
-            Returns server level configuration data on the localhost (ServerName, Name, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
+            Returns only the system configuration for MaxServerMemory on sql2012.
 
         .EXAMPLE
-            Get-DbaSpConfigure -SqlInstance sql2012 -Name MaxServerMemory
+            Get-DbaSpConfigure -SqlInstance sql2012 -ExcludeName 'max server memory (MB)', 'remote access' | Out-GridView
 
-            Returns only the system configuration for MaxServerMemory. Configs is auto-populated for tabbing convenience.
+            Returns server level configuration data on sql2012 but excludes for 'max server memory (MB)' and 'remote access'. Values returned in GridView
         #>
     [CmdletBinding()]
     Param (
@@ -61,24 +64,34 @@ function Get-DbaSpConfigure {
         [PSCredential]$SqlCredential,
         [Alias("Config", "ConfigName")]
         [string[]]$Name,
+        [string[]]$ExcludeName,
         [switch]$EnableException
     )
 
     process {
         foreach ($instance in $SqlInstance) {
             try {
+                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {
-                Write-Warning "Failed to connect to: $instance"
-                continue
+                Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
             }
 
-            #Get a list of the configuration property parents, and exclude the Parent, Properties values
-            $proplist = Get-Member -InputObject $server.Configuration -MemberType Property -Force | Select-Object Name | Where-Object { $_.Name -ne "Parent" -and $_.Name -ne "Properties" }
+            #Get a list of the configuration Properties. This collection matches entries in sys.configurations
+            try {
+                $proplist = $server.Configuration.Properties
+            }
+            catch {
+                Stop-Function -Message "Unable to gather configuration properties $instance" -Target $instance -ErrorRecord $_ -Continue
+            }
 
             if ($Name) {
-                $proplist = $proplist | Where-Object { $_.Name -in $Name }
+                $proplist = $proplist | Where-Object { $_.DisplayName -in $Name }
+            }
+
+            if (Test-Bound "ExcludeName") {
+                $proplist = $proplist | Where-Object DisplayName -NotIn $ExcludeName
             }
 
             #Grab the default sp_configure property values from the external function
@@ -86,36 +99,32 @@ function Get-DbaSpConfigure {
 
             #Iterate through the properties to get the configuration settings
             foreach ($prop in $proplist) {
-                $propInfo = $server.Configuration.$($prop.Name)
-                $defaultConfig = $defaultConfigs | Where-Object { $_.Name -eq $propInfo.DisplayName };
+                $defaultConfig = $defaultConfigs | Where-Object { $_.Name -eq $prop.DisplayName };
 
-                if ($defaultConfig.Value -eq $propInfo.RunValue) { $isDefault = $true }
+                if ($defaultConfig.Value -eq $prop.RunValue) { $isDefault = $true }
                 else { $isDefault = $false }
 
                 #Ignores properties that are not valid on this version of SQL
-                if (!([string]::IsNullOrEmpty($propInfo.RunValue))) {
-                    # some displaynames were empty
-                    $displayname = $propInfo.DisplayName
-                    if ($displayname.Length -eq 0) { $displayname = $prop.Name }
+                if (!([string]::IsNullOrEmpty($prop.RunValue))) {
+
 
                     [pscustomobject]@{
                         ServerName            = $server.Name
                         ComputerName          = $server.ComputerName
                         InstanceName          = $server.ServiceName
                         SqlInstance           = $server.DomainInstanceName
-                        Name                  = $prop.Name
-                        DisplayName           = $displayname
-                        Description           = $propInfo.Description
-                        IsAdvanced            = $propInfo.IsAdvanced
-                        IsDynamic             = $propInfo.IsDynamic
-                        MinValue              = $propInfo.Minimum
-                        MaxValue              = $propInfo.Maximum
-                        ConfiguredValue       = $propInfo.ConfigValue
-                        RunningValue          = $propInfo.RunValue
+                        Name                  = $prop.DisplayName
+                        Description           = $prop.Description
+                        IsAdvanced            = $prop.IsAdvanced
+                        IsDynamic             = $prop.IsDynamic
+                        MinValue              = $prop.Minimum
+                        MaxValue              = $prop.Maximum
+                        ConfiguredValue       = $prop.ConfigValue
+                        RunningValue          = $prop.RunValue
                         DefaultValue          = $defaultConfig.Value
                         IsRunningDefaultValue = $isDefault
                         Parent                = $server
-                        ConfigName            = $prop.Name
+                        ConfigName            = $prop.DisplayName
                     } | Select-DefaultView -ExcludeProperty ServerName, Parent, ConfigName
                 }
             }
