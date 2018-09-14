@@ -28,8 +28,8 @@ function New-DbaDacProfile {
         .PARAMETER Path
             The directory where you would like to save the profile xml file(s).
 
-        .PARAMETER RegisterDataTierApplication
-            Sets "Register as a Data Tier Application" in publish.xml. Either $true or $false. Defaults to $false.
+        .PARAMETER PublishOptions
+            Optional hashtable to set publish options. Key/value pairs in the hashtable get converted to strings of "<key>value</key>".
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -68,7 +68,7 @@ function New-DbaDacProfile {
         [string[]]$Database,
         [string]$Path = "$home\Documents",
         [string[]]$ConnectionString,
-        [switch]$RegisterDataTierApplication=$false,
+        [hashtable]$PublishOptions,
         [switch]$EnableException
     )
     begin {
@@ -84,17 +84,29 @@ function New-DbaDacProfile {
             Stop-Function -Message "Path must be a directory"
         }
 
-function Get-Template ($db, $connstring) {
-    "<?xml version=""1.0"" ?>
-    <Project ToolsVersion=""14.0"" xmlns=""http://schemas.microsoft.com/developer/msbuild/2003"">
-        <PropertyGroup>
-        <TargetDatabaseName>{0}</TargetDatabaseName>
-        <TargetConnectionString>{1}</TargetConnectionString>
-        <ProfileVersionNumber>1</ProfileVersionNumber>
-        <RegisterDataTierApplication>{2}</RegisterDataTierApplication>
-        </PropertyGroup>
-    </Project>" -f $db[0], $connstring, $RegisterDataTierApplication
-}
+        function Convert-HashtableToXMLString($PublishOptions) {
+            $return = @()
+            if ($PublishOptions) {
+                $PublishOptions.GetEnumerator() | ForEach-Object {
+                    $key = $PSItem.Key.ToString()
+                    $value = $PSItem.Value.ToString()
+                    $return += "<$key>$value</$key>"
+                }
+            } 
+            $return | Out-String
+        }
+        
+        function Get-Template ($db, $connstring) {
+            "<?xml version=""1.0"" ?>
+            <Project ToolsVersion=""14.0"" xmlns=""http://schemas.microsoft.com/developer/msbuild/2003"">
+                <PropertyGroup>
+                <TargetDatabaseName>{0}</TargetDatabaseName>
+                <TargetConnectionString>{1}</TargetConnectionString>
+                <ProfileVersionNumber>1</ProfileVersionNumber>
+                {2}
+                </PropertyGroup>
+            </Project>" -f $db[0], $connstring, $(Convert-HashtableToXMLString($PublishOptions))
+        }
 
         function Get-ServerName ($connstring) {
             $builder = New-Object System.Data.Common.DbConnectionStringBuilder
