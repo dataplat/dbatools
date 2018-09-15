@@ -45,7 +45,7 @@ function Get-DbaSpConfigure {
         .EXAMPLE
             Get-DbaSpConfigure -SqlInstance localhost
 
-            Returns server level configuration data on the localhost (ServerName, Name, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
+            Returns all system configuration information on the localhost.
 
         .EXAMPLE
             'localhost','localhost\namedinstance' | Get-DbaSpConfigure
@@ -60,7 +60,7 @@ function Get-DbaSpConfigure {
         .EXAMPLE
             Get-DbaSpConfigure -SqlInstance sql2012 -ExcludeName 'max server memory (MB)', 'remote access' | Out-GridView
 
-            Returns server level configuration data on sql2012 but excludes for 'max server memory (MB)' and 'remote access'. Values returned in GridView
+            Returns system configuration information on sql2012 but excludes for 'max server memory (MB)' and 'remote access'. Values returned in GridView
         #>
     [CmdletBinding()]
     Param (
