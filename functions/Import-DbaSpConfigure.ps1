@@ -32,6 +32,11 @@ function Import-DbaSpConfigure {
         .PARAMETER Force
             If this switch is enabled, no version check between Source and Destination is performed. By default, the major and minor versions of Source and Destination must match when copying sp_configure settings.
 
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -93,8 +98,9 @@ function Import-DbaSpConfigure {
         [string]$Path,
         [Parameter(ParameterSetName = "FromFile")]
         [PSCredential]$SqlCredential,
-        [switch]$Force
-
+        [switch]$Force,
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     begin {
 
@@ -108,6 +114,10 @@ function Import-DbaSpConfigure {
                 return
             }
 
+            if (!(Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) {
+                Stop-Function -Message "Not a sysadmin on $sourceserver. Skipping." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
+            }
+
             try {
                 Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
                 $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
@@ -115,6 +125,10 @@ function Import-DbaSpConfigure {
             catch {
                 Stop-Function -Message "Failed to process Instance $Destination" -ErrorRecord $_ -Target $Destination
                 return
+            }
+
+            if (!(Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) {
+                Stop-Function -Message "Not a sysadmin on $destserver. Skipping." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
             }
 
             $source = $sourceserver.DomainInstanceName
@@ -129,8 +143,12 @@ function Import-DbaSpConfigure {
                 Stop-Function -Message "Failed to process Instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance -Continue
             }
 
+            if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
+                Stop-Function -Message "Not a sysadmin on $server. Skipping." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
+            }
+
             if ((Test-Path $Path) -eq $false) {
-                throw "File Not Found"
+                Stop-Function -Message "File $Path Not Found" -Category InvalidArgument -Target $Path -Continue
             }
         }
 
