@@ -115,7 +115,7 @@ function Import-DbaSpConfigure {
             }
 
             if (!(Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $sourceserver. Skipping." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
+                Stop-Function -Message "Not a sysadmin on $sourceserver. Quitting." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
             }
 
             try {
@@ -128,7 +128,7 @@ function Import-DbaSpConfigure {
             }
 
             if (!(Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $destserver. Skipping." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
+                Stop-Function -Message "Not a sysadmin on $destserver. Quitting." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
             }
 
             $source = $sourceserver.DomainInstanceName
@@ -144,7 +144,7 @@ function Import-DbaSpConfigure {
             }
 
             if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $server. Skipping." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
+                Stop-Function -Message "Not a sysadmin on $server. Quitting." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
             }
 
             if ((Test-Path $Path) -eq $false) {
