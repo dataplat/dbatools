@@ -166,9 +166,9 @@ function Import-DbaSpConfigure {
 
             If ($Pscmdlet.ShouldProcess($destination, "Execute sp_configure")) {
                 $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-                $sourceserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
+                $sourceserver.Configuration.Alter($true)
                 $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-                $destserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
+                $sourceserver.Configuration.Alter($true)
 
                 $destprops = $destserver.Configuration.Properties
 
@@ -179,7 +179,7 @@ function Import-DbaSpConfigure {
                     if ($null -ne $destprop) {
                         try {
                             $destprop.configvalue = $sourceprop.configvalue
-                            $destserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
+                            $null = $destserver.Query("RECONFIGURE WITH OVERRIDE")
                             Write-Message -Level Output -Message "updated $($destprop.displayname) to $($sourceprop.configvalue)."
                         }
                         catch {
@@ -195,9 +195,9 @@ function Import-DbaSpConfigure {
                 }
 
                 $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-                $sourceserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
+                $sourceserver.Configuration.Alter($true)
                 $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-                $destserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
+                $destserver.Configuration.Alter($true)
 
                 if ($needsrestart -eq $true) {
                     Write-Message -Level Warning -Message "Some configuration options will be updated once SQL Server is restarted."
