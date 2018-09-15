@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 5
+        $paramCount = 10
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Test-DbaDbCompression).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential','Database','ExcludeDatabase','EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential','Database','ExcludeDatabase','Schema','Table','ResultSize','Rank','FilterBy', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -57,6 +57,27 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Command excludes results for specified database" {
         It "Shouldn't get any results for $dbname" {
             $(Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -ExcludeDatabase $dbname).Database | Should not Match $dbname
+        }
+    }
+    Context "Command gets Schema suggestions" {
+        $schema = 'dbo'
+        $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -Schema $schema
+        It "Should get results for Schema:$schema" {
+            $results | Should Not Be $null
+        }
+    }
+    Context "Command gets Table suggestions" {
+        $table = 'syscols'
+        $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -Table $table
+        It "Should get results for table:$table" {
+            $results | Should Not Be $null
+        }
+    }
+    Context "Command gets limited output" {
+        $resultCount = 2
+        $results = Test-DbaDbCompression -SqlInstance $script:instance2 -Database $dbname -ResultSize $resultCount -Rank TotalPages -FilterBy Partition
+        It "Should get only $resultCount results" {
+            $results.Count | Should Be $resultCount
         }
     }
 }
