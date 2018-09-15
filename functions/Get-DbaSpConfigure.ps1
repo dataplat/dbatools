@@ -36,6 +36,12 @@ function Get-DbaSpConfigure {
         .LINK
             https://dbatools.io/Get-DbaSpConfigure
 
+        .INPUTS
+            A DbaInstanceParameter representing an array of SQL Server instances.
+
+        .OUTPUTS
+            Returns pscustomobject with properties ServerName, ComputerName, InstanceName, SqlInstance, Name, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue
+
         .EXAMPLE
             Get-DbaSpConfigure -SqlInstance localhost
 
