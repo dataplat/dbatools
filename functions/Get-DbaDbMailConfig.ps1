@@ -17,7 +17,7 @@
 
     .PARAMETER InputObject
         Accepts pipeline input from Get-DbaDbMail
-    
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -41,8 +41,8 @@
     .EXAMPLE
         Get-DbaDbMailConfig -SqlInstance sql01\sharepoint -Name ProhibitedExtensions
 
-        Returns The DBA Team dbmail config from sql01\sharepoint
-    
+        Returns the ProhibitedExtensions configuration on sql01\sharepoint
+
     .EXAMPLE
         Get-DbaDbMailConfig -SqlInstance sql01\sharepoint | Select *
 
@@ -52,7 +52,7 @@
         $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
         $servers | Get-DbaDbMail | Get-DbaDbMailConfig
 
-       Returns the db dbmail configs for "sql2014","sql2016" and "sqlcluster\sharepoint"
+       Returns the dbmail configs for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
 #>
     [CmdletBinding()]
@@ -72,20 +72,20 @@
             Write-Message -Level Verbose -Message "Connecting to $instance"
             $InputObject += Get-DbaDbMail -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
-        
+
         if (-not $InputObject) {
             Stop-Function -Message "No servers to process"
             return
         }
-        
+
         foreach ($mailserver in $InputObject) {
             try {
                 $configs = $mailserver.ConfigurationValues
-                
+
                 if ($Name) {
                     $configs = $configs | Where-Object Name -in $Name
                 }
-                
+
                 $configs | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $mailserver.ComputerName
                 $configs | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
                 $configs | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
