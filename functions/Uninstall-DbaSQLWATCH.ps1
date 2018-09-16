@@ -74,40 +74,59 @@ Function Uninstall-DbaSQLWATCH {
 
     }
     process {
+        if (Test-FunctionInterrupt) {
+            return
+        }
 
-        #TODO: add try/catch blocks
+        try {
+            Write-PSFMessage -Level Host -Message "Removing SQL Agent jobs."
+            $agentJobs | Remove-DbaAgentJob
+        }
+        catch {
+            Stop-Function -Message "Could not remove all agent jobs." -ErrorRecord $_ -Target $instance -Continue
+        }
 
-        Write-PSFMessage -Level Host -Message "Removing SQL Agent jobs."
-        $agentJobs | Remove-DbaAgentJob
-
-        Write-PSFMessage -Level Host -Message "Removing stored procedures."
-        $dropScript = ""
-        $sprocs | ForEach-Object {
-            $dropScript += "DROP PROCEDURE $($PSItem.Name);`n"
-        }
-        if ($dropScript) { 
-            Invoke-DbaQuery -SqlInstance $SqlInstance -Database $Database -Query $dropScript 
-        }
-        
-        Write-PSFMessage -Level Host -Message "Removing views."
-        $dropScript = ""
-        $views | ForEach-Object {
-            $dropScript += "DROP VIEW $($PSItem.Name);`n"
-        }
-        if ($dropScript) { 
-            Invoke-DbaQuery -SqlInstance $SqlInstance -Database $Database -Query $dropScript
+        try {
+            Write-PSFMessage -Level Host -Message "Removing stored procedures."
+            $dropScript = ""
+            $sprocs | ForEach-Object {
+                $dropScript += "DROP PROCEDURE $($PSItem.Name);`n"
+            }
+            if ($dropScript) { 
+                Invoke-DbaQuery -SqlInstance $SqlInstance -Database $Database -Query $dropScript 
+            }
+        } 
+        catch {
+            Stop-Function -Message "Could not remove all stored procedures." -ErrorRecord $_ -Target $instance -Continue
         }
         
-        Write-PSFMessage -Level Host -Message "Removing tables."
-        $dropScript = ""
-        $tables | ForEach-Object {
-            $dropScript += "DROP TABLE $($PSItem.Name);`n"
+        try {
+            Write-PSFMessage -Level Host -Message "Removing views."
+            $dropScript = ""
+            $views | ForEach-Object {
+                $dropScript += "DROP VIEW $($PSItem.Name);`n"
+            }
+            if ($dropScript) { 
+                Invoke-DbaQuery -SqlInstance $SqlInstance -Database $Database -Query $dropScript
+            }
         }
-        if ($dropScript) { 
-            Invoke-DbaQuery -SqlInstance $SqlInstance -Database $Database -Query $dropScript
+        catch {
+            Stop-Function -Message "Could not remove all views." -ErrorRecord $_ -Target $instance -Continue
         }
         
-        
+        try {
+            Write-PSFMessage -Level Host -Message "Removing tables."
+            $dropScript = ""
+            $tables | ForEach-Object {
+                $dropScript += "DROP TABLE $($PSItem.Name);`n"
+            }
+            if ($dropScript) { 
+                Invoke-DbaQuery -SqlInstance $SqlInstance -Database $Database -Query $dropScript
+            }
+        }
+        catch {
+            Stop-Function -Message "Could not remove all tables." -ErrorRecord $_ -Target $instance -Continue
+        }
 
     }
     end {}
