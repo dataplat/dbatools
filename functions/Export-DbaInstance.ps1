@@ -172,9 +172,10 @@
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
+            $stepCounter = 0
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance."
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
