@@ -65,7 +65,7 @@ function Get-DbaCmObject {
             Get-DbaCmObject -Computername "sql2014" -ClassName Win32_OperatingSystem -Credential $cred -DoNotUse CimRM
 
             Retrieves the common operating system information from the server sql2014.
-            It will use the credewntials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).
+            It will use the Credentials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).
     #>
     [CmdletBinding(DefaultParameterSetName = "Class")]
     param (
