@@ -50,7 +50,7 @@ function Get-DbaClientProtocol {
             (Get-DbaClientProtocol -ComputerName sql2 | Where { $_.DisplayName = 'via' }).Disable()
 
             Disables the VIA ClientNetworkProtocol on computer sql2.
-            If succesful, returncode 0 is shown.
+            If successful, returncode 0 is shown.
 #>
     [CmdletBinding()]
     param (
