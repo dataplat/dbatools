@@ -61,6 +61,12 @@ function Get-DbaSpConfigure {
             Get-DbaSpConfigure -SqlInstance sql2012 -ExcludeName 'max server memory (MB)', RemoteAccess | Out-GridView
 
             Returns system configuration information on sql2012 but excludes for 'max server memory (MB)' and 'remote access'. Values returned in GridView
+
+        .EXAMPLE
+            $cred = Get-Credential SqlCredential
+            'sql2012' | Get-DbaSpConfigure -SqlCredential $cred -Name RemoteAccess, 'max server memory (MB)' -ExcludeName 'remote access' | Out-GridView
+
+            Returns system configuration information on sql2012 using SQL Server Authentication. Only MaxServerMemory is returned as RemoteAccess was also excluded.
         #>
     [CmdletBinding()]
     Param (
