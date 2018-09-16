@@ -73,12 +73,12 @@ function Import-DbaSpConfigure {
         .EXAMPLE
             Import-DbaSpConfigure -Source sqlserver -Destination sqlcluster -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
 
-            Imports the sp_configure settings from the source server sqlserver and sets them on the sqlcluster server using the SQL credentials stored in the variables using the SQL credential stored in the variables $SourceSqlCredential and $DestinationSqlCredential
+            Imports the sp_configure settings from the source server sqlserver and sets them on the sqlcluster server using the SQL credentials stored in the variables $SourceSqlCredential and $DestinationSqlCredential
 
         .EXAMPLE
             Import-DbaSpConfigure -SqlInstance sqlserver -Path .\spconfig.sql -SqlCredential $SqlCredential
 
-            Imports the sp_configure settings from the file .\spconfig.sql and sets them on the sqlserver server using the SQL credential stored in the variables $SourceSqlCredential and $DestinationSqlCredential
+            Imports the sp_configure settings from the file .\spconfig.sql and sets them on the sqlserver server using the SQL credential stored in the variable $SqlCredential
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
