@@ -77,7 +77,7 @@ Gets the registry root for all instances on server1
                 if ([System.String]::IsNullOrEmpty($vsname)) {
                     $vsname = $computer
                     if ($instancename -ne "MSSQLSERVER") {
-                        $vsname = "$computer\$instancename"
+                        $vsname = "$($computer.ComputerName)\$instancename"
                     }
                 }
 
