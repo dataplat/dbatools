@@ -20,7 +20,7 @@
 
     .PARAMETER InputObject
         Accepts pipeline input from Get-DbaDbMail
-    
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -45,7 +45,7 @@
         Get-DbaDbMailProfile -SqlInstance sql01\sharepoint -Profile 'The DBA Team'
 
         Returns The DBA Team dbmail profile from sql01\sharepoint
-    
+
     .EXAMPLE
         Get-DbaDbMailProfile -SqlInstance sql01\sharepoint | Select *
 
@@ -55,7 +55,7 @@
         $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
         $servers | Get-DbaDbMail | Get-DbaDbMailProfile
 
-       Returns the db dbmail profiles for "sql2014","sql2016" and "sqlcluster\sharepoint"
+       Returns the dbmail profiles for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
 #>
     [CmdletBinding()]
@@ -75,29 +75,29 @@
             Write-Message -Level Verbose -Message "Connecting to $instance"
             $InputObject += Get-DbaDbMail -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
-        
+
         if (-not $InputObject) {
             Stop-Function -Message "No servers to process"
             return
         }
-        
+
         foreach ($mailserver in $InputObject) {
             try {
                 $profiles = $mailserver.Profiles
-                
+
                 if ($Profile) {
                     $profiles = $profiles | Where-Object Name -in $Profile
                 }
-                
+
                 If ($ExcludeProfile) {
                     $profiles = $profiles | Where-Object Name -notin $ExcludeProfile
-                    
+
                 }
-                
+
                 $profiles | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $mailserver.ComputerName
                 $profiles | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
                 $profiles | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
-                
+
                 $profiles | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ID, Name, Description, ForceDeleteForActiveProfiles, IsBusyProfile
             }
             catch {

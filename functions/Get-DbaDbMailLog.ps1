@@ -41,7 +41,7 @@ function Get-DbaDbMailLog {
     .EXAMPLE
         Get-DbaDbMailLog -SqlInstance sql01\sharepoint | Select *
 
-        Returns the entire dbmail log on sql01\sharepoint then return a bunch more columns
+        Returns the entire dbmail log on sql01\sharepoint, includes all returned information.
 
     .EXAMPLE
         $servers = "sql2014","sql2016", "sqlcluster\sharepoint"

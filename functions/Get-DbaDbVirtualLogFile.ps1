@@ -56,7 +56,7 @@ function Get-DbaDbVirtualLogFile {
             Returns user databases that have 50 or more VLFs.
 
         .EXAMPLE
-            @('sqlserver','sqlcluster') | Get-DbaDbVirtualLogFile
+            'sqlserver','sqlcluster' | Get-DbaDbVirtualLogFile
 
             Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
 
