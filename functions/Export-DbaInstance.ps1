@@ -98,10 +98,6 @@
         .NOTES
             Tags: Export
             Author: Chrissy LeMaire (@cl), netnerds.net
-            Limitations:     Doesn't cover what it doesn't cover (certificates, etc)
-                            SQL Server 2000 login exports have some limitations (server perms aren't exported)
-                            SQL Server 2000 databases cannot be directly exported to SQL Server 2012 and above.
-                            Logins within SQL Server 2012 and above logins cannot be exported to SQL Server 2008 R2 and below.
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -110,19 +106,15 @@
             https://dbatools.io/Export-DbaInstance
 
         .EXAMPLE
-            Export-DbaInstance -SqlInstance sqlserver\instance -Destination sqlcluster
+            Export-DbaInstance -SqlInstance sqlserver\instance 
 
-            All databases, logins, job objects and sp_configure options will be exported from sqlserver\instance to to disk.
-
-        .EXAMPLE
-            Export-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Verbose
-
-            Exports everything but logins and databases.
+            All databases, logins, job objects and sp_configure options will be exported from 
+            sqlserver\instance to an automaticallyl generated folder name in Documents.
 
         .EXAMPLE
-            Export-DbaInstance -Verbose -SqlInstance sqlcluster -Exclude Databases, Logins
-
-            Exports everything but logins and databases.
+            Export-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Path C:\dr\sqlcluster
+    
+            Exports everything but logins and database restore scripts to C:\dr\sqlcluster
     #>
     [CmdletBinding()]
     param (
