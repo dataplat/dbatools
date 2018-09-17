@@ -52,10 +52,10 @@ function Restore-DbaBackupFromDirectory {
     #Requires -Version 3.0
     [CmdletBinding()]
     Param (
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [string]$Path,
         [switch]$NoRecovery,
         [Alias("ReuseFolderStructure")]

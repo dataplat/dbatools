@@ -65,20 +65,20 @@ function Get-DbaCmObject {
             Get-DbaCmObject -Computername "sql2014" -ClassName Win32_OperatingSystem -Credential $cred -DoNotUse CimRM
 
             Retrieves the common operating system information from the server sql2014.
-            It will use the Credentials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).
+            It will use the credewntials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).
     #>
     [CmdletBinding(DefaultParameterSetName = "Class")]
     param (
-        [Parameter(Mandatory, Position = 0, ParameterSetName = "Class")]
+        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Class")]
         [Alias('Class')]
         [string]
         $ClassName,
 
-        [Parameter(Mandatory, Position = 0, ParameterSetName = "Query")]
+        [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Query")]
         [string]
         $Query,
 
-        [Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline = $true)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
 
@@ -101,7 +101,7 @@ function Get-DbaCmObject {
         [Alias('Silent')]$EnableException
     )
 
-    begin {
+    Begin {
         #region Configuration Values
         $disable_cache = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableCache
 
@@ -110,7 +110,7 @@ function Get-DbaCmObject {
 
         $ParSet = $PSCmdlet.ParameterSetName
     }
-    process {
+    Process {
         :main foreach ($connectionObject in $ComputerName) {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret input: $($connectionObject.Input)" -Category InvalidArgument -Target $connectionObject.Input -Continue -SilentlyContinue:$SilentlyContinue }
 
@@ -380,7 +380,7 @@ function Get-DbaCmObject {
             }
         }
     }
-    end {
+    End {
 
     }
 }

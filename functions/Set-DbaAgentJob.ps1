@@ -171,7 +171,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
         [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
         [object]$DeleteLevel,
         [switch]$Force,
-        [parameter(ValueFromPipeline)]
+        [parameter(ValueFromPipeline = $true)]
         [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
         [switch][Alias('Silent')]
         $EnableException

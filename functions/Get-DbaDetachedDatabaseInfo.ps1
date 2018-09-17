@@ -23,7 +23,7 @@ function Get-DbaDetachedDatabaseInfo {
 
         .NOTES
             Tags: Database, Detach
-            Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -39,10 +39,10 @@ function Get-DbaDetachedDatabaseInfo {
 
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [Alias("Mdf")]
         [string]$Path,
         [PSCredential]$SqlCredential
@@ -56,7 +56,7 @@ function Get-DbaDetachedDatabaseInfo {
             $servername = $server.name
             $serviceaccount = $server.ServiceAccount
 
-            $exists = Test-DbaPath -SqlInstance $server -Path $Path
+            $exists = Test-DbaSqlPath -SqlInstance $server -Path $Path
 
             if ($exists -eq $false) {
                 throw "$servername cannot access the file $path. Does the file exist and does the service account ($serviceaccount) have access to the path?"

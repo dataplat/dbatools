@@ -45,7 +45,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 }
             }
 
-            Mock Get-DbaService -MockWith {
+            Mock Get-DbaSqlService -MockWith {
                 New-Object PSObject -Property @{
                     InstanceName = "foo"
                     State        = "Running"
@@ -58,7 +58,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $result = Test-DbaMaxMemory -SqlInstance 'ABC'
 
                 Assert-MockCalled Connect-SqlInstance -Scope It -Times 1
-                Assert-MockCalled Get-DbaService -Scope It -Times 1
+                Assert-MockCalled Get-DbaSqlService -Scope It -Times 1
                 Assert-MockCalled Get-DbaMaxMemory -Scope It -Times 1
             }
 

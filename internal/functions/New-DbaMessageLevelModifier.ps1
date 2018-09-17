@@ -62,11 +62,11 @@
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
         
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [int]
         $Modifier,
         

@@ -197,7 +197,7 @@ go
 CREATE DATABASE encrypted
 go
 "@
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $sqlencrypt -Database Master
+        $null = Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query $sqlencrypt -Database Master
         $createdb =
 @"
 CREATE DATABASE ENCRYPTION KEY
@@ -208,7 +208,7 @@ ALTER DATABASE encrypted
 SET ENCRYPTION ON;
 GO
 "@
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $createdb -Database encrypted
+        $null = Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query $createdb -Database encrypted
         It "Should not compress an encrypted db" {
             $results = Backup-DbaDatabase -SqlInstance $script:instance2 -Database encrypted -Compress
             $results.script | Should -BeLike '*NO_COMPRESSION*'
@@ -221,9 +221,9 @@ go
 drop master key
 go
 "@
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $sqldrop -Database Master
+        $null = Invoke-DbaSqlQuery -SqlInstance $script:instance2 -Query $sqldrop -Database Master
     }
-    if ($env:azurepasswd1) {
+    if ($env:azurepasswd) {
         Context "Azure works" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2

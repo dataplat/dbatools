@@ -70,7 +70,7 @@ function Get-DbaMaintenanceSolutionLog {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]

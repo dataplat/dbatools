@@ -92,38 +92,38 @@ function Invoke-DbaDbShrink {
 
         .NOTES
             Tags: Shrink, Database
-            Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Invoke-DbaDbShrink
+            https://dbatools.io/Invoke-DbaDatabaseShrink
 
         .EXAMPLE
-            Invoke-DbaDbShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014
+            Invoke-DbaDatabaseShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014
 
             Shrinks Northwind, pubs and Adventureworks2014 to have as little free space as possible.
 
         .EXAMPLE
-            Invoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50
+            Invoke-DbaDatabaseShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50
 
             Shrinks AdventureWorks2014 to have 50% free space. So let's say AdventureWorks2014 was 1GB and it's using 100MB space. The database free space would be reduced to 50MB.
 
         .EXAMPLE
-            Invoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSizeMB 25
+            Invoke-DbaDatabaseShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSizeMB 25
 
             Shrinks AdventureWorks2014 to have 50% free space, runs shrinks in 25MB chunks for improved performance.
 
         .EXAMPLE
-            Invoke-DbaDbShrink -SqlInstance sql2012 -AllUserDatabases
+            Invoke-DbaDatabaseShrink -SqlInstance sql2012 -AllUserDatabases
 
             Shrinks all databases on SQL2012 (not ideal for production)
 
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]

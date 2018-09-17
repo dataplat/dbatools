@@ -117,9 +117,6 @@ function Find-DbaCommand {
             ## fetch the synopsis
             $thebase.Synopsis = $thishelp.Synopsis
 
-            ## fetch the syntax
-            $thebase.Syntax = $thishelp.Syntax | Out-String -Width 120
-
             ## store notes
             $as = $thishelp.AlertSet | Out-String -Width 120
 
@@ -159,7 +156,7 @@ function Find-DbaCommand {
                     $x = Get-DbaHelp "$command"
                     $helpcoll.Add($x)
                 }
-                # $dest = Get-DbatoolsConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
+                # $dest = Get-DbaConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
                 $dest = "$moduleDirectory\bin\dbatools-index.json"
                 $helpcoll | ConvertTo-Json | Out-File $dest -Encoding UTF8
             }

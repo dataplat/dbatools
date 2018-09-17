@@ -80,7 +80,7 @@ Doesn't Change the alert but shows what would happen.
         [switch]$Enabled,
         [switch]$Disabled,
         [switch]$Force,
-        [parameter(ValueFromPipeline)]
+        [parameter(ValueFromPipeline = $true)]
         [Microsoft.SqlServer.Management.Smo.Agent.Alert[]]$InputObject,
         [switch][Alias('Silent')]
         $EnableException

@@ -9,29 +9,29 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
                      MAX_CPU_PERCENT = 100,
                      MIN_CPU_PERCENT = 50
                 )"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaSqlQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
         $sql = "CREATE WORKLOAD GROUP dbatoolsci_prodprocessing
                 WITH
                 (
                      IMPORTANCE = MEDIUM
                 ) USING dbatoolsci_prod"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaSqlQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
         $sql = "CREATE RESOURCE POOL dbatoolsci_offhoursprocessing
                 WITH
                 (
                      MAX_CPU_PERCENT = 50,
                      MIN_CPU_PERCENT = 0
                 )"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaSqlQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
         $sql = "CREATE WORKLOAD GROUP dbatoolsci_goffhoursprocessing
                 WITH
                 (
                      IMPORTANCE = LOW
                 )
                 USING dbatoolsci_offhoursprocessing"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaSqlQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
         $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaSqlQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
         $sql = "CREATE FUNCTION dbatoolsci_fnRG()
                 RETURNS sysname
                 WITH SCHEMABINDING
@@ -39,18 +39,18 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
                 BEGIN
                      RETURN N'dbatoolsci_goffhoursprocessing'
                 END"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaSqlQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
         $sql = "ALTER RESOURCE GOVERNOR with (CLASSIFIER_FUNCTION = dbo.dbatoolsci_fnRG); ALTER RESOURCE GOVERNOR RECONFIGURE;"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
+        Invoke-DbaSqlQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2 -Query $sql
     }
     AfterAll {
         Get-DbaProcess -SqlInstance $script:instance2, $script:instance3 |  Stop-DbaProcess -WarningAction SilentlyContinue
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG];ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP WORKLOAD GROUP [dbatoolsci_prodprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP WORKLOAD GROUP [dbatoolsci_goffhoursprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP RESOURCE POOL [dbatoolsci_offhoursprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
-        Invoke-DbaQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP RESOURCE POOL [dbatoolsci_prod];ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaSqlQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL); ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaSqlQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP FUNCTION [dbo].[dbatoolsci_fnRG];ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaSqlQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP WORKLOAD GROUP [dbatoolsci_prodprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaSqlQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP WORKLOAD GROUP [dbatoolsci_goffhoursprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaSqlQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP RESOURCE POOL [dbatoolsci_offhoursprocessing];ALTER RESOURCE GOVERNOR RECONFIGURE"
+        Invoke-DbaSqlQuery -WarningAction SilentlyContinue -SqlInstance $script:instance2, $script:instance3 -Query "DROP RESOURCE POOL [dbatoolsci_prod];ALTER RESOURCE GOVERNOR RECONFIGURE"
     }
 
     Context "Command works" {

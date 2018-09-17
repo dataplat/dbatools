@@ -28,7 +28,7 @@ Prompts you for confirmation before executing any changing operations within the
 
 .NOTES
 Tags: Certificate
-Author: Chrissy LeMaire (@cl), netnerds.net
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: MIT https://opensource.org/licenses/MIT
@@ -60,7 +60,7 @@ You will be prompted to securely enter your Service Key Password twice, then a m
                     Stop-Function -Message "Passwords do not match" -Continue
                 }
             }
-            New-DbaDbMasterKey -SqlInstance $instance -Database master -Password $password
+            New-DbaDatabaseMasterKey -SqlInstance $instance -Database master -Password $password
         }
     }
 }

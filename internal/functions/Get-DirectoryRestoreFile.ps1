@@ -8,7 +8,7 @@ Takes path, checks for validity. Scans for usual backup file
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]$Path,
         [switch]$Recurse,
         [Alias('Silent')]

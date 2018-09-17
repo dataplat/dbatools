@@ -11,17 +11,14 @@
 
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
-        .PARAMETER Proxy
-            The proxy to process - this list is auto-populated from the server. If unspecified, all proxies will be processed.
-            
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Author: Chrissy LeMaire (@cl), netnerds.net
+            Author: Chrissy LeMaire ( @cl )
             Tags: Agent, SMO
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -40,11 +37,10 @@
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "Instance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$Proxy,
         [switch]$EnableException
     )
     process {
@@ -67,10 +63,6 @@
             $defaults = "ComputerName", "SqlInstance", "InstanceName", "Name", "ID", "CredentialID", "CredentialIdentity", "CredentialName", "Description", "IsEnabled"
             
             $proxies = $server.Jobserver.ProxyAccounts
-            
-            if ($proxy) {
-                $proxies = $proxies | Where-Object Name -In $proxy
-            }
             
             foreach ($proxy in $proxies) {
                 Add-Member -Force -InputObject $proxy -MemberType NoteProperty -Name ComputerName -value $server.ComputerName

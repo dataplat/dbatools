@@ -22,7 +22,7 @@ function Get-DbaOperatingSystem {
             Tags: ServerInfo, OperatingSystem
             Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
 
-            Website: https://dbatools.io
+            Website: https: //dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
@@ -41,7 +41,7 @@ function Get-DbaOperatingSystem {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline = $true)]
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,

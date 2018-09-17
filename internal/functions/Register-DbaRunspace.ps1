@@ -41,11 +41,11 @@ function Register-DbaRunspace {
     [CmdletBinding(PositionalBinding = $false)]
     param
     (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Scriptblock]
         $ScriptBlock,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [String]
         $Name,
 

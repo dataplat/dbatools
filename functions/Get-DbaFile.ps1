@@ -68,7 +68,7 @@ Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql201
 #>
     [CmdletBinding()]
     Param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

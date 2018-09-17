@@ -28,7 +28,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Check if output file was created" {
-        if (Get-DbaDbUser -SqlInstance $script:instance1 -Database $dbname | Where-Object Name -eq $user) {
+        if (Get-DbaDatabaseUser -SqlInstance $script:instance1 -Database $dbname | Where-Object Name -eq $user) {
             $results = Export-DbaUser -SqlInstance $script:instance1 -Database $dbname -User $user -FilePath $outputFile
             It "Exports results to one sql file" {
                 (Get-ChildItem $outputFile).Count | Should Be 1

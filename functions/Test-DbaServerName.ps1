@@ -31,9 +31,9 @@ function Test-DbaServerName {
 
         .NOTES
             Tags: SPN, ServerName
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -64,7 +64,7 @@ function Test-DbaServerName {
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -124,7 +124,7 @@ function Test-DbaServerName {
             $rs = $null
             if ($SkipSsrs -eq $false -or $NoWarning -eq $false) {
                 try {
-                    $rs = Get-DbaService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type SSRS -EnableException -WarningAction Stop
+                    $rs = Get-DbaSqlService -ComputerName $instance.ComputerName -InstanceName $server.ServiceName -Type SSRS -EnableException -WarningAction Stop
                 }
                 catch {
                     Write-Message -Level Warning -Message "Unable to pull information on $ssrsService." -ErrorRecord $_ -Target $instance

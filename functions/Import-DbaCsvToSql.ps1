@@ -178,7 +178,7 @@ function Import-DbaCsvToSql {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
         [string[]]$Csv,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [object]$SqlCredential,
@@ -277,11 +277,11 @@ function Import-DbaCsvToSql {
             #>
 
             param (
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [string[]]$Csv,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [string]$Delimiter,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [bool]$FirstRowColumns
             )
 
@@ -317,9 +317,9 @@ function Import-DbaCsvToSql {
                     Array of column data
              #>
             param (
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [string[]]$Csv,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [string]$Delimiter
             )
             $columnparser = New-Object Microsoft.VisualBasic.FileIO.TextFieldParser($csv[0])
@@ -360,14 +360,14 @@ function Import-DbaCsvToSql {
                     Returns an array of existing schema files that have been moved, if any.
              #>
             param (
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [string[]]$Csv,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [string[]]$Columns,
                 [string[]]$ColumnText,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [string]$Delimiter,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [bool]$FirstRowColumns
             )
 
@@ -438,9 +438,9 @@ function Import-DbaCsvToSql {
             #>
 
             param (
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [string[]]$Csv,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [string]$Delimiter,
                 [string[]]$Columns,
                 [string[]]$ColumnText,
@@ -1303,7 +1303,7 @@ function Import-DbaCsvToSql {
         Write-Output "[*] Total Elapsed Time for bulk insert: $totaltime seconds"
     }
 
-    end {
+    End {
         # Close everything just in case & ignore errors
         try {
             if ($oleconn.connection) {$null = $oleconn.close(); $null = $oleconn.dispose()}

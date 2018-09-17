@@ -56,18 +56,18 @@ function Find-DbaDatabase {
         .EXAMPLE
             Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern '-faeb-495a-9898-f25a782835f5' | Select-Object *
 
-            Returns all database from the SqlInstances that have the same Service Broker GUID with a detailed output
+            Returns all database from the SqlInstances that have the same Service Broker GUID with a deatiled output
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [ValidateSet('Name', 'ServiceBrokerGuid', 'Owner')]
         [string]$Property = 'Name',
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [string]$Pattern,
         [switch]$Exact,
         [switch]$Detailed,

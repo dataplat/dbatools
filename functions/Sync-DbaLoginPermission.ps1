@@ -38,6 +38,9 @@ function Sync-DbaLoginPermission {
         .NOTES
             Tags: Migration, Login
             Author: Chrissy LeMaire (@cl), netnerds.net
+            Requires: sysadmin access on SQL Servers
+            Limitations: Does not support Application Roles yet
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -62,11 +65,11 @@ function Sync-DbaLoginPermission {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [DbaInstanceParameter]$Source,
         [PSCredential]
         $SourceSqlCredential,
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$Destination,
         [PSCredential]
         $DestinationSqlCredential,
@@ -79,7 +82,7 @@ function Sync-DbaLoginPermission {
         function Sync-Only {
             [CmdletBinding()]
             param (
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [ValidateNotNullOrEmpty()]
                 [object]$sourceServer,
                 [object]$destServer,
@@ -147,6 +150,6 @@ function Sync-DbaLoginPermission {
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-SqlLoginPermissions
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-DbaSqlLoginPermission
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-SqlLoginPermission
     }
 }

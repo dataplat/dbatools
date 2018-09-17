@@ -176,15 +176,15 @@ function Invoke-Sqlcmd2 {
     param (
         [Parameter(ParameterSetName = 'Ins-Que',
             Position = 0,
-            Mandatory,
-            ValueFromPipeline,
+            Mandatory = $true,
+            ValueFromPipeline = $true,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false,
             HelpMessage = 'SQL Server Instance required...')]
         [Parameter(ParameterSetName = 'Ins-Fil',
             Position = 0,
-            Mandatory,
-            ValueFromPipeline,
+            Mandatory = $true,
+            ValueFromPipeline = $true,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false,
             HelpMessage = 'SQL Server Instance required...')]
@@ -198,23 +198,23 @@ function Invoke-Sqlcmd2 {
         [string]$Database,
         [Parameter(ParameterSetName = 'Ins-Que',
             Position = 2,
-            Mandatory,
+            Mandatory = $true,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
         [Parameter(ParameterSetName = 'Con-Que',
             Position = 2,
-            Mandatory,
+            Mandatory = $true,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
         [string]$Query,
         [Parameter(ParameterSetName = 'Ins-Fil',
             Position = 2,
-            Mandatory,
+            Mandatory = $true,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
         [Parameter(ParameterSetName = 'Con-Fil',
             Position = 2,
-            Mandatory,
+            Mandatory = $true,
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false)]
         [ValidateScript( { Test-Path -LiteralPath $_ })]

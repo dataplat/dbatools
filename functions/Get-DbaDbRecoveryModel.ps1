@@ -48,7 +48,7 @@ function Get-DbaDbRecoveryModel {
         .EXAMPLE
             Get-DbaDbRecoveryModel -SqlInstance sql2014 -Database TestDB
 
-            Gets recovery model information for TestDB. If TestDB does not exist on the instance we don't return anything.
+            Gets recovery model information for TestDB. If TestDB does not exist on the instance we don't return anythig.
 
     #>
     [CmdletBinding()]

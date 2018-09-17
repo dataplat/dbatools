@@ -34,10 +34,11 @@ function Watch-DbaDbLogin {
         .NOTES
             Tags: Login
             Author: Chrissy LeMaire (@cl), netnerds.net
+            Requires: sysadmin access on all SQL Servers for the most accurate results
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
-            Requires: sysadmin access on all SQL Servers for the most accurate results
 
         .LINK
             https://dbatools.io/Watch-DbaDbLogin
@@ -60,7 +61,7 @@ function Watch-DbaDbLogin {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance]$SqlInstance,
         [object]$Database,

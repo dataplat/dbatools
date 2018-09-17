@@ -25,11 +25,11 @@ function Start-DbaRunspace {
 #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline = $true)]
         [string[]]
         $Name,
 
-        [Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline = $true)]
         [Sqlcollaborative.Dbatools.Runspace.RunspaceContainer[]]
         $Runspace,
 

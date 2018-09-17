@@ -21,8 +21,7 @@ function Show-DbaServerFileSystem {
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
         .NOTES
-            Tags: Storage, FileSystem
-            Author: Chrissy LeMaire (@cl), netnerds.net
+            Tags: Storage
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -43,7 +42,7 @@ function Show-DbaServerFileSystem {
     #>
     [CmdletBinding(SupportsShouldProcess)]
     Param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [object]$SqlCredential

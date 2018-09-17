@@ -46,7 +46,7 @@ function Get-DbaCmConnection {
     [CmdletBinding()]
     param
     (
-        [Parameter(Position = 0, ValueFromPipeline)]
+        [Parameter(Position = 0, ValueFromPipeline = $true)]
         [Alias('Filter')]
         [String[]]
         $ComputerName = "*",
@@ -58,17 +58,17 @@ function Get-DbaCmConnection {
         [Alias('Silent')]$EnableException
     )
 
-    begin {
+    BEGIN {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
     }
-    process {
+    PROCESS {
         foreach ($name in $ComputerName) {
             Write-Message -Level VeryVerbose -Message "Processing search. ComputerName: '$name' | Username: '$UserName'"
             ([Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections.Values | Where-Object { ($_.ComputerName -like $name) -and ($_.Credentials.UserName -like $UserName) })
         }
     }
-    end {
+    END {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }

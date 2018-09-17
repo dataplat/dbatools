@@ -82,10 +82,10 @@ function Copy-DbaAgentCategory {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldprocess = $true)]
     param (
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [Parameter(ParameterSetName = 'SpecificAlerts')]

@@ -24,8 +24,7 @@ function Get-DbaDbMailLog {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: databasemail, dbmail, mail
-        Author: Chrissy LeMaire (@cl), netnerds.net
+        Tags: Logging
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: MIT https://opensource.org/licenses/MIT
@@ -41,7 +40,7 @@ function Get-DbaDbMailLog {
     .EXAMPLE
         Get-DbaDbMailLog -SqlInstance sql01\sharepoint | Select *
 
-        Returns the entire dbmail log on sql01\sharepoint, includes all returned information.
+        Returns the entire dbmail log on sql01\sharepoint then return a bunch more columns
 
     .EXAMPLE
         $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
@@ -52,7 +51,7 @@ function Get-DbaDbMailLog {
 #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]

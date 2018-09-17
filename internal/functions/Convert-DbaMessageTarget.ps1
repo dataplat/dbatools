@@ -24,14 +24,14 @@
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         $Target,
         
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $FunctionName,
         
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $ModuleName
     )

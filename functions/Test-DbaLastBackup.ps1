@@ -82,7 +82,7 @@ function Test-DbaLastBackup {
 
         .NOTES
             Tags: DisasterRecovery, Backup, Restore
-            Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -127,7 +127,7 @@ function Test-DbaLastBackup {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer", "Source")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
@@ -187,7 +187,7 @@ function Test-DbaLastBackup {
             }
 
             if ($CopyPath) {
-                $testpath = Test-DbaPath -SqlInstance $destserver -Path $CopyPath
+                $testpath = Test-DbaSqlPath -SqlInstance $destserver -Path $CopyPath
                 if (!$testpath) {
                     Stop-Function -Message "$destserver cannot access $CopyPath." -Continue
                 }
@@ -212,7 +212,7 @@ function Test-DbaLastBackup {
             $destination = $destserver.DomainInstanceName
 
             if ($datadirectory) {
-                if (!(Test-DbaPath -SqlInstance $destserver -Path $datadirectory)) {
+                if (!(Test-DbaSqlPath -SqlInstance $destserver -Path $datadirectory)) {
                     $serviceaccount = $destserver.ServiceAccount
                     Stop-Function -Message "Can't access $datadirectory Please check if $serviceaccount has permissions." -Continue
                 }
@@ -222,7 +222,7 @@ function Test-DbaLastBackup {
             }
 
             if ($logdirectory) {
-                if (!(Test-DbaPath -SqlInstance $destserver -Path $logdirectory)) {
+                if (!(Test-DbaSqlPath -SqlInstance $destserver -Path $logdirectory)) {
                     $serviceaccount = $destserver.ServiceAccount
                     Stop-Function -Message "$Destination can't access its local directory $logdirectory. Please check if $serviceaccount has permissions." -Continue
                 }
@@ -347,7 +347,7 @@ function Test-DbaLastBackup {
                         $fileexists = $dbccresult = "Skipped"
                         $success = $restoreresult = "Restore not located on shared location"
                     }
-                    elseif (($lastbackup[0].Path | ForEach-Object { Test-DbaPath -SqlInstance $destserver -Path $_ }) -eq $false) {
+                    elseif (($lastbackup[0].Path | ForEach-Object { Test-DbaSqlPath -SqlInstance $destserver -Path $_ }) -eq $false) {
                         Write-Message -Level Verbose -Message "SQL Server cannot find backup."
                         $fileexists = $false
                         $success = $restoreresult = $dbccresult = "Skipped"

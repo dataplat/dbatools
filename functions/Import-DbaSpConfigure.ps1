@@ -9,11 +9,11 @@ function Import-DbaSpConfigure {
         .PARAMETER Source
             Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
-
         .PARAMETER SourceSqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+
+        .PARAMETER Destination
+            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
         .PARAMETER DestinationSqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -32,11 +32,6 @@ function Import-DbaSpConfigure {
         .PARAMETER Force
             If this switch is enabled, no version check between Source and Destination is performed. By default, the major and minor versions of Source and Destination must match when copying sp_configure settings.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -44,41 +39,26 @@ function Import-DbaSpConfigure {
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
         .NOTES
-            Tags: SpConfig, Configure, Configuration
-            Author: Chrissy LeMaire (@cl), netnerds.net
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Import-DbaSpConfigure
-
-        .INPUTS
-            None You cannot pipe objects to Import-DbaSpConfigure
-
-        .OUTPUTS
-            $true if success
-            $false if failure
-
         .EXAMPLE
-            Import-DbaSpConfigure -Source sqlserver -Destination sqlcluster
+            Import-DbaSpConfigure sqlserver sqlcluster $SourceSqlCredential $DestinationSqlCredential
 
-            Imports the sp_configure settings from the source server sqlserver and sets them on the sqlcluster server using Windows Authentication
-
-        .EXAMPLE
-            Import-DbaSpConfigure -Source sqlserver -Destination sqlcluster -Force
-
-            Imports the sp_configure settings from the source server sqlserver and sets them on the sqlcluster server using Windows Authentication. Will not do a version check between Source and Destination
-
-        .EXAMPLE
-            Import-DbaSpConfigure -Source sqlserver -Destination sqlcluster -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
-
-            Imports the sp_configure settings from the source server sqlserver and sets them on the sqlcluster server using the SQL credentials stored in the variables $SourceSqlCredential and $DestinationSqlCredential
+            Imports the sp_configure settings from the source server sqlserver and sets them on the sqlcluster server
+            using the SQL credentials stored in the variables
 
         .EXAMPLE
             Import-DbaSpConfigure -SqlInstance sqlserver -Path .\spconfig.sql -SqlCredential $SqlCredential
 
-            Imports the sp_configure settings from the file .\spconfig.sql and sets them on the sqlserver server using the SQL credential stored in the variable $SqlCredential
+            Imports the sp_configure settings from the file .\spconfig.sql and sets them on the sqlcluster server
+            using the SQL credential stored in the variables
+
+        .OUTPUTS
+            $true if success
+            $false if failure
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
@@ -98,57 +78,22 @@ function Import-DbaSpConfigure {
         [string]$Path,
         [Parameter(ParameterSetName = "FromFile")]
         [PSCredential]$SqlCredential,
-        [switch]$Force,
-        [Alias('Silent')]
-        [switch]$EnableException
+        [switch]$Force
+
     )
     begin {
 
         if ($Path.length -eq 0) {
-            try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $Source" -Target $Source
-                $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failed to process Instance $Source" -ErrorRecord $_ -Target $Source
-                return
-            }
-
-            if (!(Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $sourceserver. Quitting." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
-            }
-
-            try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
-                $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failed to process Instance $Destination" -ErrorRecord $_ -Target $Destination
-                return
-            }
-
-            if (!(Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $destserver. Quitting." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
-            }
+            $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+            $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
             $source = $sourceserver.DomainInstanceName
             $destination = $destserver.DomainInstanceName
         }
         else {
-            try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance" -Target $SqlInstance
-                $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failed to process Instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance -Continue
-            }
-
-            if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $server. Quitting." -Category PermissionDenied -ErrorRecord $_ -Target $server -Continue
-            }
-
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             if ((Test-Path $Path) -eq $false) {
-                Stop-Function -Message "File $Path Not Found" -Category InvalidArgument -Target $Path -Continue
+                throw "File Not Found"
             }
         }
 
@@ -160,15 +105,15 @@ function Import-DbaSpConfigure {
             }
 
             if ($sourceserver.versionMajor -ne $destserver.versionMajor -and $force -eq $false) {
-                Write-Message -Level Warning -Message "Source SQL Server major version and Destination SQL Server major version must match for sp_configure migration. Use -Force to override this precaution or check the exported sql file, $sqlfilename, and run manually."
+                Write-Warning "Source SQL Server major version and Destination SQL Server major version must match for sp_configure migration. Use -Force to override this precaution or check the exported sql file, $sqlfilename, and run manually."
                 return
             }
 
             If ($Pscmdlet.ShouldProcess($destination, "Execute sp_configure")) {
                 $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-                $sourceserver.Configuration.Alter($true)
+                $sourceserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
                 $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-                $sourceserver.Configuration.Alter($true)
+                $destserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
 
                 $destprops = $destserver.Configuration.Properties
 
@@ -179,11 +124,11 @@ function Import-DbaSpConfigure {
                     if ($null -ne $destprop) {
                         try {
                             $destprop.configvalue = $sourceprop.configvalue
-                            $null = $destserver.Query("RECONFIGURE WITH OVERRIDE")
-                            Write-Message -Level Output -Message "updated $($destprop.displayname) to $($sourceprop.configvalue)."
+                            $destserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
+                            Write-Output "updated $($destprop.displayname) to $($sourceprop.configvalue)."
                         }
                         catch {
-                            Stop-Function -Message "Could not set $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported." -ErrorRecord $_ -Continue
+                            Write-Error "Could not $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported."
                         }
                     }
                 }
@@ -195,15 +140,15 @@ function Import-DbaSpConfigure {
                 }
 
                 $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-                $sourceserver.Configuration.Alter($true)
+                $sourceserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
                 $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-                $destserver.Configuration.Alter($true)
+                $destserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
 
                 if ($needsrestart -eq $true) {
-                    Write-Message -Level Warning -Message "Some configuration options will be updated once SQL Server is restarted."
+                    Write-Warning "Some configuration options will be updated once SQL Server is restarted."
                 }
                 else {
-                    Write-Message -Level Output -Message "Configuration option has been updated."
+                    Write-Output "Configuration option has been updated."
                 }
             }
 
@@ -218,15 +163,15 @@ function Import-DbaSpConfigure {
                 $sql = Get-Content $Path
                 foreach ($line in $sql) {
                     try {
-                        $null = $server.Query($line)
-                        Write-Message -Level Output -Message "Successfully executed $line."
+                        $server.Query($line) | Out-Null
+                        Write-Output "Successfully executed $line."
                     }
                     catch {
-                        Stop-Function -Message "$line failed. Feature may not be supported." -ErrorRecord $_ -Continue
+                        Write-Error "$line failed. Feature may not be supported."
                     }
                 }
                 $server.Configuration.ShowAdvancedOptions.ConfigValue = $false
-                Write-Message -Level Warning -Message "Some configuration options will be updated once SQL Server is restarted."
+                Write-Warning "Some configuration options will be updated once SQL Server is restarted."
             }
         }
     }
@@ -240,7 +185,7 @@ function Import-DbaSpConfigure {
         }
 
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
-            Write-Message -Level Output -Message "SQL Server configuration options migration finished."
+            Write-Output "SQL Server configuration options migration finished."
         }
 
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Import-SqlSpConfigure

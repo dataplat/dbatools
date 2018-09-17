@@ -20,7 +20,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         # memorizing $fileStructure for a later test
         $fileStructure = New-Object System.Collections.Specialized.StringCollection
         
-        foreach ($file in (Get-DbaDbFile -SqlInstance $script:instance3 -Database $dbname).PhysicalName) {
+        foreach ($file in (Get-DbaDatabaseFile -SqlInstance $script:instance3 -Database $dbname).PhysicalName) {
             $null = $fileStructure.Add($file)
         }
     }
@@ -62,7 +62,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $server.Query("CREATE DATABASE $db2")
             $null = New-DbaDbSnapshot -SqlInstance $script:instance3 -Database $db2
             $fileStructure = New-Object System.Collections.Specialized.StringCollection
-            foreach ($file in (Get-DbaDbFile -SqlInstance $script:instance3 -Database $db1).PhysicalName) {
+            foreach ($file in (Get-DbaDatabaseFile -SqlInstance $script:instance3 -Database $db1).PhysicalName) {
                 $null = $fileStructure.Add($file)
             }
             Stop-DbaProcess -SqlInstance $script:instance3 -Database $db1

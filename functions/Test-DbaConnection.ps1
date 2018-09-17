@@ -48,7 +48,8 @@ function Test-DbaConnection {
 
         .NOTES
             Tags: CIM, Test, Connection
-            Author: Chrissy LeMaire (@cl), netnerds.net
+            Author: Chrissy LeMaire
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT

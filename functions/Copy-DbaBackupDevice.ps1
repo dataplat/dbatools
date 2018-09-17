@@ -66,10 +66,10 @@ function Copy-DbaBackupDevice {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [object[]]$BackupDevice,
@@ -168,7 +168,7 @@ function Copy-DbaBackupDevice {
                 
                 Write-Message -Level Verbose -Message "Checking if directory $destPath exists"
                 
-                if ($(Test-DbaPath -SqlInstance $destinstance -Path $path) -eq $false) {
+                if ($(Test-DbaSqlPath -SqlInstance $destinstance -Path $path) -eq $false) {
                     $backupDirectory = $destServer.BackupDirectory
                     $destPath = Join-AdminUnc $destNetBios $backupDirectory
                     

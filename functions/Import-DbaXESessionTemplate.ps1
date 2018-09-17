@@ -40,7 +40,6 @@
 
         .NOTES
             Tags: ExtendedEvent, XE, XEvent
-            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -161,8 +160,8 @@
 
                     Write-Message -Level Verbose -Message "$TargetFilePath does not exist on $server, creating now."
                     try {
-                        if (-not (Test-DbaPath -SqlInstance $server -Path $TargetFilePath)) {
-                            $null = New-DbaDirectory -SqlInstance $server -Path $TargetFilePath
+                        if (-not (Test-DbaSqlPath -SqlInstance $server -Path $TargetFilePath)) {
+                            $null = New-DbaSqlDirectory -SqlInstance $server -Path $TargetFilePath
                         }
                     }
                     catch {

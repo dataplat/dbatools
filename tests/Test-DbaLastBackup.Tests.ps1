@@ -60,7 +60,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Restores using a specific path" {
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_singlerestore" | Backup-DbaDatabase
         $null = Test-DbaLastBackup -SqlInstance $script:instance2 -Database "dbatoolsci_singlerestore" -DataDirectory C:\Temp -LogDirectory C:\Temp -NoDrop
-        $results = Get-DbaDbFile -SqlInstance $script:instance2 -Database "dbatools-testrestore-dbatoolsci_singlerestore"
+        $results = Get-DbaDatabaseFile -SqlInstance $script:instance2 -Database "dbatools-testrestore-dbatoolsci_singlerestore"
         It "Should match C:\Temp" {
             ('C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore.mdf' -in $results.PhysicalName) | Should Be $true
             ('C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore_log.ldf' -in $results.PhysicalName) | Should Be $true

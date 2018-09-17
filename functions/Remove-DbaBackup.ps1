@@ -84,12 +84,12 @@ function Remove-DbaBackup {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory, HelpMessage = "Full path to the root level backup folder (ex. 'C:\SQL\Backups'")]
+        [parameter(Mandatory = $true, HelpMessage = "Full path to the root level backup folder (ex. 'C:\SQL\Backups'")]
         [Alias("BackupFolder")]
         [string]$Path,
-        [parameter(Mandatory, HelpMessage = "Backup File extension to remove (ex. bak, trn, dif)")]
+        [parameter(Mandatory = $true, HelpMessage = "Backup File extension to remove (ex. bak, trn, dif)")]
         [string]$BackupFileExtension ,
-        [parameter(Mandatory, HelpMessage = "Backup retention period. (ex. 24h, 7d, 4w, 6m)")]
+        [parameter(Mandatory = $true, HelpMessage = "Backup retention period. (ex. 24h, 7d, 4w, 6m)")]
         [string]$RetentionPeriod ,
         [parameter(Mandatory = $false)]
         [switch]$CheckArchiveBit = $false ,

@@ -138,7 +138,7 @@ function Backup-DbaDatabase {
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
     param (
-        [parameter(ParameterSetName = "Pipe", Mandatory)]
+        [parameter(ParameterSetName = "Pipe", Mandatory = $true)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
@@ -149,7 +149,7 @@ function Backup-DbaDatabase {
         [switch]$CopyOnly,
         [ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
         [string]$Type = 'Database',
-        [parameter(ParameterSetName = "NoPipe", Mandatory, ValueFromPipeline)]
+        [parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$InputObject,
         [switch]$CreateFolder,
         [int]$FileCount = 0,
@@ -400,12 +400,12 @@ function Backup-DbaDatabase {
             if (-not $IgnoreFileChecks -and -not $AzureBaseUrl) {
                 $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
                 foreach ($parentPath in $parentPaths) {
-                    if (-not (Test-DbaPath -SqlInstance $server -Path $parentPath)) {
+                    if (-not (Test-DbaSqlPath -SqlInstance $server -Path $parentPath)) {
                         if (($BuildPath -eq $true) -or ($CreateFolder -eq $True)) {
-                            $null = New-DbaDirectory -SqlInstance $server -Path $parentPath
+                            $null = New-DbaSqlDirectory -SqlInstance $server -Path $parentPath
                         }
                         else {
-                            $failreason += "SQL Server cannot check if $parentPath exists. You can try disabling this check with -IgnoreFileChecks"
+                            $failreason += "SQL Server cannot check if $parentPath exists. You can try disabiling this check with -IgnoreFileChecks"
                             $failures += $failreason
                             Write-Message -Level Warning -Message "$failreason"
                         }
@@ -433,13 +433,13 @@ function Backup-DbaDatabase {
                     else {
                         $device.DeviceType = "File"
                     }
-
+                    
                     if ($WithFormat) {
                         Write-Message -Message "WithFormat specified. Ensuring Initialize and SkipTapeHeader are set to true." -Level Verbose
                         $Initialize = $true
                         $SkipTapeHeader = $true
                     }
-
+                    
                     $backup.FormatMedia = $WithFormat
                     $backup.Initialize = $Initialize
                     $backup.SkipTapeHeader = $SkipTapeHeader

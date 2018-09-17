@@ -7,10 +7,7 @@ function Copy-DbaCredential {
             By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another while maintaining username and password.
 
             Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+            License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
 
         .PARAMETER Source
             Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -33,7 +30,7 @@ function Copy-DbaCredential {
 
         .PARAMETER ExcludeName
             Excluded credential names
-
+    
         .PARAMETER Identity
             Only include specific identities
             Note: if spaces exist in the credential identity, you will have to type "" or '' around it.
@@ -123,7 +120,7 @@ function Copy-DbaCredential {
             Write-Message -Level Verbose -Message "Collecting Credential logins and passwords on $($sourceServer.Name)"
             $sourceCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Type Credential
             $credentialList = Get-DbaCredential -SqlInstance $sourceServer -Name $Name -ExcludeName $ExcludeName -Identity $Identity -ExcludeIdentity $ExcludeIdentity
-
+            
             Write-Message -Level Verbose -Message "Starting migration"
             foreach ($credential in $credentialList) {
                 $destServer.Credentials.Refresh()
@@ -155,7 +152,7 @@ function Copy-DbaCredential {
                         }
                     }
                 }
-
+                
                 Write-Message -Level Verbose -Message "Attempting to migrate $credentialName"
                 try {
                     $currentCred = $sourceCredentials | Where-Object { $_.Name -eq "[$credentialName]" }
@@ -179,7 +176,7 @@ function Copy-DbaCredential {
                 }
             }
         }
-
+        
         try {
             Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
@@ -188,15 +185,15 @@ function Copy-DbaCredential {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance
             return
         }
-
+        
         if ($null -ne $SourceSqlCredential.Username) {
             Write-Message -Level Verbose -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
         }
-
+        
         $sourceNetBios = Resolve-NetBiosName $sourceServer
-
+        
         Invoke-SmoCheck -SqlInstance $sourceServer
-
+        
         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
         try {
             Invoke-Command2 -ComputerName $sourceNetBios -Credential $credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
@@ -208,7 +205,7 @@ function Copy-DbaCredential {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-
+        
         foreach ($destinstance in $Destination) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $destinstance"
@@ -218,7 +215,7 @@ function Copy-DbaCredential {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             Invoke-SmoCheck -SqlInstance $destServer
-
+            
             Copy-Credential $credentials -force:$force
         }
     }

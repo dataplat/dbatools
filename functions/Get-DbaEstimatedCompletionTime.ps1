@@ -43,7 +43,6 @@ The database(s) to exclude - this list is auto-populated from the server
 
 .NOTES
 Tags: Database
-Author: Chrissy LeMaire (@cl), netnerds.net
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: MIT https://opensource.org/licenses/MIT
@@ -74,7 +73,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 #>
     [CmdletBinding()]
     Param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

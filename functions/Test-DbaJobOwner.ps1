@@ -65,7 +65,7 @@ function Test-DbaJobOwner {
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

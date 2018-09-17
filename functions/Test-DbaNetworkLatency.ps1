@@ -37,7 +37,6 @@ function Test-DbaNetworkLatency {
 
         .NOTES
             Tags: Performance, Network
-            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -64,7 +63,7 @@ function Test-DbaNetworkLatency {
     [CmdletBinding()]
     [OutputType([System.Object[]])]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,

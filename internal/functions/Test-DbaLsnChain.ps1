@@ -28,7 +28,7 @@ function Test-DbaLsnChain {
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$FilteredRestoreFiles,
         [switch]$Continue,
         [switch]$EnableException

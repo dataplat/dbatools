@@ -37,7 +37,7 @@ function Test-DbaDbVirtualLogFile {
 
         .NOTES
             Tags: VLF, Database
-            Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -67,7 +67,7 @@ function Test-DbaDbVirtualLogFile {
     #>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
-    param ([parameter(ValueFromPipeline, Mandatory)]
+    param ([parameter(ValueFromPipeline, Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -104,7 +104,7 @@ function Test-DbaDbVirtualLogFile {
             foreach ($db in $dbs) {
                 try {
                     $data = Get-DbaDbVirtualLogFile -SqlInstance $server -Database $db.Name
-                    $logFile = Get-DbaDbFile -SqlInstance $server -Database $db.Name | Where-Object Type -eq 1
+                    $logFile = Get-DbaDatabaseFile -SqlInstance $server -Database $db.Name | Where-Object Type -eq 1
 
                     $active = $data | Where-Object Status -eq 2
                     $inactive = $data | Where-Object Status -eq 0

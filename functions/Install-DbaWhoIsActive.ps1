@@ -56,8 +56,6 @@ function Install-DbaWhoIsActive {
             Install-DbaWhoIsActive -SqlInstance $instances -Database master
 
         .NOTES
-            Tags: AdamMechanic, WhoIsActive, SpWhoIsActive
-            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -68,7 +66,7 @@ function Install-DbaWhoIsActive {
 
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [parameter(Mandatory, ValueFromPipeline, Position = 0)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PsCredential]$SqlCredential,
@@ -82,7 +80,7 @@ function Install-DbaWhoIsActive {
     )
 
     begin {
-        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
+        $DbatoolsData = Get-DbaConfigValue -FullName "Path.DbatoolsData"
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$temp\spwhoisactive.zip"
 
@@ -169,17 +167,6 @@ function Install-DbaWhoIsActive {
             $sql = [IO.File]::ReadAllText($sqlfile)
             $sql = $sql -replace 'USE master', ''
             $batches = $sql -split "GO\r\n"
-
-            $matchString = 'Who Is Active? v'
-
-            If ($sql  -like "*$matchString*"){
-                $posStart = $sql.IndexOf("$matchString")
-                $PosEnd = $sql.IndexOf(")", $PosStart)
-                $versionWhoIsActive = $sql.Substring($posStart+$matchString.Length, $posEnd - ($posStart + $matchString.Length)+ 1).TrimEnd()
-            }
-            Else {
-                $versionWhoIsActive = ''
-            }
         }
     }
 
@@ -230,15 +217,12 @@ function Install-DbaWhoIsActive {
                         else {
                             $status = 'Installed'
                         }
-
-
                         [PSCustomObject]@{
                             ComputerName = $server.ComputerName
                             InstanceName = $server.ServiceName
                             SqlInstance  = $server.DomainInstanceName
                             Database     = $Database
                             Name         = 'sp_WhoisActive'
-                            Version      = $versionWhoIsActive
                             Status       = $status
                         }
                     }

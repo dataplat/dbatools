@@ -35,7 +35,7 @@
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [System.Management.Automation.ScriptBlock]
         $ScriptBlock,
 

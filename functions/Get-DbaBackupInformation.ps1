@@ -71,6 +71,11 @@ function Get-DbaBackupInformation {
             Replaces user friendly yellow warnings with bloody red exceptions of doom!
             Use this if you want the function to throw terminating errors you want to catch.
 
+        .EXAMPLE
+            Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse
+
+            Will use the Server1 instance to recursively read all backup files under c:\backups, and return a dbatools BackupHistory object
+
         .NOTES
             Tags: DisasterRecovery, Backup, Restore
 
@@ -80,11 +85,6 @@ function Get-DbaBackupInformation {
 
         .LINK
             https://dbatools.io/Get-DbaBackupInformation
-
-        .EXAMPLE
-            Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse
-
-            Will use the Server1 instance to recursively read all backup files under c:\backups, and return a dbatools BackupHistory object
 
         .EXAMPLE
             Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath c:\store\BackupHistory.xml
@@ -124,13 +124,13 @@ function Get-DbaBackupInformation {
         .EXAMPLE
             $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups -MaintenanceSolution -IgnoreLogBackup
 
-            As we know we are dealing with an Ola Hallengren style backup folder from the MaintenanceSolution switch, when IgnoreLogBackup is also included we can ignore the LOG folder to skip any scanning of log backups. Note this also means they WON'T be restored
+            As we know we are dealing with an Ola Hallengren style backup folder from the MaintenanceSolution switch, when IgnoreLogBackup is also included we can ignore the LOG folder to skip any scanning of log backups. Note this also means then WON'T be restored
     #>
     [CmdletBinding( DefaultParameterSetName = "Create")]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$Path,
-        [parameter(Mandatory, ParameterSetName = "Create")]
+        [parameter(Mandatory = $true, ParameterSetName = "Create")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(ParameterSetName = "Create")]
@@ -219,7 +219,7 @@ function Get-DbaBackupInformation {
                             $f = $f | Select-Object *, @{ Name = "FullName"; Expression = { $f } }
                         }
                         Write-Message -Message "Testing a single file $f " -Level Verbose
-                        if ((Test-DbaPath -Path $f.fullname -SqlInstance $server)) {
+                        if ((Test-DbaSqlPath -Path $f.fullname -SqlInstance $server)) {
                             $files += $f
                         }
                         else {
@@ -294,7 +294,7 @@ function Get-DbaBackupInformation {
             catch {
                 Stop-Function -Message "Failure reading backup header" -ErrorRecord $_ -Target $server -Continue
             }
-
+            
             $groupdetails = $FileDetails | group-object -Property BackupSetGUID
 
             foreach ($Group in $GroupDetails) {

@@ -38,7 +38,7 @@ function Remove-DbaCmConnection {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline, Mandatory)]
+        [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName,
 
@@ -46,11 +46,11 @@ function Remove-DbaCmConnection {
         [Alias('Silent')]$EnableException
     )
 
-    begin {
+    BEGIN {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
     }
-    process {
+    PROCESS {
         foreach ($connectionObject in $ComputerName) {
             if (-not $connectionObject.Success) { Stop-Function -Message "Failed to interpret computername input: $($connectionObject.InputObject)" -Category InvalidArgument -Target $connectionObject.InputObject -Continue }
             Write-Message -Level VeryVerbose -Message "Removing from connection cache: $($connectionObject.Connection.ComputerName)" -Target $connectionObject.Connection.ComputerName
@@ -63,7 +63,7 @@ function Remove-DbaCmConnection {
             }
         }
     }
-    end {
+    END {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }

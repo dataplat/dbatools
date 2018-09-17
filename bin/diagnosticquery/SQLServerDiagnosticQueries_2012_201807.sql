@@ -1,7 +1,7 @@
 
 -- SQL Server 2012 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: September 11, 2018
+-- Last Modified: August 2, 2018
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -835,26 +835,18 @@ ORDER BY [CPU Rank] OPTION (RECOMPILE);
 
 -- Get I/O utilization by database (Query 33) (IO Usage By Database)
 WITH Aggregate_IO_Statistics
-AS (SELECT DB_NAME(database_id) AS [Database Name],
-    CAST(SUM(num_of_bytes_read + num_of_bytes_written) / 1048576 AS DECIMAL(12, 2)) AS [ioTotalMB],
-    CAST(SUM(num_of_bytes_read ) / 1048576 AS DECIMAL(12, 2)) AS [ioReadMB],
-    CAST(SUM(num_of_bytes_written) / 1048576 AS DECIMAL(12, 2)) AS [ioWriteMB]
-    FROM sys.dm_io_virtual_file_stats(NULL, NULL) AS [DM_IO_STATS]
-    GROUP BY database_id)
-SELECT ROW_NUMBER() OVER (ORDER BY ioTotalMB DESC) AS [I/O Rank],
-        [Database Name], ioTotalMB AS [Total I/O (MB)],
-        CAST(ioTotalMB / SUM(ioTotalMB) OVER () * 100.0 AS DECIMAL(5, 2)) AS [Total I/O %],
-        ioReadMB AS [Read I/O (MB)], 
-		CAST(ioReadMB / SUM(ioReadMB) OVER () * 100.0 AS DECIMAL(5, 2)) AS [Read I/O %],
-        ioWriteMB AS [Write I/O (MB)], 
-		CAST(ioWriteMB / SUM(ioWriteMB) OVER () * 100.0 AS DECIMAL(5, 2)) AS [Write I/O %]
+AS
+(SELECT DB_NAME(database_id) AS [Database Name],
+CAST(SUM(num_of_bytes_read + num_of_bytes_written)/1048576 AS DECIMAL(12, 2)) AS io_in_mb
+FROM sys.dm_io_virtual_file_stats(NULL, NULL) AS [DM_IO_STATS]
+GROUP BY database_id)
+SELECT ROW_NUMBER() OVER(ORDER BY io_in_mb DESC) AS [I/O Rank], [Database Name], io_in_mb AS [Total I/O (MB)],
+       CAST(io_in_mb/ SUM(io_in_mb) OVER() * 100.0 AS DECIMAL(5,2)) AS [I/O Percent]
 FROM Aggregate_IO_Statistics
 ORDER BY [I/O Rank] OPTION (RECOMPILE);
 ------
 
 -- Helps determine which database is using the most I/O resources on the instance
--- These numbers are cumulative since the last service restart
--- They include all I/O activity, not just the nominal I/O workload
 
 
 -- Get total buffer usage by database for current instance  (Query 34) (Total Buffer Usage by Database)
@@ -1685,10 +1677,7 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- Have you done any backup tuning with striped backups, or changing the parameters of the backup command?
 
 
--- These four Pluralsight Courses go into more detail about how to run these queries and interpret the results
-
--- SQL Server 2017: Diagnosing Configuration Issues with DMVs
--- https://bit.ly/2MSUDUL
+-- These three Pluralsight Courses go into more detail about how to run these queries and interpret the results
 
 -- SQL Server 2014 DMV Diagnostic Queries – Part 1 
 -- https://bit.ly/2plxCer
@@ -1704,7 +1693,7 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- Sign up for Microsoft Visual Studio Dev Essentials and get a free three month pass to Pluralsight
 
 -- Microsoft Visual Studio Dev Essentials
--- http://bit.ly/1q6xbDL
+-- https://bit.ly/1q6xbDL
 
 
 -- Sign up for Microsoft Azure Essentials and get lots of free Azure usage credits, MCP exam voucher, three month Pluralsight subscription
@@ -1713,5 +1702,5 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 -- https://bit.ly/2JMWe8x
 
 
--- August 2017 blog series about upgrading and migrating to SQL Server 2016/2017
+-- August 2017 blog series about upgrading and migrating SQL Server
 -- https://bit.ly/2ftKVrX

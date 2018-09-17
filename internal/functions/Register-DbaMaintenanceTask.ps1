@@ -43,19 +43,19 @@ function Register-DbaMaintenanceTask {
 
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [System.Management.Automation.ScriptBlock]
         $ScriptBlock,
 
-        [Parameter(Mandatory, ParameterSetName = "Once")]
+        [Parameter(Mandatory = $true, ParameterSetName = "Once")]
         [switch]
         $Once,
 
-        [Parameter(Mandatory, ParameterSetName = "Repeating")]
+        [Parameter(Mandatory = $true, ParameterSetName = "Repeating")]
         [System.TimeSpan]
         $Interval,
 

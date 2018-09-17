@@ -22,7 +22,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
         # make darn sure suspect pages show up, run twice
         try {
-            $null = Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+            $null = Invoke-DbaDatabaseCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
             $null = $db.Query("select top 100 from example")
             $null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
             $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
@@ -30,7 +30,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         catch {} # should fail
 
         try {
-            $null = Invoke-DbaDbCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
+            $null = Invoke-DbaDatabaseCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
             $null = $db.Query("select top 100 from example")
             $null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
             $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue

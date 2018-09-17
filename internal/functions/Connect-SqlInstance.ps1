@@ -39,7 +39,7 @@ function Connect-SqlInstance {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidDefaultValueSwitchParameter", "")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [object]$SqlInstance,
         [object]$SqlCredential,
         [switch]$ParameterConnection,

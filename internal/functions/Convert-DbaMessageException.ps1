@@ -24,14 +24,14 @@ function Convert-DbaMessageException {
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         $Exception,
         
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $FunctionName,
         
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $ModuleName
     )

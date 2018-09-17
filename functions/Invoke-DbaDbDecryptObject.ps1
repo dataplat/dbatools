@@ -87,7 +87,7 @@ function Invoke-DbaDbDecryptObject {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [object[]]$Database,
         [string[]]$ObjectName,
         [ValidateSet('ASCII', 'UTF8')]
@@ -100,11 +100,11 @@ function Invoke-DbaDbDecryptObject {
 
         function Invoke-DecryptData() {
             param(
-                [parameter(Mandatory)]
+                [parameter(Mandatory = $true)]
                 [byte[]]$Secret,
-                [parameter(Mandatory)]
+                [parameter(Mandatory = $true)]
                 [byte[]]$KnownPlain,
-                [parameter(Mandatory)]
+                [parameter(Mandatory = $true)]
                 [byte[]]$KnownSecret
             )
 

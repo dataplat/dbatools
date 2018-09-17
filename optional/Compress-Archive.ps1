@@ -79,22 +79,22 @@ Which ships with PowerShell Version 5 but will run under v3.
         [CmdletBinding(DefaultParameterSetName = "Path", SupportsShouldProcess = $true, HelpUri = "http://go.microsoft.com/fwlink/?LinkID=393252")]
         param
         (
-            [parameter (Mandatory, Position = 0, ParameterSetName = "Path", ValueFromPipeline, ValueFromPipelineByPropertyName = $true)]
-            [parameter (Mandatory, Position = 0, ParameterSetName = "PathWithForce", ValueFromPipeline, ValueFromPipelineByPropertyName = $true)]
-            [parameter (Mandatory, Position = 0, ParameterSetName = "PathWithUpdate", ValueFromPipeline, ValueFromPipelineByPropertyName = $true)]
+            [parameter (mandatory = $true, Position = 0, ParameterSetName = "Path", ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+            [parameter (mandatory = $true, Position = 0, ParameterSetName = "PathWithForce", ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+            [parameter (mandatory = $true, Position = 0, ParameterSetName = "PathWithUpdate", ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
             [ValidateNotNullOrEmpty()]
             [string[]]
             $Path,
 
-            [parameter (Mandatory, ParameterSetName = "LiteralPath", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
-            [parameter (Mandatory, ParameterSetName = "LiteralPathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
-            [parameter (Mandatory, ParameterSetName = "LiteralPathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
+            [parameter (mandatory = $true, ParameterSetName = "LiteralPath", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
+            [parameter (mandatory = $true, ParameterSetName = "LiteralPathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
+            [parameter (mandatory = $true, ParameterSetName = "LiteralPathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $true)]
             [ValidateNotNullOrEmpty()]
             [Alias("PSPath")]
             [string[]]
             $LiteralPath,
 
-            [parameter (Mandatory,
+            [parameter (mandatory = $true,
                         Position = 1,
                         ValueFromPipeline = $false,
                         ValueFromPipelineByPropertyName = $false)]
@@ -110,13 +110,13 @@ Which ships with PowerShell Version 5 but will run under v3.
             [string]
             $CompressionLevel = "Optimal",
 
-            [parameter(Mandatory, ParameterSetName = "PathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
-            [parameter(Mandatory, ParameterSetName = "LiteralPathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
+            [parameter(mandatory = $true, ParameterSetName = "PathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
+            [parameter(mandatory = $true, ParameterSetName = "LiteralPathWithUpdate", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
             [switch]
             $Update = $false,
 
-            [parameter(Mandatory, ParameterSetName = "PathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
-            [parameter(Mandatory, ParameterSetName = "LiteralPathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
+            [parameter(mandatory = $true, ParameterSetName = "PathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
+            [parameter(mandatory = $true, ParameterSetName = "LiteralPathWithForce", ValueFromPipeline = $false, ValueFromPipelineByPropertyName = $false)]
             [switch]
             $Force = $false
         )
