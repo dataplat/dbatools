@@ -56,7 +56,7 @@ function New-DbatoolsSupportPackage {
         [Alias('Silent')]$EnableException
     )
 
-    begin {
+    BEGIN {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
@@ -115,7 +115,7 @@ function New-DbatoolsSupportPackage {
         }
         #endregion Helper functions
     }
-    process {
+    PROCESS {
         $filePathXml = "$($Path.Trim('\'))\dbatools_support_pack_$(Get-Date -Format "yyyy_MM_dd-HH_mm_ss").xml"
         $filePathZip = $filePathXml -replace "\.xml$", ".zip"
 
@@ -176,7 +176,7 @@ This will make it easier for us to troubleshoot and you won't be sending us the 
 
         Remove-Item -Path $filePathXml -ErrorAction Ignore
     }
-    end {
+    END {
         Write-Message -Level InternalComment -Message "Ending"
     }
 }

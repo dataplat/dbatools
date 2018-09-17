@@ -28,10 +28,9 @@
 
     .NOTES
         Tags: databasemail, dbmail, mail
-        Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MITIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaDbMailAccount

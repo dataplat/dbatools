@@ -99,7 +99,7 @@ function New-DbaCmConnection {
     #>
     [CmdletBinding(DefaultParameterSetName = 'Credential')]
     param (
-        [Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline = $true)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
         [Parameter(ParameterSetName = "Credential")]
@@ -135,7 +135,7 @@ function New-DbaCmConnection {
         Write-Message -Level InternalComment -Message "Starting execution"
         Write-Message -Level Verbose -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 
-        $disable_cache = Get-DbatoolsConfigValue -Name 'ComputerManagement.Cache.Disable.All' -Fallback $false
+        $disable_cache = Get-DbaConfigValue -Name 'ComputerManagement.Cache.Disable.All' -Fallback $false
     }
     process {
         foreach ($connectionObject in $ComputerName) {

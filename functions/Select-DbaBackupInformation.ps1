@@ -74,7 +74,7 @@ function Select-DbaBackupInformation {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]$BackupHistory,
         [DateTime]$RestoreTime = (get-date).addmonths(1),
         [switch]$IgnoreLogs,
@@ -142,20 +142,20 @@ function Select-DbaBackupInformation {
             else {
                 $databasefilter = $database
             }
-
+            
             if ($true -eq $Continue){
                 #Test if Database is in a continuing state and the LSN to continue from:
                 if ($Databasefilter -in ($ContinuePoints | Select-Object -Property Database).Database) {
                     Write-Message -Message "$Database in ContinuePoints, will attmept to continue" -Level verbose
                     $IgnoreFull = $True
                     #Check what the last backup restored was
-                    if (($LastRestoreType | Where-Object {$_.Database -eq $Databasefilter}).RestoreType -eq 'log') {
-                        #log Backup last restored, so diffs cannot be used
-                        $IgnoreDiffs = $true
+                    if (($LastRestoreType | Where-Object {$_.Database -eq $Databasefilter}).RestoreType -eq 'Database') {
+                        #Full Backup last restored, so diffs can be used
+                        $IgnoreDiffs = $false
                     }
                     else {
-                        #Last restore was a diff or full, so can restore diffs or logs
-                        $IgnoreDiffs = $false
+                        #Last restore was a diff or log, so can only restore more logs
+                        $IgnoreDiffs = $true
                     }
                 }
                 else {
@@ -184,7 +184,7 @@ function Select-DbaBackupInformation {
                         CheckpointLSN = ($ContinuePoints | Where-Object {$_.Database -eq $DatabaseFilter}).differential_base_lsn
                     }
             }
-
+            
             if ($false -eq $IgnoreDiffs){
                 Write-Message -Message "processing diffs" -Level Verbose
                 $Diff = $DatabaseHistory | Where-Object {$_.Type -in ('Differential', 'Database Differential') -and $_.Start -le $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1

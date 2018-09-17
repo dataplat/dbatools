@@ -32,11 +32,11 @@ function Remove-DbaMessageLevelModifier {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline = $true)]
         [string[]]
         $Name,
         
-        [Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline = $true)]
         [Sqlcollaborative.Dbatools.Message.MessageLevelModifier[]]
         $Modifier,
         

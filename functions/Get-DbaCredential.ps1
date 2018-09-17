@@ -62,7 +62,7 @@ function Get-DbaCredential {
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Name,

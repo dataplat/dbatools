@@ -20,9 +20,8 @@ function Get-DbaMaxMemory {
 
         .NOTES
             Tags: MaxMemory, Memory
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -40,7 +39,7 @@ function Get-DbaMaxMemory {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

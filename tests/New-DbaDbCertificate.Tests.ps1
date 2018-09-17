@@ -5,17 +5,17 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Can create a database certificate" {
         BeforeAll {
-            if (-not (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database master)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            if (-not (Get-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database master)) {
+                $masterkey = New-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             }
 
-            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            $tempdbmasterkey = New-DbaDatabasemasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             $certificateName1 = "Cert_$(Get-random)"
             $certificateName2 = "Cert_$(Get-random)"
         }
         AfterAll {
-            if ($tempdbmasterkey) { $tempdbmasterkey | Remove-DbaDbMasterKey -Confirm:$false }
-            if ($masterKey) { $masterkey | Remove-DbaDbMasterKey -Confirm:$false }
+            if ($tempdbmasterkey) { $tempdbmasterkey | Remove-DbaDatabaseMasterKey -Confirm:$false }
+            if ($masterKey) { $masterkey | Remove-DbaDatabasemasterKey -Confirm:$false }
         }
 
         $cert1 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1

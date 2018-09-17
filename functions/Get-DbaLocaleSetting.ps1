@@ -55,7 +55,7 @@ function Get-DbaLocaleSetting {
         [switch]$EnableException
     )
 
-    begin {
+    BEGIN {
         $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
         $sessionoption = New-CimSessionOption -Protocol DCom
         $keyname = "Control Panel\International"
@@ -63,7 +63,7 @@ function Get-DbaLocaleSetting {
         $Reg = 'StdRegProv'
         [UInt32]$CIMHiveCU = 2147483649
     }
-    process {
+    PROCESS {
         foreach ($computer in $ComputerName) {
             $props = @{ "ComputerName" = $computer }
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential

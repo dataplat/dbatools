@@ -77,10 +77,10 @@ Displays what would happen trying to set all missing SPNs for sql2016
 #>
     [cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
     param (
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
         [Alias("RequiredSPN")]
         [string]$SPN,
-        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName)]
         [Alias("InstanceServiceAccount", "AccountName")]
         [string]$ServiceAccount,
         [Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]

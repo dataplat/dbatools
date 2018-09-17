@@ -45,7 +45,7 @@
         .EXAMPLE
             Get-DbaAgentJobStep -SqlInstance localhost, sql2016
 
-            Returns all SQL Agent Job Steps for the local and sql2016 SQL Server instances
+            Returns all SQl Agent Job Steps for the local and sql2016 SQL Server instances
 
         .EXAMPLE
             Get-DbaAgentJobStep -SqlInstance localhost -Job BackupData, BackupDiff
@@ -55,21 +55,21 @@
         .EXAMPLE
             Get-DbaAgentJobStep -SqlInstance localhost -ExcludeJob BackupDiff
 
-            Returns all SQL Agent Job Steps for the local SQL Server instances, except for the BackupDiff Job.
+            Returns all SQl Agent Job Steps for the local SQL Server instances, except for the BackupDiff Job.
 
         .EXAMPLE
             Get-DbaAgentJobStep -SqlInstance localhost -NoDisabledJobs
 
-            Returns all SQL Agent Job Steps for the local SQL Server instances, excluding the disabled jobs.
+            Returns all SQl Agent Job Steps for the local SQL Server instances, excluding the disabled jobs.
 
         .EXAMPLE
             $servers | Get-DbaAgentJobStep
 
-            Find all of your Job Steps from SQL Server instances in the $servers collection
+            Find all of your Job Steps from servers in the $server collection
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]

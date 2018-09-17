@@ -81,7 +81,7 @@ function Set-DbaMaxDop {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
@@ -90,7 +90,7 @@ function Set-DbaMaxDop {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [int]$MaxDop = -1,
-        [Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline = $True)]
         [object]$Collection,
         [Alias("All")]
         [switch]$AllDatabases,

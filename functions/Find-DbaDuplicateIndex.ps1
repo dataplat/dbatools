@@ -95,7 +95,7 @@ function Find-DbaDuplicateIndex {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     Param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

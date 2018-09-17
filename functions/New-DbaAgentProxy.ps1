@@ -94,7 +94,7 @@ function New-DbaAgentProxy {
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

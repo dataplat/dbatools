@@ -74,23 +74,23 @@
 #>
     [CmdletBinding(PositionalBinding = $false)]
     param (
-        [Parameter(Mandatory, ParameterSetName = "Target")]
+        [Parameter(Mandatory = $true, ParameterSetName = "Target")]
         [string]
         $TargetType,
         
-        [Parameter(Mandatory, ParameterSetName = "Exception")]
+        [Parameter(Mandatory = $true, ParameterSetName = "Exception")]
         [string]
         $ExceptionType,
         
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ScriptBlock]
         $ScriptBlock,
         
-        [Parameter(Mandatory, ParameterSetName = "TargetFilter")]
+        [Parameter(Mandatory = $true, ParameterSetName = "TargetFilter")]
         [string]
         $TargetTypeFilter,
         
-        [Parameter(Mandatory, ParameterSetName = "ExceptionFilter")]
+        [Parameter(Mandatory = $true, ParameterSetName = "ExceptionFilter")]
         [string]
         $ExceptionTypeFilter,
         

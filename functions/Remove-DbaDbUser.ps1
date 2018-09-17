@@ -24,7 +24,7 @@ function Remove-DbaDbUser {
     Specifies the list of users to remove.
 
     .PARAMETER InputObject
-    Support piping from Get-DbaDbUser.
+    Support piping from Get-DbaDatabaseUser.
 
     .PARAMETER Force
     If enabled this will force the change of the owner to 'dbo' for any schema which owner is the User.
@@ -67,7 +67,7 @@ function Remove-DbaDbUser {
     Drops user1 from all databases it exists in on server 'sqlserver2014' except for the model database.
 
     .EXAMPLE
-    Get-DbaDbUser sqlserver2014 | Where-Object Name -In "user1" | Remove-DbaDbUser
+    Get-DbaDatabaseUser sqlserver2014 | Where-Object Name -In "user1" | Remove-DbaDbUser
 
     Drops user1 from all databases it exists in on server 'sqlserver2014'.
 
@@ -229,7 +229,7 @@ function Remove-DbaDbUser {
 
                 foreach ($db in $databases) {
                     Write-Message -Level Verbose -Message "Get users in Database $db on target $server"
-                    $users = Get-DbaDbUser -SqlInstance $server -Database $db.Name
+                    $users = Get-DbaDatabaseUser -SqlInstance $server -Database $db.Name
                     $users = $users | Where-Object Name -In $User
                     Remove-DbUser $users
                 }

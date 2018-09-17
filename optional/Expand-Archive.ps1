@@ -57,17 +57,17 @@ Which ships with PowerShell Version 5 but will run under v3.
         param
         (
             [parameter (
-                        Mandatory,
+                        mandatory = $true,
                         Position = 0,
                         ParameterSetName = "Path",
-                        ValueFromPipeline,
+                        ValueFromPipeline = $true,
                         ValueFromPipelineByPropertyName = $true)]
             [ValidateNotNullOrEmpty()]
             [string]
             $Path,
 
             [parameter (
-                        Mandatory,
+                        mandatory = $true,
                         ParameterSetName = "LiteralPath",
                         ValueFromPipelineByPropertyName = $true)]
             [ValidateNotNullOrEmpty()]

@@ -99,12 +99,8 @@ function Install-DbaFirstResponderKit {
     )
 
     begin {
-        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-        
-        if (-not $DbatoolsData) {
-            $DbatoolsData = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-        }
-        
+        $DbatoolsData = Get-DbaConfigValue -FullName "Path.DbatoolsData"
+
         $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
 
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
@@ -208,7 +204,7 @@ function Install-DbaFirstResponderKit {
                     }
                     if ($Pscmdlet.ShouldProcess($instance, "installing/updating $scriptname in $database.")) {
                         try {
-                            Invoke-DbaQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
+                            Invoke-DbaSqlQuery -SqlInstance $server -Database $Database -File $script.FullName -EnableException -Verbose:$false
                         }
                         catch {
                             Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_

@@ -69,11 +69,11 @@ function Copy-DbaServerTrigger {
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$Source,
         [PSCredential]
         $SourceSqlCredential,
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]
         $DestinationSqlCredential,

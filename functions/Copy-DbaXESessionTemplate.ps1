@@ -22,7 +22,6 @@
         .NOTES
             Tags: ExtendedEvent, XE, XEvent
             Website: https://dbatools.io
-            Author: Chrissy LeMaire (@cl), netnerds.net
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 

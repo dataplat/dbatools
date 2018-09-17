@@ -39,7 +39,7 @@
 
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Status
     )

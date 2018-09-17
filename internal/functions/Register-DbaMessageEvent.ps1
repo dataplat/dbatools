@@ -60,11 +60,11 @@
 #>
     [CmdletBinding(PositionalBinding = $false)]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Name,
         
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [System.Management.Automation.ScriptBlock]
         $ScriptBlock,
         

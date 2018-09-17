@@ -85,7 +85,7 @@ function Invoke-Command2 {
         # Tell the system to clean up if the session expires
         [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::PSSessionSet($runspaceId, $ComputerName.ComputerName, $currentSession)
 
-        if (-not (Get-DbatoolsConfigValue -FullName 'PSRemoting.Sessions.Enable' -Fallback $true)) {
+        if (-not (Get-DbaConfigValue -FullName 'PSRemoting.Sessions.Enable' -Fallback $true)) {
             $currentSession | Remove-PSSession
         }
     }

@@ -69,18 +69,18 @@ function Remove-DbaAgentJobStep {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [object[]]$Job,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$StepName,
-        [DbaMode]$Mode = (Get-DbatoolsConfigValue -Name 'message.mode.default' -Fallback "Strict"),
+        [DbaMode]$Mode = (Get-DbaConfigValue -Name 'message.mode.default' -Fallback "Strict"),
         [Alias('Silent')]
         [switch]$EnableException
     )

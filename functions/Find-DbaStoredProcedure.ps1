@@ -67,14 +67,14 @@ function Find-DbaStoredProcedure {
     #>
     [CmdletBinding()]
     Param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [string]$Pattern,
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,

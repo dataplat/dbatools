@@ -146,7 +146,7 @@ function Backup-DbaDbCertificate {
             $fullCertName = "$actualPath\$certName$Suffix"
             $exportPathKey = "$fullCertName.pvk"
 
-            if (!(Test-DbaPath -SqlInstance $server -Path $actualPath)) {
+            if (!(Test-DbaSqlPath -SqlInstance $server -Path $actualPath)) {
                 Stop-Function -Message "$SqlInstance cannot access $actualPath" -Target $actualPath
             }
 

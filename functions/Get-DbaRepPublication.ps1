@@ -48,7 +48,7 @@ function Get-DbaRepPublication {
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [DbaInstanceParameter[]]$SqlInstance,
         [object[]]$Database,
         [PSCredential]$SqlCredential,

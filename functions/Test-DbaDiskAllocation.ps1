@@ -43,9 +43,10 @@ function Test-DbaDiskAllocation {
 
         .NOTES
             Tags: CIM, Storage
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Requires: Windows sysadmin access on SQL Servers
+
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -69,7 +70,7 @@ function Test-DbaDiskAllocation {
     [CmdletBinding(SupportsShouldProcess = $true)]
     [OutputType("System.Collections.ArrayList", "System.Boolean")]
     Param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [object[]]$ComputerName,
         [switch]$NoSqlCheck,

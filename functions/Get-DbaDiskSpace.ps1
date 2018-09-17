@@ -91,7 +91,7 @@ function Get-DbaDiskSpace {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline = $true)]
         [Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
@@ -143,7 +143,7 @@ function Get-DbaDiskSpace {
 
             if ($CheckForSql) {
                 try {
-                    $sqlServices = Get-DbaService -ComputerName $computer -Type Engine
+                    $sqlServices = Get-DbaSqlService -ComputerName $computer -Type Engine
                 }
                 catch {
                     Write-Message -Level Warning -Message "Failed to connect to $computer to gather SQL Server instances, will not be reporting SQL Information." -ErrorRecord $_ -OverrideExceptionMessage -Target $computer.ComputerName

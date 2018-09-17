@@ -32,9 +32,8 @@ function Read-DbaBackupHeader {
 
         .NOTES
             Tags: DisasterRecovery, Backup, Restore
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -88,11 +87,11 @@ function Read-DbaBackupHeader {
     <# AzureCredential is utilized in this command is not a formal Credential object. #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance]$SqlInstance,
         [PsCredential]$SqlCredential,
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$Path,
         [switch]$Simple,
         [switch]$FileList,
@@ -188,7 +187,7 @@ function Read-DbaBackupHeader {
         Write-Message -Level Verbose -Message "$pathCount unique files to scan."
         Write-Message -Level Verbose -Message "Checking accessibility for all the files."
 
-        $testPath = Test-DbaPath -SqlInstance $server -Path $pathGroup
+        $testPath = Test-DbaSqlPath -SqlInstance $server -Path $pathGroup
 
         #Setup initial session state
         $InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()

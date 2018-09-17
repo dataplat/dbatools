@@ -8,16 +8,14 @@ function Get-DbaSpConfigure {
             The data includes the default value for each configuration, for quick identification of values that may have been changed.
 
         .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+            SQL Server name or SMO object representing the SQL Server to connect to. This can be a
+            collection and receive pipeline input
 
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Name
-            Return only specific configurations. Name can be either values from (sys.configuration/sp_configure) or from SMO object
-
-        .PARAMETER ExcludeName
-            Exclude specific configurations. Name can be either values from (sys.configuration/sp_configure) or from SMO object
+            Return only specific configurations -- auto-populated from source server
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -35,16 +33,10 @@ function Get-DbaSpConfigure {
         .LINK
             https://dbatools.io/Get-DbaSpConfigure
 
-        .INPUTS
-            A DbaInstanceParameter representing an array of SQL Server instances.
-
-        .OUTPUTS
-            Returns pscustomobject with properties ServerName, ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue
-
         .EXAMPLE
             Get-DbaSpConfigure -SqlInstance localhost
 
-            Returns all system configuration information on the localhost.
+            Returns server level configuration data on the localhost (ServerName, Name, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
 
         .EXAMPLE
             'localhost','localhost\namedinstance' | Get-DbaSpConfigure
@@ -52,144 +44,41 @@ function Get-DbaSpConfigure {
             Returns system configuration information on multiple instances piped into the function
 
         .EXAMPLE
-            Get-DbaSpConfigure -SqlInstance sql2012 -Name 'max server memory (MB)'
+            Get-DbaSpConfigure -SqlInstance localhost
 
-            Returns only the system configuration for MaxServerMemory on sql2012.
-
-        .EXAMPLE
-            Get-DbaSpConfigure -SqlInstance sql2012 -ExcludeName 'max server memory (MB)', RemoteAccess | Out-GridView
-
-            Returns system configuration information on sql2012 but excludes for 'max server memory (MB)' and 'remote access'. Values returned in GridView
+            Returns server level configuration data on the localhost (ServerName, Name, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
 
         .EXAMPLE
-            $cred = Get-Credential SqlCredential
-            'sql2012' | Get-DbaSpConfigure -SqlCredential $cred -Name RemoteAccess, 'max server memory (MB)' -ExcludeName 'remote access' | Out-GridView
+            Get-DbaSpConfigure -SqlInstance sql2012 -Name MaxServerMemory
 
-            Returns system configuration information on sql2012 using SQL Server Authentication. Only MaxServerMemory is returned as RemoteAccess was also excluded.
+            Returns only the system configuration for MaxServerMemory. Configs is auto-populated for tabbing convenience.
         #>
     [CmdletBinding()]
     Param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias("Config", "ConfigName")]
         [string[]]$Name,
-        [string[]]$ExcludeName,
         [switch]$EnableException
     )
-    begin {
-        $smoName = [pscustomobject]@{
-            "Ad Hoc Distributed Queries"         = "AdHocDistributedQueriesEnabled"
-            "affinity I/O mask"                  = "AffinityIOMask"
-            "affinity mask"                      = "AffinityMask"
-            "affinity64 I/O mask"                = "Affinity64IOMask"
-            "affinity64 mask"                    = "Affinity64Mask"
-            "Agent XPs"                          = "AgentXPsEnabled"
-            "allow updates"                      = "AllowUpdates"
-            "awe enabled"                        = "AweEnabled"
-            "backup compression default"         = "DefaultBackupCompression"
-            "blocked process threshold"          = "BlockedProcessThreshold"
-            "blocked process threshold (s)"      = "BlockedProcessThreshold"
-            "c2 audit mode"                      = "C2AuditMode"
-            "clr enabled"                        = "IsSqlClrEnabled"
-            "common criteria compliance enabled" = "CommonCriteriaComplianceEnabled"
-            "contained database authentication"  = "ContainmentEnabled"
-            "cost threshold for parallelism"     = "CostThresholdForParallelism"
-            "cross db ownership chaining"        = "CrossDBOwnershipChaining"
-            "cursor threshold"                   = "CursorThreshold"
-            "Database Mail XPs"                  = "DatabaseMailEnabled"
-            "default full-text language"         = "DefaultFullTextLanguage"
-            "default language"                   = "DefaultLanguage"
-            "default trace enabled"              = "DefaultTraceEnabled"
-            "disallow results from triggers"     = "DisallowResultsFromTriggers"
-            "EKM provider enabled"               = "ExtensibleKeyManagementEnabled"
-            "filestream access level"            = "FilestreamAccessLevel"
-            "fill factor (%)"                    = "FillFactor"
-            "ft crawl bandwidth (max)"           = "FullTextCrawlBandwidthMax"
-            "ft crawl bandwidth (min)"           = "FullTextCrawlBandwidthMin"
-            "ft notify bandwidth (max)"          = "FullTextNotifyBandwidthMax"
-            "ft notify bandwidth (min)"          = "FullTextNotifyBandwidthMin"
-            "index create memory (KB)"           = "IndexCreateMemory"
-            "in-doubt xact resolution"           = "InDoubtTransactionResolution"
-            "lightweight pooling"                = "LightweightPooling"
-            "locks"                              = "Locks"
-            "max degree of parallelism"          = "MaxDegreeOfParallelism"
-            "max full-text crawl range"          = "FullTextCrawlRangeMax"
-            "max server memory (MB)"             = "MaxServerMemory"
-            "max text repl size (B)"             = "ReplicationMaxTextSize"
-            "max worker threads"                 = "MaxWorkerThreads"
-            "media retention"                    = "MediaRetention"
-            "min memory per query (KB)"          = "MinMemoryPerQuery"
-            "min server memory (MB)"             = "MinServerMemory"
-            "nested triggers"                    = "NestedTriggers"
-            "network packet size (B)"            = "NetworkPacketSize"
-            "Ole Automation Procedures"          = "OleAutomationProceduresEnabled"
-            "open objects"                       = "OpenObjects"
-            "optimize for ad hoc workloads"      = "OptimizeAdhocWorkloads"
-            "PH timeout (s)"                     = "ProtocolHandlerTimeout"
-            "precompute rank"                    = "PrecomputeRank"
-            "priority boost"                     = "PriorityBoost"
-            "query governor cost limit"          = "QueryGovernorCostLimit"
-            "query wait (s)"                     = "QueryWait"
-            "recovery interval (min)"            = "RecoveryInterval"
-            "remote access"                      = "RemoteAccess"
-            "remote admin connections"           = "RemoteDacConnectionsEnabled"
-            "remote data archive"                = "RemoteDataArchiveEnabled"
-            "remote login timeout (s)"           = "RemoteLoginTimeout"
-            "remote proc trans"                  = "RemoteProcTrans"
-            "remote query timeout (s)"           = "RemoteQueryTimeout"
-            "Replication XPs"                    = "ReplicationXPsEnabled"
-            "scan for startup procs"             = "ScanForStartupProcedures"
-            "server trigger recursion"           = "ServerTriggerRecursionEnabled"
-            "set working set size"               = "SetWorkingSetSize"
-            "show advanced options"              = "ShowAdvancedOptions"
-            "SMO and DMO XPs"                    = "SmoAndDmoXPsEnabled"
-            "SQL Mail XPs"                       = "SqlMailXPsEnabled"
-            "transform noise words"              = "TransformNoiseWords"
-            "two digit year cutoff"              = "TwoDigitYearCutoff"
-            "user connections"                   = "UserConnections"
-            "user options"                       = "UserOptions"
-            "Web Assistant Procedures"           = "WebXPsEnabled"
-            "xp_cmdshell"                        = "XPCmdShellEnabled"
-            # Configurations without defined names - Created dummy entries
-            "access check cache bucket count"    = "AccessCheckCacheBucketCount"
-            "access check cache quota"           = "AccessCheckCacheQuota"
-            "allow polybase export"              = "AllowPolybaseExport"
-            "automatic soft-NUMA disabled"       = "AutomaticSoftnumaDisabled"
-            "backup checksum default"            = "BackupChecksumDefault"
-            "clr strict security"                = "ClrStrictSecurity"
-            "external scripts enabled"           = "ExternalScriptsEnabled"
-            "hadoop connectivity"                = "HadoopConnectivity"
-            "polybase network encryption"        = "PolybaseNetworkEncryption"
-            "User Instance Timeout"              = "UserInstanceTimeout"
-            "user instances enabled"             = "UserInstancesEnabled"
-        }
-    }
+
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {
-                Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
+                Write-Warning "Failed to connect to: $instance"
+                continue
             }
 
-            #Get a list of the configuration Properties. This collection matches entries in sys.configurations
-            try {
-                $proplist = $server.Configuration.Properties
-            }
-            catch {
-                Stop-Function -Message "Unable to gather configuration properties $instance" -Target $instance -ErrorRecord $_ -Continue
-            }
+            #Get a list of the configuration property parents, and exclude the Parent, Properties values
+            $proplist = Get-Member -InputObject $server.Configuration -MemberType Property -Force | Select-Object Name | Where-Object { $_.Name -ne "Parent" -and $_.Name -ne "Properties" }
 
             if ($Name) {
-                $proplist = $proplist | Where-Object { ($_.DisplayName -in $Name -or ($smoName).$($_.DisplayName) -in $Name) }
-            }
-
-            if (Test-Bound "ExcludeName") {
-                $proplist = $proplist | Where-Object { ($_.DisplayName -NotIn $ExcludeName -and ($smoName).$($_.DisplayName) -NotIn $ExcludeName) }
+                $proplist = $proplist | Where-Object { $_.Name -in $Name }
             }
 
             #Grab the default sp_configure property values from the external function
@@ -197,33 +86,36 @@ function Get-DbaSpConfigure {
 
             #Iterate through the properties to get the configuration settings
             foreach ($prop in $proplist) {
-                $defaultConfig = $defaultConfigs | Where-Object { $_.Name -eq $prop.DisplayName };
+                $propInfo = $server.Configuration.$($prop.Name)
+                $defaultConfig = $defaultConfigs | Where-Object { $_.Name -eq $propInfo.DisplayName };
 
-                if ($defaultConfig.Value -eq $prop.RunValue) { $isDefault = $true }
+                if ($defaultConfig.Value -eq $propInfo.RunValue) { $isDefault = $true }
                 else { $isDefault = $false }
 
                 #Ignores properties that are not valid on this version of SQL
-                if (!([string]::IsNullOrEmpty($prop.RunValue))) {
+                if (!([string]::IsNullOrEmpty($propInfo.RunValue))) {
+                    # some displaynames were empty
+                    $displayname = $propInfo.DisplayName
+                    if ($displayname.Length -eq 0) { $displayname = $prop.Name }
 
-                    $DisplayName = $prop.DisplayName
                     [pscustomobject]@{
                         ServerName            = $server.Name
                         ComputerName          = $server.ComputerName
                         InstanceName          = $server.ServiceName
                         SqlInstance           = $server.DomainInstanceName
-                        Name                  = ($smoName).$DisplayName
-                        DisplayName           = $DisplayName
-                        Description           = $prop.Description
-                        IsAdvanced            = $prop.IsAdvanced
-                        IsDynamic             = $prop.IsDynamic
-                        MinValue              = $prop.Minimum
-                        MaxValue              = $prop.Maximum
-                        ConfiguredValue       = $prop.ConfigValue
-                        RunningValue          = $prop.RunValue
+                        Name                  = $prop.Name
+                        DisplayName           = $displayname
+                        Description           = $propInfo.Description
+                        IsAdvanced            = $propInfo.IsAdvanced
+                        IsDynamic             = $propInfo.IsDynamic
+                        MinValue              = $propInfo.Minimum
+                        MaxValue              = $propInfo.Maximum
+                        ConfiguredValue       = $propInfo.ConfigValue
+                        RunningValue          = $propInfo.RunValue
                         DefaultValue          = $defaultConfig.Value
                         IsRunningDefaultValue = $isDefault
                         Parent                = $server
-                        ConfigName            = ($smoName).$DisplayName
+                        ConfigName            = $prop.Name
                     } | Select-DefaultView -ExcludeProperty ServerName, Parent, ConfigName
                 }
             }

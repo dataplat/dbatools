@@ -81,7 +81,7 @@ function Find-DbaOrphanedFile {
     #>
     [CmdletBinding()]
     Param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(Mandatory = $false)]
@@ -126,7 +126,7 @@ function Find-DbaOrphanedFile {
         function Get-SqlFileStructure {
             param
             (
-                [Parameter(Mandatory, Position = 1)]
+                [Parameter(Mandatory = $true, Position = 1)]
                 [Microsoft.SqlServer.Management.Smo.SqlSmoObject]$smoserver
             )
             if ($smoserver.versionMajor -eq 8) {

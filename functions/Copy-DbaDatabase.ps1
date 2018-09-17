@@ -166,7 +166,7 @@ function Copy-DbaDatabase {
         [parameter(Mandatory = $false)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [Alias("Databases")]
@@ -176,7 +176,7 @@ function Copy-DbaDatabase {
         [parameter(ParameterSetName = "DbBackup")]
         [parameter(ParameterSetName = "DbAttachDetach")]
         [switch]$AllDatabases,
-        [parameter(Mandatory, ParameterSetName = "DbBackup")]
+        [parameter(Mandatory = $true, ParameterSetName = "DbBackup")]
         [switch]$BackupRestore,
         [parameter(ParameterSetName = "DbBackup",
                    HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and the SQL Server service accounts for both Source and Destination.")]
@@ -190,7 +190,7 @@ function Copy-DbaDatabase {
         [parameter(ParameterSetName = "DbBackup")]
         [ValidateRange(1, 64)]
         [int]$NumberFiles = 3,
-        [parameter(Mandatory, ParameterSetName = "DbAttachDetach")]
+        [parameter(Mandatory = $true, ParameterSetName = "DbAttachDetach")]
         [switch]$DetachAttach,
         [parameter(ParameterSetName = "DbAttachDetach")]
         [switch]$Reattach,
@@ -244,23 +244,7 @@ function Copy-DbaDatabase {
         else {
             $ReplaceDbNameInFile = $false
         }
-        
-        function Join-Path {
-        <#
-        An internal command that does not require the local path to exist
-        
-        Boo, this does not work, but keeping it for future ref.
-        #>
-            [CmdletBinding()]
-            param (
-                [string]$Path,
-                [string]$ChildPath
-            )
-            process {
-                [IO.Path]::Combine($Path, $ChildPath)
-            }
-        }
-        
+
         function Join-AdminUnc {
             <#
         .SYNOPSIS
@@ -268,10 +252,10 @@ function Copy-DbaDatabase {
         #>
             [CmdletBinding()]
             param (
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [ValidateNotNullOrEmpty()]
                 [string]$servername,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [ValidateNotNullOrEmpty()]
                 [string]$filepath
 
@@ -745,11 +729,11 @@ function Copy-DbaDatabase {
             }
 
             if ($NetworkShare) {
-                if ($(Test-DbaPath -SqlInstance $sourceServer -Path $NetworkShare) -eq $false) {
+                if ($(Test-DbaSqlPath -SqlInstance $sourceServer -Path $NetworkShare) -eq $false) {
                     Write-Message -Level Verbose -Message "$Source may not be able to access $NetworkShare. Trying anyway."
                 }
 
-                if ($(Test-DbaPath -SqlInstance $destServer -Path $NetworkShare) -eq $false) {
+                if ($(Test-DbaSqlPath -SqlInstance $destServer -Path $NetworkShare) -eq $false) {
                     Write-Message -Level Verbose -Message "$destinstance may not be able to access $NetworkShare. Trying anyway."
                 }
 
@@ -1004,7 +988,7 @@ function Copy-DbaDatabase {
                         $fgRows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and FileType = 'ROWS'")[0]
                         $remotePath = Split-Path $fgRows.Filename
 
-                        if (!(Test-DbaPath -SqlInstance $destServer -Path $remotePath)) {
+                        if (!(Test-DbaSqlPath -SqlInstance $destServer -Path $remotePath)) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "$remotePath does not exist on $destinstance and ReuseSourceFolderStructure was specified")) {
                                 # Stop-Function -Message "Cannot resolve $remotePath on $source. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script."
                                 $copyDatabaseStatus.Status = "Failed"
@@ -1221,7 +1205,7 @@ function Copy-DbaDatabase {
                                 $dbOwner = Get-SaLoginName -SqlInstance $destServer
                             }
                             Write-Message -Level Verbose -Message "Updating database owner to $dbOwner."
-                            $OwnerResult = Set-DbaDbOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -EnableException
+                            $OwnerResult = Set-DbaDatabaseOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -EnableException
                             if ($OwnerResult.Length -eq 0) {
                                 Write-Message -Level Verbose -Message "Failed to update database owner."
                             }
@@ -1359,7 +1343,7 @@ function Copy-DbaDatabase {
                     if ($SetSourceOffline -and $sourceServer.databases[$DestinationdbName].status -notlike '*offline*') {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Setting $DestinationdbName offline on $source")) {
                             Stop-DbaProcess -SqlInstance $sourceServer -Database $DestinationdbName
-                            Set-DbaDbState -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential -database $DestinationdbName -Offline
+                            Set-DbaDatabaseState -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential -database $DestinationdbName -Offline
                         }
                     }
 

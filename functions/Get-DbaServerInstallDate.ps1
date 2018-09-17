@@ -64,7 +64,7 @@ Returns an object with SQL Instance install date as a string for every server li
 #>
     [CmdletBinding()]
     Param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]

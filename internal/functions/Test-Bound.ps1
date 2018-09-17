@@ -39,7 +39,7 @@
     #>
     [CmdletBinding()]
     Param (
-        [Parameter(Mandatory, Position = 0)]
+        [Parameter(Mandatory = $true, Position = 0)]
         [string[]]
         $ParameterName,
 

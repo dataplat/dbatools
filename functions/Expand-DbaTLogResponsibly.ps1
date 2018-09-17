@@ -132,7 +132,7 @@ function Expand-DbaTLogResponsibly {
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Default')]
     param (
-        [parameter(Position = 1, Mandatory)]
+        [parameter(Position = 1, Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(Position = 3)]
@@ -141,15 +141,15 @@ function Expand-DbaTLogResponsibly {
         [object[]]$Database,
         [parameter(Position = 4)]
         [object[]]$ExcludeDatabase,
-        [parameter(Position = 5, Mandatory)]
+        [parameter(Position = 5, Mandatory = $true)]
         [int]$TargetLogSizeMB,
         [parameter(Position = 6)]
         [int]$IncrementSizeMB = -1,
         [parameter(Position = 7)]
         [int]$LogFileId = -1,
-        [parameter(Position = 8, ParameterSetName = 'Shrink', Mandatory)]
+        [parameter(Position = 8, ParameterSetName = 'Shrink', Mandatory = $true)]
         [switch]$ShrinkLogFile,
-        [parameter(Position = 9, ParameterSetName = 'Shrink', Mandatory)]
+        [parameter(Position = 9, ParameterSetName = 'Shrink', Mandatory = $true)]
         [int]$ShrinkSizeMB,
         [parameter(Position = 10, ParameterSetName = 'Shrink')]
         [AllowEmptyString()]
@@ -185,7 +185,7 @@ function Expand-DbaTLogResponsibly {
                 $backupdirectory = $server.Settings.BackupDirectory
             }
 
-            $pathexists = Test-DbaPath -SqlInstance $server -Path $backupdirectory
+            $pathexists = Test-DbaSqlPath -SqlInstance $server -Path $backupdirectory
 
             if ($pathexists -eq $false) {
                 Stop-Function -Message "Backup directory does not exist."

@@ -36,7 +36,7 @@
 
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [datetime]
         $InputDate
     )

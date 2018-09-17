@@ -28,7 +28,7 @@ function Remove-DbaClientAlias {
 
         .NOTES
             Tags: Alias
-            Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -51,7 +51,7 @@ function Remove-DbaClientAlias {
         [parameter(ValueFromPipelineByPropertyName = $true)]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]
+        [parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)]
         [Alias('AliasName')]
         [string[]]$Alias,
         [Alias('Silent')]

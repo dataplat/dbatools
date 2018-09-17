@@ -55,7 +55,7 @@ function Test-DbaDeprecation {
     #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Version]
         $DeprecatedOn,
 
@@ -65,11 +65,11 @@ function Test-DbaDeprecation {
         [object]
         $Call = (Get-PSCallStack)[0].InvocationInfo,
 
-        [Parameter(ParameterSetName = "Param", Mandatory)]
+        [Parameter(ParameterSetName = "Param", Mandatory = $true)]
         [string]
         $Parameter,
 
-        [Parameter(ParameterSetName = "Alias", Mandatory)]
+        [Parameter(ParameterSetName = "Alias", Mandatory = $true)]
         [string]
         $Alias,
 

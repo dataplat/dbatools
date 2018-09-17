@@ -32,9 +32,8 @@ function Test-DbaConnectionAuthScheme {
 
         .NOTES
             Tags: SPN, Kerberos
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -58,7 +57,7 @@ function Test-DbaConnectionAuthScheme {
     #>
     [CmdletBinding()]
     Param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential", "Cred")]

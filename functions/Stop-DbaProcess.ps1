@@ -52,7 +52,6 @@ function Stop-DbaProcess {
 
         .NOTES
             Tags: Processes
-            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -104,7 +103,7 @@ function Stop-DbaProcess {
         [string[]]$Login,
         [string[]]$Hostname,
         [string[]]$Program,
-        [parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Process")]
+        [parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Process")]
         [object[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException

@@ -25,7 +25,6 @@ function Clear-DbaWaitStatistics {
 
     .NOTES
         Tags: WaitStatistic
-        Author: Chrissy LeMaire (@cl)
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: MIT https://opensource.org/licenses/MIT
@@ -43,7 +42,7 @@ function Clear-DbaWaitStatistics {
     #>
     [CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,

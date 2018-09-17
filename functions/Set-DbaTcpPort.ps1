@@ -47,7 +47,7 @@ function Set-DbaTcpPort {
         .EXAMPLE
             Set-DbaTcpPort -SqlInstance SqlInstance2014a -Port 1433
 
-            Sets the port number 1433 for all IP Addresses on the default instance on SqlInstance2014a
+            Sets the port number 1433 for allips on the default instance on SqlInstance2014a
 
         .EXAMPLE
             Set-DbaTcpPort -SqlInstance winserver\sqlexpress -IpAddress 192.168.1.22 -Port 1433
@@ -57,16 +57,16 @@ function Set-DbaTcpPort {
         .EXAMPLE
             Set-DbaTcpPort -SqlInstance 'SQLDB2014A' ,'SQLDB2016B' -port 1337
 
-            Sets the port number 1337 for all IP Addresses on SqlInstance SQLDB2014A and SQLDB2016B
+            Sets the port number 1337 for ALLIP's on SqlInstance SQLDB2014A and SQLDB2016B
     #>
     [CmdletBinding(ConfirmImpact = "High")]
     Param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [ValidateRange(1, 65535)]
         [int]$Port,
         [IpAddress[]]$IpAddress,

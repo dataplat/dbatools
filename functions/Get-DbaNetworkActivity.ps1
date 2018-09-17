@@ -56,11 +56,11 @@ function Get-DbaNetworkActivity {
         [switch]$EnableException
     )
 
-    begin {
+    BEGIN {
         $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
         $sessionoption = New-CimSessionOption -Protocol DCom
     }
-    process {
+    PROCESS {
         foreach ($computer in $ComputerName) {
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
             if ( $Server.FullComputerName ) {

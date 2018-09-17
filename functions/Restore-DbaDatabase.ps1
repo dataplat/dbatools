@@ -288,15 +288,10 @@ function Restore-DbaDatabase {
     .EXAMPLE
         Due to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround
         This will use a SQL Server instance > 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BacukupHistory object:
-
+        
         $BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\backups\sql2000\ProdDb
         $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
-    .EXAMPLE
-        Restore-DbaDatabase -SqlInstance server1\instance1 -Path "C:\Temp\devops_prod_full.bak" -DatabaseName "DevOps_DEV" -ReplaceDbNameInFile
-        Rename-DbaDatabase -SqlInstance server1\instance1 -Database "DevOps_DEV" -LogicalName "<DBN>_<FT>"
 
-        This will restore the database from the "C:\Temp\devops_prod_full.bak" file, with the new name "DevOps_DEV" and store the different physical files with the new name. It will use the system default configured data and log locations.
-        After the restore the logical names of the database files will be renamed with the "DevOps_DEV_ROWS" for MDF/NDF and "DevOps_DEV_LOG" for LDF
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
         Author: Stuart Moore (@napalmgram), stuart-moore.com
@@ -307,14 +302,14 @@ function Restore-DbaDatabase {
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Restore")]
     param (
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Restore")]
-        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "RestorePage")]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "Restore")]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "RestorePage")]
         [object[]]$Path,
-        [parameter(ValueFromPipeline)]
+        [parameter(ValueFromPipeline = $true)]
         [Alias("Name")]
         [object[]]$DatabaseName,
         [parameter(ParameterSetName = "Restore")]
@@ -386,9 +381,9 @@ function Restore-DbaDatabase {
         [switch]$StopAfterFormatBackupInformation,
         [string]$TestBackupInformation,
         [switch]$StopAfterTestBackupInformation,
-        [parameter(Mandatory, ParameterSetName = "RestorePage")]
+        [parameter(Mandatory = $true, ParameterSetName = "RestorePage")]
         [object]$PageRestore,
-        [parameter(Mandatory, ParameterSetName = "RestorePage")]
+        [parameter(Mandatory = $true, ParameterSetName = "RestorePage")]
         [string]$PageRestoreTailFolder,
         [int]$StatementTimeout = 0
 
@@ -471,7 +466,7 @@ $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
                 }
             }
             if ('' -ne $StandbyDirectory) {
-                if (!(Test-DbaPath -Path $StandbyDirectory -SqlInstance $RestoreInstance)) {
+                if (!(Test-DbaSqlPath -Path $StandbyDirectory -SqlInstance $RestoreInstance)) {
                     Stop-Function -Message "$SqlSever cannot see the specified Standby Directory $StandbyDirectory" -Target $SqlInstance
                     return
                 }
@@ -564,7 +559,7 @@ $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
                 $BackupHistory += Get-DbaBackupInformation -SqlInstance $RestoreInstance -SqlCredential $SqlCredential -Path $files -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
-                if (-not (Test-DbaPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {
+                if (-not (Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)) {
                     Stop-Function -Message "Instance $RestoreInstance cannot read $PageRestoreTailFolder, cannot proceed" -Target $PageRestoreTailFolder
                     return
                 }
@@ -637,7 +632,7 @@ $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
             }
 
             $null = $BackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatabaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping
-
+            
             if (Test-Bound -ParameterName FormatBackupInformation) {
                 Set-Variable -Name $FormatBackupInformation -Value $BackupHistory -Scope Global
             }
@@ -646,16 +641,16 @@ $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
             }
 
             $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints -LastRestoreType $LastRestoreType -DatabaseName $DatabaseName
-
+            
             if (Test-Bound -ParameterName SelectBackupInformation) {
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose
                 Set-Variable -Name $SelectBackupInformation -Value $FilteredBackupHistory -Scope Global
-
+                
             }
             if ($StopAfterSelectBackupInformation) {
                 return
             }
-
+            
             try {
                 Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
                 $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance -WithReplace:$WithReplace -Continue:$Continue -VerifyOnly:$VerifyOnly -EnableException:$true
@@ -663,7 +658,7 @@ $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
             catch {
                 Stop-Function -ErrorRecord $_ -Message "Failure" -Continue
             }
-
+            
             if (Test-Bound -ParameterName TestBackupInformation) {
                 Set-Variable -Name $TestBackupInformation -Value $FilteredBackupHistory -Scope Global
             }
@@ -672,7 +667,7 @@ $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
             }
             $DbVerfied = ($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $True } | Select-Object -Property Database -Unique).Database -join ','
             Write-Message -Message "$DbVerfied passed testing" -Level Verbose
-
+            
             if (($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $True }).count -lt $FilteredBackupHistory.count) {
                 $DbUnVerified = ($FilteredBackupHistory | Where-Object { $_.IsVerified -eq $False } | Select-Object -Property Database -Unique).Database -join ','
                 if ($AllowContinue) {
@@ -683,7 +678,7 @@ $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
                     return
                 }
             }
-
+            
             If ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if (($FilteredBackupHistory.Database | select-Object -unique | Measure-Object).count -ne 1) {
                     Stop-Function -Message "Must only 1 database passed in for Page Restore. Sorry"

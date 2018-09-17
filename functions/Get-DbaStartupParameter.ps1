@@ -37,16 +37,15 @@ function Get-DbaStartupParameter {
 
     .NOTES
         Tags: WSMan, SQLWMI, Memory
-        Author: Chrissy LeMaire (@cl), netnerds.net
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        dbatools PowerShell module (https://dbatools.io)
+        Copyright (C) 2016 Chrissy LeMaire
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaStartupParameter
 #>
     [CmdletBinding()]
-    param ([parameter(ValueFromPipeline, Mandatory)]
+    param ([parameter(ValueFromPipeline, Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("SqlCredential")]

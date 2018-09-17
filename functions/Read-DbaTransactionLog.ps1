@@ -45,16 +45,16 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 .EXAMPLE
 $Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase -IgnoreLimit
 
-Will read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell object $Log, ignoring the recommendation of not returning more that 0.5GB of log
+Will read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell object $Log, ignoring the recommnedation of not returning more that 0.5GB of log
 
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
-        [parameter(Position = 0, Mandatory)]
+        [parameter(Position = 0, Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [object]$Database,
         [Switch]$IgnoreLimit,
         [Alias('Silent')]

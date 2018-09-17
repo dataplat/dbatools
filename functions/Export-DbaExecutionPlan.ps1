@@ -5,7 +5,7 @@ function Export-DbaExecutionPlan {
             Exports execution plans to disk.
 
         .DESCRIPTION
-            Exports execution plans to disk. Can pipe from Get-DbaExecutionPlan
+            Exports execution plans to disk. Can pipe from Export-DbaExecutionPlan
 
             Thanks to
                 https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/
@@ -50,8 +50,7 @@ function Export-DbaExecutionPlan {
 
         .NOTES
             Tags: Performance, ExecutionPlan
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
 
@@ -59,25 +58,14 @@ function Export-DbaExecutionPlan {
             https://dbatools.io/Export-DbaExecutionPlan
 
         .EXAMPLE
-            Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Path C:\Temp
+            Export-DbaExecutionPlan -SqlInstance sqlserver2014a
 
-            Exports all execution plans for sqlserver2014a. Files saved in to C:\Temp
-
-        .EXAMPLE
-            Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Database db1, db2 -SinceLastExecution '2016-07-01 10:47:00' -Path C:\Temp
-
-            Exports all execution plans for databases db1 and db2 on sqlserver2014a since July 1, 2016 at 10:47 AM. Files saved in to C:\Temp
+            Exports all execution plans for sqlserver2014a.
 
         .EXAMPLE
-            Get-DbaExecutionPlan -SqlInstance sqlserver2014a | Export-DbaExecutionPlan -Path C:\Temp
+            Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Database db1, db2 -SinceLastExecution '7/1/2016 10:47:00'
 
-            Gets all execution plans for sqlserver2014a. Using Pipeline exports them all to C:\Temp
-
-        .EXAMPLE
-            Get-DbaExecutionPlan -SqlInstance sqlserver2014a | Export-DbaExecutionPlan -Path C:\Temp -WhatIf
-
-            Gets all execution plans for sqlserver2014a. Then shows what would happen if the results where piped to Export-DbaExecutionPlan
-
+            Exports all execution plans for databases db1 and db2 on sqlserver2014a since July 1, 2016 at 10:47 AM.
     #>
     [cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
     param (
@@ -103,6 +91,13 @@ function Export-DbaExecutionPlan {
     )
 
     begin {
+        if ($SinceCreation -ne $null) {
+            $SinceCreation = $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss")
+        }
+
+        if ($SinceLastExecution -ne $null) {
+            $SinceLastExecution = $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss")
+        }
 
         function Export-Plan {
             param(
@@ -185,7 +180,7 @@ function Export-DbaExecutionPlan {
                         CROSS APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
                         CROSS APPLY sys.dm_exec_sql_text(deqs.plan_handle) AS execText"
 
-            if ($ExcludeDatabase -or $Database -or $SinceCreation -or $SinceLastExecution -or $ExcludeEmptyQueryPlan -eq $true) {
+            if ($ExcludeDatabase -or $Database -or $SinceCreation.Length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true) {
                 $where = " WHERE "
             }
 
@@ -198,12 +193,12 @@ function Export-DbaExecutionPlan {
 
             if (Test-Bound 'SinceCreation') {
                 Write-Message -Level Verbose -Message "Adding creation time"
-                $whereArray += " creation_time >= '" + $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss") + "' "
+                $whereArray += " creation_time >= '$SinceCreation' "
             }
 
             if (Test-Bound 'SinceLastExecution') {
                 Write-Message -Level Verbose -Message "Adding last execution time"
-                $whereArray += " last_execution_time >= '" + $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss") + "' "
+                $whereArray += " last_execution_time >= '$SinceLastExecution' "
             }
 
             if (Test-Bound 'ExcludeDatabase') {

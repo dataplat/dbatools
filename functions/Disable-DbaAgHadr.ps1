@@ -51,7 +51,7 @@ function Disable-DbaAgHadr {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
@@ -63,7 +63,7 @@ function Disable-DbaAgHadr {
         function GetDbaAgHadr {
             [CmdletBinding()]
             param (
-                [parameter(Mandatory, ValueFromPipeline)]
+                [parameter(Mandatory = $true, ValueFromPipeline = $true)]
                 [Alias("ServerInstance", "SqlServer")]
                 [DbaInstanceParameter[]]$SqlInstance,
                 [PSCredential]$Credential,
@@ -153,8 +153,8 @@ function Disable-DbaAgHadr {
                 if (Test-Bound 'Force') {
                     if ($PSCmdlet.ShouldProcess($instance, "Force provided, restarting Engine and Agent service for $instance on $computerFullName")) {
                         try {
-                            $null = Stop-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
-                            $null = Start-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
+                            $null = Stop-DbaSqlService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
+                            $null = Start-DbaSqlService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
                         }
                         catch {
                             Stop-Function -Message "Issue restarting $instance" -Target $instance -Continue

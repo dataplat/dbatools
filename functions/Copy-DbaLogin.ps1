@@ -127,7 +127,7 @@ function Copy-DbaLogin {
         [parameter(ParameterSetName = "SqlInstance", Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
         [object[]]$Login,

@@ -29,20 +29,20 @@ CREATE DATABASE dbatoolsci_orphan;
         $server = Connect-DbaInstance -SqlInstance $script:instance1
         $null = Remove-DbaLogin -SqlInstance $server -Login dbatoolsci_orphan1, dbatoolsci_orphan2, dbatoolsci_orphan3 -Force -Confirm:$false
         $null = Remove-DbaDatabase -SqlInstance $server -Database dbatoolsci_orphan -Confirm:$false
-        $null = Invoke-DbaQuery -SqlInstance $server -Query $loginsq
+        $null = Invoke-DbaSqlQuery -SqlInstance $server -Query $loginsq
         $usersq = @'
 CREATE USER [dbatoolsci_orphan1] FROM LOGIN [dbatoolsci_orphan1];
 CREATE USER [dbatoolsci_orphan2] FROM LOGIN [dbatoolsci_orphan2];
 CREATE USER [dbatoolsci_orphan3] FROM LOGIN [dbatoolsci_orphan3];
 '@
-        Invoke-DbaQuery -SqlInstance $server -Query $usersq -Database dbatoolsci_orphan
+        Invoke-DbaSqlQuery -SqlInstance $server -Query $usersq -Database dbatoolsci_orphan
         $dropOrphan = "DROP LOGIN [dbatoolsci_orphan1];DROP LOGIN [dbatoolsci_orphan2];"
-        Invoke-DbaQuery -SqlInstance $server -Query $dropOrphan
+        Invoke-DbaSqlQuery -SqlInstance $server -Query $dropOrphan
         $loginsq = @'
 CREATE LOGIN [dbatoolsci_orphan1] WITH PASSWORD = N'password1', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
 CREATE LOGIN [dbatoolsci_orphan2] WITH PASSWORD = N'password2', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
 '@
-        Invoke-DbaQuery -SqlInstance $server -Query $loginsq
+        Invoke-DbaSqlQuery -SqlInstance $server -Query $loginsq
     }
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $script:instance1

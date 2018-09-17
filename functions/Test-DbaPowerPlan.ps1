@@ -29,9 +29,10 @@ function Test-DbaPowerPlan {
 
         .NOTES
             Tags: PowerPlan
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Requires: WMI access to servers
+
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -48,7 +49,7 @@ function Test-DbaPowerPlan {
             Checks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the custom plan "Maximum Performance".
     #>
     param (
-        [parameter(ValueFromPipeline)]
+        [parameter(ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,

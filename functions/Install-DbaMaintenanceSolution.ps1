@@ -103,7 +103,7 @@ function Install-DbaMaintenanceSolution {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias('ServerInstance', 'SqlServer')]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -123,7 +123,7 @@ function Install-DbaMaintenanceSolution {
     )
     
     begin {
-        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
+        $DbatoolsData = Get-DbaConfigValue -FullName "Path.DbatoolsData"
         
         $url = "https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip"
         
@@ -264,8 +264,8 @@ process {
         }
         
         if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
-            $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
-            $table = Get-DbaDbTable -SqlInstance $server -Database $Database -Table CommandLog -IncludeSystemDBs | Where-Object Database -eq $Database
+            $procs = Get-DbaSqlModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
+            $table = Get-DbaTable -SqlInstance $server -Database $Database -Table CommandLog -IncludeSystemDBs | Where-Object Database -eq $Database
             
             if ($null -ne $procs -or $null -ne $table) {
                 Stop-Function -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."

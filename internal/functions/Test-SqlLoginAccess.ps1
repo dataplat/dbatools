@@ -5,7 +5,7 @@ function Test-SqlLoginAccess {
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [Alias("ServerInstance", "SqlServer")]
         [object]$SqlInstance,

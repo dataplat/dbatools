@@ -6,7 +6,7 @@ function Invoke-SmoCheck {
 #>
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [object]$SqlInstance
     )
 

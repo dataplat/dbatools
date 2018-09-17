@@ -97,7 +97,7 @@ function Stop-Function {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(DefaultParameterSetName = 'Plain')]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Message,
 

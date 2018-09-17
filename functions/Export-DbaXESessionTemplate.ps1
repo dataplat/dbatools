@@ -1,10 +1,10 @@
 ﻿function Export-DbaXESessionTemplate {
     <#
         .SYNOPSIS
-            Exports an XESession XML Template using XE Session(s) output by Get-DbaXESession
+            Exports an XESession XML Template.
 
         .DESCRIPTION
-            Exports an XESession XML Template either from the Target SQL Server or XE Session(s) output by Get-DbaXESession. Exports to "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates" by default
+            Exports an XESession XML Template either from the dbatools repository or a file you specify. Exports to "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates" by default
 
         .PARAMETER SqlInstance
             Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
@@ -28,7 +28,6 @@
 
         .NOTES
             Tags: ExtendedEvent, XE, XEvent
-            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -39,12 +38,12 @@
         .EXAMPLE
             Export-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\temp\xe
 
-            Exports an XESession XML Template for all Extended Event Sessions on sql2017 to the C:\temp\xe folder.
+            Exports XE Session Template to the C:\temp\xe folder.
 
         .EXAMPLE
-            Get-DbaXESession -SqlInstance sql2017 -Session system_health | Export-DbaXESessionTemplate -Path C:\temp\xe
+            Get-DbaXESession -SqlInstance sql2017 -Session session_health | Export-DbaXESessionTemplate -Path C:\temp
 
-            Gets the system_health Extended Events Session from sql2017 and then exports as an XESession XML Template to C:\temp\xe
+            Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
 
     #>
     [CmdletBinding()]

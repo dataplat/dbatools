@@ -42,7 +42,7 @@ function Get-DbaBackupDevice {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias('Silent')]

@@ -79,7 +79,7 @@ function Test-DbaLogShippingStatus {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -112,14 +112,14 @@ CREATE TABLE #logshippingstatus
     DatabaseName VARCHAR(100) ,
     TimeSinceLastBackup INT ,
     LastBackupFile VARCHAR(255) ,
-    BackupThreshold INT ,
+    BackupThresshold INT ,
     IsBackupAlertEnabled BIT ,
     TimeSinceLastCopy INT ,
     LastCopiedFile VARCHAR(255) ,
     TimeSinceLastRestore INT ,
     LastRestoredFile VARCHAR(255) ,
     LastRestoredLatency INT ,
-    RestoreThreshold INT ,
+    RestoreThresshold INT ,
     IsRestoreAlertEnabled BIT
 );
 
@@ -130,14 +130,14 @@ INSERT INTO #logshippingstatus
     DatabaseName ,
     TimeSinceLastBackup ,
     LastBackupFile ,
-    BackupThreshold ,
+    BackupThresshold ,
     IsBackupAlertEnabled ,
     TimeSinceLastCopy ,
     LastCopiedFile ,
     TimeSinceLastRestore ,
     LastRestoredFile ,
     LastRestoredLatency ,
-    RestoreThreshold ,
+    RestoreThresshold ,
     IsRestoreAlertEnabled
 )
 EXEC master.sys.sp_help_log_shipping_monitor"
@@ -219,8 +219,8 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                             if (-not $result.TimeSinceLastBackup) {
                                 $statusDetails += "The backup has never been executed."
                             }
-                            elseif ($result.TimeSinceLastBackup -ge $result.BackupThreshold) {
-                                $statusDetails += "The backup has not been executed in the last $($result.BackupThreshold) minutes"
+                            elseif ($result.TimeSinceLastBackup -ge $result.BackupThresshold) {
+                                $statusDetails += "The backup has not been executed in the last $($result.BackupThresshold) minutes"
                             }
                         }
                         elseif (-not $result.IsPrimary) {
@@ -228,8 +228,8 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                             if ($null -eq $result.TimeSinceLastRestore) {
                                 $statusDetails += "The restore has never been executed."
                             }
-                            elseif ($result.TimeSinceLastRestore -ge $result.RestoreThreshold) {
-                                $statusDetails += "The restore has not been executed in the last $($result.RestoreThreshold) minutes"
+                            elseif ($result.TimeSinceLastRestore -ge $result.RestoreThresshold) {
+                                $statusDetails += "The restore has not been executed in the last $($result.RestoreThresshold) minutes"
                             }
                         }
                     }
@@ -270,14 +270,14 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                         InstanceType          = switch ($result.IsPrimary) { $true { "Primary Instance" } $false { "Secondary Instance" } }
                         TimeSinceLastBackup   = $lastBackup
                         LastBackupFile        = $result.LastBackupFile
-                        BackupThreshold       = $result.BackupThreshold
+                        BackupThresshold      = $result.BackupThresshold
                         IsBackupAlertEnabled  = $result.IsBackupAlertEnabled
                         TimeSinceLastCopy     = $lastCopy
                         LastCopiedFile        = $result.LastCopiedFile
                         TimeSinceLastRestore  = $lastRestore
                         LastRestoredFile      = $result.LastRestoredFile
                         LastRestoredLatency   = $result.LastRestoredLatency
-                        RestoreThreshold      = $result.RestoreThreshold
+                        RestoreThresshold     = $result.RestoreThresshold
                         IsRestoreAlertEnabled = $result.IsRestoreAlertEnabled
                         Status                = $statusDetails -join ","
                     })

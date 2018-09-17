@@ -43,14 +43,14 @@ function Enable-DbaForceNetworkEncryption {
 
         .NOTES
             Tags: Certificate
-            Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
-        [Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]
         $SqlInstance = $env:COMPUTERNAME,

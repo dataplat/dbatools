@@ -39,7 +39,7 @@ function Copy-DbaSysDbUserObject {
 
         .NOTES
             Tags: Migration, SystemDatabase, UserObject
-            Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -54,11 +54,11 @@ function Copy-DbaSysDbUserObject {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter[]]$Destination,
         [PSCredential]$DestinationSqlCredential,
@@ -236,7 +236,7 @@ function Copy-DbaSysDbUserObject {
                         $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     
-                    $userobjects = Get-DbaModule -SqlInstance $sourceserver -Database $systemDb -NoSystemObjects | Sort-Object Type
+                    $userobjects = Get-DbaSqlModule -SqlInstance $sourceserver -Database $systemDb -NoSystemObjects | Sort-Object Type
                     Write-Message -Level Verbose -Message "Copying from $systemDb"
                     foreach ($userobject in $userobjects) {
                         
@@ -258,7 +258,7 @@ function Copy-DbaSysDbUserObject {
                         Write-Message -Level Debug -Message $sql
                         try {
                             Write-Message -Level Verbose -Message "Searching for $name in $db on $destinstance"
-                            $result = Get-DbaModule -SqlInstance $destServer -NoSystemObjects -Database $db |
+                            $result = Get-DbaSqlModule -SqlInstance $destServer -NoSystemObjects -Database $db |
                             Where-Object { $psitem.Name -eq $userobject.Name -and $psitem.Type -eq $userobject.Type }
                             if ($result) {
                                 Write-Message -Level Verbose -Message "Found $name in $db on $destinstance"

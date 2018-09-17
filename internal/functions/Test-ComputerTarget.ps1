@@ -28,7 +28,7 @@
 #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline, Mandatory)]
+        [Parameter(ValueFromPipeline = $true, Mandatory = $true)]
         [string[]]
         $ComputerName
     )

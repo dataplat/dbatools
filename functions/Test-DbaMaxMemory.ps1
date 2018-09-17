@@ -25,9 +25,8 @@ function Test-DbaMaxMemory {
 
         .NOTES
             Tags: MaxMemory, Memory
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -45,7 +44,7 @@ function Test-DbaMaxMemory {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -70,10 +69,10 @@ function Test-DbaMaxMemory {
             try {
                 Write-Message -Level Verbose -Target $instance -Message "Retrieving number of instances from $($instance.ComputerName)"
                 if ($Credential) {
-                    $serverService = Get-DbaService -ComputerName $instance -Credential $Credential -EnableException
+                    $serverService = Get-DbaSqlService -ComputerName $instance -Credential $Credential -EnableException
                 }
                 else {
-                    $serverService = Get-DbaService -ComputerName $instance -EnableException
+                    $serverService = Get-DbaSqlService -ComputerName $instance -EnableException
                 }
                 $instanceCount = ($serverService | Where-Object State -Like Running | Where-Object InstanceName | Group-Object InstanceName | Measure-Object Count).Count
             }

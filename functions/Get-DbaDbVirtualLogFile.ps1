@@ -37,7 +37,7 @@ function Get-DbaDbVirtualLogFile {
 
         .NOTES
             Tags: VLF, Database, LogFile
-            Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -56,7 +56,7 @@ function Get-DbaDbVirtualLogFile {
             Returns user databases that have 50 or more VLFs.
 
         .EXAMPLE
-            'sqlserver','sqlcluster' | Get-DbaDbVirtualLogFile
+            @('sqlserver','sqlcluster') | Get-DbaDbVirtualLogFile
 
             Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
 
@@ -67,7 +67,7 @@ function Get-DbaDbVirtualLogFile {
     #>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
-    param ([parameter(ValueFromPipeline, Mandatory)]
+    param ([parameter(ValueFromPipeline, Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

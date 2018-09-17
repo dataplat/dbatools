@@ -12,7 +12,7 @@ function Stop-DbaRunspace {
         If the scriptblock hasn't finished and terminated the runspace in a seemingly time, it will be killed by the system.
         This timeout is by default 30 seconds, but can be altered by using the Configuration System.
         For example, this line will increase the timeout to 60 seconds:
-        Set-DbatoolsConfig Runspace.StopTimeout 60
+        Set-DbaConfig Runspace.StopTimeout 60
 
     .PARAMETER Name
         The name of the registered runspace to stop
@@ -33,11 +33,11 @@ function Stop-DbaRunspace {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline = $true)]
         [string[]]
         $Name,
 
-        [Parameter(ValueFromPipeline)]
+        [Parameter(ValueFromPipeline = $true)]
         [Sqlcollaborative.Dbatools.Runspace.RunspaceContainer[]]
         $Runspace,
 

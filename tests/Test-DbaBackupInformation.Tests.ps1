@@ -36,13 +36,13 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             }
             Mock Get-DbaDatabase { $null }
 
-            Mock New-DbaDirectory {$true}
-            Mock Test-DbaPath { [pscustomobject]@{
+            Mock New-DbaSqlDirectory {$true}
+            Mock Test-DbaSqlPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
-            Mock New-DbaDirectory {$True}
+            Mock New-DbaSqlDirectory {$True}
             It "Should pass as all systems Green" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
@@ -81,13 +81,13 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 return $obj
             }
             Mock Get-DbaDatabase { $null }
-            Mock New-DbaDirectory {$true}
-            Mock Test-DbaPath { [pscustomobject]@{
+            Mock New-DbaSqlDirectory {$true}
+            Mock Test-DbaSqlPath { [pscustomobject]@{
                     FilePath   = 'does\not\exists'
                     FileExists = $false
                 }
             }
-            Mock New-DbaDirectory {$True}
+            Mock New-DbaSqlDirectory {$True}
             It "Should return fail as backup files don't exist" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
@@ -127,13 +127,13 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 return $obj
             }
             Mock Get-DbaDatabase { $null }
-            Mock New-DbaDirectory {$true}
-            Mock Test-DbaPath { [pscustomobject]@{
+            Mock New-DbaSqlDirectory {$true}
+            Mock Test-DbaSqlPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
-            Mock New-DbaDirectory {$True}
+            Mock New-DbaSqlDirectory {$True}
             It "Should return fail as 2 origin dbs" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
@@ -173,13 +173,13 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 return $obj
             }
             Mock Get-DbaDatabase { '1' }
-            Mock New-DbaDirectory {$true}
-            Mock Test-DbaPath { [pscustomobject]@{
+            Mock New-DbaSqlDirectory {$true}
+            Mock Test-DbaSqlPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
-            Mock New-DbaDirectory {$True}
+            Mock New-DbaSqlDirectory {$True}
             It "Should return fail if dest db exists" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue
                 ($output.Count) -gt 0 | Should be $true
@@ -219,13 +219,13 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 return $obj
             }
             Mock Get-DbaDatabase { '1' }
-            Mock New-DbaDirectory {$true}
-            Mock Test-DbaPath { [pscustomobject]@{
+            Mock New-DbaSqlDirectory {$true}
+            Mock Test-DbaSqlPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
                     FileExists = $true
                 }
             }
-            Mock New-DbaDirectory {$True}
+            Mock New-DbaSqlDirectory {$True}
             It "Should pass if destdb exists and WithReplace specified" {
                 $output = $BackupHistory | Test-DbaBackupInformation -SqlServer NotExist -WarningVariable warnvar -WarningAction SilentlyContinue -WithReplace
                 ($output.Count) -gt 0 | Should be $true

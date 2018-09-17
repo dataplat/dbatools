@@ -2,7 +2,7 @@
     [CmdletBinding(DefaultParameterSetName = "Default")]
 
     Param(
-        [parameter(Mandatory)]
+        [parameter(Mandatory = $true)]
         [ValidateScript( {Test-Path $_})]
         [System.IO.FileInfo]$filename,
         [Switch]$NoQueryTextColumn,

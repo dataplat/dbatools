@@ -57,7 +57,7 @@ Rename multiple jobs in one go on multiple servers.
 
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

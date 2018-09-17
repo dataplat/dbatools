@@ -59,11 +59,11 @@ Creates a new job category with the name 'Category 2' and assign the category ty
 
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string[]]$Category,
         [ValidateSet("LocalJob", "MultiServerJob", "None")]

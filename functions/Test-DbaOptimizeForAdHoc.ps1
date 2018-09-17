@@ -38,7 +38,7 @@ function Test-DbaOptimizeForAdHoc {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,

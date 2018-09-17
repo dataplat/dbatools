@@ -37,7 +37,6 @@ function Mount-DbaDatabase {
 
         .NOTES
             Tags: Database
-            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -121,7 +120,7 @@ function Mount-DbaDatabase {
 
                     $FileStructure = New-Object System.Collections.Specialized.StringCollection
                     foreach ($file in $filepaths) {
-                        $exists = Test-Dbapath -SqlInstance $server -Path $file
+                        $exists = Test-DbaSqlpath -SqlInstance $server -Path $file
                         if (-not $exists) {
                             $message = "Could not find the files to build the FileStructure. Rerun the command and provide the FileStructure parameter."
                             Stop-Function -Message $message -Target $file -Continue
