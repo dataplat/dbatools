@@ -106,14 +106,14 @@
             https://dbatools.io/Export-DbaInstance
 
         .EXAMPLE
-            Export-DbaInstance -SqlInstance sqlserver\instance 
+            Export-DbaInstance -SqlInstance sqlserver\instance
 
-            All databases, logins, job objects and sp_configure options will be exported from 
+            All databases, logins, job objects and sp_configure options will be exported from
             sqlserver\instance to an automaticallyl generated folder name in Documents.
 
         .EXAMPLE
             Export-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Path C:\dr\sqlcluster
-    
+
             Exports everything but logins and database restore scripts to C:\dr\sqlcluster
     #>
     [CmdletBinding()]
