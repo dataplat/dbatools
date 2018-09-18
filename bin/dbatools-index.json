@@ -3974,6 +3974,17 @@
         "Syntax":  "\r\nMeasure-DbaDiskSpaceRequirement [-Source] \u003cDbaInstanceParameter\u003e [-Database] \u003cString\u003e [[-SourceSqlCredential] \r\n\u003cPSCredential\u003e] [-Destination] \u003cDbaInstanceParameter\u003e [[-DestinationDatabase] \u003cString\u003e] [[-DestinationSqlCredential] \r\n\u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Measure-DbatoolsImport",
+        "Description":  "Displays the import load times of the dbatools PowerShell module",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Displays the import load times of the dbatools PowerShell module",
+        "Name":  "Measure-DbatoolsImport",
+        "Links":  "https://dbatools.io/Measure-DbatoolsImport",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eMeasure-DbatoolsImport\r\n\r\nDisplays the import load times of the dbatools PowerShell module\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eImport-Module dbatools\r\n\r\nMeasure-DbatoolsImport\r\n\r\nDisplays the import load times of the dbatools PowerShell module\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n",
+        "Syntax":  "\r\nMeasure-DbatoolsImport [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Mount-DbaDatabase",
         "Description":  "This command will attach a SQL Server database.",
         "Tags":  "Database",
