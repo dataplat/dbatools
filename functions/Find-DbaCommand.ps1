@@ -1,4 +1,4 @@
-#ValidationTags#Messaging#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaCommand {
     <#
         .SYNOPSIS
@@ -104,6 +104,9 @@ function Find-DbaCommand {
             $thebase = @{ }
             $thebase.CommandName = $commandName
             $thebase.Name = $thishelp.Name
+
+            $alias = Get-Alias -Definition $commandName -ErrorAction SilentlyContinue
+            $thebase.Alias = $alias.Name -Join ','
 
             ## fetch the description
             $thebase.Description = $thishelp.Description.Text
