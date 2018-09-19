@@ -94,18 +94,21 @@ function Export-DbaRepServerSetting {
                 $mydocs = [Environment]::GetFolderPath('MyDocuments')
                 $path = "$mydocs\$($server.replace('\', '$'))-$timenow-replication.sql"
             }
-            
-            if (-not $ScriptOption) {
-                $out = $repserver.Script([Microsoft.SqlServer.Replication.ScriptOptions]::Creation `
-                    -bor [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeAll `
-                    -bor [Microsoft.SqlServer.Replication.ScriptOptions]::EnableReplicationDB `
-                    -bor [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeInstallDistributor
-                )
+            try {
+                if (-not $ScriptOption) {
+                    $out = $repserver.Script([Microsoft.SqlServer.Replication.ScriptOptions]::Creation `
+                        -bor [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeAll `
+                        -bor [Microsoft.SqlServer.Replication.ScriptOptions]::EnableReplicationDB `
+                        -bor [Microsoft.SqlServer.Replication.ScriptOptions]::IncludeInstallDistributor
+                    )
+                }
+                else {
+                    $out = $repserver.Script($scriptOption)
+                }
             }
-            else {
-                $out = $repserver.Script($scriptOption)
+            catch {
+                Stop-Function -ErrorRecord $_ -Message "Replication export failed. Is it setup?" -Continue
             }
-            
             if ($Passthru) {
                 "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-String
                 $out | Out-String
