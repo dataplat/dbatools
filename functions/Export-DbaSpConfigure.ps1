@@ -83,25 +83,29 @@ function Export-DbaSpConfigure {
             if (-not (Test-Bound -ParameterName Path)) {
                 $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
                 $mydocs = [Environment]::GetFolderPath('MyDocuments')
-                $FilePath = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
+                $filepath = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
             }
             
             if (Test-Path $Path -PathType Container) {
                 $timenow= (Get-Date -uformat "%m%d%Y%H%M%S")
-                $FilePath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
+                $filepath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
             }
             elseif (Test-Path $Path -PathType Leaf) {
                 if ($SqlInstance.Count -gt 1) {
                     $timenow= (Get-Date -uformat "%m%d%Y%H%M%S")
                     $PathData =  Get-ChildItem $Path
-                    $FilePath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
+                    $filepath = "$($PathData.DirectoryName)\$($server.name.replace('\', '$'))-$timenow-$($PathData.Name)"
                 }
                 else {
-                    $FilePath = $Path
+                    $filepath = $Path
                 }
             }
             
-            $topdir = Split-Path -Path $FilePath
+            If (-not $filepath) {
+                $filepath = $Path
+            }
+            
+            $topdir = Split-Path -Path $filepath
             
             if (-not (Test-Path -Path $topdir)) {
                 New-Item -Path $topdir -ItemType Directory    
@@ -120,26 +124,26 @@ function Export-DbaSpConfigure {
             }
 
             try {
-                Set-Content -Path $FilePath "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE"
+                Set-Content -Path $filepath "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE"
             }
             catch {
-                Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
+                Stop-Function -Message "Can't write to $filepath" -ErrorRecord $_ -Continue
             }
 
             foreach ($sourceprop in $server.Configuration.Properties) {
                 $displayname = $sourceprop.DisplayName
                 $configvalue = $sourceprop.ConfigValue
-                Add-Content -Path $FilePath "EXEC sp_configure '$displayname' , $configvalue;"
+                Add-Content -Path $filepath "EXEC sp_configure '$displayname' , $configvalue;"
             }
 
             if($ShowAdvancedOptions -eq 0) {
-                Add-Content -Path $FilePath "EXEC sp_configure 'show advanced options' , 0;"
-                Add-Content -Path $FilePath "RECONFIGURE WITH OVERRIDE"
+                Add-Content -Path $filepath "EXEC sp_configure 'show advanced options' , 0;"
+                Add-Content -Path $filepath "RECONFIGURE WITH OVERRIDE"
 
                 $server.Configuration.ShowAdvancedOptions.ConfigValue = $false
                 $server.Configuration.Alter($true)
             }
-            Get-ChildItem -Path $FilePath
+            Get-ChildItem -Path $filepath
         }
     }
 
