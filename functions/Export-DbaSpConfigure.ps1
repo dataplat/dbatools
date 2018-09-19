@@ -85,7 +85,8 @@ function Export-DbaSpConfigure {
                 $mydocs = [Environment]::GetFolderPath('MyDocuments')
                 $FilePath = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
             }
-            elseif (Test-Path $Path -PathType Container) {
+            
+            if (Test-Path $Path -PathType Container) {
                 $timenow= (Get-Date -uformat "%m%d%Y%H%M%S")
                 $FilePath = Join-Path -Path $Path -ChildPath "$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
             }
@@ -99,7 +100,13 @@ function Export-DbaSpConfigure {
                     $FilePath = $Path
                 }
             }
-
+            
+            $topdir = Split-Path -Path $FilePath
+            
+            if (-not (Test-Path -Path $topdir)) {
+                New-Item -Path $topdir -ItemType Directory    
+            }
+            
             $ShowAdvancedOptions = $server.Configuration.ShowAdvancedOptions.ConfigValue
 
             if($ShowAdvancedOptions -eq 0) {
