@@ -658,7 +658,7 @@ $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
 
             try {
                 Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
-                $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance -WithReplace:$WithReplace -Continue:$Continue -VerifyOnly:$VerifyOnly -EnableException:$true
+                $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance -WithReplace:$WithReplace -Continue:$Continue -VerifyOnly:$VerifyOnly -EnableException:$true -OutputScriptOnly:$OutputScriptOnly
             }
             catch {
                 Stop-Function -ErrorRecord $_ -Message "Failure" -Continue
