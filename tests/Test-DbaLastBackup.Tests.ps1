@@ -66,4 +66,26 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             ('C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore_log.ldf' -in $results.PhysicalName) | Should Be $true
         }
     }
+
+    Context "Test dbsize skip and cleanup (Issue 3968)" {
+        $results1 = Restore-DbaDatabase -SqlInstance $script:instance2 -Database bigtestrest -Path $script:appveyorlabrepo\sql2008-backups\db1\FULL -ReplaceDbNameInFile
+        Backup-DbaDatabase -SqlInstance $script:instance2 -Database bigtestrest
+        $results1 = Restore-DbaDatabase -SqlInstance $script:instance2 -Database smalltestrest -Path $script:appveyorlabrepo\sql2008-backups\db2\FULL\SQL2008_db2_FULL_20170518_041738.bak -ReplaceDbNameInFile
+        Backup-DbaDatabase -SqlInstance $script:instance2 -Database smalltestrest
+
+        $results = Test-DbaLastBackup -SqlInstance $script:instance2 -Databases bigtestrest,smalltestrest -CopyFile -CopyPath c:\temp -MaxMB 3 -Prefix testlast
+        $fileresult = Get-ChildItem c:\temp | Where-Object {$_.name -like '*bigtestrest'}
+        It "Should have skipped bigtestrest and tested smalltestrest"{
+            $results[0].RestoreResult | Should -BeLike '*exceeds the specified maximum*'
+            $results[0].DbccResult | Should -Be 'Skipped'
+            $results[1].RestoreResult | Should -Be 'Success'
+            $results[1].DbccResult | Should -Be 'Success'
+        }
+
+        It "Should have removed the temp backup copy even if skipped" {
+            ($null -eq $fileresult) | Should -Be $true
+        }
+
+        Get-DbaDatabase -SqlInstance $script:instance2 -Databases  bigtestrest,smalltestrest | Remove-DbaDatabase -confirm:$false
+    }
 }
