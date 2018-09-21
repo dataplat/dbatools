@@ -447,19 +447,19 @@ function Test-DbaLastBackup {
                             }
 
                             #Cleanup BackupFiles if -CopyFile and backup was moved to destination
-                            if ($CopyFile) {
-                                Write-Message -Level Verbose -Message "Removing copied backup file from $destination."
-                                try {
-                                    $removearray | Remove-item -ErrorAction Stop
-                                }
-                                catch {
-                                    Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
-                                }
-                            }
 
                             $destserver.Databases.Refresh()
                             if ($destserver.Databases[$dbname] -and !$NoDrop) {
                                 Write-Message -Level Warning -Message "$dbname was not dropped."
+                            }
+                        }
+                        if ($CopyFile) {
+                            Write-Message -Level Verbose -Message "Removing copied backup file from $destination."
+                            try {
+                                $removearray | Remove-item -ErrorAction Stop
+                            }
+                            catch {
+                                Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
                             }
                         }
                     }

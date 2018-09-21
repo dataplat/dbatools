@@ -30,6 +30,9 @@ function Test-DbaBackupInformation {
         .PARAMETER Continue
             Switch to indicate a continuing restore
 
+        .PARAMETER OutputScriptOnly
+            Switch to disable path creation. Will write a warning that a path does not exist
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -75,6 +78,7 @@ function Test-DbaBackupInformation {
         [switch]$WithReplace,
         [switch]$Continue,
         [switch]$VerifyOnly,
+        [switch]$OutputScriptOnly,
         [switch]$EnableException
     )
 
@@ -142,15 +146,20 @@ function Test-DbaBackupInformation {
                     else {
                         $ParentPath = Split-Path $path -Parent
                         if (!(Test-DbaPath -SqlInstance $RestoreInstance -Path $ParentPath) ) {
-                            $ConfirmMessage = "`n Creating Folder $ParentPath on $SqlInstance `n"
-                            if ($Pscmdlet.ShouldProcess("$Path on $SqlInstance `n `n", $ConfirmMessage)) {
-                                if (New-DbaDirectory -SqlInstance $RestoreInstance -Path $ParentPath) {
-                                    Write-Message -Message "Created Folder $ParentPath on $SqlInstance" -Level Verbose
+                            if(-not $OutputScriptOnly){
+                                $ConfirmMessage = "`n Creating Folder $ParentPath on $SqlInstance `n"
+                                if ($Pscmdlet.ShouldProcess("$Path on $SqlInstance `n `n", $ConfirmMessage)) {
+                                    if (New-DbaDirectory -SqlInstance $RestoreInstance -Path $ParentPath) {
+                                        Write-Message -Message "Created Folder $ParentPath on $SqlInstance" -Level Verbose
+                                    }
+                                    else {
+                                        Write-Message -Message "Failed to create $ParentPath on $SqlInstance" -Level Warning
+                                        $VerificationErrors++
+                                    }
                                 }
-                                else {
-                                    Write-Message -Message "Failed to create $ParentPath on $SqlInstance" -Level Warning
-                                    $VerificationErrors++
-                                }
+                            }
+                            else {
+                                Write-Message -Message "Parth $ParentPath on $SqlInstance does not exist" -Level Verbose
                             }
                         }
                     }

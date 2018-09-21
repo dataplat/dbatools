@@ -5746,7 +5746,7 @@
         "Name":  "Test-DbaBackupInformation",
         "Links":  "https://dbatools.io/Test-DbaBackupInformation",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$BackupHistory | Test-DbaBackupInformation -SqlInstance MyInstance\r\n\r\n$PassedDbs = $BackupHistory | Where-Object {$_.IsVerified -eq $True}\r\n$FailedDbs = $BackupHistory | Where-Object {$_.IsVerified -ne $True}\r\n\r\nPass in a BackupHistory object to be tested against MyInstance.\r\n\r\nThose records that pass are marked as verified. We can then use the IsVerified property to divide the failures and \r\nsuccesses\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n",
-        "Syntax":  "\r\nTest-DbaBackupInformation [-BackupHistory] \u003cObject[]\u003e [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \r\n\u003cPSCredential\u003e] [-WithReplace] [-Continue] [-VerifyOnly] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n"
+        "Syntax":  "\r\nTest-DbaBackupInformation [-BackupHistory] \u003cObject[]\u003e [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \r\n\u003cPSCredential\u003e] [-WithReplace] [-Continue] [-VerifyOnly] [-OutputScriptOnly] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaBuild",
