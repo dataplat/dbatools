@@ -91,6 +91,11 @@ function Export-DbaDacPackage {
             Stop-Function -Message "$Path doesn't exist or access denied"
         }
 
+        # Convert $Path to absolute path because relative paths are problematic when you mix PowerShell commands
+        # and System.IO.
+        # This must happen after Test-Path because Resolve-Path will throw an exception if a path does not exist.
+        $Path = (Resolve-Path $Path).Path
+        
         if ((Get-Item $path) -isnot [System.IO.DirectoryInfo]) {
             Stop-Function -Message "Path must be a directory"
         }
