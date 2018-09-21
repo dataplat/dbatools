@@ -28,5 +28,23 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
             }
         }
+
+        It "exports to the correct directory" {
+            $testFolder = 'C:\Temp\dacpacs'
+            New-Item $testFolder -ItemType Directory
+
+            Push-Location $testFolder
+            try {
+                $relativePath = '.\'
+                $expectedPath = (Resolve-Path $relativePath).Path
+
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Path $relativePath
+                $results.Path | Split-Path | Should -Be $expectedPath
+            }
+            finally {
+                Pop-Location
+                Remove-Item $testFolder -Force -Recurse
+            }
+        }
     }
 }

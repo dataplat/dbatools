@@ -800,6 +800,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
+    Context "Don't try to create/test folders with OutputScriptOnly (Issue 4046)"{
+        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\RestoreTimeClean\RestoreTimeClean.bak -DestinationDataDirectory g:\DoesNtExist -OutputScriptOnly -WarningVariable warnvar
+        It "Should not raise a warning" {
+            ('' -eq $warnvar) | Should -Be $True
+        }
+    }
+
     if ($env:azurepasswd1) {
         Context "Restores to Azure" {
             BeforeAll {
