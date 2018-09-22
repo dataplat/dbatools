@@ -102,8 +102,8 @@ function Install-DbaSQLWATCH{
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$temp\SQLWATCH-$Branch.zip"
         $zipfolder = "$temp\SQLWATCH-$Branch\"
-        $FRKLocation = "SQLWATCH_$Branch"
-        $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $FRKLocation
+        $sqwLocation = "SQLWATCH_$Branch"
+        $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $sqwLocation
         if ($LocalFile) {
             if (-not(Test-Path $LocalFile)) {
                 Stop-Function -Message "$LocalFile doesn't exist"
@@ -200,17 +200,12 @@ function Install-DbaSQLWATCH{
                 Stop-Function -Message "DACPAC failed to publish." -ErrorRecord $_ -Target $instance -Continue
             }
 
-            Write-Message -Level Verbose -Message "Finished installing/updating SQLWATCH in $database on $instance."
+            Write-PSFMessage -Level Verbose -Message "Finished installing/updating SQLWATCH in $database on $instance."
+            #notify user of location to PowerBI file
+            $pbitLocation = Get-ChildItem $LocalCachedCopy -Recurse -include *.pbit | Select-Object -ExpandProperty Directory -Unique
+            Write-PSFMessage -Level Host -Message "SQLWATCH installed successfully. Power BI dashboard files can be found at $($pbitLocation.FullName)"
         }
     }
 
-    end {        
-        #notify user of location to PowerBI file
-        Get-ChildItem $LocalCachedCopy -Recurse -include *.pbit,*.pdf | ForEach-Object { Move-Item -Path $PSitem -Destination $LocalCachedCopy }
-        Write-PSFMessage -Level Host -Message "A Power BI dashboard file has been created on your computer at $LocalCachedCopy"
-
-        #delete downloaded files
-        Write-PSFMessage -Level Verbose -Message "Removing downloaded files from $LocalCachedCopy"
-        Remove-Item -Path $LocalCachedCopy -Exclude *.pbit,*.pdf -Force -Recurse
-    }
+    end {}
 }
