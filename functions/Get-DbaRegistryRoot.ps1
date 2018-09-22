@@ -19,7 +19,7 @@ Allows you to login to $ComputerName using alternative Windows credentials
 
 .NOTES
 Tags: Configuration, Registry
-
+Author: Chrissy LeMaire (@cl), netnerds.net
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: MIT https://opensource.org/licenses/MIT
@@ -77,7 +77,7 @@ Gets the registry root for all instances on server1
                 if ([System.String]::IsNullOrEmpty($vsname)) {
                     $vsname = $computer
                     if ($instancename -ne "MSSQLSERVER") {
-                        $vsname = "$computer\$instancename"
+                        $vsname = "$($computer.ComputerName)\$instancename"
                     }
                 }
 

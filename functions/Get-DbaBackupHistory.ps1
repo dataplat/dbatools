@@ -75,16 +75,16 @@ function Get-DbaBackupHistory {
         .EXAMPLE
             Get-DbaBackupHistory -SqlInstance SqlInstance2014a
 
-            Returns server name, database, username, backup type, date for all backups databases on SqlInstance2014a. This may return many rows; consider using filters that are included in other examples.
+            Returns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in other examples.
 
         .EXAMPLE
             $cred = Get-Credential sqladmin
             Get-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred
 
-            Does the same as above but logs in as SQL user "sqladmin"
+            Does the same as above but connect to SqlInstance2014a as SQL user "sqladmin"
 
         .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '7/1/2016 10:47:00'
+            Get-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '2016-07-01 10:47:00'
 
             Returns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.
 

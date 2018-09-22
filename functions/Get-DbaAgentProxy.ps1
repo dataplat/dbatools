@@ -21,7 +21,7 @@
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Author: Chrissy LeMaire ( @cl )
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Tags: Agent, SMO
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -72,11 +72,11 @@
                 $proxies = $proxies | Where-Object Name -In $proxy
             }
             
-            foreach ($proxy in $proxies) {
-                Add-Member -Force -InputObject $proxy -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $proxy -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $proxy -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Select-DefaultView -InputObject $proxy -Property $defaults
+            foreach ($px in $proxies) {
+                Add-Member -Force -InputObject $px -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $px -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $px -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Select-DefaultView -InputObject $px -Property $defaults
             }
         }
     }

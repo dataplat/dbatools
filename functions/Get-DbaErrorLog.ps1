@@ -37,6 +37,7 @@ function Get-DbaErrorLog {
 
         .NOTES
             Tags: Instance, ErrorLog
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -71,14 +72,14 @@ function Get-DbaErrorLog {
             Returns the most recent SQL Server error logs for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
         .EXAMPLE
-            Get-DbaErrorLog -SqlInstance sql01\sharepoint -After '11/14/2006 00:00'
+            Get-DbaErrorLog -SqlInstance sql01\sharepoint -After '2016-11-14 00:00:00'
 
-            Returns every log entry found after the date 11/14/2006 00:00 from sql101\sharepoint SQL Server instance.
+            Returns every log entry found after the date 14 November 2016 from sql101\sharepoint SQL Server instance.
 
         .EXAMPLE
-            Get-DbaErrorLog -SqlInstance sql01\sharepoint -Before '08/16/2016 00:00'
+            Get-DbaErrorLog -SqlInstance sql01\sharepoint -Before '2016-08-16 00:00:00'
 
-            Returns every log entry found before the date 08/16/2016 00:00 from sql101\sharepoint SQL Server instance.
+            Returns every log entry found before the date 16 August 2016 from sql101\sharepoint SQL Server instance.
         #>
     [CmdletBinding()]
     param (

@@ -18,10 +18,10 @@
     .PARAMETER Account
         Get only the mail server associated with specific accounts
 
-    
+
     .PARAMETER InputObject
         Accepts pipeline input from Get-DbaDbMail
-    
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -29,6 +29,7 @@
 
     .NOTES
         Tags: databasemail, dbmail, mail
+        Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: MIT https://opensource.org/licenses/MIT
@@ -39,13 +40,13 @@
     .EXAMPLE
         Get-DbaDbMailServer -SqlInstance sql01\sharepoint
 
-        Returns dbmail servers on sql01\sharepoint
+        Returns all dbmail servers on sql01\sharepoint
 
     .EXAMPLE
-        Get-DbaDbMailServer -SqlInstance sql01\sharepoint -Name ProhibitedExtensions
+        Get-DbaDbMailServer -SqlInstance sql01\sharepoint -Server DbaTeam
 
         Returns The DBA Team dbmail server from sql01\sharepoint
-    
+
     .EXAMPLE
         Get-DbaDbMailServer -SqlInstance sql01\sharepoint | Select *
 
@@ -55,7 +56,7 @@
         $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
         $servers | Get-DbaDbMail | Get-DbaDbMailServer
 
-       Returns the db dbmail servers for "sql2014","sql2016" and "sqlcluster\sharepoint"
+        Returns the dbmail servers for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
 #>
     [CmdletBinding()]
@@ -76,26 +77,28 @@
             Write-Message -Level Verbose -Message "Connecting to $instance"
             $InputObject += Get-DbaDbMail -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
-        
+
         if (-not $InputObject) {
             Stop-Function -Message "No servers to process"
             return
         }
-        
+
         foreach ($mailserver in $InputObject) {
             try {
                 $accounts = $mailserver | Get-DbaDbMailAccount -Account $Account
                 $servers = $accounts.MailServers
-                
+
                 if ($Server) {
                     $servers = $servers | Where-Object Name -in $Server
                 }
-                                
-                $servers | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $mailserver.ComputerName
-                $servers | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
-                $servers | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
-                $servers | Add-Member -Force -MemberType NoteProperty -Name Account -value $servers[0].Parent.Name
-                $servers | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Account, Name, Port, EnableSsl, ServerType, UserName, UseDefaultCredentials, NoCredentialChange
+
+                if ($servers) {
+                    $servers | Add-Member -Force -MemberType NoteProperty -Name ComputerName -value $mailserver.ComputerName
+                    $servers | Add-Member -Force -MemberType NoteProperty -Name InstanceName -value $mailserver.InstanceName
+                    $servers | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -value $mailserver.SqlInstance
+                    $servers | Add-Member -Force -MemberType NoteProperty -Name Account -value $servers[0].Parent.Name
+                    $servers | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Account, Name, Port, EnableSsl, ServerType, UserName, UseDefaultCredentials, NoCredentialChange
+                }
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue

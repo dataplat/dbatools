@@ -281,7 +281,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
 
     Context "All user databases are removed post RestoreTime check" {
@@ -291,7 +291,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
 
     Context "RestoreTime point in time" {
@@ -315,7 +315,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
 
     Context "RestoreTime point in time with Simple Model" {
@@ -340,7 +340,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
 
     Context "RestoreTime point in time and continue" {
@@ -515,7 +515,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    Clear-DbaSqlConnectionPool
+    Clear-DbaConnectionPool
     Start-Sleep -Seconds 1
 
     Context "All user databases are removed post history test" {
@@ -800,7 +800,14 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    if ($env:azurepasswd) {
+    Context "Don't try to create/test folders with OutputScriptOnly (Issue 4046)"{
+        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\RestoreTimeClean\RestoreTimeClean.bak -DestinationDataDirectory g:\DoesNtExist -OutputScriptOnly -WarningVariable warnvar
+        It "Should not raise a warning" {
+            ('' -eq $warnvar) | Should -Be $True
+        }
+    }
+
+    if ($env:azurepasswd1) {
         Context "Restores to Azure" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2
@@ -819,7 +826,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 
-    if ($env:azurelegacypasswd) {
+    if ($env:azurelegacypasswd1) {
         Context "Restores to Azure" {
             BeforeAll {
                 $server = Connect-DbaInstance -SqlInstance $script:instance2

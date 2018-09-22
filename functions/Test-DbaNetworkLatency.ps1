@@ -37,6 +37,7 @@ function Test-DbaNetworkLatency {
 
         .NOTES
             Tags: Performance, Network
+            Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT

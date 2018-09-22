@@ -28,7 +28,7 @@ function Get-DbaServerRole {
             Tags: ServerRole, Security
             Original Author: Shawn Melton (@wsmelton)
 
-            Website: https: //dbatools.io
+            Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
