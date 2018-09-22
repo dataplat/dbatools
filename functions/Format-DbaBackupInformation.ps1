@@ -215,9 +215,11 @@ function Format-DbaBackupInformation {
                 }
             }
             if ($null -ne $RebaseBackupFolder -and $History.FullName[0] -notmatch 'http') {
-                $History.FullName | ForEach-Object {
-                    $file = [System.IO.FileInfo]$_
-                    $_ = $RebaseBackupFolder + "\" + $file.BaseName + $file.Extension
+                for ($i = 0; $i -lt $History.count; $i++){
+                    for ($j = 0; $j -lt $History[$i].fullname.count; $j++){
+                        $file = [System.IO.FileInfo]$History[$i].fullname[$j]
+                        $History[$i].fullname[$j] = $RebaseBackupFolder + "\" + $file.BaseName + $file.Extension
+                    }
                 }
             }
             $History
