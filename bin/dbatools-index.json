@@ -5001,14 +5001,14 @@
     },
     {
         "CommandName":  "Restore-DbaBackupFromDirectory",
-        "Description":  "Many SQL Server database administrators use Ola Hallengren\u0027s SQL Server Maintenance Solution which can be found at http://ola.hallengren.com\n\nHallengren uses a predictable backup structure which made it relatively easy to create a script that can restore an entire SQL Server database instance, down to the master database (next version), to a new server. This script is intended to be used in the event that the originating SQL Server becomes unavailable, thus rendering my other SQL restore script (http://goo.gl/QmfQ6s) ineffective.",
+        "Description":  "Please use `Get-ChildItem | Restore-DbaDatabase` instead. This command is no longer supported.",
         "Tags":  [
                      "DisasterRecovery",
                      "Backup",
                      "Restore"
                  ],
         "Alias":  "Restore-SqlBackupFromDirectory",
-        "Synopsis":  "Restores SQL Server databases from the backup directory structure created by Ola Hallengren\u0027s database maintenance scripts. Different structures coming soon.",
+        "Synopsis":  "Please use `Get-ChildItem | Restore-DbaDatabase` instead. This command is no longer supported.",
         "Name":  "Restore-DbaBackupFromDirectory",
         "Links":  "https://dbatools.io/Restore-SqlBackupFromDirectory",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-SqlBackupFromDirectory -SqlInstance sqlcluster -Path \\\\fileserver\\share\\sqlbackups\\SQLSERVER2014A\r\n\r\nAll user databases contained within \\\\fileserver\\share\\sqlbackups\\SQLSERVERA will be restored to sqlcluster, down the \r\nmost recent full/differential/logs.\r\n\r\n\r\nRequires -Version 3.0\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n",
