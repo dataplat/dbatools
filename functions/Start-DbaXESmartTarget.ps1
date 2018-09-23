@@ -203,7 +203,6 @@
                     foreach ($property in $responder.PSObject.Properties) {
                         if ($property.Value) {
                             if($property.Value -is [Array]) {
-                                "$($property.Name) is Array" 
                                 $name = $property.Name
                                 $newResponder.$name = [object[]]$property.Value
                             }
