@@ -189,15 +189,36 @@ function Install-DbaSQLWATCH{
             Write-Message -Level Verbose -Message "Starting installing/updating SQLWATCH in $database on $instance."
 
             try {
+
+                # create a publish profile and publish DACPAC
                 $DacPacPath = Get-ChildItem -Filter "SQLWATCH.dacpac" -Path $LocalCachedCopy -Recurse | Select-Object -ExpandProperty FullName
                 $PublishOptions = @{
                     RegisterDataTierApplication = $true
                 }
                 $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCachedCopy -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
-                Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
+                $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
+                
+                # parse results
+                $parens = Select-String -InputObject $PublishResults.Result -Pattern "\(([^\)]+)\)" -AllMatches
+                if ($parens.matches) {
+                    $ExtractedResult = $parens.matches | select -Last 1 | %{ $_.value }
+                }                
+                $result = [PSCustomObject]@{
+                    ComputerName = $PublishResults.ComputerName
+                    InstanceName = $PublishResults.InstanceName
+                    SqlInstance = $PublishResults.SqlInstance
+                    Database = $PublishResults.Database
+                    Dacpac = $PublishResults.Dacpac
+                    PublishXml = $PublishResults.PublishXml
+                    Result = $ExtractedResult
+                    FullResult = $PublishResults.Result
+                    DeployOptions = $PublishResults.DeployOptions
+                    SqlCmdVariableValues = $PublishResults.SqlCmdVariableValues
+                }
+                Select-DefaultView -InputObject $result -ExcludeProperty Dacpac,PublishXml,FullResult,DeployOptions,SqlCmdVariableValues
             }
             catch {
-                Stop-Function -Message "DACPAC failed to publish." -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
             }
 
             Write-PSFMessage -Level Verbose -Message "Finished installing/updating SQLWATCH in $database on $instance."
