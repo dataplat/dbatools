@@ -30,19 +30,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Removed all tables" {
-            $tableCount = (Get-DbaDbTable -SqlInstance $server -Database $database | Where-Object {$PSItem.Name -like "sql_perf_mon_*" }).Count
+            $tableCount = (Get-DbaDbTable -SqlInstance $instance -Database $Database | Where-Object {($PSItem.Name -like "sql_perf_mon_*") -or ($PSItem.Name -like "logger_*")}).Count
             $tableCount | Should -Be 0
         }
         It "Removed all views" {
-            $viewCount = (Get-DbaDbView -SqlInstance $server -Database $database | Where-Object {$PSItem.Name -like "vw_sql_perf_mon_*" }).Count
+            $viewCount = (Get-DbaDbView -SqlInstance $instance -Database $Database | Where-Object {$PSItem.Name -like "vw_sql_perf_mon_*" }).Count
             $viewCount | Should -Be 0
         }
         It "Removed all stored procedures" {
-            $sprocCount = (Get-DbaDbStoredProcedure -SqlInstance $server -Database $database | Where-Object {$PSItem.Name -like "sp_sql_perf_mon_*" }).Count
+            $sprocCount = (Get-DbaDbStoredProcedure -SqlInstance $instance -Database $Database | Where-Object {($PSItem.Name -like "sp_sql_perf_mon_*") -or ($PSItem.Name -like "usp_logger_*")}).Count
             $sprocCount | Should -Be 0
         }
         It "Removed all SQL Agent jobs" {
-            $agentCount = (Get-DbaAgentJob -SqlInstance $server -Database $database | Where-Object {$PSItem.Name -like "DBA-PERF-*" }).Count
+            $agentCount = (Get-DbaAgentJob -SqlInstance $instance | Where-Object {($PSItem.Name -like "SQLWATCH-*") -or ($PSItem.Name -like "DBA-PERF-*")}).Count
             $agentCount | Should -Be 0
         }
 

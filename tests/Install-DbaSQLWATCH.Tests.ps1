@@ -39,19 +39,19 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
         It "Installed tables" {
-            $tableCount = (Get-DbaDbTable -SqlInstance $server -Database $database | Where-Object {$PSItem.Name -like "sql_perf_mon_*" }).Count
+            $tableCount = (Get-DbaDbTable -SqlInstance $instance -Database $Database | Where-Object {($PSItem.Name -like "sql_perf_mon_*") -or ($PSItem.Name -like "logger_*")}).Count
             $tableCount | Should -BeGreaterThan 0
         }
         It "Installed views" {
-            $viewCount = (Get-DbaDbView -SqlInstance $server -Database $database | Where-Object {$PSItem.Name -like "vw_sql_perf_mon_*" }).Count
+            $viewCount = (Get-DbaDbView -SqlInstance $instance -Database $Database | Where-Object {$PSItem.Name -like "vw_sql_perf_mon_*" }).Count
             $viewCount | Should -BeGreaterThan 0
         }
         It "Installed stored procedures" {
-            $sprocCount = (Get-DbaDbStoredProcedure -SqlInstance $server -Database $database | Where-Object {$PSItem.Name -like "sp_sql_perf_mon_*" }).Count
+            $sprocCount = (Get-DbaDbStoredProcedure -SqlInstance $instance -Database $Database | Where-Object {($PSItem.Name -like "sp_sql_perf_mon_*") -or ($PSItem.Name -like "usp_logger_*")}).Count
             $sprocCount | Should -BeGreaterThan 0
         }
         It "Installed SQL Agent jobs" {
-            $agentCount = (Get-DbaAgentJob -SqlInstance $server -Database $database | Where-Object {$PSItem.Name -like "DBA-PERF-*" }).Count
+            $agentCount = (Get-DbaAgentJob -SqlInstance $instance | Where-Object {($PSItem.Name -like "SQLWATCH-*") -or ($PSItem.Name -like "DBA-PERF-*")}).Count
             $agentCount | Should -BeGreaterThan 0
         }
 
