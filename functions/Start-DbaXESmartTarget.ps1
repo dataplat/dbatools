@@ -202,9 +202,16 @@
                     $newResponder = New-Object -TypeName $typename
                     foreach ($property in $responder.PSObject.Properties) {
                         if ($property.Value) {
-                            $name = $property.Name
-                            $newResponder.$name = $property.Value
+                            if($property.Value -is [Array]) {
+                                $name = $property.Name
+                                $newResponder.$name = [object[]]$property.Value
+                            }
+                            else {
+                                $name = $property.Name
+                                $newResponder.$name = $property.Value   
+                            }
                         }
+
                     }
                     $params["Responder"] += $newResponder
                 }
