@@ -1,6 +1,6 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 Function Uninstall-DbaSQLWATCH {
-<#
+    <#
         .SYNOPSIS
             Uninstalls SQLWATCH.
 
@@ -66,66 +66,105 @@ Function Uninstall-DbaSQLWATCH {
 
         # validate database parameter
 
-        # get SQWATCH objects
-        $tables = Get-DbaDbTable -SqlInstance $SqlInstance -Database $Database | Where-Object {$PSItem.Name -like "sql_perf_mon_*" } 
-        $views = Get-DbaDbView -SqlInstance $SqlInstance -Database $Database | Where-Object {$PSItem.Name -like "vw_sql_perf_mon_*" }
-        $sprocs = Get-DbaDbStoredProcedure -SqlInstance $SqlInstance -Database $Database | Where-Object {$PSItem.Name -like "sp_sql_perf_mon_*" }
-        $agentJobs = Get-DbaAgentJob -SqlInstance $SqlInstance | Where-Object {$PSItem.Name -like "DBA-PERF-*" }
+        if (Test-Bound -Not -ParameterName 'DacfxPath') {
+            $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
+        }
 
+        if ((Test-Path $dacfxPath) -eq $false) {
+            Stop-Function -Message 'No usable version of Dac Fx found.' 
+        }
+        else {
+            try {
+                Add-Type -Path $dacfxPath
+                Write-Message -Level Verbose -Message "Dac Fx loaded."
+            }
+            catch {
+                Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
+            }
+        }
     }
     process {
         if (Test-FunctionInterrupt) {
             return
         }
 
-        try {
-            Write-PSFMessage -Level Host -Message "Removing SQL Agent jobs."
-            $agentJobs | Remove-DbaAgentJob
-        }
-        catch {
-            Stop-Function -Message "Could not remove all agent jobs." -ErrorRecord $_ -Target $instance -Continue
-        }
+        foreach ($instance in $SqlInstance) {
 
-        try {
-            Write-PSFMessage -Level Host -Message "Removing stored procedures."
-            $dropScript = ""
-            $sprocs | ForEach-Object {
-                $dropScript += "DROP PROCEDURE $($PSItem.Name);`n"
+            # get SQWATCH objects
+            $tables = Get-DbaDbTable -SqlInstance $instance -Database $Database | Where-Object {$PSItem.Name -like "sql_perf_mon_*" -or $PSItem.Name -like "logger_*" } 
+            $views = Get-DbaDbView -SqlInstance $instance -Database $Database | Where-Object {$PSItem.Name -like "vw_sql_perf_mon_*" }
+            $sprocs = Get-DbaDbStoredProcedure -SqlInstance $instance -Database $Database | Where-Object {$PSItem.Name -like "sp_sql_perf_mon_*" -or $PSItem.Name -like "usp_logger_*" }
+            $agentJobs = Get-DbaAgentJob -SqlInstance $instance | Where-Object { ($PSItem.Name -like "SQLWATCH-*") -or ($PSItem.Name -like "DBA-PERF-*") }
+
+            try {
+                Write-PSFMessage -Level Verbose -Message "Removing SQL Agent jobs from $instance."
+                $agentJobs | Remove-DbaAgentJob | Out-Null
             }
-            if ($dropScript) { 
-                Invoke-DbaQuery -SqlInstance $SqlInstance -Database $Database -Query $dropScript 
+            catch {
+                Stop-Function -Message "Could not remove all SQLWATCH Agent Jobs on $instance." -ErrorRecord $_ -Target $instance -Continue
             }
-        } 
-        catch {
-            Stop-Function -Message "Could not remove all stored procedures." -ErrorRecord $_ -Target $instance -Continue
-        }
+
+            try {
+                Write-PSFMessage -Level Verbose -Message "Removing SQLWATCH stored procedures from $database on $instance."
+                $dropScript = ""
+                $sprocs | ForEach-Object {
+                    $dropScript += "DROP PROCEDURE $($PSItem.Name);`n"
+                }
+                if ($dropScript) { 
+                    Invoke-DbaQuery -SqlInstance $instance -Database $Database -Query $dropScript 
+                }
+            } 
+            catch {
+                Stop-Function -Message "Could not remove all SQLWATCH stored procedures from $database on $instance." -ErrorRecord $_ -Target $instance -Continue
+            }
         
-        try {
-            Write-PSFMessage -Level Host -Message "Removing views."
-            $dropScript = ""
-            $views | ForEach-Object {
-                $dropScript += "DROP VIEW $($PSItem.Name);`n"
+            try {
+                Write-PSFMessage -Level Verbose -Message "Removing SQLWATCH views from $database on $instance."
+                $dropScript = ""
+                $views | ForEach-Object {
+                    $dropScript += "DROP VIEW $($PSItem.Name);`n"
+                }
+                if ($dropScript) { 
+                    Invoke-DbaQuery -SqlInstance $instance -Database $Database -Query $dropScript
+                }
             }
-            if ($dropScript) { 
-                Invoke-DbaQuery -SqlInstance $SqlInstance -Database $Database -Query $dropScript
+            catch {
+                Stop-Function -Message "Could not remove all SQLWATCH views from $database on $instance." -ErrorRecord $_ -Target $instance -Continue
             }
-        }
-        catch {
-            Stop-Function -Message "Could not remove all views." -ErrorRecord $_ -Target $instance -Continue
-        }
         
-        try {
-            Write-PSFMessage -Level Host -Message "Removing tables."
-            $dropScript = ""
-            $tables | ForEach-Object {
-                $dropScript += "DROP TABLE $($PSItem.Name);`n"
+            try {
+                Write-PSFMessage -Level Verbose -Message "Removing foreign keys from SQLWATCH tables in $database on $instance."
+                if ($tables.ForeignKeys) {
+                    $tables.ForeignKeys | ForEach-Object { $PSItem.Drop() }
+                }
             }
-            if ($dropScript) { 
-                Invoke-DbaQuery -SqlInstance $SqlInstance -Database $Database -Query $dropScript
+            catch {
+                Stop-Function -Message "Could not remove all foreign keys from SQLWATCH tables in $database on $instance." -ErrorRecord $_ -Target $instance -Continue
+            }        
+
+            try {
+                Write-PSFMessage -Level Verbose -Message "Removing SQLWATCH tables from $database on $instance."
+                $dropScript = ""
+                $tables | ForEach-Object {
+                    $dropScript += "DROP TABLE $($PSItem.Name);`n"
+                }
+                if ($dropScript) { 
+                    Invoke-DbaQuery -SqlInstance $instance -Database $Database -Query $dropScript
+                }
             }
-        }
-        catch {
-            Stop-Function -Message "Could not remove all tables." -ErrorRecord $_ -Target $instance -Continue
+            catch {
+                Stop-Function -Message "Could not remove all SQLWATCH tables from $database on $instance." -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            try {
+                Write-PSFMessage -Level Verbose -Message "Unpublishing SQLWATCH DACPAC from $database on $instance."
+                $connectionString = Connect-DbaInstance $instance | Select-Object -ExpandProperty ConnectionContext
+                $dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connectionString
+                $dacServices.Unregister($Database)
+            }
+            catch {
+                Stop-Function -Message "Failed to unpublish SQLWATCH DACPAC from $database on $instance." -ErrorRecord $_
+            }
         }
 
     }
