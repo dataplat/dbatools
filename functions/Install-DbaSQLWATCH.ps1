@@ -223,7 +223,7 @@ function Install-DbaSQLWATCH{
             Write-PSFMessage -Level Verbose -Message "Finished installing/updating SQLWATCH in $database on $instance."
             #notify user of location to PowerBI file
             $pbitLocation = Get-ChildItem $LocalCachedCopy -Recurse -include *.pbit | Select-Object -ExpandProperty Directory -Unique
-            Write-PSFMessage -Level Host -Message "SQLWATCH installed successfully. Power BI dashboard files can be found at $($pbitLocation.FullName)"
+            #Write-PSFMessage -Level Host -Message "SQLWATCH installed successfully. Power BI dashboard files can be found at $($pbitLocation.FullName)"
         }
     }
 
