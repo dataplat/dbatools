@@ -122,7 +122,7 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
         $Output = Format-DbaBackupInformation -BackupHistory $History -RebaseBackupFolder c:\backups\
 
         It "Should not have moved all backup files to c:\backups" {
-            ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be 0
+            ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be $History.count
         }
 
     }
@@ -143,7 +143,7 @@ Describe "$commandname Integration Tests" -Tags "UnitTests" {
             (($Output | Select-Object -ExpandProperty Filelist | Where-Object {$_.Type -eq 'L'}).PhysicalName | split-path | Where-Object {$_ -ne 'c:\logs'}).count | Should Be 0
         }
         It "Should not have moved all backup files to c:\backups" {
-            ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be 0
+            ($Output | Select-Object -ExpandProperty FullName | split-path | Where-Object {$_ -eq 'c:\backups'}).count | Should Be $History.count
         }
 
     }

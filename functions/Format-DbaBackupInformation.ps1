@@ -214,12 +214,16 @@ function Format-DbaBackupInformation {
                     }
                 }
             }
-            if ($null -ne $RebaseBackupFolder -and $History.FullName[0] -notmatch 'http') {
-                $History.FullName | ForEach-Object {
-                    $file = [System.IO.FileInfo]$_
-                    $_ = $RebaseBackupFolder + "\" + $file.BaseName + $file.Extension
+            if ('' -ne $RebaseBackupFolder -and $History.FullName[0] -notmatch 'http') {
+                Write-Message -Message 'Rebasing backup files' -Level Verbose
+
+                for ($j = 0; $j -lt $History.fullname.count; $j++){
+                    $file = [System.IO.FileInfo]($History.fullname[$j])
+                    $History.fullname[$j] = $RebaseBackupFolder + "\" + $file.BaseName + $file.Extension
                 }
+
             }
+
             $History
         }
     }
