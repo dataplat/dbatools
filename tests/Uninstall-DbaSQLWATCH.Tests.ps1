@@ -22,7 +22,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $database = "dbatoolsci_sqlwatch_$(Get-Random)"
             $server = Connect-DbaInstance -SqlInstance $script:instance2
-            Install-DbaSQLWATCH -SqlInstance $server -Database $database
+            Install-DbaSQLWATCH -SqlInstance $server -Database $database -Force
         }
         AfterAll {
             Remove-DbaDatabase -SqlInstance $server -Database $database -Confirm:$false
