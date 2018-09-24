@@ -208,7 +208,7 @@
                             }
                             else {
                                 $name = $property.Name
-                                $newResponder.$name = $property.Value   
+                                $newResponder.$name = $property.Value
                             }
                         }
 

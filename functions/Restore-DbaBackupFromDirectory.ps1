@@ -1,13 +1,11 @@
 function Restore-DbaBackupFromDirectory {
     <#
         .SYNOPSIS
-            Restores SQL Server databases from the backup directory structure created by Ola Hallengren's database maintenance scripts. Different structures coming soon.
+            Please use `Get-ChildItem | Restore-DbaDatabase` instead. This command is no longer supported.
 
         .DESCRIPTION
-            Many SQL Server database administrators use Ola Hallengren's SQL Server Maintenance Solution which can be found at http://ola.hallengren.com
-
-            Hallengren uses a predictable backup structure which made it relatively easy to create a script that can restore an entire SQL Server database instance, down to the master database (next version), to a new server. This script is intended to be used in the event that the originating SQL Server becomes unavailable, thus rendering my other SQL restore script (http://goo.gl/QmfQ6s) ineffective.
-
+            Please use `Get-ChildItem | Restore-DbaDatabase` instead. This command is no longer supported.
+    
         .PARAMETER SqlInstance
             The SQL Server instance to which you will be restoring the database.
 
@@ -34,8 +32,6 @@ function Restore-DbaBackupFromDirectory {
 
         .NOTES
             Tags: DisasterRecovery, Backup, Restore
-            Requires: sysadmin access on destination SQL Server.
-
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
