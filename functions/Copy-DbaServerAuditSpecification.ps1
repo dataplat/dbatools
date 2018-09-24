@@ -143,7 +143,7 @@ function Copy-DbaServerAuditSpecification {
                         $copyAuditSpecStatus.Status = "Skipped"
                         $copyAuditSpecStatus.Notes = "Audit $($auditSpec.AuditName) does not exist on $destinstance. Skipping $auditSpecName."
                         Write-Message -Level Warning -Message "Audit $($auditSpec.AuditName) does not exist on $destinstance. Skipping $auditSpecName."
-                        $copyAuditSpecStatus
+                        $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     continue
                 }
