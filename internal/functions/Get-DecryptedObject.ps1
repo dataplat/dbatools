@@ -136,7 +136,7 @@
     Write-Message -Level Verbose -Message "Get entropy from the registry"
     
     try {
-        $results = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $connString, $sql {
+        $results = Invoke-Command2 -ErrorAction Stop -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $connString, $sql {
             $connString = $args[0]; $sql = $args[1]
             $conn = New-Object System.Data.SqlClient.SQLConnection($connString)
             $conn.open()

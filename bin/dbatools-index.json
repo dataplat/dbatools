@@ -2162,6 +2162,18 @@
         "Syntax":  "\r\nGet-DbaDependency [[-InputObject] \u003cObject\u003e] [-AllowSystemObjects] [-Parents] [-IncludeSelf] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaDeprecatedFeature",
+        "Description":  "Displays information relating to deprecated features for SQL Server 2005 and above.",
+        "Tags":  "Deprecated",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Displays information relating to deprecated features for SQL Server 2005 and above.",
+        "Name":  "Get-DbaDeprecatedFeature",
+        "Links":  "https://dbatools.io/Get-DbaDeprecatedFeature",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Get-DbaDeprecatedFeature\r\n\r\nCheck deprecated features on server sql2008 for only the testdb and db2 databases\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDeprecatedFeature -SqlInstance sql2008, sqlserver2012\r\n\r\nCheck deprecated features for all databases on the servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDeprecatedFeature -SqlInstance sql2008 -Database TestDB\r\n\r\nCheck deprecated features on server sql2008 for only the TestDB database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDeprecatedFeature -SqlInstance sql2008 -Database TestDB -Threshold 20\r\n\r\nCheck deprecated features on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed \r\nrange or higher\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n",
+        "Syntax":  "\r\nGet-DbaDeprecatedFeature [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] \r\n[\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaDetachedDatabaseInfo",
         "Description":  "Gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure.\n\n\"Data files\" and \"Log file\" report the structure of the data and log files as they were when the database was detached. \"Database version\" is the compatibility level.\n\nMDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.",
         "Tags":  [
@@ -5001,14 +5013,14 @@
     },
     {
         "CommandName":  "Restore-DbaBackupFromDirectory",
-        "Description":  "Many SQL Server database administrators use Ola Hallengren\u0027s SQL Server Maintenance Solution which can be found at http://ola.hallengren.com\n\nHallengren uses a predictable backup structure which made it relatively easy to create a script that can restore an entire SQL Server database instance, down to the master database (next version), to a new server. This script is intended to be used in the event that the originating SQL Server becomes unavailable, thus rendering my other SQL restore script (http://goo.gl/QmfQ6s) ineffective.",
+        "Description":  "Please use `Get-ChildItem | Restore-DbaDatabase` instead. This command is no longer supported.",
         "Tags":  [
                      "DisasterRecovery",
                      "Backup",
                      "Restore"
                  ],
         "Alias":  "Restore-SqlBackupFromDirectory",
-        "Synopsis":  "Restores SQL Server databases from the backup directory structure created by Ola Hallengren\u0027s database maintenance scripts. Different structures coming soon.",
+        "Synopsis":  "Please use `Get-ChildItem | Restore-DbaDatabase` instead. This command is no longer supported.",
         "Name":  "Restore-DbaBackupFromDirectory",
         "Links":  "https://dbatools.io/Restore-SqlBackupFromDirectory",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-SqlBackupFromDirectory -SqlInstance sqlcluster -Path \\\\fileserver\\share\\sqlbackups\\SQLSERVER2014A\r\n\r\nAll user databases contained within \\\\fileserver\\share\\sqlbackups\\SQLSERVERA will be restored to sqlcluster, down the \r\nmost recent full/differential/logs.\r\n\r\n\r\nRequires -Version 3.0\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n",
@@ -5882,6 +5894,18 @@
         "Links":  "https://dbatools.io/Test-DbaDbVirtualLogFile",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDbVirtualLogFile -SqlInstance sqlcluster\r\n\r\nReturns all user database virtual log file counts for the sqlcluster instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDbVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}\r\n\r\nReturns user databases that have 50 or more VLFs.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e@(\u0027sqlserver\u0027,\u0027sqlcluster\u0027) | Test-DbaDbVirtualLogFile\r\n\r\nReturns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDbVirtualLogFile -SqlInstance sqlcluster -Database db1, db2\r\n\r\nReturns VLF counts for the db1 and db2 databases on sqlcluster.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n",
         "Syntax":  "\r\nTest-DbaDbVirtualLogFile [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \r\n\u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-IncludeSystemDBs] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Test-DbaDeprecatedFeature",
+        "Description":  "Displays information relating to deprecated features for SQL Server 2005 and above.",
+        "Tags":  "Deprecated",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Displays information relating to deprecated features for SQL Server 2005 and above.",
+        "Name":  "Test-DbaDeprecatedFeature",
+        "Links":  "https://dbatools.io/Test-DbaDeprecatedFeature",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Test-DbaDeprecatedFeature\r\n\r\nCheck deprecated features on server sql2008 for only the testdb and db2 databases\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Test-DbaDeprecatedFeature | Select *\r\n\r\nSee the object definition in the output as well\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDeprecatedFeature -SqlInstance sql2008, sqlserver2012\r\n\r\nCheck deprecated features for all databases on the servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDeprecatedFeature -SqlInstance sql2008 -Database TestDB\r\n\r\nCheck deprecated features on server sql2008 for only the TestDB database\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n",
+        "Syntax":  "\r\nTest-DbaDeprecatedFeature [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \r\n\u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaDiskAlignment",
