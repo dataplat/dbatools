@@ -12,9 +12,7 @@ function Set-DbaLogin {
     SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-    $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-    To connect as a different Windows user, run PowerShell as that user.
+    Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Login
     The login that needs to be changed
@@ -45,6 +43,9 @@ function Set-DbaLogin {
     .PARAMETER GrantLogin
     Grant access to SQL Server
 
+    .PARAMETER PasswordPolicyEnforced
+    Should the password policy be enforced.
+
     .PARAMETER AddRole
     Add one or more server roles to the login
     The following roles can be used "bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin".
@@ -64,7 +65,7 @@ function Set-DbaLogin {
 
     Website: https://dbatools.io
     Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    License: MIT https://opensource.org/licenses/MIT
 
     .LINK
     https://dbatools.io/Set-DbaLogin
@@ -108,6 +109,16 @@ function Set-DbaLogin {
     Grant the login to connect to the instance
 
     .EXAMPLE
+    Set-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced
+
+    Enforces the password policy on a login
+
+    .EXAMPLE
+    Set-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced:$false
+
+    Disables enforcement of the password policy on a login
+
+    .EXAMPLE
     Set-DbaLogin -SqlInstance sql1 -Login test -AddRole serveradmin
 
     Add the server role "serveradmin" to the login
@@ -124,17 +135,17 @@ function Set-DbaLogin {
 
 #>
 
-    [CmdletBinding()]
-
+    [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
-        [parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Instance")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory, ValueFromPipelineByPropertyName)]
-        [Alias("Name")]
+        [parameter(Mandatory, ParameterSetName = "Instance")]
         [string[]]$Login,
-        [object]$Password,
+        [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Logins")]
+        [Microsoft.SqlServer.Management.Smo.Login[]]$InputObject,
+        [SecureString]$Password,
         [switch]$Unlock,
         [switch]$MustChange,
         [string]$NewName,
@@ -142,11 +153,13 @@ function Set-DbaLogin {
         [switch]$Enable,
         [switch]$DenyLogin,
         [switch]$GrantLogin,
+        [switch]$PasswordPolicyEnforced,
         [ValidateSet("bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin")]
         [string[]]$AddRole,
         [ValidateSet("bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin")]
         [string[]]$RemoveRole,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
@@ -179,9 +192,14 @@ function Set-DbaLogin {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($instance in $sqlinstance) {
+        if ($PSCmdlet.ParameterSetName -eq 'Logins') {
+            $SqlInstance = $InputObject | Select-Object -ExpandProperty SqlInstance -Unique
+        }
+
+        $allLogins = @{}
+        foreach ($instance in $SqlInstance) {
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
@@ -189,161 +207,169 @@ function Set-DbaLogin {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # Get all the logins
-            $allLogins = $server.Logins | Where-Object {($_.IsSystemObject -eq $false) -and ($_.Name -notlike '##*')}
-            $logins = $server.Logins | Where-Object {$Login -contains $_.Name}
-
-            # Loop through all the logins
-            foreach ($l in $logins) {
-
-                # Create the notes
-                $notes = @()
-
-                # Change the name
-                if ($NewName) {
-                    # Check if the new name doesn't already exist
-                    if ($allLogins.Name -notcontains $NewName) {
-                        try {
-                            $l.Rename($NewName)
-                        }
-                        catch {
-                            $notes += "Couldn't rename login"
-                            Stop-Function -Message "Something went wrong changing the name for $l" -Target $l -ErrorRecord $_ -Continue
-                        }
-                    }
-                    else {
-                        $notes += "New login name already exists"
-                        Write-Message -Message "New login name $NewName already exists on $instance" -Level Verbose
-                    }
-                }
-
-                # Change the password
-                if ($Password) {
-                    try {
-                        $l.ChangePassword($newPassword, $Unlock, $MustChange)
-                        $passwordChanged = $true
-                    }
-                    catch {
-                        $notes += "Couldn't change password"
-                        $passwordChanged = $false
-                        Stop-Function -Message "Something went wrong changing the password for $l" -Target $l -ErrorRecord $_ -Continue
-                    }
-                }
-
-                # Disable the login
-                if ($Disable) {
-                    if ($l.IsDisabled) {
-                        Write-Message -Message "Login $l is already disabled" -Level Verbose
-                    }
-                    else {
-                        try {
-                            $l.Disable()
-                        }
-                        catch {
-                            $notes += "Couldn't disable login"
-                            Stop-Function -Message "Something went wrong disabling $l" -Target $l -ErrorRecord $_ -Continue
-                        }
-                    }
-                }
-
-                # Enable the login
-                if ($Enable) {
-                    if (-not $l.IsDisabled) {
-                        Write-Message -Message "Login $l is already enabled" -Level Verbose
-                    }
-                    else {
-                        try {
-                            $l.Enable()
-                        }
-                        catch {
-                            $notes += "Couldn't enable login"
-                            Stop-Function -Message "Something went wrong enabling $l" -Target $l -ErrorRecord $_ -Continue
-                        }
-                    }
-                }
-
-                # Deny access
-                if ($DenyLogin) {
-                    if ($l.DenyWindowsLogin) {
-                        Write-Message -Message "Login $l already has login access denied" -Level Verbose
-                    }
-                    else {
-                        $l.DenyWindowsLogin = $true
-                    }
-                }
-
-                # Grant access
-                if ($GrantLogin) {
-                    if (-not $l.DenyWindowsLogin) {
-                        Write-Message -Message "Login $l already has login access granted" -Level Verbose
-                    }
-                    else {
-                        $l.DenyWindowsLogin = $false
-                    }
-                }
-
-                # Add server roles to login
-                if ($AddRole) {
-                    # Loop through each of the roles
-                    foreach ($role in $AddRole) {
-                        try {
-                            $l.AddToRole($role)
-                        }
-                        catch {
-                            $notes += "Couldn't add role $role"
-                            Stop-Function -Message "Something went wrong adding role $role to $l" -Target $l -ErrorRecord $_ -Continue
-                        }
-                    }
-                }
-
-                # Remove server roles from login
-                if ($RemoveRole) {
-                    # Loop through each of the roles
-                    foreach ($role in $RemoveRole) {
-                        try {
-                            $server.Roles[$role].DropMember($l.Name)
-                        }
-                        catch {
-                            $notes += "Couldn't remove role $role"
-                            Stop-Function -Message "Something went wrong removing role $role to $l" -Target $l -ErrorRecord $_ -Continue
-                        }
-                    }
-                }
-
-                # Alter the login to make the changes
-                $l.Alter()
-
-                # Retrieve the server roles for the login
-                $roles = Get-DbaRoleMember -SqlInstance $instance -IncludeServerLevel | Where-Object {$null -eq $_.Database -and $_.Member -eq $l.Name}
-
-                # Check if there were any notes to include in the results
-                if ($notes) {
-                    $notes = $notes | Get-Unique
-                    $notes = $notes -Join ';'
-                }
-                else {
-                    $notes = $null
-                }
-
-                # Return the results
-                [PSCustomObject]@{
-                    ComputerName       = $server.NetName
-                    InstanceName       = $server.ServiceName
-                    SqlInstance        = $server.DomainInstanceName
-                    LoginName          = $l.Name
-                    DenyLogin          = $l.DenyWindowsLogin
-                    IsDisabled         = $l.IsDisabled
-                    IsLocked           = $l.IsLocked
-                    MustChangePassword = $l.MustChangePassword
-                    PasswordChanged    = $passwordChanged
-                    ServerRole         = $roles.Role -join ","
-                    Notes              = $notes
-                } | Select-DefaultView -ExcludeProperty Login
-
-            } # end for each login
-
+            # cache all the logins for the instance for duplicate checking
+            $allLogins[$instance] = $server.Logins | Where-Object {($_.IsSystemObject -eq $false) -and ($_.Name -notlike '##*')} | Select-Object -ExpandProperty Name
+            $InputObject += $server.Logins | Where-Object {$Login -contains $_.Name}
         } # end for each instance
 
+        # Loop through all the logins
+        foreach ($l in $InputObject) {
+
+            # Create the notes
+            $notes = @()
+
+            # Change the name
+            if ($NewName) {
+                # Check if the new name doesn't already exist
+                if ($allLogins[$l.SqlInstance] -notcontains $NewName) {
+                    try {
+                        $l.Rename($NewName)
+                    }
+                    catch {
+                        $notes += "Couldn't rename login"
+                        Stop-Function -Message "Something went wrong changing the name for $l" -Target $l -ErrorRecord $_ -Continue
+                    }
+                }
+                else {
+                    $notes += "New login name already exists"
+                    Write-Message -Message "New login name $NewName already exists on $instance" -Level Verbose
+                }
+            }
+
+            # Change the password
+            if ($Password) {
+                try {
+                    $l.ChangePassword($newPassword, $Unlock, $MustChange)
+                    $passwordChanged = $true
+                }
+                catch {
+                    $notes += "Couldn't change password"
+                    $passwordChanged = $false
+                    Stop-Function -Message "Something went wrong changing the password for $l" -Target $l -ErrorRecord $_ -Continue
+                }
+            }
+
+            # Disable the login
+            if ($Disable) {
+                if ($l.IsDisabled) {
+                    Write-Message -Message "Login $l is already disabled" -Level Verbose
+                }
+                else {
+                    try {
+                        $l.Disable()
+                    }
+                    catch {
+                        $notes += "Couldn't disable login"
+                        Stop-Function -Message "Something went wrong disabling $l" -Target $l -ErrorRecord $_ -Continue
+                    }
+                }
+            }
+
+            # Enable the login
+            if ($Enable) {
+                if (-not $l.IsDisabled) {
+                    Write-Message -Message "Login $l is already enabled" -Level Verbose
+                }
+                else {
+                    try {
+                        $l.Enable()
+                    }
+                    catch {
+                        $notes += "Couldn't enable login"
+                        Stop-Function -Message "Something went wrong enabling $l" -Target $l -ErrorRecord $_ -Continue
+                    }
+                }
+            }
+
+            # Deny access
+            if ($DenyLogin) {
+                if ($l.DenyWindowsLogin) {
+                    Write-Message -Message "Login $l already has login access denied" -Level Verbose
+                }
+                else {
+                    $l.DenyWindowsLogin = $true
+                }
+            }
+
+            # Grant access
+            if ($GrantLogin) {
+                if (-not $l.DenyWindowsLogin) {
+                    Write-Message -Message "Login $l already has login access granted" -Level Verbose
+                }
+                else {
+                    $l.DenyWindowsLogin = $false
+                }
+            }
+
+            # Enforce password policy
+            if (Test-Bound PasswordPolicyEnforced) {
+                if ($l.PasswordPolicyEnforced -eq $PasswordPolicyEnforced) {
+                    Write-Message -Message ("Login $l password policy is already set to " + $l.PasswordPolicyEnforced) -Level Verbose
+                } else {
+                    $l.PasswordPolicyEnforced = $PasswordPolicyEnforced
+                }
+            }
+
+            # Add server roles to login
+            if ($AddRole) {
+                # Loop through each of the roles
+                foreach ($role in $AddRole) {
+                    try {
+                        $l.AddToRole($role)
+                    }
+                    catch {
+                        $notes += "Couldn't add role $role"
+                        Stop-Function -Message "Something went wrong adding role $role to $l" -Target $l -ErrorRecord $_ -Continue
+                    }
+                }
+            }
+
+            # Remove server roles from login
+            if ($RemoveRole) {
+                # Loop through each of the roles
+                foreach ($role in $RemoveRole) {
+                    try {
+                        $server.Roles[$role].DropMember($l.Name)
+                    }
+                    catch {
+                        $notes += "Couldn't remove role $role"
+                        Stop-Function -Message "Something went wrong removing role $role to $l" -Target $l -ErrorRecord $_ -Continue
+                    }
+                }
+            }
+
+            # Alter the login to make the changes
+            $l.Alter()
+
+            # Retrieve the server roles for the login
+            $roles = Get-DbaRoleMember -SqlInstance $instance -IncludeServerLevel | Where-Object {$null -eq $_.Database -and $_.Member -eq $l.Name}
+
+            # Check if there were any notes to include in the results
+            if ($notes) {
+                $notes = $notes | Get-Unique
+                $notes = $notes -Join ';'
+            }
+            else {
+                $notes = $null
+            }
+
+            # Return the results
+            [PSCustomObject]@{
+                ComputerName           = $server.ComputerName
+                InstanceName           = $server.ServiceName
+                SqlInstance            = $server.DomainInstanceName
+                LoginName              = $l.Name
+                DenyLogin              = $l.DenyWindowsLogin
+                IsDisabled             = $l.IsDisabled
+                IsLocked               = $l.IsLocked
+                PasswordPolicyEnforced = $l.PasswordPolicyEnforced
+                MustChangePassword     = $l.MustChangePassword
+                PasswordChanged        = $passwordChanged
+                ServerRole             = $roles.Role -join ","
+                Notes                  = $notes
+            } | Select-DefaultView -ExcludeProperty Login
+
+        } # end for each login
     } # end process
 
     end {
