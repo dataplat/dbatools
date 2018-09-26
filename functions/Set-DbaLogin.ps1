@@ -128,11 +128,6 @@ function Set-DbaLogin {
 
     Remove the server role "bulkadmin" to the login
 
-    .EXAMPLE
-    Get-DbaLogin -SqlInstance sql1 -Login test | Set-DbaLogin -RemoveRole bulkadmin
-
-    Remove the server role "bulkadmin" from the login test on sql1
-
 #>
 
     [CmdletBinding(DefaultParameterSetName = "Default")]
