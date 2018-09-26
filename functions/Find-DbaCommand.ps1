@@ -94,6 +94,10 @@ function Find-DbaCommand {
         [switch]$EnableException
     )
     begin {
+        function Get-DbaTrimmedString($Text) {
+            return $Text.Trim() -replace '(\r\n){2,}', "`n"
+        }
+
         $tagsRex = ([regex]'(?m)^[\s]{0,15}Tags:(.*)$')
         $authorRex = ([regex]'(?m)^[\s]{0,15}Author:(.*)$')
         $minverRex = ([regex]'(?m)^[\s]{0,15}MinimumVersion:(.*)$')
@@ -112,7 +116,7 @@ function Find-DbaCommand {
             $thebase.Description = $thishelp.Description.Text
 
             ## fetch examples
-            $thebase.Examples = $thishelp.Examples | Out-String -Width 120
+            $thebase.Examples = Get-DbaTrimmedString -Text ($thishelp.Examples | Out-String -Width 200)
 
             ## fetch help link
             $thebase.Links = ($thishelp.relatedLinks).NavigationLink.Uri
@@ -121,10 +125,10 @@ function Find-DbaCommand {
             $thebase.Synopsis = $thishelp.Synopsis
 
             ## fetch the syntax
-            $thebase.Syntax = $thishelp.Syntax | Out-String -Width 120
+            $thebase.Syntax = Get-DbaTrimmedString -Text ($thishelp.Syntax | Out-String -Width 600)
 
             ## store notes
-            $as = $thishelp.AlertSet | Out-String -Width 120
+            $as = $thishelp.AlertSet | Out-String -Width 600
 
             ## fetch the tags
             $tags = $tagsrex.Match($as).Groups[1].Value
