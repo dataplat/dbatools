@@ -36,6 +36,20 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
             $result.PasswordChanged | Should -Be $true
         }
 
+        It "Change the password via SqlInstance pipeline" {
+            $instance = Connect-DbaInstance -SqlInstance $script:instance2
+            $result = $instance | Set-DbaLogin -Login 'testLogin' -Password $password2
+
+            $result.PasswordChanged | Should -Be $true
+        }
+
+        It "Change the password via Get-DbaLogin pipeline" {
+            $login = Get-DbaLogin -SqlInstance $script:instance2 -Login testLogin
+            $result = $login | Set-DbaLogin -Password $password2
+
+            $result.PasswordChanged | Should -Be $true
+        }
+
         It "Disable the login" {
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Disable
 
@@ -58,18 +72,6 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -GrantLogin
 
             $result.DenyLogin | Should -Be $false
-        }
-
-        It "Enforces password policy on login" {
-            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -PasswordPolicyEnforced
-
-            $result.PasswordPolicyEnforced | Should Be $true
-        }
-
-        It "Disables enforcing password policy on login" {
-            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -PasswordPolicyEnforced:$false
-
-            $result.PasswordPolicyEnforced | Should Be $false
         }
 
         It "Add roles to login" {

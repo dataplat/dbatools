@@ -12,7 +12,9 @@ function Set-DbaLogin {
     SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
-    Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+    To connect as a different Windows user, run PowerShell as that user.
 
     .PARAMETER Login
     The login that needs to be changed
@@ -43,9 +45,6 @@ function Set-DbaLogin {
     .PARAMETER GrantLogin
     Grant access to SQL Server
 
-    .PARAMETER PasswordPolicyEnforced
-    Should the password policy be enforced.
-
     .PARAMETER AddRole
     Add one or more server roles to the login
     The following roles can be used "bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin".
@@ -65,7 +64,7 @@ function Set-DbaLogin {
 
     Website: https://dbatools.io
     Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: MIT https://opensource.org/licenses/MIT
+    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
     https://dbatools.io/Set-DbaLogin
@@ -109,16 +108,6 @@ function Set-DbaLogin {
     Grant the login to connect to the instance
 
     .EXAMPLE
-    Set-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced
-
-    Enforces the password policy on a login
-
-    .EXAMPLE
-    Set-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced:$false
-
-    Disables enforcement of the password policy on a login
-
-    .EXAMPLE
     Set-DbaLogin -SqlInstance sql1 -Login test -AddRole serveradmin
 
     Add the server role "serveradmin" to the login
@@ -128,17 +117,24 @@ function Set-DbaLogin {
 
     Remove the server role "bulkadmin" to the login
 
+    .EXAMPLE
+    Get-DbaLogin -SqlInstance sql1 -Login test | Set-DbaLogin -RemoveRole bulkadmin
+
+    Remove the server role "bulkadmin" from the login test on sql1
+
 #>
 
     [CmdletBinding()]
+
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
+        [parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [Alias("Name")]
         [string[]]$Login,
-        [SecureString]$Password,
+        [object]$Password,
         [switch]$Unlock,
         [switch]$MustChange,
         [string]$NewName,
@@ -146,13 +142,11 @@ function Set-DbaLogin {
         [switch]$Enable,
         [switch]$DenyLogin,
         [switch]$GrantLogin,
-        [switch]$PasswordPolicyEnforced,
         [ValidateSet("bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin")]
         [string[]]$AddRole,
         [ValidateSet("bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin")]
         [string[]]$RemoveRole,
-        [Alias('Silent')]
-        [switch]$EnableException
+        [switch][Alias('Silent')]$EnableException
     )
 
     begin {
@@ -187,7 +181,7 @@ function Set-DbaLogin {
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Connecting to $instance" -Level Verbose
+            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
@@ -288,15 +282,6 @@ function Set-DbaLogin {
                     }
                 }
 
-                # Enforce password policy
-                if (Test-Bound PasswordPolicyEnforced) {
-                    if ($l.PasswordPolicyEnforced -eq $PasswordPolicyEnforced) {
-                        Write-Message -Message ("Login $l password policy is already set to " + $l.PasswordPolicyEnforced) -Level Verbose
-                    } else {
-                        $l.PasswordPolicyEnforced = $PasswordPolicyEnforced
-                    }
-                }
-
                 # Add server roles to login
                 if ($AddRole) {
                     # Loop through each of the roles
@@ -342,18 +327,17 @@ function Set-DbaLogin {
 
                 # Return the results
                 [PSCustomObject]@{
-                    ComputerName           = $server.ComputerName
-                    InstanceName           = $server.ServiceName
-                    SqlInstance            = $server.DomainInstanceName
-                    LoginName              = $l.Name
-                    DenyLogin              = $l.DenyWindowsLogin
-                    IsDisabled             = $l.IsDisabled
-                    IsLocked               = $l.IsLocked
-                    PasswordPolicyEnforced = $l.PasswordPolicyEnforced
-                    MustChangePassword     = $l.MustChangePassword
-                    PasswordChanged        = $passwordChanged
-                    ServerRole             = $roles.Role -join ","
-                    Notes                  = $notes
+                    ComputerName       = $server.NetName
+                    InstanceName       = $server.ServiceName
+                    SqlInstance        = $server.DomainInstanceName
+                    LoginName          = $l.Name
+                    DenyLogin          = $l.DenyWindowsLogin
+                    IsDisabled         = $l.IsDisabled
+                    IsLocked           = $l.IsLocked
+                    MustChangePassword = $l.MustChangePassword
+                    PasswordChanged    = $passwordChanged
+                    ServerRole         = $roles.Role -join ","
+                    Notes              = $notes
                 } | Select-DefaultView -ExcludeProperty Login
 
             } # end for each login
