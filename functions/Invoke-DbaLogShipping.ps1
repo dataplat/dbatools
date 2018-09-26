@@ -344,42 +344,42 @@ function Invoke-DbaLogShipping {
             https://dbatools.io/Invoke-DbaLogShipping
 
         .EXAMPLE
-            $params = @{
-                SourceSqlInstance = 'sql1'
-                DestinationSqlInstance = 'sql2'
-                Database = 'db1'
-                BackupNetworkPath= '\\sql1\logshipping'
-                BackupLocalPath= 'D:\Data\logshipping'
-                BackupScheduleFrequencyType = 'daily'
-                BackupScheduleFrequencyInterval = 1
-                CompressBackup = $true
-                CopyScheduleFrequencyType = 'daily'
-                CopyScheduleFrequencyInterval = 1
-                GenerateFullBackup = $true
-                RestoreScheduleFrequencyType = 'daily'
-                RestoreScheduleFrequencyInterval = 1
-                SecondaryDatabaseSuffix = 'DR'
-                CopyDestinationFolder = '\\sql2\logshippingdest'
-                Force = $true
-            }
+            PS C:\> $params = @{
+            >>    SourceSqlInstance = 'sql1'
+            >>    DestinationSqlInstance = 'sql2'
+            >>    Database = 'db1'
+            >>    BackupNetworkPath= '\\sql1\logshipping'
+            >>    BackupLocalPath= 'D:\Data\logshipping'
+            >>    BackupScheduleFrequencyType = 'daily'
+            >>    BackupScheduleFrequencyInterval = 1
+            >>    CompressBackup = $true
+            >>    CopyScheduleFrequencyType = 'daily'
+            >>    CopyScheduleFrequencyInterval = 1
+            >>    GenerateFullBackup = $true
+            >>    RestoreScheduleFrequencyType = 'daily'
+            >>    RestoreScheduleFrequencyInterval = 1
+            >>    SecondaryDatabaseSuffix = 'DR'
+            >>    CopyDestinationFolder = '\\sql2\logshippingdest'
+            >>    Force = $true
+            >> }
 
-            Invoke-DbaLogShipping @params
+            PS C:\> Invoke-DbaLogShipping @params
 
             Sets up log shipping for database "db1" with the backup path to a network share allowing local backups.
             It creates daily schedules for the backup, copy and restore job with all the defaults to be executed every 15 minutes daily.
             The secondary database will be called "db1_LS".
 
         .EXAMPLE
-            $params = @{
-                SourceSqlInstance = 'sql1'
-                DestinationSqlInstance = 'sql2'
-                Database = 'db1'
-                BackupNetworkPath= '\\sql1\logshipping'
-                GenerateFullBackup = $true
-                Force = $true
-            }
+            PS C:\> $params = @{
+            >>     SourceSqlInstance = 'sql1'
+            >>     DestinationSqlInstance = 'sql2'
+            >>     Database = 'db1'
+            >>     BackupNetworkPath= '\\sql1\logshipping'
+            >>     GenerateFullBackup = $true
+            >>     Force = $true
+            >> }
 
-            Invoke-DbaLogShipping @params
+            PS C:\> Invoke-DbaLogShipping @params
 
             Sets up log shipping with all defaults except that a backup file is generated.
             The script will show a message that the copy destination has not been supplied and asks if you want to use the default which would be the backup directory of the secondary server with the folder "logshipping" i.e. "D:\SQLBackup\Logshiping".
@@ -1025,7 +1025,7 @@ function Invoke-DbaLogShipping {
 
         if (Test-FunctionInterrupt) { return }
 
-        foreach($destInstance in $DestinationSqlInstance){
+        foreach ($destInstance in $DestinationSqlInstance) {
 
             $setupResult = "Success"
             $comment = ""
@@ -1259,7 +1259,7 @@ function Invoke-DbaLogShipping {
 
 
                 # Checking if the database network path exists
-                if($setupResult -ne 'Failed'){
+                if ($setupResult -ne 'Failed') {
                     Write-Message -Message "Testing database backup network path $DatabaseBackupNetworkPath" -Level Verbose
                     if ((Test-DbaPath -Path $DatabaseBackupNetworkPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
                         # To to create the backup directory for the database
@@ -1307,7 +1307,7 @@ function Invoke-DbaLogShipping {
                 }
 
                 # Check if the secondary database needs tobe initialized
-                if($setupResult -ne 'Failed'){
+                if ($setupResult -ne 'Failed') {
                     if (-not $NoInitialization) {
                         # Check if the secondary database exists on the secondary instance
                         if ($DestiationServer.Databases.Name -notcontains $SecondaryDatabase) {
@@ -1350,7 +1350,7 @@ function Invoke-DbaLogShipping {
                 # Check the parameters for initialization of the secondary database
                 if (-not $NoInitialization -and ($GenerateFullBackup -or $UseExistingFullBackup -or $UseBackupFolder)) {
                     # Check if the restore data and log folder are set
-                    if($setupResult -ne 'Failed'){
+                    if ($setupResult -ne 'Failed') {
                         if (-not $RestoreDataFolder -or -not $RestoreLogFolder) {
                             Write-Message -Message "Restore data folder or restore log folder are not set. Using server defaults" -Level Verbose
 
@@ -1420,7 +1420,7 @@ function Invoke-DbaLogShipping {
                     }
 
                     # Check if the full backup path can be reached
-                    if($setupResult -ne 'Failed'){
+                    if ($setupResult -ne 'Failed') {
                         if ($FullBackupPath) {
                             Write-Message -Message "Testing full backup path $FullBackupPath" -Level Verbose
                             if ((Test-DbaPath -Path $FullBackupPath -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
@@ -1501,7 +1501,7 @@ function Invoke-DbaLogShipping {
                 }
 
                 # Check if the copy destination folder exists
-                if($setupResult -ne 'Failed'){
+                if ($setupResult -ne 'Failed') {
                     Write-Message -Message "Testing database copy destination path $DatabaseCopyDestinationFolder" -Level Verbose
                     if ((Test-DbaPath -Path $DatabaseCopyDestinationFolder -SqlInstance $destInstance -SqlCredential $DestinationCredential) -ne $true) {
                         if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating copy destination folder on $DestinationServerName")) {
@@ -1539,7 +1539,7 @@ function Invoke-DbaLogShipping {
                 Write-Message -Message "Restore job schedule name set to $DatabaseRestoreSchedule" -Level Verbose
 
                 # If the database needs to be backed up first
-                if($setupResult -ne 'Failed'){
+                if ($setupResult -ne 'Failed') {
                     if ($GenerateFullBackup) {
                         if ($PSCmdlet.ShouldProcess($SourceSqlInstance, "Backing up database $db")) {
 
@@ -1632,7 +1632,7 @@ function Invoke-DbaLogShipping {
                 # Now that all the checks have been done we can start with the fun stuff !
 
                 # Restore the full backup
-                if($setupResult -ne 'Failed'){
+                if ($setupResult -ne 'Failed') {
                     if ($PSCmdlet.ShouldProcess($destInstance, "Restoring database $db to $SecondaryDatabase on $destInstance")) {
                         if ($GenerateFullBackup -or $UseExistingFullBackup -or $UseBackupFolder) {
                             try {
@@ -1709,7 +1709,7 @@ function Invoke-DbaLogShipping {
 
                 #region Set up log shipping on the primary instance
                 # Set up log shipping on the primary instance
-                if($setupResult -ne 'Failed'){
+                if ($setupResult -ne 'Failed') {
                     if ($PSCmdlet.ShouldProcess($SourceSqlInstance, "Configuring logshipping for primary database $db on $SourceSqlInstance")) {
                         try {
 
@@ -1779,7 +1779,7 @@ function Invoke-DbaLogShipping {
 
                 #region Set up log shipping on the secondary instance
                 # Set up log shipping on the secondary instance
-                if($setupResult -ne 'Failed'){
+                if ($setupResult -ne 'Failed') {
                     if ($PSCmdlet.ShouldProcess($destInstance, "Configuring logshipping for secondary database $SecondaryDatabase on $destInstance")) {
                         try {
 
@@ -1878,12 +1878,12 @@ function Invoke-DbaLogShipping {
                 Write-Message -Message "Completed configuring log shipping for database $db" -Level Verbose
 
                 [PSCustomObject]@{
-                    PrimaryInstance = $SourceServer.DomainInstanceName
+                    PrimaryInstance   = $SourceServer.DomainInstanceName
                     SecondaryInstance = $DestinationServer.DomainInstanceName
-                    PrimaryDatabase = $($db.Name)
+                    PrimaryDatabase   = $($db.Name)
                     SecondaryDatabase = $SecondaryDatabase
-                    Result = $setupResult
-                    Comment = $comment
+                    Result            = $setupResult
+                    Comment           = $comment
                 }
 
             } # for each database
