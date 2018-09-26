@@ -1,3 +1,4 @@
+#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaBuildReference {
     <#
     .SYNOPSIS
@@ -163,6 +164,8 @@ function Get-DbaBuildReference {
                 $EnableException
             )
             $url = Get-DbatoolsConfigValue -Name 'assets.sqlbuildreference'
+            $oldSslSettings = [System.Net.ServicePointManager]::SecurityProtocol
+            [System.Net.ServicePointManager]::SecurityProtocol = "Tls12"
             try {
                 $WebContent = Invoke-WebRequest $url -ErrorAction Stop
             }
@@ -177,6 +180,7 @@ function Get-DbaBuildReference {
                     return
                 }
             }
+            [System.Net.ServicePointManager]::SecurityProtocol = $oldSslSettings
             return $WebContent
         }
 
