@@ -123,7 +123,7 @@ function Copy-DbaBackupDevice {
                     if ($force -eq $false) {
                         $copyBackupDeviceStatus.Status = "Skipped"
                         $copyBackupDeviceStatus.Notes = "Already exists"
-                        $copyBackupDeviceStatus
+                        $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         
                         Write-Message -Level Verbose -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."
                         continue

@@ -61,13 +61,11 @@ function Copy-DbaLinkedServer {
         .EXAMPLE
             Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster
 
-            Description
             Copies all SQL Server Linked Servers on sqlserver2014a to sqlcluster. If Linked Server exists on destination, it will be skipped.
 
         .EXAMPLE
             Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServer SQL2K5,SQL2k -Force
 
-            Description
             Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
