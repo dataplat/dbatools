@@ -155,4 +155,7 @@ function Get-DbaCmsRegServerGroup {
             }
         }
     }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServerGroup
+    }
 }

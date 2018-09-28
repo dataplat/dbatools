@@ -200,7 +200,8 @@ function Get-DbaCmsRegServer {
     }
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter ExcludeCmsServer
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaCmsRegServerName
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServerName
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlRegisteredServerName
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServer
     }
 }
