@@ -1,4 +1,4 @@
-function Get-DbaRegisteredServerGroup {
+function Get-DbaCmsRegServerGroup {
     <#
         .SYNOPSIS
             Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
@@ -37,25 +37,25 @@ function Get-DbaRegisteredServerGroup {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Get-DbaRegisteredServerGroup
+            https://dbatools.io/Get-DbaCmsRegServerGroup
 
         .EXAMPLE
-            Get-DbaRegisteredServerGroup -SqlInstance sqlserver2014a
+            Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a
 
             Gets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.
 
         .EXAMPLE
-            Get-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential
+            Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential
 
             Gets the top level groups from the CMS on sqlserver2014a, using alternative credentials to authenticate to the server.
 
         .EXAMPLE
-            Get-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting
+            Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting
 
             Gets the HR and Accounting groups from the CMS on sqlserver2014a.
 
         .EXAMPLE
-            Get-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -Group HR\Development
+            Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR\Development
 
             Returns the sub-group Development of the HR group from the CMS on sqlserver2014a.
     #>
@@ -74,7 +74,7 @@ function Get-DbaRegisteredServerGroup {
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Get-DbaRegisteredServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
+                $server = Get-DbaCmsRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
             }
             catch {
                 Stop-Function -Message "Cannot access Central Management Server '$instance'" -ErrorRecord $_ -Continue
@@ -131,7 +131,7 @@ function Get-DbaRegisteredServerGroup {
             }
 
             if ($ExcludeGroup) {
-                $excluded = Get-DbaRegisteredServer $server -Group $ExcludeGroup
+                $excluded = Get-DbaCmsRegServer $server -Group $ExcludeGroup
                 Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
                 $groups = $groups | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
             }
@@ -154,5 +154,8 @@ function Get-DbaRegisteredServerGroup {
                 Select-DefaultView -InputObject $groupobject -Property ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, ServerGroups, RegisteredServers
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServerGroup
     }
 }

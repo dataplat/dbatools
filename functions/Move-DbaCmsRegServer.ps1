@@ -1,5 +1,5 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Move-DbaRegisteredServer {
+function Move-DbaCmsRegServer {
     <#
         .SYNOPSIS
             Moves registered servers around SQL Server Central Management Server (CMS)
@@ -23,7 +23,7 @@ function Move-DbaRegisteredServer {
             The new group. If no new group is specified, the default root will used
 
         .PARAMETER InputObject
-            Allows results from Get-DbaRegisteredServer to be piped in
+            Allows results from Get-DbaCmsRegServer to be piped in
 
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
@@ -46,20 +46,20 @@ function Move-DbaRegisteredServer {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Move-DbaRegisteredServer
+            https://dbatools.io/Move-DbaCmsRegServer
 
         .EXAMPLE
-            Move-DbaRegisteredServer -SqlInstance sql2012 -Name 'Web SQL Cluster' -NewGroup HR\Prod
+            Move-DbaCmsRegServer -SqlInstance sql2012 -Name 'Web SQL Cluster' -NewGroup HR\Prod
 
             Moves the registered server on sql2012 titled 'Web SQL Cluster' to the Prod group within the HR group
 
         .EXAMPLE
-            Move-DbaRegisteredServer -SqlInstance sql2012 -Group HR\Development -NewGroup HR\Prod
+            Move-DbaCmsRegServer -SqlInstance sql2012 -Group HR\Development -NewGroup HR\Prod
 
             Moves all servers from the HR and sub-group Development to HR Prod
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sql2017 -Name 'Web SQL Cluster' | Move-DbaRegisteredServer -NewGroup Web
+            Get-DbaCmsRegServer -SqlInstance sql2017 -Name 'Web SQL Cluster' | Move-DbaCmsRegServer -NewGroup Web
 
             Moves the registered server 'Web SQL Cluster' on sql2017 to the Web group, also on sql2017
     #>
@@ -86,7 +86,7 @@ function Move-DbaRegisteredServer {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $Name -ServerName $ServerName
+            $InputObject += Get-DbaCmsRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $Name -ServerName $ServerName
 
         }
 
@@ -100,20 +100,20 @@ function Move-DbaRegisteredServer {
             $server = $parentserver.ServerConnection.SqlConnectionObject
 
             if ((Test-Bound -ParameterName NewGroup)) {
-                $group = Get-DbaRegisteredServerGroup -SqlInstance $server -Group $NewGroup
+                $group = Get-DbaCmsRegServerGroup -SqlInstance $server -Group $NewGroup
 
                 if (-not $group) {
                     Stop-Function -Message "$NewGroup not found on $server" -Continue
                 }
             }
             else {
-                $group = Get-DbaRegisteredServerGroup -SqlInstance $server -Id 1
+                $group = Get-DbaCmsRegServerGroup -SqlInstance $server -Id 1
             }
 
             if ($Pscmdlet.ShouldProcess($regserver.SqlInstance, "Moving $($regserver.Name) to $group")) {
                 try {
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regserver.ScriptMove($group).GetScript())
-                    Get-DbaRegisteredServer -SqlInstance $server -Name $regserver.Name -ServerName $regserver.ServerName
+                    Get-DbaCmsRegServer -SqlInstance $server -Name $regserver.Name -ServerName $regserver.ServerName
                     $parentserver.ServerConnection.Disconnect()
                 }
                 catch {
@@ -121,5 +121,8 @@ function Move-DbaRegisteredServer {
                 }
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Move-DbaRegisteredServer
     }
 }
