@@ -377,11 +377,11 @@ $script:renames = @(
     },
     @{
         "AliasName"  = "Get-SqlRegisteredServerName"
-        "Definition" = "Get-DbaRegisteredServer"
+        "Definition" = "Get-DbaCmsRegServer"
     },
     @{
-        "AliasName"  = "Get-DbaRegisteredServerName"
-        "Definition" = "Get-DbaRegisteredServer"
+        "AliasName"  = "Get-DbaCmsRegServerName"
+        "Definition" = "Get-DbaCmsRegServer"
     },
     @{
         "AliasName"  = "Get-SqlServerKey"

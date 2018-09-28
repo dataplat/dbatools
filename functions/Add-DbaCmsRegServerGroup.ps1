@@ -1,11 +1,11 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Add-DbaRegisteredServerGroup {
+function Add-DbaCmsRegServerGroup {
     <#
         .SYNOPSIS
             Adds registered server groups to SQL Server Central Management Server (CMS)
 
         .DESCRIPTION
-            Adds registered server groups to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaRegisteredServer which
+            Adds registered server groups to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaCmsRegServer which
             accepts multiple kinds of input and allows you to add reg servers and groups from different CMSes.
 
         .PARAMETER SqlInstance
@@ -24,13 +24,13 @@ function Add-DbaRegisteredServerGroup {
             The SQL Server Central Management Server group. If no groups are specified, the new group will be created at the root.
 
         .PARAMETER InputObject
-            Allows results from Get-DbaRegisteredServerGroup to be piped in
+            Allows results from Get-DbaCmsRegServerGroup to be piped in
 
         .PARAMETER IncludeRegisteredServers
             Create the registered servers within the group, too
 
         .PARAMETER InputObject
-            Allows results from Get-DbaRegisteredServerGroup to be piped in
+            Allows results from Get-DbaCmsRegServerGroup to be piped in
 
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
@@ -54,20 +54,20 @@ function Add-DbaRegisteredServerGroup {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Add-DbaRegisteredServerGroup
+            https://dbatools.io/Add-DbaCmsRegServerGroup
 
         .EXAMPLE
-            Add-DbaRegisteredServerGroup -SqlInstance sql2012 -Name HR
+            Add-DbaCmsRegServerGroup -SqlInstance sql2012 -Name HR
 
             Creates a registered server group called HR, in the root of sql2012's CMS
 
         .EXAMPLE
-            Add-DbaRegisteredServerGroup -SqlInstance sql2012, sql2014 -Name subfolder -Group HR
+            Add-DbaCmsRegServerGroup -SqlInstance sql2012, sql2014 -Name subfolder -Group HR
 
             Creates a registered server group on sql2012 and sql2014 called subfolder within the HR group
 
     .EXAMPLE
-            Get-DbaRegisteredServerGroup -SqlInstance sql2012, sql2014 -Group HR | Add-DbaRegisteredServerGroup -Name subfolder
+            Get-DbaCmsRegServerGroup -SqlInstance sql2012, sql2014 -Group HR | Add-DbaCmsRegServerGroup -Name subfolder
 
             Creates a registered server group on sql2012 and sql2014 called subfolder within the HR group of each server
     #>
@@ -91,10 +91,10 @@ function Add-DbaRegisteredServerGroup {
         }
         foreach ($instance in $SqlInstance) {
             if ((Test-Bound -ParameterName Group)) {
-                $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
+                $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
             }
             else {
-                $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
+                $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
             }
         }
 
@@ -112,7 +112,7 @@ function Add-DbaRegisteredServerGroup {
                     $newgroup.Description = $Description
                     $newgroup.Create()
                     
-                    Get-DbaRegisteredServerGroup -SqlInstance $parentserver.ServerConnection.SqlConnectionObject -Group (Get-RegServerGroupReverseParse -object $newgroup)
+                    Get-DbaCmsRegServerGroup -SqlInstance $parentserver.ServerConnection.SqlConnectionObject -Group (Get-RegServerGroupReverseParse -object $newgroup)
                     $parentserver.ServerConnection.Disconnect()
                 }
                 catch {

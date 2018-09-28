@@ -1,5 +1,5 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Move-DbaRegisteredServerGroup {
+function Move-DbaCmsRegServerGroup {
     <#
         .SYNOPSIS
              Moves registered server groups around SQL Server Central Management Server (CMS).
@@ -17,7 +17,7 @@ function Move-DbaRegisteredServerGroup {
             Specifies one or more groups to include from SQL Server Central Management Server.
 
         .PARAMETER InputObject
-            Allows results from Get-DbaRegisteredServerGroup to be piped in
+            Allows results from Get-DbaCmsRegServerGroup to be piped in
 
         .PARAMETER Id
             Get group by Id(s)
@@ -46,15 +46,15 @@ function Move-DbaRegisteredServerGroup {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Move-DbaRegisteredServerGroup
+            https://dbatools.io/Move-DbaCmsRegServerGroup
 
         .EXAMPLE
-            Move-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR\Development -NewGroup AD\Prod
+            Move-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR\Development -NewGroup AD\Prod
 
             Moves the Development group within HR to the Prod group within AD
 
         .EXAMPLE
-            Get-DbaRegisteredServerGroup -SqlInstance sql2017 -Group HR\Development| Move-DbaRegisteredServer -NewGroup Web
+            Get-DbaCmsRegServerGroup -SqlInstance sql2017 -Group HR\Development| Move-DbaCmsRegServer -NewGroup Web
 
             Moves the Development group within HR to the Web group
     #>
@@ -80,7 +80,7 @@ function Move-DbaRegisteredServerGroup {
 
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance to search for $group"
-            $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
+            $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
         }
 
         foreach ($regservergroup in $InputObject) {
@@ -93,10 +93,10 @@ function Move-DbaRegisteredServerGroup {
             $server = $parentserver.ServerConnection.SqlConnectionObject
 
             if ($NewGroup -eq 'Default') {
-                $groupobject = Get-DbaRegisteredServerGroup -SqlInstance $server -Id 1
+                $groupobject = Get-DbaCmsRegServerGroup -SqlInstance $server -Id 1
             }
             else {
-                $groupobject = Get-DbaRegisteredServerGroup -SqlInstance $server -Group $NewGroup
+                $groupobject = Get-DbaCmsRegServerGroup -SqlInstance $server -Group $NewGroup
             }
 
             Write-Message -Level Verbose -Message "Found $($groupobject.Name) on $($parentserver.ServerConnection.ServerName)"
@@ -113,7 +113,7 @@ function Move-DbaRegisteredServerGroup {
                     Write-Message -Level Verbose -Message "Executing $($regservergroup.ScriptMove($groupobject).GetScript())"
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptMove($groupobject).GetScript())
                     Write-Message -Level Verbose -Message "Connecting to $instance to search for $newname"
-                    Get-DbaRegisteredServerGroup -SqlInstance $server -Group $newname
+                    Get-DbaCmsRegServerGroup -SqlInstance $server -Group $newname
                     $parentserver.ServerConnection.Disconnect()
                 }
                 catch {

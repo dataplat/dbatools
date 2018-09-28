@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Components are properly retreived" {
         It "Should return the right values" {
-            $results = Get-DbaRegisteredServerStore -SqlInstance $script:instance2
+            $results = Get-DbaCmsRegServerStore -SqlInstance $script:instance2
             $results.InstanceName | Should -Not -Be $null
             $results.DisplayName | Should -Be "Central Management Servers"
         }
