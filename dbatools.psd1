@@ -677,7 +677,18 @@
     'Get-DbaUserLevelPermission',
     'Get-DbaDistributor',
     'Get-DbaTable',
-    'Copy-DbaTableData'
+    'Copy-DbaTableData',
+    'Add-DbaRegisteredServer',
+    'Add-DbaRegisteredServerGroup',
+    'Export-DbaRegisteredServer',
+    'Get-DbaRegisteredServer',
+    'Get-DbaRegisteredServerGroup',
+    'Get-DbaRegisteredServerStore',
+    'Import-DbaRegisteredServer',
+    'Move-DbaRegisteredServer',
+    'Move-DbaRegisteredServerGroup',
+    'Remove-DbaRegisteredServer',
+    'Remove-DbaRegisteredServerGroup'
 
     # List of all modules packaged with this module
     ModuleList             = @()

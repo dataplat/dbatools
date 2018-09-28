@@ -858,6 +858,49 @@ $script:renames = @(
     @{
         "AliasName"  = "Copy-DbaTableData"
         "Definition" = "Copy-DbaDbTableData"
+    }, @{
+        "AliasName"  = "Add-DbaRegisteredServer"
+        "Definition" = "Add-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Add-DbaRegisteredServerGroup"
+        "Definition" = "Add-DbaCmsRegServerGroup"
+    },
+    @{
+        "AliasName"  = "Export-DbaRegisteredServer"
+        "Definition" = "Export-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Get-DbaRegisteredServer"
+        "Definition" = "Get-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Get-DbaRegisteredServerGroup"
+        "Definition" = "Get-DbaCmsRegServerGroup"
+    },
+    @{
+        "AliasName"  = "Get-DbaRegisteredServerStore"
+        "Definition" = "Get-DbaCmsRegServerStore"
+    },
+    @{
+        "AliasName"  = "Import-DbaRegisteredServer"
+        "Definition" = "Import-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Move-DbaRegisteredServer"
+        "Definition" = "Move-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Move-DbaRegisteredServerGroup"
+        "Definition" = "Move-DbaCmsRegServerGroup"
+    },
+    @{
+        "AliasName"  = "Remove-DbaRegisteredServer"
+        "Definition" = "Remove-DbaCmsRegServer"
+    },
+    @{
+        "AliasName"  = "Remove-DbaRegisteredServerGroup"
+        "Definition" = "Remove-DbaCmsRegServerGroup"
     }
 )
 
