@@ -98,7 +98,7 @@ function Watch-DbaDbLogin {
         #>
         if ($SqlCms) {
             try {
-                $servers = Get-DbaRegisteredServerName -SqlInstance $SqlCms -SqlCredential $SqlCredential -EnableException
+                $servers = Get-DbaCmsRegServerName -SqlInstance $SqlCms -SqlCredential $SqlCredential -EnableException
             }
             catch {
                 Stop-Function -Message "The CMS server, $SqlCms, was not accessible." -Target $SqlCms -ErrorRecord $_

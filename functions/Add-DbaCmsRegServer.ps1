@@ -1,11 +1,11 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Add-DbaRegisteredServer {
+function Add-DbaCmsRegServer {
     <#
         .SYNOPSIS
             Adds registered servers to SQL Server Central Management Server (CMS)
 
         .DESCRIPTION
-            Adds registered servers to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaRegisteredServer which
+            Adds registered servers to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaCmsRegServer which
             accepts multiple kinds of input and allows you to add reg servers from different CMSes.
 
         .PARAMETER SqlInstance
@@ -51,26 +51,26 @@ function Add-DbaRegisteredServer {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Add-DbaRegisteredServer
+            https://dbatools.io/Add-DbaCmsRegServer
 
         .EXAMPLE
-           Add-DbaRegisteredServer -SqlInstance sql2008 -ServerName sql01
+           Add-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01
 
            Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible.
 
         .EXAMPLE
-           Add-DbaRegisteredServer -SqlInstance sql2008 -ServerName sql01 -Name "The 2008 Clustered Instance" -Description "HR's Dedicated SharePoint instance"
+           Add-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Name "The 2008 Clustered Instance" -Description "HR's Dedicated SharePoint instance"
 
            Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, "The 2008 Clustered Instance" will be visible.
            Clearly this is hard to explain ;)
 
         .EXAMPLE
-           Add-DbaRegisteredServer -SqlInstance sql2008 -ServerName sql01 -Group hr\Seattle
+           Add-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Group hr\Seattle
 
            Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible within the Seattle group which is in the hr group.
 
         .EXAMPLE
-           Get-DbaRegisteredServerGroup -SqlInstance sql2008 -Group hr\Seattle | Add-DbaRegisteredServer -ServerName sql01111
+           Get-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\Seattle | Add-DbaCmsRegServer -ServerName sql01111
 
            Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible within the Seattle group which is in the hr group.
     #>
@@ -102,14 +102,14 @@ function Add-DbaRegisteredServer {
         foreach ($instance in $SqlInstance) {
             if (($Group)) {
                 if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
-                    $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group.Name
+                    $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group.Name
                 }
                 else {
-                    $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
+                    $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
                 }
             }
             else {
-                $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
+                $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
             }
 
             if (-not $InputObject) {
@@ -133,7 +133,7 @@ function Add-DbaRegisteredServer {
                     $newserver.Description = $Description
                     $newserver.Create()
 
-                    Get-DbaRegisteredServer -SqlInstance $server -Name $Name -ServerName $ServerName
+                    Get-DbaCmsRegServer -SqlInstance $server -Name $Name -ServerName $ServerName
                 }
                 catch {
                     Stop-Function -Message "Failed to add $ServerName on $($parentserver.SqlInstance)" -ErrorRecord $_ -Continue

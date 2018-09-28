@@ -50,20 +50,20 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newServer3.Create()
         }
         AfterAll {
-            Get-DbaRegisteredServer -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServer -Confirm:$false
-            Get-DbaRegisteredServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServerGroup -Confirm:$false
+            Get-DbaCmsRegServer -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaCmsRegServer -Confirm:$false
+            Get-DbaCmsRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaCmsRegServerGroup -Confirm:$false
         }
         
         It "Should return multiple objects" {
-            $results = Get-DbaRegisteredServer -SqlInstance $script:instance1 -Group $group
+            $results = Get-DbaCmsRegServer -SqlInstance $script:instance1 -Group $group
             $results.Count | Should Be 2
         }
         It "Should allow searching subgroups" {
-            $results = Get-DbaRegisteredServer -SqlInstance $script:instance1 -Group "$group\$group2"
+            $results = Get-DbaCmsRegServer -SqlInstance $script:instance1 -Group "$group\$group2"
             $results.Count | Should Be 1
         }
         It "Should return the root server when excluding (see #3529)" {
-            $results = Get-DbaRegisteredServer -SqlInstance $script:instance1 -ExcludeGroup "$group\$group2"
+            $results = Get-DbaCmsRegServer -SqlInstance $script:instance1 -ExcludeGroup "$group\$group2"
             @($results | Where-Object Name -eq $srvName3).Count | Should -Be 1
         }
         

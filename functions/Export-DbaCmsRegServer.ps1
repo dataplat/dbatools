@@ -1,5 +1,5 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Export-DbaRegisteredServer {
+function Export-DbaCmsRegServer {
     <#
         .SYNOPSIS
             Exports registered servers and registered server groups to file
@@ -23,7 +23,7 @@ function Export-DbaRegisteredServer {
             The path to the exported file. If no path is specified, one will be created.
 
         .PARAMETER InputObject
-            Enables piping from Get-DbaRegisteredServer, Get-DbaRegisteredServerGroup, CSVs and other objects.
+            Enables piping from Get-DbaCmsRegServer, Get-DbaCmsRegServerGroup, CSVs and other objects.
 
             If importing from CSV or other object, a column named ServerName is required. Optional columns include Name, Description and Group.
 
@@ -43,25 +43,25 @@ function Export-DbaRegisteredServer {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Export-DbaRegisteredServer
+            https://dbatools.io/Export-DbaCmsRegServer
 
         .EXAMPLE
-           Export-DbaRegisteredServer -SqlInstance sql2008
+           Export-DbaCmsRegServer -SqlInstance sql2008
 
            Exports all Registered Server and Registered Server Groups on sql2008 to an automatically generated file name in the current directory
 
         .EXAMPLE
-           Export-DbaRegisteredServer -SqlInstance sql2008 -Group hr\Seattle -Path C:\temp\Seattle.xml
+           Export-DbaCmsRegServer -SqlInstance sql2008 -Group hr\Seattle -Path C:\temp\Seattle.xml
 
            Exports all Registered Server and Registered Server Groups with the Seattle group within the HR group on sql2008 to C:\temp\Seattle.xml
 
         .EXAMPLE
-           Get-DbaRegisteredServer -SqlInstance sql2008, sql2012 | Export-DbaRegisteredServer
+           Get-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer
 
            Exports all registered servers on sql2008 and sql2012. Warning - each one will have its own individual file. Consider piping groups.
 
         .EXAMPLE
-           Get-DbaRegisteredServerGroup -SqlInstance sql2008, sql2012 | Export-DbaRegisteredServer
+           Get-DbaCmsRegServerGroup -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer
 
            Exports all registered servers on sql2008 and sql2012, organized by group.
     #>
@@ -94,13 +94,13 @@ function Export-DbaRegisteredServer {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
+            $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
         }
 
         foreach ($object in $InputObject) {
             try {
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore]) {
-                    $object = Get-DbaRegisteredServerGroup -SqlInstance $object.ServerConnection.SqlConnectionObject -Id 1
+                    $object = Get-DbaCmsRegServerGroup -SqlInstance $object.ServerConnection.SqlConnectionObject -Id 1
                 }
 
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {

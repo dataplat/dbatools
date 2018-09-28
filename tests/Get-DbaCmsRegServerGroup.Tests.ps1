@@ -42,16 +42,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $newServer2.Create()
         }
         AfterAll {
-            Get-DbaRegisteredServer -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServer -Confirm:$false
-            Get-DbaRegisteredServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServerGroup -Confirm:$false
+            Get-DbaCmsRegServer -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaCmsRegServer -Confirm:$false
+            Get-DbaCmsRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaCmsRegServerGroup -Confirm:$false
         }
         
         It "Should return one group" {
-            $results = Get-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Group $group
+            $results = Get-DbaCmsRegServerGroup -SqlInstance $script:instance1 -Group $group
             $results.Count | Should Be 1
         }
         It "Should allow searching subgroups" {
-            $results = Get-DbaRegisteredServerGroup -SqlInstance $script:instance1 -Group "$group\$group2"
+            $results = Get-DbaCmsRegServerGroup -SqlInstance $script:instance1 -Group "$group\$group2"
             $results.Count | Should Be 1
         }
         
