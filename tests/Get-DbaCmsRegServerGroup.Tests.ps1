@@ -2,7 +2,7 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Setup" {
         BeforeAll {
             $server = Connect-DbaInstance $script:instance1
@@ -40,31 +40,19 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $newServer2.ServerName = $srvName2
             $newServer2.Description = $regSrvDesc2
             $newServer2.Create()
-            
-            $regSrvName3 = "dbatoolsci-server3"
-            $srvName3 = "dbatoolsci-server3"
-            $regSrvDesc3 = "dbatoolsci-server3desc"
-            $newServer3 = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($dbStore, $regSrvName3)
-            $newServer3.ServerName = $srvName3
-            $newServer3.Description = $regSrvDesc3
-            $newServer3.Create()
         }
         AfterAll {
-            Get-DbaRegisteredServer -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServer -Confirm:$false
-            Get-DbaRegisteredServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaRegisteredServerGroup -Confirm:$false
+            Get-DbaCmsRegServer -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaCmsRegServer -Confirm:$false
+            Get-DbaCmsRegServerGroup -SqlInstance $script:instance1 | Where-Object Name -match dbatoolsci | Remove-DbaCmsRegServerGroup -Confirm:$false
         }
         
-        It "Should return multiple objects" {
-            $results = Get-DbaRegisteredServer -SqlInstance $script:instance1 -Group $group
-            $results.Count | Should Be 2
-        }
-        It "Should allow searching subgroups" {
-            $results = Get-DbaRegisteredServer -SqlInstance $script:instance1 -Group "$group\$group2"
+        It "Should return one group" {
+            $results = Get-DbaCmsRegServerGroup -SqlInstance $script:instance1 -Group $group
             $results.Count | Should Be 1
         }
-        It "Should return the root server when excluding (see #3529)" {
-            $results = Get-DbaRegisteredServer -SqlInstance $script:instance1 -ExcludeGroup "$group\$group2"
-            @($results | Where-Object Name -eq $srvName3).Count | Should -Be 1
+        It "Should allow searching subgroups" {
+            $results = Get-DbaCmsRegServerGroup -SqlInstance $script:instance1 -Group "$group\$group2"
+            $results.Count | Should Be 1
         }
         
         # Property Comparisons will come later when we have the commands

@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Get-DbaRegisteredServer {
+function Get-DbaCmsRegServer {
     <#
         .SYNOPSIS
             Gets list of SQL Server objects stored in SQL Server Central Management Server (CMS).
@@ -53,30 +53,30 @@ function Get-DbaRegisteredServer {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Get-DbaRegisteredServer
+            https://dbatools.io/Get-DbaCmsRegServer
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a
+            Get-DbaCmsRegServer -SqlInstance sqlserver2014a
 
             Gets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -IncludeSelf
+            Get-DbaCmsRegServer -SqlInstance sqlserver2014a -IncludeSelf
 
             Gets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
+            Get-DbaCmsRegServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
 
             Returns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting
+            Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR, Accounting
 
             Gets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\Development
+            Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR\Development
 
             Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.
     #>
@@ -109,7 +109,7 @@ function Get-DbaRegisteredServer {
         foreach ($instance in $SqlInstance) {
             if ($Group) {
                 Write-Message -Level Verbose -Message "Connecting to $instance to search for $group"
-                $groupservers = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
+                $groupservers = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
                 if ($groupservers) {
                     $servers += $groupservers.GetDescendantRegisteredServers()
                 }
@@ -117,7 +117,7 @@ function Get-DbaRegisteredServer {
             else {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
                 try {
-                    $serverstore = Get-DbaRegisteredServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
+                    $serverstore = Get-DbaCmsRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
                 }
                 catch {
                     Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
@@ -143,7 +143,7 @@ function Get-DbaRegisteredServer {
         }
 
         if ($ExcludeGroup) {
-            $excluded = Get-DbaRegisteredServer $serverstore.ServerConnection.SqlConnectionObject -Group $ExcludeGroup
+            $excluded = Get-DbaCmsRegServer $serverstore.ServerConnection.SqlConnectionObject -Group $ExcludeGroup
             Write-Message -Level Verbose -Message "Excluding $ExcludeGroup"
             $servers = $servers | Where-Object { $_.Urn.Value -notin $excluded.Urn.Value }
         }
@@ -202,5 +202,6 @@ function Get-DbaRegisteredServer {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter ExcludeCmsServer
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServerName
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlRegisteredServerName
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServer
     }
 }
