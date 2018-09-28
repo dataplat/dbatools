@@ -1,50 +1,50 @@
 function Restore-DbaDbCertificate {
     <#
-.SYNOPSIS
-Imports certificates from .cer files using SMO.
+        .SYNOPSIS
+            Imports certificates from .cer files using SMO.
 
-.DESCRIPTION
-Imports certificates from.cer files using SMO.
+        .DESCRIPTION
+            Imports certificates from.cer files using SMO.
 
-.PARAMETER SqlInstance
-The SQL Server to create the certificates on.
+        .PARAMETER SqlInstance
+            The SQL Server to create the certificates on.
 
-.PARAMETER Path
-The Path the contains the certificate and private key files. The path can be a directory or a specific certificate.
+        .PARAMETER Path
+            The Path the contains the certificate and private key files. The path can be a directory or a specific certificate.
 
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER Password
-Secure string used to decrypt the private key.
+        .PARAMETER Password
+            Secure string used to decrypt the private key.
 
-.PARAMETER Database
-The database where the certificate imports into. Defaults to master.
+        .PARAMETER Database
+            The database where the certificate imports into. Defaults to master.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+                By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+                This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+                Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Migration, Certificate
-Author: Jess Pomfret (@jpomfret)
+        .NOTES
+        Tags: Migration, Certificate
+        Author: Jess Pomfret (@jpomfret)
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE
-Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
-Imports all the certificates in the specified path.
+        .EXAMPLE
+        Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+        Imports all the certificates in the specified path.
 
-#>
+        #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [Parameter(Mandatory)]
@@ -64,7 +64,7 @@ Imports all the certificates in the specified path.
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Retore-DbaDatabaseCertificate
 
         function new-smocert ($directory, $certname) {
-            if ($Pscmdlet.ShouldProcess("$cert on $SqlInstance", "Importing Certificate")) {
+            if ($Pscmdlet.ShouldProcess("$certname on $SqlInstance", "Importing Certificate")) {
                 $smocert = New-Object Microsoft.SqlServer.Management.Smo.Certificate
                 $smocert.Name = $certname
                 $smocert.Parent = $server.Databases[$Database]
