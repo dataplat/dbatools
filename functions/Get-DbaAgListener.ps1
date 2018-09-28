@@ -23,7 +23,7 @@ function Get-DbaAgListener {
             Specify the Listener name that you want to get information on.
 
         .PARAMETER InputObject
-            Piped in Availability Group objects from Get-DbaAvailabilityGroup
+            Piped in Availability Group objects
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -60,7 +60,7 @@ function Get-DbaAgListener {
         [parameter(ValueFromPipeline)]
         [string[]]$AvailabilityGroup,
         [string[]]$Listener,
-        [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
+        [object[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException
     )
