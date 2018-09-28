@@ -122,4 +122,7 @@ function Move-DbaCmsRegServer {
             }
         }
     }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Move-DbaRegisteredServer
+    }
 }
