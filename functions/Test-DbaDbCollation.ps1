@@ -52,7 +52,7 @@ function Test-DbaDbCollation {
             Returns information for database and server collations for all databases except db1 on sqlserver2014a and sql2016.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sql2016 | Test-DbaDbCollation
+            Get-DbaCmsRegServer -SqlInstance sql2016 | Test-DbaDbCollation
 
             Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016.
     #>
