@@ -1,5 +1,5 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Remove-DbaRegisteredServer {
+function Remove-DbaCmsRegServer {
     <#
         .SYNOPSIS
             Removes registered servers found in SQL Server Central Management Server (CMS).
@@ -23,7 +23,7 @@ function Remove-DbaRegisteredServer {
             Specifies one or more groups to include from SQL Server Central Management Server.
 
         .PARAMETER InputObject
-            Allows results from Get-DbaRegisteredServer to be piped in
+            Allows results from Get-DbaCmsRegServer to be piped in
 
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
@@ -46,20 +46,20 @@ function Remove-DbaRegisteredServer {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Remove-DbaRegisteredServer
+            https://dbatools.io/Remove-DbaCmsRegServer
 
         .EXAMPLE
-            Remove-DbaRegisteredServer -SqlInstance sql2012 -Group HR, Accounting
+            Remove-DbaCmsRegServer -SqlInstance sql2012 -Group HR, Accounting
 
             Removes all servers from the HR and Accounting groups on sql2012
 
         .EXAMPLE
-            Remove-DbaRegisteredServer -SqlInstance sql2012 -Group HR\Development
+            Remove-DbaCmsRegServer -SqlInstance sql2012 -Group HR\Development
 
             Removes all servers from the HR and sub-group Development from the CMS on sql2012.
 
         .EXAMPLE
-            Remove-DbaRegisteredServer -SqlInstance sql2012 -Confirm:$false
+            Remove-DbaCmsRegServer -SqlInstance sql2012 -Confirm:$false
 
             Removes all registered servers on sql2012 and turns off all prompting
     #>
@@ -79,7 +79,7 @@ function Remove-DbaRegisteredServer {
 
     process {
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup -Name $Name -ServerName $ServerName
+            $InputObject += Get-DbaCmsRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup -Name $Name -ServerName $ServerName
         }
 
         foreach ($regserver in $InputObject) {
@@ -104,5 +104,8 @@ function Remove-DbaRegisteredServer {
                 }
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaRegisteredServer
     }
 }

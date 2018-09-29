@@ -66,7 +66,7 @@ function Get-DbaRestoreHistory {
             Adds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and formats the data as a table.
 
         .EXAMPLE
-            Get-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaRestoreHistory
+            Get-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaRestoreHistory
 
             Returns database restore information for every database on every server listed in the Central Management Server on sql2016.
 

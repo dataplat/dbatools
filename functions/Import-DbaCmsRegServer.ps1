@@ -1,5 +1,5 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Import-DbaRegisteredServer {
+function Import-DbaCmsRegServer {
     <#
         .SYNOPSIS
             Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)
@@ -20,7 +20,7 @@ function Import-DbaRegisteredServer {
             Optional path to exported reg server XML
 
         .PARAMETER InputObject
-            Enables piping from Get-DbaRegisteredServer, Get-DbaRegisteredServerGroup, CSVs and other objects.
+            Enables piping from Get-DbaCmsRegServer, Get-DbaCmsRegServerGroup, CSVs and other objects.
 
             If importing from CSV or other object, a column named ServerName is required. Optional columns include Name, Description and Group.
 
@@ -40,25 +40,25 @@ function Import-DbaRegisteredServer {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Import-DbaRegisteredServer
+            https://dbatools.io/Import-DbaCmsRegServer
 
         .EXAMPLE
-           Import-DbaRegisteredServer -SqlInstance sql2012 -Path C:\temp\corp-regservers.xml
+           Import-DbaCmsRegServer -SqlInstance sql2012 -Path C:\temp\corp-regservers.xml
 
            Imports C:\temp\corp-regservers.xml to the CMS on sql2012
 
         .EXAMPLE
-           Import-DbaRegisteredServer -SqlInstance sql2008 -Group hr\Seattle -Path C:\temp\Seattle.xml
+           Import-DbaCmsRegServer -SqlInstance sql2008 -Group hr\Seattle -Path C:\temp\Seattle.xml
 
            Imports C:\temp\Seattle.xml to Seattle subgroup within the hr group on sql2008
 
         .EXAMPLE
-           Get-DbaRegisteredServer -SqlInstance sql2008, sql2012 | Import-DbaRegisteredServer -SqlInstance sql2017
+           Get-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Import-DbaCmsRegServer -SqlInstance sql2017
 
            Imports all registered servers from sql2008 and sql2012 to sql2017
 
         .EXAMPLE
-           Get-DbaRegisteredServerGroup -SqlInstance sql2008 -Group hr\Seattle | Import-DbaRegisteredServer -SqlInstance sql2017 -Group Seattle
+           Get-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\Seattle | Import-DbaCmsRegServer -SqlInstance sql2017 -Group Seattle
 
            Imports all registered servers from the hr\Seattle group on sql2008 to the Seattle group on sql2017
 
@@ -87,7 +87,7 @@ function Import-DbaRegisteredServer {
                     $groupobject = $Group
                 }
                 else {
-                    $groupobject = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
+                    $groupobject = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
                 }
                 if (-not $groupobject) {
                     Stop-Function -Message "Group $Group cannot be found on $instance" -Target $instance -Continue
@@ -97,19 +97,19 @@ function Import-DbaRegisteredServer {
             foreach ($object in $InputObject) {
                 if ($object -is [Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer]) {
 
-                    $groupexists = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $object.Parent.Name
+                    $groupexists = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $object.Parent.Name
                     if (-not $groupexists) {
-                        $groupexists = Add-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Parent.Name
+                        $groupexists = Add-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Parent.Name
                     }
-                    Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $groupexists
+                    Add-DbaCmsRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $groupexists
                 }
                 elseif ($object -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                     foreach ($regserver in $object.RegisteredServers) {
-                        $groupexists = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $regserver.Parent.Name
+                        $groupexists = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $regserver.Parent.Name
                         if (-not $groupexists) {
-                            $groupexists = Add-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $regserver.Parent.Name
+                            $groupexists = Add-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Name $regserver.Parent.Name
                         }
-                        Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $regserver.Name -ServerName $regserver.ServerName -Description $regserver.Description -Group $groupexists
+                        Add-DbaCmsRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $regserver.Name -ServerName $regserver.ServerName -Description $regserver.Description -Group $groupexists
                     }
                 }
                 elseif ($object -is [System.IO.FileInfo]) {
@@ -118,11 +118,11 @@ function Import-DbaRegisteredServer {
                             $reggroups = $Group
                         }
                         else {
-                            $reggroups = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
+                            $reggroups = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
                         }
                     }
                     else {
-                        $reggroups = Get-DbaRegisteredServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
+                        $reggroups = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Id 1
                     }
 
                     foreach ($file in $object) {
@@ -135,7 +135,7 @@ function Import-DbaRegisteredServer {
                                 Write-Message -Level Verbose -Message "Importing $file to $($reggroup.Name) on $instance"
                                 $urnlist = $reggroup.RegisteredServers.Urn.Value
                                 $reggroup.Import($file.FullName)
-                                Get-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential | Where-Object { $_.Urn.Value -notin $urnlist }
+                                Get-DbaCmsRegServer -SqlInstance $instance -SqlCredential $SqlCredential | Where-Object { $_.Urn.Value -notin $urnlist }
                             }
                             catch {
                                 Stop-Function -Message "Failure attempting to import $file to $instance" -ErrorRecord $_ -Continue
@@ -147,9 +147,12 @@ function Import-DbaRegisteredServer {
                     if (-not $object.ServerName) {
                         Stop-Function -Message "Property 'ServerName' not found in InputObject. No servers added." -Continue
                     }
-                    Add-DbaRegisteredServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $groupobject
+                    Add-DbaCmsRegServer -SqlInstance $instance -SqlCredential $SqlCredential -Name $object.Name -ServerName $object.ServerName -Description $object.Description -Group $groupobject
                 }
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Import-DbaRegisteredServer
     }
 }

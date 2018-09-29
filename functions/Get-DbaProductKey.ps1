@@ -15,7 +15,7 @@ Allows you to specify a comma separated list of servers to query.
 Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
 .PARAMETER SqlCms
-Deprecated, pipe in from Get-DbaRegisteredServer
+Deprecated, pipe in from Get-DbaCmsRegServer
 
 .PARAMETER ServersFromFile
 Deprecated, pipe in from Get-Content
@@ -86,7 +86,7 @@ Gets SQL Server versions, editions and product keys for all instances within eac
 
     process {
         if ($SqlCms) {
-            Stop-Function -Message "Please pipe in servers using Get-DbaRegisteredServer instead"
+            Stop-Function -Message "Please pipe in servers using Get-DbaCmsRegServer instead"
             return
         }
 
