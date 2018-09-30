@@ -1,4 +1,5 @@
-﻿function Copy-DbaXESessionTemplate {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Copy-DbaXESessionTemplate {
     <#
         .SYNOPSIS
             Copies non-Microsoft templates from the dbatools template repository (\bin\xetemplates\) to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.

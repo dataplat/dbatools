@@ -1,4 +1,5 @@
-﻿function Get-DbaPfDataCollectorSet {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaPfDataCollectorSet {
     <#
         .SYNOPSIS
             Gets Performance Monitor Data Collector Set.

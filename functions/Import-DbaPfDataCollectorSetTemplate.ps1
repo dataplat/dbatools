@@ -1,4 +1,5 @@
-﻿function Import-DbaPfDataCollectorSetTemplate {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Import-DbaPfDataCollectorSetTemplate {
     <#
         .SYNOPSIS
             Imports a new Performance Monitor Data Collector Set Template either from the dbatools repository or a file you specify.
