@@ -44,7 +44,7 @@ function Get-DbaWsfcAvailableDisk {
     )
     process {
         foreach ($computer in $computername) {
-            Get-DbaCmObject -Computername $computer -Namespace root\MSCluster -ClassName MSCluster_AvailableDisk
+            Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_AvailableDisk
         }
     }
 }

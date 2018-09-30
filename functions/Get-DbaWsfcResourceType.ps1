@@ -44,7 +44,7 @@ function Get-DbaWsfcResourceType {
     )
     process {
         foreach ($computer in $computername) {
-            Get-DbaCmObject -Computername $computer -Namespace root\MSCluster -ClassName MSCluster_ResourceType
+            Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_ResourceType
         }
     }
 }
