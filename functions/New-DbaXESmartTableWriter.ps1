@@ -1,4 +1,5 @@
-﻿function New-DbaXESmartTableWriter {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function New-DbaXESmartTableWriter {
     <#
         .SYNOPSIS
             This Response type is used to write Extended Events to a database table.

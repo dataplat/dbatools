@@ -1,4 +1,4 @@
-#ValidationTags#Messaging#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaExecutionPlan {
     <#
         .SYNOPSIS
