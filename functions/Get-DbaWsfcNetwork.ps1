@@ -44,7 +44,7 @@ function Get-DbaWsfcNetwork {
     )
     process {
         foreach ($computer in $computername) {
-            Get-DbaCmObject -Computername $computer -Namespace root\MSCluster -ClassName MSCluster_Network
+            Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Network
         }
     }
 }

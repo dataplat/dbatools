@@ -44,7 +44,7 @@ function Get-DbaWsfcSharedVolume {
     )
     process {
         foreach ($computer in $computername) {
-            Get-DbaCmObject -Computername $computer -Namespace root\MSCluster -ClassName ClusterSharedVolume
+            Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName ClusterSharedVolume
         }
     }
 }
