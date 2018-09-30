@@ -289,7 +289,7 @@ function Copy-DbaCentralManagementServer {
         try {
             Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
-            $fromCmStore = Get-DbaRegisteredServerStore -SqlInstance $sourceServer
+            $fromCmStore = Get-DbaCmsRegServerStore -SqlInstance $sourceServer
         }
         catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
@@ -307,7 +307,7 @@ function Copy-DbaCentralManagementServer {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            $toCmStore = Get-DbaRegisteredServerStore -SqlInstance $destServer
+            $toCmStore = Get-DbaCmsRegServerStore -SqlInstance $destServer
             
             $stores = $fromCmStore.DatabaseEngineServerGroup
             if ($CMSGroup) {

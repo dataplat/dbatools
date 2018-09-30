@@ -171,7 +171,7 @@ function Test-DbaBackupInformation {
             $allpaths_validity = Test-DbaPath -SqlInstance $RestoreInstance -Path $allpaths
             foreach ($path in $allpaths_validity) {
                 if ($path.FileExists -eq $false) {
-                    Write-Message -Message "Backup File $($path.FilePath) cannot be read" -Level Warning
+                    Write-Message -Message "Backup File $($path.FilePath) cannot be read by $RestoreInstance. Does the service account have permission?" -Level Warning
                     $VerificationErrors++
                 }
             }

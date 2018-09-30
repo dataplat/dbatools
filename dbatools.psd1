@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.445'
+    ModuleVersion          = '0.9.447'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -108,7 +108,7 @@
         'Watch-DbaDbLogin',
         'Expand-DbaTLogResponsibly',
         'Test-DbaMigrationConstraint',
-        'Get-DbaRegisteredServer',
+        'Get-DbaCmsRegServer',
         'Test-DbaNetworkLatency',
         'Find-DbaDuplicateIndex',
         'Show-DbaServerFileSystem',
@@ -331,7 +331,7 @@
         'Get-DbaAgReplica',
         'Get-DbaAgDatabase',
         'Get-DbaModule',
-        'Get-DbaRegisteredServerStore',
+        'Get-DbaCmsRegServerStore',
         'Sync-DbaLoginPermission',
         'Invoke-Sqlcmd2',
         'New-DbaCredential',
@@ -450,7 +450,7 @@
         'Get-DbaXESmartTarget',
         'Remove-DbaXESmartTarget'
         'Stop-DbaXESmartTarget',
-        'Get-DbaRegisteredServerGroup',
+        'Get-DbaCmsRegServerGroup',
         'New-DbaDbUser',
         'Measure-DbaDiskSpaceRequirement',
         'New-DbaXESmartCsvWriter',
@@ -472,14 +472,14 @@
         'Test-DbaLoginPassword',
         'Get-DbaErrorLogConfig',
         'Set-DbaErrorLogConfig',
-        'Add-DbaRegisteredServer',
-        'Add-DbaRegisteredServerGroup',
-        'Export-DbaRegisteredServer',
-        'Import-DbaRegisteredServer',
-        'Move-DbaRegisteredServer',
-        'Move-DbaRegisteredServerGroup',
-        'Remove-DbaRegisteredServer',
-        'Remove-DbaRegisteredServerGroup',
+        'Add-DbaCmsRegServer',
+        'Add-DbaCmsRegServerGroup',
+        'Export-DbaCmsRegServer',
+        'Import-DbaCmsRegServer',
+        'Move-DbaCmsRegServer',
+        'Move-DbaCmsRegServerGroup',
+        'Remove-DbaCmsRegServer',
+        'Remove-DbaCmsRegServerGroup',
         'Get-DbaPlanCache',
         'Clear-DbaPlanCache',
         'Get-DbaSsisExecutionHistory',
@@ -590,7 +590,7 @@
     'Get-DbaDatabaseFreeSpace',
     'Get-DbaQueryStoreConfig',
     'Set-DbaQueryStoreConfig',
-    'Get-DbaRegisteredServerName',
+    'Get-DbaCmsRegServerName',
     'Connect-DbaServer',
     'Get-DbaInstance',
     'Get-DbaXEventsSession',
@@ -677,7 +677,18 @@
     'Get-DbaUserLevelPermission',
     'Get-DbaDistributor',
     'Get-DbaTable',
-    'Copy-DbaTableData'
+    'Copy-DbaTableData',
+    'Add-DbaRegisteredServer',
+    'Add-DbaRegisteredServerGroup',
+    'Export-DbaRegisteredServer',
+    'Get-DbaRegisteredServer',
+    'Get-DbaRegisteredServerGroup',
+    'Get-DbaRegisteredServerStore',
+    'Import-DbaRegisteredServer',
+    'Move-DbaRegisteredServer',
+    'Move-DbaRegisteredServerGroup',
+    'Remove-DbaRegisteredServer',
+    'Remove-DbaRegisteredServerGroup'
 
     # List of all modules packaged with this module
     ModuleList             = @()

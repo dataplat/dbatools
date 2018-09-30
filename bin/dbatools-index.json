@@ -1,5 +1,35 @@
 ﻿[
     {
+        "CommandName":  "Add-DbaCmsRegServer",
+        "Description":  "Adds registered servers to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaCmsRegServer which\naccepts multiple kinds of input and allows you to add reg servers from different CMSes.",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Alias":  "Add-DbaRegisteredServer",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Adds registered servers to SQL Server Central Management Server (CMS)",
+        "Name":  "Add-DbaCmsRegServer",
+        "Links":  "https://dbatools.io/Add-DbaCmsRegServer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Name \"The 2008 Clustered Instance\" -Description \"HR\u0027s Dedicated SharePoint instance\"\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, \"The 2008 Clustered Instance\" will be visible.\r\nClearly this is hard to explain ;)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Group hr\\Seattle\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible within the Seattle group which is in the hr group.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\\Seattle | Add-DbaCmsRegServer -ServerName sql01111\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible within the Seattle group which is in the hr group.",
+        "Syntax":  "Add-DbaCmsRegServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-ServerName] \u003cString\u003e [[-Name] \u003cString\u003e] [[-Description] \u003cString\u003e] [[-Group] \u003cObject\u003e] [[-InputObject] \u003cServerGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Add-DbaCmsRegServerGroup",
+        "Description":  "Adds registered server groups to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaCmsRegServer which\naccepts multiple kinds of input and allows you to add reg servers and groups from different CMSes.",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Alias":  "Add-DbaRegisteredServerGroup",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Adds registered server groups to SQL Server Central Management Server (CMS)",
+        "Name":  "Add-DbaCmsRegServerGroup",
+        "Links":  "https://dbatools.io/Add-DbaCmsRegServerGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServerGroup -SqlInstance sql2012 -Name HR\nCreates a registered server group called HR, in the root of sql2012\u0027s CMS\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eAdd-DbaCmsRegServerGroup -SqlInstance sql2012, sql2014 -Name subfolder -Group HR\nCreates a registered server group on sql2012 and sql2014 called subfolder within the HR group\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2012, sql2014 -Group HR | Add-DbaCmsRegServerGroup -Name subfolder\nCreates a registered server group on sql2012 and sql2014 called subfolder within the HR group of each server",
+        "Syntax":  "Add-DbaCmsRegServerGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [[-Description] \u003cString\u003e] [[-Group] \u003cString\u003e] [[-InputObject] \u003cServerGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Add-DbaComputerCertificate",
         "Description":  "Adds a computer certificate from a local or remote computer.",
         "Tags":  "Certificate",
@@ -22,36 +52,6 @@
         "Links":  "https://dbatools.io/Add-DbaPfDataCollectorCounter",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaPfDataCollectorCounter -ComputerName sql2017 -CollectorSet \u0027System Correlation\u0027 -Collector DataCollector01  -Counter \u0027\\LogicalDisk(*)\\Avg. Disk Queue Length\u0027\nAdds the \u0027\\LogicalDisk(*)\\Avg. Disk Queue Length\u0027 counter within the DataCollector01 collector within the System Correlation collector set on sql2017.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaPfDataCollector | Out-GridView -PassThru | Add-DbaPfDataCollectorCounter -Counter \u0027\\LogicalDisk(*)\\Avg. Disk Queue Length\u0027 -Confirm\nAllows you to select which Data Collector you\u0027d like to add the counter \u0027\\LogicalDisk(*)\\Avg. Disk Queue Length\u0027 on localhost and prompts for confirmation.",
         "Syntax":  "Add-DbaPfDataCollectorCounter [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CollectorSet] \u003cString[]\u003e] [[-Collector] \u003cString[]\u003e] [-Counter] \u003cObject[]\u003e [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Add-DbaRegisteredServer",
-        "Description":  "Adds registered servers to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaRegisteredServer which\naccepts multiple kinds of input and allows you to add reg servers from different CMSes.",
-        "Tags":  [
-                     "RegisteredServer",
-                     "CMS"
-                 ],
-        "Alias":  "",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Adds registered servers to SQL Server Central Management Server (CMS)",
-        "Name":  "Add-DbaRegisteredServer",
-        "Links":  "https://dbatools.io/Add-DbaRegisteredServer",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaRegisteredServer -SqlInstance sql2008 -ServerName sql01\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eAdd-DbaRegisteredServer -SqlInstance sql2008 -ServerName sql01 -Name \"The 2008 Clustered Instance\" -Description \"HR\u0027s Dedicated SharePoint instance\"\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, \"The 2008 Clustered Instance\" will be visible.\r\nClearly this is hard to explain ;)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eAdd-DbaRegisteredServer -SqlInstance sql2008 -ServerName sql01 -Group hr\\Seattle\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible within the Seattle group which is in the hr group.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sql2008 -Group hr\\Seattle | Add-DbaRegisteredServer -ServerName sql01111\nCreates a registered server on sql2008\u0027s CMS which points to the SQL Server, sql01. When scrolling in CMS, the name \"sql01\" will be visible within the Seattle group which is in the hr group.",
-        "Syntax":  "Add-DbaRegisteredServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-ServerName] \u003cString\u003e [[-Name] \u003cString\u003e] [[-Description] \u003cString\u003e] [[-Group] \u003cObject\u003e] [[-InputObject] \u003cServerGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Add-DbaRegisteredServerGroup",
-        "Description":  "Adds registered server groups to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaRegisteredServer which\naccepts multiple kinds of input and allows you to add reg servers and groups from different CMSes.",
-        "Tags":  [
-                     "RegisteredServer",
-                     "CMS"
-                 ],
-        "Alias":  "",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Adds registered server groups to SQL Server Central Management Server (CMS)",
-        "Name":  "Add-DbaRegisteredServerGroup",
-        "Links":  "https://dbatools.io/Add-DbaRegisteredServerGroup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaRegisteredServerGroup -SqlInstance sql2012 -Name HR\nCreates a registered server group called HR, in the root of sql2012\u0027s CMS\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eAdd-DbaRegisteredServerGroup -SqlInstance sql2012, sql2014 -Name subfolder -Group HR\nCreates a registered server group on sql2012 and sql2014 called subfolder within the HR group\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sql2012, sql2014 -Group HR | Add-DbaRegisteredServerGroup -Name subfolder\nCreates a registered server group on sql2012 and sql2014 called subfolder within the HR group of each server",
-        "Syntax":  "Add-DbaRegisteredServerGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Name] \u003cString\u003e [[-Description] \u003cString\u003e] [[-Group] \u003cString\u003e] [[-InputObject] \u003cServerGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Backup-DbaDatabase",
@@ -174,7 +174,7 @@
         "Synopsis":  "Converts InputObject to a html timeline using Google Chart",
         "Name":  "ConvertTo-DbaTimeline",
         "Links":  "https://dbatools.io/ConvertTo-DbaTimeline",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql-1 -StartDate \u00272018-08-13 00:00\u0027 -EndDate \u00272018-08-13 23:59\u0027 -NoJobSteps | ConvertTo-DbaTimeline | Out-File C:\\temp\\DbaAgentJobHistory.html -Encoding \r\nASCII\nCreates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since \u00272018-08-13 00:00\u0027 | ConvertTo-DbaTimeline | Out-File C:\\temp\\DbaBackupHistory.html -Encoding ASCII\nCreates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$messageParameters = @{\nSubject = \"Backup history for sql2017 and sql2016\"\r\n    Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since \u00272018-08-13 00:00\u0027 | ConvertTo-DbaTimeline\r\n    From = \"dba@ad.local\"\r\n    To = \"dba@ad.local\"\r\n    SmtpServer = \"smtp.ad.local\"\r\n}\r\nSend-MailMessage @messageParameters -BodyAsHtml\nSends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaAgentJobHistory -SqlInstance sql-1 -StartDate \u00272018-08-13 00:00\u0027 -EndDate \u00272018-08-13 23:59\u0027 -NoJobSteps | ConvertTo-DbaTimeline | Out-File C:\\temp\\DbaAgentJobHistory.html -Encoding \r\nASCII\nCreates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since \u00272018-08-13 00:00\u0027 | ConvertTo-DbaTimeline | Out-File C:\\temp\\DbaBackupHistory.html -Encoding ASCII\nCreates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$messageParameters = @{\nSubject = \"Backup history for sql2017 and sql2016\"\r\n    Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since \u00272018-08-13 00:00\u0027 | ConvertTo-DbaTimeline\r\n    From = \"dba@ad.local\"\r\n    To = \"dba@ad.local\"\r\n    SmtpServer = \"smtp.ad.local\"\r\n}\r\nSend-MailMessage @messageParameters -BodyAsHtml\nSends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.",
         "Syntax":  "ConvertTo-DbaTimeline [-InputObject] \u003cObject[]\u003e [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -758,6 +758,21 @@
         "Syntax":  "Export-DbaAvailabilityGroup [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-AvailabilityGroup] \u003cObject[]\u003e] [[-ExcludeAvailabilityGroup] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [-NoClobber] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Export-DbaCmsRegServer",
+        "Description":  "Exports registered servers and registered server groups to file",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Alias":  "Export-DbaRegisteredServer",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Exports registered servers and registered server groups to file",
+        "Name":  "Export-DbaCmsRegServer",
+        "Links":  "https://dbatools.io/Export-DbaCmsRegServer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaCmsRegServer -SqlInstance sql2008\nExports all Registered Server and Registered Server Groups on sql2008 to an automatically generated file name in the current directory\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaCmsRegServer -SqlInstance sql2008 -Group hr\\Seattle -Path C:\\temp\\Seattle.xml\nExports all Registered Server and Registered Server Groups with the Seattle group within the HR group on sql2008 to C:\\temp\\Seattle.xml\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer\nExports all registered servers on sql2008 and sql2012. Warning - each one will have its own individual file. Consider piping groups.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer\nExports all registered servers on sql2008 and sql2012, organized by group.",
+        "Syntax":  "Export-DbaCmsRegServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [[-CredentialPersistenceType] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Export-DbaCredential",
         "Description":  "Exports credentials INCLUDING PASSWORDS, unless specified otherwise, to sql file.\n\nRequires remote Windows access if exporting the password.",
         "Tags":  "Credential",
@@ -867,21 +882,6 @@
         "Syntax":  "Export-DbaPfDataCollectorSetTemplate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CollectorSet] \u003cString[]\u003e] [[-Path] \u003cString\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
-        "CommandName":  "Export-DbaRegisteredServer",
-        "Description":  "Exports registered servers and registered server groups to file",
-        "Tags":  [
-                     "RegisteredServer",
-                     "CMS"
-                 ],
-        "Alias":  "",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Exports registered servers and registered server groups to file",
-        "Name":  "Export-DbaRegisteredServer",
-        "Links":  "https://dbatools.io/Export-DbaRegisteredServer",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaRegisteredServer -SqlInstance sql2008\nExports all Registered Server and Registered Server Groups on sql2008 to an automatically generated file name in the current directory\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaRegisteredServer -SqlInstance sql2008 -Group hr\\Seattle -Path C:\\temp\\Seattle.xml\nExports all Registered Server and Registered Server Groups with the Seattle group within the HR group on sql2008 to C:\\temp\\Seattle.xml\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2008, sql2012 | Export-DbaRegisteredServer\nExports all registered servers on sql2008 and sql2012. Warning - each one will have its own individual file. Consider piping groups.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sql2008, sql2012 | Export-DbaRegisteredServer\nExports all registered servers on sql2008 and sql2012, organized by group.",
-        "Syntax":  "Export-DbaRegisteredServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Path] \u003cString\u003e] [[-CredentialPersistenceType] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
         "CommandName":  "Export-DbaRepServerSetting",
         "Description":  "Exports replication server settings to file.",
         "Tags":  "Replication",
@@ -984,7 +984,7 @@
         "Synopsis":  "Find-DbaAgentJob finds agent job/s that fit certain search filters.",
         "Name":  "Find-DbaAgentJob",
         "Links":  "https://dbatools.io/Find-DbaAgentJob",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -JobName *backup*\nReturns all agent job(s) that have backup in the name\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01, Dev02 -JobName Mybackup\nReturns all agent job(s) that are named exactly Mybackup\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -LastUsed 10\nReturns all agent job(s) that have not ran in 10 days\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -IsDisabled -IsNoEmailNotification -IsNotScheduled\nReturns all agent job(s) that are either disabled, have no email notification or don\u0027t have a schedule. returned with detail\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob\nFinds all failed job then starts them. Consider using a -WhatIf at the end of Start-DbaAgentJob to see what it\u0027ll do first\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 -Exclude \"Yearly - RollUp Workload\", \"SMS - Notification\"\nReturns all agent jobs that havent ran in the last 10 days ignoring jobs \"Yearly - RollUp Workload\" and \"SMS - Notification\"\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -Category \"REPL-Distribution\", \"REPL-Snapshot\" -Detailed | Format-Table -AutoSize -Wrap\nReturns all job/s on Dev01 that are in either category \"REPL-Distribution\" or \"REPL-Snapshot\" with detailed output\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01, Dev02 -IsFailed -Since \u00272016-07-01 10:47:00\u0027\nReturns all agent job(s) on Dev01 and Dev02 that have failed since July of 2016 (and still have history in msdb)\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -IsNotScheduled | Format-Table -AutoSize -Wrap\nQueries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -JobName *backup*\nReturns all agent job(s) that have backup in the name\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01, Dev02 -JobName Mybackup\nReturns all agent job(s) that are named exactly Mybackup\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -LastUsed 10\nReturns all agent job(s) that have not ran in 10 days\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -IsDisabled -IsNoEmailNotification -IsNotScheduled\nReturns all agent job(s) that are either disabled, have no email notification or don\u0027t have a schedule. returned with detail\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob\nFinds all failed job then starts them. Consider using a -WhatIf at the end of Start-DbaAgentJob to see what it\u0027ll do first\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 -Exclude \"Yearly - RollUp Workload\", \"SMS - Notification\"\nReturns all agent jobs that havent ran in the last 10 days ignoring jobs \"Yearly - RollUp Workload\" and \"SMS - Notification\"\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01 -Category \"REPL-Distribution\", \"REPL-Snapshot\" -Detailed | Format-Table -AutoSize -Wrap\nReturns all job/s on Dev01 that are in either category \"REPL-Distribution\" or \"REPL-Snapshot\" with detailed output\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eFind-DbaAgentJob -SqlInstance Dev01, Dev02 -IsFailed -Since \u00272016-07-01 10:47:00\u0027\nReturns all agent job(s) on Dev01 and Dev02 that have failed since July of 2016 (and still have history in msdb)\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -IsNotScheduled | Format-Table -AutoSize -Wrap\nQueries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.",
         "Syntax":  "Find-DbaAgentJob [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-JobName \u003cString[]\u003e] [-ExcludeJobName \u003cString[]\u003e] [-StepName \u003cString[]\u003e] [-LastUsed \u003cInt32\u003e] [-IsDisabled] [-IsFailed] [-IsNotScheduled] [-IsNoEmailNotification] [-Category \u003cString[]\u003e] [-Owner \u003cString\u003e] [-Since \u003cDateTime\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -1475,7 +1475,7 @@
         "Synopsis":  "Returns backup history details for databases on a SQL Server.",
         "Name":  "Get-DbaBackupHistory",
         "Links":  "https://dbatools.io/Get-DbaBackupHistory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a\nReturns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in \r\nother examples.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nGet-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred\nDoes the same as above but connect to SqlInstance2014a as SQL user \"sqladmin\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since \u00272016-07-01 10:47:00\u0027\nReturns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table\nReturns information only for AdventureWorks2014 and pubs and formats the results as a table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull\nReturns information about the most recent full backup for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full\nReturns information about all Full backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaBackupHistory\nReturns database backup information for every database on every server listed in the Central Management Server on sql2016.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force\nReturns detailed backup history for all databases on SqlInstance2014a and sql2016.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a\nReturns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in \r\nother examples.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nGet-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred\nDoes the same as above but connect to SqlInstance2014a as SQL user \"sqladmin\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since \u00272016-07-01 10:47:00\u0027\nReturns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table\nReturns information only for AdventureWorks2014 and pubs and formats the results as a table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull\nReturns information about the most recent full backup for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full\nReturns information about all Full backups for AdventureWorks2014 on sql2014.\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaBackupHistory\nReturns database backup information for every database on every server listed in the Central Management Server on sql2016.\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force\nReturns detailed backup history for all databases on SqlInstance2014a and sql2016.",
         "Syntax":  "Get-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Force] [-Since \u003cDateTime\u003e] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaBackupHistory -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeCopyOnly] [-Last] [-LastFull] [-LastDiff] [-LastLog] [-DeviceType \u003cString[]\u003e] [-Raw] [-LastLsn \u003cBigInteger\u003e] [-Type \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -1502,7 +1502,7 @@
         "Synopsis":  "Returns SQL Server Build infos on a SQL instance",
         "Name":  "Get-DbaBuildReference",
         "Links":  "https://dbatools.io/Get-DbaBuildReference",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\"\nReturns information about a build identified by  \"12.00.4502\" (which is SQL 2014 with SP1 and CU11)\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\" -Update\nReturns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.0.4502\",\"10.50.4260\"\nReturns information builds identified by these versions strings\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a | Get-DbaBuildReference\nIntegrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\"\nReturns information about a build identified by  \"12.00.4502\" (which is SQL 2014 with SP1 and CU11)\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.00.4502\" -Update\nReturns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaBuildReference -Build \"12.0.4502\",\"10.50.4260\"\nReturns information builds identified by these versions strings\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference\nIntegrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a",
         "Syntax":  "Get-DbaBuildReference [[-Build] \u003cVersion[]\u003e] [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Update] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -1574,6 +1574,51 @@
         "Links":  "https://dbatools.io/Get-DbaCmObject",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaCmObject win32_OperatingSystem\nRetrieves the common operating system information from the local computer.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmObject -Computername \"sql2014\" -ClassName Win32_OperatingSystem -Credential $cred -DoNotUse CimRM\nRetrieves the common operating system information from the server sql2014.\r\nIt will use the Credentials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).",
         "Syntax":  "Get-DbaCmObject [-ClassName] \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]\nGet-DbaCmObject [-Query] \u003cString\u003e [-ComputerName \u003cDbaCmConnectionParameter[]\u003e] [-Credential \u003cPSCredential\u003e] [-Namespace \u003cString\u003e] [-DoNotUse {None | CimRM | CimDCOM | Wmi | PowerShellRemoting}] [-Force] [-SilentlyContinue] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaCmsRegServer",
+        "Description":  "Returns an array of servers found in the CMS.",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Alias":  "Get-DbaCmsRegServerName,Get-DbaRegisteredServer,Get-SqlRegisteredServerName",
+        "Author":  "Bryan Hamby (@galador)",
+        "Synopsis":  "Gets list of SQL Server objects stored in SQL Server Central Management Server (CMS).",
+        "Name":  "Get-DbaCmsRegServer",
+        "Links":  "https://dbatools.io/Get-DbaCmsRegServer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a\nGets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -IncludeSelf\nGets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName\nReturns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR, Accounting\nGets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR\\Development\nReturns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.",
+        "Syntax":  "Get-DbaCmsRegServer [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-ServerName] \u003cString[]\u003e] [[-Group] \u003cObject[]\u003e] [[-ExcludeGroup] \u003cObject[]\u003e] [[-Id] \u003cInt32[]\u003e] [-IncludeSelf] [-ExcludeCmsServer] [-ResolveNetworkName] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaCmsRegServerGroup",
+        "Description":  "Returns an array of Server Groups found in the CMS.",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Alias":  "Get-DbaRegisteredServerGroup",
+        "Author":  "Tony Wilhelm (@tonywsql)",
+        "Synopsis":  "Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).",
+        "Name":  "Get-DbaCmsRegServerGroup",
+        "Links":  "https://dbatools.io/Get-DbaCmsRegServerGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sqlserver2014a\nGets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential\nGets the top level groups from the CMS on sqlserver2014a, using alternative credentials to authenticate to the server.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting\nGets the HR and Accounting groups from the CMS on sqlserver2014a.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR\\Development\nReturns the sub-group Development of the HR group from the CMS on sqlserver2014a.",
+        "Syntax":  "Get-DbaCmsRegServerGroup [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Group] \u003cObject[]\u003e] [[-ExcludeGroup] \u003cObject[]\u003e] [[-Id] \u003cInt32[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaCmsRegServerStore",
+        "Description":  "Returns a SQL Server Registered Server Store object - useful for working with Central Management Store",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Alias":  "Get-DbaRegisteredServerStore",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Returns a SQL Server Registered Server Store Object",
+        "Name":  "Get-DbaCmsRegServerStore",
+        "Links":  "https://dbatools.io/Get-DbaCmsRegServerStore",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerStore -SqlInstance sqlserver2014a\nReturns a SQL Server Registered Server Store Object from sqlserver2014a\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerStore -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)\nReturns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login",
+        "Syntax":  "Get-DbaCmsRegServerStore [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaComputerCertificate",
@@ -2895,51 +2940,6 @@
         "Syntax":  "Get-DbaQueryExecutionTime [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [[-MaxResultsPerDb] \u003cInt32\u003e] [[-MinExecs] \u003cInt32\u003e] [[-MinExecMs] \u003cInt32\u003e] [[-NoSystemDb]] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
-        "CommandName":  "Get-DbaRegisteredServer",
-        "Description":  "Returns an array of servers found in the CMS.",
-        "Tags":  [
-                     "RegisteredServer",
-                     "CMS"
-                 ],
-        "Alias":  "Get-DbaRegisteredServerName,Get-SqlRegisteredServerName",
-        "Author":  "Bryan Hamby (@galador)",
-        "Synopsis":  "Gets list of SQL Server objects stored in SQL Server Central Management Server (CMS).",
-        "Name":  "Get-DbaRegisteredServer",
-        "Links":  "https://dbatools.io/Get-DbaRegisteredServer",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a\nGets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -IncludeSelf\nGets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName\nReturns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting\nGets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\\Development\nReturns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.",
-        "Syntax":  "Get-DbaRegisteredServer [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-ServerName] \u003cString[]\u003e] [[-Group] \u003cObject[]\u003e] [[-ExcludeGroup] \u003cObject[]\u003e] [[-Id] \u003cInt32[]\u003e] [-IncludeSelf] [-ExcludeCmsServer] [-ResolveNetworkName] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Get-DbaRegisteredServerGroup",
-        "Description":  "Returns an array of Server Groups found in the CMS.",
-        "Tags":  [
-                     "RegisteredServer",
-                     "CMS"
-                 ],
-        "Alias":  "",
-        "Author":  "Tony Wilhelm (@tonywsql)",
-        "Synopsis":  "Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).",
-        "Name":  "Get-DbaRegisteredServerGroup",
-        "Links":  "https://dbatools.io/Get-DbaRegisteredServerGroup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sqlserver2014a\nGets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential\nGets the top level groups from the CMS on sqlserver2014a, using alternative credentials to authenticate to the server.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting\nGets the HR and Accounting groups from the CMS on sqlserver2014a.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sqlserver2014a -Group HR\\Development\nReturns the sub-group Development of the HR group from the CMS on sqlserver2014a.",
-        "Syntax":  "Get-DbaRegisteredServerGroup [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Group] \u003cObject[]\u003e] [[-ExcludeGroup] \u003cObject[]\u003e] [[-Id] \u003cInt32[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Get-DbaRegisteredServerStore",
-        "Description":  "Returns a SQL Server Registered Server Store object - useful for working with Central Management Store",
-        "Tags":  [
-                     "RegisteredServer",
-                     "CMS"
-                 ],
-        "Alias":  "",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Returns a SQL Server Registered Server Store Object",
-        "Name":  "Get-DbaRegisteredServerStore",
-        "Links":  "https://dbatools.io/Get-DbaRegisteredServerStore",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServerStore -SqlInstance sqlserver2014a\nReturns a SQL Server Registered Server Store Object from sqlserver2014a\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServerStore -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)\nReturns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login",
-        "Syntax":  "Get-DbaRegisteredServerStore [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
         "CommandName":  "Get-DbaRegistryRoot",
         "Description":  "Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer",
         "Tags":  [
@@ -3014,7 +3014,7 @@
         "Synopsis":  "Returns restore history details for databases on a SQL Server.",
         "Name":  "Get-DbaRestoreHistory",
         "Links":  "https://dbatools.io/Get-DbaRestoreHistory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2016\nReturns server name, database, username, restore type, date for all restored databases on sql2016.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since \u00277/1/2016 10:47:00\u0027\nReturns restore information only for databases db1 and db2 on sql2016 since July 1, 2016 at 10:47 AM.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2014, sql2016 -Exclude db1\nLots of detailed information for all databases except db1 on sql2014 and sql2016.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs | Format-Table\nAdds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and formats the data as a table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaRestoreHistory\nReturns database restore information for every database on every server listed in the Central Management Server on sql2016.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2016\nReturns server name, database, username, restore type, date for all restored databases on sql2016.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since \u00277/1/2016 10:47:00\u0027\nReturns restore information only for databases db1 and db2 on sql2016 since July 1, 2016 at 10:47 AM.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2014, sql2016 -Exclude db1\nLots of detailed information for all databases except db1 on sql2014 and sql2016.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs | Format-Table\nAdds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and formats the data as a table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaRestoreHistory\nReturns database restore information for every database on every server listed in the Central Management Server on sql2016.",
         "Syntax":  "Get-DbaRestoreHistory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-Since] \u003cDateTime\u003e] [-Force] [-Last] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -3148,7 +3148,7 @@
         "Synopsis":  "Returns the install date of a SQL Instance and Windows Server, depending on what is passed.",
         "Name":  "Get-DbaServerInstallDate",
         "Links":  "https://dbatools.io/Get-DbaServerInstallDate",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaServerInstallDate -SqlInstance SqlBox1\\Instance2\nReturns an object with SQL Instance Install date as a string and the Windows install date as string.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaServerInstallDate -SqlInstance winserver\\sqlexpress, sql2016\nReturns an object with SQL Instance Install date as a string and the Windows install date as a string for both SQLInstances that are passed to the cmdlet.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaServerInstallDate -SqlInstance sqlserver2014a, sql2016\nReturns an object with only the SQL Server Install date as a string.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaServerInstallDate -SqlInstance sqlserver2014a, sql2016 -IncludeWindows\nReturns an object with the Windows Install date and the SQL install date as a string.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2014 | Get-DbaServerInstallDate\nReturns an object with SQL Instance install date as a string for every server listed in the Central Management Server on sql2014",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaServerInstallDate -SqlInstance SqlBox1\\Instance2\nReturns an object with SQL Instance Install date as a string and the Windows install date as string.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaServerInstallDate -SqlInstance winserver\\sqlexpress, sql2016\nReturns an object with SQL Instance Install date as a string and the Windows install date as a string for both SQLInstances that are passed to the cmdlet.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaServerInstallDate -SqlInstance sqlserver2014a, sql2016\nReturns an object with only the SQL Server Install date as a string.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaServerInstallDate -SqlInstance sqlserver2014a, sql2016 -IncludeWindows\nReturns an object with the Windows Install date and the SQL install date as a string.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaServerInstallDate\nReturns an object with SQL Instance install date as a string for every server listed in the Central Management Server on sql2014",
         "Syntax":  "Get-DbaServerInstallDate [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [-IncludeWindows] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -3311,7 +3311,7 @@
         "Synopsis":  "Returns the TCP port used by the specified SQL Server.",
         "Name":  "Get-DbaTcpPort",
         "Links":  "https://dbatools.io/Get-DbaTcpPort",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaTcpPort -SqlInstance sqlserver2014a\nReturns just the port number for the default instance on sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaTcpPort -SqlInstance winserver\\sqlexpress, sql2016\nReturns an object with server name and port number for the sqlexpress on winserver and the default instance on sql2016.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaTcpPort -SqlInstance sqlserver2014a, sql2016 -Detailed\nReturns an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for sqlserver2014a and sql2016.\nRemote sqlwmi is used by default. If this doesn\u0027t work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -Detailed\nReturns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in the Central Management Server on sql2014.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaTcpPort -SqlInstance sqlserver2014a\nReturns just the port number for the default instance on sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaTcpPort -SqlInstance winserver\\sqlexpress, sql2016\nReturns an object with server name and port number for the sqlexpress on winserver and the default instance on sql2016.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaTcpPort -SqlInstance sqlserver2014a, sql2016 -Detailed\nReturns an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for sqlserver2014a and sql2016.\nRemote sqlwmi is used by default. If this doesn\u0027t work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -Detailed\nReturns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in the Central Management Server on sql2014.",
         "Syntax":  "Get-DbaTcpPort [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Detailed] [-ExcludeIpv6] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -3417,7 +3417,7 @@
         "Synopsis":  "Returns the uptime of the SQL Server instance, and if required the hosting windows server",
         "Name":  "Get-DbaUptime",
         "Links":  "https://dbatools.io/Get-DbaUptime",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaUptime -SqlInstance SqlBox1\\Instance2\nReturns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress \r\ninstance on winserver\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaUptime -SqlInstance winserver\\sqlexpress, sql2016\nReturns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress \r\ninstance on host winserver  and the default instance on host sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2014 | Get-DbaUptime\nReturns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for every server \r\nlisted in the Central Management Server on sql2014",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaUptime -SqlInstance SqlBox1\\Instance2\nReturns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress \r\ninstance on winserver\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaUptime -SqlInstance winserver\\sqlexpress, sql2016\nReturns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress \r\ninstance on host winserver  and the default instance on host sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaUptime\nReturns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for every server \r\nlisted in the Central Management Server on sql2014",
         "Syntax":  "Get-DbaUptime [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -3588,6 +3588,21 @@
         "Syntax":  "Get-DbaXEStore [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Import-DbaCmsRegServer",
+        "Description":  "Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Alias":  "Import-DbaRegisteredServer",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)",
+        "Name":  "Import-DbaCmsRegServer",
+        "Links":  "https://dbatools.io/Import-DbaCmsRegServer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaCmsRegServer -SqlInstance sql2012 -Path C:\\temp\\corp-regservers.xml\nImports C:\\temp\\corp-regservers.xml to the CMS on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaCmsRegServer -SqlInstance sql2008 -Group hr\\Seattle -Path C:\\temp\\Seattle.xml\nImports C:\\temp\\Seattle.xml to Seattle subgroup within the hr group on sql2008\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Import-DbaCmsRegServer -SqlInstance sql2017\nImports all registered servers from sql2008 and sql2012 to sql2017\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\\Seattle | Import-DbaCmsRegServer -SqlInstance sql2017 -Group Seattle\nImports all registered servers from the hr\\Seattle group on sql2008 to the Seattle group on sql2017",
+        "Syntax":  "Import-DbaCmsRegServer [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Path] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Group] \u003cObject\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Import-DbaCsvToSql",
         "Description":  "Import-DbaCsvToSql takes advantage of .NET\u0027s super fast SqlBulkCopy class to import CSV files into SQL Server at up to 90,000 rows a second.\n\nThe entire import is contained within a transaction, so if a failure occurs or the script is aborted, no changes will persist.\n\nIf the table specified does not exist, it will be automatically created using best guessed data types. In addition, the destination table can be truncated prior to import.\n\nThe Query parameter will be used to import only the data returned from a SQL Query executed against the CSV file(s). This function supports a number of bulk copy options. Please see parameter list for details.",
         "Tags":  "Migration",
@@ -3614,21 +3629,6 @@
         "Links":  "https://dbatools.io/Import-DbaPfDataCollectorSetTemplate",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template \u0027Long Running Query\u0027\nCreates a new data collector set named \u0027Long Running Query\u0027 from the dbatools repository on the SQL Server sql2017.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template \u0027Long Running Query\u0027 -DisplayName \u0027New Long running query\u0027 -Confirm\nCreates a new data collector set named \"New Long Running Query\" using the \u0027Long Running Query\u0027 template. Forces a confirmation if the template exists.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaPfDataCollectorSet -ComputerName sql2017 -Session db_ola_health | Remove-DbaPfDataCollectorSet\nImport-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template db_ola_health | Start-DbaPfDataCollectorSet\nImports a session if it exists, then recreates it using a template.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017\nAllows you to select a Session template then import to an instance named sql2017.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eImport-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Template \u0027Long Running Query\u0027 -Instance SHAREPOINT\nCreates a new data collector set named \u0027Long Running Query\u0027 from the dbatools repository on the SQL Server sql2017 for both the default and the SHAREPOINT instance.\nIf you\u0027d like to remove counters for the default instance, use Remove-DbaPfDataCollectorCounter.",
         "Syntax":  "Import-DbaPfDataCollectorSetTemplate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-DisplayName] \u003cString\u003e] [-SchedulesEnabled] [[-RootPath] \u003cString\u003e] [-Segment] [[-SegmentMaxDuration] \u003cInt32\u003e] [[-SegmentMaxSize] \u003cInt32\u003e] [[-Subdirectory] \u003cString\u003e] [[-SubdirectoryFormat] \u003cInt32\u003e] [[-SubdirectoryFormatPattern] \u003cString\u003e] [[-Task] \u003cString\u003e] [-TaskRunAsSelf] [[-TaskArguments] \u003cString\u003e] [[-TaskUserTextArguments] \u003cString\u003e] [-StopOnCompletion] [[-Path] \u003cString[]\u003e] [[-Template] \u003cString[]\u003e] [[-Instance] \u003cString[]\u003e] [-EnableException] [-WhatIf] [-Confirm] \r\n[\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Import-DbaRegisteredServer",
-        "Description":  "Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)",
-        "Tags":  [
-                     "RegisteredServer",
-                     "CMS"
-                 ],
-        "Alias":  "",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)",
-        "Name":  "Import-DbaRegisteredServer",
-        "Links":  "https://dbatools.io/Import-DbaRegisteredServer",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eImport-DbaRegisteredServer -SqlInstance sql2012 -Path C:\\temp\\corp-regservers.xml\nImports C:\\temp\\corp-regservers.xml to the CMS on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eImport-DbaRegisteredServer -SqlInstance sql2008 -Group hr\\Seattle -Path C:\\temp\\Seattle.xml\nImports C:\\temp\\Seattle.xml to Seattle subgroup within the hr group on sql2008\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2008, sql2012 | Import-DbaRegisteredServer -SqlInstance sql2017\nImports all registered servers from sql2008 and sql2012 to sql2017\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sql2008 -Group hr\\Seattle | Import-DbaRegisteredServer -SqlInstance sql2017 -Group Seattle\nImports all registered servers from the hr\\Seattle group on sql2008 to the Seattle group on sql2017",
-        "Syntax":  "Import-DbaRegisteredServer [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Path] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [[-Group] \u003cObject\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Import-DbaSpConfigure",
@@ -3718,7 +3718,7 @@
         "Synopsis":  "Automatically installs or updates sp_WhoisActive by Adam Machanic.",
         "Name":  "Install-DbaWhoIsActive",
         "Links":  "https://dbatools.io/Install-DbaWhoIsActive",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master\nDownloads sp_WhoisActive from the internet and installs to sqlserver2014a\u0027s master database. Connects to SQL Server using Windows Authentication.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred\nPops up a dialog box asking which database on sqlserver2014a you want to install the procedure into. Connects to SQL Server using SQL Authentication.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\\SQLAdmin\\whoisactive_install.sql\nInstalls sp_WhoisActive to sqlserver2014a\u0027s master database from the local file whoisactive_install.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$instances = Get-DbaRegisteredServer sqlserver\nInstall-DbaWhoIsActive -SqlInstance $instances -Database master",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master\nDownloads sp_WhoisActive from the internet and installs to sqlserver2014a\u0027s master database. Connects to SQL Server using Windows Authentication.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred\nPops up a dialog box asking which database on sqlserver2014a you want to install the procedure into. Connects to SQL Server using SQL Authentication.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\\SQLAdmin\\whoisactive_install.sql\nInstalls sp_WhoisActive to sqlserver2014a\u0027s master database from the local file whoisactive_install.sql\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$instances = Get-DbaCmsRegServer sqlserver\nInstall-DbaWhoIsActive -SqlInstance $instances -Database master",
         "Syntax":  "Install-DbaWhoIsActive [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-LocalFile \u003cString\u003e] [-Database \u003cObject\u003e] [-EnableException] [-Force] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -3895,7 +3895,7 @@
         "Synopsis":  "A command to run explicit T-SQL commands or files.",
         "Name":  "Invoke-DbaQuery",
         "Links":  "https://dbatools.io/Invoke-DbaQuery",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaQuery -SqlInstance server\\instance -Query \u0027SELECT foo FROM bar\u0027\nRuns the sql query \u0027SELECT foo FROM bar\u0027 against the instance \u0027server\\instance\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaQuery -Query \u0027SELECT foo FROM bar\u0027\nRuns the sql query \u0027SELECT foo FROM bar\u0027 against all instances in the group [GROUPNAME] on the CMS [SERVERNAME]\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\"server1\", \"server1\\nordwind\", \"server2\" | Invoke-DbaQuery -File \"C:\\scripts\\sql\\rebuild.sql\"\nRuns the sql commands stored in rebuild.sql against the instances \"server1\", \"server1\\nordwind\" and \"server2\"\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance \"server1\", \"server1\\nordwind\", \"server2\" | Invoke-DbaQuery -File \"C:\\scripts\\sql\\rebuild.sql\"\nRuns the sql commands stored in rebuild.sql against all accessible databases of the instances \"server1\", \"server1\\nordwind\" and \"server2\"",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaQuery -SqlInstance server\\instance -Query \u0027SELECT foo FROM bar\u0027\nRuns the sql query \u0027SELECT foo FROM bar\u0027 against the instance \u0027server\\instance\u0027\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance [SERVERNAME] -Group [GROUPNAME] | Invoke-DbaQuery -Query \u0027SELECT foo FROM bar\u0027\nRuns the sql query \u0027SELECT foo FROM bar\u0027 against all instances in the group [GROUPNAME] on the CMS [SERVERNAME]\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\"server1\", \"server1\\nordwind\", \"server2\" | Invoke-DbaQuery -File \"C:\\scripts\\sql\\rebuild.sql\"\nRuns the sql commands stored in rebuild.sql against the instances \"server1\", \"server1\\nordwind\" and \"server2\"\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance \"server1\", \"server1\\nordwind\", \"server2\" | Invoke-DbaQuery -File \"C:\\scripts\\sql\\rebuild.sql\"\nRuns the sql commands stored in rebuild.sql against all accessible databases of the instances \"server1\", \"server1\\nordwind\" and \"server2\"",
         "Syntax":  "Invoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject\u003e] [-Query] \u003cString\u003e [-QueryTimeout \u003cInt32\u003e] [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nInvoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject\u003e] [-QueryTimeout \u003cInt32\u003e] -File \u003cObject[]\u003e [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]\nInvoke-DbaQuery [-SqlInstance \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject\u003e] [-QueryTimeout \u003cInt32\u003e] -SqlObject \u003cSqlSmoObject[]\u003e [-As \u003cString\u003e] [-SqlParameters \u003cIDictionary\u003e] [-AppendServerInstance] [-MessagesToOutput] [-InputObject \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -4009,34 +4009,34 @@
         "Syntax":  "Mount-DbaDatabase [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Database] \u003cString[]\u003e [[-FileStructure] \u003cStringCollection\u003e] [[-DatabaseOwner] \u003cString\u003e] [[-AttachOption] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
-        "CommandName":  "Move-DbaRegisteredServer",
+        "CommandName":  "Move-DbaCmsRegServer",
         "Description":  "Moves registered servers around SQL Server Central Management Server (CMS)",
         "Tags":  [
                      "RegisteredServer",
                      "CMS"
                  ],
-        "Alias":  "",
+        "Alias":  "Move-DbaRegisteredServer",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Moves registered servers around SQL Server Central Management Server (CMS)",
-        "Name":  "Move-DbaRegisteredServer",
-        "Links":  "https://dbatools.io/Move-DbaRegisteredServer",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaRegisteredServer -SqlInstance sql2012 -Name \u0027Web SQL Cluster\u0027 -NewGroup HR\\Prod\nMoves the registered server on sql2012 titled \u0027Web SQL Cluster\u0027 to the Prod group within the HR group\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eMove-DbaRegisteredServer -SqlInstance sql2012 -Group HR\\Development -NewGroup HR\\Prod\nMoves all servers from the HR and sub-group Development to HR Prod\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2017 -Name \u0027Web SQL Cluster\u0027 | Move-DbaRegisteredServer -NewGroup Web\nMoves the registered server \u0027Web SQL Cluster\u0027 on sql2017 to the Web group, also on sql2017",
-        "Syntax":  "Move-DbaRegisteredServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-ServerName] \u003cString[]\u003e] [[-NewGroup] \u003cString\u003e] [[-InputObject] \u003cRegisteredServer[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Name":  "Move-DbaCmsRegServer",
+        "Links":  "https://dbatools.io/Move-DbaCmsRegServer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaCmsRegServer -SqlInstance sql2012 -Name \u0027Web SQL Cluster\u0027 -NewGroup HR\\Prod\nMoves the registered server on sql2012 titled \u0027Web SQL Cluster\u0027 to the Prod group within the HR group\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eMove-DbaCmsRegServer -SqlInstance sql2012 -Group HR\\Development -NewGroup HR\\Prod\nMoves all servers from the HR and sub-group Development to HR Prod\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2017 -Name \u0027Web SQL Cluster\u0027 | Move-DbaCmsRegServer -NewGroup Web\nMoves the registered server \u0027Web SQL Cluster\u0027 on sql2017 to the Web group, also on sql2017",
+        "Syntax":  "Move-DbaCmsRegServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-ServerName] \u003cString[]\u003e] [[-NewGroup] \u003cString\u003e] [[-InputObject] \u003cRegisteredServer[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
-        "CommandName":  "Move-DbaRegisteredServerGroup",
+        "CommandName":  "Move-DbaCmsRegServerGroup",
         "Description":  "Moves registered server groups around SQL Server Central Management Server (CMS).",
         "Tags":  [
                      "RegisteredServer",
                      "CMS"
                  ],
-        "Alias":  "",
+        "Alias":  "Move-DbaRegisteredServerGroup",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
         "Synopsis":  "Moves registered server groups around SQL Server Central Management Server (CMS).",
-        "Name":  "Move-DbaRegisteredServerGroup",
-        "Links":  "https://dbatools.io/Move-DbaRegisteredServerGroup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR\\Development -NewGroup AD\\Prod\nMoves the Development group within HR to the Prod group within AD\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServerGroup -SqlInstance sql2017 -Group HR\\Development| Move-DbaRegisteredServer -NewGroup Web\nMoves the Development group within HR to the Web group",
-        "Syntax":  "Move-DbaRegisteredServerGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Group] \u003cString[]\u003e] [-NewGroup] \u003cString\u003e [[-InputObject] \u003cServerGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Name":  "Move-DbaCmsRegServerGroup",
+        "Links":  "https://dbatools.io/Move-DbaCmsRegServerGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eMove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR\\Development -NewGroup AD\\Prod\nMoves the Development group within HR to the Prod group within AD\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServerGroup -SqlInstance sql2017 -Group HR\\Development| Move-DbaCmsRegServer -NewGroup Web\nMoves the Development group within HR to the Web group",
+        "Syntax":  "Move-DbaCmsRegServerGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Group] \u003cString[]\u003e] [-NewGroup] \u003cString\u003e [[-InputObject] \u003cServerGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "New-DbaAgentJob",
@@ -4662,6 +4662,36 @@
         "Syntax":  "Remove-DbaCmConnection [-ComputerName] \u003cDbaCmConnectionParameter[]\u003e [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Remove-DbaCmsRegServer",
+        "Description":  "Removes registered servers found in SQL Server Central Management Server (CMS).",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Alias":  "Remove-DbaRegisteredServer",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Removes registered servers found in SQL Server Central Management Server (CMS).",
+        "Name":  "Remove-DbaCmsRegServer",
+        "Links":  "https://dbatools.io/Remove-DbaCmsRegServer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServer -SqlInstance sql2012 -Group HR, Accounting\nRemoves all servers from the HR and Accounting groups on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServer -SqlInstance sql2012 -Group HR\\Development\nRemoves all servers from the HR and sub-group Development from the CMS on sql2012.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServer -SqlInstance sql2012 -Confirm:$false\nRemoves all registered servers on sql2012 and turns off all prompting",
+        "Syntax":  "Remove-DbaCmsRegServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-ServerName] \u003cString[]\u003e] [[-Group] \u003cString[]\u003e] [[-InputObject] \u003cRegisteredServer[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Remove-DbaCmsRegServerGroup",
+        "Description":  "Returns an array of Server Groups found in the CMS.",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
+        "Alias":  "Remove-DbaRegisteredServerGroup",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).",
+        "Name":  "Remove-DbaCmsRegServerGroup",
+        "Links":  "https://dbatools.io/Remove-DbaCmsRegServerGroup",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR, Accounting\nRemoves the HR and Accounting groups on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR\\Development -Confirm:$false\nRemoves the Development subgroup within the HR group on sql2012 and turns off all prompting",
+        "Syntax":  "Remove-DbaCmsRegServerGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-InputObject] \u003cServerGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Remove-DbaComputerCertificate",
         "Description":  "Removes a computer certificate from a local or remote compuer",
         "Tags":  "Certificate",
@@ -4828,36 +4858,6 @@
         "Syntax":  "Remove-DbaPfDataCollectorSet [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-CollectorSet] \u003cString[]\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
-        "CommandName":  "Remove-DbaRegisteredServer",
-        "Description":  "Removes registered servers found in SQL Server Central Management Server (CMS).",
-        "Tags":  [
-                     "RegisteredServer",
-                     "CMS"
-                 ],
-        "Alias":  "",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Removes registered servers found in SQL Server Central Management Server (CMS).",
-        "Name":  "Remove-DbaRegisteredServer",
-        "Links":  "https://dbatools.io/Remove-DbaRegisteredServer",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaRegisteredServer -SqlInstance sql2012 -Group HR, Accounting\nRemoves all servers from the HR and Accounting groups on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaRegisteredServer -SqlInstance sql2012 -Group HR\\Development\nRemoves all servers from the HR and sub-group Development from the CMS on sql2012.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaRegisteredServer -SqlInstance sql2012 -Confirm:$false\nRemoves all registered servers on sql2012 and turns off all prompting",
-        "Syntax":  "Remove-DbaRegisteredServer [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-ServerName] \u003cString[]\u003e] [[-Group] \u003cString[]\u003e] [[-InputObject] \u003cRegisteredServer[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Remove-DbaRegisteredServerGroup",
-        "Description":  "Returns an array of Server Groups found in the CMS.",
-        "Tags":  [
-                     "RegisteredServer",
-                     "CMS"
-                 ],
-        "Alias":  "",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).",
-        "Name":  "Remove-DbaRegisteredServerGroup",
-        "Links":  "https://dbatools.io/Remove-DbaRegisteredServerGroup",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR, Accounting\nRemoves the HR and Accounting groups on sql2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaRegisteredServerGroup -SqlInstance sql2012 -Group HR\\Development -Confirm:$false\nRemoves the Development subgroup within the HR group on sql2012 and turns off all prompting",
-        "Syntax":  "Remove-DbaRegisteredServerGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Name] \u003cString[]\u003e] [[-InputObject] \u003cServerGroup[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
-    },
-    {
         "CommandName":  "Remove-DbaSpn",
         "Description":  "This function will connect to Active Directory and search for an account. If the account is found, it will attempt to remove the specified SPN. Once the SPN is removed, the function will also remove delegation to that service.\n\nIn order to run this function, the credential you provide must have write access to Active Directory.\n\nNote: This function supports -WhatIf",
         "Tags":  "SPN",
@@ -4991,7 +4991,7 @@
         "Synopsis":  "Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).",
         "Name":  "Resolve-DbaNetworkName",
         "Links":  "https://dbatools.io/Resolve-DbaNetworkName",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -ComputerName ServerA\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for ServerA\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -SqlInstance sql2016\\sqlexpress\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\\sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -SqlInstance sql2016\\sqlexpress, sql2014\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\\sqlexpress and sql2014\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2014 | Resolve-DbaNetworkName\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaRegisteredServer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -ComputerName ServerA\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for ServerA\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -SqlInstance sql2016\\sqlexpress\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\\sqlexpress\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eResolve-DbaNetworkName -SqlInstance sql2016\\sqlexpress, sql2014\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\\sqlexpress and sql2014\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2014 | Resolve-DbaNetworkName\nReturns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaCmsRegServer",
         "Syntax":  "Resolve-DbaNetworkName [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-Turbo] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -5360,7 +5360,7 @@
         "Synopsis":  "Sets SQL Server \u0027Max Server Memory\u0027 configuration setting to a new value then displays information this setting.",
         "Name":  "Set-DbaMaxMemory",
         "Links":  "https://dbatools.io/Set-DbaMaxMemory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaMaxMemory sqlserver1\nSet max memory to the recommended MB on just one server named \"sqlserver1\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaMaxMemory -SqlInstance sqlserver1 -MaxMB 2048\nExplicitly max memory to 2048 MB on just one server, \"sqlserver1\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver | Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory\nFind all servers in SQL Server Central Management server that have Max SQL memory set to higher than the total memory\r\nof the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaMaxMemory sqlserver1\nSet max memory to the recommended MB on just one server named \"sqlserver1\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaMaxMemory -SqlInstance sqlserver1 -MaxMB 2048\nExplicitly max memory to 2048 MB on just one server, \"sqlserver1\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver | Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory\nFind all servers in SQL Server Central Management server that have Max SQL memory set to higher than the total memory\r\nof the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.",
         "Syntax":  "Set-DbaMaxMemory [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [-SqlCredential \u003cPSCredential\u003e] [[-MaxMB] \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -5769,7 +5769,7 @@
         "Synopsis":  "Returns SQL Server Build \"compliance\" level on a build",
         "Name":  "Test-DbaBuild",
         "Links":  "https://dbatools.io/Test-DbaBuild",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.0.5540\" -MinimumBuild \"12.0.5557\"\nReturns information about a build identified by \"12.0.5540\" (which is SQL 2014 with SP2 and CU4), which is not compliant as the minimum required\r\nbuild is \"12.0.5557\" (which is SQL 2014 with SP2 and CU8)\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.0.5540\" -MaxBehind \"1SP\"\nReturns information about a build identified by \"12.0.5540\", making sure it is AT MOST 1 Service Pack \"behind\". For that version,\r\nthat identifies an SP2, means accepting as the lowest compliance version as \"12.0.4110\", that identifies 2014 with SP1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.0.5540\" -MaxBehind \"1SP 1CU\"\nReturns information about a build identified by \"12.0.5540\", making sure it is AT MOST 1 Service Pack \"behind\", plus 1 CU \"behind\". For that version,\r\nthat identifies an SP2 and CU, rolling back 1 SP brings you to \"12.0.4110\", but given the latest CU for SP1 is CU13, the target \"compliant\" build\r\nwill be \"12.0.4511\", which is 2014 with SP1 and CU12\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.0.5540\" -MaxBehind \"0CU\"\nReturns information about a build identified by \"12.0.5540\", making sure it is the latest CU release.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.0.5540\" -Latest\nSame as previous, returns information about a build identified by \"12.0.5540\", making sure it is the latest build available.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.00.4502\" -MinimumBuild \"12.0.4511\" -Update\nSame as before, but tries to fetch the most up to date index online. When the online version is newer, the local one gets overwritten\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.0.4502\",\"10.50.4260\" -MinimumBuild \"12.0.4511\"\nReturns information builds identified by these versions strings\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver2014a | Test-DbaBuild -MinimumBuild \"12.0.4511\"\nIntegrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.0.5540\" -MinimumBuild \"12.0.5557\"\nReturns information about a build identified by \"12.0.5540\" (which is SQL 2014 with SP2 and CU4), which is not compliant as the minimum required\r\nbuild is \"12.0.5557\" (which is SQL 2014 with SP2 and CU8)\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.0.5540\" -MaxBehind \"1SP\"\nReturns information about a build identified by \"12.0.5540\", making sure it is AT MOST 1 Service Pack \"behind\". For that version,\r\nthat identifies an SP2, means accepting as the lowest compliance version as \"12.0.4110\", that identifies 2014 with SP1\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.0.5540\" -MaxBehind \"1SP 1CU\"\nReturns information about a build identified by \"12.0.5540\", making sure it is AT MOST 1 Service Pack \"behind\", plus 1 CU \"behind\". For that version,\r\nthat identifies an SP2 and CU, rolling back 1 SP brings you to \"12.0.4110\", but given the latest CU for SP1 is CU13, the target \"compliant\" build\r\nwill be \"12.0.4511\", which is 2014 with SP1 and CU12\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.0.5540\" -MaxBehind \"0CU\"\nReturns information about a build identified by \"12.0.5540\", making sure it is the latest CU release.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.0.5540\" -Latest\nSame as previous, returns information about a build identified by \"12.0.5540\", making sure it is the latest build available.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.00.4502\" -MinimumBuild \"12.0.4511\" -Update\nSame as before, but tries to fetch the most up to date index online. When the online version is newer, the local one gets overwritten\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eTest-DbaBuild -Build \"12.0.4502\",\"10.50.4260\" -MinimumBuild \"12.0.4511\"\nReturns information builds identified by these versions strings\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sqlserver2014a | Test-DbaBuild -MinimumBuild \"12.0.4511\"\nIntegrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a",
         "Syntax":  "Test-DbaBuild [[-Build] \u003cVersion[]\u003e] [[-MinimumBuild] \u003cVersion\u003e] [[-MaxBehind] \u003cString\u003e] [-Latest] [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-Update] [-Quiet] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -5830,7 +5830,7 @@
         "Synopsis":  "Compares Database Collations to Server Collation",
         "Name":  "Test-DbaDbCollation",
         "Links":  "https://dbatools.io/Test-DbaDbCollation",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDbCollation -SqlInstance sqlserver2014a\nReturns server name, database name and true/false if the collations match for all databases on sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDbCollation -SqlInstance sqlserver2014a -Database db1, db2\nReturns information for the db1 and db2 databases on sqlserver2014a.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaDbCollation -SqlInstance sqlserver2014a, sql2016 -Exclude db1\nReturns information for database and server collations for all databases except db1 on sqlserver2014a and sql2016.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2016 | Test-DbaDbCollation\nReturns db/server collation information for every database on every server listed in the Central Management Server on sql2016.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDbCollation -SqlInstance sqlserver2014a\nReturns server name, database name and true/false if the collations match for all databases on sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDbCollation -SqlInstance sqlserver2014a -Database db1, db2\nReturns information for the db1 and db2 databases on sqlserver2014a.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaDbCollation -SqlInstance sqlserver2014a, sql2016 -Exclude db1\nReturns information for database and server collations for all databases except db1 on sqlserver2014a and sql2016.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2016 | Test-DbaDbCollation\nReturns db/server collation information for every database on every server listed in the Central Management Server on sql2016.",
         "Syntax":  "Test-DbaDbCollation [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -5845,7 +5845,7 @@
         "Synopsis":  "Compares Database Compatibility level to Server Compatibility",
         "Name":  "Test-DbaDbCompatibility",
         "Links":  "https://dbatools.io/Test-DbaDbCompatibility",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDbCompatibility -SqlInstance sqlserver2014a\nReturns server name, database name and true/false if the compatibility level match for all databases on sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDbCompatibility -SqlInstance sqlserver2014a -Database db1, db2\nReturns detailed information for database and server compatibility level for the db1 and db2 databases on sqlserver2014a.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaDbCompatibility -SqlInstance sqlserver2014a, sql2016 -Exclude db1\nReturns detailed information for database and server compatibility level for all databases except db1 on sqlserver2014a and sql2016.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2014 | Test-DbaDbCompatibility\nReturns db/server compatibility information for every database on every server listed in the Central Management Server on sql2016.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDbCompatibility -SqlInstance sqlserver2014a\nReturns server name, database name and true/false if the compatibility level match for all databases on sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDbCompatibility -SqlInstance sqlserver2014a -Database db1, db2\nReturns detailed information for database and server compatibility level for the db1 and db2 databases on sqlserver2014a.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaDbCompatibility -SqlInstance sqlserver2014a, sql2016 -Exclude db1\nReturns detailed information for database and server compatibility level for all databases except db1 on sqlserver2014a and sql2016.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaCmsRegServer -SqlInstance sql2014 | Test-DbaDbCompatibility\nReturns db/server compatibility information for every database on every server listed in the Central Management Server on sql2016.",
         "Syntax":  "Test-DbaDbCompatibility [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-Credential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
