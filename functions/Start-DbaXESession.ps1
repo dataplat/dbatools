@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaXESession {
     <#
         .SYNOPSIS

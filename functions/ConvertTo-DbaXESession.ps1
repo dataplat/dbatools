@@ -1,4 +1,5 @@
-﻿function ConvertTo-DbaXESession {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function ConvertTo-DbaXESession {
     <#
         .SYNOPSIS
             Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events.

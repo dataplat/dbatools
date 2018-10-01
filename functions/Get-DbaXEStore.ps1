@@ -1,4 +1,5 @@
-﻿function Get-DbaXEStore {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaXEStore {
     <#
         .SYNOPSIS
             Get a Extended Events store

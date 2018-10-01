@@ -1,4 +1,5 @@
-﻿function Get-DbaPfDataCollectorCounter {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaPfDataCollectorCounter {
     <#
         .SYNOPSIS
             Gets Performance Counters.

@@ -1,4 +1,5 @@
-﻿function Get-DbaXESmartTarget {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaXESmartTarget {
     <#
         .SYNOPSIS
             Gets an XESmartTarget PowerShell Job created by Start-DbaXESmartTarget.
