@@ -54,6 +54,9 @@ function Set-DbaLogin {
     Remove one or more server roles to the login
     The following roles can be used "bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin".
 
+    .PARAMETER InputObject
+    Allows logins to be piped in from Get-DbaLogin
+
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -130,16 +133,12 @@ function Set-DbaLogin {
 
 #>
 
-    [CmdletBinding(DefaultParameterSetName = "Default")]
+    [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Instance")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory, ParameterSetName = "Instance")]
         [string[]]$Login,
-        [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Logins")]
-        [Microsoft.SqlServer.Management.Smo.Login[]]$InputObject,
         [SecureString]$Password,
         [switch]$Unlock,
         [switch]$MustChange,
@@ -153,6 +152,8 @@ function Set-DbaLogin {
         [string[]]$AddRole,
         [ValidateSet("bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin")]
         [string[]]$RemoveRole,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Login[]]$InputObject,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -175,24 +176,22 @@ function Set-DbaLogin {
         # Check the password
         if ($Password) {
             switch ($Password.GetType().Name) {
-                "PSCredential" { $newPassword = $Password.Password}
-                "SecureString" { $newPassword = $Password}
+                "PSCredential" { $newPassword = $Password.Password }
+                "SecureString" { $newPassword = $Password }
             }
         }
         else {
         }
 
+        if ((Test-Bound -ParameterName SqlInstance) -And (Test-Bound -ParameterName Login -Not)) {
+            Stop-Function -Message "You must specify a Login when using SqlInstance"
+        }
     }
 
     process {
         if (Test-FunctionInterrupt) { return }
 
-        if ($PSCmdlet.ParameterSetName -eq 'Logins') {
-            $SqlInstance = $InputObject | Select-Object -ExpandProperty SqlInstance -Unique
-        }
-
-        $allLogins = @{}
-        foreach ($instance in $SqlInstance) {
+        foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
             Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
@@ -201,22 +200,19 @@ function Set-DbaLogin {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            # cache all the logins for the instance for duplicate checking
-            $allLogins[$instance] = $server.Logins | Where-Object {($_.IsSystemObject -eq $false) -and ($_.Name -notlike '##*')} | Select-Object -ExpandProperty Name
-            $InputObject += $server.Logins | Where-Object {$Login -contains $_.Name}
-        } # end for each instance
+            $InputObject += Get-DbaLogin -SqlInstance $server -Login $Login | Where-Object { ($_.IsSystemObject -eq $false) -and ($_.Name -notlike '##*') }
+        }
 
         # Loop through all the logins
         foreach ($l in $InputObject) {
-
+            $server = $l.Parent
             # Create the notes
             $notes = @()
 
             # Change the name
             if ($NewName) {
                 # Check if the new name doesn't already exist
-                if ($allLogins[$l.SqlInstance] -notcontains $NewName) {
+                if ($allLogins.Name -notcontains $NewName) {
                     try {
                         $l.Rename($NewName)
                     }
@@ -300,7 +296,8 @@ function Set-DbaLogin {
             if (Test-Bound PasswordPolicyEnforced) {
                 if ($l.PasswordPolicyEnforced -eq $PasswordPolicyEnforced) {
                     Write-Message -Message ("Login $l password policy is already set to " + $l.PasswordPolicyEnforced) -Level Verbose
-                } else {
+                }
+                else {
                     $l.PasswordPolicyEnforced = $PasswordPolicyEnforced
                 }
             }
@@ -337,7 +334,7 @@ function Set-DbaLogin {
             $l.Alter()
 
             # Retrieve the server roles for the login
-            $roles = Get-DbaRoleMember -SqlInstance $instance -IncludeServerLevel | Where-Object {$null -eq $_.Database -and $_.Member -eq $l.Name}
+            $roles = Get-DbaRoleMember -SqlInstance $server -IncludeServerLevel | Where-Object { $null -eq $_.Database -and $_.Member -eq $l.Name }
 
             # Check if there were any notes to include in the results
             if ($notes) {
@@ -348,29 +345,8 @@ function Set-DbaLogin {
                 $notes = $null
             }
 
-            # Return the results
-            [PSCustomObject]@{
-                ComputerName           = $server.ComputerName
-                InstanceName           = $server.ServiceName
-                SqlInstance            = $server.DomainInstanceName
-                LoginName              = $l.Name
-                DenyLogin              = $l.DenyWindowsLogin
-                IsDisabled             = $l.IsDisabled
-                IsLocked               = $l.IsLocked
-                PasswordPolicyEnforced = $l.PasswordPolicyEnforced
-                MustChangePassword     = $l.MustChangePassword
-                PasswordChanged        = $passwordChanged
-                ServerRole             = $roles.Role -join ","
-                Notes                  = $notes
-            } | Select-DefaultView -ExcludeProperty Login
+            Get-DbaLogin -SqlInstance $server -Login $l.Name
 
-        } # end for each login
-    } # end process
-
-    end {
-        if (Test-FunctionInterrupt) { return }
-        Write-Message -Message "Finished changing login(s)" -Level Verbose
+        }
     }
-
-
 }
