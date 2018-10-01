@@ -44,7 +44,12 @@ function Get-DbaWsfcSharedVolume {
     )
     process {
         foreach ($computer in $computername) {
-            Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName ClusterSharedVolume
+            $cluster = Get-DbaWsfcCluster -ComputerName $computer -Credential $Credential
+            $volume = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName ClusterSharedVolume
+            # I don't have a shared volume, so I can't see how to clean this up: Passthru
+            $volume | Add-Member -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
+            $volume | Add-Member -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn -PassThru
+            
         }
     }
 }

@@ -34,6 +34,12 @@ function Get-DbaWsfcNode {
         Get-DbaWsfcNode -ComputerName cluster01
     
         Gets node information from the failover cluster cluster01
+    
+    .EXAMPLE
+        Get-DbaWsfcNode -ComputerName cluster01 | Select *
+    
+        Shows all node values, including the ones not shown in the default view
+   
     #>
     [CmdletBinding()]
     param (
@@ -44,7 +50,11 @@ function Get-DbaWsfcNode {
     )
     process {
         foreach ($computer in $computername) {
-            Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Node
+            $cluster = Get-DbaWsfcCluster -ComputerName $computer -Credential $Credential
+            $node = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Node
+            $node | Add-Member -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
+            $node | Add-Member -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn
+            $node | Select-DefaultView -Property ClusterName, ClusterFqdn, Name, Caption, Description, InstallDate, Status, PrimaryOwnerName, PrimaryOwnerContact, Dedicated, NodeHighestVersion, NodeLowestVersion
         }
     }
 }
