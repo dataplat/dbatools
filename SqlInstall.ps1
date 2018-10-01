@@ -175,11 +175,11 @@ Switch ($AlterDir)
     N {
         Write-Host "Datadrive: " $DataVolume
         $NewDataVolume = Read-Host "Your datavolume: "
-        If($NewDataVolume.Substring($NewDataVolume.Length -2 -eq $CheckLastTwoChar))
+        If($NewDataVolume.Substring($NewDataVolume.Length -2 -eq $CheckLastTwoChar) -and $NewDataVolume.Length -gt 2)
         {
             $NewDataVolume = $NewDataVolume.Substring(0,$NewDataVolume.Length-2)
         }
-        If($NewDataVolume.Substring($NewDataVolume.Length -1 -eq $CheckLastChar))
+        If($NewDataVolume.Substring($NewDataVolume.Length -1 -eq $CheckLastChar)-and $NewDataVolume.Length -gt 1)
         {
             $NewDataVolume = $NewDataVolume.Substring(0,$NewDataVolume.Length-1)
         }
@@ -194,11 +194,11 @@ Switch ($AlterDir)
 
         Write-Host "logvolume: " $LogVolume
         $NewLogVolume = Read-Host "Your logvolume: "
-        If($NewLogVolume.Substring($NewLogVolume.Length -2 -eq $CheckLastTwoChar))
+        If($NewLogVolume.Substring($NewLogVolume.Length -2 -eq $CheckLastTwoChar) -and $NewLogVolume.Length -gt 2)
         {
             $NewLogVolume = $NewLogVolume.Substring(0,$NewLogVolume.Length-2)
         }
-        If($NewLogVolume.Substring($NewLogVolume.Length -1 -eq $CheckLastChar))
+        If($NewLogVolume.Substring($NewLogVolume.Length -1 -eq $CheckLastChar)-and $NewLogVolume.Length -gt 1)
         {
             $NewLogVolume = $NewLogVolume.Substring(0,$NewLogVolume.Length-1)
         }
@@ -213,11 +213,11 @@ Switch ($AlterDir)
 
         Write-Host "TempVolume: " $TempVolume
         $NewTempVolume = Read-Host "Your TempVolume: "
-        If($NewTempVolume.Substring($NewTempVolume.Length -2 -eq $CheckLastTwoChar))
+        If($NewTempVolume.Substring($NewTempVolume.Length -2 -eq $CheckLastTwoChar)-and $NewTempVolume.Length -gt 2)
         {
             $NewTempVolume = $NewTempVolume.Substring(0,$NewTempVolume.Length-2)
         }
-        If($NewTempVolume.Substring($NewTempVolume.Length -1 -eq $CheckLastChar))
+        If($NewTempVolume.Substring($NewTempVolume.Length -1 -eq $CheckLastChar) -and $NewTempVolume.Length -gt 1)
         {
             $NewTempVolume = $NewTempVolume.Substring(0,$NewTempVolume.Length-1)
         }
@@ -232,11 +232,11 @@ Switch ($AlterDir)
 
         Write-Host "AppVolume: " $AppVolume
         $NewAppVolume = Read-Host "Your AppVolume: "
-        If($NewAppVolume.Substring($NewAppVolume.Length -2 -eq $CheckLastTwoChar))
+        If($NewAppVolume.Substring($NewAppVolume.Length -2 -eq $CheckLastTwoChar) -and $NewAppVolume.Length -gt 2)
         {
             $NewAppVolume = $NewAppVolume.Substring(0,$NewAppVolume.Length-2)
         }
-        If($NewAppVolume.Substring($NewAppVolume.Length -1 -eq $CheckLastChar))
+        If($NewAppVolume.Substring($NewAppVolume.Length -1 -eq $CheckLastChar) -and $NewAppVolume.Length -gt 1)
         {
             $NewAppVolume = $NewAppVolume.Substring(0,$NewAppVolume.Length-1)
         }
@@ -251,11 +251,11 @@ Switch ($AlterDir)
 
         Write-Host "BackupVolume: " $BackupVolume
         $NewBackupVolume = Read-Host "Your BackupVolume: "
-        If($NewBackupVolume.Substring($NewBackupVolume.Length -2 -eq $CheckLastTwoChar))
+        If($NewBackupVolume.Substring($NewBackupVolume.Length -2 -eq $CheckLastTwoChar) -and $NewBackupVolume.Length -gt 2)
         {
             $NewBackupVolume = $NewBackupVolume.Substring(0,$NewBackupVolume.Length-2)
         }
-        If($NewBackupVolume.Substring($NewBackupVolume.Length -1 -eq $CheckLastChar))
+        If($NewBackupVolume.Substring($NewBackupVolume.Length -1 -eq $CheckLastChar) -and $NewBackupVolume.Length -gt -1)
         {
             $NewBackupVolume = $NewBackupVolume.Substring(0,$NewBackupVolume.Length-1)
         }
@@ -271,11 +271,11 @@ Switch ($AlterDir)
     Default{Write-Host "Drives agreed, continuing";}
 }
 $SetupFile = Read-Host -Prompt 'Please enter the location for Setup.exe'
-If($SetupFile.Substring($SetupFile.Length -2 -eq $CheckLastTwoChar))
+If($SetupFile.Substring($SetupFile.Length -2 -eq $CheckLastTwoChar) -and $SetupFile.Length -gt 2 )
         {
             $SetupFile = $SetupFile.Substring(0,$SetupFile.Length-2)
         }
-        If($SetupFile.Substring($SetupFile.Length -1 -eq $CheckLastChar))
+        If($SetupFile.Substring($SetupFile.Length -1 -eq $CheckLastChar)-and $SetupFile.Length -gt 1)
         {
             $SetupFile = $SetupFile.Substring(0,$SetupFile.Length-1)
         }
