@@ -300,10 +300,10 @@ If($SetupFile.Substring($SetupFile.Length -2 -eq $CheckLastTwoChar) -and $SetupF
         }
 IF($SetupFile.Length -eq 1)
 {
-    $SetupFile = $SetupFile + ':\SETUP.EXE'
+    $SetupFile = $SetupFile + ':\SQLEXPR_x64_ENU.EXE'
 }
 else {
-    $SetupFile = $SetupFile + '\SETUP.EXE'
+    $SetupFile = $SetupFile + '\SQLEXPR_x64_ENU.EXE'
     }
 
 
@@ -314,7 +314,7 @@ if( -Not (Test-Path -Path $ConfigFile ) )
     New-Item -ItemType directory -Path $ConfigFile
 }
 
-$FileLocation = $startScript
+$FileLocation = $startScript | Out-File $ConfigFile + 'ConfigurationFile2.ini'
 $FileLocation2 = $ConfigFile + 'ConfigurationFile2.ini'
 
 (Get-Content -Path $FileLocation).Replace('SQLBACKUPDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"', 'SQLBACKUPDIR="' + $BackupVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"') | Out-File $FileLocation2
