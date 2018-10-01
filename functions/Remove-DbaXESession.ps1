@@ -1,4 +1,5 @@
-﻿function Remove-DbaXESession {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Remove-DbaXESession {
     <#
         .SYNOPSIS
             Removes Extended Events sessions.

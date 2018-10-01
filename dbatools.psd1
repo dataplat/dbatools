@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.447'
+    ModuleVersion          = '0.9.450'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -125,7 +125,6 @@
         'Set-DbaPowerPlan',
         'Test-DbaDiskAlignment',
         'Get-DbaDbSpace',
-        'Get-DbaClusterNode',
         'Test-DbaDbOwner',
         'Set-DbaDbOwner',
         'Test-DbaJobOwner',
@@ -509,7 +508,17 @@
         'Get-DbaRepServer',
         'Measure-DbatoolsImport',
         'Get-DbaDeprecatedFeature',
-        'Test-DbaDeprecatedFeature'
+        'Test-DbaDeprecatedFeature',
+        'Get-DbaWsfcAvailableDisk',
+        'Get-DbaWsfcCluster',
+        'Get-DbaWsfcDisk',
+        'Get-DbaWsfcNetwork',
+        'Get-DbaWsfcNetworkInterface',
+        'Get-DbaWsfcNode',
+        'Get-DbaWsfcResource',
+        'Get-DbaWsfcResourceType',
+        'Get-DbaWsfcRole',
+        'Get-DbaWsfcSharedVolume'
     )
 
     # Cmdlets to export from this module
@@ -606,7 +615,6 @@
     'Get-DbaTraceFile',
     'Out-DbaDataTable',
     'Invoke-DbaCmd',
-    'Get-DbaClusterActiveNode',
     'Test-DbaVirtualLogFile',
     'Test-DbaFullRecoveryModel',
     'Get-DbaDatabaseSnapshot',
