@@ -34,6 +34,11 @@ function Get-DbaWsfcCluster {
         Get-DbaWsfcCluster -ComputerName cluster01
     
         Gets failover cluster information about cluster01
+    
+    .EXAMPLE
+        Get-DbaWsfcCluster -ComputerName cluster01 | Select *
+    
+        Shows all cluster values, including those not included in the default view
 #>
     [CmdletBinding()]
     param (
@@ -44,7 +49,8 @@ function Get-DbaWsfcCluster {
     )
     process {
         foreach ($computer in $computername) {
-            Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Cluster
+            Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Cluster |
+            Select-DefaultView -Property Name, Fqdn, Caption, Description, InstallDate, Status, DrainOnShutdown, DynamicQuorumEnabled, EnableSharedVolumes, SharedVolumesRoot, QuorumPath, QuorumType, QuorumTypeValue, RequestReplyTimeout
         }
     }
 }
