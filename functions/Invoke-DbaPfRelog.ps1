@@ -1,4 +1,5 @@
-﻿function Invoke-DbaPfRelog {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Invoke-DbaPfRelog {
     <#
         .SYNOPSIS
             Pipeline-compatible wrapper for the relog command which is available on modern Windows platforms.

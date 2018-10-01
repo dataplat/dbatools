@@ -1,4 +1,5 @@
-﻿function New-DbaXESmartReplay {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function New-DbaXESmartReplay {
     <#
         .SYNOPSIS
             This Response type can be used to replay execution related events to a target SQL Server instance.
