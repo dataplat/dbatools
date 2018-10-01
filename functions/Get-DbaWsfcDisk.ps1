@@ -58,7 +58,7 @@ function Get-DbaWsfcDisk {
             }
             
             <#
-                $disks = Get-CimInstance -Namespace Root\MSCluster -ClassName MSCluster_Resource -ComputerName $Cluster | ?{$_.Type -eq 'Physical Disk'}
+                $disks = Get-CimInstance -Namespace Root\MSCluster -ClassName MSCluster_Resource -ComputerName $Cluster | Where-Object Type -eq 'Physical Disk'
                 $disks | Get-CimAssociatedInstance -ResultClassName MSCluster_DiskPartition
             #>
             
@@ -66,17 +66,9 @@ function Get-DbaWsfcDisk {
                 $resourcegroup = $res.GetRelated() | Where-Object Type -eq 'Physical Disk'
                 foreach ($resource in $resourcegroup) {
                     $disks = $resource.GetRelated("MSCluster_Disk")
+                    
                     foreach ($disk in $disks) {
                         $diskpart = $disk.GetRelated("MSCluster_DiskPartition")
-                        $diskpart
-                        return
-                        $clusterdisk = $resource.Name
-                        $diskstate = $resource.State
-                        $diskdrive = $diskpart.Path
-                        $disklabel = $diskpart.VolumeLabel
-                        $disksize = $diskpart.TotalSize
-                        $diskfree = $diskpart.FreeSpace
-                        
                         switch ($diskstate) {
                             -1 { $diskstate = "Unknown" }
                             0   { $diskstate = "Inherited" }
@@ -89,36 +81,18 @@ function Get-DbaWsfcDisk {
                             130 { $diskstate = "Offline Pending" }
                         }
                         
-                        <#
-                        Caption                :
-                        Characteristics        :
-                        Description            :
-                        FileSystem             : NTFS
-                        FileSystemFlags        : 65470703
-                        Flags                  : 29
-                        FreeSpace              : 94538
-                        InstallDate            :
-                        MaximumComponentLength : 255
-                        MountPoints            : { M: }
-                        Name                   :
-                        PartitionNumber        : 2
-                        Path                   : M:
-                        SerialNumber           : 1045740649
-                        Status                 :
-                        TotalSize              : 102269
-                        VolumeGuid             : cb354fe3-d679-4e84-8cc4-f24cc2d3630f
-                        VolumeLabel            : Data
-                        PSComputerName         : SQLB
-                        #>
                         [pscustomobject]@{
-                            ComputerName = $computer
+                            ComputerName  = $computer
                             ResourceGroup = $res.OwnerGroup
-                            Disk          = $clusterdisk
-                            State         = $diskstate
-                            Drive         = $diskdrive
-                            Label         = $disklabel
-                            Size          = $disksize
-                            Free          = $diskfree
+                            Disk          = $resource.Name
+                            State         = $resource.State
+                            FileSystem    = $diskpart.FileSystem
+                            Path          = $diskpart.Path
+                            Label         = $diskpart.VolumeLabel
+                            Size          = [dbasize]($diskpart.TotalSize * 1MB)
+                            Free          = [dbasize]($diskpart.FreeSpace * 1MB)
+                            MountPoints   = $diskpart.MountPoints
+                            SerialNumber  = $diskpart.SerialNumber
                         }
                     }
                 }
