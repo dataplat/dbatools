@@ -34,6 +34,12 @@ function Get-DbaWsfcRole {
         Get-DbaWsfcRole -ComputerName cluster01
     
         Gets role information from the failover cluster cluster01
+    
+    .EXAMPLE
+        Get-DbaWsfcRole -ComputerName cluster01 | Select *
+    
+        Shows all role values, including the ones not shown in the default view
+   
 #>
     [CmdletBinding()]
     param (
@@ -44,7 +50,11 @@ function Get-DbaWsfcRole {
     )
     process {
         foreach ($computer in $computername) {
-            Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_ResourceGroup
+            $cluster = Get-DbaWsfcCluster -ComputerName $computer -Credential $Credential
+            $role = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_ResourceGroup
+            $role | Add-Member -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
+            $role | Add-Member -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn
+            $role | Select-DefaultView -Property ClusterName, ClusterFqdn, Name, Caption, Description, InstallDate, Status, OwnerNode, State
         }
     }
 }

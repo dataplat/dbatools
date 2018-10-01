@@ -38,7 +38,7 @@ function Get-DbaWsfcCluster {
     .EXAMPLE
         Get-DbaWsfcCluster -ComputerName cluster01 | Select *
     
-        Shows all cluster values, including those not included in the default view
+        Shows all cluster values, including the ones not shown in the default view
 #>
     [CmdletBinding()]
     param (

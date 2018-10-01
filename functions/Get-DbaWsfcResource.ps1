@@ -34,6 +34,12 @@ function Get-DbaWsfcResource {
         Get-DbaWsfcResource -ComputerName cluster01
     
         Gets resource information from the failover cluster cluster01
+    
+    .EXAMPLE
+        Get-DbaWsfcResource -ComputerName cluster01 | Select *
+    
+        Shows all resource values, including the ones not shown in the default view
+   
 #>
     [CmdletBinding()]
     param (
@@ -44,7 +50,11 @@ function Get-DbaWsfcResource {
     )
     process {
         foreach ($computer in $computername) {
-            Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Resource
+            $cluster = Get-DbaWsfcCluster -ComputerName $computer -Credential $Credential
+            $resource = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Resource
+            $resource | Add-Member -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
+            $resource | Add-Member -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn
+            $resource | Select-DefaultView -Property ClusterName, ClusterFqdn, Name, Caption, Description, InstallDate, Status, Type, OwnerGroup, OwnerNode, PendingTimeout, PersistentState, QuorumCapable, RequiredDependencyClasses, RequiredDependencyTypes, RestartAction, RestartDelay, RestartPeriod, RestartThreshold, RetryPeriodOnFailure, SeparateMonitor, State    
         }
     }
 }

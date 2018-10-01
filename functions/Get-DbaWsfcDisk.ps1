@@ -69,23 +69,11 @@ function Get-DbaWsfcDisk {
                     
                     foreach ($disk in $disks) {
                         $diskpart = $disk.GetRelated("MSCluster_DiskPartition")
-                        switch ($diskstate) {
-                            -1 { $diskstate = "Unknown" }
-                            0   { $diskstate = "Inherited" }
-                            1   { $diskstate = "Initializing" }
-                            2   { $diskstate = "Online" }
-                            3   { $diskstate = "Offline" }
-                            4   { $diskstate = "Failed" }
-                            128 { $diskstate = "Pending" }
-                            129 { $diskstate = "Online Pending" }
-                            130 { $diskstate = "Offline Pending" }
-                        }
-                        
                         [pscustomobject]@{
                             ComputerName  = $computer
                             ResourceGroup = $res.OwnerGroup
                             Disk          = $resource.Name
-                            State         = $resource.State
+                            State         = (Get-ResourceState $resource.State)
                             FileSystem    = $diskpart.FileSystem
                             Path          = $diskpart.Path
                             Label         = $diskpart.VolumeLabel

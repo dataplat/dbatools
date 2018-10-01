@@ -33,7 +33,12 @@ function Get-DbaWsfcNetworkInterface {
     .EXAMPLE
         Get-DbaWsfcNetworkInterface -ComputerName cluster01
     
-        Gets network information from the failover cluster cluster01
+        Gets network interface information from the failover cluster cluster01
+    
+    .EXAMPLE
+        Get-DbaWsfcNetworkInterface -ComputerName cluster01 | Select *
+    
+        Shows all network interface  values, including the ones not shown in the default view
     #>
     [CmdletBinding()]
     param (
@@ -44,7 +49,11 @@ function Get-DbaWsfcNetworkInterface {
     )
     process {
         foreach ($computer in $computername) {
-            Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_NetworkInterface
+            $cluster = Get-DbaWsfcCluster -ComputerName $computer -Credential $Credential
+            $network = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_NetworkInterface
+            $network | Add-Member -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
+            $network | Add-Member -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn
+            $network | Select-DefaultView -Property ClusterName, ClusterFqdn, Name, Caption, Description, InstallDate, Status, Network, Node, Adapter, Address, DhcpEnabled, IPv4Addresses, IPv6Addresses, IPv6Addresses, State
         }
     }
 }

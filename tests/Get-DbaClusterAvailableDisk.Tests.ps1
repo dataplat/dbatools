@@ -16,7 +16,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $knownParameters = 'ComputerName', 'Credential', 'EnableException'
         $paramCount = $knownParameters.Count
         
-        [object[]]$params = (Get-ChildItem function:\Get-DbaClusterAvailableDisk).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Get-DbaWsfcAvailableDisk).Parameters.Keys
         It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
