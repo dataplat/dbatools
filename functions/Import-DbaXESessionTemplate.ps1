@@ -1,4 +1,5 @@
-﻿function Import-DbaXESessionTemplate {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Import-DbaXESessionTemplate {
     <#
         .SYNOPSIS
             Imports a new XESession XML Template

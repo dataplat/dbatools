@@ -1,4 +1,5 @@
-﻿function New-DbaXESession {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function New-DbaXESession {
     <#
         .SYNOPSIS
             Creates a new XESession object - for the dogged.
