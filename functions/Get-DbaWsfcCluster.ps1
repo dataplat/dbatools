@@ -49,8 +49,9 @@ function Get-DbaWsfcCluster {
     )
     process {
         foreach ($computer in $computername) {
-            Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Cluster |
-            Select-DefaultView -Property Name, Fqdn, Caption, Description, InstallDate, Status, DrainOnShutdown, DynamicQuorumEnabled, EnableSharedVolumes, SharedVolumesRoot, QuorumPath, QuorumType, QuorumTypeValue, RequestReplyTimeout
+            $cluster = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Cluster
+            $cluster | Add-Member -Force -NotePropertyName State -NotePropertyValue (Get-ResourceState $resource.State)
+            $cluster | Select-DefaultView -Property Name, Fqdn, State, DrainOnShutdown, DynamicQuorumEnabled, EnableSharedVolumes, SharedVolumesRoot, QuorumPath, QuorumType, QuorumTypeValue, RequestReplyTimeout
         }
     }
 }

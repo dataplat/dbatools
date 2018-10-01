@@ -48,8 +48,9 @@ function Get-DbaWsfcAvailableDisk {
             $disk = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_AvailableDisk
             
             # I don't have an available disk, so I can't see how to clean this up: Passthru
-            $disk | Add-Member -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
-            $disk | Add-Member -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn -PassThru
+            $disk | Add-Member -Force -NotePropertyName State -NotePropertyValue (Get-ResourceState $resource.State)
+            $disk | Add-Member -Force -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
+            $disk | Add-Member -Force -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn -PassThru
         }
     }
 }

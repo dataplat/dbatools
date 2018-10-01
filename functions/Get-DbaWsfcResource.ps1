@@ -51,10 +51,13 @@ function Get-DbaWsfcResource {
     process {
         foreach ($computer in $computername) {
             $cluster = Get-DbaWsfcCluster -ComputerName $computer -Credential $Credential
-            $resource = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Resource
-            $resource | Add-Member -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
-            $resource | Add-Member -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn
-            $resource | Select-DefaultView -Property ClusterName, ClusterFqdn, Name, Caption, Description, InstallDate, Status, Type, OwnerGroup, OwnerNode, PendingTimeout, PersistentState, QuorumCapable, RequiredDependencyClasses, RequiredDependencyTypes, RestartAction, RestartDelay, RestartPeriod, RestartThreshold, RetryPeriodOnFailure, SeparateMonitor, State
+            $resources = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Resource
+            foreach ($resource in $resources) {
+                $resource | Add-Member -Force -NotePropertyName State -NotePropertyValue (Get-ResourceState $resource.State)
+                $resource | Add-Member -Force -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
+                $resource | Add-Member -Force -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn
+                $resource | Select-DefaultView -Property ClusterName, ClusterFqdn, Name, State, Type, OwnerGroup, OwnerNode, PendingTimeout, PersistentState, QuorumCapable, RequiredDependencyClasses, RequiredDependencyTypes, RestartAction, RestartDelay, RestartPeriod, RestartThreshold, RetryPeriodOnFailure, SeparateMonitor
+            }
         }
     }
 }

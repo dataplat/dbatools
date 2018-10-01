@@ -47,10 +47,10 @@ function Get-DbaWsfcNetwork {
             $cluster = Get-DbaWsfcCluster -ComputerName $computer -Credential $Credential
             
             $network = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_Network
-            $network | Add-Member -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
-            $network | Add-Member -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn
+            $network | Add-Member -Force -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
+            $network | Add-Member -Force -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn
             
-            $network | Select-DefaultView -Property ClusterName, ClusterFqdn, Name, Caption, Description, InstallDate, Status, Address, AddressMask, IPv4Addresses, IPv4PrefixLengths, IPv6Addresses, IPv6PrefixLengths, QuorumType, QuorumTypeValue, RequestReplyTimeout, Role, State
+            $network | Select-DefaultView -Property ClusterName, ClusterFqdn, Name, Address, AddressMask, IPv4Addresses, IPv4PrefixLengths, IPv6Addresses, IPv6PrefixLengths, QuorumType, QuorumTypeValue, RequestReplyTimeout, Role
         }
     }
 }
