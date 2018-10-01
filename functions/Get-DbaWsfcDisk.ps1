@@ -44,44 +44,24 @@ function Get-DbaWsfcDisk {
     )
     process {
         foreach ($computer in $computername) {
-            try {
-                # unsure how to do this with cim
-                if ($Credential) {
-                    $resources = Get-WmiObject -ComputerName $computer -Credential $Credential -Namespace root\MSCluster -Class MSCluster_Resource -Authentication PacketPrivacy -ErrorAction Stop
-                }
-                else {
-                    $resources = Get-WmiObject -ComputerName $computer -Namespace root\MSCluster -Class MSCluster_Resource -Authentication PacketPrivacy -ErrorAction Stop
-                }
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $computer -Continue
-            }
-            
-            <#
-                $disks = Get-CimInstance -Namespace Root\MSCluster -ClassName MSCluster_Resource -ComputerName $Cluster | Where-Object Type -eq 'Physical Disk'
-                $disks | Get-CimAssociatedInstance -ResultClassName MSCluster_DiskPartition
-            #>
-            
-            foreach ($res in $resources) {
-                $resourcegroup = $res.GetRelated() | Where-Object Type -eq 'Physical Disk'
-                foreach ($resource in $resourcegroup) {
-                    $disks = $resource.GetRelated("MSCluster_Disk")
-                    
-                    foreach ($disk in $disks) {
-                        $diskpart = $disk.GetRelated("MSCluster_DiskPartition")
-                        [pscustomobject]@{
-                            ComputerName  = $computer
-                            ResourceGroup = $res.OwnerGroup
-                            Disk          = $resource.Name
-                            State         = (Get-ResourceState $resource.State)
-                            FileSystem    = $diskpart.FileSystem
-                            Path          = $diskpart.Path
-                            Label         = $diskpart.VolumeLabel
-                            Size          = [dbasize]($diskpart.TotalSize * 1MB)
-                            Free          = [dbasize]($diskpart.FreeSpace * 1MB)
-                            MountPoints   = $diskpart.MountPoints
-                            SerialNumber  = $diskpart.SerialNumber
-                        }
+            $resources = Get-DbaWsfcResource -ComputerName $computer -Credential $Credential | Where-Object Type -eq 'Physical Disk'
+            foreach ($resource in $resources) {
+                $disks = $resource | Get-CimAssociatedInstance -ResultClassName MSCluster_Disk
+                foreach ($disk in $disks) {
+                    $diskpart = $disk | Get-CimAssociatedInstance -ResultClassName MSCluster_DiskPartition
+                    [pscustomobject]@{
+                        ClusterName = $resource.ClusterName
+                        ClusterFqdn = $resource.ClusterFqdn
+                        ResourceGroup = $resource.OwnerGroup
+                        Disk        = $resource.Name
+                        State       = $resource.State
+                        FileSystem  = $diskpart.FileSystem
+                        Path        = $diskpart.Path
+                        Label       = $diskpart.VolumeLabel
+                        Size        = [dbasize]($diskpart.TotalSize * 1MB)
+                        Free        = [dbasize]($diskpart.FreeSpace * 1MB)
+                        MountPoints = $diskpart.MountPoints
+                        SerialNumber = $diskpart.SerialNumber
                     }
                 }
             }
