@@ -62,7 +62,10 @@ function Get-DbaWsfcDisk {
                         Free        = [dbasize]($diskpart.FreeSpace * 1MB)
                         MountPoints = $diskpart.MountPoints
                         SerialNumber = $diskpart.SerialNumber
-                    }
+                        ClusterDisk        = $disk
+                        ClusterDiskPart    = $diskpart
+                        ClusterResource    = $resource
+                    } | Select-DefaultView -ExcludeProperty ClusterDisk, ClusterDiskPart, ClusterResource
                 }
             }
         }
