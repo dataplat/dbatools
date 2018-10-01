@@ -181,9 +181,13 @@ Switch ($AlterDir)
             $DataVolume = $NewDataVolume
             Write-Host "DataVolume moved to " $DataVolume
         }
-        If($NewDataVolume.Substring($NewDataVolume.Length -1 -eq $CheckLastChar)-and $NewDataVolume.Length -gt 1)
+        elseif ($NewDataVolume.Substring($NewDataVolume.Length -1 -eq $CheckLastChar)-and $NewDataVolume.Length -gt 1)
         {
             $NewDataVolume = $NewDataVolume.Substring(0,$NewDataVolume.Length-1)
+            $DataVolume = $NewDataVolume
+            Write-Host "DataVolume moved to " $DataVolume
+        }
+        else {
             $DataVolume = $NewDataVolume
             Write-Host "DataVolume moved to " $DataVolume
         }
@@ -199,9 +203,13 @@ Switch ($AlterDir)
             $LogVolume = $NewLogVolume
             Write-Host "LogVolume moved to " $LogVolume
         }
-        If($NewLogVolume.Substring($NewLogVolume.Length -1 -eq $CheckLastChar)-and $NewLogVolume.Length -gt 1)
+        elseif($NewLogVolume.Substring($NewLogVolume.Length -1 -eq $CheckLastChar)-and $NewLogVolume.Length -gt 1)
         {
             $NewLogVolume = $NewLogVolume.Substring(0,$NewLogVolume.Length-1)
+            $LogVolume = $NewLogVolume
+            Write-Host "LogVolume moved to " $LogVolume
+        }
+        else {
             $LogVolume = $NewLogVolume
             Write-Host "LogVolume moved to " $LogVolume
         }
@@ -218,9 +226,13 @@ Switch ($AlterDir)
             $TempVolume = $NewTempVolume
             Write-Host "TempVolume moved to " $TempVolume
         }
-        If($NewTempVolume.Substring($NewTempVolume.Length -1 -eq $CheckLastChar) -and $NewTempVolume.Length -gt 1)
+        elseif($NewTempVolume.Substring($NewTempVolume.Length -1 -eq $CheckLastChar) -and $NewTempVolume.Length -gt 1)
         {
             $NewTempVolume = $NewTempVolume.Substring(0,$NewTempVolume.Length-1)
+            $TempVolume = $NewTempVolume
+            Write-Host "TempVolume moved to " $TempVolume
+        }
+        else {
             $TempVolume = $NewTempVolume
             Write-Host "TempVolume moved to " $TempVolume
         }
@@ -237,9 +249,13 @@ Switch ($AlterDir)
             $AppVolume = $NewAppVolume
             Write-Host "AppVolume moved to " $AppVolume
         }
-        If($NewAppVolume.Substring($NewAppVolume.Length -1 -eq $CheckLastChar) -and $NewAppVolume.Length -gt 1)
+        elseif($NewAppVolume.Substring($NewAppVolume.Length -1 -eq $CheckLastChar) -and $NewAppVolume.Length -gt 1)
         {
             $NewAppVolume = $NewAppVolume.Substring(0,$NewAppVolume.Length-1)
+            $AppVolume = $NewAppVolume
+            Write-Host "AppVolume moved to " $AppVolume
+        }
+        else {
             $AppVolume = $NewAppVolume
             Write-Host "AppVolume moved to " $AppVolume
         }
@@ -256,9 +272,13 @@ Switch ($AlterDir)
             $BackupVolume = $NewBackupVolume
             Write-Host "BackupVolume moved to " $BackupVolume
         }
-        If($NewBackupVolume.Substring($NewBackupVolume.Length -1 -eq $CheckLastChar) -and $NewBackupVolume.Length -gt -1)
+        elseif($NewBackupVolume.Substring($NewBackupVolume.Length -1 -eq $CheckLastChar) -and $NewBackupVolume.Length -gt -1)
         {
             $NewBackupVolume = $NewBackupVolume.Substring(0,$NewBackupVolume.Length-1)
+            $BackupVolume = $NewBackupVolume
+            Write-Host "BackupVolume moved to " $BackupVolume
+        }
+        else {
             $BackupVolume = $NewBackupVolume
             Write-Host "BackupVolume moved to " $BackupVolume
         }
