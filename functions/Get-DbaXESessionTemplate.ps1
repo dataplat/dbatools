@@ -1,4 +1,5 @@
-﻿function Get-DbaXESessionTemplate {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaXESessionTemplate {
     <#
         .SYNOPSIS
             Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\bin\xetemplates\).

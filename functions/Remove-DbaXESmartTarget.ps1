@@ -1,4 +1,5 @@
-﻿function Remove-DbaXESmartTarget {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Remove-DbaXESmartTarget {
     <#
         .SYNOPSIS
            Removes an XESmartTarget PowerShell Job.

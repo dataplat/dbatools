@@ -1,4 +1,5 @@
-﻿function Get-DbaXEObject {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaXEObject {
     <#
         .SYNOPSIS
             Gets a list of trace(s) from specified SQL Server instance(s).
