@@ -289,6 +289,12 @@ else {
 
 
 $ConfigFile = 'c:\temp\'
+
+if( -Not (Test-Path -Path $ConfigFile ) )
+{
+    New-Item -ItemType directory -Path $ConfigFile
+}
+
 $FileLocation = $startScript
 $FileLocation2 = $ConfigFile + 'ConfigurationFile2.ini'
 
