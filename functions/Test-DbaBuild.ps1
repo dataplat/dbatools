@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaBuild {
     <#
     .SYNOPSIS
@@ -216,7 +217,7 @@ function Test-DbaBuild {
             $targetSPName = $null
             $targetCUName = $null
             if ($BuildVersion.MatchType -eq 'Approximate') {
-                Stop-Function -Message "$($BuildVersion.Build) is not recognized as a correct version" -ErrorRecord $_ -Continue
+                Write-Message -Level Warning -Message "$($BuildVersion.Build) is not recognized as a correct version"
             }
             if ($MinimumBuild) {
                 Write-Message -Level Debug -Message "Comparing $MinimumBuild to $inputbuild"
