@@ -163,13 +163,131 @@ Write-Host 'Your applicationdrive:' $AppVolume
 Write-Host 'Your Backup Drive:' $BackupVolume
 Write-Host 'Number of cores for your Database:' $NumberOfCores
 
-$SetupFile = Read-Host -Prompt 'Please enter the location for Setup.exe'
-$SetupFile = $SetupFile + 'SETUP.EXE'
+Write-Host  'Do you agree on the drives?'
+$AlterDir = Read-Host " ( Y / N )"
 
-#$ConfigFile = Read-Host -Prompt 'Geef de locatie op van het configuratiebestand'
-#Write-Host 'Setup staat op:' $SetupFile
-#Write-Host 'Config file staat op:' $ConfigFile
-# Edit 20180907: Configfile included in this script
+$CheckLastTwoChar = ":\"
+$CheckLastChar = "\"
+
+Switch ($AlterDir)
+{
+    Y {Write-Host "Yes, drives agreed, continuing";}
+    N {
+        Write-Host "Datadrive: " $DataVolume
+        $NewDataVolume = Read-Host "Your datavolume: "
+        If($NewDataVolume.Substring($NewDataVolume.Length -2 -eq $CheckLastTwoChar))
+        {
+            $NewDataVolume = $NewDataVolume.Substring(0,$NewDataVolume.Length-2)
+        }
+        If($NewDataVolume.Substring($NewDataVolume.Length -1 -eq $CheckLastChar))
+        {
+            $NewDataVolume = $NewDataVolume.Substring(0,$NewDataVolume.Length-1)
+        }
+        If ([string]::IsNullOrEmpty($NewDataVolume))
+        {
+            Write-Host "Datavolume remains on " $DataVolume
+        }
+        else {
+            $DataVolume = $NewDataVolume
+            Write-Host "DataVolume moved to " $DataVolume
+        }
+
+        Write-Host "logvolume: " $LogVolume
+        $NewLogVolume = Read-Host "Your logvolume: "
+        If($NewLogVolume.Substring($NewLogVolume.Length -2 -eq $CheckLastTwoChar))
+        {
+            $NewLogVolume = $NewLogVolume.Substring(0,$NewLogVolume.Length-2)
+        }
+        If($NewLogVolume.Substring($NewLogVolume.Length -1 -eq $CheckLastChar))
+        {
+            $NewLogVolume = $NewLogVolume.Substring(0,$NewLogVolume.Length-1)
+        }
+        If ([string]::IsNullOrEmpty($NewLogVolume))
+        {
+            Write-Host "Logvolume remains on " $LogVolume
+        }
+        else {
+            $LogVolume = $NewLogVolume
+            Write-Host "LogVolume moved to " $LogVolume
+        }
+
+        Write-Host "TempVolume: " $TempVolume
+        $NewTempVolume = Read-Host "Your TempVolume: "
+        If($NewTempVolume.Substring($NewTempVolume.Length -2 -eq $CheckLastTwoChar))
+        {
+            $NewTempVolume = $NewTempVolume.Substring(0,$NewTempVolume.Length-2)
+        }
+        If($NewTempVolume.Substring($NewTempVolume.Length -1 -eq $CheckLastChar))
+        {
+            $NewTempVolume = $NewTempVolume.Substring(0,$NewTempVolume.Length-1)
+        }
+        If ([string]::IsNullOrEmpty($NewTempVolume))
+        {
+            Write-Host "TempVolume remains on " $TempVolume
+        }
+        else {
+            $TempVolume = $NewTempVolume
+            Write-Host "TempVolume moved to " $TempVolume
+        }
+
+        Write-Host "AppVolume: " $AppVolume
+        $NewAppVolume = Read-Host "Your AppVolume: "
+        If($NewAppVolume.Substring($NewAppVolume.Length -2 -eq $CheckLastTwoChar))
+        {
+            $NewAppVolume = $NewAppVolume.Substring(0,$NewAppVolume.Length-2)
+        }
+        If($NewAppVolume.Substring($NewAppVolume.Length -1 -eq $CheckLastChar))
+        {
+            $NewAppVolume = $NewAppVolume.Substring(0,$NewAppVolume.Length-1)
+        }
+        If ([string]::IsNullOrEmpty($NewAppVolume))
+        {
+            Write-Host "AppVolume remains on " $AppVolume
+        }
+        else {
+            $AppVolume = $NewAppVolume
+            Write-Host "AppVolume moved to " $AppVolume
+        }
+
+        Write-Host "BackupVolume: " $BackupVolume
+        $NewBackupVolume = Read-Host "Your BackupVolume: "
+        If($NewBackupVolume.Substring($NewBackupVolume.Length -2 -eq $CheckLastTwoChar))
+        {
+            $NewBackupVolume = $NewBackupVolume.Substring(0,$NewBackupVolume.Length-2)
+        }
+        If($NewBackupVolume.Substring($NewBackupVolume.Length -1 -eq $CheckLastChar))
+        {
+            $NewBackupVolume = $NewBackupVolume.Substring(0,$NewBackupVolume.Length-1)
+        }
+        If ([string]::IsNullOrEmpty($NewBackupVolume))
+        {
+            Write-Host "BackupVolume remains on " $BackupVolume
+        }
+        else {
+            $BackupVolume = $NewBackupVolume
+            Write-Host "BackupVolume moved to " $BackupVolume
+        }
+    }
+    Default{Write-Host "Drives agreed, continuing";}
+}
+$SetupFile = Read-Host -Prompt 'Please enter the location for Setup.exe'
+If($SetupFile.Substring($SetupFile.Length -2 -eq $CheckLastTwoChar))
+        {
+            $SetupFile = $SetupFile.Substring(0,$SetupFile.Length-2)
+        }
+        If($SetupFile.Substring($SetupFile.Length -1 -eq $CheckLastChar))
+        {
+            $SetupFile = $SetupFile.Substring(0,$SetupFile.Length-1)
+        }
+IF($SetupFile.Length -eq 1)
+{
+    $SetupFile = $SetupFile + ':\SETUP.EXE'
+}
+else {
+    $SetupFile = $SetupFile + '\SETUP.EXE'
+    }
+
+
 $ConfigFile = 'c:\temp\'
 $FileLocation = $startScript
 $FileLocation2 = $ConfigFile + 'ConfigurationFile2.ini'
