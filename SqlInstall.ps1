@@ -178,37 +178,36 @@ Switch ($AlterDir)
         If($NewDataVolume.Substring($NewDataVolume.Length -2 -eq $CheckLastTwoChar) -and $NewDataVolume.Length -gt 2)
         {
             $NewDataVolume = $NewDataVolume.Substring(0,$NewDataVolume.Length-2)
+            $DataVolume = $NewDataVolume
+            Write-Host "DataVolume moved to " $DataVolume
         }
         If($NewDataVolume.Substring($NewDataVolume.Length -1 -eq $CheckLastChar)-and $NewDataVolume.Length -gt 1)
         {
             $NewDataVolume = $NewDataVolume.Substring(0,$NewDataVolume.Length-1)
+            $DataVolume = $NewDataVolume
+            Write-Host "DataVolume moved to " $DataVolume
         }
         If ([string]::IsNullOrEmpty($NewDataVolume))
         {
             Write-Host "Datavolume remains on " $DataVolume
         }
-        else {
-            $DataVolume = $NewDataVolume
-            Write-Host "DataVolume moved to " $DataVolume
-        }
-
         Write-Host "logvolume: " $LogVolume
         $NewLogVolume = Read-Host "Your logvolume: "
         If($NewLogVolume.Substring($NewLogVolume.Length -2 -eq $CheckLastTwoChar) -and $NewLogVolume.Length -gt 2)
         {
             $NewLogVolume = $NewLogVolume.Substring(0,$NewLogVolume.Length-2)
+            $LogVolume = $NewLogVolume
+            Write-Host "LogVolume moved to " $LogVolume
         }
         If($NewLogVolume.Substring($NewLogVolume.Length -1 -eq $CheckLastChar)-and $NewLogVolume.Length -gt 1)
         {
             $NewLogVolume = $NewLogVolume.Substring(0,$NewLogVolume.Length-1)
+            $LogVolume = $NewLogVolume
+            Write-Host "LogVolume moved to " $LogVolume
         }
         If ([string]::IsNullOrEmpty($NewLogVolume))
         {
             Write-Host "Logvolume remains on " $LogVolume
-        }
-        else {
-            $LogVolume = $NewLogVolume
-            Write-Host "LogVolume moved to " $LogVolume
         }
 
         Write-Host "TempVolume: " $TempVolume
@@ -216,18 +215,18 @@ Switch ($AlterDir)
         If($NewTempVolume.Substring($NewTempVolume.Length -2 -eq $CheckLastTwoChar)-and $NewTempVolume.Length -gt 2)
         {
             $NewTempVolume = $NewTempVolume.Substring(0,$NewTempVolume.Length-2)
+            $TempVolume = $NewTempVolume
+            Write-Host "TempVolume moved to " $TempVolume
         }
         If($NewTempVolume.Substring($NewTempVolume.Length -1 -eq $CheckLastChar) -and $NewTempVolume.Length -gt 1)
         {
             $NewTempVolume = $NewTempVolume.Substring(0,$NewTempVolume.Length-1)
+            $TempVolume = $NewTempVolume
+            Write-Host "TempVolume moved to " $TempVolume
         }
         If ([string]::IsNullOrEmpty($NewTempVolume))
         {
             Write-Host "TempVolume remains on " $TempVolume
-        }
-        else {
-            $TempVolume = $NewTempVolume
-            Write-Host "TempVolume moved to " $TempVolume
         }
 
         Write-Host "AppVolume: " $AppVolume
@@ -235,18 +234,18 @@ Switch ($AlterDir)
         If($NewAppVolume.Substring($NewAppVolume.Length -2 -eq $CheckLastTwoChar) -and $NewAppVolume.Length -gt 2)
         {
             $NewAppVolume = $NewAppVolume.Substring(0,$NewAppVolume.Length-2)
+            $AppVolume = $NewAppVolume
+            Write-Host "AppVolume moved to " $AppVolume
         }
         If($NewAppVolume.Substring($NewAppVolume.Length -1 -eq $CheckLastChar) -and $NewAppVolume.Length -gt 1)
         {
             $NewAppVolume = $NewAppVolume.Substring(0,$NewAppVolume.Length-1)
+            $AppVolume = $NewAppVolume
+            Write-Host "AppVolume moved to " $AppVolume
         }
         If ([string]::IsNullOrEmpty($NewAppVolume))
         {
             Write-Host "AppVolume remains on " $AppVolume
-        }
-        else {
-            $AppVolume = $NewAppVolume
-            Write-Host "AppVolume moved to " $AppVolume
         }
 
         Write-Host "BackupVolume: " $BackupVolume
@@ -254,18 +253,18 @@ Switch ($AlterDir)
         If($NewBackupVolume.Substring($NewBackupVolume.Length -2 -eq $CheckLastTwoChar) -and $NewBackupVolume.Length -gt 2)
         {
             $NewBackupVolume = $NewBackupVolume.Substring(0,$NewBackupVolume.Length-2)
+            $BackupVolume = $NewBackupVolume
+            Write-Host "BackupVolume moved to " $BackupVolume
         }
         If($NewBackupVolume.Substring($NewBackupVolume.Length -1 -eq $CheckLastChar) -and $NewBackupVolume.Length -gt -1)
         {
             $NewBackupVolume = $NewBackupVolume.Substring(0,$NewBackupVolume.Length-1)
+            $BackupVolume = $NewBackupVolume
+            Write-Host "BackupVolume moved to " $BackupVolume
         }
         If ([string]::IsNullOrEmpty($NewBackupVolume))
         {
             Write-Host "BackupVolume remains on " $BackupVolume
-        }
-        else {
-            $BackupVolume = $NewBackupVolume
-            Write-Host "BackupVolume moved to " $BackupVolume
         }
     }
     Default{Write-Host "Drives agreed, continuing";}
