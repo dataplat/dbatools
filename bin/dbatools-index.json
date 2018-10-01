@@ -120,7 +120,7 @@
         "Synopsis":  "Removes adhoc and prepared plan caches is single use plans are over defined threshold.",
         "Name":  "Clear-DbaPlanCache",
         "Links":  "https://dbatools.io/Clear-DbaPlanCache",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eClear-DbaPlanCache -SqlInstance sql2017 -Threshold 200\nLogs into the SQL Server instance \"sql2017\" and removes plan caches if over 200 MB.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eClear-DbaPlanCache -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin)\nLogs into the SQL instance using the SQL Login \u0027sqladmin\u0027 and then Windows instance as \u0027ad\\sqldba\u0027\r\nand removes if Threshold over 100 MB.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eClear-DbaPlanCache -SqlInstance sql2017 -Threshold 200\nLogs into the SQL Server instance \"sql2017\" and removes plan caches if over 200 MB.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eClear-DbaPlanCache -SqlInstance sql2017 -SqlCredential sqladmin\nLogs into the SQL instance using the SQL Login \u0027sqladmin\u0027 and then Windows instance as \u0027ad\\sqldba\u0027\r\nand removes if Threshold over 100 MB.",
         "Syntax":  "Clear-DbaPlanCache [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Threshold] \u003cInt32\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -1528,22 +1528,6 @@
         "Links":  "https://dbatools.io/Get-DbaClientProtocol",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaClientProtocol -ComputerName sqlserver2014a\nGets the SQL Server related client protocols on computer sqlserver2014a.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaClientProtocol\nGets the SQL Server related client protocols on computers sql1, sql2 and sql3.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaClientProtocol -ComputerName sql1,sql2 | Out-Gridview\nGets the SQL Server related client protocols on computers sql1 and sql2, and shows them in a grid view.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e(Get-DbaClientProtocol -ComputerName sql2 | Where { $_.DisplayName = \u0027via\u0027 }).Disable()\nDisables the VIA ClientNetworkProtocol on computer sql2.\r\nIf successful, returncode 0 is shown.",
         "Syntax":  "Get-DbaClientProtocol [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
-    },
-    {
-        "CommandName":  "Get-DbaClusterNode",
-        "Description":  "Returns the name of the current node(s) in the SQL Server cluster.\n\nIf the -ActiveNode Parameter is passed it only returns the name of the Server currently hosting the clustered instance.",
-        "Tags":  [
-                     "Cluster",
-                     "WSFC",
-                     "FCI"
-                 ],
-        "Alias":  "",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Returns the node(s) of a SQL Cluster.",
-        "Name":  "Get-DbaClusterNode",
-        "Links":  "https://dbatools.io/Get-DbaClusterNode",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaClusterNode -SqlInstance sqlcluster\nReturns all nodes in the cluster and details about each node.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaClusterNode -SqlInstance sqlcluster -ActiveNode\nReturns the name of the active node in the cluster",
-        "Syntax":  "Get-DbaClusterNode [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-ActiveNode] [-Detailed] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaCmConnection",
@@ -3490,6 +3474,176 @@
         "Links":  "https://dbatools.io/Get-DbaWindowsLog",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$ErrorLogs = Get-DbaWindowsLog -SqlInstance sql01\\sharepoint\n$ErrorLogs | Where-Object ErrorNumber -eq 18456\nReturns all lines in the errorlogs that have event number 18456 in them",
         "Syntax":  "Get-DbaWindowsLog [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Start] \u003cDateTime\u003e] [[-End] \u003cDateTime\u003e] [[-Credential] \u003cPSCredential\u003e] [[-MaxThreads] \u003cInt32\u003e] [[-MaxRemoteThreads] \u003cInt32\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaWsfcAvailableDisk",
+        "Description":  "Gets information about the disks that can support Failover Clustering and are visible to all nodes, but are not yet part of the set of clustered disks.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
+        "Tags":  [
+                     "Cluster",
+                     "WSFC",
+                     "FCI",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Gets information about the disks that can support Failover Clustering and are visible to all nodes, but are not yet part of the set of clustered disks.",
+        "Name":  "Get-DbaWsfcAvailableDisk",
+        "Links":  "https://dbatools.io/Get-DbaWsfcAvailableDisk",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcAvailableDisk -ComputerName cluster01\nGets available disks from the failover cluster cluster01",
+        "Syntax":  "Get-DbaWsfcAvailableDisk [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaWsfcCluster",
+        "Description":  "Gets information about one or more failover clusters in a given domain.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
+        "Tags":  [
+                     "Cluster",
+                     "WSFC",
+                     "FCI",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Gets information about one or more failover clusters in a given domain.",
+        "Name":  "Get-DbaWsfcCluster",
+        "Links":  "https://dbatools.io/Get-DbaWsfcCluster",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcCluster -ComputerName cluster01\nGets failover cluster information about cluster01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWsfcCluster -ComputerName cluster01 | Select *\nShows all cluster values, including the ones not shown in the default view",
+        "Syntax":  "Get-DbaWsfcCluster [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaWsfcDisk",
+        "Description":  "Gets information about the clustered disks on one or more failover clusters in a given domain.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
+        "Tags":  [
+                     "Cluster",
+                     "WSFC",
+                     "FCI",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Gets information about the clustered disks on one or more failover clusters in a given domain.",
+        "Name":  "Get-DbaWsfcDisk",
+        "Links":  "https://dbatools.io/Get-DbaWsfcDisk",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcDisk -ComputerName cluster01\nGets disk information from the failover cluster cluster01",
+        "Syntax":  "Get-DbaWsfcDisk [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaWsfcNetwork",
+        "Description":  "Gets information about one or more networks in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
+        "Tags":  [
+                     "Cluster",
+                     "WSFC",
+                     "FCI",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Gets information about one or more networks in a failover cluster.",
+        "Name":  "Get-DbaWsfcNetwork",
+        "Links":  "https://dbatools.io/Get-DbaWsfcNetwork",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcNetwork -ComputerName cluster01\nGets network information from the failover cluster cluster01",
+        "Syntax":  "Get-DbaWsfcNetwork [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaWsfcNetworkInterface",
+        "Description":  "Gets information about one or more network adapters in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
+        "Tags":  [
+                     "Cluster",
+                     "WSFC",
+                     "FCI",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Gets information about one or more network adapters in a failover cluster.",
+        "Name":  "Get-DbaWsfcNetworkInterface",
+        "Links":  "https://dbatools.io/Get-DbaWsfcNetworkInterface",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcNetworkInterface -ComputerName cluster01\nGets network interface information from the failover cluster cluster01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWsfcNetworkInterface -ComputerName cluster01 | Select *\nShows all network interface  values, including the ones not shown in the default view",
+        "Syntax":  "Get-DbaWsfcNetworkInterface [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaWsfcNode",
+        "Description":  "Gets information about one or more nodes, or servers, in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
+        "Tags":  [
+                     "Cluster",
+                     "WSFC",
+                     "FCI",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Gets information about one or more nodes, or servers, in a failover cluster.",
+        "Name":  "Get-DbaWsfcNode",
+        "Links":  "https://dbatools.io/Get-DbaWsfcNode",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcNode -ComputerName cluster01\nGets node information from the failover cluster cluster01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWsfcNode -ComputerName cluster01 | Select *\nShows all node values, including the ones not shown in the default view",
+        "Syntax":  "Get-DbaWsfcNode [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaWsfcResource",
+        "Description":  "Gets information about one or more resources in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
+        "Tags":  [
+                     "Cluster",
+                     "WSFC",
+                     "FCI",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Gets information about one or more resources in a failover cluster.",
+        "Name":  "Get-DbaWsfcResource",
+        "Links":  "https://dbatools.io/Get-DbaWsfcResource",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcResource -ComputerName cluster01\nGets resource information from the failover cluster cluster01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWsfcResource -ComputerName cluster01 | Select *\nShows all resource values, including the ones not shown in the default view",
+        "Syntax":  "Get-DbaWsfcResource [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaWsfcResourceType",
+        "Description":  "Gets information about one or more resource types in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
+        "Tags":  [
+                     "Cluster",
+                     "WSFC",
+                     "FCI",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Gets information about one or more resource types in a failover cluster.",
+        "Name":  "Get-DbaWsfcResourceType",
+        "Links":  "https://dbatools.io/Get-DbaWsfcResourceType",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcResourceType -ComputerName cluster01\nGets resource type information from the failover cluster cluster01",
+        "Syntax":  "Get-DbaWsfcResourceType [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaWsfcRole",
+        "Description":  "Gets information about one or more clustered roles (resource groups) in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
+        "Tags":  [
+                     "Cluster",
+                     "WSFC",
+                     "FCI",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Gets information about one or more clustered roles (resource groups) in a failover cluster.",
+        "Name":  "Get-DbaWsfcRole",
+        "Links":  "https://dbatools.io/Get-DbaWsfcRole",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcRole -ComputerName cluster01\nGets role information from the failover cluster cluster01\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWsfcRole -ComputerName cluster01 | Select *\nShows all role values, including the ones not shown in the default view",
+        "Syntax":  "Get-DbaWsfcRole [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaWsfcSharedVolume",
+        "Description":  "Gets information about Cluster Shared Volumes in a failover cluster.\n\nAll Windows Server Failover Clustering (Wsfc) commands require local admin on each member node.",
+        "Tags":  [
+                     "Cluster",
+                     "WSFC",
+                     "FCI",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Gets information about Cluster Shared Volumes in a failover cluster.",
+        "Name":  "Get-DbaWsfcSharedVolume",
+        "Links":  "https://dbatools.io/Get-DbaWsfcSharedVolume",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWsfcSharedVolume -ComputerName cluster01\nGets shared volume (CSV) information from the failover cluster cluster01",
+        "Syntax":  "Get-DbaWsfcSharedVolume [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaXEObject",
