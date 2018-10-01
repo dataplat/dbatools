@@ -289,21 +289,36 @@ Switch ($AlterDir)
     }
     Default{Write-Host "Drives agreed, continuing";}
 }
-$SetupFile = Read-Host -Prompt 'Please enter the location for Setup.exe'
-If($SetupFile.Substring($SetupFile.Length -2 -eq $CheckLastTwoChar) -and $SetupFile.Length -gt 2 )
+
+$CheckLastTwoChar = ":\"
+$CheckLastChar = "\"
+
+$SetupFile = Read-Host -Prompt 'Please enter the root location for Setup.exe'
+IF($SetupFile.Length -gt 1)
+{
+    $C2 = $SetupFile.Substring($SetupFile.Length -2)
+    $C1 = $SetupFile.Substring($SetupFile.Length -1)
+    If($C2 -eq $CheckLastTwoChar) 
         {
+            $debug = $SetupFile.Substring($SetupFile.Length -2)
+            Write-Host $debug '/' $CheckLastTwoChar
             $SetupFile = $SetupFile.Substring(0,$SetupFile.Length-2)
+            Write-Host $SetupFile
         }
-        If($SetupFile.Substring($SetupFile.Length -1 -eq $CheckLastChar)-and $SetupFile.Length -gt 1)
+    elseif($C1 -eq $CheckLastChar)
         {
             $SetupFile = $SetupFile.Substring(0,$SetupFile.Length-1)
+            Write-Host $SetupFile
         }
+    }
 IF($SetupFile.Length -eq 1)
 {
-    $SetupFile = $SetupFile + ':\SQLEXPR_x64_ENU.EXE'
-}
+    $SetupFile = $SetupFile + ':\SQLEXPR_x64_ENU\SETUP.EXE'
+    Write-Host 'Setup will start from ' + $SetupFile
+} 
 else {
-    $SetupFile = $SetupFile + '\SQLEXPR_x64_ENU.EXE'
+    $SetupFile = $SetupFile + '\SQLEXPR_x64_ENU\SETUP.EXE'
+    Write-Host 'Setup will start from ' + $SetupFile
     }
 
 
@@ -314,10 +329,11 @@ if( -Not (Test-Path -Path $ConfigFile ) )
     New-Item -ItemType directory -Path $ConfigFile
 }
 
-$FileLocation = $startScript | Out-File $ConfigFile + 'ConfigurationFile2.ini'
+Out-File -FilePath C:\Temp\ConfigurationFile2.ini -InputObject $startScript
+
 $FileLocation2 = $ConfigFile + 'ConfigurationFile2.ini'
 
-(Get-Content -Path $FileLocation).Replace('SQLBACKUPDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"', 'SQLBACKUPDIR="' + $BackupVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"') | Out-File $FileLocation2
+(Get-Content -Path $FileLocation2).Replace('SQLBACKUPDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"', 'SQLBACKUPDIR="' + $BackupVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"') | Out-File $FileLocation2
 
 (Get-Content -Path $FileLocation2).Replace('SQLUSERDBDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"', 'SQLUSERDBDIR="' + $DataVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"') | Out-File $FileLocation2
 
