@@ -344,9 +344,23 @@ function Set-DbaLogin {
             else {
                 $notes = $null
             }
-
-            Get-DbaLogin -SqlInstance $server -Login $l.Name
-
+            # Return the results
+                [PSCustomObject]@{
+                    ComputerName           = $server.ComputerName
+                    InstanceName           = $server.ServiceName
+                    SqlInstance            = $server.DomainInstanceName
+                    LoginName              = $l.Name
+                    DenyLogin              = $l.DenyWindowsLogin
+                    IsDisabled             = $l.IsDisabled
+                    IsLocked               = $l.IsLocked
+                    PasswordPolicyEnforced = $l.PasswordPolicyEnforced
+                    MustChangePassword     = $l.MustChangePassword
+                    PasswordChanged        = $passwordChanged
+                    ServerRole             = $roles.Role -join ","
+                    Notes                  = $notes
+                } | Select-DefaultView -ExcludeProperty Login
+                # Change output and update tests when there's time
+            # Get-DbaLogin -SqlInstance $server -Login $l.Name
         }
     }
 }
