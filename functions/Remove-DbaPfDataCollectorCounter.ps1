@@ -1,4 +1,5 @@
-﻿function Remove-DbaPfDataCollectorCounter {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Remove-DbaPfDataCollectorCounter {
     <#
         .SYNOPSIS
             Removes a Performance Data Collector Counter.

@@ -1,4 +1,5 @@
-﻿function Add-DbaPfDataCollectorCounter {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Add-DbaPfDataCollectorCounter {
     <#
         .SYNOPSIS
             Adds a Performance Data Collector Counter.

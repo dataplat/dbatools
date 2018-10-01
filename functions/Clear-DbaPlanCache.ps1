@@ -50,7 +50,7 @@
             Logs into the SQL Server instance "sql2017" and removes plan caches if over 200 MB.
 
         .EXAMPLE
-            Clear-DbaPlanCache -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin)
+            Clear-DbaPlanCache -SqlInstance sql2017 -SqlCredential sqladmin
 
             Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
             and removes if Threshold over 100 MB.
