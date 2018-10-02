@@ -93,7 +93,7 @@ function Invoke-DbaDbMirroring {
         $params = $PSBoundParameters
         $null = $params.Remove('UseLastBackups')
         $null = $params.Remove('Force')
-        $totalSteps = 10
+        $totalSteps = 11
         $Activity = "Setting up mirroring"
     }
     process {
@@ -197,6 +197,18 @@ function Invoke-DbaDbMirroring {
                     $witnessendpoint = New-DbaEndpoint -SqlInstance $witserver -Type DatabaseMirroring -Role Witness
                     $null = $witnessendpoint | Stop-DbaEndpoint
                     $null = $witnessendpoint | Start-DbaEndpoint
+                }
+            }
+            
+            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Granting permissions to service account"
+            
+            $serviceaccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
+            
+            foreach ($account in $serviceaccounts) {
+                $null = $source.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
+                $null = $dest.Query("GRANT CONNECT ON ENDPOINT::$mirrorendpoint TO [$account]")
+                if ($witserver) {
+                    $witserver.Query("GRANT CONNECT ON ENDPOINT::$witnessendpoint TO [$account]")
                 }
             }
             
