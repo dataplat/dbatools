@@ -74,7 +74,6 @@ function Invoke-DbaDbMirrorValidation {
         [DbaInstanceParameter]$Witness,
         [PSCredential]$WitnessSqlCredential,
         [string[]]$Database,
-        [parameter(Mandatory)]
         [string]$NetworkShare,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
@@ -130,7 +129,14 @@ function Invoke-DbaDbMirrorValidation {
                 $canmirror = $false
             }
             
-            $destdb = Get-DbaDatabase -SqlInstance $dest -Database $db.Name
+            if ($db.RecoveryModel -ne 'Full') {
+                Write-Message -Level Verbose -Message "Cannot setup mirroring on database ($dbname) due to its current recovery model: $($db.RecoveryModel)"
+                $canmirror = $false
+            }
+            
+            if ((Get-DbaDbRecoveryModel -SqlInstance $dest -Database $db.Name).Name -ne 'Full') {
+                $canmirror = $false
+            }
             
             if ($destdb) {
                 $exists = $true
@@ -141,7 +147,7 @@ function Invoke-DbaDbMirrorValidation {
                 $exists = $false
             }
             
-            if (-not (Test-DbaPath -SqlInstance $dest -Path $NetworkShare)) {
+            if ((Test-Bound -ParameterName NetworkShare) -and -not (Test-DbaPath -SqlInstance $dest -Path $NetworkShare)) {
                 Write-Message -Level Verbose -Message "Cannot access $NetworkShare from $($destdb.Parent.Name)"
                 $canmirror = $false
                 $nexists = $false
@@ -182,6 +188,7 @@ function Invoke-DbaDbMirrorValidation {
                 Mirror   = $Mirror
                 Witness  = $Witness
                 Database = $db.Name
+                RecoveryModel = $db.RecoveryModel
                 MirroringStatus = $db.MirroringStatus
                 State    = $db.Status
                 EndPoints = $endpointpass
@@ -194,10 +201,10 @@ function Invoke-DbaDbMirrorValidation {
             }
             
             if ((Test-Bound -ParameterName Witness)) {
-                $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, MirroringStatus, State, EndPoints, DatabaseExistsOnMirror, OnlineWitness, DatabaseExistsOnWitness, EditionMatch, AccessibleShare, ValidationPassed
+                $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, RecoveryModel, MirroringStatus, State, EndPoints, DatabaseExistsOnMirror, OnlineWitness, DatabaseExistsOnWitness, EditionMatch, AccessibleShare, ValidationPassed
             }
             else {
-                $results | Select-DefaultView -Property Primary, Mirror, Database, MirroringStatus, State, EndPoints, DatabaseExistsOnMirror, EditionMatch, AccessibleShare, ValidationPassed
+                $results | Select-DefaultView -Property Primary, Mirror, Database, RecoveryModel, MirroringStatus, State, EndPoints, DatabaseExistsOnMirror, EditionMatch, AccessibleShare, ValidationPassed
             }
         }
     }
