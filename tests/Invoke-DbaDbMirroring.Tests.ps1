@@ -8,7 +8,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $db1 = "dbatoolsci_mirroring"
         
-        Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db12 -Confirm:$false
+        Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1 -Confirm:$false
         Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
         $server.Query("CREATE DATABASE $db1")
     }
