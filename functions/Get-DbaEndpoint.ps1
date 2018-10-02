@@ -1,4 +1,4 @@
-#ValidationTags#Messaging,FlowControl,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaEndpoint {
     <#
         .SYNOPSIS
@@ -46,7 +46,7 @@ function Get-DbaEndpoint {
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Endpoint,
         [switch]$EnableException
@@ -70,7 +70,14 @@ function Get-DbaEndpoint {
             
             foreach ($end in $endpoints) {
                 if ($end.Protocol.Tcp.ListenerPort) {
-                    $fqdn = "TCP://" + $server.ComputerName + ":" + $end.Protocol.Tcp.ListenerPort
+                    if ($instance.ComputerName -match '\.') {
+                        $dns = $instance.ComputerName
+                    }
+                    else {
+                        $dns = [System.Net.Dns]::GetHostEntry($instance.ComputerName).HostName
+                    }
+                                        
+                    $fqdn = "TCP://" + $dns + ":" + $end.Protocol.Tcp.ListenerPort
                 }
                 else {
                     $fqdn = $null
@@ -81,7 +88,7 @@ function Get-DbaEndpoint {
                 Add-Member -Force -InputObject $end -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Add-Member -Force -InputObject $end -MemberType NoteProperty -Name Fqdn -Value $fqdn
                 
-                Select-DefaultView -InputObject $end -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointType, Owner, IsAdminEndpoint, Fqdn, IsSystemObject
+                Select-DefaultView -InputObject $end -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointState, EndpointType, Owner, IsAdminEndpoint, Fqdn, IsSystemObject
             }
         }
     }

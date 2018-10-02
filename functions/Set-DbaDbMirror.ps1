@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaDbMirror {
     <#
         .SYNOPSIS
@@ -53,12 +53,12 @@ function Set-DbaDbMirror {
     #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string]$Partner,
         [string]$Witness,
+        [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )

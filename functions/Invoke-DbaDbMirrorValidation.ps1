@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaDbMirrorValidation {
     <#
         .SYNOPSIS
@@ -99,9 +99,9 @@ function Invoke-DbaDbMirrorValidation {
             
             if (Test-Bound -ParameterName Witness) {
                 try {
-                    $witserver = Connect-SqlInstance -SqlInstance $Witness -SqlCredential $WitnessSqlCredential
+                    $witserver = Connect-DbaInstance -SqlInstance $Witness -SqlCredential $WitnessSqlCredential
                     $endpoints += Get-DbaEndpoint -SqlInstance $witserver | Where-Object EndpointType -eq DatabaseMirroring
-                    $witdb = Get-DbaDatabase -SqlInstance $Witness -SqlCredential $WitnessSqlCredential -Database $db.Name
+                    $witdb = Get-DbaDatabase -SqlInstance $witserver -Database $db.Name
                     $wexists = $true
                     
                     if ($witdb) {
@@ -137,6 +137,8 @@ function Invoke-DbaDbMirrorValidation {
             if ((Get-DbaDbRecoveryModel -SqlInstance $dest -Database $db.Name).Name -ne 'Full') {
                 $canmirror = $false
             }
+            
+            $destdb = Get-DbaDatabase -SqlInstance $dest -Database $db.Name
             
             if ($destdb) {
                 $exists = $true

@@ -109,10 +109,12 @@ function New-DbaEndpoint {
                 $endpoint = New-Object Microsoft.SqlServer.Management.Smo.EndPoint $server, $Name
                 $endpoint.ProtocolType = [Microsoft.SqlServer.Management.Smo.ProtocolType]::$Protocol
                 $endpoint.EndpointType = [Microsoft.SqlServer.Management.Smo.EndpointType]::$Type
-                $endpoint.Protocol.Tcp.ListenerPort = $tcpPort
-                $endpoint.Payload.DatabaseMirroring.ServerMirroringRole = [Microsoft.SqlServer.Management.Smo.ServerMirroringRole]::$Role
-                if (Test-Bound -ParameterName SslPort) {
-                    $endpoint.Protocol.Tcp.SslPort = $SslPort
+                if ($Protocol -eq "TCP") {
+                    $endpoint.Protocol.Tcp.ListenerPort = $tcpPort
+                    $endpoint.Payload.DatabaseMirroring.ServerMirroringRole = [Microsoft.SqlServer.Management.Smo.ServerMirroringRole]::$Role
+                    if (Test-Bound -ParameterName SslPort) {
+                        $endpoint.Protocol.Tcp.SslPort = $SslPort
+                    }
                 }
                 $null = $endpoint.Create()
                 $server.Endpoints.Refresh()
