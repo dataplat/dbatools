@@ -93,7 +93,7 @@ function Invoke-DbaDbMirroring {
         $params = $PSBoundParameters
         $null = $params.Remove('UseLastBackups')
         $null = $params.Remove('Force')
-        $totalSteps = 11
+        $totalSteps = 12
         $Activity = "Setting up mirroring"
     }
     process {
@@ -154,7 +154,7 @@ function Invoke-DbaDbMirroring {
             if (-not $validation.DatabaseExistsOnMirror -or $Force) {
                 $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
                 $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
-                $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $dest -WithReplace
+                $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $dest -WithReplace -NoRecovery
             }
             
             $mirrordb = Get-DbaDatabase -SqlInstance $dest -Database $dbName
@@ -166,7 +166,7 @@ function Invoke-DbaDbMirroring {
                     $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
                     $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
                 }
-                $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $witserver -WithReplace
+                $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $witserver -WithReplace -NoRecovery
             }
             
             if ($Witness) {
@@ -205,9 +205,12 @@ function Invoke-DbaDbMirroring {
             $serviceaccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
             
             foreach ($account in $serviceaccounts) {
+                $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
+                $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
                 $null = $source.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
                 $null = $dest.Query("GRANT CONNECT ON ENDPOINT::$mirrorendpoint TO [$account]")
                 if ($witserver) {
+                    $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
                     $witserver.Query("GRANT CONNECT ON ENDPOINT::$witnessendpoint TO [$account]")
                 }
             }
