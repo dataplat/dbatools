@@ -440,9 +440,9 @@ Write-Host "Done." -ForegroundColor DarkCyan
 
 Install-PackageProvider -Name NuGet -Force
 
-Import-Module SqlServer -Force
+Install-Module -name SqlServer -Force
 
-Install-Module -name SqlServer
+Import-Module SqlServer -Force
 
 #Go into the realms of SQL Server
 
