@@ -38,6 +38,9 @@ function Invoke-DbaDbMirroring {
   
         .PARAMETER UseLastBackups
                 Use the last full backup of database
+  
+        .PARAMETER Force
+                Drop and recreate the database on remote servers using fresh backup
     
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -50,6 +53,8 @@ function Invoke-DbaDbMirroring {
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
+            
+            TODO: add service accounts
 
         .LINK
             https://dbatools.io/Invoke-DbaDbMirroring
@@ -63,7 +68,7 @@ function Invoke-DbaDbMirroring {
                     Database = 'onthewall'
                     NetworkShare = '\\nas\sql\share'
                 }
-            
+    
             Invoke-DbaDbMirroring @params
         
     #>
