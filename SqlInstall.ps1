@@ -69,7 +69,7 @@ SQLSYSADMINACCOUNTS="WIN-NAJQHOBU8QD\Administrator"
 ; The default is Windows Authentication. Use "SQL" for Mixed Mode Authentication. 
 SECURITYMODE="SQL"
 ; Default directory for the Database Engine log files. 
-SQLLOGDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"
+SQLUSERDBLOGDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"
 ; Default directory for the Database Engine backup files. 
 SQLBACKUPDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"
 ; Default directory for the Database Engine user databases. 
@@ -339,7 +339,7 @@ $FileLocation2 = $ConfigFile + 'ConfigurationFile2.ini'
 
 (Get-Content -Path $FileLocation2).Replace('SQLTEMPDBDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"', 'SQLTEMPDBDIR="' + $TempVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"') | Out-File $FileLocation2
 
-(Get-Content -Path $FileLocation2).Replace('SQLTEMPDBDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"', 'SQLTEMPDBDIR="' + $LogVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"') | Out-File $FileLocation2
+(Get-Content -Path $FileLocation2).Replace('SQLUSERDBLOGDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"', 'SQLUSERDBLOGDIR="' + $LogVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"') | Out-File $FileLocation2
 
 (Get-Content -Path $FileLocation2).Replace('SQLSYSADMINACCOUNTS="WIN-NAJQHOBU8QD\Administrator"', 'SQLSYSADMINACCOUNTS="' + $env:COMPUTERNAME + '\Administrator"')| Out-File $FileLocation2
 
@@ -433,14 +433,17 @@ else {
 }
 Write-Host "Done." -ForegroundColor DarkCyan 
 
-#Set-ExecutionPolicy -ExecutionPolicy AllSigned
+
 
 # Now for the fun part, alter the database settings
 # First we need to install (if necessary) the SQL commandlets
 
+Install-PackageProvider -Name NuGet -Force
+
 Import-Module SqlServer -Force
 
 Install-Module -name SqlServer
+
 #Go into the realms of SQL Server
 
 SQLSERVER:
