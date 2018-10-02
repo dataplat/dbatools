@@ -13,14 +13,26 @@ function Set-DbaDbMirror {
 
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
+    
+        .PARAMETER Database
+            The target database.
+    
+        .PARAMETER Partner
+            The partner fqdn.
+    
+        .PARAMETER Witness
+            The witness fqdn.
+    
+        .PARAMETER InputObject
+            Allows piping from Get-DbaDatabase.
+    
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Endpoint
+            Tags: Mirror, HA
             Author: Chrissy LeMaire (@cl), netnerds.net
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire

@@ -42,7 +42,7 @@ function Invoke-DbaDbMirrorValidation {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Mirror
+            Tags: Mirror, HA
             Author: Chrissy LeMaire (@cl), netnerds.net
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
