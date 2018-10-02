@@ -16,7 +16,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $db1 -ErrorAction SilentlyContinue
     }
     
-    It "returns success" {
+    It -skip "returns success" {
         $results = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -NetworkShare C:\temp -Force
         $results.Status -eq 'Success' | Should Be $true
     }
