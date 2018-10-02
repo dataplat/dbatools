@@ -2,10 +2,10 @@
 function Invoke-DbaDbMirrorValidation {
     <#
         .SYNOPSIS
-            Gets SQL Endpoint(s) information for each instance(s) of SQL Server.
-
+            Validates if a mirror is ready
+    
         .DESCRIPTION
-            The Set-DbaDbMirror command gets SQL Endpoint(s) information for each instance(s) of SQL Server.
+            Validates if a mirror is ready
 
             Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1
     
@@ -92,10 +92,16 @@ function Invoke-DbaDbMirrorValidation {
             $server = $db.Parent
             $dbname = $db.Name
             $canmirror = $true
+            $dest = Connect-DbaInstance -SqlInstance $Mirror -Credential $MirrorSqlCredential
+            
+            $endpoints = @()
+            $endpoints += Get-DbaEndpoint -SqlInstance $server | Where-Object EndpointType -eq DatabaseMirroring
+            $endpoints += Get-DbaEndpoint -SqlInstance $dest | Where-Object EndpointType -eq DatabaseMirroring
             
             if (Test-Bound -ParameterName Witness) {
                 try {
                     $witserver = Connect-SqlInstance -SqlInstance $Witness -SqlCredential $WitnessSqlCredential
+                    $endpoints += Get-DbaEndpoint -SqlInstance $witserver | Where-Object EndpointType -eq DatabaseMirroring
                     $witdb = Get-DbaDatabase -SqlInstance $Witness -SqlCredential $WitnessSqlCredential -Database $db.Name
                     $wexists = $true
                     
@@ -124,7 +130,7 @@ function Invoke-DbaDbMirrorValidation {
                 $canmirror = $false
             }
             
-            $destdb = Get-DbaDatabase -SqlInstance $Mirror -SqlCredential $MirrorSqlCredential -Database $db.Name
+            $destdb = Get-DbaDatabase -SqlInstance $dest -Database $db.Name
             
             if ($destdb) {
                 $exists = $true
@@ -135,7 +141,7 @@ function Invoke-DbaDbMirrorValidation {
                 $exists = $false
             }
             
-            if (-not (Test-DbaPath -SqlInstance $destdb.Parent -Path $NetworkShare)) {
+            if (-not (Test-DbaPath -SqlInstance $dest -Path $NetworkShare)) {
                 Write-Message -Level Verbose -Message "Cannot access $NetworkShare from $($destdb.Parent.Name)"
                 $canmirror = $false
                 $nexists = $false
@@ -144,13 +150,31 @@ function Invoke-DbaDbMirrorValidation {
                 $nexists = $true
             }
             
-            if ($server.EngineEdition -ne $destdb.Parent.EngineEdition) {
+            if ($server.EngineEdition -ne $dest.EngineEdition) {
                 Write-Message -Level Verbose -Message "This mirroring configuration is not supported. Because the principal server instance, $server, is $($server.EngineEdition) Edition, the mirror server instance must also be $($server.EngineEdition) Edition."
                 $canmirror = $false
                 $edition = $false
             }
             else {
                 $edition = $true
+            }
+            
+            # There's a better way to do this but I'm sleepy
+            if ((Test-Bound -ParameterName Witness)) {
+                if ($endpoints.Count -eq 3) {
+                    $endpointpass = $true
+                }
+                else {
+                    $endpointpass = $false
+                }
+            }
+            else {
+                if ($endpoints.Count -eq 2) {
+                    $endpointpass = $true
+                }
+                else {
+                    $endpointpass = $false
+                }
             }
             
             $results = [pscustomobject]@{
@@ -160,6 +184,7 @@ function Invoke-DbaDbMirrorValidation {
                 Database = $db.Name
                 MirroringStatus = $db.MirroringStatus
                 State    = $db.Status
+                EndPoints = $endpointpass
                 DatabaseExistsOnMirror = $exists
                 DatabaseExistsOnWitness = $witexists
                 OnlineWitness = $wexists
@@ -169,10 +194,10 @@ function Invoke-DbaDbMirrorValidation {
             }
             
             if ((Test-Bound -ParameterName Witness)) {
-                $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, MirroringStatus, State, DatabaseExistsOnMirror, OnlineWitness, DatabaseExistsOnWitness, EditionMatch, AccessibleShare, ValidationPassed
+                $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, MirroringStatus, State, EndPoints, DatabaseExistsOnMirror, OnlineWitness, DatabaseExistsOnWitness, EditionMatch, AccessibleShare, ValidationPassed
             }
             else {
-                $results | Select-DefaultView -Property Primary, Mirror, Database, MirroringStatus, State, DatabaseExistsOnMirror, EditionMatch, AccessibleShare, ValidationPassed
+                $results | Select-DefaultView -Property Primary, Mirror, Database, MirroringStatus, State, EndPoints, DatabaseExistsOnMirror, EditionMatch, AccessibleShare, ValidationPassed
             }
         }
     }
