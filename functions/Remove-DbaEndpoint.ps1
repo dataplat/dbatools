@@ -88,7 +88,7 @@ function Remove-DbaEndpoint {
                         ComputerName = $ep.ComputerName
                         InstanceName = $ep.InstanceName
                         SqlInstance  = $ep.SqlInstance
-                        Endpiont     = $ep.Name
+                        Endpoint     = $ep.Name
                         Status       = "Removed"
                     }
                 }

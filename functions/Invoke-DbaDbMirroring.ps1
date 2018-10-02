@@ -114,7 +114,9 @@ function Invoke-DbaDbMirroring {
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Connecting to SQL Servers"
             $source = $primarydb.Parent
             $dest = Connect-DbaInstance -SqlInstance $Mirror -Credential $MirrorSqlCredential
-            $witserver = Connect-DbaInstance -SqlInstance $Witness -Credential $WitnessSqlCredential
+            if ($Witness) {
+                $witserver = Connect-DbaInstance -SqlInstance $Witness -Credential $WitnessSqlCredential
+            }
             
             $dbName = $primarydb.Name
             
@@ -159,7 +161,7 @@ function Invoke-DbaDbMirroring {
             
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to witness"
             
-            if ($Witness -and -not $validation.DatabaseExistsOnWitness -or $Force) {
+            if ($Witness -and (-not $validation.DatabaseExistsOnWitness -or $Force)) {
                 if (-not $fullbackup) {
                     $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
                     $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
@@ -167,7 +169,9 @@ function Invoke-DbaDbMirroring {
                 $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $witserver -WithReplace
             }
             
-            $witnessdb = Get-DbaDatabase -SqlInstance $witserver -Database $dbName
+            if ($Witness) {
+                $witnessdb = Get-DbaDatabase -SqlInstance $witserver -Database $dbName
+            }
             
             $primaryendpoint = Get-DbaEndpoint -SqlInstance $source | Where-Object EndpointType -eq DatabaseMirroring
             $mirrorendpoint = Get-DbaEndpoint -SqlInstance $dest | Where-Object EndpointType -eq DatabaseMirroring
