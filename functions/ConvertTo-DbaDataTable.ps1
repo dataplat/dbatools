@@ -9,7 +9,7 @@ function ConvertTo-DbaDataTable {
 
             Thanks to Chad Miller, this is based on his script. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd
 
-            If the attempt to convert to datatable fails, try the -Raw parameter for less accurate datatype detection.
+            If the attempt to convert to data table fails, try the -Raw parameter for less accurate datatype detection.
 
         .PARAMETER InputObject
             The object to transform into a DataTable.
@@ -33,6 +33,8 @@ function ConvertTo-DbaDataTable {
 
         .NOTES
             Tags: DataTable, Table, Data
+            Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io/
             Copyright: (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
@@ -44,22 +46,22 @@ function ConvertTo-DbaDataTable {
             System.Object[]
 
         .EXAMPLE
-            Get-Service | ConvertTo-DbaDataTable
+            PS C:\> Get-Service | ConvertTo-DbaDataTable
 
             Creates a DataTable from the output of Get-Service.
 
         .EXAMPLE
-            ConvertTo-DbaDataTable -InputObject $csv.cheesetypes
+            PS C:\> ConvertTo-DbaDataTable -InputObject $csv.cheesetypes
 
             Creates a DataTable from the CSV object $csv.cheesetypes.
 
         .EXAMPLE
-            $dblist | ConvertTo-DbaDataTable
+            PS C:\> $dblist | ConvertTo-DbaDataTable
 
             Creates a DataTable from the $dblist object passed in via pipeline.
 
         .EXAMPLE
-            Get-Process | ConvertTo-DbaDataTable -TimeSpanType TotalSeconds
+            PS C:\> Get-Process | ConvertTo-DbaDataTable -TimeSpanType TotalSeconds
 
             Creates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.
     #>
@@ -67,18 +69,18 @@ function ConvertTo-DbaDataTable {
     [OutputType([System.Object[]])]
     param (
         [Parameter(Position = 0,
-                   Mandatory,
-                   ValueFromPipeline)]
+            Mandatory,
+            ValueFromPipeline)]
         [AllowNull()]
         [PSObject[]]$InputObject,
         [Parameter(Position = 1)]
         [ValidateSet("Ticks",
-                     "TotalDays",
-                     "TotalHours",
-                     "TotalMinutes",
-                     "TotalSeconds",
-                     "TotalMilliseconds",
-                     "String")]
+            "TotalDays",
+            "TotalHours",
+            "TotalMinutes",
+            "TotalSeconds",
+            "TotalMilliseconds",
+            "String")]
         [ValidateNotNullOrEmpty()]
         [string]$TimeSpanType = "TotalMilliseconds",
         [ValidateSet("Int64", "Int32", "String")]
@@ -405,6 +407,6 @@ function ConvertTo-DbaDataTable {
     }
     end {
         Write-Message -Level InternalComment -Message "Finished."
-         , $datatable
+        , $datatable
     }
 }
