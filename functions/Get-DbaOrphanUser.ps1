@@ -35,25 +35,28 @@ function Get-DbaOrphanUser {
             Author: Claudio Silva (@ClaudioESSilva)
             Author: Garry Bargsley (@gbargsley)
             Editor: Simone Bizzotto (@niphlod)
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
-        .LINK
 
+        .LINK
             https://dbatools.io/Get-DbaOrphanUser
 
         .EXAMPLE
-            Get-DbaOrphanUser -SqlInstance localhost\sql2016
+            PS C:\> Get-DbaOrphanUser -SqlInstance localhost\sql2016
+
             Finds all orphan users without matching Logins in all databases present on server 'localhost\sql2016'.
 
         .EXAMPLE
-            Get-DbaOrphanUser -SqlInstance localhost\sql2016 -SqlCredential $cred
+            PS C:\> Get-DbaOrphanUser -SqlInstance localhost\sql2016 -SqlCredential $cred
+
             Finds all orphan users without matching Logins in all databases present on server 'localhost\sql2016'. SQL Server authentication will be used in connecting to the server.
 
         .EXAMPLE
-            Get-DbaOrphanUser -SqlInstance localhost\sql2016 -Database db1
-            Finds orphan users without matching Logins in the db1 database present on server 'localhost\sql2016'.
+            PS C:\> Get-DbaOrphanUser -SqlInstance localhost\sql2016 -Database db1
 
+            Finds orphan users without matching Logins in the db1 database present on server 'localhost\sql2016'.
     #>
     [CmdletBinding()]
     Param (
