@@ -32,6 +32,7 @@ function Get-DbaService {
         .NOTES
             Tags: Service, SqlServer, Instance, Connect
             Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -40,44 +41,44 @@ function Get-DbaService {
             https://dbatools.io/Get-DbaService
 
         .EXAMPLE
-            Get-DbaService -ComputerName sqlserver2014a
+            PS C:\> Get-DbaService -ComputerName sqlserver2014a
 
             Gets the SQL Server related services on computer sqlserver2014a.
 
         .EXAMPLE
-            'sql1','sql2','sql3' | Get-DbaService
+            PS C:\> 'sql1','sql2','sql3' | Get-DbaService
 
             Gets the SQL Server related services on computers sql1, sql2 and sql3.
 
         .EXAMPLE
-            $cred = Get-Credential WindowsUser
-            Get-DbaService -ComputerName sql1,sql2 -Credential $cred  | Out-GridView
+            PS C:\> $cred = Get-Credential WindowsUser
+            PS C:\> Get-DbaService -ComputerName sql1,sql2 -Credential $cred  | Out-GridView
 
             Gets the SQL Server related services on computers sql1 and sql2 via the user WindowsUser, and shows them in a grid view.
 
         .EXAMPLE
-            Get-DbaService -ComputerName sql1,sql2 -InstanceName MSSQLSERVER
+            PS C:\> Get-DbaService -ComputerName sql1,sql2 -InstanceName MSSQLSERVER
 
             Gets the SQL Server related services related to the default instance MSSQLSERVER on computers sql1 and sql2.
 
         .EXAMPLE
-            Get-DbaService -ComputerName $MyServers -Type SSRS
+            PS C:\> Get-DbaService -ComputerName $MyServers -Type SSRS
 
             Gets the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
 
         .EXAMPLE
-            $services = Get-DbaService -ComputerName sql1 -Type Agent,Engine
-            $services.ChangeStartMode('Manual')
+            PS C:\> $services = Get-DbaService -ComputerName sql1 -Type Agent,Engine
+            PS C:\> $services.ChangeStartMode('Manual')
 
             Gets the SQL Server related services of types Sql Agent and DB Engine on computer sql1 and changes their startup mode to 'Manual'.
 
         .EXAMPLE
-            (Get-DbaService -ComputerName sql1 -Type Engine).Restart($true)
+            PS C:\> (Get-DbaService -ComputerName sql1 -Type Engine).Restart($true)
 
             Calls a Restart method for each Engine service on computer sql1.
     #>
     [CmdletBinding(DefaultParameterSetName = "Search")]
-    Param (
+    param (
         [parameter(ValueFromPipeline, Position = 1)]
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
