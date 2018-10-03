@@ -13,8 +13,9 @@ function Get-DbaAgentAlert {
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .NOTES
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
             Tags: Agent, SMO
+            Author: Klaas Vandenberghe (@PowerDBAKlaas)
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -28,11 +29,13 @@ function Get-DbaAgentAlert {
             https://dbatools.io/Get-DbaAgentAlert
 
         .EXAMPLE
-            Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB
+            PS C:\> Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB
+
             Returns all SQL Agent alerts on serverA and serverB\instanceB
 
         .EXAMPLE
-            'serverA','serverB\instanceB' | Get-DbaAgentAlert
+            PS C:\> 'serverA','serverB\instanceB' | Get-DbaAgentAlert
+
             Returns all SQL Agent alerts  on serverA and serverB\instanceB
     #>
     [CmdletBinding()]
@@ -44,7 +47,6 @@ function Get-DbaAgentAlert {
         $SqlCredential,
         [Alias('Silent')]
         [switch]$EnableException
-
     )
 
     process {
