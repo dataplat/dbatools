@@ -44,6 +44,8 @@ function Get-DbaProcess {
 
         .NOTES
             Tags: Process, Session, ActivityMonitor
+            Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -52,27 +54,27 @@ function Get-DbaProcess {
             https://dbatools.io/Get-DbaProcess
 
         .EXAMPLE
-            Get-DbaProcess -SqlInstance sqlserver2014a -Login base\ctrlb, sa
+            PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Login base\ctrlb, sa
 
             Shows information about the processes for base\ctrlb and sa on sqlserver2014a. Windows Authentication is used in connecting to sqlserver2014a.
 
         .EXAMPLE
-            Get-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spid 56, 77
+            PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spid 56, 77
 
             Shows information about the processes for spid 56 and 57. Uses alternative (SQL or Windows) credentials to authenticate to sqlserver2014a.
 
         .EXAMPLE
-            Get-DbaProcess -SqlInstance sqlserver2014a -Program 'Microsoft SQL Server Management Studio'
+            PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Program 'Microsoft SQL Server Management Studio'
 
             Shows information about the processes that were created in Microsoft SQL Server Management Studio.
 
         .EXAMPLE
-            Get-DbaProcess -SqlInstance sqlserver2014a -Host workstationx, server100
+            PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Host workstationx, server100
 
             Shows information about the processes that were initiated by hosts (computers/clients) workstationx and server 1000.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -100,10 +102,23 @@ function Get-DbaProcess {
                 Stop-Function -Message "Could not connect to Sql Server instance $instance : $_" -Target $instance -ErrorRecord $_ -Continue
             }
 
-            $sql = "SELECT datediff(minute, s.last_request_end_time, getdate()) as MinutesAsleep, s.session_id as spid, s.host_process_id as HostProcessId, t.text as Query,
-                    s.login_time as LoginTime,s.client_version as ClientVersion, s.last_request_start_time as LastRequestStartTime, s.last_request_end_time as LastRequestEndTime,
-                    c.net_transport as NetTransport, c.encrypt_option as EncryptOption, c.auth_scheme as AuthScheme, c.net_packet_size as NetPacketSize, c.client_net_address as ClientNetAddress
-                    FROM sys.dm_exec_connections c join sys.dm_exec_sessions s on c.session_id = s.session_id cross apply sys.dm_exec_sql_text(c.most_recent_sql_handle) t"
+            $sql = "SELECT DATEDIFF(MINUTE, s.last_request_end_time, GETDATE()) AS MinutesAsleep,
+                s.session_id AS spid,
+                s.host_process_id AS HostProcessId,
+                t.text AS Query,
+                s.login_time AS LoginTime,
+                s.client_version AS ClientVersion,
+                s.last_request_start_time AS LastRequestStartTime,
+                s.last_request_end_time AS LastRequestEndTime,
+                c.net_transport AS NetTransport,
+                c.encrypt_option AS EncryptOption,
+                c.auth_scheme AS AuthScheme,
+                c.net_packet_size AS NetPacketSize,
+                c.client_net_address AS ClientNetAddress
+            FROM sys.dm_exec_connections c
+            JOIN sys.dm_exec_sessions s
+                on c.session_id = s.session_id
+            CROSS APPLY sys.dm_exec_sql_text(c.most_recent_sql_handle) t"
 
             if ($server.VersionMajor -gt 8) {
                 $results = $server.Query($sql)
