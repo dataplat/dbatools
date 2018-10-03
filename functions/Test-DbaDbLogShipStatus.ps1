@@ -288,6 +288,6 @@ EXEC master.sys.sp_help_log_shipping_monitor"
         }
     }
     end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaLogShippingRecovery
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-DbaLogShippingStatus
     }
 }

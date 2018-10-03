@@ -696,7 +696,11 @@
     'Move-DbaRegisteredServer',
     'Move-DbaRegisteredServerGroup',
     'Remove-DbaRegisteredServer',
-    'Remove-DbaRegisteredServerGroup'
+    'Remove-DbaRegisteredServerGroup',
+    'Get-DbaLogShippingError',
+    'Invoke-DbaLogShipping',
+    'Invoke-DbaLogShippingRecovery',
+    'Test-DbaLogShippingStatus'
 
     # List of all modules packaged with this module
     ModuleList             = @()
