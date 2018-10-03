@@ -71,6 +71,12 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result.PasswordChanged | Should -Be $true
         }
 
+        It "Catches errors when login name cannot be changed" {
+            # erroring due to permissions
+            $cred = New-Object System.Management.Automation.PSCredential 'testLogin', $password2
+            { Set-DbaLogin -SqlInstance $script:instance2 -SqlCredential $cred -Login 'testLogin' -NewName 'testLogin2' -EnableException } | Should -Throw
+        }
+
         It "Disable the login" {
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Disable
 
