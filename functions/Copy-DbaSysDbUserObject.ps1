@@ -48,7 +48,7 @@ function Copy-DbaSysDbUserObject {
             https://dbatools.io/Copy-DbaSysDbUserObject
 
         .EXAMPLE
-            PS C:\> Copy-DbaSysDbUserObject $sourceServer $destserver
+            PS C:\> adCopy-DbaSysDbUserObject $sourceServer $destserver
 
             Copies user objects from source to destination
     #>
