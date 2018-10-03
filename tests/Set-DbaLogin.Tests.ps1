@@ -4,11 +4,36 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        [object[]]$params = (Get-ChildItem function:\Set-DbaLogin).Parameters.Keys
+        $command = Get-Command $CommandName
+        [object[]]$params = $command.Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'Password', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'AddRole', 'RemoveRole', 'EnableException', 'InputObject'
         $paramCount = $knownParameters.Count
         It "Contains our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
+        }
+
+        $systemRoles = @(
+            @{role = 'bulkadmin'},
+            @{role = 'dbcreator'},
+            @{role = 'diskadmin'},
+            @{role = 'processadmin'},
+            @{role = 'public'},
+            @{role = 'securityadmin'},
+            @{role = 'serveradmin'},
+            @{role = 'setupadmin'},
+            @{role = 'sysadmin'}
+        )
+
+        It "Validates -AddRole contains <role>" -TestCases $systemRoles {
+            param ($role)
+
+            $command.Parameters['AddRole'].Attributes.ValidValues | Should -Contain $role
+        }
+
+        It "Validates -RemoveRole contains <role>" -TestCases $systemRoles {
+            param ($role)
+
+            $command.Parameters['RemoveRole'].Attributes.ValidValues | Should -Contain $role
         }
 
         It "Validates -Login and -NewName aren't the same" {
@@ -35,8 +60,6 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             # Create the new password
             $password1 = ConvertTo-SecureString -String "password1" -AsPlainText -Force
             $password2 = ConvertTo-SecureString -String "password2" -AsPlainText -Force
-
-            $cred = New-Object System.Management.Automation.PSCredential 'testLogin', $password2
 
             # Create the login
             New-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Password $password1
@@ -73,23 +96,13 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result.PasswordChanged | Should -Be $true
         }
 
-        It "Catches errors when login name cannot be changed" {
-            # erroring due to permissions
-            $result = Set-DbaLogin -SqlInstance $script:instance2 -SqlCredential $cred -Login 'testLogin' -NewName 'testLogin2' -WarningAction 'SilentlyContinue'
-            $result | Should -Be $null
-
-            { Set-DbaLogin -SqlInstance $script:instance2 -SqlCredential $cred -Login 'testLogin' -NewName 'testLogin2' -EnableException } | Should -Throw
-        }
-
         It "Disable the login" {
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Disable
-
             $result.IsDisabled | Should -Be $true
         }
 
         It "Enable the login" {
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Enable
-
             $result.IsDisabled | Should -Be $false
         }
 
@@ -144,7 +157,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         }
 
         AfterAll {
-            Remove-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Confirm:$false
+            Remove-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Confirm:$false -Force
         }
     }
 }
