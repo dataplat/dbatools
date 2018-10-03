@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 14
         [object[]]$params = (Get-ChildItem function:\Set-DbaLogin).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'Password', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'AddRole', 'RemoveRole', 'EnableException'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'Password', 'Unlock', 'MustChange', 'NewName', 'Disable', 'Enable', 'DenyLogin', 'GrantLogin', 'AddRole', 'RemoveRole', 'EnableException', 'InputObject'
+        $paramCount = $knownParameters.Count
         It "Contains our specific parameters" {
-            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
     }
 }
@@ -26,13 +26,27 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
         }
 
         It "Does test login exist" {
-            $logins = Get-DbaLogin -SqlInstance $script:instance2 | Where-Object {$_.Name -eq "testlogin"} | Select-Object Name
+            $logins = Get-DbaLogin -SqlInstance $script:instance2 | Where-Object { $_.Name -eq "testlogin" } | Select-Object Name
             $logins.Name | Should -Be "testlogin"
         }
 
         It "Change the password"{
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Password $password2
 
+            $result.PasswordChanged | Should -Be $true
+        }
+
+        It "Change the password from piped Login" {
+            $login = Get-DbaLogin -Sqlinstance $script:instance2 -Login testLogin
+
+            $result = $login | Set-DbaLogin -Password $password2
+            $result.PasswordChanged | Should -Be $true
+        }
+
+        It "Change the password from InputObject" {
+            $login = Get-DbaLogin -Sqlinstance $script:instance2 -Login testLogin
+
+            $result = Set-DbaLogin -InputObject $login -Password $password2
             $result.PasswordChanged | Should -Be $true
         }
 
