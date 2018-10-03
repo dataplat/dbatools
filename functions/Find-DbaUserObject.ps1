@@ -53,7 +53,7 @@ function Find-DbaUserObject {
             Shows all user owned (non-sa, non-dbo) objects and verbose output
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstances")]
         [DbaInstanceParameter[]]$SqlInstance,

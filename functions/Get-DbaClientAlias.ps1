@@ -43,7 +43,7 @@ function Get-DbaClientAlias {
             Gets all SQL Server client aliases on Server1 and Server2
 #>
         [CmdletBinding()]
-    Param (
+    param (
         [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
@@ -56,7 +56,7 @@ function Get-DbaClientAlias {
             $scriptblock = {
 
                 function Get-ItemPropertyValue {
-                    Param (
+                    param (
                         [parameter()]
                         [String]$Path,
                         [parameter()]

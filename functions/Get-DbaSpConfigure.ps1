@@ -68,7 +68,7 @@ function Get-DbaSpConfigure {
             Returns system configuration information on sql2012 using SQL Server Authentication. Only MaxServerMemory is returned as RemoteAccess was also excluded.
         #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,

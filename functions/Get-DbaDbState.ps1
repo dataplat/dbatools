@@ -63,7 +63,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseLiteralInitializerForHashtable", "")]
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

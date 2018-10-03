@@ -40,7 +40,7 @@ function Get-DbaSuspectPage {
 
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

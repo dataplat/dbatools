@@ -66,7 +66,7 @@ function Find-DbaView {
             Searches in "mydb" database views for "runtime" in the textbody
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,

@@ -56,7 +56,7 @@ function Get-DbaUptime {
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance,

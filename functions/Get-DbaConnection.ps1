@@ -7,7 +7,7 @@ function Get-DbaConnection {
         .DESCRIPTION
             Returns a bunch of information from dm_exec_connections which, according to Microsoft:
             "Returns information about the connections established to this instance of SQL Server and the details of each connection. Returns server wide connection information for SQL Server. Returns current database connection information for SQL Database."
-    
+
         .PARAMETER SqlInstance
             The target SQL Server instance. Server(s) must be SQL Server 2005 or higher.
 
@@ -31,11 +31,11 @@ function Get-DbaConnection {
 
         .EXAMPLE
             Get-DbaConnection -SqlInstance sql2016, sql2017
-            
+
             Returns client connection information from sql2016 and sql2017
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -43,7 +43,7 @@ function Get-DbaConnection {
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )
-    
+
     begin {
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
                             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
@@ -57,17 +57,17 @@ function Get-DbaConnection {
                             parent_connection_id as ParentConnectionId, most_recent_sql_handle as MostRecentSqlHandle
                             FROM sys.dm_exec_connections"
     }
-    
+
     process {
         foreach ($instance in $SqlInstance) {
-            
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             Write-Message -Level Debug -Message "Getting results for the following query: $sql."
             try {
                 $server.Query($sql)

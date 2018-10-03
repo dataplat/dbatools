@@ -72,7 +72,7 @@ function Copy-DbaCentralManagementServer {
             If SwitchServerName is not specified, "sqlcluster" will be skipped.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,

@@ -26,25 +26,25 @@ function Get-DbaSpn {
             Tags: SPN
             Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
 
-            dbatools PowerShell module (https://dbatools.io)
-            Copyright (C) 2016 Chrissy LeMaire
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaSpn
 
         .EXAMPLE
-            Get-DbaSpn -ServerName SQLSERVERA -Credential (Get-Credential)
+            PS C:\> Get-DbaSpn -ServerName SQLSERVERA -Credential (Get-Credential)
 
             Returns a custom object with SearchTerm (ServerName) and the SPNs that were found
 
         .EXAMPLE
-            Get-DbaSpn -AccountName domain\account -Credential (Get-Credential)
+            PS C:\> Get-DbaSpn -AccountName domain\account -Credential (Get-Credential)
 
             Returns a custom object with SearchTerm (domain account) and the SPNs that were found
 
         .EXAMPLE
-            Get-DbaSpn -ServerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
+            PS C:\> Get-DbaSpn -ServerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
 
             Returns a custom object with SearchTerm (ServerName) and the SPNs that were found for multiple computers
     #>

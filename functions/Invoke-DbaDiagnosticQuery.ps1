@@ -167,7 +167,7 @@ function Invoke-DbaDiagnosticQuery {
 
         function Invoke-DiagnosticQuerySelectionHelper {
             [CmdletBinding()]
-            Param (
+            param (
                 [parameter(Mandatory)]
                 $ParsedScript
             )
@@ -278,7 +278,7 @@ function Invoke-DbaDiagnosticQuery {
                     return
                 }
             }
-            
+
             if ($QueryName.Count -eq 0) {
                 $QueryName = $parsedscript | Select-Object -ExpandProperty QueryName
             }

@@ -117,7 +117,7 @@ function Read-DbaBackupHeader {
             return
         }
         $getHeaderScript = {
-            Param (
+            param (
                 $SqlInstance,
                 $Path,
                 $DeviceType,

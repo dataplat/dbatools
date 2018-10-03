@@ -94,7 +94,7 @@ function Get-DbaWindowsLog {
 
         function Receive-Runspace {
             [Parameter()]
-            Param (
+            param (
                 [switch]
                 $Wait
             )
@@ -117,7 +117,7 @@ function Get-DbaWindowsLog {
 
         #region Scriptblocks
         $scriptBlock_RemoteExecution = {
-            Param (
+            param (
                 [System.DateTime]
                 $Start,
 
@@ -133,7 +133,7 @@ function Get-DbaWindowsLog {
 
             #region Helper function
             function Convert-ErrorRecord {
-                Param (
+                param (
                     $Line
                 )
 
@@ -162,7 +162,7 @@ function Get-DbaWindowsLog {
 
             #region Script that processes an individual file
             $scriptBlock = {
-                Param (
+                param (
                     [System.IO.FileInfo]
                     $File
                 )
@@ -242,7 +242,7 @@ function Get-DbaWindowsLog {
         }
 
         $scriptBlock_ParallelRemoting = {
-            Param (
+            param (
                 [DbaInstanceParameter]
                 $SqlInstance,
 

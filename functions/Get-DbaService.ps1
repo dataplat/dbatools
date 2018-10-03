@@ -197,16 +197,16 @@ function Get-DbaService {
                                 Add-Member -Force -InputObject $service -NotePropertyName InstanceName -NotePropertyValue $instance
                                 Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue $priority
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value {
-                                    Param ([bool]$Force = $false)
+                                    param ([bool]$Force = $false)
                                     Stop-DbaService -InputObject $this -Force:$Force
                                 }
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Start" -Value { Start-DbaService -InputObject $this }
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Restart" -Value {
-                                    Param ([bool]$Force = $false)
+                                    param ([bool]$Force = $false)
                                     Restart-DbaService -InputObject $this -Force:$Force
                                 }
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "ChangeStartMode" -Value {
-                                    Param (
+                                    param (
                                         [parameter(Mandatory)]
                                         [string]$Mode
                                     )

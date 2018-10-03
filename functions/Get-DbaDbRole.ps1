@@ -74,7 +74,7 @@
 
         #>
             [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('SqlServer', 'ServerInstance')]
         [DbaInstanceParameter[]]$SqlInstance,

@@ -60,7 +60,7 @@
         Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,

@@ -38,7 +38,7 @@
             Retrieve all configuration elements from all modules, even hidden ones.
     #>
     [CmdletBinding(DefaultParameterSetName = "FullName")]
-    Param (
+    param (
         [Parameter(ParameterSetName = "FullName", Position = 0)]
         [string]$FullName = "*",
         [Parameter(ParameterSetName = "Module", Position = 1)]

@@ -30,7 +30,7 @@
         .EXAMPLE
             Get-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Get-DbaDeprecatedFeature
             Check deprecated features on server sql2008 for only the testdb and db2 databases
-    
+
         .EXAMPLE
             Get-DbaDeprecatedFeature -SqlInstance sql2008, sqlserver2012
             Check deprecated features for all databases on the servers sql2008 and sqlserver2012.
@@ -44,14 +44,14 @@
             Check deprecated features on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range or higher
         #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )
-    
+
     begin {
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
         ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
@@ -59,25 +59,25 @@
         FROM sys.dm_os_performance_counters WHERE object_name like '%Deprecated%'
         and cntr_value > 0 ORDER BY deprecated_feature"
     }
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-            
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             try {
                 $server.Query($sql)
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
         }
     }
 }

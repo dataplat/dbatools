@@ -26,7 +26,7 @@
             Registers the scriptblock stored in $scriptblock as validation with the name IntPositive
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(Mandatory)]
         [string]
         $Name,

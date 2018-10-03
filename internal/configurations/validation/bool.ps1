@@ -1,5 +1,5 @@
 ﻿Register-DbatoolsConfigValidation -Name "bool" -ScriptBlock {
-    Param (
+    param (
         $Value
     )
 

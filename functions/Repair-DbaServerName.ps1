@@ -23,7 +23,7 @@ function Repair-DbaServerName {
 
         .PARAMETER Force
             If this switch is enabled, most confirmation prompts will be skipped.
-        
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -62,7 +62,7 @@ function Repair-DbaServerName {
             Checks to see if the server name is updatable and automatically performs the change, bypassing most prompts and confirmations. Replication or mirroring will be broken if necessary.
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
