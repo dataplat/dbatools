@@ -33,51 +33,51 @@
             https://dbatools.io/Get-DbaPlanCache
 
         .EXAMPLE
-            Get-DbaPlanCache -SqlInstance sql2017
+            PS C:\> Get-DbaPlanCache -SqlInstance sql2017
 
             Returns the single use plan cache usage information for SQL Server instance 2017
 
         .EXAMPLE
-            Get-DbaPlanCache -SqlInstance sql2017
+            PS C:\> Get-DbaPlanCache -SqlInstance sql2017
 
             Returns the single use plan cache usage information for SQL Server instance 2017
 
         .EXAMPLE
-            Get-DbaPlanCache -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin)
+            PS C:\> Get-DbaPlanCache -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin)
 
             Returns the single use plan cache usage information for SQL Server instance 2017 using login 'sqladmin'
     #>
-        [CmdletBinding()]
-        Param (
-            [parameter(Mandatory, ValueFromPipeline)]
-            [Alias("ServerInstance", "SqlServer", "SqlServers")]
-            [DbaInstanceParameter[]]$SqlInstance,
-            [PSCredential]$SqlCredential,
-            [switch]$EnableException
-        )
-        begin {
-            $Sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
-        ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-        SERVERPROPERTY('ServerName') AS SqlInstance, MB = sum(cast((CASE WHEN usecounts = 1 AND objtype IN ('Adhoc', 'Prepared') THEN size_in_bytes ELSE 0 END) as decimal(12, 2))) / 1024 / 1024,
-        UseCount = sum(CASE WHEN usecounts = 1 AND objtype IN ('Adhoc', 'Prepared') THEN 1 ELSE 0 END)
-        FROM sys.dm_exec_cached_plans;"
-        }
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [switch]$EnableException
+    )
+    begin {
+        $Sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
+    ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
+    SERVERPROPERTY('ServerName') AS SqlInstance, MB = SUM(CAST((CASE WHEN usecounts = 1 AND objtype IN ('Adhoc', 'Prepared') THEN size_in_bytes ELSE 0 END) AS DECIMAL(12, 2))) / 1024 / 1024,
+    UseCount = SUM(CASE WHEN usecounts = 1 AND objtype IN ('Adhoc', 'Prepared') THEN 1 ELSE 0 END)
+    FROM sys.dm_exec_cached_plans;"
+    }
 
-        process {
-            foreach ($instance in $SqlInstance) {
-                try {
-                    Write-Message -Level Verbose -Message "Connecting to $instance"
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $sqlcredential
-                }
-                catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                }
-
-                $results = $server.Query($sql)
-                $size = [dbasize]($results.MB*1024*1024)
-                Add-Member -Force -InputObject $results -MemberType NoteProperty -Name Size -Value $size
-
-                Select-DefaultView -InputObject $results -Property ComputerName, InstanceName, SqlInstance, Size, UseCount
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance"
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            $results = $server.Query($sql)
+            $size = [dbasize]($results.MB*1024*1024)
+            Add-Member -Force -InputObject $results -MemberType NoteProperty -Name Size -Value $size
+
+            Select-DefaultView -InputObject $results -Property ComputerName, InstanceName, SqlInstance, Size, UseCount
         }
     }
+}
