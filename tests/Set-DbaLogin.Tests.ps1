@@ -51,6 +51,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         It "Validates -Login is required when using -SqlInstance" {
             { Set-DbaLogin -SqlInstance $script:instance2 -EnableException } | Should -Throw 'You must specify a Login when using SqlInstance'
         }
+
+        It "Validates -Password is a SecureString or PSCredential" {
+            { Set-DbaLogin -SqlInstance $script:instance2 -Login 'testLogin' -Password 'password' -EnableException } | Should -Throw 'Password must be a PSCredential or SecureString'
+        }
     }
 }
 
@@ -76,8 +80,15 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result.Notes | Should -Be 'New login name already exists'
         }
 
-        It "Change the password"{
+        It 'Change the password from a SecureString' {
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Password $password2
+
+            $result.PasswordChanged | Should -Be $true
+        }
+
+        It 'Changes the password from a PSCredential' {
+            $cred = New-Object System.Management.Automation.PSCredential ('testLogin', $password2)
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login 'testLogin' -Password $cred
 
             $result.PasswordChanged | Should -Be $true
         }

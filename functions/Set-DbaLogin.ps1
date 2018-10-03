@@ -139,7 +139,7 @@ function Set-DbaLogin {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Login,
-        [SecureString]$Password,
+        $Password,
         [switch]$Unlock,
         [switch]$MustChange,
         [string]$NewName,
@@ -179,8 +179,10 @@ function Set-DbaLogin {
                 "PSCredential" { $newPassword = $Password.Password }
                 "SecureString" { $newPassword = $Password }
             }
-        }
-        else {
+
+            if ($Password.GetType().Name -notin @('PSCredential', 'SecureString')) {
+                Stop-Function -Message "Password must be a PSCredential or SecureString" -Target $Login
+            }
         }
 
         if ((Test-Bound -ParameterName SqlInstance) -And (Test-Bound -ParameterName Login -Not)) {
