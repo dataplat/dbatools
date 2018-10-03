@@ -61,7 +61,7 @@ function Get-DbaUserPermission {
         including public and guest grants, and sys schema objects.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,

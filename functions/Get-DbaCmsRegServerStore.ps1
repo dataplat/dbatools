@@ -40,7 +40,7 @@ function Get-DbaCmsRegServerStore {
             Returns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

@@ -66,7 +66,7 @@ function Find-DbaStoredProcedure {
             Searches in "mydb" database stored procedures for "runtime" in the textbody
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,

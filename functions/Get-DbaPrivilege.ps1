@@ -46,7 +46,7 @@ function Get-DbaPrivilege {
             Gets the local privileges on computers sql1 and sql2, and shows them in a grid view.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(ValueFromPipeline)]
         [Alias("cn", "host", "Server")]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
@@ -79,7 +79,7 @@ function Get-DbaPrivilege {
 
                     Write-Message -Level Verbose -Message "Getting Batch Logon Privileges on $Computer"
                     $BL = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
-                        Param ($ResolveSID)
+                        param ($ResolveSID)
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -match "SeBatchLogonRight" }).substring(20).split(",").replace("`*", "") |
@@ -91,7 +91,7 @@ function Get-DbaPrivilege {
 
                     Write-Message -Level Verbose -Message "Getting Instant File Initialization Privileges on $Computer"
                     $ifi = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
-                        Param ($ResolveSID)
+                        param ($ResolveSID)
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeManageVolumePrivilege*' }).substring(26).split(",").replace("`*", "") |
@@ -103,7 +103,7 @@ function Get-DbaPrivilege {
 
                     Write-Message -Level Verbose -Message "Getting Lock Pages in Memory Privileges on $Computer"
                     $lpim = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
-                        Param ($ResolveSID)
+                        param ($ResolveSID)
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeLockMemoryPrivilege*' }).substring(24).split(",").replace("`*", "") |

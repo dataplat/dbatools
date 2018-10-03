@@ -53,7 +53,7 @@ function New-DbaSsisCatalog {
             Creates the SSIS Catalog on server DEV01 with the specified password.
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

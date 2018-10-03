@@ -35,7 +35,7 @@ function Get-DbatoolsConfigValue {
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSPossibleIncorrectComparisonWithNull", "")]
     [CmdletBinding()]
-    Param (
+    param (
         [Alias('Name')]
         [Parameter(Mandatory)]
         [string]$FullName,

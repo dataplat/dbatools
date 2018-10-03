@@ -42,7 +42,7 @@ function Get-DbaProductKey {
             Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer", "SqlInstances")]
         [DbaInstanceParameter[]]$SqlInstance,

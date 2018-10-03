@@ -59,7 +59,7 @@ function Get-DbaBuildReference {
 #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
-    Param (
+    param (
         [version[]]
         $Build,
 
@@ -83,7 +83,7 @@ function Get-DbaBuildReference {
         #region Helper functions
         function Get-DbaBuildReferenceIndex {
             [CmdletBinding()]
-            Param (
+            param (
                 [string]
                 $Moduledirectory,
 
@@ -159,7 +159,7 @@ function Get-DbaBuildReference {
 
         function Get-DbaBuildReferenceIndexOnline {
             [CmdletBinding()]
-            Param (
+            param (
                 [bool]
                 $EnableException
             )
@@ -188,7 +188,7 @@ function Get-DbaBuildReference {
             [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
             [CmdletBinding()]
             [OutputType([System.Collections.Hashtable])]
-            Param (
+            param (
                 [version]
                 $Build,
 

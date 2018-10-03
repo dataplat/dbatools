@@ -59,7 +59,7 @@ function Get-DbaOrphanUser {
             Finds orphan users without matching Logins in the db1 database present on server 'localhost\sql2016'.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

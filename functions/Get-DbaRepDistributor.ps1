@@ -34,7 +34,7 @@ function Get-DbaRepDistributor {
             Retrieve distributor information for servers sql2008 and sqlserver2012.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,

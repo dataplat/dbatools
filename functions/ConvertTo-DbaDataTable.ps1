@@ -201,7 +201,7 @@ function ConvertTo-DbaDataTable {
                 The timespan type defined by the user
         #>
             [CmdletBinding()]
-            Param (
+            param (
                 $Value,
                 [ValidateSet('Timespan', 'Size')]
                 [string]$Type,
@@ -249,7 +249,7 @@ function ConvertTo-DbaDataTable {
                 Autofilled. Whether the column should be string, no matter the input.
         #>
             [CmdletBinding()]
-            Param (
+            param (
                 [System.Management.Automation.PSPropertyInfo]$Property,
                 [System.Data.DataTable]$DataTable = $datatable,
                 [string]$TimeSpanType = $TimeSpanType,

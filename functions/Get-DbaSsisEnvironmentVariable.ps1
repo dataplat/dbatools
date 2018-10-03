@@ -45,67 +45,67 @@ function Get-DbaSsisEnvironmentVariable {
             Tags: SSIS, SSISDB, Variable
             Author: Bartosz Ratajczyk ( @b_ratajczyk )
 
-            dbatools PowerShell module (https://dbatools.io)
-            Copyright (C) 2016 Chrissy LeMaire
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaSsisEnvironmentVariable
 
         .EXAMPLE
-            Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL
+            PS C:\> Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL
 
             Gets variables of 'DEV' environment located in 'DWH_ETL' folder on 'localhost' Server
 
         .EXAMPLE
-            Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL, DEV2, QA
+            PS C:\> Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL, DEV2, QA
 
             Gets variables of 'DEV' environment(s) located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
         .EXAMPLE
-            Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -FolderExclude DWH_ETL, DEV2, QA
+            PS C:\> Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -FolderExclude DWH_ETL, DEV2, QA
 
             Gets variables of 'DEV' environments located in folders other than 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
         .EXAMPLE
-            Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV, PROD -Folder DWH_ETL, DEV2, QA
+            PS C:\> Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV, PROD -Folder DWH_ETL, DEV2, QA
 
             Gets variables of 'DEV' and 'PROD' environment(s) located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
         .EXAMPLE
-            Get-DbaSsisEnvironmentVariable -SqlInstance localhost -EnvironmentExclude DEV, PROD -Folder DWH_ETL, DEV2, QA
+            PS C:\> Get-DbaSsisEnvironmentVariable -SqlInstance localhost -EnvironmentExclude DEV, PROD -Folder DWH_ETL, DEV2, QA
 
             Gets variables of environments other than 'DEV' and 'PROD' located in folders 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
         .EXAMPLE
-            Get-DbaSsisEnvironmentVariable -SqlInstance localhost -EnvironmentExclude DEV, PROD -FolderExclude DWH_ETL, DEV2, QA
+            PS C:\> Get-DbaSsisEnvironmentVariable -SqlInstance localhost -EnvironmentExclude DEV, PROD -FolderExclude DWH_ETL, DEV2, QA
 
             Gets variables of environments other than 'DEV' and 'PROD' located in folders other than 'DWH_ETL', 'DEV2' and 'QA' on 'localhost' server
 
         .EXAMPLE
-            'localhost' | Get-DbaSsisEnvironmentVariable -EnvironmentExclude DEV, PROD
+            PS C:\> 'localhost' | Get-DbaSsisEnvironmentVariable -EnvironmentExclude DEV, PROD
 
             Gets all SSIS environments except 'DEV' and 'PROD' from 'localhost' server. The server name comes from pipeline
 
         .EXAMPLE
-            'SRV1', 'SRV3' | Get-DbaSsisEnvironmentVariable
+            PS C:\> 'SRV1', 'SRV3' | Get-DbaSsisEnvironmentVariable
 
             Gets all SSIS environments from 'SRV1' and 'SRV3' servers. The server's names come from pipeline
 
         .EXAMPLE
-            'SRV1', 'SRV2' | Get-DbaSsisEnvironmentVariable DEV | Out-GridView
+            PS C:\> 'SRV1', 'SRV2' | Get-DbaSsisEnvironmentVariable DEV | Out-GridView
 
             Gets all variables from 'DEV' Environment(s) on servers 'SRV1' and 'SRV2' and outputs it as the GridView.
             The server names come from the pipeline.
 
         .EXAMPLE
-            'localhost' | Get-DbaSsisEnvironmentVariable -EnvironmentExclude DEV, PROD | Select-Object -Property Name, Value | Where-Object {$_.Name -match '^a'} | Out-GridView
+            PS C:\> 'localhost' | Get-DbaSsisEnvironmentVariable -EnvironmentExclude DEV, PROD | Select-Object -Property Name, Value | Where-Object {$_.Name -match '^a'} | Out-GridView
 
             Gets all variables from Environments other than 'DEV' and 'PROD' on 'localhost' server,
             selects Name and Value properties for variables that names start with letter 'a' and outputs it as the GridView
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('SqlServer', 'ServerInstance')]
         [DbaInstanceParameter[]]$SqlInstance,

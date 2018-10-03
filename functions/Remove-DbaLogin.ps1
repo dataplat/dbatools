@@ -64,7 +64,7 @@ removes mylogin on SQL Server server\instance
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
-    Param (
+    param (
         [parameter(Mandatory, ParameterSetName = "instance")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -78,9 +78,9 @@ removes mylogin on SQL Server server\instance
         [switch]$Force,
         [switch]$EnableException
     )
-    
+
     process {
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -91,7 +91,7 @@ removes mylogin on SQL Server server\instance
             }
             $InputObject += $server.Logins | Where-Object { $_.Name -in $Login }
         }
-        
+
         foreach ($currentlogin in $InputObject) {
             try {
                 $server = $currentlogin.Parent
@@ -99,9 +99,9 @@ removes mylogin on SQL Server server\instance
                     if ($force) {
                         $null = Stop-DbaProcess -SqlInstance $server -Login $currentlogin.name
                     }
-                    
+
                     $currentlogin.Drop()
-                    
+
                     [pscustomobject]@{
                         ComputerName  = $server.ComputerName
                         InstanceName  = $server.ServiceName
