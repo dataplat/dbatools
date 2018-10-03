@@ -47,12 +47,12 @@ function Copy-DbaAgentSharedSchedule {
             https://dbatools.io/Copy-DbaAgentSharedSchedule
 
         .EXAMPLE
-            Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster
 
             Copies all shared job schedules from sqlserver2014a to sqlcluster using Windows credentials. If shared job schedules with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            PS C:\> Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
     #>
@@ -91,7 +91,7 @@ function Copy-DbaAgentSharedSchedule {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             $destSchedules = $destServer.JobServer.SharedSchedules
             foreach ($schedule in $serverSchedules) {
                 $scheduleName = $schedule.Name
@@ -104,11 +104,11 @@ function Copy-DbaAgentSharedSchedule {
                     Notes        = $null
                     DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
-                
+
                 if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
                     continue
                 }
-                
+
                 if ($destSchedules.Name -contains $scheduleName) {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate.")) {
@@ -143,15 +143,15 @@ function Copy-DbaAgentSharedSchedule {
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating schedule $scheduleName")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying schedule $scheduleName"
                         $sql = $schedule.Script() | Out-String
-                        
+
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
-                        
+
                         $copySharedScheduleStatus.Status = "Successful"
                         $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }

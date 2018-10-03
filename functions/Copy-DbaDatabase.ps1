@@ -93,7 +93,7 @@ function Copy-DbaDatabase {
             For more details please refer to this MSDN article - https://msdn.microsoft.com/en-us/library/ms191495.aspx
 
         .PARAMETER NewName
-            If a single database is being copied, this will be used to rename the database during the copy process. Any occurence of the original database name in the physical file names will be replaced with newname
+            If a single database is being copied, this will be used to rename the database during the copy process. Any occurrence of the original database name in the physical file names will be replaced with NewName
             If specified with multiple databases a warning will be raised and the copy stopped
 
             This option is mutually exclusive of Prefix
@@ -138,24 +138,24 @@ function Copy-DbaDatabase {
             https://dbatools.io/Copy-DbaDatabase
 
         .EXAMPLE
-            Copy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -NetworkShare \\fileshare\sql\migration
+            PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sql2014b -Database TestDB -BackupRestore -NetworkShare \\fileshare\sql\migration
 
             Migrates a single user database TestDB using Backup and restore from instance sql2014a to sql2014b. Backup files are stored in \\fileshare\sql\migration.
 
         .EXAMPLE
-            Copy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -DetachAttach -Reattach
+            PS C:\> Copy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -DetachAttach -Reattach
 
             Databases will be migrated from sql2012 to both sql2014 and sql2016 using the detach/copy files/attach method.The following will be performed: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SqlSERVER\M$\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
 
         .EXAMPLE
-            Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackups -Force
+            PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackups -Force
 
             Migrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql204a. If the databases exists on the destinations, they will be dropped prior to attach.
 
             Note that the backups must exist in a location accessible by all destination servers, such a network share.
 
         .EXAMPLE
-            Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\fileshare\sql\migration
+            PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\fileshare\sql\migration
 
             Migrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\fileshare\sql\migration. If the database exists on the destination, it will be dropped prior to attach.
 
@@ -244,11 +244,11 @@ function Copy-DbaDatabase {
         else {
             $ReplaceDbNameInFile = $false
         }
-        
+
         function Join-Path {
         <#
         An internal command that does not require the local path to exist
-        
+
         Boo, this does not work, but keeping it for future ref.
         #>
             [CmdletBinding()]
@@ -260,7 +260,7 @@ function Copy-DbaDatabase {
                 [IO.Path]::Combine($Path, $ChildPath)
             }
         }
-        
+
         function Join-AdminUnc {
             <#
         .SYNOPSIS

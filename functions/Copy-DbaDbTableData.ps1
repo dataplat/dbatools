@@ -103,42 +103,41 @@ function Copy-DbaDbTableData {
             https://dbatools.io/Copy-DbaDbTableData
 
         .EXAMPLE
-            Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table
+            PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table
 
             Copies all the data from sql1 to sql2, using the database dbatools_from.
 
         .EXAMPLE
-            Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table test_table
+            PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table test_table
 
             Copies all the data from sql1 to sql2, using the database dbatools_from as source and dbatools_dest as destination
 
         .EXAMPLE
-            Get-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -DestinationTable tb3
+            PS C:\> Get-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -DestinationTable tb3
 
             Copies all data from tables tb1 and tb2 in tempdb on sql1 to tb3 in tempdb on sql1
 
         .EXAMPLE
-            Get-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -Destination sql2
+            PS C:\> Get-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -Destination sql2
 
             Copies data from tbl1 in tempdb on sql1 to tbl1 in tempdb on sql2
             then
             Copies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2
 
         .EXAMPLE
-            Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table
+            PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table
 
             Copies all the data from sql1 to sql2, using the database dbatools_from.
 
         .EXAMPLE
-            Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+            PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
 
             Copies all the data from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination
 
         .EXAMPLE
-            Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+            PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
 
             Copies all the data from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination
-
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
