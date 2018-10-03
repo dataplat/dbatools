@@ -10,19 +10,24 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             $null = $masterkey | Remove-DbaDbMasterKey -Confirm:$false
         }
-
         $password = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
         $cert = New-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb
         $backup = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb -EncryptionPassword $password
         $null = Remove-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert.Name -Database tempdb -Confirm:$false
-        $results = Restore-DbaDbCertificate -SqlInstance $script:instance1 -Path $backup.ExportPath -Password $password -Database tempdb
 
-        It "restores the db cert" {
-            $results.Parent.Name -eq 'tempdb'
-            $null -ne $results.Name
-            $results.PrivateKeyEncryptionType -eq "Password"
+        It "restores the db cert and encrypts with password" {
+            $results = Restore-DbaDbCertificate -SqlInstance $script:instance1 -Path $backup.ExportPath -Password $password -Database tempdb -EncryptionPassword $password
+            $results.Parent.Name | Should Be 'tempdb'
+            $results.Name | Should Not BeNullOrEmpty
+            $results.PrivateKeyEncryptionType | Should Be "Password"
+            $results | Remove-DbaDbCertificate -Confirm:$false
         }
-
-        $results | Remove-DbaDbCertificate -Confirm:$false
+        It "restores the db cert and encrypts with master key" {
+            $results = Restore-DbaDbCertificate -SqlInstance $script:instance1 -Path $backup.ExportPath -Password $password -Database tempdb
+            $results.Parent.Name | Should Be 'tempdb'
+            $results.Name | Should Not BeNullOrEmpty
+            $results.PrivateKeyEncryptionType | Should Be "MasterKey"
+            $results | Remove-DbaDbCertificate -Confirm:$false
+        }
     }
 }
