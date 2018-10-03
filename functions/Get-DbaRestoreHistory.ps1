@@ -51,19 +51,20 @@ function Get-DbaRestoreHistory {
             Returns server name, database, username, restore type, date for all restored databases on sql2016.
 
         .EXAMPLE
-            Get-DbaRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since '7/1/2016 10:47:00'
+            Get-DbaRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since '2016-07-01 10:47:00'
 
             Returns restore information only for databases db1 and db2 on sql2016 since July 1, 2016 at 10:47 AM.
 
         .EXAMPLE
             Get-DbaRestoreHistory -SqlInstance sql2014, sql2016 -Exclude db1
 
-            Lots of detailed information for all databases except db1 on sql2014 and sql2016.
+            Returns restore information for all databases except db1 on sql2014 and sql2016.
 
         .EXAMPLE
-            Get-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs | Format-Table
+            $cred = Get-Credential sqladmin
+            Get-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -SqlCredential $cred | Format-Table
 
-            Adds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and formats the data as a table.
+            Returns database restore information for AdventureWorks2014 and pubs database on sql2014, connects using SQL Authentication via sqladmin account. Formats the data as a table.
 
         .EXAMPLE
             Get-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaRestoreHistory
