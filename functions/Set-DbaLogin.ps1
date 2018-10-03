@@ -139,7 +139,7 @@ function Set-DbaLogin {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Login,
-        $Password,
+        [object]$Password,
         [switch]$Unlock,
         [switch]$MustChange,
         [string]$NewName,
