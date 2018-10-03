@@ -45,6 +45,12 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $logins.Name | Should -Be "testlogin"
         }
 
+        It "Verifies -NewName doesn't already exist when renaming a login" {
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login 'testLogin' -NewName 'sa' -EnableException
+
+            $result.Notes | Should -Be 'New login name already exists'
+        }
+
         It "Change the password"{
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Password $password2
 

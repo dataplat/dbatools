@@ -211,6 +211,8 @@ function Set-DbaLogin {
 
             # Change the name
             if ($NewName) {
+                $allLogins = Get-DbaLogin -SqlInstance $server
+
                 # Check if the new name doesn't already exist
                 if ($allLogins.Name -notcontains $NewName) {
                     try {
