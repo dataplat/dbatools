@@ -10,12 +10,27 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         It "Contains our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
+
+        It "Validates -Login and -NewName aren't the same" {
+            { Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -NewName testLogin -EnableException } | Should -Throw 'Login name is the same as the value in -NewName'
+        }
+
+        It "Validates -Enable and -Disable aren't used together" {
+            { Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Enable -Disable -EnableException } | Should -Throw 'You cannot use both -Enable and -Disable together'
+        }
+
+        It "Validates -GrantLogin and -DenyLogin aren't used together" {
+            { Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -GrantLogin -DenyLogin -EnableException } | Should -Throw 'You cannot use both -GrantLogin and -DenyLogin together'
+        }
+
+        It "Validates -Login is required when using -SqlInstance" {
+            { Set-DbaLogin -SqlInstance $script:instance2 -EnableException } | Should -Throw 'You must specify a Login when using SqlInstance'
+        }
     }
 }
 
-Describe "$CommandName Unittests" -Tag 'UnitTests' {
+Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
     Context "Change login" {
-
         BeforeAll {
             # Create the new password
             $password1 = ConvertTo-SecureString -String "password1" -AsPlainText -Force
