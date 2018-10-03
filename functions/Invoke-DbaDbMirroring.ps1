@@ -113,9 +113,16 @@ function Invoke-DbaDbMirroring {
             $stepCounter = 0
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Connecting to SQL Servers"
             $source = $primarydb.Parent
-            $dest = Connect-DbaInstance -SqlInstance $Mirror -Credential $MirrorSqlCredential
-            if ($Witness) {
-                $witserver = Connect-DbaInstance -SqlInstance $Witness -Credential $WitnessSqlCredential
+            
+            try {
+                $dest = Connect-SqlInstance -SqlInstance $Mirror -SqlCredential $MirrorSqlCredential
+                
+                if ($Witness) {
+                    $witserver = Connect-SqlInstance -SqlInstance $Witness -SqlCredential $WitnessSqlCredential
+                }
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             
             $dbName = $primarydb.Name
@@ -230,17 +237,6 @@ function Invoke-DbaDbMirroring {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_
             }
             
-            if ($witnessdb) {
-                try {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for witness"
-                    $witnessdb | Set-DbaDbMirror -Witness $mirrorendpoint.Fqdn
-                    $witnessdb | Set-DbaDbMirror -Witness $primaryendpoint.Fqdn
-                }
-                catch {
-                    Stop-Function -Continue -Message "Failure on witness" -ErrorRecord $_
-                }
-            }
-            
             try {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for mirror"
                 $mirrordb | Set-DbaDbMirror -Partner $primaryendpoint.Fqdn
@@ -255,6 +251,15 @@ function Invoke-DbaDbMirroring {
             }
             catch {
                 Stop-Function -Continue -Message "Failure on primary" -ErrorRecord $_
+            }
+            
+            try {
+                if ($witnessendpoint) {
+                    $primarydb | Set-DbaDbMirror -Witness $witnessendpoint.Fqdn
+                }
+            }
+            catch {
+                Stop-Function -Continue -Message "Failure with the new last part" -ErrorRecord $_
             }
             
             $results = [pscustomobject]@{
