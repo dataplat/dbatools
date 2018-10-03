@@ -48,7 +48,7 @@ function Get-DbaDbMirror {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential | Where-Object IsMirroringEnabled |
+            Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential | Where-Object MirroringPartner |
             Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, MirroringSafetyLevel, MirroringStatus, MirroringPartner, MirroringPartnerInstance, MirroringFailoverLogSequenceNumber, MirroringID, MirroringRedoQueueMaxSize, MirroringRoleSequence, MirroringSafetySequence, MirroringTimeout, MirroringWitness, MirroringWitnessStatus
         }
     }

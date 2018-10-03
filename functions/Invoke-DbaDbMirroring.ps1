@@ -221,11 +221,16 @@ function Invoke-DbaDbMirroring {
             foreach ($account in $serviceaccounts) {
                 $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
                 $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
-                $null = $source.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
-                $null = $dest.Query("GRANT CONNECT ON ENDPOINT::$mirrorendpoint TO [$account]")
-                if ($witserver) {
-                    $null = New-DbaLogin -SqlInstance $witserver -Login $account -WarningAction SilentlyContinue
-                    $witserver.Query("GRANT CONNECT ON ENDPOINT::$witnessendpoint TO [$account]")
+                try {
+                    $null = $source.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
+                    $null = $dest.Query("GRANT CONNECT ON ENDPOINT::$mirrorendpoint TO [$account]")
+                    if ($witserver) {
+                        $null = New-DbaLogin -SqlInstance $witserver -Login $account -WarningAction SilentlyContinue
+                        $witserver.Query("GRANT CONNECT ON ENDPOINT::$witnessendpoint TO [$account]")
+                    }
+                }
+                catch {
+                    Stop-Function -Continue -Message "Failure" -ErrorRecord $_
                 }
             }
             
