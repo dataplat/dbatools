@@ -104,6 +104,10 @@ function Invoke-DbaDbMirrorValidation {
                     $witdb = Get-DbaDatabase -SqlInstance $witserver -Database $db.Name
                     $wexists = $true
                     
+                    if ($witdb.Status -ne 'Restoring') {
+                        $canmirror = $false
+                    }
+                    
                     if ($witdb) {
                         $witexists = $true
                     }
@@ -134,19 +138,23 @@ function Invoke-DbaDbMirrorValidation {
                 $canmirror = $false
             }
             
-            if ((Get-DbaDbRecoveryModel -SqlInstance $dest -Database $db.Name).Name -ne 'Full') {
+            $destdb = Get-DbaDatabase -SqlInstance $dest -Database $db.Name
+            
+            if ($destdb.RecoveryModel -ne 'Full') {
                 $canmirror = $false
             }
             
-            $destdb = Get-DbaDatabase -SqlInstance $dest -Database $db.Name
+            if ($destdb.Status -ne 'Restoring') {
+                $canmirror = $false
+            }
             
             if ($destdb) {
-                $exists = $true
+                $destdbexists = $true
             }
             else {
                 Write-Message -Level Verbose -Message "Database ($dbname) does not exist on mirror server"
                 $canmirror = $false
-                $exists = $false
+                $destdbexists = $false
             }
             
             if ((Test-Bound -ParameterName NetworkShare) -and -not (Test-DbaPath -SqlInstance $dest -Path $NetworkShare)) {
@@ -194,19 +202,21 @@ function Invoke-DbaDbMirrorValidation {
                 MirroringStatus = $db.MirroringStatus
                 State    = $db.Status
                 EndPoints = $endpointpass
-                DatabaseExistsOnMirror = $exists
+                DatabaseExistsOnMirror = $destdbexists
                 DatabaseExistsOnWitness = $witexists
                 OnlineWitness = $wexists
                 EditionMatch = $edition
                 AccessibleShare = $nexists
+                DestinationDbStatus = $destdb.Status
+                WitnessDbStatus = $witdb.Status
                 ValidationPassed = $canmirror
             }
             
             if ((Test-Bound -ParameterName Witness)) {
-                $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, RecoveryModel, MirroringStatus, State, EndPoints, DatabaseExistsOnMirror, OnlineWitness, DatabaseExistsOnWitness, EditionMatch, AccessibleShare, ValidationPassed
+                $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, RecoveryModel, MirroringStatus, State, EndPoints, DatabaseExistsOnMirror, OnlineWitness, DatabaseExistsOnWitness, EditionMatch, AccessibleShare, DestinationDbStatus, WitnessDbStatus, ValidationPassed
             }
             else {
-                $results | Select-DefaultView -Property Primary, Mirror, Database, RecoveryModel, MirroringStatus, State, EndPoints, DatabaseExistsOnMirror, EditionMatch, AccessibleShare, ValidationPassed
+                $results | Select-DefaultView -Property Primary, Mirror, Database, RecoveryModel, MirroringStatus, State, EndPoints, DatabaseExistsOnMirror, EditionMatch, AccessibleShare, DestinationDbStatus, ValidationPassed
             }
         }
     }

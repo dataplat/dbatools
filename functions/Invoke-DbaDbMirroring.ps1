@@ -134,6 +134,7 @@ function Invoke-DbaDbMirroring {
             if ($validation.MirroringStatus -ne "None") {
                 Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbname) due to its current mirroring state: $($primarydb.MirroringStatus)"
             }
+            
             if ($primarydb.Status -ne "Normal") {
                 Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbname) due to its current state: $($primarydb.Status)"
             }
@@ -154,7 +155,13 @@ function Invoke-DbaDbMirroring {
             if (-not $validation.DatabaseExistsOnMirror -or $Force) {
                 $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
                 $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
-                $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $dest -WithReplace -NoRecovery
+                try {
+                    $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $dest -WithReplace -NoRecovery -EnableException
+                }
+                catch {
+                    $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                    Stop-Function -Message $msg -ErrorRecord $_ -Target $dest -Continue
+                }
             }
             
             $mirrordb = Get-DbaDatabase -SqlInstance $dest -Database $dbName
@@ -210,7 +217,7 @@ function Invoke-DbaDbMirroring {
                 $null = $source.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
                 $null = $dest.Query("GRANT CONNECT ON ENDPOINT::$mirrorendpoint TO [$account]")
                 if ($witserver) {
-                    $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
+                    $null = New-DbaLogin -SqlInstance $witserver -Login $account -WarningAction SilentlyContinue
                     $witserver.Query("GRANT CONNECT ON ENDPOINT::$witnessendpoint TO [$account]")
                 }
             }
@@ -224,10 +231,10 @@ function Invoke-DbaDbMirroring {
             }
             
             try {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for primary"
-                $primarydb | Set-DbaDbMirror -Partner $mirrorendpoint.Fqdn
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for mirror"
                 $mirrordb | Set-DbaDbMirror -Partner $primaryendpoint.Fqdn
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for primary"
+                $primarydb | Set-DbaDbMirror -Partner $mirrorendpoint.Fqdn
                 
                 if ($witnessdb) {
                     Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for witness"
