@@ -38,32 +38,32 @@
             https://dbatools.io/Get-DbaAgentJobStep
 
         .EXAMPLE
-            Get-DbaAgentJobStep -SqlInstance localhost
+            PS C:\> Get-DbaAgentJobStep -SqlInstance localhost
 
             Returns all SQL Agent Job Steps on the local default SQL Server instance
 
         .EXAMPLE
-            Get-DbaAgentJobStep -SqlInstance localhost, sql2016
+            PS C:\> Get-DbaAgentJobStep -SqlInstance localhost, sql2016
 
             Returns all SQL Agent Job Steps for the local and sql2016 SQL Server instances
 
         .EXAMPLE
-            Get-DbaAgentJobStep -SqlInstance localhost -Job BackupData, BackupDiff
+            PS C:\> Get-DbaAgentJobStep -SqlInstance localhost -Job BackupData, BackupDiff
 
             Returns all SQL Agent Job Steps for the jobs named BackupData and BackupDiff from the local SQL Server instance.
 
         .EXAMPLE
-            Get-DbaAgentJobStep -SqlInstance localhost -ExcludeJob BackupDiff
+            PS C:\> Get-DbaAgentJobStep -SqlInstance localhost -ExcludeJob BackupDiff
 
             Returns all SQL Agent Job Steps for the local SQL Server instances, except for the BackupDiff Job.
 
         .EXAMPLE
-            Get-DbaAgentJobStep -SqlInstance localhost -NoDisabledJobs
+            PS C:\> Get-DbaAgentJobStep -SqlInstance localhost -NoDisabledJobs
 
             Returns all SQL Agent Job Steps for the local SQL Server instances, excluding the disabled jobs.
 
         .EXAMPLE
-            $servers | Get-DbaAgentJobStep
+            PS C:\> $servers | Get-DbaAgentJobStep
 
             Find all of your Job Steps from SQL Server instances in the $servers collection
     #>
