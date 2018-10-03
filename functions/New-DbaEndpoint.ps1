@@ -93,16 +93,22 @@ function New-DbaEndpoint {
                 $tcpPort = $port
             }
             else {
-                $measure = (Get-DbaEndPoint -SqlInstance $server).Protocol.Tcp | Measure-Object ListenerPort -Maximum
-                if ($measure.Maximum) {
+                $thisport = (Get-DbaEndPoint -SqlInstance $server).Protocol.Tcp
+                $measure = $thisport | Measure-Object ListenerPort -Maximum
+                
+                if ($null -eq $thisport) {
+                    $tcpPort = 5022
+                }
+                elseif ($measure.Maximum) {
                     $maxPort = $measure.Maximum
+                    #choose a random port that is greater than the current max port
+                    $tcpPort = $maxPort + (New-Object Random).Next(1, 500)
                 }
                 else {
                     $maxPort = 5000
+                    #choose a random port that is greater than the current max port
+                    $tcpPort = $maxPort + (New-Object Random).Next(1, 500)
                 }
-                
-                #choose a random port that is greater than the current max port
-                $tcpPort = $maxPort + (New-Object Random).Next(1, 500)
             }
             
             try {

@@ -18,10 +18,16 @@ function Set-DbaDbMirror {
             The target database.
     
         .PARAMETER Partner
-            The partner fqdn.
+            Sets the partner fqdn.
     
         .PARAMETER Witness
-            The witness fqdn.
+            Sets the witness fqdn.
+    
+        .PARAMETER SafetyLevel
+            Sets the mirroring safety level.
+    
+        .PARAMETER State
+            Sets the mirror state.
     
         .PARAMETER InputObject
             Allows piping from Get-DbaDatabase.
@@ -58,6 +64,10 @@ function Set-DbaDbMirror {
         [string[]]$Database,
         [string]$Partner,
         [string]$Witness,
+        [ValidateSet('Full','Off','None')]
+        [string]$SafetyLevel,
+        [ValidateSet('ForceFailoverAndAllowDataLoss', 'Failover', 'RemoveWitness', 'Resume', 'Suspend', 'Off')]
+        [string]$State,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -72,12 +82,29 @@ function Set-DbaDbMirror {
         }
         
         foreach ($db in $InputObject) {
-            if ($Partner) {
-                # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
-                $db.Parent.Query("ALTER DATABASE $db SET PARTNER = N'$Partner'")
+            try {
+                if ($Partner) {
+                    # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
+                    $db.Parent.Query("ALTER DATABASE $db SET PARTNER = N'$Partner'")
+                }
+                elseif ($Witness) {
+                    $db.Parent.Query("ALTER DATABASE $db SET WITNESS = N'$Witness'")
+                }
+                
+                if ($SafetyLevel) {
+                    $db.MirroringSafetyLevel = $SafetyLevel
+                }
+                
+                if ($State) {
+                    $db.ChangeMirroringState($State)
+                }
+                
+                $db.Alter()
+                
+                $db
             }
-            elseif ($Witness) {
-                $db.Parent.Query("ALTER DATABASE $db SET WITNESS = N'$Witness'")
+            catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_
             }
         }
     }
