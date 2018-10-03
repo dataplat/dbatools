@@ -49,35 +49,34 @@ function Find-DbaOrphanedFile {
             https://dbatools.io/Find-DbaOrphanedFile
 
         .EXAMPLE
-            Find-DbaOrphanedFile -SqlInstance sqlserver2014a
+            PS C:\> Find-DbaOrphanedFile -SqlInstance sqlserver2014a
 
             Connects to sqlserver2014a, authenticating with Windows credentials, and searches for orphaned files. Returns server name, local filename, and unc path to file.
 
         .EXAMPLE
-            Find-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred
+            PS C:\> Find-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred
 
             Connects to sqlserver2014a, authenticating with SQL Server authentication, and searches for orphaned files. Returns server name, local filename, and unc path to file.
 
         .EXAMPLE
-            Find-DbaOrphanedFile -SqlInstance sql2014 -Path 'E:\Dir1', 'E:\Dir2'
+            PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -Path 'E:\Dir1', 'E:\Dir2'
 
             Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
 
         .EXAMPLE
-            Find-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly
+            PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly
 
-            Returns only the local filepaths for orphaned files.
-
-        .EXAMPLE
-            Find-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly
-
-            Returns only the remote filepath for orphaned files.
+            Returns only the local file paths for orphaned files.
 
         .EXAMPLE
-            Find-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld
+            PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly
+
+            Returns only the remote file path for orphaned files.
+
+        .EXAMPLE
+            PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld
 
             Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
-
     #>
     [CmdletBinding()]
     param (
