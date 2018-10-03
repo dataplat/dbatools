@@ -1,10 +1,10 @@
-function Invoke-DbaLogShipping {
+function Invoke-DbDbLogShip {
     <#
         .SYNOPSIS
-            Invoke-DbaLogShipping sets up log shipping for one or more databases
+            Invoke-DbDbLogShip sets up log shipping for one or more databases
 
         .DESCRIPTION
-            Invoke-DbaLogShipping helps to easily set up log shipping for one or more databases.
+            Invoke-DbDbLogShip helps to easily set up log shipping for one or more databases.
 
             This function will make a lot of decisions for you assuming you want default values like a daily interval for the schedules with a 15 minute interval on the day.
             There are some settings that cannot be made by the function and they need to be prepared before the function is executed.
@@ -341,7 +341,7 @@ function Invoke-DbaLogShipping {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Invoke-DbaLogShipping
+            https://dbatools.io/Invoke-DbDbLogShip
 
         .EXAMPLE
             PS C:\> $params = @{
@@ -363,7 +363,7 @@ function Invoke-DbaLogShipping {
             >>    Force = $true
             >> }
 
-            PS C:\> Invoke-DbaLogShipping @params
+            PS C:\> Invoke-DbDbLogShip @params
 
             Sets up log shipping for database "db1" with the backup path to a network share allowing local backups.
             It creates daily schedules for the backup, copy and restore job with all the defaults to be executed every 15 minutes daily.
@@ -379,7 +379,7 @@ function Invoke-DbaLogShipping {
             >>     Force = $true
             >> }
 
-            PS C:\> Invoke-DbaLogShipping @params
+            PS C:\> Invoke-DbDbLogShip @params
 
             Sets up log shipping with all defaults except that a backup file is generated.
             The script will show a message that the copy destination has not been supplied and asks if you want to use the default which would be the backup directory of the secondary server with the folder "logshipping" i.e. "D:\SQLBackup\Logshiping".
