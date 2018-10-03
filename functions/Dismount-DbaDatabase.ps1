@@ -49,22 +49,21 @@ function Dismount-DbaDatabase {
             https://dbatools.io/Dismount-DbaDatabase
 
         .EXAMPLE
-            Detach-DbaDatabase -SqlInstance sql2016b -Database SharePoint_Config, WSS_Logging
+            PS C:\> Detach-DbaDatabase -SqlInstance sql2016b -Database SharePoint_Config, WSS_Logging
 
             Detaches SharePoint_Config and WSS_Logging from sql2016b
 
         .EXAMPLE
-            Get-DbaDatabase -SqlInstance sql2016b -Database 'PerformancePoint Service Application_10032db0fa0041df8f913f558a5dc0d4' | Detach-DbaDatabase -Force
+            PS C:\> Get-DbaDatabase -SqlInstance sql2016b -Database 'PerformancePoint Service Application_10032db0fa0041df8f913f558a5dc0d4' | Detach-DbaDatabase -Force
 
             Detaches 'PerformancePoint Service Application_10032db0fa0041df8f913f558a5dc0d4' from sql2016b. Since Force was specified, if the database is part of mirror, the mirror will be broken prior to detaching.
 
             If the database is part of an Availability Group, it will first be dropped prior to detachment.
 
-            .EXAMPLE
-            Get-DbaDatabase -SqlInstance sql2016b -Database WSS_Logging | Detach-DbaDatabase -Force -WhatIf
+        .EXAMPLE
+            PS C:\> Get-DbaDatabase -SqlInstance sql2016b -Database WSS_Logging | Detach-DbaDatabase -Force -WhatIf
 
             Shows what would happen if the command were to execute (without actually executing the detach/break/remove commands).
-
     #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
     Param (

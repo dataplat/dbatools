@@ -22,31 +22,32 @@ function Enable-DbaForceNetworkEncryption {
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
         .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .EXAMPLE
-            Enable-DbaForceNetworkEncryption
-
-            Enables Force Encryption on the default (MSSQLSERVER) instance on localhost. Requires (and checks for) RunAs admin.
-
-        .EXAMPLE
-            Enable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
-
-            Enables Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both connect and modify the registry.
-
-        .EXAMPLE
-            Enable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2 -WhatIf
-
-            Shows what would happen if the command were executed.
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
             Tags: Certificate
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
+
+        .EXAMPLE
+            PS C:\> Enable-DbaForceNetworkEncryption
+
+            Enables Force Encryption on the default (MSSQLSERVER) instance on localhost. Requires (and checks for) RunAs admin.
+
+        .EXAMPLE
+            PS C:\> Enable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
+
+            Enables Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both connect and modify the registry.
+
+        .EXAMPLE
+            PS C:\> Enable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2 -WhatIf
+
+            Shows what would happen if the command were executed.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
