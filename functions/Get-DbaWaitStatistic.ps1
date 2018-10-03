@@ -7,17 +7,17 @@
             This command is based off of Paul Randal's post "Wait statistics, or please tell me where it hurts"
 
             Returns:
-                        WaitType
-                        Category
-                        WaitSeconds
-                        ResourceSeconds
-                        SignalSeconds
-                        WaitCount
-                        Percentage
-                        AverageWaitSeconds
-                        AverageResourceSeconds
-                        AverageSignalSeconds
-                        URL
+                WaitType
+                Category
+                WaitSeconds
+                ResourceSeconds
+                SignalSeconds
+                WaitCount
+                Percentage
+                AverageWaitSeconds
+                AverageResourceSeconds
+                AverageSignalSeconds
+                URL
 
             Reference: https://www.sqlskills.com/blogs/paul/wait-statistics-or-please-tell-me-where-it-hurts/
 
@@ -41,6 +41,7 @@
         .NOTES
             Tags: WaitStatistic
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -49,30 +50,28 @@
             https://dbatools.io/Get-DbaWaitStatistic
 
         .EXAMPLE
-            Get-DbaWaitStatistic -SqlInstance sql2008, sqlserver2012
+            PS C:\> Get-DbaWaitStatistic -SqlInstance sql2008, sqlserver2012
 
             Check wait statistics for servers sql2008 and sqlserver2012
 
         .EXAMPLE
-            Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 98 -IncludeIgnorable
+            PS C:\> Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 98 -IncludeIgnorable
 
             Check wait statistics on server sql2008 for thresholds above 98% and include wait stats that are most often, but not always, ignorable
 
         .EXAMPLE
-            Get-DbaWaitStatistic -SqlInstance sql2008 | Select *
+            PS C:\> Get-DbaWaitStatistic -SqlInstance sql2008 | Select *
 
             Shows detailed notes, if available, from Paul's post
 
         .EXAMPLE
-            $output = Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 100 -IncludeIgnorable | Select * | ConvertTo-DbaDataTable
+            PS C:\> $output = Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 100 -IncludeIgnorable | Select-Object * | ConvertTo-DbaDataTable
 
             Collects all Wait Statistics (including ignorable waits) on server sql2008 into a Data Table.
 
-
         .EXAMPLE
-            $output = Get-DbaWaitStatistic -SqlInstance sql2008
-            $output
-            foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }
+            PS C:\> $output = Get-DbaWaitStatistic -SqlInstance sql2008
+            PS C:\> foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }
 
             Displays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.
     #>
@@ -828,8 +827,8 @@
                 INNER JOIN [Waits] AS [W2]
                     ON [W2].[RowNum] <= [W1].[RowNum]
                 GROUP BY [W1].[RowNum] HAVING SUM ([W2].[Percentage]) - MAX([W1].[Percentage]) < $Threshold"
-            }
-            else {
+        }
+        else {
             $IgnorableList = "'$($ignorable -join "','")'"
             $sql = "WITH [Waits] AS
                 (SELECT
@@ -860,7 +859,7 @@
                     ON [W2].[RowNum] <= [W1].[RowNum]
                 GROUP BY [W1].[RowNum] HAVING SUM ([W2].[Percentage]) - MAX([W1].[Percentage]) < $Threshold"
 
-            }
+        }
         Write-Message -Level Debug -Message $sql
     }
     process {
