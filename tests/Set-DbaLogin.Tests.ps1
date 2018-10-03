@@ -36,6 +36,20 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
             $result.PasswordChanged | Should -Be $true
         }
 
+        It "Change the password from piped Login" {
+            $login = Get-DbaLogin -Sqlinstance $script:instance2 -Login testLogin
+
+            $result = $login | Set-DbaLogin -Password $password2
+            $result.PasswordChanged | Should -Be $true
+        }
+
+        It "Change the password from InputObject" {
+            $login = Get-DbaLogin -Sqlinstance $script:instance2 -Login testLogin
+
+            $result = Set-DbaLogin -InputObject $login -Password $password2
+            $result.PasswordChanged | Should -Be $true
+        }
+
         It "Disable the login" {
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Disable
 

@@ -63,7 +63,8 @@
         [switch]$EnableException
     )
     process {
-        foreach ($file in $InputObject) {
+        foreach ($fileobject in $InputObject) {
+            $file = $fileobject.FullName
             foreach ($name in $script:renames) {
                 if ((Select-String -Pattern $name.AliasName -Path $file)) {
                     if ($Pscmdlet.ShouldProcess($file, "Replacing $($name.AliasName) with $($name.Definition)")) {

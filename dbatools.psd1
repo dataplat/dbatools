@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.450'
+    ModuleVersion          = '0.9.453'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -287,7 +287,7 @@
         'Get-DbaInstanceUserOption',
         'New-DbaConnectionString',
         'Get-DbaAgentSchedule',
-        'Invoke-DbaLogShipping',
+        'Invoke-DbaDbLogShipping',
         'Read-DbaTraceFile',
         'New-DbaComputerCertificate',
         'Get-DbaComputerCertificate',
@@ -307,7 +307,7 @@
         'Get-DbaManagementObject',
         'Test-DbaManagementObject',
         'Get-DbaMaintenanceSolutionLog',
-        'Invoke-DbaLogShippingRecovery',
+        'Invoke-DbaDbLogShipRecovery',
         'Find-DbaTrigger',
         'Find-DbaView',
         'Invoke-DbaDbUpgrade',
@@ -371,7 +371,7 @@
         'Stop-DbaAgentJob',
         'Remove-DbaClientAlias',
         'New-DbaAgentProxy',
-        'Test-DbaLogShippingStatus',
+        'Test-DbaDbLogShipStatus',
         'Get-DbaXESessionTarget',
         'New-DbaXESmartTargetResponse',
         'New-DbaXESmartTarget',
@@ -420,7 +420,7 @@
         'Start-DbaXESmartTarget',
         'Get-DbaOrphanUser',
         'Get-DbaOpenTransaction',
-        'Get-DbaLogShippingError',
+        'Get-DbaDbLogShipError',
         'Test-DbaBuild',
         'Get-DbaXESessionTemplate',
         'ConvertTo-DbaXESession',
@@ -696,7 +696,11 @@
     'Move-DbaRegisteredServer',
     'Move-DbaRegisteredServerGroup',
     'Remove-DbaRegisteredServer',
-    'Remove-DbaRegisteredServerGroup'
+    'Remove-DbaRegisteredServerGroup',
+    'Get-DbaLogShippingError',
+    'Invoke-DbaLogShipping',
+    'Invoke-DbaLogShippingRecovery',
+    'Test-DbaLogShippingStatus'
 
     # List of all modules packaged with this module
     ModuleList             = @()
