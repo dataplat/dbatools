@@ -1,12 +1,12 @@
 function Get-DbaServerInstallDate {
     <#
         .SYNOPSIS
-            Returns the install date of a SQL Instance and Windows Server, depending on what is passed.
+            Returns the install date of a SQL Instance and Windows Server.
 
         .DESCRIPTION
-            By default, this command returns for each SQL Instance instance passed in:
-            SQL Instance install date, formatted as a string
-            Hosting Windows server install date, formatted as a string
+            This command returns:
+            SqlInstallDate
+            WindowsInstallDate (use -IncludeWindows)
 
         .PARAMETER SqlInstance
             The SQL Server that you're connecting to.
@@ -26,7 +26,7 @@ function Get-DbaServerInstallDate {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: CIM
+            Tags: Install
             Author: Mitchell Hamann (@SirCaptainMitch), mitchellhamann.com
 
             Website: https://dbatools.io
@@ -37,31 +37,30 @@ function Get-DbaServerInstallDate {
             https://dbatools.io/Get-DbaServerInstallDate
 
         .EXAMPLE
-            Get-DbaServerInstallDate -SqlInstance SqlBox1\Instance2
+            PS C:\> Get-DbaServerInstallDate -SqlInstance SqlBox1\Instance2
 
             Returns an object with SQL Instance Install date as a string.
 
         .EXAMPLE
-            Get-DbaServerInstallDate -SqlInstance winserver\sqlexpress, sql2016
+            PS C:\> Get-DbaServerInstallDate -SqlInstance winserver\sqlexpress, sql2016
 
             Returns an object with SQL Instance Install date as a string for both SQLInstances that are passed to the cmdlet.
 
         .EXAMPLE
-            'sqlserver2014a', 'sql2016' | Get-DbaServerInstallDate
+            PS C:\> 'sqlserver2014a', 'sql2016' | Get-DbaServerInstallDate
 
-            Returns an object with SQL Instance Install date as a string for both SQLInstances that are passed to the cmdlet via the Pipline.
+            Returns an object with SQL Instance Install date as a string for both SQLInstances that are passed to the cmdlet via the pipeline.
 
         .EXAMPLE
-            Get-DbaServerInstallDate -SqlInstance sqlserver2014a, sql2016 -IncludeWindows
+            PS C:\> Get-DbaServerInstallDate -SqlInstance sqlserver2014a, sql2016 -IncludeWindows
 
             Returns an object with the Windows Install date and the SQL install date as a string.
 
         .EXAMPLE
-            Get-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaServerInstallDate
+            PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaServerInstallDate
 
             Returns an object with SQL Instance install date as a string for every server listed in the Central Management Server on sql2014
-
-#>
+    #>
     [CmdletBinding()]
     Param (
         [parameter(Mandatory, ValueFromPipeline)]
