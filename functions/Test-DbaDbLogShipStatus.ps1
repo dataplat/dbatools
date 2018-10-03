@@ -91,12 +91,8 @@ function Test-DbaDbLogShipStatus {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    
     begin {
-
-        # Create array list to hold the results
-        $collection = New-Object System.Collections.ArrayList
-
         # Setup the query
         [string[]]$query = "
 IF ( OBJECT_ID('tempdb..#logshippingstatus') ) IS NOT NULL
@@ -141,27 +137,27 @@ INSERT INTO #logshippingstatus
     IsRestoreAlertEnabled
 )
 EXEC master.sys.sp_help_log_shipping_monitor"
-
+        
         $select = "SELECT * FROM #logshippingstatus"
-
+        
         if ($Database -or $ExcludeDatabase) {
-
+            
             if ($database) {
                 $where += "DatabaseName IN ('$($Database -join ''',''')')"
             }
             elseif ($ExcludeDatabase) {
                 $where += "DatabaseName NOT IN ('$($ExcludeDatabase -join ''',''')')"
             }
-
+            
             $select = "$select WHERE $where"
         }
-
+        
         $query += $select
         $query += "DROP TABLE #logshippingstatus"
         $sql = $query -join ";`n"
         Write-Message -level Debug -Message $sql
     }
-
+    
     process {
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
@@ -172,40 +168,40 @@ EXEC master.sys.sp_help_log_shipping_monitor"
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
             if ($server.EngineEdition -match "Express") {
                 Write-Message -Level Warning -Message "$instance is Express Edition which does not support Log Shipping"
                 continue
             }
-
+            
             # Check the variables
             if ($Primary -and $Secondary) {
                 Stop-Function -Message "Invalid parameter combination. Please enter either -Primary or -Secondary" -Target $instance -Continue
             }
-
+            
             # Get the log shipped databases
             $results = $server.Query($sql)
-
+            
             # Check if any rows were returned
             if ($results.Count -lt 1) {
                 Stop-Function -Message "No information available about any log shipped databases for $instance. Please check the instance name." -Target $instance -Continue
             }
-
+            
             # Filter the results
             if ($Primary) {
                 $results = $results | Where-Object { $_.IsPrimary -eq $true }
             }
-
+            
             if ($Secondary) {
                 $results = $results | Where-Object { $_.IsPrimary -eq $false }
             }
-
+            
             # Loop through each of the results
             foreach ($result in $results) {
-
+                
                 # Setup a variable to hold the errors
                 $statusDetails = @()
-
+                
                 # Check if there are any results that need to be returned
                 if ($result.Status -notin 0, 1) {
                     $statusDetails += "N/A"
@@ -236,60 +232,62 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                     else {
                         $statusDetails += "All OK"
                     }
-
-
+                    
+                    
                     # Check the time for the backup, copy and restore
                     if ($result.TimeSinceLastBackup -eq [DBNull]::Value) {
                         $lastBackup = "N/A"
                     }
                     else {
-                        $lastBackup = (Get-Date).AddMinutes( - $result.TimeSinceLastBackup)
+                        $lastBackup = (Get-Date).AddMinutes(- $result.TimeSinceLastBackup)
                     }
-
+                    
                     if ($result.TimeSinceLastCopy -eq [DBNull]::Value) {
                         $lastCopy = "N/A"
                     }
                     else {
-                        $lastCopy = (Get-Date).AddMinutes( - $result.TimeSinceLastCopy)
+                        $lastCopy = (Get-Date).AddMinutes(- $result.TimeSinceLastCopy)
                     }
-
+                    
                     if ($result.TimeSinceLastRestore -eq [DBNull]::Value) {
                         $lastRestore = "N/A"
                     }
                     else {
-                        $lastRestore = (Get-Date).AddMinutes( - $result.TimeSinceLastRestore)
+                        $lastRestore = (Get-Date).AddMinutes(- $result.TimeSinceLastRestore)
                     }
                 }
-
+                
                 # Set up the custom object
-                $null = $collection.Add([PSCustomObject]@{
-                        ComputerName          = $server.ComputerName
-                        InstanceName          = $server.ServiceName
-                        SqlInstance           = $server.DomainInstanceName
-                        Database              = $result.DatabaseName
-                        InstanceType          = switch ($result.IsPrimary) { $true { "Primary Instance" } $false { "Secondary Instance" } }
-                        TimeSinceLastBackup   = $lastBackup
-                        LastBackupFile        = $result.LastBackupFile
-                        BackupThreshold       = $result.BackupThreshold
-                        IsBackupAlertEnabled  = $result.IsBackupAlertEnabled
-                        TimeSinceLastCopy     = $lastCopy
-                        LastCopiedFile        = $result.LastCopiedFile
-                        TimeSinceLastRestore  = $lastRestore
-                        LastRestoredFile      = $result.LastRestoredFile
-                        LastRestoredLatency   = $result.LastRestoredLatency
-                        RestoreThreshold      = $result.RestoreThreshold
-                        IsRestoreAlertEnabled = $result.IsRestoreAlertEnabled
-                        Status                = $statusDetails -join ","
-                    })
-
-            }
-
-            if ($Simple) {
-                return $collection | Select-Object SqlInstance, Database, InstanceType, Status
-            }
-            else {
-                return $collection
+                $object = [PSCustomObject]@{
+                    ComputerName = $server.ComputerName
+                    InstanceName = $server.ServiceName
+                    SqlInstance  = $server.DomainInstanceName
+                    Database     = $result.DatabaseName
+                    InstanceType = switch ($result.IsPrimary) { $true { "Primary Instance" } $false { "Secondary Instance" } }
+                    TimeSinceLastBackup = $lastBackup
+                    LastBackupFile = $result.LastBackupFile
+                    BackupThreshold = $result.BackupThreshold
+                    IsBackupAlertEnabled = $result.IsBackupAlertEnabled
+                    TimeSinceLastCopy = $lastCopy
+                    LastCopiedFile = $result.LastCopiedFile
+                    TimeSinceLastRestore = $lastRestore
+                    LastRestoredFile = $result.LastRestoredFile
+                    LastRestoredLatency = $result.LastRestoredLatency
+                    RestoreThreshold = $result.RestoreThreshold
+                    IsRestoreAlertEnabled = $result.IsRestoreAlertEnabled
+                    Status       = $statusDetails -join ","
+                }
+                
+                if ($Simple) {
+                    $object | Select-DefaultView -Property SqlInstance, Database, InstanceType, Status
+                }
+                else {
+                    $object
+                }
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaLogShippingRecovery
     }
 }

@@ -1889,8 +1889,8 @@ function Invoke-DbaDbLogShipping {
             } # for each database
         } # end for each destination server
     } # end process
-
     end {
         Write-Message -Message "Finished setting up log shipping." -Level Verbose
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Invoke-DbaLogShipping
     }
 }
