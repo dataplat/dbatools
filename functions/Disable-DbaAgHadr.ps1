@@ -40,12 +40,12 @@ function Disable-DbaAgHadr {
             https://dbatools.io/Disable-DbaAgHadr
 
         .EXAMPLE
-            Disable-DbaAgHadr -SqlInstance sql2016 -Force
+            PS C:\> Disable-DbaAgHadr -SqlInstance sql2016 -Force
 
             Sets Hadr service to disabled for the instance sql2016, and restart the service to apply the change.
 
         .EXAMPLE
-            Disable-DbaAgHadr -SqlInstance sql2012\dev1 -Force
+            PS C:\> Disable-DbaAgHadr -SqlInstance sql2012\dev1 -Force
 
             Sets Hadr service to disabled for the instance dev1 on sq2012, and restart the service to apply the change.
     #>
