@@ -36,6 +36,8 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $password1 = ConvertTo-SecureString -String "password1" -AsPlainText -Force
             $password2 = ConvertTo-SecureString -String "password2" -AsPlainText -Force
 
+            $cred = New-Object System.Management.Automation.PSCredential 'testLogin', $password2
+
             # Create the login
             New-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Password $password1
         }
@@ -73,7 +75,9 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
 
         It "Catches errors when login name cannot be changed" {
             # erroring due to permissions
-            $cred = New-Object System.Management.Automation.PSCredential 'testLogin', $password2
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -SqlCredential $cred -Login 'testLogin' -NewName 'testLogin2' -WarningAction 'SilentlyContinue'
+            $result | Should -Be $null
+
             { Set-DbaLogin -SqlInstance $script:instance2 -SqlCredential $cred -Login 'testLogin' -NewName 'testLogin2' -EnableException } | Should -Throw
         }
 
@@ -115,7 +119,9 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             # violate policy
             $invalidPassword = ConvertTo-SecureString -String "password1" -AsPlainText -Force
 
-            { Set-DbaLogin -SqlInstance $script:instance2 -Login 'testLogin' -Password $invalidPassword -WarningAction 'SilentlyContinue' } | Should -Be $null
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login 'testLogin' -Password $invalidPassword -WarningAction 'SilentlyContinue'
+            $result | Should -Be $null
+
             { Set-DbaLogin -SqlInstance $script:instance2 -Login 'testLogin' -Password $invalidPassword -EnableException } | Should -Throw
         }
 
