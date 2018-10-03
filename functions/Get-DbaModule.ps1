@@ -1,67 +1,67 @@
 function Get-DbaModule {
     <#
-    .SYNOPSIS
-    Displays all objects in sys.sys_modules after specified modification date.  Works on SQL Server 2008 and above.
+        .SYNOPSIS
+            Displays all objects in sys.sys_modules after specified modification date.  Works on SQL Server 2008 and above.
 
-    .DESCRIPTION
-    Quickly find modules (Stored Procs, Functions, Views, Constraints, Rules, Triggers, etc) that have been modified in a database, or across all databases.
-    Results will exclude the module definition, but can be queried explicitly.
+        .DESCRIPTION
+            Quickly find modules (Stored Procs, Functions, Views, Constraints, Rules, Triggers, etc) that have been modified in a database, or across all databases.
+            Results will exclude the module definition, but can be queried explicitly.
 
-    .PARAMETER SqlInstance
-    Allows you to specify a comma separated list of servers to query.
+        .PARAMETER SqlInstance
+            Allows you to specify a comma separated list of servers to query.
 
-    .PARAMETER SqlCredential
-    Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER Database
-    The database(s) to process. If unspecified, all databases will be processed.
+        .PARAMETER Database
+            The database(s) to process. If unspecified, all databases will be processed.
 
-    .PARAMETER ExcludeDatabase
-    The database(s) to exclude.
+        .PARAMETER ExcludeDatabase
+            The database(s) to exclude.
 
-    .PARAMETER ModifiedSince
-    DateTime value to use as minimum modified date of module.
+        .PARAMETER ModifiedSince
+            DateTime value to use as minimum modified date of module.
 
-    .PARAMETER Type
-    Limit by specific type of module. Valid choices include: View, TableValuedFunction, DefaultConstraint, StoredProcedure, Rule, InlineTableValuedFunction, Trigger, ScalarFunction
+        .PARAMETER Type
+            Limit by specific type of module. Valid choices include: View, TableValuedFunction, DefaultConstraint, StoredProcedure, Rule, InlineTableValuedFunction, Trigger, ScalarFunction
 
-    .PARAMETER NoSystemDb
-    Allows you to suppress output on system databases
+        .PARAMETER NoSystemDb
+            Allows you to suppress output on system databases
 
-    .PARAMETER NoSystemObjects
-    Allows you to suppress output on system objects
+        .PARAMETER NoSystemObjects
+            Allows you to suppress output on system objects
 
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .NOTES
-    Author: Brandon Abshire, netnerds.net
-    Tags: StoredProcedure, Trigger
+        .NOTES
+            Author: Brandon Abshire, netnerds.net
+            Tags: StoredProcedure, Trigger
 
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: MIT https://opensource.org/licenses/MIT
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    .LINK
-    https://dbatools.io/Get-DbaModule
+        .LINK
+            https://dbatools.io/Get-DbaModule
 
-    .EXAMPLE
-    Get-DbaModule -SqlServer sql2008, sqlserver2012
-    Return all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC.
+        .EXAMPLE
+            Get-DbaModule -SqlInstance sql2008, sqlserver2012
+            Return all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC.
 
-    .EXAMPLE
-    Get-DbaModule -SqlServer sql2008, sqlserver2012 | Select *
-    Shows hidden definition column (informative wall of text).
+        .EXAMPLE
+            Get-DbaModule -SqlInstance sql2008, sqlserver2012 | Select *
+            Shows hidden definition column (informative wall of text).
 
-    .EXAMPLE
-    Get-DbaModule -SqlServer sql2008 -Database TestDB -ModifiedSince "01/01/2017 10:00:00 AM"
-    Return all modules on server sql2008 for only the TestDB database with a modified date after 01/01/2017 10:00:00 AM.
+        .EXAMPLE
+            Get-DbaModule -SqlInstance sql2008 -Database TestDB -ModifiedSince "2017-01-01 10:00:00"
+            Return all modules on server sql2008 for only the TestDB database with a modified date after 1 January 2017 10:00:00 AM.
 
-    .EXAMPLE
-    Get-DbaModule -SqlServer sql2008 -Type View, Trigger, ScalarFunction
-    Return all modules on server sql2008 for all databases that are triggers, views or scalar functions.
+        .EXAMPLE
+            Get-DbaModule -SqlInstance sql2008 -Type View, Trigger, ScalarFunction
+            Return all modules on server sql2008 for all databases that are triggers, views or scalar functions.
 #>
     [CmdletBinding()]
     Param (
@@ -73,7 +73,7 @@ function Get-DbaModule {
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
-        [datetime]$ModifiedSince = "01/01/1900",
+        [datetime]$ModifiedSince = "1900-01-01",
         [ValidateSet("View", "TableValuedFunction", "DefaultConstraint", "StoredProcedure", "Rule", "InlineTableValuedFunction", "Trigger", "ScalarFunction")]
         [string[]]$Type,
         [switch]$NoSystemDb,

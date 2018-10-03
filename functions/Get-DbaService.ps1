@@ -6,6 +6,8 @@ function Get-DbaService {
         .DESCRIPTION
             Gets the SQL Server related services on one or more computers.
 
+            Requires Local Admin rights on destination computer(s).
+
         .PARAMETER ComputerName
             The SQL Server (or server in general) that you're connecting to. This command handles named instances.
 
@@ -30,11 +32,8 @@ function Get-DbaService {
         .NOTES
             Tags: Service, SqlServer, Instance, Connect
             Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-
-            Requires Local Admin rights on destination computer(s).
-
-            dbatools PowerShell module (https://dbatools.io)
-            Copyright (C) 2016 Chrissy LeMaire
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -51,9 +50,15 @@ function Get-DbaService {
             Gets the SQL Server related services on computers sql1, sql2 and sql3.
 
         .EXAMPLE
-            Get-DbaService -ComputerName sql1,sql2 | Out-GridView
+            $cred = Get-Credential WindowsUser
+            Get-DbaService -ComputerName sql1,sql2 -Credential $cred  | Out-GridView
 
-            Gets the SQL Server related services on computers sql1 and sql2, and shows them in a grid view.
+            Gets the SQL Server related services on computers sql1 and sql2 via the user WindowsUser, and shows them in a grid view.
+
+        .EXAMPLE
+            Get-DbaService -ComputerName sql1,sql2 -InstanceName MSSQLSERVER
+
+            Gets the SQL Server related services related to the default instance MSSQLSERVER on computers sql1 and sql2.
 
         .EXAMPLE
             Get-DbaService -ComputerName $MyServers -Type SSRS
@@ -67,9 +72,9 @@ function Get-DbaService {
             Gets the SQL Server related services of types Sql Agent and DB Engine on computer sql1 and changes their startup mode to 'Manual'.
 
         .EXAMPLE
-            (Get-DbaService sql1 -Type Engine).Restart($true)
+            (Get-DbaService -ComputerName sql1 -Type Engine).Restart($true)
 
-            Calls a Restart method for each Engine service on computer sql1 with -Force option.
+            Calls a Restart method for each Engine service on computer sql1.
     #>
     [CmdletBinding(DefaultParameterSetName = "Search")]
     Param (

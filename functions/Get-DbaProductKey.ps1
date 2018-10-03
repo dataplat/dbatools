@@ -1,44 +1,44 @@
 function Get-DbaProductKey {
     <#
-.SYNOPSIS
-Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2005-2016
+        .SYNOPSIS
+            Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2005-2016
 
-.DESCRIPTION
-Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and accessible by the account running the script.
+        .DESCRIPTION
+            Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and accessible by the account running the script.
 
-Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
+            Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
 
-.PARAMETER SqlInstance
-Allows you to specify a comma separated list of servers to query.
+        .PARAMETER SqlInstance
+            Allows you to specify a comma separated list of servers to query.
 
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER SqlCms
-Deprecated, pipe in from Get-DbaCmsRegServer
+        .PARAMETER SqlCms
+            Deprecated, pipe in from Get-DbaCmsRegServer
 
-.PARAMETER ServersFromFile
-Deprecated, pipe in from Get-Content
+        .PARAMETER ServersFromFile
+            Deprecated, pipe in from Get-Content
 
-.PARAMETER EnableException
-By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Author: Chrissy LeMaire (@cl), netnerds.net
-Tags: ProductKey
+        .NOTES
+            Tags: ProductKey
+            Author: Chrissy LeMaire (@cl), netnerds.net
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Get-DbaProductKey
+        .LINK
+            https://dbatools.io/Get-DbaProductKey
 
-.EXAMPLE
-Get-DbaProductKey winxp, sqlservera, sqlserver2014a, win2k8
-Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
+        .EXAMPLE
+            Get-DbaProductKey -SqlInstance winxp, sqlservera, sqlserver2014a, win2k8
+            Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
 
 #>
     [CmdletBinding()]
