@@ -230,19 +230,31 @@ function Invoke-DbaDbMirroring {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_
             }
             
+            if ($witnessdb) {
+                try {
+                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for witness"
+                    $witnessdb | Set-DbaDbMirror -Witness $mirrorendpoint.Fqdn
+                    $witnessdb | Set-DbaDbMirror -Witness $primaryendpoint.Fqdn
+                }
+                catch {
+                    Stop-Function -Continue -Message "Failure on witness" -ErrorRecord $_
+                }
+            }
+            
             try {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for mirror"
                 $mirrordb | Set-DbaDbMirror -Partner $primaryendpoint.Fqdn
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for primary"
-                $primarydb | Set-DbaDbMirror -Partner $mirrorendpoint.Fqdn
-                
-                if ($witnessdb) {
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for witness"
-                    $witnessdb | Set-DbaDbMirror -Witness $primaryendpoint.Fqdn
-                }
             }
             catch {
-                Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+                Stop-Function -Continue -Message "Failure on mirror" -ErrorRecord $_
+            }
+            
+            try {
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for primary"
+                $primarydb | Set-DbaDbMirror -Partner $mirrorendpoint.Fqdn
+            }
+            catch {
+                Stop-Function -Continue -Message "Failure on primary" -ErrorRecord $_
             }
             
             $results = [pscustomobject]@{
@@ -254,10 +266,10 @@ function Invoke-DbaDbMirroring {
             }
             
             if ($Witness) {
-                $results
+                $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, Status
             }
             else {
-                $results | Select-DefaultView -ExcludeProperty Witness
+                $results | Select-DefaultView -Property Primary, Mirror, Database, Status
             }
         }
     }

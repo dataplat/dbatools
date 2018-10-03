@@ -42,14 +42,14 @@ function Get-DbaDbMirror {
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
             Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential | Where-Object IsMirroringEnabled |
-            Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, MirroringStatus, MirroringPartner
+            Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, MirroringSafetyLevel, MirroringStatus, MirroringPartner, MirroringPartnerInstance, MirroringFailoverLogSequenceNumber, MirroringID, MirroringRedoQueueMaxSize, MirroringRoleSequence, MirroringSafetySequence, MirroringTimeout, MirroringWitness, MirroringWitnessStatus
         }
     }
 }

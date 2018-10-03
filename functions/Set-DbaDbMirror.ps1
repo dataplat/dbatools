@@ -53,7 +53,7 @@ function Set-DbaDbMirror {
     #>
     [CmdletBinding()]
     param (
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string]$Partner,
