@@ -27,6 +27,10 @@
             Tags: Config, Module
             Author: Friedrich Weinmann
 
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
+
         .EXAMPLE
             PS C:\> Get-DbatoolsConfig 'Mail.To'
 
