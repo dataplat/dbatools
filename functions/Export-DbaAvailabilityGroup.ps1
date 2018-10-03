@@ -48,22 +48,22 @@ function Export-DbaAvailabilityGroup {
             https://dbatools.io/Export-DbaAvailabilityGroup
 
         .EXAMPLE
-            Export-DbaAvailabilityGroup -SqlInstance sql2012
+            PS C:\> Export-DbaAvailabilityGroup -SqlInstance sql2012
 
             Exports all Availability Groups from SQL server "sql2012". Output scripts are written to the Documents\SqlAgExports directory by default.
 
         .EXAMPLE
-            Export-DbaAvailabilityGroup -SqlInstance sql2012 -Path C:\temp\availability_group_exports
+            PS C:\> Export-DbaAvailabilityGroup -SqlInstance sql2012 -Path C:\temp\availability_group_exports
 
             Exports all Availability Groups from SQL server "sql2012". Output scripts are written to the C:\temp\availability_group_exports directory.
 
         .EXAMPLE
-            Export-DbaAvailabilityGroup -SqlInstance sql2012 -Path 'C:\dir with spaces\availability_group_exports' -AvailabilityGroups AG1,AG2
+            PS C:\> Export-DbaAvailabilityGroup -SqlInstance sql2012 -Path 'C:\dir with spaces\availability_group_exports' -AvailabilityGroups AG1,AG2
 
             Exports Availability Groups AG1 and AG2 from SQL server "sql2012". Output scripts are written to the C:\dir with spaces\availability_group_exports directory.
 
         .EXAMPLE
-            Export-DbaAvailabilityGroup -SqlInstance sql2014 -Path C:\temp\availability_group_exports -NoClobber
+            PS C:\> Export-DbaAvailabilityGroup -SqlInstance sql2014 -Path C:\temp\availability_group_exports -NoClobber
 
             Exports all Availability Groups from SQL server "sql2014". Output scripts are written to the C:\temp\availability_group_exports directory. If the export file already exists it will not be overwritten.
     #>
