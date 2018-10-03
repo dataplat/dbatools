@@ -1,7 +1,7 @@
-function Get-DbaLogShippingError {
+function Get-DbaDbLogShipError {
     <#
         .SYNOPSIS
-            Get-DbaLogShippingError returns all the log shipping errors that occurred
+            Get-DbaDbLogShipError returns all the log shipping errors that occurred
 
         .DESCRIPTION
             When your log shipping fails it's sometimes hard to see why is fails.
@@ -51,31 +51,31 @@ function Get-DbaLogShippingError {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Get-DbaLogShippingError
+            https://dbatools.io/Get-DbaDbLogShipError
 
         .EXAMPLE
-            Get-DbaLogShippingError -SqlInstance sql1
+            Get-DbaDbLogShipError -SqlInstance sql1
 
             Get all the log shipping errors that occurred
 
         .EXAMPLE
-            Get-DbaLogShippingError -SqlInstance sql1 -Action Backup
+            Get-DbaDbLogShipError -SqlInstance sql1 -Action Backup
 
             Get the errors that have something to do with the backup of the databases
 
         .EXAMPLE
-            Get-DbaLogShippingError -SqlInstance sql1 -Secondary
+            Get-DbaDbLogShipError -SqlInstance sql1 -Secondary
 
             Get the errors that occurred on the secondary instance.
             This will return the copy of the restore actions because those only occur on the secondary instance
 
         .EXAMPLE
-            Get-DbaLogShippingError -SqlInstance sql1 -DateTimeFrom "01/05/2018"
+            Get-DbaDbLogShipError -SqlInstance sql1 -DateTimeFrom "01/05/2018"
 
             Get the errors that have occurred from "01/05/2018". This can also be of format "yyyy-MM-dd"
 
         .EXAMPLE
-            Get-DbaLogShippingError -SqlInstance sql1 -Secondary -DateTimeFrom "01/05/2018" -DateTimeTo "2018-01-07"
+            Get-DbaDbLogShipError -SqlInstance sql1 -Secondary -DateTimeFrom "01/05/2018" -DateTimeTo "2018-01-07"
 
             Get the errors that have occurred between "01/05/2018" and "01/07/2018".
             See that is doesn't matter how the date is represented.
@@ -97,17 +97,8 @@ function Get-DbaLogShippingError {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
-    begin {
-
-        # Create array list to hold the results
-        $collection = New-Object System.Collections.ArrayList
-
-    }
-
     process {
         foreach ($instance in $sqlinstance) {
-            # Try connecting to the instance
             Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
@@ -115,12 +106,12 @@ function Get-DbaLogShippingError {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
             if ($server.EngineEdition -match "Express") {
                 Write-Message -Level Warning -Message "$instance is Express Edition which does not support Log Shipping"
                 continue
             }
-
+            
             $query = "
 CREATE TABLE #DatabaseID
 (
@@ -179,64 +170,59 @@ ORDER BY lsmed.[log_time],
             lsmed.[sequence_number];
 
 DROP TABLE #DatabaseID;"
-
+            
             # Get the log shipping errors
             $results = $server.Query($query)
-
+            
             if ($results.Count -ge 1) {
-
+                
                 # Filter the results
                 if ($Database) {
                     $results = $results | Where-Object { $_.DatabaseName -in $Database }
                 }
-
+                
                 if ($Action) {
                     $results = $results | Where-Object { $_.Action -in $Action }
                 }
-
+                
                 if ($DateTimeFrom) {
-                    $results = $results | Where-Object {$_.Logtime -ge $DateTimeFrom}
+                    $results = $results | Where-Object { $_.Logtime -ge $DateTimeFrom }
                 }
-
+                
                 if ($DateTimeTo) {
-                    $results = $results | Where-Object {$_.Logtime -le $DateTimeTo}
+                    $results = $results | Where-Object { $_.Logtime -le $DateTimeTo }
                 }
-
+                
                 if ($Primary) {
-                    $results = $results | Where-Object {$_.Instance -eq 'Primary'}
+                    $results = $results | Where-Object { $_.Instance -eq 'Primary' }
                 }
-
+                
                 if ($Secondary) {
-                    $results = $results | Where-Object {$_.Instance -eq 'Secondary'}
+                    $results = $results | Where-Object { $_.Instance -eq 'Secondary' }
                 }
-
-                # Loop through each of the results
+                
                 foreach ($result in $results) {
-                    # Set up the custom object
-                    $null = $collection.Add([PSCustomObject]@{
-                            ComputerName   = $server.ComputerName
-                            InstanceName   = $server.ServiceName
-                            SqlInstance    = $server.DomainInstanceName
-                            Database       = $result.DatabaseName
-                            Instance       = $result.Instance
-                            Action         = $result.Action
-                            SessionID      = $result.SessionID
-                            SequenceNumber = $result.SequenceNumber
-                            LogTime        = $result.LogTime
-                            Message        = $result.Message
-                        })
-
-                } # for each result
+                    [PSCustomObject]@{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Database     = $result.DatabaseName
+                        Instance     = $result.Instance
+                        Action       = $result.Action
+                        SessionID    = $result.SessionID
+                        SequenceNumber = $result.SequenceNumber
+                        LogTime      = $result.LogTime
+                        Message      = $result.Message
+                    }
+                    
+                }
             }
             else {
                 Write-Message -Message "No log shipping errors found" -Level Verbose
             }
-
-        } # foreach instance
-
-        return $collection
-
-    } # end process
-
+        }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaLogShippingError
+    }
 }
-
