@@ -4,7 +4,7 @@ function ConvertTo-DbaTimeline {
             Converts InputObject to a html timeline using Google Chart
 
         .DESCRIPTION
-            This function accepts input as pipeline from the following psdbatools functions:
+            This function accepts input as pipeline from the following dbatools functions:
                 Get-DbaAgentJobHistory
                 Get-DbaBackupHistory
                 (more to come...)
@@ -32,30 +32,29 @@ function ConvertTo-DbaTimeline {
             https://dbatools.io/ConvertTo-DbaTimeline
 
         .EXAMPLE
-            Get-DbaAgentJobHistory -SqlInstance sql-1 -StartDate '2018-08-13 00:00' -EndDate '2018-08-13 23:59' -NoJobSteps | ConvertTo-DbaTimeline | Out-File C:\temp\DbaAgentJobHistory.html -Encoding ASCII
+            PS C:\> Get-DbaAgentJobHistory -SqlInstance sql-1 -StartDate '2018-08-13 00:00' -EndDate '2018-08-13 23:59' -NoJobSteps | ConvertTo-DbaTimeline | Out-File C:\temp\DbaAgentJobHistory.html -Encoding ASCII
 
             Creates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13
 
         .EXAMPLE
-            Get-DbaCmsRegServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-File C:\temp\DbaBackupHistory.html -Encoding ASCII
+            PS C:\> Get-DbaCmsRegServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-File C:\temp\DbaBackupHistory.html -Encoding ASCII
 
             Creates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm
 
         .EXAMPLE
-            $messageParameters = @{
+            PS C:\> $messageParameters = @{
                 Subject = "Backup history for sql2017 and sql2016"
                 Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline
                 From = "dba@ad.local"
                 To = "dba@ad.local"
                 SmtpServer = "smtp.ad.local"
             }
-            Send-MailMessage @messageParameters -BodyAsHtml
+            PS C:\> Send-MailMessage @messageParameters -BodyAsHtml
 
             Sends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.
     #>
-
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$EnableException
