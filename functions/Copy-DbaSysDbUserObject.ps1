@@ -22,7 +22,7 @@ function Copy-DbaSysDbUserObject {
 
         .PARAMETER Classic
             Perform the migration the old way
-    
+
         .PARAMETER Force
             Drop destination objects first. Has no effect if you use Classic. This doesn't work really well, honestly.
 
@@ -48,7 +48,7 @@ function Copy-DbaSysDbUserObject {
             https://dbatools.io/Copy-DbaSysDbUserObject
 
         .EXAMPLE
-            Copy-DbaSysDbUserObject $sourceServer $destserver
+            PS C:\> Copy-DbaSysDbUserObject $sourceServer $destserver
 
             Copies user objects from source to destination
     #>
@@ -91,12 +91,12 @@ function Copy-DbaSysDbUserObject {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-        
+
         if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
             Stop-Function -Message "Not a sysadmin on $source. Quitting."
             return
         }
-        
+
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
@@ -106,21 +106,21 @@ function Copy-DbaSysDbUserObject {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
                 Stop-Function -Message "Not a sysadmin on $destinstance" -Continue
             }
-            
+
             $systemDbs = "master", "model", "msdb"
-            
+
             if (-not $Classic) {
                 foreach ($systemDb in $systemDbs) {
                     $smodb = $sourceServer.databases[$systemDb]
                     $destdb = $destserver.databases[$systemDb]
-                    
+
                     $tables = $smodb.Tables | Where-Object IsSystemObject -ne $true
                     $schemas = $smodb.Schemas | Where-Object IsSystemObject -ne $true
-                    
+
                     foreach ($schema in $schemas) {
                         $copyobject = [pscustomobject]@{
                             SourceServer = $sourceServer.Name
@@ -131,10 +131,10 @@ function Copy-DbaSysDbUserObject {
                             Notes        = $null
                             DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
-                        
+
                         $destschema = $destdb.Schemas | Where-Object Name -eq $schema.Name
                         $schmadoit = $true
-                        
+
                         if ($destschema) {
                             if (-not $force) {
                                 $copyobject.Status = "Skipped"
@@ -155,7 +155,7 @@ function Copy-DbaSysDbUserObject {
                                 }
                             }
                         }
-                        
+
                         if ($schmadoit) {
                             $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
                             $null = $transfer.CopyAllObjects = $false
@@ -175,10 +175,10 @@ function Copy-DbaSysDbUserObject {
                                 }
                             }
                         }
-                        
+
                         $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-                    
+
                     foreach ($table in $tables) {
                         $copyobject = [pscustomobject]@{
                             SourceServer = $sourceServer.Name
@@ -189,10 +189,10 @@ function Copy-DbaSysDbUserObject {
                             Notes        = $null
                             DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
-                        
+
                         $desttable = $destdb.Tables.Item($table.Name, $table.Schema)
                         $doit = $true
-                        
+
                         if ($desttable) {
                             if (-not $force) {
                                 $copyobject.Status = "Skipped"
@@ -213,7 +213,7 @@ function Copy-DbaSysDbUserObject {
                                 }
                             }
                         }
-                        
+
                         if ($doit) {
                             $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
                             $null = $transfer.CopyAllObjects = $false
@@ -235,17 +235,17 @@ function Copy-DbaSysDbUserObject {
                         }
                         $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-                    
+
                     $userobjects = Get-DbaModule -SqlInstance $sourceserver -Database $systemDb -NoSystemObjects | Sort-Object Type
                     Write-Message -Level Verbose -Message "Copying from $systemDb"
                     foreach ($userobject in $userobjects) {
-                        
+
                         $name = "[$($userobject.SchemaName)].[$($userobject.Name)]"
                         $db = $userobject.Database
                         $type = get-sqltypename $userobject.Type
                         $sql = $userobject.Definition
                         $schema = $userobject.SchemaName
-                        
+
                         $copyobject = [pscustomobject]@{
                             SourceServer = $sourceServer.Name
                             DestinationServer = $destServer.Name
@@ -276,7 +276,7 @@ function Copy-DbaSysDbUserObject {
                                         "SQL_INLINE_TABLE_VALUED_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
                                         "SQL_SCALAR_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
                                     }
-                                    
+
                                     if ($smobject) {
                                         Write-Message -Level Verbose -Message "Force specified. Dropping $smobject on $destdb on $destinstance using SMO"
                                         $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
@@ -373,11 +373,11 @@ function Copy-DbaSysDbUserObject {
                     $transfer.Options.Indexes = $true
                     $transfer.Options.Permissions = $true
                     $transfer.Options.WithDependencies = $false
-                    
+
                     Write-Message -Level Output -Message "Copying from $systemDb."
                     try {
                         $sqlQueries = $transfer.ScriptTransfer()
-                        
+
                         foreach ($sql in $sqlQueries) {
                             Write-Message -Level Debug -Message "$sql"
                             if ($PSCmdlet.ShouldProcess($destServer, $sql)) {
