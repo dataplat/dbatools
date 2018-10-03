@@ -73,12 +73,12 @@ function Set-DbaDbMirror {
         
         foreach ($db in $InputObject) {
             if ($Partner) {
-                $db.MirroringPartner = $Partner
+                # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
+                $db.Parent.Query("ALTER DATABASE $db SET PARTNER = N'$Partner'")
             }
             elseif ($Witness) {
-                $db.MirroringWitness = $Witness
+                $db.Parent.Query("ALTER DATABASE $db SET WITNESS = N'$Witness'")
             }
-            $db.Alter()
         }
     }
 }
