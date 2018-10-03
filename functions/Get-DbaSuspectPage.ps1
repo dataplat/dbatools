@@ -1,44 +1,43 @@
 function Get-DbaSuspectPage {
     <#
         .SYNOPSIS
-        Returns data that is stored in SQL for Suspect Pages on the specified SQL Server Instance
+            Returns data that is stored in SQL for Suspect Pages on the specified SQL Server Instance
 
         .DESCRIPTION
-        This function returns any records that were stored due to suspect pages in databases on a SQL Server Instance.
+            This function returns any records that were stored due to suspect pages in databases on a SQL Server Instance.
 
         .PARAMETER SqlInstance
-        A SQL Server instance to connect to
+            A SQL Server instance to connect to
 
         .PARAMETER SqlCredential
-        A credential to use to connect to the SQL Instance rather than using Windows Authentication
+            A credential to use to connect to the SQL Instance rather than using Windows Authentication
 
         .PARAMETER Database
-        The database to return. If unspecified, all records will be returned.
+            The database to return. If unspecified, all records will be returned.
 
         .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-        Tags: Pages, DBCC
-        Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
+            Tags: Pages, DBCC
+            Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MIT
-
-        .EXAMPLE
-        Get-DbaSuspectPage -SqlInstance sql2016
-
-        Retrieve any records stored for Suspect Pages on the sql2016 SQL Server.
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
-        Get-DbaSuspectPage -SqlInstance sql2016 -Database Test
+            PS C:\> Get-DbaSuspectPage -SqlInstance sql2016
 
-        Retrieve any records stored for Suspect Pages on the sql2016 SQL Server and the Test database only.
+            Retrieve any records stored for Suspect Pages on the sql2016 SQL Server.
 
-#>
+        .EXAMPLE
+            PS C:\> Get-DbaSuspectPage -SqlInstance sql2016 -Database Test
+
+            Retrieve any records stored for Suspect Pages on the sql2016 SQL Server and the Test database only.
+    #>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -51,7 +50,6 @@ function Get-DbaSuspectPage {
     )
 
     process {
-
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9

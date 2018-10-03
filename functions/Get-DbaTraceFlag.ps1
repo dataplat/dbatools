@@ -24,27 +24,27 @@ function Get-DbaTraceFlag {
             Tags: TraceFlag
             Author: Kevin Bullen (@sqlpadawan)
 
-            References:  https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-traceon-trace-flags-transact-sql
-
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
+
+            References:  https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-traceon-trace-flags-transact-sql
 
         .LINK
             https://dbatools.io/Get-DbaTraceFlag
 
         .EXAMPLE
-            Get-DbaTraceFlag -SqlInstance localhost
+            PS C:\> Get-DbaTraceFlag -SqlInstance localhost
 
             Returns all Trace Flag information on the local default SQL Server instance
 
         .EXAMPLE
-            Get-DbaTraceFlag -SqlInstance localhost, sql2016
+            PS C:\> Get-DbaTraceFlag -SqlInstance localhost, sql2016
 
             Returns all Trace Flag(s) for the local and sql2016 SQL Server instances
 
         .EXAMPLE
-            Get-DbaTraceFlag -SqlInstance localhost -TraceFlag 4199,3205
+            PS C:\> Get-DbaTraceFlag -SqlInstance localhost -TraceFlag 4199,3205
 
             Returns Trace Flag status for TF 4199 and 3205 for the local SQL Server instance if they are enabled.
     #>
