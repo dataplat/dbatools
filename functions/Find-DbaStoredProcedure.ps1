@@ -19,7 +19,7 @@ function Find-DbaStoredProcedure {
             The database(s) to exclude - this list is auto-populated from the server
 
         .PARAMETER Pattern
-            String pattern that you want to search for in the stored procedure textbody
+            String pattern that you want to search for in the stored procedure text body
 
         .PARAMETER IncludeSystemObjects
             By default, system stored procedures are ignored but you can include them within the search using this parameter.
@@ -46,24 +46,24 @@ function Find-DbaStoredProcedure {
             https://dbatools.io/Find-DbaStoredProcedure
 
         .EXAMPLE
-            Find-DbaStoredProcedure -SqlInstance DEV01 -Pattern whatever
+            PS C:\> Find-DbaStoredProcedure -SqlInstance DEV01 -Pattern whatever
 
-            Searches all user databases stored procedures for "whatever" in the textbody
-
-        .EXAMPLE
-            Find-DbaStoredProcedure -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
-
-            Searches all databases for all stored procedures that contain a valid email pattern in the textbody
+            Searches all user databases stored procedures for "whatever" in the text body
 
         .EXAMPLE
-            Find-DbaStoredProcedure -SqlInstance DEV01 -Database MyDB -Pattern 'some string' -Verbose
+            PS C:\> Find-DbaStoredProcedure -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
 
-            Searches in "mydb" database stored procedures for "some string" in the textbody
+            Searches all databases for all stored procedures that contain a valid email pattern in the text body
 
         .EXAMPLE
-            Find-DbaStoredProcedure -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects
+            PS C:\> Find-DbaStoredProcedure -SqlInstance DEV01 -Database MyDB -Pattern 'some string' -Verbose
 
-            Searches in "mydb" database stored procedures for "runtime" in the textbody
+            Searches in "mydb" database stored procedures for "some string" in the text body
+
+        .EXAMPLE
+            PS C:\> Find-DbaStoredProcedure -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects
+
+            Searches in "mydb" database stored procedures for "runtime" in the text body
     #>
     [CmdletBinding()]
     param (

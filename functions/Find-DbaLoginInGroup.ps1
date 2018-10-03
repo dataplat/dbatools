@@ -23,32 +23,31 @@ function Find-DbaLoginInGroup {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Login, AD, ActiveDirectory, Group, Security
+            Tags: Login, Group, Security
             Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-            Author: Simone Bizzotto, @niphlod
+            Author: Simone Bizzotto (@niphlod)
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Find-DbaLoginInGroup
 
         .EXAMPLE
-            Find-DbaLoginInGroup -SqlInstance DEV01 -Login "MyDomain\Stephen.Bennett"
+            PS C:\> Find-DbaLoginInGroup -SqlInstance DEV01 -Login "MyDomain\Stephen.Bennett"
 
             Returns all active directory groups with logins on Sql Instance DEV01 that contain the AD user Stephen.Bennett.
 
         .EXAMPLE
-            Find-DbaLoginInGroup -SqlInstance DEV01
+            PS C:\> Find-DbaLoginInGroup -SqlInstance DEV01
 
             Returns all active directory users within all windows AD groups that have logins on the instance.
 
         .EXAMPLE
-            Find-DbaLoginInGroup -SqlInstance DEV01 | Where-Object Login -like '*stephen*'
+            PS C:\> Find-DbaLoginInGroup -SqlInstance DEV01 | Where-Object Login -like '*stephen*'
 
-            Returns all active directory users within all windows AD groups that have logins on the instance whose login contains 'stephen'
-
+            Returns all active directory users within all windows AD groups that have logins on the instance whose login contains "stephen"
     #>
     [CmdletBinding()]
     param (

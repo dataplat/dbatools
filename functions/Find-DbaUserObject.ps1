@@ -35,20 +35,21 @@ function Find-DbaUserObject {
         .NOTES
             Tags: Object
             Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
+
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Find-DbaUserObject
 
         .EXAMPLE
-            Find-DbaUserObject -SqlInstance DEV01 -Pattern ad\stephen
+            PS C:\> Find-DbaUserObject -SqlInstance DEV01 -Pattern ad\stephen
 
             Searches user objects for owner ad\stephen
 
         .EXAMPLE
-            Find-DbaUserObject -SqlInstance DEV01 -Verbose
+            PS C:\> Find-DbaUserObject -SqlInstance DEV01 -Verbose
 
             Shows all user owned (non-sa, non-dbo) objects and verbose output
     #>

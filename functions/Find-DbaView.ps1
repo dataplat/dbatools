@@ -19,7 +19,7 @@ function Find-DbaView {
             The database(s) to exclude - this list is auto-populated from the server
 
         .PARAMETER Pattern
-            String pattern that you want to search for in the view textbody
+            String pattern that you want to search for in the view text body
 
         .PARAMETER IncludeSystemObjects
             By default, system views are ignored but you can include them within the search using this parameter.
@@ -46,24 +46,24 @@ function Find-DbaView {
             https://dbatools.io/Find-DbaView
 
         .EXAMPLE
-            Find-DbaView -SqlInstance DEV01 -Pattern whatever
+            PS C:\> Find-DbaView -SqlInstance DEV01 -Pattern whatever
 
-            Searches all user databases views for "whatever" in the textbody
-
-        .EXAMPLE
-            Find-DbaView -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
-
-            Searches all databases for all views that contain a valid email pattern in the textbody
+            Searches all user databases views for "whatever" in the text body
 
         .EXAMPLE
-            Find-DbaView -SqlInstance DEV01 -Database MyDB -Pattern 'some string' -Verbose
+            PS C:\> Find-DbaView -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
 
-            Searches in "mydb" database views for "some string" in the textbody
+            Searches all databases for all views that contain a valid email pattern in the text body
 
         .EXAMPLE
-            Find-DbaView -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects
+            PS C:\> Find-DbaView -SqlInstance DEV01 -Database MyDB -Pattern 'some string' -Verbose
 
-            Searches in "mydb" database views for "runtime" in the textbody
+            Searches in "mydb" database views for "some string" in the text body
+
+        .EXAMPLE
+            PS C:\> Find-DbaView -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects
+
+            Searches in "mydb" database views for "runtime" in the text body
     #>
     [CmdletBinding()]
     param (
