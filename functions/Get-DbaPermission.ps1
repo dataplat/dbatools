@@ -47,23 +47,23 @@ function Get-DbaPermission {
             https://dbatools.io/Get-DbaPermission
 
         .EXAMPLE
-            Get-DbaPermission -SqlInstance ServerA\sql987
+            PS C:\> Get-DbaPermission -SqlInstance ServerA\sql987
 
             Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable.
 
         .EXAMPLE
-            Get-DbaPermission -SqlInstance ServerA\sql987 | Format-Table -AutoSize
+            PS C:\> Get-DbaPermission -SqlInstance ServerA\sql987 | Format-Table -AutoSize
 
             Returns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, securable and securabletype.
 
         .EXAMPLE
-            Get-DbaPermission -SqlInstance ServerA\sql987 -NoSystemObjects -IncludeServerLevel
+            PS C:\> Get-DbaPermission -SqlInstance ServerA\sql987 -NoSystemObjects -IncludeServerLevel
 
             Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
             in all databases and on the server level, but not on system securables.
 
         .EXAMPLE
-            Get-DbaPermission -SqlInstance sql2016 -Database master
+            PS C:\> Get-DbaPermission -SqlInstance sql2016 -Database master
 
             Returns a custom object with permissions for the master database.
     #>
