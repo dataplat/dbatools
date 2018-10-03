@@ -108,6 +108,8 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
 
             # violate policy
             $invalidPassword = ConvertTo-SecureString -String "password1" -AsPlainText -Force
+
+            { Set-DbaLogin -SqlInstance $script:instance2 -Login 'testLogin' -Password $invalidPassword -WarningAction 'SilentlyContinue' } | Should -Be $null
             { Set-DbaLogin -SqlInstance $script:instance2 -Login 'testLogin' -Password $invalidPassword -EnableException } | Should -Throw
         }
 
