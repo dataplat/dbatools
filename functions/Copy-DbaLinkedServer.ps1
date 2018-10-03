@@ -59,12 +59,12 @@ function Copy-DbaLinkedServer {
             https://dbatools.io/Copy-DbaLinkedServer
 
         .EXAMPLE
-            Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster
 
             Copies all SQL Server Linked Servers on sqlserver2014a to sqlcluster. If Linked Server exists on destination, it will be skipped.
 
         .EXAMPLE
-            Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServer SQL2K5,SQL2k -Force
+            PS C:\> Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServer SQL2K5,SQL2k -Force
 
             Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
     #>

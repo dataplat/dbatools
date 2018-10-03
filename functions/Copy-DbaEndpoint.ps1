@@ -53,17 +53,17 @@ function Copy-DbaEndpoint {
             https://dbatools.io/Copy-DbaEndpoint
 
         .EXAMPLE
-            Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster
 
             Copies all server endpoints from sqlserver2014a to sqlcluster, using Windows credentials. If endpoints with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaEndpoint -Source sqlserver2014a -SourceSqlCredential $cred -Destination sqlcluster -Endpoint tg_noDbDrop -Force
+            PS C:\> Copy-DbaEndpoint -Source sqlserver2014a -SourceSqlCredential $cred -Destination sqlcluster -Endpoint tg_noDbDrop -Force
 
             Copies only the tg_noDbDrop endpoint from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an endpoint with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
         .EXAMPLE
-            Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            PS C:\> Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
     #>
@@ -106,10 +106,10 @@ function Copy-DbaEndpoint {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destEndpoints = $destServer.Endpoints
-            
+
             foreach ($currentEndpoint in $serverEndpoints) {
                 $endpointName = $currentEndpoint.Name
-                
+
                 $copyEndpointStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -119,17 +119,17 @@ function Copy-DbaEndpoint {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($Endpoint -and $Endpoint -notcontains $endpointName -or $ExcludeEndpoint -contains $endpointName) {
                     continue
                 }
-                
+
                 if ($destEndpoints.Name -contains $endpointName) {
                     if ($force -eq $false) {
                         $copyEndpointStatus.Status = "Skipped"
                         $copyEndpointStatus.Notes = "Already exists"
                         $copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Write-Message -Level Verbose -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
                         continue
                     }
@@ -142,25 +142,25 @@ function Copy-DbaEndpoint {
                             catch {
                                 $copyEndpointStatus.Status = "Failed"
                                 $copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                
+
                                 Stop-Function -Message "Issue dropping server endpoint." -Target $endpointName -ErrorRecord $_ -Continue
                             }
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating server endpoint $endpointName.")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying server endpoint $endpointName."
                         $destServer.Query($currentEndpoint.Script()) | Out-Null
-                        
+
                         $copyEndpointStatus.Status = "Successful"
                         $copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     catch {
                         $copyEndpointStatus.Status = "Failed"
                         $copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Stop-Function -Message "Issue creating server endpoint." -Target $endpointName -ErrorRecord $_
                     }
                 }
