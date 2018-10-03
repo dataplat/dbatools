@@ -1,7 +1,7 @@
-function Get-DbaLogShippingError {
+function Get-DbaDbLogShipError {
     <#
         .SYNOPSIS
-            Get-DbaLogShippingError returns all the log shipping errors that occurred
+            Get-DbaDbLogShipError returns all the log shipping errors that occurred
 
         .DESCRIPTION
             When your log shipping fails it's sometimes hard to see why is fails.
@@ -51,31 +51,31 @@ function Get-DbaLogShippingError {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Get-DbaLogShippingError
+            https://dbatools.io/Get-DbaDbLogShipError
 
         .EXAMPLE
-            Get-DbaLogShippingError -SqlInstance sql1
+            Get-DbaDbLogShipError -SqlInstance sql1
 
             Get all the log shipping errors that occurred
 
         .EXAMPLE
-            Get-DbaLogShippingError -SqlInstance sql1 -Action Backup
+            Get-DbaDbLogShipError -SqlInstance sql1 -Action Backup
 
             Get the errors that have something to do with the backup of the databases
 
         .EXAMPLE
-            Get-DbaLogShippingError -SqlInstance sql1 -Secondary
+            Get-DbaDbLogShipError -SqlInstance sql1 -Secondary
 
             Get the errors that occurred on the secondary instance.
             This will return the copy of the restore actions because those only occur on the secondary instance
 
         .EXAMPLE
-            Get-DbaLogShippingError -SqlInstance sql1 -DateTimeFrom "01/05/2018"
+            Get-DbaDbLogShipError -SqlInstance sql1 -DateTimeFrom "01/05/2018"
 
             Get the errors that have occurred from "01/05/2018". This can also be of format "yyyy-MM-dd"
 
         .EXAMPLE
-            Get-DbaLogShippingError -SqlInstance sql1 -Secondary -DateTimeFrom "01/05/2018" -DateTimeTo "2018-01-07"
+            Get-DbaDbLogShipError -SqlInstance sql1 -Secondary -DateTimeFrom "01/05/2018" -DateTimeTo "2018-01-07"
 
             Get the errors that have occurred between "01/05/2018" and "01/07/2018".
             See that is doesn't matter how the date is represented.

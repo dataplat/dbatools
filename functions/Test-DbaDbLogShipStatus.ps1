@@ -1,7 +1,7 @@
-function Test-DbaLogShippingStatus {
+function Test-DbaDbLogShipStatus {
     <#
         .SYNOPSIS
-            Test-DbaLogShippingStatus returns the status of your log shipping databases
+            Test-DbaDbLogShipStatus returns the status of your log shipping databases
 
         .DESCRIPTION
             Most of the time your log shipping "just works".
@@ -50,30 +50,30 @@ function Test-DbaLogShippingStatus {
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Test-DbaLogShippingStatus
+            https://dbatools.io/Test-DbaDbLogShipStatus
 
         .EXAMPLE
-            Test-DbaLogShippingStatus -SqlInstance sql1
+            Test-DbaDbLogShipStatus -SqlInstance sql1
 
             Retrieves the log ship information from sql1 and displays all the information present including the status.
 
         .EXAMPLE
-            Test-DbaLogShippingStatus -SqlInstance sql1 -Database AdventureWorks2014
+            Test-DbaDbLogShipStatus -SqlInstance sql1 -Database AdventureWorks2014
 
             Retrieves the log ship information for just the database AdventureWorks.
 
         .EXAMPLE
-            Test-DbaLogShippingStatus -SqlInstance sql1 -Primary
+            Test-DbaDbLogShipStatus -SqlInstance sql1 -Primary
 
             Retrieves the log ship information and only returns the information for the databases on the primary instance.
 
         .EXAMPLE
-            Test-DbaLogShippingStatus -SqlInstance sql1 -Secondary
+            Test-DbaDbLogShipStatus -SqlInstance sql1 -Secondary
 
             Retrieves the log ship information and only returns the information for the databases on the secondary instance.
 
         .EXAMPLE
-            Test-DbaLogShippingStatus -SqlInstance sql1 -Simple
+            Test-DbaDbLogShipStatus -SqlInstance sql1 -Simple
 
             Retrieves the log ship information and only returns the columns SQL Instance, Database, Instance Type and Status
     #>
