@@ -101,6 +101,16 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result.PasswordPolicyEnforced | Should Be $true
         }
 
+        It "Catches errors when password can't be changed" {
+            # enforce password policy
+            $result = Set-DbaLogin -SqlInstance $script:instance2 -Login 'testLogin' -PasswordPolicyEnforced -EnableException
+            $result.PasswordPolicyEnforced | Should -Be $true
+
+            # violate policy
+            $invalidPassword = ConvertTo-SecureString -String "password1" -AsPlainText -Force
+            { Set-DbaLogin -SqlInstance $script:instance2 -Login 'testLogin' -Password $invalidPassword -EnableException } | Should -Throw
+        }
+
         It "Disables enforcing password policy on login" {
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -PasswordPolicyEnforced:$false
 
