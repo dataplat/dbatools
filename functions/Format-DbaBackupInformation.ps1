@@ -1,7 +1,7 @@
 function Format-DbaBackupInformation {
     <#
         .SYNOPSIS
-            Transforms the data in a dbatools backuphistory object for a restore
+            Transforms the data in a dbatools BackupHistory object for a restore
 
         .DESCRIPTION
             Performs various mapping on Backup History, ready restoring
@@ -14,7 +14,7 @@ function Format-DbaBackupInformation {
             If a single value is provided, this will be replaced do all occurrences a database name
             If a Hashtable is passed in, each database name mention will be replaced as specified. If a database's name does not appear it will not be replace
             DatabaseName will also be replaced where it  occurs in the file paths of data and log files.
-            Please note, that this won't change the Logical Names of datafiles, that has to be done with a separate Alter DB call
+            Please note, that this won't change the Logical Names of data files, that has to be done with a separate Alter DB call
 
         .PARAMETER DatabaseNamePrefix
             This string will be prefixed to all restored database's name
@@ -44,7 +44,7 @@ function Format-DbaBackupInformation {
             A string that will be suffixed to every file restored
 
         .PARAMETER ReplaceDbNameInFile
-            If set, will replace the old databasename with the new name if it occurs in the file name
+            If set, will replace the old database name with the new name if it occurs in the file name
 
         .PARAMETER FileMapping
             A hashtable that can be used to move specific files to a location.
@@ -60,7 +60,7 @@ function Format-DbaBackupInformation {
 
         .NOTES
             Tags: DisasterRecovery, Backup, Restore
-            Author:Stuart Moore (@napalmgram stuart-moore.com )
+            Author: Stuart Moore (@napalmgram), stuart-moore.com
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -70,24 +70,24 @@ function Format-DbaBackupInformation {
             https://dbatools.io/Format-DbaBackupInformation
 
         .EXAMPLE
-            $History | Format-DbaBackupInformation -ReplaceDatabaseName NewDb
+            PS C:\> $History | Format-DbaBackupInformation -ReplaceDatabaseName NewDb
 
-            Changes as databasename references to NewDb, both in the database name and any restore paths. Note, this will fail if the BackupHistory object contains backups for more than 1 database
+            Changes as database name references to NewDb, both in the database name and any restore paths. Note, this will fail if the BackupHistory object contains backups for more than 1 database
 
         .EXAMPLE
-            $History | Format-DbaBackupInformation -ReplaceDatabaseName @{'OldB'='NewDb';'ProdHr'='DevHr'}
+            PS C:\> $History | Format-DbaBackupInformation -ReplaceDatabaseName @{'OldB'='NewDb';'ProdHr'='DevHr'}
 
             Will change all occurrences of original database name in the backup history (names and restore paths) using the mapping in the hashtable.
-            In this example any occurence of OldDb will be replaced with NewDb and ProdHr with DevPR
+            In this example any occurrence of OldDb will be replaced with NewDb and ProdHr with DevPR
 
         .EXAMPLE
-            $History | Format-DbaBackupInformation -DataFileDirectory 'D:\DataFiles\' -LogFileDirectory 'E:\LogFiles\
+            PS C:\> $History | Format-DbaBackupInformation -DataFileDirectory 'D:\DataFiles\' -LogFileDirectory 'E:\LogFiles\
 
-            This example with change the restore path for all datafiles (everything that is not a log file) to d:\datafiles
+            This example with change the restore path for all data files (everything that is not a log file) to d:\datafiles
             And all Transaction Log files will be restored to E:\Logfiles
 
         .EXAMPLE
-            $History | Formate-DbaBackupInformation -RebaseBackupFolder f:\backups
+            PS C:\> $History | Format-DbaBackupInformation -RebaseBackupFolder f:\backups
 
             This example changes the location that SQL Server will look for the backups. This is useful if you've moved the backups to a different location
     #>

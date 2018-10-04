@@ -18,8 +18,9 @@ function Get-DbaRunningJob {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Process, Session, ActivityMonitor, Agent, Job
+            Tags: Agent, Job
             Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -43,7 +44,7 @@ function Get-DbaRunningJob {
             Returns all active jobs on multiple instances piped into the function.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -55,7 +56,7 @@ function Get-DbaRunningJob {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Failed to connect to: $Server." -Target $server -ErrorRecord $_ -Continue
@@ -68,7 +69,7 @@ function Get-DbaRunningJob {
             }
             else {
                 foreach ($job in $jobs) {
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName     = $server.ComputerName
                         InstanceName     = $server.ServiceName
                         SqlInstance      = $server.DomainInstanceName

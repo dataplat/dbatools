@@ -53,17 +53,17 @@ function Copy-DbaServerAuditSpecification {
             https://dbatools.io/Copy-DbaServerAuditSpecification
 
         .EXAMPLE
-            Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster
 
             Copies all server audits from sqlserver2014a to sqlcluster using Windows credentials to connect. If audits with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -ServerAuditSpecification tg_noDbDrop -SourceSqlCredential $cred -Force
+            PS C:\> Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -ServerAuditSpecification tg_noDbDrop -SourceSqlCredential $cred -Force
 
             Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster using SQL credentials to connect to sqlserver2014a and Windows credentials to connect to sqlcluster. If an audit specification with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
         .EXAMPLE
-            Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            PS C:\> Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
     #>
@@ -91,12 +91,12 @@ function Copy-DbaServerAuditSpecification {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-        
+
         if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
             Stop-Function -Message "Not a sysadmin on $source. Quitting."
             return
         }
-        
+
         $AuditSpecifications = $sourceServer.ServerAuditSpecifications
     }
     process {
@@ -109,12 +109,12 @@ function Copy-DbaServerAuditSpecification {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
                 Stop-Function -Message "Not a sysadmin on $destinstance. Quitting."
                 return
             }
-            
+
             if ($destServer.VersionMajor -lt $sourceServer.VersionMajor) {
                 Stop-Function -Message "Migration from version $($destServer.VersionMajor) to version $($sourceServer.VersionMajor) is not supported."
                 return
@@ -122,7 +122,7 @@ function Copy-DbaServerAuditSpecification {
             $destAudits = $destServer.ServerAuditSpecifications
             foreach ($auditSpec in $AuditSpecifications) {
                 $auditSpecName = $auditSpec.Name
-                
+
                 $copyAuditSpecStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -132,11 +132,11 @@ function Copy-DbaServerAuditSpecification {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($AuditSpecification -and $auditSpecName -notin $AuditSpecification -or $auditSpecName -in $ExcludeAuditSpecification) {
                     continue
                 }
-                
+
                 $destServer.Audits.Refresh()
                 if ($destServer.Audits.Name -notcontains $auditSpec.AuditName) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Audit $($auditSpec.AuditName) does not exist on $destinstance. Skipping $auditSpecName.")) {
@@ -147,11 +147,11 @@ function Copy-DbaServerAuditSpecification {
                     }
                     continue
                 }
-                
+
                 if ($destAudits.name -contains $auditSpecName) {
                     if ($force -eq $false) {
                         Write-Message -Level Verbose -Message "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate."
-                        
+
                         $copyAuditSpecStatus.Status = "Skipped"
                         $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         continue
@@ -166,7 +166,7 @@ function Copy-DbaServerAuditSpecification {
                                 $copyAuditSpecStatus.Status = "Failed"
                                 $copyAuditSpecStatus.Notes = (Get-ErrorMessage -Record $_)
                                 $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                
+
                                 Stop-Function -Message "Issue dropping audit spec" -Target $auditSpecName -ErrorRecord $_ -Continue
                             }
                         }
@@ -178,7 +178,7 @@ function Copy-DbaServerAuditSpecification {
                         $sql = $auditSpec.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
-                        
+
                         $copyAuditSpecStatus.Status = "Successful"
                         $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
@@ -186,7 +186,7 @@ function Copy-DbaServerAuditSpecification {
                         $copyAuditSpecStatus.Status = "Failed"
                         $copyAuditSpecStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Stop-Function -Message "Issue creating audit spec on destination" -Target $auditSpecName -ErrorRecord $_
                     }
                 }

@@ -37,7 +37,7 @@ function Find-DbaCommand {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: Find,Help,Command
+            Tags: Find, Help, Command
             Author: Simone Bizzotto
 
             Website: https://dbatools.io
@@ -48,37 +48,37 @@ function Find-DbaCommand {
             https://dbatools.io/Find-DbaCommand
 
         .EXAMPLE
-            Find-DbaCommand "snapshot"
+            PS C:\> Find-DbaCommand "snapshot"
 
             For lazy typers: finds all commands searching the entire help for "snapshot"
 
         .EXAMPLE
-            Find-DbaCommand -Pattern "snapshot"
+            PS C:\> Find-DbaCommand -Pattern "snapshot"
 
             For rigorous typers: finds all commands searching the entire help for "snapshot"
 
         .EXAMPLE
-            Find-DbaCommand -Tag copy
+            PS C:\> Find-DbaCommand -Tag copy
 
             Finds all commands tagged with "copy"
 
         .EXAMPLE
-            Find-DbaCommand -Tag copy,user
+            PS C:\> Find-DbaCommand -Tag copy,user
 
             Finds all commands tagged with BOTH "copy" and "user"
 
         .EXAMPLE
-            Find-DbaCommand -Author chrissy
+            PS C:\> Find-DbaCommand -Author chrissy
 
             Finds every command whose author contains our beloved "chrissy"
 
         .EXAMPLE
-            Find-DbaCommand -Author chrissy -Tag copy
+            PS C:\> Find-DbaCommand -Author chrissy -Tag copy
 
             Finds every command whose author contains our beloved "chrissy" and it tagged as "copy"
 
         .EXAMPLE
-            Find-DbaCommand -Pattern snapshot -Rebuild
+            PS C:\> Find-DbaCommand -Pattern snapshot -Rebuild
 
             Finds all commands searching the entire help for "snapshot", rebuilding the index (good for developers)
     #>

@@ -1,4 +1,4 @@
-[
+﻿[
     {
         "CommandName":  "Add-DbaCmsRegServer",
         "Description":  "Adds registered servers to SQL Server Central Management Server (CMS). If you need more flexiblity, look into Import-DbaCmsRegServer which\naccepts multiple kinds of input and allows you to add reg servers from different CMSes.",

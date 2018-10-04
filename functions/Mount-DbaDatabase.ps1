@@ -65,7 +65,7 @@ function Mount-DbaDatabase {
             Shows what would happen if the command were executed (without actually performing the command)
     #>
     [CmdletBinding(SupportsShouldProcess)]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

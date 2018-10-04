@@ -6,7 +6,7 @@ param (
 
 function Write-LocalMessage {
     [CmdletBinding()]
-    Param (
+    param (
         [string]$Message
     )
 

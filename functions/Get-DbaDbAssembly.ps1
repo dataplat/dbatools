@@ -22,6 +22,7 @@ function Get-DbaDbAssembly {
         .NOTES
             Tags: Assembly, Database
             Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -30,12 +31,12 @@ function Get-DbaDbAssembly {
             https://dbatools.io/Get-DbaDbAssembly
 
         .EXAMPLE
-            Get-DbaDbAssembly -SqlInstance localhost
+            PS C:\> Get-DbaDbAssembly -SqlInstance localhost
 
             Returns all Database Assembly on the local default SQL Server instance
 
         .EXAMPLE
-            Get-DbaDbAssembly -SqlInstance localhost, sql2016
+            PS C:\> Get-DbaDbAssembly -SqlInstance localhost, sql2016
 
             Returns all Database Assembly for the local and sql2016 SQL Server instances
     #>

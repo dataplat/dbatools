@@ -34,25 +34,26 @@ function Get-DbaDbPageInfo {
         .NOTES
             Tags: Database, Page
             Author: Chrissy LeMaire (@cl), netnerds.net
-            dbatools PowerShell module (https://dbatools.io)
-            Copyright (C) 2016 Chrissy LeMaire
+
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaDbPageInfo
 
         .EXAMPLE
-            Get-DbaDbPageInfo -SqlInstance sql2017
+            PS C:\> et-DbaDbPageInfo -SqlInstance sql2017
 
             Returns page information for all databases on sql2017
 
         .EXAMPLE
-            Get-DbaDbPageInfo -SqlInstance sql2017, sql2016 -Database testdb
+            PS C:\> Get-DbaDbPageInfo -SqlInstance sql2017, sql2016 -Database testdb
 
             Returns page information for the testdb on sql2017 and sql2016
 
         .EXAMPLE
-            $servers | Get-DbaDatabase -Database testdb | Get-DbaDbPageInfo
+            PS C:\> $servers | Get-DbaDatabase -Database testdb | Get-DbaDbPageInfo
 
             Returns page information for the testdb on all $servers
     #>

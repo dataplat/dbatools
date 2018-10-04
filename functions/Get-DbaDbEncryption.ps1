@@ -29,6 +29,7 @@ function Get-DbaDbEncryption {
         .NOTES
             Tags: Encryption, Database
             Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -37,27 +38,28 @@ function Get-DbaDbEncryption {
             https://dbatools.io/Get-DbaDbEncryption
 
         .EXAMPLE
-            Get-DbaDbEncryption -SqlInstance DEV01
+            PS C:\> Get-DbaDbEncryption -SqlInstance DEV01
 
             List all encryption found on the instance by database
 
         .EXAMPLE
-            Get-DbaDbEncryption -SqlInstance DEV01 -Database MyDB
+            PS C:\> Get-DbaDbEncryption -SqlInstance DEV01 -Database MyDB
 
             List all encryption found for the MyDB database.
 
         .EXAMPLE
-            Get-DbaDbEncryption -SqlInstance DEV01 -ExcludeDatabase MyDB
+            PS C:\> Get-DbaDbEncryption -SqlInstance DEV01 -ExcludeDatabase MyDB
 
             List all encryption found for all databases except MyDB.
 
         .EXAMPLE
-            Get-DbaDbEncryption -SqlInstance DEV01 -IncludeSystemDBs
+            PS C:\> Get-DbaDbEncryption -SqlInstance DEV01 -IncludeSystemDBs
 
             List all encryption found for all databases including the system databases.
     #>
     [CmdletBinding()]
-    param ([parameter(ValueFromPipeline, Mandatory)]
+    param (
+        [parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

@@ -32,12 +32,12 @@ function Get-DbaAgentSchedule {
             https://dbatools.io/Get-DbaAgentSchedule
 
         .EXAMPLE
-            Get-DbaAgentSchedule -SqlInstance localhost
+            PS C:\> Get-DbaAgentSchedule -SqlInstance localhost
 
             Returns all SQL Agent Shared Schedules on the local default SQL Server instance
 
         .EXAMPLE
-            Get-DbaAgentSchedule -SqlInstance localhost, sql2016
+            PS C:\> Get-DbaAgentSchedule -SqlInstance localhost, sql2016
 
             Returns all SQL Agent Shared Schedules for the local and sql2016 SQL Server instances
     #>

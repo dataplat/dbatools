@@ -1,52 +1,52 @@
 ﻿function Get-DbaPbmCondition {
     <#
-    .SYNOPSIS
-    Returns conditions from policy based management from an instance.
+        .SYNOPSIS
+            Returns conditions from policy based management from an instance.
 
-    .DESCRIPTION
-    Returns conditions from policy based management from an instance.
+        .DESCRIPTION
+            Returns conditions from policy based management from an instance.
 
+        .PARAMETER SqlInstance
+            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-    .PARAMETER SqlInstance
-    SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER SqlCredential
-    Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        .PARAMETER Condition
+            Filters results to only show specific condition
 
-    .PARAMETER Condition
-    Filters results to only show specific condition
-    
-    .PARAMETER IncludeSystemObject
-    By default system objects are filtered out. Use this parameter to include them.
+        .PARAMETER IncludeSystemObject
+            By default system objects are filtered out. Use this parameter to include them.
 
-    .PARAMETER InputObject
-    Allows piping from Get-DbaPbmStore
-    
-    .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER InputObject
+            Allows piping from Get-DbaPbmStore
 
-    .NOTES
-    Tags: Policy, PoilcyBasedManagement, PBM
-    Author: Chrissy LeMaire (@cl), netnerds.net
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: MIT https://opensource.org/licenses/MIT
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .LINK
-    https://dbatools.io/Get-DbaPbmCondition
+        .NOTES
+            Tags: Policy, PolicyBasedManagement, PBM
+            Author: Chrissy LeMaire (@cl), netnerds.net
 
-    .EXAMPLE
-    Get-DbaPbmCondition -SqlInstance sql2016
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    Returns all conditions from the sql2016 PBM server
+        .LINK
+            https://dbatools.io/Get-DbaPbmCondition
 
-    .EXAMPLE
-    Get-DbaPbmCondition -SqlInstance sql2016 -SqlCredential $cred
+        .EXAMPLE
+            PS C:\> Get-DbaPbmCondition -SqlInstance sql2016
 
-    Uses a credential $cred to connect and return all conditions from the sql2016 PBM server
-#>
+            Returns all conditions from the sql2016 PBM server
+
+        .EXAMPLE
+            PS C:\> Get-DbaPbmCondition -SqlInstance sql2016 -SqlCredential $cred
+
+            Uses a credential $cred to connect and return all conditions from the sql2016 PBM server
+    #>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -66,15 +66,15 @@
         }
         foreach ($store in $InputObject) {
             $allconditions = $store.Conditions
-            
+
             if (-not $IncludeSystemObject) {
                 $allconditions = $allconditions | Where-Object IsSystemObject -eq $false
             }
-            
+
             if ($Condition) {
                 $allconditions = $allconditions | Where-Object Name -in $Condition
             }
-            
+
             foreach ($currentcondition in $allconditions) {
                 Write-Message -Level Verbose -Message "Processing $currentcondition"
                 Add-Member -Force -InputObject $currentcondition -MemberType NoteProperty ComputerName -value $store.ComputerName

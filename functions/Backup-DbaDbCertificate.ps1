@@ -48,55 +48,64 @@ function Backup-DbaDbCertificate {
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
         .NOTES
-            Author: Jess Pomfret (@jpomfret)
             Tags: Migration, Certificate
+            Author: Jess Pomfret (@jpomfret)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1
+            PS C:\> Backup-DbaDbCertificate -SqlInstance Server1
+
             Exports all the certificates on the specified SQL Server to the default data path for the instance.
 
         .EXAMPLE
-            $cred = Get-Credential sqladmin
-            Backup-DbaDbCertificate -SqlInstance Server1 -SqlCredential $cred
+            PS C:\> $cred = Get-Credential sqladmin
+            PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -SqlCredential $cred
 
             Connects using sqladmin credential and exports all the certificates on the specified SQL Server to the default data path for the instance.
 
         .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1 -Certificate Certificate1
+            PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -Certificate Certificate1
+
             Exports only the certificate named Certificate1 on the specified SQL Server to the default data path for the instance.
 
         .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1 -Database AdventureWorks
+            PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -Database AdventureWorks
+
             Exports only the certificates for AdventureWorks on the specified SQL Server to the default data path for the instance.
 
         .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1 -ExcludeDatabase AdventureWorks
+            PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -ExcludeDatabase AdventureWorks
+
             Exports all certificates except those for AdventureWorks on the specified SQL Server to the default data path for the instance.
 
         .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+            PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+
             Exports all the certificates and private keys on the specified SQL Server.
 
         .EXAMPLE
-            $EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
-            $DecryptionPassword = ConvertTo-SecureString -AsPlainText "Password4567!!" -force
-            Backup-DbaDbCertificate -SqlInstance Server1 -EncryptionPassword $EncryptionPassword -DecryptionPassword $DecryptionPassword
+            PS C:\> $EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
+            PS C:\> $DecryptionPassword = ConvertTo-SecureString -AsPlainText "Password4567!!" -force
+            PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -EncryptionPassword $EncryptionPassword -DecryptionPassword $DecryptionPassword
+
             Exports all the certificates on the specified SQL Server using the supplied DecryptionPassword, since an EncryptionPassword is specified private keys are also exported.
 
         .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates
+            PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates
+
             Exports all certificates on the specified SQL Server to the specified path.
 
         .EXAMPLE
-            Backup-DbaDbCertificate -SqlInstance Server1 -Suffix DbaTools
+            PS C:\> Backup-DbaDbCertificate -SqlInstance Server1 -Suffix DbaTools
+
             Exports all certificates on the specified SQL Server to the specified path, appends DbaTools to the end of the filenames.
 
         .EXAMPLE
-            Get-DbaDbCertificate -SqlInstance sql2016 | Backup-DbaDbCertificate
+            PS C:\> Get-DbaDbCertificate -SqlInstance sql2016 | Backup-DbaDbCertificate
+
             Exports all certificates found on sql2016 to the default data directory.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]

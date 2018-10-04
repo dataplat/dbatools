@@ -24,10 +24,10 @@ function Test-DbaLoginPassword {
 
         .PARAMETER Login
             The login(s) to process.
-    
+
         .PARAMETER InputObject
             Allows piping from Get-DbaLogin.
-    
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -68,7 +68,7 @@ function Test-DbaLoginPassword {
             Test selected logins on all servers in the $servers variable
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

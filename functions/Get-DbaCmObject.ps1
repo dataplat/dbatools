@@ -47,7 +47,7 @@ function Get-DbaCmObject {
 
         .NOTES
             Tags: ComputerManagement, CIM
-            Author: Fred Winmann (@FredWeinmann)
+            Author: Fred Weinmann (@FredWeinmann)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -57,12 +57,12 @@ function Get-DbaCmObject {
             https://dbatools.io/Get-DbaCmObject
 
         .EXAMPLE
-            Get-DbaCmObject win32_OperatingSystem
+            PS C:\> Get-DbaCmObject win32_OperatingSystem
 
             Retrieves the common operating system information from the local computer.
 
         .EXAMPLE
-            Get-DbaCmObject -Computername "sql2014" -ClassName Win32_OperatingSystem -Credential $cred -DoNotUse CimRM
+            PS C:\> Get-DbaCmObject -Computername "sql2014" -ClassName Win32_OperatingSystem -Credential $cred -DoNotUse CimRM
 
             Retrieves the common operating system information from the server sql2014.
             It will use the Credentials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).

@@ -108,7 +108,7 @@ function Set-DbatoolsConfig {
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(DefaultParameterSetName = "FullName")]
-    Param (
+    param (
         [Parameter(ParameterSetName = "FullName", Position = 0, Mandatory)]
         [string]$FullName,
         [Parameter(ParameterSetName = "Module", Position = 1, Mandatory)]

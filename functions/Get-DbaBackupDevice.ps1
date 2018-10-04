@@ -23,20 +23,20 @@ function Get-DbaBackupDevice {
             Tags: Backup
             Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaBackupDevice
 
         .EXAMPLE
-            Get-DbaBackupDevice -SqlInstance localhost
+            PS C:\> Get-DbaBackupDevice -SqlInstance localhost
 
             Returns all Backup Devices on the local default SQL Server instance
 
         .EXAMPLE
-            Get-DbaBackupDevice -SqlInstance localhost, sql2016
+            PS C:\> Get-DbaBackupDevice -SqlInstance localhost, sql2016
 
             Returns all Backup Devices for the local and sql2016 SQL Server instances
     #>

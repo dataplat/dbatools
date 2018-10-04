@@ -55,24 +55,24 @@ function Copy-DbaCentralManagementServer {
             https://dbatools.io/Copy-DbaCentralManagementServer
 
         .EXAMPLE
-            Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster
 
-            All groups, subgroups, and server instances are copied from sqlserver's Central Management Server to sqlcluster's Central Management Server.
+            All groups, subgroups, and server instances are copied from sqlserver2014a CMS to sqlcluster CMS.
 
         .EXAMPLE
-            Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3
+            PS C:\> Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3
 
             Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster.
 
         .EXAMPLE
-            Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
+            PS C:\> Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
 
             Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver".
 
             If SwitchServerName is not specified, "sqlcluster" will be skipped.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
@@ -97,7 +97,7 @@ function Copy-DbaCentralManagementServer {
                 $currentServerGroup = $destinationGroup
                 $groupName = $sourceGroup.Name
                 $destinationGroup = $destinationGroup.ServerGroups[$groupName]
-                
+
                 $copyDestinationGroupStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -107,9 +107,9 @@ function Copy-DbaCentralManagementServer {
                     Notes        = $null
                     DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
-                
+
                 if ($null -ne $destinationGroup) {
-                    
+
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if $groupName exists")) {
                             $copyDestinationGroupStatus.Status = "Skipped"
@@ -127,27 +127,27 @@ function Copy-DbaCentralManagementServer {
                         catch {
                             $copyDestinationGroupStatus.Status = "Failed"
                             $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             Stop-Function -Message "Issue dropping group" -Target $groupName -ErrorRecord $_ -Continue
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating group $groupName")) {
                     Write-Message -Level Verbose -Message "Creating group $($sourceGroup.Name)"
                     $destinationGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($currentServerGroup, $sourceGroup.Name)
                     $destinationGroup.Create()
-                    
+
                     $copyDestinationGroupStatus.Status = "Successful"
                     $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
             }
-            
+
             # Add Servers
             foreach ($instance in $sourceGroup.RegisteredServers) {
                 $instanceName = $instance.Name
                 $serverName = $instance.ServerName
-                
+
                 $copyInstanceStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -157,7 +157,7 @@ function Copy-DbaCentralManagementServer {
                     Notes        = $null
                     DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
-                
+
                 if ($serverName.ToLower() -eq $toCmStore.DomainInstanceName.ToLower()) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if server is the CMS equals current server name")) {
                         if ($SwitchServerName) {
@@ -168,26 +168,26 @@ function Copy-DbaCentralManagementServer {
                         else {
                             $copyInstanceStatus.Status = "Skipped"
                             $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             Write-Message -Level Verbose -Message "$serverName is Central Management Server. Add prohibited. Skipping."
                             continue
                         }
                     }
                 }
-                
+
                 if ($destinationGroup.RegisteredServers.Name -contains $instanceName) {
-                    
+
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if $instanceName in $groupName exists")) {
                             $copyInstanceStatus.Status = "Skipped"
                             $copyInstanceStatus.Notes = "Already exists"
                             $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             Write-Message -Level Verbose -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
                         }
                         continue
                     }
-                    
+
                     if ($Pscmdlet.ShouldProcess($destinstance, "Dropping instance $instanceName from $groupName and recreating")) {
                         try {
                             Write-Message -Level Verbose -Message "Dropping instance $instance from $groupName"
@@ -196,25 +196,25 @@ function Copy-DbaCentralManagementServer {
                         catch {
                             $copyInstanceStatus.Status = "Failed"
                             $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             Stop-Function -Message "Issue dropping instance from group" -Target $instanceName -ErrorRecord $_ -Continue
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Copying $instanceName")) {
                     $newServer = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($destinationGroup, $instanceName)
                     $newServer.ServerName = $serverName
                     $newServer.Description = $instance.Description
-                    
+
                     if ($serverName -ne $fromCmStore.DomainInstanceName) {
                         $newServer.SecureConnectionString = $instance.SecureConnectionString.ToString()
                         $newServer.ConnectionString = $instance.ConnectionString.ToString()
                     }
-                    
+
                     try {
                         $newServer.Create()
-                        
+
                         $copyInstanceStatus.Status = "Successful"
                         $copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
@@ -231,12 +231,12 @@ function Copy-DbaCentralManagementServer {
                     Write-Message -Level Verbose -Message "Added Server $serverName as $instanceName to $($destinationGroup.Name)"
                 }
             }
-            
+
             # Add Groups
             foreach ($fromSubGroup in $sourceGroup.ServerGroups) {
                 $fromSubGroupName = $fromSubGroup.Name
                 $toSubGroup = $destinationGroup.ServerGroups[$fromSubGroupName]
-                
+
                 $copyGroupStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -246,19 +246,19 @@ function Copy-DbaCentralManagementServer {
                     Notes        = $null
                     DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
-                
+
                 if ($null -ne $toSubGroup) {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Checking to see if subgroup $fromSubGroupName exists")) {
                             $copyGroupStatus.Status = "Skipped"
                             $copyGroupStatus.Notes = "Already exists"
                             $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             Write-Message -Level Verbose -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
                         }
                         continue
                     }
-                    
+
                     if ($Pscmdlet.ShouldProcess($destinstance, "Dropping subgroup $fromSubGroupName recreating")) {
                         try {
                             Write-Message -Level Verbose -Message "Dropping subgroup $fromSubGroupName"
@@ -267,25 +267,25 @@ function Copy-DbaCentralManagementServer {
                         catch {
                             $copyGroupStatus.Status = "Failed"
                             $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             Stop-Function -Message "Issue dropping subgroup" -Target $toSubGroup -ErrorRecord $_ -Continue
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating group $($fromSubGroup.Name)")) {
                     Write-Message -Level Verbose -Message "Creating group $($fromSubGroup.Name)"
                     $toSubGroup = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($destinationGroup, $fromSubGroup.Name)
                     $toSubGroup.create()
-                    
+
                     $copyGroupStatus.Status = "Successful"
                     $copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
-                
+
                 Invoke-ParseServerGroup -sourceGroup $fromSubGroup -destinationgroup $toSubGroup -SwitchServerName $SwitchServerName
             }
         }
-        
+
         try {
             Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
@@ -296,7 +296,7 @@ function Copy-DbaCentralManagementServer {
             return
         }
     }
-    
+
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
@@ -308,7 +308,7 @@ function Copy-DbaCentralManagementServer {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $toCmStore = Get-DbaCmsRegServerStore -SqlInstance $destServer
-            
+
             $stores = $fromCmStore.DatabaseEngineServerGroup
             if ($CMSGroup) {
                 $stores = @();
@@ -316,7 +316,7 @@ function Copy-DbaCentralManagementServer {
                     $stores += $fromCmStore.DatabaseEngineServerGroup.ServerGroups[$groupName]
                 }
             }
-            
+
             foreach ($store in $stores) {
                 Invoke-ParseServerGroup -sourceGroup $store -destinationgroup $toCmStore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
             }

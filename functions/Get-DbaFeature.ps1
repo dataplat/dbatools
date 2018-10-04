@@ -59,7 +59,7 @@ function Get-DbaFeature {
             Gets all SQL Server features for all instances on sql2017 using the ad\sqladmin credential (which has access to the Windows Server).
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,

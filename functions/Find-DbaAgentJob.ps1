@@ -64,52 +64,52 @@ function Find-DbaAgentJob {
             https://dbatools.io/Find-DbaAgentJob
 
         .EXAMPLE
-            Find-DbaAgentJob -SqlInstance Dev01 -JobName *backup*
+            PS C:\> Find-DbaAgentJob -SqlInstance Dev01 -JobName *backup*
 
             Returns all agent job(s) that have backup in the name
 
         .EXAMPLE
-            Find-DbaAgentJob -SqlInstance Dev01, Dev02 -JobName Mybackup
+            PS C:\> Find-DbaAgentJob -SqlInstance Dev01, Dev02 -JobName Mybackup
 
             Returns all agent job(s) that are named exactly Mybackup
 
         .EXAMPLE
-            Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10
+            PS C:\> Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10
 
             Returns all agent job(s) that have not ran in 10 days
 
         .EXAMPLE
-            Find-DbaAgentJob -SqlInstance Dev01 -IsDisabled -IsNoEmailNotification -IsNotScheduled
+            PS C:\> Find-DbaAgentJob -SqlInstance Dev01 -IsDisabled -IsNoEmailNotification -IsNotScheduled
 
             Returns all agent job(s) that are either disabled, have no email notification or don't have a schedule. returned with detail
 
         .EXAMPLE
-            $servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob
+            PS C:\> $servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob
 
             Finds all failed job then starts them. Consider using a -WhatIf at the end of Start-DbaAgentJob to see what it'll do first
 
         .EXAMPLE
-            Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 -Exclude "Yearly - RollUp Workload", "SMS - Notification"
+            PS C:\> Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 -Exclude "Yearly - RollUp Workload", "SMS - Notification"
 
-            Returns all agent jobs that havent ran in the last 10 days ignoring jobs "Yearly - RollUp Workload" and "SMS - Notification"
+            Returns all agent jobs that have not ran in the last 10 days ignoring jobs "Yearly - RollUp Workload" and "SMS - Notification"
 
         .EXAMPLE
-            Find-DbaAgentJob -SqlInstance Dev01 -Category "REPL-Distribution", "REPL-Snapshot" -Detailed | Format-Table -AutoSize -Wrap
+            PS C:\> Find-DbaAgentJob -SqlInstance Dev01 -Category "REPL-Distribution", "REPL-Snapshot" -Detailed | Format-Table -AutoSize -Wrap
 
             Returns all job/s on Dev01 that are in either category "REPL-Distribution" or "REPL-Snapshot" with detailed output
 
         .EXAMPLE
-            Find-DbaAgentJob -SqlInstance Dev01, Dev02 -IsFailed -Since '2016-07-01 10:47:00'
+            PS C:\> Find-DbaAgentJob -SqlInstance Dev01, Dev02 -IsFailed -Since '2016-07-01 10:47:00'
 
             Returns all agent job(s) on Dev01 and Dev02 that have failed since July of 2016 (and still have history in msdb)
 
         .EXAMPLE
-            Get-DbaCmsRegServer -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -IsNotScheduled | Format-Table -AutoSize -Wrap
+            PS C:\> Get-DbaCmsRegServer -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -IsNotScheduled | Format-Table -AutoSize -Wrap
 
             Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
