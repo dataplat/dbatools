@@ -30,12 +30,12 @@ function Get-DbaDbMirror {
             https://dbatools.io/Get-DbaDbMirror
 
         .EXAMPLE
-            Get-DbaDbMirror -SqlInstance localhost
+            PS C:\> Get-DbaDbMirror -SqlInstance localhost
 
             Returns all Endpoint(s) on the local default SQL Server instance
 
         .EXAMPLE
-            Get-DbaDbMirror -SqlInstance localhost, sql2016
+            PS C:\> Get-DbaDbMirror -SqlInstance localhost, sql2016
 
             Returns all Endpoint(s) for the local and sql2016 SQL Server instances
     #>

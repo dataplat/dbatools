@@ -52,7 +52,7 @@ function Invoke-DbaDbMirrorValidation {
             https://dbatools.io/Invoke-DbaDbMirrorValidation
 
         .EXAMPLE
-            $params = @{
+            PS C:\> $params = @{
                     Primary = 'sql2017a'
                     Mirror = 'sql2017b'
                     MirrorSqlCredential = 'sqladmin'
@@ -61,7 +61,9 @@ function Invoke-DbaDbMirrorValidation {
                     NetworkShare = '\\nas\sql\share'
                 }
             
-            Invoke-DbaDbMirrorValidation @params
+            PS C:\> Invoke-DbaDbMirrorValidation @params
+    
+            Do things
         
     #>
     [CmdletBinding()]

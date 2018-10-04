@@ -42,12 +42,12 @@ function Remove-DbaDbMirror {
             https://dbatools.io/Set-DbaDbMirror
 
         .EXAMPLE
-            Set-DbaDbMirror -SqlInstance localhost
+            PS C:\> Set-DbaDbMirror -SqlInstance localhost
 
             Returns all Endpoint(s) on the local default SQL Server instance
 
         .EXAMPLE
-            Set-DbaDbMirror -SqlInstance localhost, sql2016
+            PS C:\> Set-DbaDbMirror -SqlInstance localhost, sql2016
 
             Returns all Endpoint(s) for the local and sql2016 SQL Server instances
     #>

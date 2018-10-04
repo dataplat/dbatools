@@ -60,7 +60,7 @@ function Invoke-DbaDbMirroring {
             https://dbatools.io/Invoke-DbaDbMirroring
 
         .EXAMPLE
-            $params = @{
+            PS C:\> $params = @{
                     Primary = 'sql2017a'
                     Mirror = 'sql2017b'
                     MirrorSqlCredential = 'sqladmin'
@@ -69,7 +69,9 @@ function Invoke-DbaDbMirroring {
                     NetworkShare = '\\nas\sql\share'
                 }
     
-            Invoke-DbaDbMirroring @params
+            PS C:\> Invoke-DbaDbMirroring @params
+    
+            Do that
         
     #>
     [CmdletBinding()]

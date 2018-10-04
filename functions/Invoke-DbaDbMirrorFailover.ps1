@@ -40,7 +40,7 @@ function Invoke-DbaDbMirrorFailover {
             https://dbatools.io/Invoke-DbaDbMirrorFailover
 
         .EXAMPLE
-            $params = @{
+            PS C:\> $params = @{
                     Primary = 'sql2017a'
                     Mirror = 'sql2017b'
                     MirrorSqlCredential = 'sqladmin'
@@ -49,7 +49,9 @@ function Invoke-DbaDbMirrorFailover {
                     NetworkShare = '\\nas\sql\share'
                 }
     
-            Invoke-DbaDbMirrorFailover @params
+            PS C:\> Invoke-DbaDbMirrorFailover @params
+    
+            Failover to stuff
         
     #>
     [CmdletBinding()]
