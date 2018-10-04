@@ -139,7 +139,7 @@ function Set-DbaLogin {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Login,
-        [SecureString]$Password,
+        [object]$Password,
         [switch]$Unlock,
         [switch]$MustChange,
         [string]$NewName,
@@ -179,8 +179,10 @@ function Set-DbaLogin {
                 "PSCredential" { $newPassword = $Password.Password }
                 "SecureString" { $newPassword = $Password }
             }
-        }
-        else {
+
+            if ($Password.GetType().Name -notin @('PSCredential', 'SecureString')) {
+                Stop-Function -Message "Password must be a PSCredential or SecureString" -Target $Login
+            }
         }
 
         if ((Test-Bound -ParameterName SqlInstance) -And (Test-Bound -ParameterName Login -Not)) {
@@ -211,6 +213,8 @@ function Set-DbaLogin {
 
             # Change the name
             if ($NewName) {
+                $allLogins = Get-DbaLogin -SqlInstance $server
+
                 # Check if the new name doesn't already exist
                 if ($allLogins.Name -notcontains $NewName) {
                     try {
@@ -334,7 +338,7 @@ function Set-DbaLogin {
             $l.Alter()
 
             # Retrieve the server roles for the login
-            $roles = Get-DbaRoleMember -SqlInstance $server -IncludeServerLevel | Where-Object { $null -eq $_.Database -and $_.Member -eq $l.Name }
+            $roles = Get-DbaRoleMember -SqlInstance $server -Database 'master' -IncludeServerLevel | Where-Object { $null -eq $_.Database -and $_.Member -eq $l.Name }
 
             # Check if there were any notes to include in the results
             if ($notes) {
