@@ -26,7 +26,7 @@ function Get-DbaDbMirrorMonitor {
             However, if the status table has been updated within the previous 15 seconds, or the user is not a member of the sysadmin fixed server role, the command runs without updating the status.
 
     .PARAMETER LimitResults
-            Limit results. Defaults to last day.
+            Limit results. Defaults to last two hours.
 
             Options include:
             LastRow
@@ -71,7 +71,7 @@ function Get-DbaDbMirrorMonitor {
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$Update,
         [ValidateSet('LastRow', 'LastTwoHours', 'LastFourHours', 'LastEightHours', 'LastDay', 'LastTwoDays', 'Last100Rows', 'Last500Rows', 'Last1000Rows', 'Last1000000Rows')]
-        [string]$LimitResults = 'LastDay',
+        [string]$LimitResults = 'LastTwoHours',
         [switch]$EnableException
     )
     begin {
@@ -86,17 +86,23 @@ function Get-DbaDbMirrorMonitor {
             'Last500Rows' { 7 }
             'Last1000000Rows' { 8 }
         }
+        $updatebool = switch ($Update) {
+            $false { 0 }
+            $true { 1 }
+        }
     }
     process {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
         }
-
+        
         foreach ($db in $InputObject) {
+            if (-not ($db.Parent.Databases['msdb'].Tables['dbm_monitor_data'].Name)) {
+                Stop-Function -Continue -Message "mdbo.dbo.dbm_monitor_data not found. Please run Add-DbaDbMirrorMonitor then you can get monitor stats."
+            }
             try {
-                $dbname = $db.Name
-                $sql = "msdb.dbo.sp_dbmmonitorresults ($dbname, $rows, $update)"
-                $db.Query($sql)
+                $sql = "msdb.dbo.sp_dbmmonitorresults $db, $rows, $updatebool"
+                $db.Parent.Query($sql)
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_
