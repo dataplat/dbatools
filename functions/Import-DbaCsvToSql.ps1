@@ -176,7 +176,7 @@ function Import-DbaCsvToSql {
             Imports the entire comma-delimited housing.csv located in the directory R:\To Import on FileServer using the administrative share to the SQL "markets" database on a SQL Server named sql001.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
+    param (
         [string[]]$Csv,
         [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]

@@ -31,15 +31,14 @@ function Copy-DbaXESessionTemplate {
             https://dbatools.io/Copy-DbaXESessionTemplate
 
         .EXAMPLE
-            Copy-DbaXESessionTemplate
+            PS C:\> Copy-DbaXESessionTemplate
 
             Copies non-Microsoft templates from the dbatools template repository (\bin\xetemplates\) to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
 
         .EXAMPLE
-            Copy-DbaXESessionTemplate -Path C:\temp\xetemplates
+            PS C:\> Copy-DbaXESessionTemplate -Path C:\temp\xetemplates
 
             Copies your templates from C:\temp\xetemplates to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates.
-
     #>
     [CmdletBinding()]
     param (

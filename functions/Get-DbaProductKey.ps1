@@ -37,12 +37,12 @@ function Get-DbaProductKey {
             https://dbatools.io/Get-DbaProductKey
 
         .EXAMPLE
-            Get-DbaProductKey -SqlInstance winxp, sqlservera, sqlserver2014a, win2k8
-            Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
+            PS C:\> Get-DbaProductKey -SqlInstance winxp, sqlservera, sqlserver2014a, win2k8
 
-#>
+            Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
+    #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer", "SqlInstances")]
         [DbaInstanceParameter[]]$SqlInstance,

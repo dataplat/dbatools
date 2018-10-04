@@ -49,6 +49,7 @@ function Get-DbaPfDataCollectorCounterSample {
         .NOTES
             Tags: Performance, DataCollector, PerfCounter
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -57,32 +58,32 @@ function Get-DbaPfDataCollectorCounterSample {
             https://dbatools.io/Get-DbaPfDataCollectorCounterSample
 
         .EXAMPLE
-            Get-DbaPfDataCollectorCounterSample
+            PS C:\> Get-DbaPfDataCollectorCounterSample
 
             Gets a single sample for all counters for all Collector Sets on localhost.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorCounterSample -Counter '\Processor(_Total)\% Processor Time'
+            PS C:\> Get-DbaPfDataCollectorCounterSample -Counter '\Processor(_Total)\% Processor Time'
 
             Gets a single sample for all counters for all Collector Sets on localhost.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorCounter -ComputerName sql2017, sql2016 | Out-GridView -PassThru | Get-DbaPfDataCollectorCounterSample -MaxSamples 10
+            PS C:\> Get-DbaPfDataCollectorCounter -ComputerName sql2017, sql2016 | Out-GridView -PassThru | Get-DbaPfDataCollectorCounterSample -MaxSamples 10
 
             Gets 10 samples for all counters for all Collector Sets for servers sql2016 and sql2017.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorCounterSample -ComputerName sql2017
+            PS C:\> Get-DbaPfDataCollectorCounterSample -ComputerName sql2017
 
             Gets a single sample for all counters for all Collector Sets on sql2017.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorCounterSample -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+            PS C:\> Get-DbaPfDataCollectorCounterSample -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
 
             Gets a single sample for all counters for the 'System Correlation' CollectorSet on sql2017 and sql2016 using alternative credentials.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorCounterSample -CollectorSet 'System Correlation'
+            PS C:\> Get-DbaPfDataCollectorCounterSample -CollectorSet 'System Correlation'
 
             Gets a single sample for all counters for the 'System Correlation' CollectorSet.
     #>
@@ -104,58 +105,58 @@ function Get-DbaPfDataCollectorCounterSample {
         [switch]$EnableException
     )
     process {
-        
+
         if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
             $Credential = $InputObject.Credential
         }
-        
+
         if ($InputObject.Counter -and (Test-Bound -ParameterName Counter -Not)) {
             $Counter = $InputObject.Counter
         }
-        
+
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
                 $InputObject += Get-DbaPfDataCollectorCounter -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet -Collector $Collector
             }
         }
-        
+
         if ($InputObject) {
             if (-not $InputObject.CounterObject) {
                 Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorCounter."
                 return
             }
         }
-        
+
         foreach ($counterobject in $InputObject) {
             if ((Test-Bound -ParameterName Counter) -and ($Counter -notcontains $counterobject.Name)) { continue }
             $params = @{
                 Counter = $counterobject.Name
             }
-            
+
             if (-not ([dbainstance]$counterobject.ComputerName).IsLocalHost) {
                 $params.Add("ComputerName", $counterobject.ComputerName)
             }
-            
+
             if ($Credential) {
                 $params.Add("Credential", $Credential)
             }
-            
+
             if ($Continuous) {
                 $params.Add("Continuous", $Continuous)
             }
-            
+
             if ($ListSet) {
                 $params.Add("ListSet", $ListSet)
             }
-            
+
             if ($MaxSamples) {
                 $params.Add("MaxSamples", $MaxSamples)
             }
-            
+
             if ($SampleInterval) {
                 $params.Add("SampleInterval", $SampleInterval)
             }
-            
+
             if ($Continuous) {
                 Get-Counter @params
             }
@@ -166,7 +167,7 @@ function Get-DbaPfDataCollectorCounterSample {
                 catch {
                     Stop-Function -Message "Failure for $($counterobject.Name) on $($counterobject.ComputerName)." -ErrorRecord $_ -Continue
                 }
-                
+
                 foreach ($pscounter in $pscounters) {
                     foreach ($sample in $pscounter.CounterSamples) {
                         [pscustomobject]@{

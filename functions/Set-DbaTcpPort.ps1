@@ -60,7 +60,7 @@ function Set-DbaTcpPort {
             Sets the port number 1337 for all IP Addresses on SqlInstance SQLDB2014A and SQLDB2016B
     #>
     [CmdletBinding(ConfirmImpact = "High")]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

@@ -58,7 +58,7 @@ function Test-DbaRepLatency {
     Return replication latency for the TestDB_Pub publication for the TestDB database located on the server sql2008.
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]] $SqlInstance, #Publisher
         [object[]]$Database,

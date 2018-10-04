@@ -30,8 +30,8 @@ function Get-DbaCmsRegServerGroup {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Author: Tony Wilhelm (@tonywsql)
             Tags: RegisteredServer, CMS
+            Author: Tony Wilhelm (@tonywsql)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -41,22 +41,22 @@ function Get-DbaCmsRegServerGroup {
             https://dbatools.io/Get-DbaCmsRegServerGroup
 
         .EXAMPLE
-            Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a
+            PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a
 
             Gets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.
 
         .EXAMPLE
-            Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential
+            PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential
 
             Gets the top level groups from the CMS on sqlserver2014a, using alternative credentials to authenticate to the server.
 
         .EXAMPLE
-            Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting
+            PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting
 
             Gets the HR and Accounting groups from the CMS on sqlserver2014a.
 
         .EXAMPLE
-            Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR\Development
+            PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR\Development
 
             Returns the sub-group Development of the HR group from the CMS on sqlserver2014a.
     #>
@@ -89,11 +89,11 @@ function Get-DbaCmsRegServerGroup {
                     if ($currentgroup -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                         $currentgroup = Get-RegServerGroupReverseParse -object $currentgroup
                     }
-                    
+
                     if ($currentgroup -match 'DatabaseEngineServerGroup\\') {
                         $currentgroup = $currentgroup.Replace('DatabaseEngineServerGroup\', '')
                     }
-                    
+
                     if ($currentgroup -match '\\') {
                         $split = $currentgroup.Split('\\')
                         $i = 0

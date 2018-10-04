@@ -18,7 +18,7 @@ function Export-DbaRepServerSetting {
 
         .PARAMETER Passthru
             Output script to console
-        
+
         .PARAMETER NoClobber
             Do not overwrite file
 
@@ -37,7 +37,7 @@ function Export-DbaRepServerSetting {
 
         .PARAMETER Append
             Append to file
-    
+
         .PARAMETER ScriptOption
             Not real sure how to use this yet
 
@@ -51,18 +51,19 @@ function Export-DbaRepServerSetting {
 
         .NOTES
             Tags: Replication
-            Website: https://dbatools.io
             Author: Chrissy LeMaire (@cl), netnerds.net
+
+            Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
-            Export-DbaRepServerSetting -SqlInstance sql2017 -Path C:\temp\replication.sql
+            PS C:\> Export-DbaRepServerSetting -SqlInstance sql2017 -Path C:\temp\replication.sql
 
             Exports the replication settings on sql2017 to the file C:\temp\replication.sql
 
         .EXAMPLE
-            Get-DbaRepServer -SqlInstance sql2017 | Export-DbaRepServerSettings -Path C:\temp\replication.sql
+            PS C:\> Get-DbaRepServer -SqlInstance sql2017 | Export-DbaRepServerSettings -Path C:\temp\replication.sql
 
             Exports the replication settings on sql2017 to the file C:\temp\replication.sql
     #>
@@ -86,7 +87,7 @@ function Export-DbaRepServerSetting {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaRepServer -SqlInstance $instance -SqlCredential $sqlcredential
         }
-        
+
         foreach ($repserver in $InputObject) {
             $server = $repserver.SqlServerName
             if (-not (Test-Bound -ParameterName Path)) {
@@ -113,9 +114,9 @@ function Export-DbaRepServerSetting {
                 "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-String
                 $out | Out-String
             }
-            
+
             if ($Path) {
-                
+
                 "exec sp_dropdistributor @no_checks = 1, @ignore_distributor = 1" | Out-File -FilePath $path -Encoding $encoding -Append
                 $out | Out-File -FilePath $path -Encoding $encoding -Append
             }

@@ -30,12 +30,12 @@ function Export-DbaXECsv {
             https://dbatools.io/Export-DbaXECsv
 
         .EXAMPLE
-            Get-ChildItem -Path C:\temp\sample.xel | Export-DbaXECsv -Path c:\temp\sample.csv
+            PS C:\> Get-ChildItem -Path C:\temp\sample.xel | Export-DbaXECsv -Path c:\temp\sample.csv
 
             Writes Extended Events data to the file "C:\temp\events.csv".
 
          .EXAMPLE
-            Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Export-DbaXECsv -Path c:\temp\events.csv
+            PS C:\> Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Export-DbaXECsv -Path c:\temp\events.csv
 
             Writes Extended Events data to the file "C:\temp\events.csv".
     #>

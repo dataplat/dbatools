@@ -30,7 +30,7 @@ function Enable-DbaAgHadr {
 
         .NOTES
             Tags: Hadr, AG, AvailabilityGroup
-            Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
+            Author: Shawn Melton (@wsmelton | http://wsmelton.github.io)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -40,12 +40,12 @@ function Enable-DbaAgHadr {
             https://dbatools.io/Enable-DbaAgHadr
 
         .EXAMPLE
-            Enable-DbaAgHadr -SqlInstance sql2016 -Force
+            PS C:\> Enable-DbaAgHadr -SqlInstance sql2016 -Force
 
             Sets Hadr service to enabled for the instance sql2016, and restart the service to apply the change.
 
         .EXAMPLE
-            Enable-DbaAgHadr -SqlInstance sql2012\dev1 -Force
+            PS C:\> Enable-DbaAgHadr -SqlInstance sql2012\dev1 -Force
 
             Sets Hadr service to disabled for the instance dev1 on sq2012, and restart the service to apply the change.
     #>
@@ -81,7 +81,7 @@ function Enable-DbaAgHadr {
 
         .NOTES
             Tags: Hadr, AG, AvailabilityGroup
-            Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
+            Author: Shawn Melton (@wsmelton | http://wsmelton.github.io)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

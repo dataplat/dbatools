@@ -20,7 +20,7 @@ function Find-DbaTrigger {
             The database(s) to exclude - this list is auto-populated from the server
 
         .PARAMETER Pattern
-            String pattern that you want to search for in the trigger textbody
+            String pattern that you want to search for in the trigger text body
 
         .PARAMETER TriggerLevel
             Allows specify the trigger level that you want to search. By default is All (Server, Database, Object).
@@ -40,7 +40,7 @@ function Find-DbaTrigger {
 
         .NOTES
             Tags: Trigger
-            Author: Cláudio Silva, @ClaudioESSilva
+            Author: Cláudio Silva (@ClaudioESSilva)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -50,27 +50,27 @@ function Find-DbaTrigger {
             https://dbatools.io/Find-DbaTrigger
 
         .EXAMPLE
-            Find-DbaTrigger -SqlInstance DEV01 -Pattern whatever
+            PS C:\> Find-DbaTrigger -SqlInstance DEV01 -Pattern whatever
 
-            Searches all user databases triggers for "whatever" in the textbody
-
-        .EXAMPLE
-            Find-DbaTrigger -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
-
-            Searches all databases for all triggers that contain a valid email pattern in the textbody
+            Searches all user databases triggers for "whatever" in the text body
 
         .EXAMPLE
-            Find-DbaTrigger -SqlInstance DEV01 -Database MyDB -Pattern 'some string' -Verbose
+            PS C:\> Find-DbaTrigger -SqlInstance sql2016 -Pattern '\w+@\w+\.\w+'
 
-            Searches in "mydb" database triggers for "some string" in the textbody
+            Searches all databases for all triggers that contain a valid email pattern in the text body
 
         .EXAMPLE
-            Find-DbaTrigger -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects
+            PS C:\> Find-DbaTrigger -SqlInstance DEV01 -Database MyDB -Pattern 'some string' -Verbose
 
-            Searches in "mydb" database triggers for "runtime" in the textbody
+            Searches in "mydb" database triggers for "some string" in the text body
+
+        .EXAMPLE
+            PS C:\> Find-DbaTrigger -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects
+
+            Searches in "mydb" database triggers for "runtime" in the text body
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,

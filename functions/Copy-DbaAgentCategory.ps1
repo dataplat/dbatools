@@ -66,17 +66,17 @@ function Copy-DbaAgentCategory {
             https://dbatools.io/Copy-DbaAgentCategory
 
         .EXAMPLE
-            Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster
 
             Copies all operator categories from sqlserver2014a to sqlcluster using Windows authentication. If operator categories with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force
+            PS C:\> Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force
 
             Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials for sqlcluster. If a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
         .EXAMPLE
-            Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            PS C:\> Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
     #>
@@ -98,7 +98,7 @@ function Copy-DbaAgentCategory {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     begin {
         function Copy-JobCategory {
             <#
@@ -113,15 +113,15 @@ function Copy-DbaAgentCategory {
             param (
                 [string[]]$jobCategories
             )
-            
+
             process {
-                
+
                 $serverJobCategories = $sourceServer.JobServer.JobCategories | Where-Object ID -ge 100
                 $destJobCategories = $destServer.JobServer.JobCategories | Where-Object ID -ge 100
-                
+
                 foreach ($jobCategory in $serverJobCategories) {
                     $categoryName = $jobCategory.Name
-                    
+
                     $copyJobCategoryStatus = [pscustomobject]@{
                         SourceServer = $sourceServer.Name
                         DestinationServer = $destServer.Name
@@ -131,11 +131,11 @@ function Copy-DbaAgentCategory {
                         Notes        = $null
                         DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
-                    
+
                     if ($jobCategories.Count -gt 0 -and $jobCategories -notcontains $categoryName) {
                         continue
                     }
-                    
+
                     if ($destJobCategories.Name -contains $jobCategory.name) {
                         if ($force -eq $false) {
                             $copyJobCategoryStatus.Status = "Skipped"
@@ -158,14 +158,14 @@ function Copy-DbaAgentCategory {
                             }
                         }
                     }
-                    
+
                     if ($Pscmdlet.ShouldProcess($destinstance, "Creating Job category $categoryName")) {
                         try {
                             Write-Message -Level Verbose -Message "Copying Job category $categoryName"
                             $sql = $jobCategory.Script() | Out-String
                             Write-Message -Level Debug -Message "SQL Statement: $sql"
                             $destServer.Query($sql)
-                            
+
                             $copyJobCategoryStatus.Status = "Successful"
                             $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
@@ -178,7 +178,7 @@ function Copy-DbaAgentCategory {
                 }
             }
         }
-        
+
         function Copy-OperatorCategory {
             <#
                 .SYNOPSIS
@@ -196,10 +196,10 @@ function Copy-DbaAgentCategory {
             process {
                 $serverOperatorCategories = $sourceServer.JobServer.OperatorCategories | Where-Object ID -ge 100
                 $destOperatorCategories = $destServer.JobServer.OperatorCategories | Where-Object ID -ge 100
-                
+
                 foreach ($operatorCategory in $serverOperatorCategories) {
                     $categoryName = $operatorCategory.Name
-                    
+
                     $copyOperatorCategoryStatus = [pscustomobject]@{
                         SourceServer = $sourceServer.Name
                         DestinationServer = $destServer.Name
@@ -209,11 +209,11 @@ function Copy-DbaAgentCategory {
                         Notes        = $null
                         DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
-                    
+
                     if ($operatorCategories.Count -gt 0 -and $operatorCategories -notcontains $categoryName) {
                         continue
                     }
-                    
+
                     if ($destOperatorCategories.Name -contains $operatorCategory.Name) {
                         if ($force -eq $false) {
                             $copyOperatorCategoryStatus.Status = "Skipped"
@@ -247,7 +247,7 @@ function Copy-DbaAgentCategory {
                                 $sql = $operatorCategory.Script() | Out-String
                                 Write-Message -Level Debug -Message $sql
                                 $destServer.Query($sql)
-                                
+
                                 $copyOperatorCategoryStatus.Status = "Successful"
                                 $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             }
@@ -261,7 +261,7 @@ function Copy-DbaAgentCategory {
                 }
             }
         }
-        
+
         function Copy-AlertCategory {
             <#
                 .SYNOPSIS
@@ -276,18 +276,18 @@ function Copy-DbaAgentCategory {
             param (
                 [string[]]$AlertCategories
             )
-            
+
             process {
                 if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
                     throw "Server AlertCategories are only supported in SQL Server 2005 and above. Quitting."
                 }
-                
+
                 $serverAlertCategories = $sourceServer.JobServer.AlertCategories | Where-Object ID -ge 100
                 $destAlertCategories = $destServer.JobServer.AlertCategories | Where-Object ID -ge 100
-                
+
                 foreach ($alertCategory in $serverAlertCategories) {
                     $categoryName = $alertCategory.Name
-                    
+
                     $copyAlertCategoryStatus = [pscustomobject]@{
                         SourceServer = $sourceServer.Name
                         DestinationServer = $destServer.Name
@@ -297,11 +297,11 @@ function Copy-DbaAgentCategory {
                         Notes        = $null
                         DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
-                    
+
                     if ($alertCategories.Length -gt 0 -and $alertCategories -notcontains $categoryName) {
                         continue
                     }
-                    
+
                     if ($destAlertCategories.Name -contains $alertCategory.name) {
                         if ($force -eq $false) {
                             $copyAlertCategoryStatus.Status = "Skipped"
@@ -335,7 +335,7 @@ function Copy-DbaAgentCategory {
                                 $sql = $alertCategory.Script() | Out-String
                                 Write-Message -Level Debug -Message $sql
                                 $destServer.Query($sql)
-                                
+
                                 $copyAlertCategoryStatus.Status = "Successful"
                                 $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             }
@@ -349,7 +349,7 @@ function Copy-DbaAgentCategory {
                 }
             }
         }
-        
+
         try {
             Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
@@ -369,35 +369,35 @@ function Copy-DbaAgentCategory {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             if ($CategoryType.count -gt 0) {
-                
+
                 switch ($CategoryType) {
                     "Job" {
                         Copy-JobCategory
                     }
-                    
+
                     "Alert" {
                         Copy-AlertCategory
                     }
-                    
+
                     "Operator" {
                         Copy-OperatorCategory
                     }
                 }
                 continue
             }
-            
+
             if (($OperatorCategory.Count + $AlertCategory.Count + $jobCategory.Count) -gt 0) {
-                
+
                 if ($OperatorCategory.Count -gt 0) {
                     Copy-OperatorCategory -OperatorCategories $OperatorCategory
                 }
-                
+
                 if ($AlertCategory.Count -gt 0) {
                     Copy-AlertCategory -AlertCategories $AlertCategory
                 }
-                
+
                 if ($jobCategory.Count -gt 0) {
                     Copy-JobCategory -JobCategories $jobCategory
                 }

@@ -91,11 +91,10 @@ function Expand-DbaTLogResponsibly {
 
         .NOTES
             Tags: Storage, Backup
-            This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space
-
             Author: Claudio Silva (@ClaudioESSilva)
             Requires: ALTER DATABASE permission
             Limitations: Freespace cannot be validated on the directory where the log file resides in SQL Server 2005.
+            This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space
 
             Website: https://dbatools.io
             Copyright (C) 2016 Chrissy LeMaire
@@ -106,27 +105,27 @@ function Expand-DbaTLogResponsibly {
             https://dbatools.io/Expand-DbaTLogResponsibly
 
         .EXAMPLE
-            Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 50000
+            PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 50000
 
             Grows the transaction log for database db1 on sqlcluster to 50000 MB and calculates the increment size.
 
         .EXAMPLE
-            Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200
+            PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200
 
             Grows the transaction logs for databases db1 and db2 on sqlcluster to 1000MB and sets the growth increment to 200MB.
 
         .EXAMPLE
-            Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 10000 -LogFileId 9
+            PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 10000 -LogFileId 9
 
             Grows the transaction log file  with FileId 9 of the db1 database on sqlcluster instance to 10000MB.
 
         .EXAMPLE
-            Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database (Get-Content D:\DBs.txt) -TargetLogSizeMB 50000
+            PS C:\> Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database (Get-Content D:\DBs.txt) -TargetLogSizeMB 50000
 
             Grows the transaction log of the databases specified in the file 'D:\DBs.txt' on sqlcluster instance to 50000MB.
 
         .EXAMPLE
-            Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogSizeMB 100 -IncrementSizeMB 10 -ShrinkLogFile -ShrinkSizeMB 10 -BackupDirectory R:\MSSQL\Backup
+            PS C:\> Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogSizeMB 100 -IncrementSizeMB 10 -ShrinkLogFile -ShrinkSizeMB 10 -BackupDirectory R:\MSSQL\Backup
 
             Grows the transaction logs for databases db1 and db2 on SQL server SQLInstance to 100MB, sets the incremental growth to 10MB, shrinks the transaction log to 10MB and uses the directory R:\MSSQL\Backup for the required backups.
     #>

@@ -20,7 +20,7 @@
 
         .PARAMETER InputObject
             A collection of databases (such as returned by Get-DbaDatabase), to be tested.
-    
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -39,12 +39,12 @@
         .EXAMPLE
             Get-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Test-DbaDeprecatedFeature
             Check deprecated features on server sql2008 for only the testdb and db2 databases
- 
-    
+
+
         .EXAMPLE
             Get-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Test-DbaDeprecatedFeature | Select *
             See the object definition in the output as well
-    
+
         .EXAMPLE
             Test-DbaDeprecatedFeature -SqlInstance sql2008, sqlserver2012
             Check deprecated features for all databases on the servers sql2008 and sqlserver2012.
@@ -52,10 +52,10 @@
         .EXAMPLE
             Test-DbaDeprecatedFeature -SqlInstance sql2008 -Database TestDB
             Check deprecated features on server sql2008 for only the TestDB database
-    
+
         #>
     [CmdletBinding()]
-    Param (
+    param (
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -65,25 +65,25 @@
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     begin {
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
             SERVERPROPERTY('ServerName') AS SqlInstance, object_id as ID, Name, type_desc as Type, Object_Definition (object_id) as Definition FROM sys.all_objects
             Where Type = 'P' AND is_ms_shipped = 0"
     }
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
         foreach ($db in $InputObject) {
             Write-Message -Level Verbose -Message "Processing $db on $($db.Parent.Name)"
-            
+
             if ($db.IsAccessible -eq $false) {
                 Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue
             }
-            
+
             $deps = $db.Query("select instance_name as dep from sys.dm_os_performance_counters where object_name like '%Deprecated%'")
             try {
                 $results = $db.Query($sql)

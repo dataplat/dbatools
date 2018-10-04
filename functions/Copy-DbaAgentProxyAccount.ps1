@@ -22,10 +22,10 @@ function Copy-DbaAgentProxyAccount {
 
         .PARAMETER ProxyAccount
             Only migrate specific proxy accounts
-    
+
         .PARAMETER ExcludeProxyAccount
             Migrate all proxy accounts except the ones explicitly excluded
-    
+
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -53,17 +53,17 @@ function Copy-DbaAgentProxyAccount {
             https://dbatools.io/Copy-DbaAgentProxyAccount
 
         .EXAMPLE
-            Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster
 
             Copies all proxy accounts from sqlserver2014a to sqlcluster using Windows credentials. If proxy accounts with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster -ProxyAccount PSProxy -SourceSqlCredential $cred -Force
+            PS C:\> Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster -ProxyAccount PSProxy -SourceSqlCredential $cred -Force
 
             Copies only the PSProxy proxy account from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a proxy account with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
         .EXAMPLE
-            Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            PS C:\> Copy-DbaAgentProxyAccount -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
     #>
@@ -108,12 +108,12 @@ function Copy-DbaAgentProxyAccount {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             $destProxyAccounts = $destServer.JobServer.ProxyAccounts
-            
+
             foreach ($account in $serverProxyAccounts) {
                 $proxyName = $account.Name
-                
+
                 $copyAgentProxyAccountStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -123,30 +123,30 @@ function Copy-DbaAgentProxyAccount {
                     Notes        = $null
                     DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
-                
+
                 # Proxy accounts rely on Credential accounts
                 $credentialName = $account.CredentialName
                 $copyAgentProxyAccountStatus.Name = $credentialName
                 $copyAgentProxyAccountStatus.Type = "Credential"
-                
+
                 try {
                     $credentialtest = $destServer.Credentials[$CredentialName]
                 }
                 catch {
                     # don't care
                 }
-                
+
                 if ($null -eq $credentialtest) {
                     $copyAgentProxyAccountStatus.Status = "Skipped"
                     $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     Write-Message -Level Verbose -Message "Associated credential account, $CredentialName, does not exist on $destinstance. Skipping migration of $proxyName."
                     continue
                 }
-                
+
                 if ($destProxyAccounts.Name -contains $proxyName) {
                     $copyAgentProxyAccountStatus.Name = $proxyName
                     $copyAgentProxyAccountStatus.Type = "ProxyAccount"
-                    
+
                     if ($force -eq $false) {
                         $copyAgentProxyAccountStatus.Status = "Skipped"
                         $copyAgentProxyAccountStatus
@@ -168,17 +168,17 @@ function Copy-DbaAgentProxyAccount {
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating server proxy account $proxyName")) {
                     $copyAgentProxyAccountStatus.Name = $proxyName
                     $copyAgentProxyAccountStatus.Type = "ProxyAccount"
-                    
+
                     try {
                         Write-Message -Level Verbose -Message "Copying server proxy account $proxyName"
                         $sql = $account.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
-                        
+
                         # Will fixing this misspelled status cause problems downstream?
                         $copyAgentProxyAccountStatus.Status = "Successful"
                         $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -189,13 +189,13 @@ function Copy-DbaAgentProxyAccount {
                             $copyAgentProxyAccountStatus.Status = "Skipping"
                             $copyAgentProxyAccountStatus.Notes = "Failure"
                             $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             Write-Message -Level Verbose -Message "One or more subsystems do not exist on the destination server. Skipping that part."
                         }
                         else {
                             $copyAgentProxyAccountStatus.Status = "Failed"
                             $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             Stop-Function -Message "Issue creating proxy account" -Target $proxyName -ErrorRecord $_
                         }
                     }

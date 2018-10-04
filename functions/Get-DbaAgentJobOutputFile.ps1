@@ -12,9 +12,7 @@ function Get-DbaAgentJobOutputFile {
             SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
         .PARAMETER SQLCredential
-            Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by
-            the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it
-            contains a backslash.
+            Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
         .PARAMETER Job
             The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
@@ -37,19 +35,19 @@ function Get-DbaAgentJobOutputFile {
             License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
-            Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Job 'The Agent Job'
+            PS C:\> Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Job 'The Agent Job'
 
             This will return the configured paths to the output files for each of the job step of the The Agent Job Job
             on the SERVERNAME instance
 
         .EXAMPLE
-            Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME
+            PS C:\> Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME
 
             This will return the configured paths to the output files for each of the job step of all the Agent Jobs
             on the SERVERNAME instance
 
         .EXAMPLE
-            Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME,SERVERNAME2 -Job 'The Agent Job'
+            PS C:\> Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME,SERVERNAME2 -Job 'The Agent Job'
 
             This will return the configured paths to the output files for each of the job step of the The Agent Job Job
             on the SERVERNAME instance and SERVERNAME2
@@ -62,20 +60,20 @@ function Get-DbaAgentJobOutputFile {
             on the SERVER instance and the SERVER\INSTANCE1 and open the files if they are available
 
         .EXAMPLE
-            Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME  | Out-GridView
+            PS C:\> Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME  | Out-GridView
 
             This will return the configured paths to the output files for each of the job step of all the Agent Jobs
             on the SERVERNAME instance and Pipe them to Out-GridView
 
         .EXAMPLE
-            (Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME | Out-GridView -PassThru).FileName | Invoke-Item
+            PS C:\> (Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME | Out-GridView -PassThru).FileName | Invoke-Item
 
             This will return the configured paths to the output files for each of the job step of all the Agent Jobs
             on the SERVERNAME instance and Pipe them to Out-GridView and enable you to choose the output
             file and open it
 
         .EXAMPLE
-            Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Verbose
+            PS C:\> Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Verbose
 
             This will return the configured paths to the output files for each of the job step of all the Agent Jobs
             on the SERVERNAME instance and also show the job steps without an output file
