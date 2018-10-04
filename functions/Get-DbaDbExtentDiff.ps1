@@ -42,14 +42,14 @@ function Get-DbaDbExtentDiff {
             http://dbatools.io/Get-DbaDbExtentDiff
 
         .EXAMPLE
-            PS C:\> Get the changes for the DBA database.
+            PS C:\> Get-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA
 
-            Get-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA
+            Get the changes for the DBA database.
 
         .EXAMPLE
-            PS C:\> Get the changes for the DB01 database on multiple servers.
+            PS C:\> Get-DbaDbExtentDiff -SqlInstance $SQL2017N1, $SQL2017N2, $SQL2016 -Database DB01 -SqlCredential $Cred
 
-            Get-DbaDbExtentDiff -SqlInstance $SQL2017N1, $SQL2017N2, $SQL2016 -Database DB01 -SqlCredential $Cred
+            Get the changes for the DB01 database on multiple servers.
     #>
     [CmdletBinding()]
     param (
@@ -111,7 +111,8 @@ function Get-DbaDbExtentDiff {
                 }
             }
 
-            if ($server.VersionMajor -ge 14 ) {
+            #Available from 2016 SP2
+            if ($server.Version -ge [version]'13.0.5026') {
                 foreach ($db in $sourcedbs) {
                     $DBCCPageQueryDMV = "
                         SELECT
