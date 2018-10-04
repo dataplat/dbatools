@@ -54,14 +54,24 @@ function Set-DbaDbMirror {
             https://dbatools.io/Set-DbaDbMirror
 
         .EXAMPLE
-            PS C:\> Set-DbaDbMirror -SqlInstance localhost
+            PS C:\> Set-DbaDbMirror -SqlInstance sql2005 -Database dbatools -Partner TCP://SQL2008.ad.local:5374
 
-            Returns all Endpoint(s) on the local default SQL Server instance
+            Prompts for confirmation then sets the partner to TCP://SQL2008.ad.local:5374 for the database "dbtools"
 
         .EXAMPLE
-            PS C:\> Set-DbaDbMirror -SqlInstance localhost, sql2016
+            PS C:\> Set-DbaDbMirror -SqlInstance sql2005 -Database dbatools -Witness TCP://SQL2012.ad.local:5502 -Confirm:$false
 
-            Returns all Endpoint(s) for the local and sql2016 SQL Server instances
+            Does not prompt for confirmation and sets the witness to TCP://SQL2012.ad.local:5502 for the database "dbtools"
+    
+        .EXAMPLE
+            PS C:\> Get-DbaDatabase -SqlInstance sql2005 | Out-GridView -Passthru | Set-DbaDbMirror -SafetyLevel Full -Confirm:$false
+
+            Sets the safety level to Full for databases selected from a gridview. Does not prompt for confirmation.
+
+        .EXAMPLE
+            PS C:\> Set-DbaDbMirror -SqlInstance sql2005 -Database dbatools -State Suspend -Confirm:$false
+
+            Does not prompt for confirmation and sets the state to suspend for the database "dbtools"
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
