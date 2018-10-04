@@ -1781,6 +1781,18 @@
         "Syntax":  "Get-DbaDbExtentDiff [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Get-DbaDbFeatureUsage",
+        "Description":  "Shows features that are enabled in the database but not supported on all editions of SQL Server.\n\nBasically checks for Enterprise feature usage.\n\nThis feature must be removed before the database can be migrated to all available editions of SQL Server.",
+        "Tags":  "Deprecated",
+        "Alias":  "",
+        "Author":  "Brandon Abshire, netnerds.net",
+        "Synopsis":  "Shows features that are enabled in the database but not supported on all editions of SQL Server. Basically checks for Enterprise feature usage.",
+        "Name":  "Get-DbaDbFeatureUsage",
+        "Links":  "https://dbatools.io/Get-DbaDbFeatureUsage",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nC:\\\u003eGet-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Get-DbaDbFeatureUsage\nShows features that are enabled in the testdb and db2 databases but\r\nnot supported on the all the editions of SQL Server.",
+        "Syntax":  "Get-DbaDbFeatureUsage [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-ExcludeDatabase] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Get-DbaDbFile",
         "Description":  "Returns detailed information about database files. Does not use SMO - SMO causes enumeration and this command avoids that.",
         "Tags":  "Database",
@@ -5491,7 +5503,7 @@
         "Name":  "Set-DbaLogin",
         "Links":  "https://dbatools.io/Set-DbaLogin",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$password = ConvertTo-SecureString \"PlainTextPassword\" -AsPlainText -Force\n$cred = New-Object System.Management.Automation.PSCredential (\"username\", $password)\r\nSet-DbaLogin -SqlInstance sql1 -Login login1 -Password $cred -Unlock -MustChange\nSet the new password for login1 using a credential, unlock the account and set the option\r\nthat the usermust change password at next logon.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -Enable\nEnable the login\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1, login2, login3, login4 -Enable\nEnable multiple logins\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1, sql2, sql3 -Login login1, login2, login3, login4 -Enable\nEnable multiple logins on multiple instances\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -Disable\nDisable the login\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -DenyLogin\nDeny the login to connect to the instance\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -GrantLogin\nGrant the login to connect to the instance\n-------------------------- EXAMPLE 8 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced\nEnforces the password policy on a login\n-------------------------- EXAMPLE 9 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced:$false\nDisables enforcement of the password policy on a login\n-------------------------- EXAMPLE 10 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login test -AddRole serveradmin\nAdd the server role \"serveradmin\" to the login\n-------------------------- EXAMPLE 11 --------------------------\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login test -RemoveRole bulkadmin\nRemove the server role \"bulkadmin\" to the login",
-        "Syntax":  "Set-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-Password] \u003cSecureString\u003e] [-Unlock] [-MustChange] [[-NewName] \u003cString\u003e] [-Disable] [-Enable] [-DenyLogin] [-GrantLogin] [-PasswordPolicyEnforced] [[-AddRole] \u003cString[]\u003e] [[-RemoveRole] \u003cString[]\u003e] [[-InputObject] \u003cLogin[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Set-DbaLogin [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Login] \u003cString[]\u003e] [[-Password] \u003cObject\u003e] [-Unlock] [-MustChange] [[-NewName] \u003cString\u003e] [-Disable] [-Enable] [-DenyLogin] [-GrantLogin] [-PasswordPolicyEnforced] [[-AddRole] \u003cString[]\u003e] [[-RemoveRole] \u003cString[]\u003e] [[-InputObject] \u003cLogin[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Set-DbaMaxDop",
