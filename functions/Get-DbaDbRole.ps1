@@ -33,7 +33,7 @@
 
         .NOTES
             Tags: Roles, Database, Security
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+            Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -43,37 +43,36 @@
             https://dbatools.io/Get-DbaDbRole
 
         .EXAMPLE
-            Get-DbaDbRole -SqlInstance ServerA
+            PS C:\> Get-DbaDbRole -SqlInstance ServerA
 
             Returns a custom object displaying SQLServer, Database, Role for all DatabaseRoles on sql instance ServerA.
 
         .EXAMPLE
-            Get-DbaDbRole -SqlInstance ServerA | Out-Gridview
+            PS C:\> Get-DbaDbRole -SqlInstance ServerA | Out-GridView
 
-            Returns a gridview displaying SQLServer, Database, Role for all DatabaseRoles on sql instance ServerA.
+            Returns a grid view displaying SQLServer, Database, Role for all DatabaseRoles on sql instance ServerA.
 
         .EXAMPLE
-            Get-DbaDbRole -SqlInstance ServerB\sql16 -ExcludeDatabase DBADB,TestDB
+            PS C:\> Get-DbaDbRole -SqlInstance ServerB\sql16 -ExcludeDatabase DBADB,TestDB
 
             Returns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\sql16, except those in databases DBADB and TestDB.
 
         .EXAMPLE
-            'ServerB\sql16','ServerA' | Get-DbaDbRole
+            PS C:\> 'ServerB\sql16','ServerA' | Get-DbaDbRole
 
             Returns SQLServer, Database, Role for DatabaseRoles on sql instances ServerA and ServerB\sql16.
 
         .EXAMPLE
-            Get-DbaDbRole -SqlInstance ServerB\sql16 -Database AccountingDB
+            PS C:\> Get-DbaDbRole -SqlInstance ServerB\sql16 -Database AccountingDB
 
             Returns SQLServer, Database, Role for DatabaseRoles in database AccountingDB on sql instance ServerB\sql16.
 
         .EXAMPLE
-            Get-DbaDbRole -SqlInstance ServerB\sql16 -ExcludeFixedRoles
+            PS C:\> Get-DbaDbRole -SqlInstance ServerB\sql16 -ExcludeFixedRoles
 
             Returns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\sql16, but not the fixed roles.
-
-        #>
-            [CmdletBinding()]
+    #>
+    [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('SqlServer', 'ServerInstance')]
