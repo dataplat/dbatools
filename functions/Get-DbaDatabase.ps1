@@ -283,7 +283,7 @@ function Get-DbaDatabase {
 
             $inputObject = @()
             foreach($dt in $backed_info) {
-                $inputObject += $server.Databases[$dt.name]
+                $inputObject += $server.Databases | Where-Object Name -ceq $dt.name
             }
             $inputobject = $inputObject |
                 Where-Object {
