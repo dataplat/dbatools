@@ -353,23 +353,21 @@ function Set-DbaLogin {
                 $notes = $null
             }
 
-            # Return the results
-            [PSCustomObject]@{
-                ComputerName           = $server.ComputerName
-                InstanceName           = $server.ServiceName
-                SqlInstance            = $server.DomainInstanceName
-                LoginName              = $l.Name
-                DenyLogin              = $l.DenyWindowsLogin
-                IsDisabled             = $l.IsDisabled
-                IsLocked               = $l.IsLocked
-                PasswordPolicyEnforced = $l.PasswordPolicyEnforced
-                MustChangePassword     = $l.MustChangePassword
-                PasswordChanged        = $passwordChanged
-                ServerRole             = $roles.Role -join ','
-                Notes                  = $notes
-            } | Select-DefaultView -ExcludeProperty Login
-            # Change output and update tests when there's time
-            # Get-DbaLogin -SqlInstance $server -Login $l.Name
+            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'ComputerName' -Value $server.ComputerName
+            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'InstanceName' -Value $server.ServiceName
+            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'SqlInstance' -Value $server.DomainInstanceName
+            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'PasswordChanged' -Value $passwordChanged
+            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'ServerRole' -Value ($roles.Role -join ',')
+            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'Notes' -Value $notes
+
+            # backwards compatibility: LoginName, DenyLogin
+            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'LoginName' -Value $l.Name
+            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'DenyLogin' -Value $l.DenyWindowsLogin
+
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'LoginName', 'DenyLogin', 'IsDisabled', 'IsLocked',
+                'PasswordPolicyEnforced', 'MustChangePassword', 'PasswordChanged', 'ServerRole', 'Notes'
+
+            Select-DefaultView -InputObject $l -Property $defaults
         }
     }
 }
