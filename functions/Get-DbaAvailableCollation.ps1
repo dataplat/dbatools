@@ -30,7 +30,7 @@ function Get-DbaAvailableCollation {
             https://dbatools.io/Get-DbaAvailableCollation
 
         .EXAMPLE
-            Get-DbaAvailableCollation -SqlInstance sql2016
+            PS C:\> Get-DbaAvailableCollation -SqlInstance sql2016
 
             Gets all the collations from server sql2016 using NT authentication
     #>
