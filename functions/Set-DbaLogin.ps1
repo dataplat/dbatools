@@ -178,10 +178,9 @@ function Set-DbaLogin {
             switch ($Password.GetType().Name) {
                 "PSCredential" { $newPassword = $Password.Password }
                 "SecureString" { $newPassword = $Password }
-            }
-
-            if ($Password.GetType().Name -notin @('PSCredential', 'SecureString')) {
-                Stop-Function -Message "Password must be a PSCredential or SecureString" -Target $Login
+                default {
+                    Stop-Function -Message "Password must be a PSCredential or SecureString" -Target $Login
+                }
             }
         }
 
