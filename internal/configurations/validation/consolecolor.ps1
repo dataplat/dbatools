@@ -1,5 +1,5 @@
 ﻿Register-DbatoolsConfigValidation -Name "consolecolor" -ScriptBlock {
-    Param (
+    param (
         $Value
     )
 

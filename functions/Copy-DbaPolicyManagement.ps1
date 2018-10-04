@@ -59,22 +59,22 @@ function Copy-DbaPolicyManagement {
             https://dbatools.io/Copy-DbaPolicyManagement
 
         .EXAMPLE
-            Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster
 
             Copies all policies and conditions from sqlserver2014a to sqlcluster, using Windows credentials.
 
         .EXAMPLE
-            Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+            PS C:\> Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
             Copies all policies and conditions from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
         .EXAMPLE
-            Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster -WhatIf
+            PS C:\> Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
             Shows what would happen if the command were executed.
 
         .EXAMPLE
-            Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster -Policy 'xp_cmdshell must be disabled'
+            PS C:\> Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster -Policy 'xp_cmdshell must be disabled'
 
             Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sqlcluster. No conditions are migrated.
     #>
@@ -125,7 +125,7 @@ function Copy-DbaPolicyManagement {
             $destSqlConn = $destServer.ConnectionContext.SqlConnectionObject
             $destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
             $destStore = New-Object  Microsoft.SqlServer.Management.DMF.PolicyStore $destSqlStoreConnection
-            
+
             if ($Policy) {
                 $storePolicies = $storePolicies | Where-Object Name -In $Policy
             }
@@ -138,20 +138,20 @@ function Copy-DbaPolicyManagement {
             if ($ExcludeCondition) {
                 $storeConditions = $storeConditions | Where-Object Name -NotIn $ExcludeCondition
             }
-            
+
             if ($Policy -and $Condition) {
                 $storeConditions = $null
                 $storePolicies = $null
             }
-            
+
         <#
                         Conditions
         #>
-            
+
             Write-Message -Level Verbose -Message "Migrating conditions"
             foreach ($condition in $storeConditions) {
                 $conditionName = $condition.Name
-                
+
                 $copyConditionStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -161,11 +161,11 @@ function Copy-DbaPolicyManagement {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($null -ne $destStore.Conditions[$conditionName]) {
                     if ($force -eq $false) {
                         Write-Message -Level Verbose -Message "condition '$conditionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
-                        
+
                         $copyConditionStatus.Status = "Skipped"
                         $copyConditionStatus.Notes = "Already exists"
                         $copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -174,7 +174,7 @@ function Copy-DbaPolicyManagement {
                     else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $conditionName")) {
                             Write-Message -Level Verbose -Message "Condition '$conditionName' exists on $destinstance. Force specified. Dropping $conditionName."
-                            
+
                             try {
                                 $dependentPolicies = $destStore.Conditions[$conditionName].EnumDependentPolicies()
                                 foreach ($dependent in $dependentPolicies) {
@@ -192,7 +192,7 @@ function Copy-DbaPolicyManagement {
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Migrating condition $conditionName")) {
                     try {
                         $sql = $condition.ScriptCreate().GetScript() | Out-String
@@ -200,7 +200,7 @@ function Copy-DbaPolicyManagement {
                         Write-Message -Level Verbose -Message "Copying condition $conditionName"
                         $null = $destServer.Query($sql)
                         $destStore.Conditions.Refresh()
-                        
+
                         $copyConditionStatus.Status = "Successful"
                         $copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
@@ -208,20 +208,20 @@ function Copy-DbaPolicyManagement {
                         $copyConditionStatus.Status = "Failed"
                         $copyConditionStatus.Notes = (Get-ErrorMessage -Record $_).Message
                         $copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Stop-Function -Message "Issue creating condition on $destinstance" -Target $conditionName -ErrorRecord $_
                     }
                 }
             }
-            
+
         <#
                         Policies
         #>
-            
+
             Write-Message -Level Verbose -Message "Migrating policies"
             foreach ($policy in $storePolicies) {
                 $policyName = $policy.Name
-                
+
                 $copyPolicyStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -231,11 +231,11 @@ function Copy-DbaPolicyManagement {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($null -ne $destStore.Policies[$policyName]) {
                     if ($force -eq $false) {
                         Write-Message -Level Verbose -Message "Policy '$policyName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
-                        
+
                         $copyPolicyStatus.Status = "Skipped"
                         $copyPolicyStatus.Notes = "Already exists"
                         $copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -244,7 +244,7 @@ function Copy-DbaPolicyManagement {
                     else {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $policyName")) {
                             Write-Message -Level Verbose -Message "Policy '$policyName' exists on $destinstance. Force specified. Dropping $policyName."
-                            
+
                             try {
                                 $destStore.Policies[$policyName].Drop()
                                 $destStore.Policies.refresh()
@@ -253,13 +253,13 @@ function Copy-DbaPolicyManagement {
                                 $copyPolicyStatus.Status = "Failed"
                                 $copyPolicyStatus.Notes = (Get-ErrorMessage -Record $_).Message
                                 $copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                
+
                                 Stop-Function -Message "Issue dropping policy on $destinstance" -Target $policyName -ErrorRecord $_ -Continue
                             }
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Migrating policy $policyName")) {
                     try {
                         $destStore.Conditions.Refresh()
@@ -268,7 +268,7 @@ function Copy-DbaPolicyManagement {
                         Write-Message -Level Debug -Message $sql
                         Write-Message -Level Verbose -Message "Copying policy $policyName"
                         $null = $destServer.Query($sql)
-                        
+
                         $copyPolicyStatus.Status = "Successful"
                         $copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
@@ -276,7 +276,7 @@ function Copy-DbaPolicyManagement {
                         $copyPolicyStatus.Status = "Failed"
                         $copyPolicyStatus.Notes = (Get-ErrorMessage -Record $_).Message
                         $copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         # This is usually because of a duplicate dependent from above. Just skip for now.
                         Stop-Function -Message "Issue creating policy on $destinstance" -Target $policyName -ErrorRecord $_ -Continue
                     }

@@ -32,7 +32,7 @@ function Get-DbaDbExtentDiff {
 
         .NOTES
             Tags: Backup, Database
-            Author: Viorel Ciucu, viorel.ciucu@gmail.com, cviorel.com
+            Author: Viorel Ciucu, cviorel.com
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -42,12 +42,14 @@ function Get-DbaDbExtentDiff {
             http://dbatools.io/Get-DbaDbExtentDiff
 
         .EXAMPLE
+            PS C:\> Get-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA
+
             Get the changes for the DBA database.
-            Get-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA
 
         .EXAMPLE
+            PS C:\> Get-DbaDbExtentDiff -SqlInstance $SQL2017N1, $SQL2017N2, $SQL2016 -Database DB01 -SqlCredential $Cred
+
             Get the changes for the DB01 database on multiple servers.
-            Get-DbaDbExtentDiff -SqlInstance $SQL2017N1, $SQL2017N2, $SQL2016 -Database DB01 -SqlCredential $Cred
     #>
     [CmdletBinding()]
     param (
@@ -109,7 +111,8 @@ function Get-DbaDbExtentDiff {
                 }
             }
 
-            if ($server.VersionMajor -ge 14 ) {
+            #Available from 2016 SP2
+            if ($server.Version -ge [version]'13.0.5026') {
                 foreach ($db in $sourcedbs) {
                     $DBCCPageQueryDMV = "
                         SELECT

@@ -52,7 +52,7 @@
             Retrieves all configuration items of the module MyModule, then registers them in registry to enforce them for all users on the current system.
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
+    param (
         [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Configuration.Config[]]$Config,
         [Parameter(ParameterSetName = "Default", Position = 0, ValueFromPipeline)]
@@ -70,7 +70,7 @@
 
         function Write-Config {
             [CmdletBinding()]
-            Param (
+            param (
                 [Sqlcollaborative.Dbatools.Configuration.Config]
                 $Config,
 
@@ -127,7 +127,7 @@
 
         function Ensure-RegistryPath {
             [CmdletBinding()]
-            Param (
+            param (
                 [string]
                 $Path
             )

@@ -22,6 +22,7 @@ function Get-DbaCmsRegServerStore {
         .NOTES
             Tags: RegisteredServer,CMS
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -30,17 +31,17 @@ function Get-DbaCmsRegServerStore {
             https://dbatools.io/Get-DbaCmsRegServerStore
 
         .EXAMPLE
-            Get-DbaCmsRegServerStore -SqlInstance sqlserver2014a
+            PS C:\> Get-DbaCmsRegServerStore -SqlInstance sqlserver2014a
 
             Returns a SQL Server Registered Server Store Object from sqlserver2014a
 
         .EXAMPLE
-            Get-DbaCmsRegServerStore -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)
+            PS C:\> Get-DbaCmsRegServerStore -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)
 
             Returns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

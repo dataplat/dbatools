@@ -93,7 +93,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     }
 
     Context "Testing non-EnableException: Continue & ContinueLabel" {
-        Mock -CommandName "Write-Warning" -MockWith { Param ($Message) }
+        Mock -CommandName "Write-Warning" -MockWith { param ($Message) }
 
         #region Run Tests
         try {
@@ -227,7 +227,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     }
 
     Context "Testing silent: Continue & ContinueLabel" {
-        Mock -CommandName "Write-Error" -MockWith { Param ($Message) }
+        Mock -CommandName "Write-Error" -MockWith { param ($Message) }
 
         #region Run Tests
         try {

@@ -1,10 +1,10 @@
 ﻿function Clear-DbaPlanCache {
     <#
         .SYNOPSIS
-            Removes adhoc and prepared plan caches is single use plans are over defined threshold.
+            Removes ad-hoc and prepared plan caches is single use plans are over defined threshold.
 
         .DESCRIPTION
-            Checks ahoc and prepared plan cache for each database, if over 100 MBs removes from the cache.
+            Checks ad-hoc and prepared plan cache for each database, if over 100 MBs removes from the cache.
 
             This command automates that process.
 
@@ -45,18 +45,18 @@
             https://dbatools.io/Clear-DbaPlanCache
 
         .EXAMPLE
-            Clear-DbaPlanCache -SqlInstance sql2017 -Threshold 200
+            PS C:\> Clear-DbaPlanCache -SqlInstance sql2017 -Threshold 200
 
             Logs into the SQL Server instance "sql2017" and removes plan caches if over 200 MB.
 
         .EXAMPLE
-            Clear-DbaPlanCache -SqlInstance sql2017 -SqlCredential sqladmin
+            PS C:\> Clear-DbaPlanCache -SqlInstance sql2017 -SqlCredential sqladmin
 
             Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
             and removes if Threshold over 100 MB.
     #>
     [CmdletBinding(SupportsShouldProcess)]
-    Param (
+    param (
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -74,7 +74,7 @@
             if ($result.MB -ge $Threshold) {
                 if ($Pscmdlet.ShouldProcess($($result.SqlInstance), "Cleared SQL Plans plan cache")) {
                     $server.Query("DBCC FREESYSTEMCACHE('SQL Plans')")
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $result.ComputerName
                         InstanceName = $result.InstanceName
                         SqlInstance  = $result.SqlInstance
@@ -85,7 +85,7 @@
             }
             else {
                 if ($Pscmdlet.ShouldProcess($($result.SqlInstance), "Results $($result.Size) below threshold")) {
-                    [pscustomobject]@{
+                    [PSCustomObject]@{
                         ComputerName = $result.ComputerName
                         InstanceName = $result.InstanceName
                         SqlInstance  = $result.SqlInstance

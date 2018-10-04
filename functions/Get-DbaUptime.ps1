@@ -32,31 +32,30 @@ function Get-DbaUptime {
             Tags: CIM
             Author: Stuart Moore (@napalmgram), stuart-moore.com
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaUptime
 
         .EXAMPLE
-            Get-DbaUptime -SqlInstance SqlBox1\Instance2
+            PS C:\> Get-DbaUptime -SqlInstance SqlBox1\Instance2
 
             Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on winserver
 
         .EXAMPLE
-            Get-DbaUptime -SqlInstance winserver\sqlexpress, sql2016
+            PS C:\> Get-DbaUptime -SqlInstance winserver\sqlexpress, sql2016
 
             Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on host winserver  and the default instance on host sql2016
 
         .EXAMPLE
-            Get-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaUptime
+            PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaUptime
 
             Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for every server listed in the Central Management Server on sql2014
-
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "ComputerName")]
         [DbaInstanceParameter[]]$SqlInstance,

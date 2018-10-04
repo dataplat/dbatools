@@ -62,26 +62,25 @@ function Copy-DbaSsisCatalog {
             https://dbatools.io/Copy-DbaSsisCatalog
 
         .EXAMPLE
-            Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster
 
             Copies all folders, environments and SSIS Projects from sqlserver2014a to sqlcluster, using Windows credentials to authenticate to both instances. If folders with the same name exist on the destination they will be skipped, but projects will be redeployed.
 
         .EXAMPLE
-            Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -Project Archive_Tables -SourceSqlCredential $cred -Force
+            PS C:\> Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -Project Archive_Tables -SourceSqlCredential $cred -Force
 
             Copies a single Project, the Archive_Tables Project, from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials to authenticate to sqlcluster. If a Project with the same name exists on sqlcluster, it will be deleted and recreated because -Force was used.
 
         .EXAMPLE
-            Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            PS C:\> Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
 
         .EXAMPLE
-            $SecurePW = Read-Host "Enter password" -AsSecureString
-            Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -CreateCatalogPassword $SecurePW
+            PS C:\> $SecurePW = Read-Host "Enter password" -AsSecureString
+            PS C:\> Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -CreateCatalogPassword $SecurePW
 
             Deploy entire SSIS catalog to an instance without a destination catalog. User prompts for creating the catalog on Destination will be bypassed.
-
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
@@ -243,7 +242,7 @@ function Copy-DbaSsisCatalog {
         }
 
         $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
-        
+
         try {
             Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
@@ -252,7 +251,7 @@ function Copy-DbaSsisCatalog {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-        
+
         try {
             Write-Message -Level Verbose -Message "Connecting to $Source integration services."
             $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceConnection
@@ -261,7 +260,7 @@ function Copy-DbaSsisCatalog {
             Stop-Function -Message "There was an error connecting to the source integration services." -Target $sourceConnection -ErrorRecord $_
             return
         }
-        
+
         $sourceCatalog = $sourceSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
         if (!$sourceCatalog) {
             Stop-Function -Message "The source SSISDB catalog on $Source does not exist."
@@ -279,14 +278,14 @@ function Copy-DbaSsisCatalog {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             try {
                 Get-RemoteIntegrationService -Computer $destinstance
             }
             catch {
                 Stop-Function -Message "An error occurred when checking the destination for Integration Services. Is Integration Services installed?" -Target $destinstance -ErrorRecord $_
             }
-            
+
             try {
                 Write-Message -Level Verbose -Message "Connecting to $destinstance integration services."
                 $destinationSSIS = New-Object "$ISNamespace.IntegrationServices" $destinationConnection
@@ -294,10 +293,10 @@ function Copy-DbaSsisCatalog {
             catch {
                 Stop-Function -Message "There was an error connecting to the destination integration services." -Target $destinationCon -ErrorRecord $_
             }
-            
+
             $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
             $destinationFolders = $destinationCatalog.Folders
-            
+
             if (!$destinationCatalog) {
                 if (!$destinationConnection.Configuration.IsSqlClrEnabled.ConfigValue) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Enabling SQL CLR configuration option.")) {
@@ -321,9 +320,9 @@ function Copy-DbaSsisCatalog {
                             $destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue = $true
                             $changeback = $true
                         }
-                        
+
                         $destinationConnection.Configuration.IsSqlClrEnabled.ConfigValue = $true
-                        
+
                         if ($changeback -eq $true) {
                             $destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue = $false
                         }
@@ -352,7 +351,7 @@ function Copy-DbaSsisCatalog {
                     else {
                         New-SSISDBCatalog -Password $CreateCatalogPassword
                     }
-                    
+
                     $destinationSSIS.Refresh()
                     $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
                     $destinationFolders = $destinationCatalog.Folders
@@ -376,7 +375,7 @@ function Copy-DbaSsisCatalog {
                                 catch {
                                     Stop-Function -Message "Issue dropping folder" -Target $folder -ErrorRecord $_
                                 }
-                                
+
                             }
                         }
                     }
@@ -425,7 +424,7 @@ function Copy-DbaSsisCatalog {
                     }
                 }
             }
-            
+
             # Refresh folders for project and environment deployment
             if ($Pscmdlet.ShouldProcess($destinstance, "Refresh folders for project deployment")) {
                 try {
@@ -436,7 +435,7 @@ function Copy-DbaSsisCatalog {
                 }
                 $destinationFolders.Refresh()
             }
-            
+
             if ($folder) {
                 $sourceFolders = $sourceFolders | Where-Object { $_.Name -eq $folder }
                 if (!$sourceFolders) {
@@ -475,7 +474,7 @@ function Copy-DbaSsisCatalog {
                     }
                 }
             }
-            
+
             if ($environment) {
                 $folderDeploy = $sourceFolders | Where-Object { $_.Environments.Name -eq $environment }
                 if (!$folderDeploy) {

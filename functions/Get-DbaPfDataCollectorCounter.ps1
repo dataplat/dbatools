@@ -17,13 +17,13 @@ function Get-DbaPfDataCollectorCounter {
 
         .PARAMETER CollectorSet
             The Collector Set name.
-  
+
         .PARAMETER Collector
             The Collector name.
-   
+
         .PARAMETER Counter
             The Counter name to capture. This must be in the form of '\Processor(_Total)\% Processor Time'.
-    
+
         .PARAMETER InputObject
             Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
 
@@ -31,40 +31,41 @@ function Get-DbaPfDataCollectorCounter {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
         .NOTES
             Tags: Performance, DataCollector, PerfCounter
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
-    
+
         .LINK
             https://dbatools.io/Get-DbaPfDataCollectorCounter
 
         .EXAMPLE
-            Get-DbaPfDataCollectorCounter
-    
+            PS C:\> Get-DbaPfDataCollectorCounter
+
             Gets all counters for all Collector Sets on localhost.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorCounter -ComputerName sql2017
-    
+            PS C:\> Get-DbaPfDataCollectorCounter -ComputerName sql2017
+
             Gets all counters for all Collector Sets on  on sql2017.
-    
+
         .EXAMPLE
-            Get-DbaPfDataCollectorCounter -ComputerName sql2017 -Counter '\Processor(_Total)\% Processor Time'
+            PS C:\> Get-DbaPfDataCollectorCounter -ComputerName sql2017 -Counter '\Processor(_Total)\% Processor Time'
 
             Gets the '\Processor(_Total)\% Processor Time' counter on sql2017.
-    
+
         .EXAMPLE
-            Get-DbaPfDataCollectorCounter -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
-    
+            PS C:\> Get-DbaPfDataCollectorCounter -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+
             Gets all counters for the 'System Correlation' CollectorSet on sql2017 and sql2016 using alternative credentials.
-    
+
         .EXAMPLE
-            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPfDataCollector | Get-DbaPfDataCollectorCounter
-    
+            PS C:\> Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPfDataCollector | Get-DbaPfDataCollectorCounter
+
             Gets all counters for the 'System Correlation' CollectorSet.
     #>
     [CmdletBinding()]
@@ -87,20 +88,20 @@ function Get-DbaPfDataCollectorCounter {
         if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
             $Credential = $InputObject.Credential
         }
-        
+
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
                 $InputObject += Get-DbaPfDataCollector -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet -Collector $Collector
             }
         }
-        
+
         if ($InputObject) {
             if (-not $InputObject.DataCollectorObject) {
                 Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollector."
                 return
             }
         }
-        
+
         foreach ($counterobject in $InputObject) {
             foreach ($countername in $counterobject.Counters) {
                 if ($Counter -and $Counter -notcontains $countername) { continue }

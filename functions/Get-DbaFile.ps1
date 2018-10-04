@@ -67,7 +67,7 @@ Get-DbaFile -SqlInstance -Path 'E:\Dir1' sql2014, sql2016 -FileType fsf, mld
 Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql2014 and sql2016.
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

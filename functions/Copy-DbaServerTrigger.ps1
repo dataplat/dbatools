@@ -53,17 +53,17 @@ function Copy-DbaServerTrigger {
             https://dbatools.io/Copy-DbaServerTrigger
 
         .EXAMPLE
-            Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster
 
             Copies all server triggers from sqlserver2014a to sqlcluster, using Windows credentials. If triggers with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -ServerTrigger tg_noDbDrop -SourceSqlCredential $cred -Force
+            PS C:\> Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -ServerTrigger tg_noDbDrop -SourceSqlCredential $cred -Force
 
             Copies a single trigger, the tg_noDbDrop trigger from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a trigger with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
         .EXAMPLE
-            Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            PS C:\> Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
     #>
@@ -110,10 +110,10 @@ function Copy-DbaServerTrigger {
                 return
             }
             $destTriggers = $destServer.Triggers
-            
+
             foreach ($trigger in $serverTriggers) {
                 $triggerName = $trigger.Name
-                
+
                 $copyTriggerStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -123,15 +123,15 @@ function Copy-DbaServerTrigger {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($ServerTrigger -and $triggerName -notin $ServerTrigger -or $triggerName -in $ExcludeServerTrigger) {
                     continue
                 }
-                
+
                 if ($destTriggers.Name -contains $triggerName) {
                     if ($force -eq $false) {
                         Write-Message -Level Verbose -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
-                        
+
                         $copyTriggerStatus.Status = "Skipped"
                         $copyTriggerStatus.Status = "Already exists"
                         $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -147,13 +147,13 @@ function Copy-DbaServerTrigger {
                                 $copyTriggerStatus.Status = "Failed"
                                 $copyTriggerStatus.Notes = (Get-ErrorMessage -Record $_)
                                 $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                
+
                                 Stop-Function -Message "Issue dropping trigger on destination" -Target $triggerName -ErrorRecord $_ -Continue
                             }
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating server trigger $triggerName")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying server trigger $triggerName"
@@ -161,11 +161,11 @@ function Copy-DbaServerTrigger {
                         $sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
                         $sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
                         Write-Message -Level Debug -Message $sql
-                        
+
                         foreach ($query in ($sql -split '\nGO\b')) {
                             $destServer.Query($query) | Out-Null
                         }
-                        
+
                         $copyTriggerStatus.Status = "Successful"
                         $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
@@ -173,7 +173,7 @@ function Copy-DbaServerTrigger {
                         $copyTriggerStatus.Status = "Failed"
                         $copyTriggerStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Stop-Function -Message "Issue creating trigger on destination" -Target $triggerName -ErrorRecord $_
                     }
                 }

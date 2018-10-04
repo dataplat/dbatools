@@ -19,7 +19,7 @@ function Get-DbaAgHadr {
 
         .NOTES
             Tags: Hadr, AG, AvailabilityGroup
-            Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
+            Author: Shawn Melton (@wsmelton), http://wsmelton.github.io
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -29,7 +29,7 @@ function Get-DbaAgHadr {
             https://dbatools.io/Get-DbaAgHadr
 
         .EXAMPLE
-            Get-DbaAgHadr -SqlInstance sql2016
+            PS C:\> Get-DbaAgHadr -SqlInstance sql2016
 
             Returns a status of the Hadr setting for sql2016 SQL Server instance.
     #>

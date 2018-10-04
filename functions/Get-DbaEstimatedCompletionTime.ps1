@@ -73,7 +73,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

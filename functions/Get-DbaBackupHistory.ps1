@@ -65,66 +65,68 @@ function Get-DbaBackupHistory {
 
         .NOTES
             Tags: DisasterRecovery, Backup
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
+            Author: Chrissy LeMaire (@ctrlb) | Stuart Moore (@napalmgram)
+
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaBackupHistory
 
         .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance SqlInstance2014a
+            PS C:\> Get-DbaBackupHistory -SqlInstance SqlInstance2014a
 
             Returns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in other examples.
 
         .EXAMPLE
-            $cred = Get-Credential sqladmin
+            PS C:\> $cred = Get-Credential sqladmin
             Get-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred
 
             Does the same as above but connect to SqlInstance2014a as SQL user "sqladmin"
 
         .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '2016-07-01 10:47:00'
+            PS C:\> Get-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '2016-07-01 10:47:00'
 
             Returns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.
 
         .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table
+            PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table
 
             Returns information only for AdventureWorks2014 and pubs and formats the results as a table.
 
         .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last
+            PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last
 
             Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.
 
         .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk
+            PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk
 
             Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.
 
         .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107
+            PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107
 
             Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.
 
         .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull
+            PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull
 
             Returns information about the most recent full backup for AdventureWorks2014 on sql2014.
 
         .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full
+            PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full
 
             Returns information about all Full backups for AdventureWorks2014 on sql2014.
 
         .EXAMPLE
-            Get-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaBackupHistory
+            PS C:\> Get-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaBackupHistory
 
             Returns database backup information for every database on every server listed in the Central Management Server on sql2016.
 
         .EXAMPLE
-            Get-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force
+            PS C:\> Get-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force
 
             Returns detailed backup history for all databases on SqlInstance2014a and sql2016.
     #>

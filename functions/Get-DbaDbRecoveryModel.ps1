@@ -41,15 +41,14 @@ function Get-DbaDbRecoveryModel {
             https://dbatools.io/Get-DbaDbRecoveryModel
 
         .EXAMPLE
-            Get-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Verbose
+            PS C:\> Get-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Verbose
 
-            Gets all databases on SQL Server instance sql2014 having RecoveryModel set to BulkLogged
+            Gets all databases on SQL Server instance sql2014 having RecoveryModel set to BulkLogged.
 
         .EXAMPLE
-            Get-DbaDbRecoveryModel -SqlInstance sql2014 -Database TestDB
+            PS C:\> Get-DbaDbRecoveryModel -SqlInstance sql2014 -Database TestDB
 
-            Gets recovery model information for TestDB. If TestDB does not exist on the instance we don't return anything.
-
+            Gets recovery model information for TestDB. If TestDB does not exist on the instance nothing is returned.
     #>
     [CmdletBinding()]
     param (

@@ -36,17 +36,17 @@ function Get-DbaServerAudit {
             https://dbatools.io/Get-DbaServerAudit
 
         .EXAMPLE
-            Get-DbaServerAudit -SqlInstance localhost
+            PS C:\> Get-DbaServerAudit -SqlInstance localhost
 
             Returns all Security Audits on the local default SQL Server instance
 
         .EXAMPLE
-            Get-DbaServerAudit -SqlInstance localhost, sql2016
+            PS C:\> Get-DbaServerAudit -SqlInstance localhost, sql2016
 
             Returns all Security Audits for the local and sql2016 SQL Server instances
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]

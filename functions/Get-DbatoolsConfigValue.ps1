@@ -19,6 +19,14 @@ function Get-DbatoolsConfigValue {
             However, sometimes it may be important that some value was returned.
             By specifying this parameter, the function will throw an error if no value was found at all.
 
+        .NOTES
+            Author: Friedrich Weinmann
+            Tags: Config
+
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
+
         .EXAMPLE
             PS C:\> Get-DbatoolsConfigValue -Name 'System.MailServer'
 
@@ -29,13 +37,10 @@ function Get-DbatoolsConfigValue {
 
             Returns the configured value for 'Default.CoffeeMilk'. If no such value is configured, it returns '0' instead.
 
-        .NOTES
-            Author: Friedrich Weinmann
-            Tags: Config
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSPossibleIncorrectComparisonWithNull", "")]
     [CmdletBinding()]
-    Param (
+    param (
         [Alias('Name')]
         [Parameter(Mandatory)]
         [string]$FullName,

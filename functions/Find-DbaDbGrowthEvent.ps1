@@ -33,7 +33,7 @@ function Find-DbaDbGrowthEvent {
         .PARAMETER FileType
             Provide a filter on file type to filter the results.
 
-            Allowed vaules: Data, Log
+            Allowed values: Data, Log
 
         .PARAMETER UseLocalTime
             Return the local time of the instance instead of converting to UTC.
@@ -56,32 +56,32 @@ function Find-DbaDbGrowthEvent {
             https://dbatools.io/Find-DbaDatabaseGrowthEvent
 
         .EXAMPLE
-            Find-DbaDatabaseGrowthEvent -SqlInstance localhost
+            PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance localhost
 
             Returns any database AutoGrow events in the Default Trace with UTC time for the instance for every database on the localhost instance.
 
         .EXAMPLE
-            Find-DbaDatabaseGrowthEvent -SqlInstance localhost -UseLocalTime
+            PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance localhost -UseLocalTime
 
             Returns any database AutoGrow events in the Default Trace with the local time of the instance for every database on the localhost instance.
 
         .EXAMPLE
-            Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016, ServerA\SQL2014
+            PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016, ServerA\SQL2014
 
             Returns any database AutoGrow events in the Default Traces for every database on ServerA\sql2016 & ServerA\SQL2014.
 
         .EXAMPLE
-            Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 | Format-Table -AutoSize -Wrap
+            PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 | Format-Table -AutoSize -Wrap
 
             Returns any database AutoGrow events in the Default Trace for every database on the ServerA\SQL2016 instance in a table format.
 
         .EXAMPLE
-            Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Shrink
+            PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Shrink
 
             Returns any database Auto Shrink events in the Default Trace for every database on the ServerA\SQL2016 instance.
 
         .EXAMPLE
-            Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Growth -FileType Data
+            PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Growth -FileType Data
 
             Returns any database Auto Growth events on data files in the Default Trace for every database on the ServerA\SQL2016 instance.
     #>

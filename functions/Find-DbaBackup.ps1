@@ -42,25 +42,24 @@ function Find-DbaBackup {
 
         .NOTES
             Tags: Backup
-            Author: Chris Sommer, @cjsommer, www.cjsommer.com
+            Author: Chris Sommer (@cjsommer), www.cjsommer.com
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Find-DbaBackup
 
         .EXAMPLE
-            Find-DbaBackup -Path 'C:\MSSQL\SQL Backup\' -BackupFileExtension trn -RetentionPeriod 48h
+            PS C:\> Find-DbaBackup -Path 'C:\MSSQL\SQL Backup\' -BackupFileExtension trn -RetentionPeriod 48h
 
-            '*.trn' files in 'C:\MSSQL\SQL Backup\' and all subdirectories that are more than 48 hours old will be included.
+            Searches for all trn files in C:\MSSQL\SQL Backup\ and all subdirectories that are more than 48 hours old will be included.
 
         .EXAMPLE
-            Find-DbaBackup -Path 'C:\MSSQL\Backup\' -BackupFileExtension bak -RetentionPeriod 7d -CheckArchiveBit
+            PS C:\> Find-DbaBackup -Path 'C:\MSSQL\Backup\' -BackupFileExtension bak -RetentionPeriod 7d -CheckArchiveBit
 
-            '*.bak' files in 'C:\MSSQL\Backup\' and all subdirectories that are more than 7 days old will be included, but only if the files have been backed up to another location as verified by checking the Archive bit.
-
+            Searches for all bak files in C:\MSSQL\Backup\ and all subdirectories that are more than 7 days old will be included, but only if the files have been backed up to another location as verified by checking the Archive bit.
     #>
     [CmdletBinding()]
     param (
