@@ -17,7 +17,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     
     It "returns success" {
-        $results = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -NetworkShare C:\temp -Force
+        $results = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -NetworkShare C:\temp -Force -Confirm:$false
         $results.Status -eq 'Success' | Should Be $true
     }
 }
