@@ -130,7 +130,7 @@ function Invoke-DbaDbMirroring {
             $dbName = $primarydb.Name
             
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Validating mirror setup"
-            $validation = Invoke-DbaDbMirrorValidation @params
+            $validation = Invoke-DbMirrorValidation @params
             
             if ((Test-Bound -ParameterName NetworkShare) -and -not $validation.AccessibleShare) {
                 Stop-Function -Continue -Message "Cannot access $NetworkShare from $($dest.Name)"

@@ -76,7 +76,6 @@ function Invoke-DbaDbMirrorFailover {
             # if it's async, you have to break the mirroring and allow data loss
             # alter database set partner force_service_allow_data_loss
             # if it's sync mirroring you know it's all in sync, so you can just do alter database [dbname] set partner failover
-            
             if ($Force) {
                 $db | Set-DbaDbMirror -State ForceFailoverAndAllowDataLoss
             }

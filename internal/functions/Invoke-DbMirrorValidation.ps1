@@ -1,5 +1,5 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Invoke-DbaDbMirrorValidation {
+function Invoke-DbMirrorValidation {
     <#
         .SYNOPSIS
             Validates if a mirror is ready
@@ -47,10 +47,6 @@ function Invoke-DbaDbMirrorValidation {
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Invoke-DbaDbMirrorValidation
-
         .EXAMPLE
             PS C:\> $params = @{
                     Primary = 'sql2017a'
@@ -61,7 +57,7 @@ function Invoke-DbaDbMirrorValidation {
                     NetworkShare = '\\nas\sql\share'
                 }
             
-            PS C:\> Invoke-DbaDbMirrorValidation @params
+            PS C:\> Invoke-DbMirrorValidation @params
     
             Do things
         

@@ -1,0 +1,106 @@
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaDbMirrorMonitor {
+ <#
+    .SYNOPSIS
+            Returns status rows for a monitored database from the status table in which database mirroring monitoring history is stored and allows you to choose whether the procedure obtains the latest status beforehand.
+    
+    .DESCRIPTION
+            Returns status rows for a monitored database from the status table in which database mirroring monitoring history is stored and allows you to choose whether the procedure obtains the latest status beforehand.
+            
+            Basically executes sp_dbmmonitorresults.
+    
+    .PARAMETER SqlInstance
+            The target SQL Server instance
+    
+    .PARAMETER SqlCredential
+            Login to the target instance using alternate Windows or SQL Login Authentication. Accepts credential objects (Get-Credential).
+
+    .PARAMETER Database
+            The target database.
+    
+    .PARAMETER Database
+            The target database.
+    
+    .PARAMETER Update
+            Updates the status for the database by calling sp_dbmmonitorupdate before computing the results. 
+            However, if the status table has been updated within the previous 15 seconds, or the user is not a member of the sysadmin fixed server role, the command runs without updating the status.
+    
+    .PARAMETER LimitResults
+            Limit results. Defaults to last day.
+    
+            Options include:
+            LastRow
+            LastTwoHours
+            LastFourHours
+            LastEightHours
+            LastDay
+            LastTwoDays
+            Last100Rows
+            Last500Rows
+            Last1000Rows
+            Last1000000Rows
+    
+    .PARAMETER InputObject
+            Allows piping from Get-DbaDatabase.
+    
+    .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+            Author: Chrissy LeMaire (@cl), netnerds.net
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+-           License: MIT https://opensource.org/licenses/MIT
+    
+        .LINK
+            https://dbatools.io/Get-DbaDbMirrorMonitor
+    
+        .EXAMPLE
+            PS C:\> Get-DbaDbMirrorMonitor -SqlInstance sql2008, sql2012
+            
+            Returns status rows for a monitored database from the status table on sql2008 and sql2012.
+#>
+    [CmdletBinding()]
+    Param (
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string[]]$Database,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [switch]$Update,
+        [ValidateSet('LastRow', 'LastTwoHours', 'LastFourHours', 'LastEightHours', 'LastDay', 'LastTwoDays', 'Last100Rows', 'Last500Rows', 'Last1000Rows', 'Last1000000Rows')]
+        [string]$LimitResults = 'LastDay',
+        [switch]$EnableException
+    )
+    begin {
+        $rows = switch ($LimitResults) {
+            'LastRow' { 0 }
+            'LastTwoHours' { 1 }
+            'LastFourHours' { 2 }
+            'LastEightHours' { 3 }
+            'LastDay' { 4 }
+            'LastTwoDays' { 5 }
+            'Last100Rows' { 6 }
+            'Last500Rows' { 7 }
+            'Last1000000Rows' { 8 }
+        }
+    }
+    process {
+        foreach ($instance in $SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
+        }
+        
+        foreach ($db in $InputObject) {
+            try {
+                $dbname = $db.Name                
+                $sql = "msdb.dbo.sp_dbmmonitorresults ($dbname, $rows, $update)"
+                $db.Query($sql)
+            }
+            catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_
+            }
+        }
+    }
+}

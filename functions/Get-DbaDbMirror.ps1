@@ -48,8 +48,35 @@ function Get-DbaDbMirror {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential | Where-Object MirroringPartner |
-            Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, MirroringSafetyLevel, MirroringStatus, MirroringPartner, MirroringPartnerInstance, MirroringFailoverLogSequenceNumber, MirroringID, MirroringRedoQueueMaxSize, MirroringRoleSequence, MirroringSafetySequence, MirroringTimeout, MirroringWitness, MirroringWitnessStatus
+            $dbs = Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential
+            $partners = $dbs | Where-Object MirroringPartner
+            $partners | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, MirroringSafetyLevel, MirroringStatus, MirroringPartner, MirroringPartnerInstance, MirroringFailoverLogSequenceNumber, MirroringID, MirroringRedoQueueMaxSize, MirroringRoleSequence, MirroringSafetySequence, MirroringTimeout, MirroringWitness, MirroringWitnessStatus
+            
+            # The witness is kinda hidden. Go get it manually.
+            try {
+                $witnesses = $dbs[0].Parent.Query("select distinct database_name, principal_server_name, safety_level, safety_level_desc, partner_sync_state from master.sys.database_mirroring_witnesses")
+            }
+            catch { continue }
+            
+            foreach ($witness in $witnesses) {
+                $witnessdb = $dbs | Where-Object Name -eq $witness.database_name
+                
+                foreach ($db in $witnessdb) {
+                    $state = switch($witness.partner_sync_state) {
+                        0 { "None" }
+                        1 { "Suspended" }
+                        2 { "Disconnected" }
+                        3 { "Synchronizing" }
+                        4 { "PendingFailover" }
+                        5 { "Synchronized" }
+                    }
+                    
+                    Add-Member -InputObject $db -Force -MemberType NoteProperty -Name MirroringPartner -Value $witness.principal_server_name
+                    Add-Member -InputObject $db -Force -MemberType NoteProperty -Name MirroringSafetyLevel -Value $witness.safety_level_desc
+                    Add-Member -InputObject $db -Force -MemberType NoteProperty -Name MirroringWitnessStatus -Value $status
+                    Select-DefaultView -InputObject $db -Property ComputerName, InstanceName, SqlInstance, Name, MirroringSafetyLevel, MirroringStatus, MirroringPartner, MirroringPartnerInstance, MirroringFailoverLogSequenceNumber, MirroringID, MirroringRedoQueueMaxSize, MirroringRoleSequence, MirroringSafetySequence, MirroringTimeout, MirroringWitness, MirroringWitnessStatus
+                }
+            }
         }
     }
 }
