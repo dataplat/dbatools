@@ -60,7 +60,7 @@ function Format-DbaBackupInformation {
 
         .NOTES
             Tags: DisasterRecovery, Backup, Restore
-            Author:Stuart Moore (@napalmgram), stuart-moore.com
+            Author: Stuart Moore (@napalmgram), stuart-moore.com
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

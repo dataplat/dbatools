@@ -93,7 +93,7 @@ function Copy-DbaDbTableData {
 
         .NOTES
             Tags: Migration
-            Author: niphlod (Simone Bizzotto)
+            Author: Simone Bizzotto (@niphlod)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
