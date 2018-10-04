@@ -131,6 +131,12 @@ function Set-DbaLogin {
 
     Remove the server role "bulkadmin" to the login
 
+    .EXAMPLE
+    $login = Get-DbaLogin -SqlInstance sql1 -Login test
+    $login | Set-DbaLogin -Disable
+
+    Disable the login from the pipeline
+
 #>
 
     [CmdletBinding()]
