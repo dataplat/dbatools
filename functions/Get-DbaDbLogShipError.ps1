@@ -44,7 +44,7 @@ function Get-DbaDbLogShipError {
 
         .NOTES
             Tags: LogShipping
-            Author: Sander Stad (@sqlstad, sqlstad.nl)
+            Author: Sander Stad (@sqlstad), sqlstad.nl
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -54,28 +54,28 @@ function Get-DbaDbLogShipError {
             https://dbatools.io/Get-DbaDbLogShipError
 
         .EXAMPLE
-            Get-DbaDbLogShipError -SqlInstance sql1
+            PS C:\> Get-DbaDbLogShipError -SqlInstance sql1
 
             Get all the log shipping errors that occurred
 
         .EXAMPLE
-            Get-DbaDbLogShipError -SqlInstance sql1 -Action Backup
+            PS C:\> Get-DbaDbLogShipError -SqlInstance sql1 -Action Backup
 
             Get the errors that have something to do with the backup of the databases
 
         .EXAMPLE
-            Get-DbaDbLogShipError -SqlInstance sql1 -Secondary
+            PS C:\> Get-DbaDbLogShipError -SqlInstance sql1 -Secondary
 
             Get the errors that occurred on the secondary instance.
             This will return the copy of the restore actions because those only occur on the secondary instance
 
         .EXAMPLE
-            Get-DbaDbLogShipError -SqlInstance sql1 -DateTimeFrom "01/05/2018"
+            PS C:\> Get-DbaDbLogShipError -SqlInstance sql1 -DateTimeFrom "01/05/2018"
 
             Get the errors that have occurred from "01/05/2018". This can also be of format "yyyy-MM-dd"
 
         .EXAMPLE
-            Get-DbaDbLogShipError -SqlInstance sql1 -Secondary -DateTimeFrom "01/05/2018" -DateTimeTo "2018-01-07"
+            PS C:\> Get-DbaDbLogShipError -SqlInstance sql1 -Secondary -DateTimeFrom "01/05/2018" -DateTimeTo "2018-01-07"
 
             Get the errors that have occurred between "01/05/2018" and "01/07/2018".
             See that is doesn't matter how the date is represented.
@@ -106,12 +106,12 @@ function Get-DbaDbLogShipError {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             if ($server.EngineEdition -match "Express") {
                 Write-Message -Level Warning -Message "$instance is Express Edition which does not support Log Shipping"
                 continue
             }
-            
+
             $query = "
 CREATE TABLE #DatabaseID
 (
@@ -170,37 +170,37 @@ ORDER BY lsmed.[log_time],
             lsmed.[sequence_number];
 
 DROP TABLE #DatabaseID;"
-            
+
             # Get the log shipping errors
             $results = $server.Query($query)
-            
+
             if ($results.Count -ge 1) {
-                
+
                 # Filter the results
                 if ($Database) {
                     $results = $results | Where-Object { $_.DatabaseName -in $Database }
                 }
-                
+
                 if ($Action) {
                     $results = $results | Where-Object { $_.Action -in $Action }
                 }
-                
+
                 if ($DateTimeFrom) {
                     $results = $results | Where-Object { $_.Logtime -ge $DateTimeFrom }
                 }
-                
+
                 if ($DateTimeTo) {
                     $results = $results | Where-Object { $_.Logtime -le $DateTimeTo }
                 }
-                
+
                 if ($Primary) {
                     $results = $results | Where-Object { $_.Instance -eq 'Primary' }
                 }
-                
+
                 if ($Secondary) {
                     $results = $results | Where-Object { $_.Instance -eq 'Secondary' }
                 }
-                
+
                 foreach ($result in $results) {
                     [PSCustomObject]@{
                         ComputerName = $server.ComputerName
@@ -214,7 +214,7 @@ DROP TABLE #DatabaseID;"
                         LogTime      = $result.LogTime
                         Message      = $result.Message
                     }
-                    
+
                 }
             }
             else {

@@ -149,7 +149,7 @@ function Invoke-Parallel {
         https://github.com/RamblingCookieMonster/Invoke-Parallel
     #>
     [cmdletbinding(DefaultParameterSetName='ScriptBlock')]
-    Param (
+    param (
         [Parameter(Mandatory=$false,position=0,ParameterSetName='ScriptBlock')]
         [System.Management.Automation.ScriptBlock]$ScriptBlock,
 

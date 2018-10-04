@@ -23,7 +23,7 @@ function Find-DbaInstance {
             Additional parameters allow more granular control over individual scans (e.g. Credentials to use).
 
             Note on logging and auditing:
-            The Discovery phase is unproblematic since it is non-intrusive, however during the scan phase, all targeted computers may be accessed repeatedly.
+            The Discovery phase is un-problematic since it is non-intrusive, however during the scan phase, all targeted computers may be accessed repeatedly.
             This may cause issues with security teams, due to many logon events and possibly failed authentication.
             This action constitutes a network scan, which may be illegal depending on the nation you are in and whether you own the network you scan.
             If you are unsure whether you may use this command in your environment, check the detailed description on the '-ScanType' parameter and contact your IT security team for advice.

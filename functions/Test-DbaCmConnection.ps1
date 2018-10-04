@@ -63,7 +63,7 @@ function Test-DbaCmConnection {
             The results will be reported and registered. Future calls from Get-DbaCmObject will recognize the results and optimize the query.
         #>
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(ValueFromPipeline)]
         [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter[]]
         $ComputerName = $env:COMPUTERNAME,
@@ -90,7 +90,7 @@ function Test-DbaCmConnection {
         #region Helper Functions
         function Test-ConnectionCimRM {
             [CmdletBinding()]
-            Param (
+            param (
                 [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter]
                 $ComputerName,
 
@@ -127,7 +127,7 @@ function Test-DbaCmConnection {
 
         function Test-ConnectionCimDCOM {
             [CmdletBinding()]
-            Param (
+            param (
                 [Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter]
                 $ComputerName,
 
@@ -164,7 +164,7 @@ function Test-DbaCmConnection {
 
         function Test-ConnectionWmi {
             [CmdletBinding()]
-            Param (
+            param (
                 [string]
                 $ComputerName,
 
@@ -198,7 +198,7 @@ function Test-DbaCmConnection {
 
         function Test-ConnectionPowerShellRemoting {
             [CmdletBinding()]
-            Param (
+            param (
                 [string]
                 $ComputerName,
 

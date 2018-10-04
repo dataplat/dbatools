@@ -64,7 +64,7 @@ function Get-DbaModule {
             Return all modules on server sql2008 for all databases that are triggers, views or scalar functions.
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

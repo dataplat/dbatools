@@ -36,12 +36,12 @@ function Get-DbaWaitingTask {
             https://dbatools.io/Get-DbaWaitingTask
 
         .EXAMPLE
-            Get-DbaWaitingTask -SqlInstance sqlserver2014a
+            PS C:\> Get-DbaWaitingTask -SqlInstance sqlserver2014a
 
             Returns the waiting task for all sessions on sqlserver2014a
 
         .EXAMPLE
-            Get-DbaWaitingTask -SqlInstance sqlserver2014a -IncludeSystemSpid
+            PS C:\> Get-DbaWaitingTask -SqlInstance sqlserver2014a -IncludeSystemSpid
 
             Returns the waiting task for all sessions (user and system) on sqlserver2014a
     #>

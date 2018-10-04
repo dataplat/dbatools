@@ -48,22 +48,22 @@ function Copy-DbaSpConfigure {
             https://dbatools.io/Copy-DbaSpConfigure
 
         .EXAMPLE
-            Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster
 
             Copies all sp_configure settings from sqlserver2014a to sqlcluster
 
         .EXAMPLE
-            Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -ConfigName DefaultBackupCompression, IsSqlClrEnabled -SourceSqlCredential $cred -Force
+            PS C:\> Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -ConfigName DefaultBackupCompression, IsSqlClrEnabled -SourceSqlCredential $cred -Force
 
             Copies the values for IsSqlClrEnabled and DefaultBackupCompression from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials to authenticate to sqlcluster.
 
         .EXAMPLE
-            Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -ExcludeConfigName DefaultBackupCompression, IsSqlClrEnabled
+            PS C:\> Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -ExcludeConfigName DefaultBackupCompression, IsSqlClrEnabled
 
             Copies all configs except for IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster.
 
         .EXAMPLE
-            Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -WhatIf
+            PS C:\> Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
             Shows what would happen if the command were executed.
     #>
@@ -102,13 +102,13 @@ function Copy-DbaSpConfigure {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             foreach ($sourceProp in $sourceProps) {
                 $displayName = $sourceProp.DisplayName
                 $sConfigName = $sourceProp.ConfigName
                 $sConfiguredValue = $sourceProp.ConfiguredValue
                 $requiresRestart = $sourceProp.IsDynamic
-                
+
                 $copySpConfigStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -118,26 +118,26 @@ function Copy-DbaSpConfigure {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($ConfigName -and $sConfigName -notin $ConfigName -or $sConfigName -in $ExcludeConfigName) {
                     continue
                 }
-                
+
                 $destProp = $destProps | Where-Object ConfigName -eq $sConfigName
                 if (!$destProp) {
                     Write-Message -Level Verbose -Message "Configuration $sConfigName ('$displayName') does not exist on the destination instance."
-                    
+
                     $copySpConfigStatus.Status = "Skipped"
                     $copySpConfigStatus.Notes = "Configuration does not exist on destination"
                     $copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    
+
                     continue
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Updating $sConfigName [$displayName]")) {
                     try {
                         $destOldConfigValue = $destProp.ConfiguredValue
-                        
+
                         if ($sConfiguredValue -ne $destOldConfigValue) {
                             $result = Set-DbaSpConfigure -SqlInstance $destServer -Name $sConfigName -Value $sConfiguredValue -EnableException -WarningAction SilentlyContinue
                             if ($result) {
@@ -160,7 +160,7 @@ function Copy-DbaSpConfigure {
                             $copySpConfigStatus.Notes = (Get-ErrorMessage -Record $_)
                         }
                         $copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Stop-Function -Message "Could not set $($destProp.ConfigName) to $sConfiguredValue." -Target $sConfigName -ErrorRecord $_
                     }
                 }

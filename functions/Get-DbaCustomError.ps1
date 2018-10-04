@@ -20,8 +20,9 @@ function Get-DbaCustomError {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: CustomError
+            Tags: Error, CustomError
             Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
+
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
@@ -30,12 +31,12 @@ function Get-DbaCustomError {
             https://dbatools.io/Get-DbaCustomError
 
         .EXAMPLE
-            Get-DbaCustomError -SqlInstance localhost
+            PS C:\> Get-DbaCustomError -SqlInstance localhost
 
             Returns all Custom Error Message(s) on the local default SQL Server instance
 
         .EXAMPLE
-            Get-DbaCustomError -SqlInstance localhost, sql2016
+            PS C:\> Get-DbaCustomError -SqlInstance localhost, sql2016
 
             Returns all Custom Error Message(s) for the local and sql2016 SQL Server instances
     #>

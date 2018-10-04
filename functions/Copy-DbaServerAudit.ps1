@@ -53,17 +53,17 @@ function Copy-DbaServerAudit {
             https://dbatools.io/Copy-DbaServerAudit
 
         .EXAMPLE
-            Copy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster
 
             Copies all server audits from sqlserver2014a to sqlcluster, using Windows credentials. If audits with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster -Audit tg_noDbDrop -SourceSqlCredential $cred -Force
+            PS C:\> Copy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster -Audit tg_noDbDrop -SourceSqlCredential $cred -Force
 
             Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an audit with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
         .EXAMPLE
-            Copy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            PS C:\> Copy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
     #>
@@ -85,7 +85,7 @@ function Copy-DbaServerAudit {
     )
 
     begin {
-        
+
         try {
             Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
@@ -99,7 +99,7 @@ function Copy-DbaServerAudit {
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
-            
+
             try {
                 Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
@@ -110,7 +110,7 @@ function Copy-DbaServerAudit {
             $destAudits = $destServer.Audits
             foreach ($currentAudit in $serverAudits) {
                 $auditName = $currentAudit.Name
-                
+
                 $copyAuditStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -120,13 +120,13 @@ function Copy-DbaServerAudit {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($Audit -and $auditName -notin $Audit -or $auditName -in $ExcludeAudit) {
                     continue
                 }
-                
+
                 $sql = $currentAudit.Script() | Out-String
-                
+
                 if ($destAudits.Name -contains $auditName) {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Server audit $auditName exists at destination. Use -Force to drop and migrate.")) {
@@ -145,7 +145,7 @@ function Copy-DbaServerAudit {
                                         $auditSpecification.Drop()
                                     }
                                 }
-                                
+
                                 $destServer.audits[$auditName].Disable()
                                 $destServer.audits[$auditName].Alter()
                                 $destServer.audits[$auditName].Drop()
@@ -153,13 +153,13 @@ function Copy-DbaServerAudit {
                             catch {
                                 $copyAuditStatus.Status = "Failed"
                                 $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                
+
                                 Stop-Function -Message "Issue dropping audit from destination." -Target $auditName -ErrorRecord $_
                             }
                         }
                     }
                 }
-                
+
                 if ($null -ne ($currentAudit.Filepath) -and -not (Test-DbaPath -SqlInstance $destServer -Path $currentAudit.Filepath)) {
                     if ($Force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$($currentAudit.Filepath) does not exist on $destinstance. Skipping $auditName. Specify -Force to create the directory.")) {
@@ -171,12 +171,12 @@ function Copy-DbaServerAudit {
                     }
                     else {
                         Write-Message -Level Verbose -Message "Force specified. Creating directory."
-                        
+
                         $destNetBios = Resolve-NetBiosName $destServer
                         $path = Join-AdminUnc $destNetBios $currentAudit.Filepath
                         $root = $currentAudit.Filepath.Substring(0, 3)
                         $rootUnc = Join-AdminUnc $destNetBios $root
-                        
+
                         if ((Test-Path $rootUnc) -eq $true) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Creating directory $($currentAudit.Filepath)")) {
                                 try {
@@ -200,7 +200,7 @@ function Copy-DbaServerAudit {
                         Write-Message -Level Verbose -Message "File path $($currentAudit.Filepath) exists on $destinstance."
                         Write-Message -Level Verbose -Message "Copying server audit $auditName."
                         $destServer.Query($sql)
-                        
+
                         $copyAuditStatus.Status = "Successful"
                         $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
@@ -208,7 +208,7 @@ function Copy-DbaServerAudit {
                         $copyAuditStatus.Status = "Failed"
                         $copyAuditStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Stop-Function -Message "Issue creating audit." -Target $auditName -ErrorRecord $_
                     }
                 }

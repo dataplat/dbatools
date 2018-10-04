@@ -91,13 +91,14 @@
             Add scripting options to scripting output for all objects except Registered Servers and Extended Events.
 
         .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
             Tags: Export
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -106,13 +107,13 @@
             https://dbatools.io/Export-DbaInstance
 
         .EXAMPLE
-            Export-DbaInstance -SqlInstance sqlserver\instance
+            PS C:\> Export-DbaInstance -SqlInstance sqlserver\instance
 
             All databases, logins, job objects and sp_configure options will be exported from
-            sqlserver\instance to an automaticallyl generated folder name in Documents.
+            sqlserver\instance to an automatically generated folder name in Documents.
 
         .EXAMPLE
-            Export-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Path C:\dr\sqlcluster
+            PS C:\> Export-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Path C:\dr\sqlcluster
 
             Exports everything but logins and database restore scripts to C:\dr\sqlcluster
     #>
@@ -188,7 +189,7 @@
                     return
                 }
             }
-            
+
             if ($Exclude -notcontains 'SpConfigure') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting SQL Server Configuration"
@@ -198,7 +199,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'CustomErrors') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting custom errors (user defined messages)"
@@ -209,7 +210,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'ServerRoles') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting server roles"
@@ -220,7 +221,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'Credentials') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting SQL credentials"
@@ -231,7 +232,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'DatabaseMail') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting database mail"
@@ -246,7 +247,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'CentralManagementServer') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Central Management Server"
@@ -258,7 +259,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'BackupDevices') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Backup Devices"
@@ -269,7 +270,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'LinkedServers') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting linked servers"
@@ -279,7 +280,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'SystemTriggers') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting System Triggers"
@@ -296,7 +297,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'Databases') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting database restores"
@@ -307,7 +308,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'Logins') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting logins"
@@ -317,7 +318,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'Audits') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Audits"
@@ -328,7 +329,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'ServerAuditSpecifications') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Server Audit Specifications"
@@ -339,7 +340,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'Endpoints') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Endpoints"
@@ -350,7 +351,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'PolicyManagement') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Policy Management"
@@ -363,7 +364,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'ResourceGovernor') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Resource Governor"
@@ -378,7 +379,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'ExtendedEvents') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting Extended Events"
@@ -389,7 +390,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'AgentServer') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting job server"
@@ -406,7 +407,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'ReplicationSettings') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting replication settings"
@@ -417,7 +418,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'SysDbUserObjects') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting user objects in system databases (this can take a minute)."
@@ -428,7 +429,7 @@
                     $fileCounter--
                 }
             }
-            
+
             if ($Exclude -notcontains 'AvailabilityGroups') {
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting availability group"
@@ -439,7 +440,7 @@
                     $fileCounter--
                 }
             }
-            
+
             Write-Progress -Activity "Performing Instance Export for $instance" -Completed
         }
     }

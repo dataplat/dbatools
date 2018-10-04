@@ -26,7 +26,7 @@ function Get-DbaServerRole {
 
         .NOTES
             Tags: ServerRole, Security
-            Original Author: Shawn Melton (@wsmelton)
+            Author: Shawn Melton (@wsmelton)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -36,12 +36,12 @@ function Get-DbaServerRole {
             https://dbatools.io/Get-DbaServerRole
 
         .EXAMPLE
-            Get-DbaServerRole -SqlInstance sql2016a
+            PS C:\> Get-DbaServerRole -SqlInstance sql2016a
 
             Outputs list of server-level roles for sql2016a instance.
 
         .EXAMPLE
-            Get-DbaServerRole -SqlInstance sql2017a -ExcludeFixedRole
+            PS C:\> Get-DbaServerRole -SqlInstance sql2017a -ExcludeFixedRole
 
             Outputs the server-level role(s) that are not fixed roles on sql2017a instance.
     #>

@@ -17,24 +17,24 @@ function Get-DbaRepServer {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
         .NOTES
             Tags: Replication
-            Website: https://dbatools.io
             Author: Chrissy LeMaire (@cl), netnerds.net
+
+            Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
-            Get-DbaRepServer -SqlInstance sql2016
+            PS C:\> Get-DbaRepServer -SqlInstance sql2016
 
             Gets the replication server object for sql2016 using Windows authentication
 
         .EXAMPLE
-            Get-DbaRepServer -SqlInstance sql2016 -SqlCredential repadmin
+            PS C:\> Get-DbaRepServer -SqlInstance sql2016 -SqlCredential repadmin
 
             Gets the replication server object for sql2016 using SQL authentication
-
     #>
     [CmdletBinding()]
     param (

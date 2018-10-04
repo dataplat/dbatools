@@ -29,7 +29,7 @@ function Get-DbaAgDatabase {
 
         .NOTES
             Tags: Hadr, AG, AvailabilityGroup, Replica
-            Author: Shawn Melton (@wsmelton)
+            Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -39,17 +39,17 @@ function Get-DbaAgDatabase {
             https://dbatools.io/Get-DbaAgDatabase
 
         .EXAMPLE
-            Get-DbaAgDatabase -SqlInstance sqlserver2014a
+            PS C:\> Get-DbaAgDatabase -SqlInstance sqlserver2014a
 
             Returns basic information on all the databases in each Availability Group found on sqlserver2014a
 
         .EXAMPLE
-            Get-DbaAgDatabase -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
+            PS C:\> Get-DbaAgDatabase -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
 
             Returns basic information on all the databases in the Availability Group AG-a on sqlserver2014a
 
         .EXAMPLE
-            Get-DbaAgDatabase -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -Database AG-Database
+            PS C:\> Get-DbaAgDatabase -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -Database AG-Database
 
             Returns basic information on the database AG-Database found in the Availability Group AG-a on server sqlserver2014a
     #>

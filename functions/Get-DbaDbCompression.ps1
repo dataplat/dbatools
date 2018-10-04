@@ -24,24 +24,25 @@ function Get-DbaDbCompression {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Author: Jess Pomfret (@jpomfret jesspomfret.com)
             Tags: Compression, Table, Database
+            Author: Jess Pomfret (@jpomfret), jesspomfret.com
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
-            Get-DbaDbCompression -SqlInstance localhost
+            PS C:\> Get-DbaDbCompression -SqlInstance localhost
 
             Returns objects size and current compression level for all user databases.
 
         .EXAMPLE
-            Get-DbaDbCompression -SqlInstance localhost -Database TestDatabase
+            PS C:\> Get-DbaDbCompression -SqlInstance localhost -Database TestDatabase
 
             Returns objects size and current compression level for objects within the TestDatabase database.
 
-            .EXAMPLE
-            Get-DbaDbCompression -SqlInstance localhost -ExcludeDatabase TestDatabases
+        .EXAMPLE
+            PS C:\> Get-DbaDbCompression -SqlInstance localhost -ExcludeDatabase TestDatabases
 
             Returns objects size and current compression level for objects in all databases except the TestDatabase database.
     #>

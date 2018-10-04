@@ -63,7 +63,7 @@ function New-DbatoolsSupportPackage {
         #region Helper functions
         function Get-ShellBuffer {
             [CmdletBinding()]
-            Param ()
+            param ()
 
             try {
                 # Define limits

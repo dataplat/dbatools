@@ -23,7 +23,7 @@ function Set-DbaSpConfigure {
 
         .PARAMETER InputObject
             Piped objectgs from Get-DbaSpConfigure
-    
+
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -54,7 +54,7 @@ function Set-DbaSpConfigure {
         .EXAMPLE
             Get-DbaSpConfigure -SqlInstance sql2017, sql2014 -Name XPCmdShellEnabled, IsSqlClrEnabled | Set-DbaSpConfigure -Value $false
             Sets the values for XPCmdShellEnabled and IsSqlClrEnabled on sql2017 and sql2014 to False
-    
+
         .EXAMPLE
             Set-DbaSpConfigure -SqlInstance localhost -Name XPCmdShellEnabled -Value 1
 
@@ -66,7 +66,7 @@ function Set-DbaSpConfigure {
             Returns information on the action that would be performed. No actual change will be made.
         #>
     [CmdletBinding(SupportsShouldProcess)]
-    Param (
+    param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [System.Management.Automation.PSCredential]$SqlCredential,
@@ -83,7 +83,7 @@ function Set-DbaSpConfigure {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaSpConfigure -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Name $Name
         }
-        
+
         foreach ($configobject in $InputObject) {
             $server = $InputObject.Parent
             $currentRunValue = $configobject.RunningValue
@@ -91,22 +91,22 @@ function Set-DbaSpConfigure {
             $maxValue = $configobject.MaxValue
             $isDynamic = $configobject.IsDynamic
             $configuration = $configobject.Name
-            
+
             #Let us not waste energy setting the value to itself
             if ($currentRunValue -eq $value) {
                 Stop-Function -Message "Value to set is the same as the existing value. No work being performed." -Continue -Target $server -Category InvalidData
             }
-            
+
             #Going outside the min/max boundary can be done, but it can break SQL, so I don't think allowing that is wise at this juncture
             if ($value -lt $minValue -or $value -gt $maxValue) {
                 Stop-Function -Message "Value out of range for $configuration ($minValue <-> $maxValue)" -Continue -Category InvalidArgument
             }
-            
+
             If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $configuration from $currentRunValue to $value.")) {
                 try {
                     $server.Configuration.$configuration.ConfigValue = $value
                     $server.Configuration.Alter()
-                    
+
                     [pscustomobject]@{
                         ComputerName           = $server.ComputerName
                         InstanceName           = $server.ServiceName
@@ -115,7 +115,7 @@ function Set-DbaSpConfigure {
                         OldValue               = $currentRunValue
                         NewValue               = $value
                     }
-                    
+
                     #If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
                     if ($isDynamic -eq $false) {
                         Write-Message -Level Warning -Message "Configuration setting $configuration has been set, but restart of SQL Server is required for the new value `"$value`" to be used (old value: `"$currentRunValue`")" -Target $Instance

@@ -32,33 +32,33 @@ function Get-DbaTcpPort {
         .NOTES
             Tags: SQLWMI, tcp
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
-
 
         .LINK
             https://dbatools.io/Get-DbaTcpPort
 
         .EXAMPLE
-            Get-DbaTcpPort -SqlInstance sqlserver2014a
+            PS C:\> Get-DbaTcpPort -SqlInstance sqlserver2014a
 
             Returns just the port number for the default instance on sqlserver2014a.
 
         .EXAMPLE
-            Get-DbaTcpPort -SqlInstance winserver\sqlexpress, sql2016
+            PS C:\> Get-DbaTcpPort -SqlInstance winserver\sqlexpress, sql2016
 
             Returns an object with server name and port number for the sqlexpress on winserver and the default instance on sql2016.
 
         .EXAMPLE
-            Get-DbaTcpPort -SqlInstance sqlserver2014a, sql2016 -Detailed
+            PS C:\> Get-DbaTcpPort -SqlInstance sqlserver2014a, sql2016 -Detailed
 
             Returns an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for sqlserver2014a and sql2016.
 
             Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
 
         .EXAMPLE
-            Get-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -Detailed
+            PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -Detailed
 
             Returns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in the Central Management Server on sql2014.
     #>

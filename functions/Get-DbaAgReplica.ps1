@@ -35,19 +35,19 @@ function Get-DbaAgReplica {
             https://dbatools.io/Get-DbaAgReplica
 
         .EXAMPLE
-            Get-DbaAgReplica -SqlInstance sqlserver2014a
+            PS C:\> Get-DbaAgReplica -SqlInstance sqlserver2014a
 
             Returns basic information on all the Availability Group(s) replica(s) found on sqlserver2014a
 
         .EXAMPLE
-            Get-DbaAgReplica -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
+            PS C:\> Get-DbaAgReplica -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
 
             Shows basic information on the replica(s) found on Availability Group AG-a on sqlserver2014a
 
         .EXAMPLE
-            Get-DbaAgReplica -SqlInstance sqlserver2014a | Select *
+            Get-DbaAgReplica -SqlInstance sqlserver2014a | Select-Object *
 
-            Returns full object properties on all Availability Group(s) replica(s) on sqlserver2014a
+            PS C:\> Returns full object properties on all Availability Group(s) replica(s) on sqlserver2014a
     #>
     [CmdletBinding()]
     param (

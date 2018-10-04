@@ -1,10 +1,14 @@
-﻿function Test-DbaDeprecatedFeature {
+﻿function Get-DbaDbFeatureUsage {
     <#
         .SYNOPSIS
-            Displays information relating to deprecated features for SQL Server 2005 and above.
+            Shows features that are enabled in the database but not supported on all editions of SQL Server. Basically checks for Enterprise feature usage.
 
         .DESCRIPTION
-            Displays information relating to deprecated features for SQL Server 2005 and above.
+            Shows features that are enabled in the database but not supported on all editions of SQL Server.
+    
+            Basically checks for Enterprise feature usage.
+
+            This feature must be removed before the database can be migrated to all available editions of SQL Server.
 
         .PARAMETER SqlInstance
             The target SQL Server instance
@@ -27,35 +31,23 @@
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Author: Chrissy LeMaire (@cl), netnerds.net
+            Author: Brandon Abshire, netnerds.net
             Tags: Deprecated
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 -           License: MIT https://opensource.org/licenses/MIT
 
         .LINK
-            https://dbatools.io/Test-DbaDeprecatedFeature
+            https://dbatools.io/Get-DbaDbFeatureUsage
 
         .EXAMPLE
-            Get-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Test-DbaDeprecatedFeature
-            Check deprecated features on server sql2008 for only the testdb and db2 databases
+            C:\> Get-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Get-DbaDbFeatureUsage
 
-
-        .EXAMPLE
-            Get-DbaDatabase -SqlInstance sql2008 -Database testdb, db2 | Test-DbaDeprecatedFeature | Select *
-            See the object definition in the output as well
-
-        .EXAMPLE
-            Test-DbaDeprecatedFeature -SqlInstance sql2008, sqlserver2012
-            Check deprecated features for all databases on the servers sql2008 and sqlserver2012.
-
-        .EXAMPLE
-            Test-DbaDeprecatedFeature -SqlInstance sql2008 -Database TestDB
-            Check deprecated features on server sql2008 for only the TestDB database
-
-        #>
+            Shows features that are enabled in the testdb and db2 databases but
+            not supported on the all the editions of SQL Server.
+    #>
     [CmdletBinding()]
-    param (
+    Param (
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -69,13 +61,13 @@
     begin {
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-            SERVERPROPERTY('ServerName') AS SqlInstance, object_id as ID, Name, type_desc as Type, Object_Definition (object_id) as Definition FROM sys.all_objects
-            Where Type = 'P' AND is_ms_shipped = 0"
+            SERVERPROPERTY('ServerName') AS SqlInstance, DB_NAME() as [Database], feature_id as Id,
+            feature_name as Feature FROM sys.dm_db_persisted_sku_features"
     }
 
     process {
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+            $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
         foreach ($db in $InputObject) {
             Write-Message -Level Verbose -Message "Processing $db on $($db.Parent.Name)"
@@ -84,17 +76,8 @@
                 Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue
             }
 
-            $deps = $db.Query("select instance_name as dep from sys.dm_os_performance_counters where object_name like '%Deprecated%'")
             try {
-                $results = $db.Query($sql)
-                foreach ($dep in $deps) {
-                    $escaped = [Regex]::Escape("$($dep.dep)".Trim())
-                    $matchedep = $results | Where-Object Definition -match $escaped
-                    if ($matchedep) {
-                        $matchedep | Add-Member -NotePropertyName DeprecatedFeature -NotePropertyValue $dep.dep.ToString().Trim() -PassThru -Force |
-                        Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DeprecatedFeature, ID, Name, Type
-                    }
-                }
+                $db.Query($sql)
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue

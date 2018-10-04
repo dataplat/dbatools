@@ -19,7 +19,7 @@ function Get-DbaCmConnection {
 
         .NOTES
             Tags: ComputerManagement, CIM
-            Author: Fred Winmann (@FredWeinmann)
+            Author: Fred Weinmann (@FredWeinmann)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -29,17 +29,17 @@ function Get-DbaCmConnection {
             https://dbatools.io/Get-DbaCmConnection
 
         .EXAMPLE
-            Get-DbaCmConnection
+            PS C:\> Get-DbaCmConnection
 
             List all cached connections.
 
         .EXAMPLE
-            Get-DbaCmConnection sql2014
+            PS C:\> Get-DbaCmConnection sql2014
 
             List the cached connection - if any - to the server sql2014.
 
         .EXAMPLE
-            Get-DbaCmConnection -UserName "*charles*"
+            PS C:\> Get-DbaCmConnection -UserName "*charles*"
 
             List all cached connection that use a username containing "charles" as default or override credentials.
     #>

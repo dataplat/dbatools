@@ -1,5 +1,5 @@
 ﻿Register-DbatoolsConfigValidation -Name "integerpositive" -ScriptBlock {
-    Param (
+    param (
         $Value
     )
 
