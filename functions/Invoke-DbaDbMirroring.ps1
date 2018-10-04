@@ -165,7 +165,7 @@ function Invoke-DbaDbMirroring {
                 $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
                 $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
                 try {
-                    $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $dest -WithReplace -NoRecovery -EnableException
+                    $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $Mirror -SqlCredential $MirrorSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                 }
                 catch {
                     $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
@@ -182,7 +182,13 @@ function Invoke-DbaDbMirroring {
                     $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
                     $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
                 }
-                $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $witserver -WithReplace -NoRecovery
+                try {
+                    $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $Witness -SqlCredential $WitnessSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+                }
+                catch {
+                    $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                    Stop-Function -Message $msg -ErrorRecord $_ -Target $witserver -Continue
+                }
             }
             
             if ($Witness) {
@@ -246,7 +252,7 @@ function Invoke-DbaDbMirroring {
             
             try {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for mirror"
-                $mirrordb | Set-DbaDbMirror -Partner $primaryendpoint.Fqdn
+                $null = $mirrordb | Set-DbaDbMirror -Partner $primaryendpoint.Fqdn
             }
             catch {
                 Stop-Function -Continue -Message "Failure on mirror" -ErrorRecord $_
@@ -254,7 +260,7 @@ function Invoke-DbaDbMirroring {
             
             try {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for primary"
-                $primarydb | Set-DbaDbMirror -Partner $mirrorendpoint.Fqdn
+                $null = $primarydb | Set-DbaDbMirror -Partner $mirrorendpoint.Fqdn
             }
             catch {
                 Stop-Function -Continue -Message "Failure on primary" -ErrorRecord $_
@@ -262,7 +268,7 @@ function Invoke-DbaDbMirroring {
             
             try {
                 if ($witnessendpoint) {
-                    $primarydb | Set-DbaDbMirror -Witness $witnessendpoint.Fqdn
+                    $null = $primarydb | Set-DbaDbMirror -Witness $witnessendpoint.Fqdn
                 }
             }
             catch {
