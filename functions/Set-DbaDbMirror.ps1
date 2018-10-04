@@ -32,6 +32,12 @@ function Set-DbaDbMirror {
         .PARAMETER InputObject
             Allows piping from Get-DbaDatabase.
     
+       .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
+    
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -57,7 +63,7 @@ function Set-DbaDbMirror {
 
             Returns all Endpoint(s) for the local and sql2016 SQL Server instances
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -84,24 +90,33 @@ function Set-DbaDbMirror {
         foreach ($db in $InputObject) {
             try {
                 if ($Partner) {
-                    # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
-                    $db.Parent.Query("ALTER DATABASE $db SET PARTNER = N'$Partner'")
+                    if ($Pscmdlet.ShouldProcess("Setting partner on $db", "$($db.Parent)")) {
+                        # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
+                        $db.Parent.Query("ALTER DATABASE $db SET PARTNER = N'$Partner'")
+                    }
                 }
                 elseif ($Witness) {
-                    $db.Parent.Query("ALTER DATABASE $db SET WITNESS = N'$Witness'")
+                    if ($Pscmdlet.ShouldProcess("Setting witness on $db", "$($db.Parent)")) {
+                        $db.Parent.Query("ALTER DATABASE $db SET WITNESS = N'$Witness'")
+                    }
                 }
                 
                 if ($SafetyLevel) {
-                    $db.MirroringSafetyLevel = $SafetyLevel
+                    if ($Pscmdlet.ShouldProcess("Changing safety level to $SafetyLevel on $db", "$($db.Parent)")) {
+                        $db.MirroringSafetyLevel = $SafetyLevel
+                    }
                 }
                 
                 if ($State) {
-                    $db.ChangeMirroringState($State)
+                    if ($Pscmdlet.ShouldProcess("Changing mirror state to $State on $db", "$($db.Parent)")) {
+                        $db.ChangeMirroringState($State)
+                    }
                 }
                 
-                $db.Alter()
-                
-                $db
+                if ($Pscmdlet.ShouldProcess("Committing changes to $db", "$($db.Parent)")) {
+                    $db.Alter()
+                    $db
+                }
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_

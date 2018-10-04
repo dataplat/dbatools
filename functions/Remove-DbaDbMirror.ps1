@@ -26,6 +26,12 @@ function Remove-DbaDbMirror {
         .PARAMETER InputObject
             Allows piping from Get-DbaDatabase.
     
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
+    
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -51,7 +57,7 @@ function Remove-DbaDbMirror {
 
             Returns all Endpoint(s) for the local and sql2016 SQL Server instances
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -70,20 +76,22 @@ function Remove-DbaDbMirror {
         }
         
         foreach ($db in $InputObject) {
-            # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
-            try {
-                $db.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
-                $db.Alter()
-                [pscustomobject]@{
-                    ComputerName = $db.ComputerName
-                    InstanceName = $db.InstanceName
-                    SqlInstance  = $db.SqlInstance
-                    Database     = $db.Name
-                    Status       = "Removed"
+            if ($Pscmdlet.ShouldProcess("Turning off mirror for $db", "$($db.Parent.Name)")) {
+                # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
+                try {
+                    $db.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
+                    $db.Alter()
+                    [pscustomobject]@{
+                        ComputerName = $db.ComputerName
+                        InstanceName = $db.InstanceName
+                        SqlInstance  = $db.SqlInstance
+                        Database     = $db.Name
+                        Status       = "Removed"
+                    }
                 }
-            }
-            catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_
+                catch {
+                    Stop-Function -Message "Failure on $($db.Parent.Name)" -ErrorRecord $_
+                }
             }
         }
     }

@@ -42,6 +42,12 @@ function Invoke-DbaDbMirroring {
         .PARAMETER Force
                 Drop and recreate the database on remote servers using fresh backup
     
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -74,7 +80,7 @@ function Invoke-DbaDbMirroring {
             Do that
         
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter]$Primary,
         [PSCredential]$PrimarySqlCredential,
@@ -95,6 +101,8 @@ function Invoke-DbaDbMirroring {
         $params = $PSBoundParameters
         $null = $params.Remove('UseLastBackups')
         $null = $params.Remove('Force')
+        $null = $params.Remove('Confirm')
+        $null = $params.Remove('Whatif')
         $totalSteps = 12
         $Activity = "Setting up mirroring"
     }
@@ -155,7 +163,7 @@ function Invoke-DbaDbMirroring {
                     Stop-Function -Continue -Message "$dbName not set to full recovery. UseLastBackups cannot be used."
                 }
                 else {
-                    Set-DbaDbRecoveryModel -SqlInstance $source -Database $primarydb.Name -RecoveryModel Full -Confirm:$false
+                    Set-DbaDbRecoveryModel -SqlInstance $source -Database $primarydb.Name -RecoveryModel Full
                 }
             }
             
@@ -164,12 +172,14 @@ function Invoke-DbaDbMirroring {
             if (-not $validation.DatabaseExistsOnMirror -or $Force) {
                 $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
                 $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
-                try {
-                    $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $Mirror -SqlCredential $MirrorSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
-                }
-                catch {
-                    $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
-                    Stop-Function -Message $msg -ErrorRecord $_ -Target $dest -Continue
+                if ($Pscmdlet.ShouldProcess("restoring full and log backups of $primarydb from $Primary", "$Mirror")) {
+                    try {
+                        $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $Mirror -SqlCredential $MirrorSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+                    }
+                    catch {
+                        $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                        Stop-Function -Message $msg -ErrorRecord $_ -Target $dest -Continue
+                    }
                 }
             }
             
@@ -182,12 +192,14 @@ function Invoke-DbaDbMirroring {
                     $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
                     $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
                 }
-                try {
-                    $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $Witness -SqlCredential $WitnessSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
-                }
-                catch {
-                    $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
-                    Stop-Function -Message $msg -ErrorRecord $_ -Target $witserver -Continue
+                if ($Pscmdlet.ShouldProcess("restoring full and log backups of $primarydb from $Primary", "$Witness")) {
+                    try {
+                        $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $Witness -SqlCredential $WitnessSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+                    }
+                    catch {
+                        $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                        Stop-Function -Message $msg -ErrorRecord $_ -Target $witserver -Continue
+                    }
                 }
             }
             
@@ -227,18 +239,20 @@ function Invoke-DbaDbMirroring {
             $serviceaccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
             
             foreach ($account in $serviceaccounts) {
-                $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
-                $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
-                try {
-                    $null = $source.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
-                    $null = $dest.Query("GRANT CONNECT ON ENDPOINT::$mirrorendpoint TO [$account]")
-                    if ($witserver) {
-                        $null = New-DbaLogin -SqlInstance $witserver -Login $account -WarningAction SilentlyContinue
-                        $witserver.Query("GRANT CONNECT ON ENDPOINT::$witnessendpoint TO [$account]")
+                if ($Pscmdlet.ShouldProcess("Creating login $account and granting CONNECT ON ENDPOINT", "primary, mirror and witness (if specified)")) {
+                    $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
+                    $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
+                    try {
+                        $null = $source.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
+                        $null = $dest.Query("GRANT CONNECT ON ENDPOINT::$mirrorendpoint TO [$account]")
+                        if ($witserver) {
+                            $null = New-DbaLogin -SqlInstance $witserver -Login $account -WarningAction SilentlyContinue
+                            $witserver.Query("GRANT CONNECT ON ENDPOINT::$witnessendpoint TO [$account]")
+                        }
                     }
-                }
-                catch {
-                    Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+                    catch {
+                        Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+                    }
                 }
             }
             
@@ -275,19 +289,20 @@ function Invoke-DbaDbMirroring {
                 Stop-Function -Continue -Message "Failure with the new last part" -ErrorRecord $_
             }
             
-            $results = [pscustomobject]@{
-                Primary  = $Primary
-                Mirror   = $Mirror
-                Witness  = $Witness
-                Database = $primarydb.Name
-                Status   = "Success"
-            }
-            
-            if ($Witness) {
-                $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, Status
-            }
-            else {
-                $results | Select-DefaultView -Property Primary, Mirror, Database, Status
+            if ($Pscmdlet.ShouldProcess("Showing results", "console")) {
+                $results = [pscustomobject]@{
+                    Primary  = $Primary
+                    Mirror   = $Mirror
+                    Witness  = $Witness
+                    Database = $primarydb.Name
+                    Status   = "Success"
+                }
+                if ($Witness) {
+                    $results | Select-DefaultView -Property Primary, Mirror, Witness, Database, Status
+                }
+                else {
+                    $results | Select-DefaultView -Property Primary, Mirror, Database, Status
+                }
             }
         }
     }

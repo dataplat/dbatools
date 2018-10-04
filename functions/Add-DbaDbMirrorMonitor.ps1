@@ -15,6 +15,12 @@ function Add-DbaDbMirrorMonitor {
     .PARAMETER SqlCredential
             Login to the target instance using alternate Windows or SQL Login Authentication. Accepts credential objects (Get-Credential).
 
+    .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
+    
     .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -34,7 +40,7 @@ function Add-DbaDbMirrorMonitor {
             
             Creates a database mirroring monitor job that periodically updates the mirroring status for every mirrored database on sql2008 and sql2012.
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     Param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -50,11 +56,13 @@ function Add-DbaDbMirrorMonitor {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             
-            try {
-                $server.Query("msdb.dbo.sp_dbmmonitoraddmonitoring")
-            }
-            catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+            if ($Pscmdlet.ShouldProcess("add mirror monitoring", "$instance")) {
+                try {
+                    $server.Query("msdb.dbo.sp_dbmmonitoraddmonitoring")
+                }
+                catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                }
             }
         }
     }

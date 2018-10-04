@@ -22,6 +22,12 @@ function Start-DbaEndpoint {
         .PARAMETER InputObject
             Internal parameter to support piping from Get-Endpoint
 
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -53,7 +59,7 @@ function Start-DbaEndpoint {
             Starts the endpoints returned from the Get-Endpoint function.
 
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -75,8 +81,10 @@ function Start-DbaEndpoint {
         
         foreach ($ep in $InputObject) {
             try {
-                $ep.Start()
-                $ep
+                if ($Pscmdlet.ShouldProcess("Starting $ep", "$($ep.Parent)")) {
+                    $ep.Start()
+                    $ep
+                }
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Continue

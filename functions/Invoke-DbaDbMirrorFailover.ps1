@@ -22,6 +22,12 @@ function Invoke-DbaDbMirrorFailover {
         .PARAMETER Force
             Force Failover and allow data loss
     
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -54,7 +60,7 @@ function Invoke-DbaDbMirrorFailover {
             Failover to stuff
         
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -77,11 +83,15 @@ function Invoke-DbaDbMirrorFailover {
             # alter database set partner force_service_allow_data_loss
             # if it's sync mirroring you know it's all in sync, so you can just do alter database [dbname] set partner failover
             if ($Force) {
-                $db | Set-DbaDbMirror -State ForceFailoverAndAllowDataLoss
+                if ($Pscmdlet.ShouldProcess("Forcing failover of $db and allowing data loss", "$($db.Parent.Name)")) {
+                    $db | Set-DbaDbMirror -State ForceFailoverAndAllowDataLoss
+                }
             }
             else {
-                $db | Set-DbaDbMirror -SafetyLevel Full
-                $db | Set-DbaDbMirror -State Failover
+                if ($Pscmdlet.ShouldProcess("Setting safety level to full and failing over $db to partner server", "$($db.Parent.Name)")) {
+                    $db | Set-DbaDbMirror -SafetyLevel Full
+                    $db | Set-DbaDbMirror -State Failover
+                }
             }
         }
     }

@@ -14,11 +14,6 @@ function New-DbaEndpoint {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
         .PARAMETER Name
             The name of the endpoint. If a name is not specified, one will be auto-generated.
     
@@ -36,6 +31,17 @@ function New-DbaEndpoint {
     
         .PARAMETER SslPort
             Port for SSL
+
+        .PARAMETER WhatIf
+            Shows what would happen if the command were to run. No actions are actually performed.
+
+        .PARAMETER Confirm
+            Prompts you for confirmation before executing any changing operations within the command.
+
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
             Tags: Endpoint
@@ -57,7 +63,7 @@ function New-DbaEndpoint {
 
             Returns all Endpoint(s) for the local and sql2016 SQL Server instances
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter]$SqlInstance,
@@ -111,23 +117,25 @@ function New-DbaEndpoint {
                 }
             }
             
-            try {
-                $endpoint = New-Object Microsoft.SqlServer.Management.Smo.EndPoint $server, $Name
-                $endpoint.ProtocolType = [Microsoft.SqlServer.Management.Smo.ProtocolType]::$Protocol
-                $endpoint.EndpointType = [Microsoft.SqlServer.Management.Smo.EndpointType]::$Type
-                if ($Protocol -eq "TCP") {
-                    $endpoint.Protocol.Tcp.ListenerPort = $tcpPort
-                    $endpoint.Payload.DatabaseMirroring.ServerMirroringRole = [Microsoft.SqlServer.Management.Smo.ServerMirroringRole]::$Role
-                    if (Test-Bound -ParameterName SslPort) {
-                        $endpoint.Protocol.Tcp.SslPort = $SslPort
+            if ($Pscmdlet.ShouldProcess("Creating endpoint $Name of type $Type using protocol $Protocol and if TCP then using Port $tcpPort", $server)) {
+                try {
+                    $endpoint = New-Object Microsoft.SqlServer.Management.Smo.EndPoint $server, $Name
+                    $endpoint.ProtocolType = [Microsoft.SqlServer.Management.Smo.ProtocolType]::$Protocol
+                    $endpoint.EndpointType = [Microsoft.SqlServer.Management.Smo.EndpointType]::$Type
+                    if ($Protocol -eq "TCP") {
+                        $endpoint.Protocol.Tcp.ListenerPort = $tcpPort
+                        $endpoint.Payload.DatabaseMirroring.ServerMirroringRole = [Microsoft.SqlServer.Management.Smo.ServerMirroringRole]::$Role
+                        if (Test-Bound -ParameterName SslPort) {
+                            $endpoint.Protocol.Tcp.SslPort = $SslPort
+                        }
                     }
+                    $null = $endpoint.Create()
+                    $server.Endpoints.Refresh()
+                    Get-DbaEndpoint -SqlInstance $server -Endpoint $name
                 }
-                $null = $endpoint.Create()
-                $server.Endpoints.Refresh()
-                Get-DbaEndpoint -SqlInstance $server -Endpoint $name
-            }
-            catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                }
             }
         }
     }
