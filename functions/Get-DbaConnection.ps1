@@ -22,6 +22,7 @@ function Get-DbaConnection {
         .NOTES
             Tags: Connection
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -30,7 +31,7 @@ function Get-DbaConnection {
             https://dbatools.io/Get-DbaConnection
 
         .EXAMPLE
-            Get-DbaConnection -SqlInstance sql2016, sql2017
+            PS C:\> Get-DbaConnection -SqlInstance sql2016, sql2017
 
             Returns client connection information from sql2016 and sql2017
     #>
