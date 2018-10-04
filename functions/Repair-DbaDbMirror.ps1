@@ -2,12 +2,14 @@
 function Repair-DbaDbMirror {
     <#
         .SYNOPSIS
-            Attempts to repair a suspended mirroring database.
+            Attempts to repair a suspended or paused mirroring database.
 
         .DESCRIPTION
             Attempts to repair a suspended mirroring database.
     
-            Restarts the endpoints then sets the partner to resume.
+            Restarts the endpoints then sets the partner to resume. See this article for more info:
+    
+            http://www.sqlservercentral.com/blogs/vivekssqlnotes/2016/09/03/how-to-resume-suspended-database-mirroring-in-sql-server-/
 
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
