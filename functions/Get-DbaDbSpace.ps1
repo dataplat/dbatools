@@ -31,6 +31,7 @@ function Get-DbaDbSpace {
         .NOTES
             Tags: Database, Space, Storage
             Author: Michael Fal (@Mike_Fal), http://mikefal.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -39,22 +40,22 @@ function Get-DbaDbSpace {
             https://dbatools.io/Get-DbaDbSpace
 
         .EXAMPLE
-            Get-DbaDbSpace -SqlInstance localhost
+            PS C:\> Get-DbaDbSpace -SqlInstance localhost
 
             Returns all user database files and free space information for the localhost.
 
         .EXAMPLE
-            Get-DbaDbSpace -SqlInstance localhost | Where-Object {$_.PercentUsed -gt 80}
+            PS C:\> Get-DbaDbSpace -SqlInstance localhost | Where-Object {$_.PercentUsed -gt 80}
 
             Returns all user database files and free space information for the local host. Filters the output object by any files that have a percent used of greater than 80%.
 
         .EXAMPLE
-            'localhost','localhost\namedinstance' | Get-DbaDbSpace
+            PS C:\> 'localhost','localhost\namedinstance' | Get-DbaDbSpace
 
             Returns all user database files and free space information for the localhost and localhost\namedinstance SQL Server instances. Processes data via the pipeline.
 
         .EXAMPLE
-            Get-DbaDbSpace -SqlInstance localhost -Database db1, db2
+            PS C:\> Get-DbaDbSpace -SqlInstance localhost -Database db1, db2
 
             Returns database files and free space information for the db1 and db2 on localhost.
     #>
