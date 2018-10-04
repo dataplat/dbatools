@@ -212,6 +212,7 @@ function Set-DbaLogin {
         # Loop through all the logins
         foreach ($l in $InputObject) {
             $server = $l.Parent
+
             # Create the notes
             $notes = @()
 
@@ -303,7 +304,7 @@ function Set-DbaLogin {
             # Enforce password policy
             if (Test-Bound PasswordPolicyEnforced) {
                 if ($l.PasswordPolicyEnforced -eq $PasswordPolicyEnforced) {
-                    Write-Message -Message ("Login $l password policy is already set to " + $l.PasswordPolicyEnforced) -Level Verbose
+                    Write-Message -Message "Login $l password policy is already set to $($l.PasswordPolicyEnforced)" -Level Verbose
                 }
                 else {
                     $l.PasswordPolicyEnforced = $PasswordPolicyEnforced
@@ -352,22 +353,23 @@ function Set-DbaLogin {
             else {
                 $notes = $null
             }
+
             # Return the results
-                [PSCustomObject]@{
-                    ComputerName           = $server.ComputerName
-                    InstanceName           = $server.ServiceName
-                    SqlInstance            = $server.DomainInstanceName
-                    LoginName              = $l.Name
-                    DenyLogin              = $l.DenyWindowsLogin
-                    IsDisabled             = $l.IsDisabled
-                    IsLocked               = $l.IsLocked
-                    PasswordPolicyEnforced = $l.PasswordPolicyEnforced
-                    MustChangePassword     = $l.MustChangePassword
-                    PasswordChanged        = $passwordChanged
-                    ServerRole             = $roles.Role -join ','
-                    Notes                  = $notes
-                } | Select-DefaultView -ExcludeProperty Login
-                # Change output and update tests when there's time
+            [PSCustomObject]@{
+                ComputerName           = $server.ComputerName
+                InstanceName           = $server.ServiceName
+                SqlInstance            = $server.DomainInstanceName
+                LoginName              = $l.Name
+                DenyLogin              = $l.DenyWindowsLogin
+                IsDisabled             = $l.IsDisabled
+                IsLocked               = $l.IsLocked
+                PasswordPolicyEnforced = $l.PasswordPolicyEnforced
+                MustChangePassword     = $l.MustChangePassword
+                PasswordChanged        = $passwordChanged
+                ServerRole             = $roles.Role -join ','
+                Notes                  = $notes
+            } | Select-DefaultView -ExcludeProperty Login
+            # Change output and update tests when there's time
             # Get-DbaLogin -SqlInstance $server -Login $l.Name
         }
     }
