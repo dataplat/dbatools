@@ -76,7 +76,7 @@ function Get-DbaDatabase {
 
         .NOTES
             Tags: Database
-            Author: Garry Bargsley (@gbargsley | http://blog.garrybargsley.com)
+            Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
             Author: Klaas Vandenberghe ( @PowerDbaKlaas )
             Author: Simone Bizzotto ( @niphlod )
 
@@ -88,58 +88,58 @@ function Get-DbaDatabase {
             https://dbatools.io/Get-DbaDatabase
 
         .EXAMPLE
-            Get-DbaDatabase -SqlInstance localhost
+            PS C:\> Get-DbaDatabase -SqlInstance localhost
 
             Returns all databases on the local default SQL Server instance.
 
         .EXAMPLE
-            Get-DbaDatabase -SqlInstance localhost -ExcludeAllUserDb
+            PS C:\> Get-DbaDatabase -SqlInstance localhost -ExcludeAllUserDb
 
             Returns only the system databases on the local default SQL Server instance.
 
         .EXAMPLE
-            Get-DbaDatabase -SqlInstance localhost -ExcludeAllSystemDb
+            PS C:\> Get-DbaDatabase -SqlInstance localhost -ExcludeAllSystemDb
 
             Returns only the user databases on the local default SQL Server instance.
 
         .EXAMPLE
-            'localhost','sql2016' | Get-DbaDatabase
+            PS C:\> 'localhost','sql2016' | Get-DbaDatabase
 
             Returns databases on multiple instances piped into the function.
 
         .EXAMPLE
-            Get-DbaDatabase -SqlInstance SQL1\SQLExpress -RecoveryModel full,Simple
+            PS C:\> Get-DbaDatabase -SqlInstance SQL1\SQLExpress -RecoveryModel full,Simple
 
             Returns only the user databases in Full or Simple recovery model from SQL Server instance SQL1\SQLExpress.
 
         .EXAMPLE
-            Get-DbaDatabase -SqlInstance SQL1\SQLExpress -Status Normal
+            PS C:\> Get-DbaDatabase -SqlInstance SQL1\SQLExpress -Status Normal
 
             Returns only the user databases with status 'normal' from SQL Server instance SQL1\SQLExpress.
 
         .EXAMPLE
-            Get-DbaDatabase -SqlInstance SQL1\SQLExpress -IncludeLastUsed
+            PS C:\> Get-DbaDatabase -SqlInstance SQL1\SQLExpress -IncludeLastUsed
 
             Returns the databases from SQL Server instance SQL1\SQLExpress and includes the last used information
             from the sys.dm_db_index_usage_stats DMV.
 
         .EXAMPLE
-            Get-DbaDatabase -SqlInstance SQL1\SQLExpress,SQL2 -ExcludeDatabase model,master
+            PS C:\> Get-DbaDatabase -SqlInstance SQL1\SQLExpress,SQL2 -ExcludeDatabase model,master
 
             Returns all databases except master and model from SQL Server instances SQL1\SQLExpress and SQL2.
 
         .EXAMPLE
-            Get-DbaDatabase -SqlInstance SQL1\SQLExpress,SQL2 -Encrypted
+            PS C:\> Get-DbaDatabase -SqlInstance SQL1\SQLExpress,SQL2 -Encrypted
 
             Returns only databases using TDE from SQL Server instances SQL1\SQLExpress and SQL2.
 
         .EXAMPLE
-            Get-DbaDatabase -SqlInstance SQL1\SQLExpress,SQL2 -Access ReadOnly
+            PS C:\> Get-DbaDatabase -SqlInstance SQL1\SQLExpress,SQL2 -Access ReadOnly
 
             Returns only read only databases from SQL Server instances SQL1\SQLExpress and SQL2.
 
         .EXAMPLE
-            Get-DbaDatabase -SqlInstance SQL2,SQL3 -Database OneDB,OtherDB
+            PS C:\> Get-DbaDatabase -SqlInstance SQL2,SQL3 -Database OneDB,OtherDB
 
             Returns databases 'OneDb' and 'OtherDB' from SQL Server instances SQL2 and SQL3 if databases by those names exist on those instances.
     #>
