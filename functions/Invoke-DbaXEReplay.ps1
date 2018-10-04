@@ -57,7 +57,7 @@ function Invoke-DbaXeReplay {
             Runs all batch_text for sql_batch_completed against tempdb on sql2017 and sql2016.
 
     #>
-    Param (
+    param (
         [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]$SqlInstance,

@@ -53,17 +53,17 @@ function Copy-DbaResourceGovernor {
             https://dbatools.io/Copy-DbaResourceGovernor
 
         .EXAMPLE
-            Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster
 
             Copies all all non-system resource pools from sqlserver2014a to sqlcluster using Windows credentials to connect to the SQL Server instances..
 
         .EXAMPLE
-            Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+            PS C:\> Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
             Copies all all non-system resource pools from sqlserver2014a to sqlcluster using SQL credentials to connect to sqlserver2014a and Windows credentials to connect to sqlcluster.
 
         .EXAMPLE
-            Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -WhatIf
+            PS C:\> Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
             Shows what would happen if the command were executed.
     #>

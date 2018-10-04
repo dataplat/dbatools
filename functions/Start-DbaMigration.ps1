@@ -201,7 +201,7 @@ function Start-DbaMigration {
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Position = 1, Mandatory)]
         [DbaInstanceParameter]$Source,
         [parameter(Position = 2, Mandatory)]
@@ -306,7 +306,7 @@ function Start-DbaMigration {
 
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         # testing twice for whatif reasons
         if ($BackupRestore -and (-not $NetworkShare -and -not $UseLastBackups)) {
             Stop-Function -Message "When using -BackupRestore, you must specify -NetworkShare or -UseLastBackups"
@@ -418,14 +418,14 @@ function Start-DbaMigration {
             Write-Message -Level Verbose -Message "Migrating Resource Governor"
             Copy-DbaResourceGovernor -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
         }
-        
+
         if (-not $NoSysDbUserObjects) {
             Write-Message -Level Verbose -Message "Migrating user objects in system databases (this can take a second)."
             If ($Pscmdlet.ShouldProcess($destination, "Copying user objects.")) {
                 Copy-DbaSysDbUserObject -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$force
             }
         }
-        
+
         if (-not $NoExtendedEvents) {
             Write-Message -Level Verbose -Message "Migrating Extended Events"
             Copy-DbaExtendedEvent -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force

@@ -30,7 +30,7 @@ function Get-DbaSsisExecutionHistory {
         .PARAMETER Since
             Datetime object used to narrow the results to a date
 
-            .PARAMETER EnableException
+        .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
@@ -39,25 +39,25 @@ function Get-DbaSsisExecutionHistory {
             Tags: Migration, SSIS
             Author: Chris Tucker (ChrisTucker, @ChrisTuc47368095)
 
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaSsisExecutionHistory
 
         .EXAMPLE
-            Get-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Folder SMTQ_PRC
+            PS C:\> Get-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Folder SMTQ_PRC
 
             Get all history items for SMTQ01 in folder SMTQ_PRC.
 
         .EXAMPLE
-            Get-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Status Failed,Cancelled
+            PS C:\> Get-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Status Failed,Cancelled
 
             Gets all failed or canceled executions for SMTQ01.
 
         .EXAMPLE
-            Get-DbaSsisExecutionHistory -SqlInstance SMTQ01,SMTQ02 -Status Failed,Cancelled -Whatif
+            PS C:\> Get-DbaSsisExecutionHistory -SqlInstance SMTQ01,SMTQ02 -Status Failed,Cancelled -Whatif
 
             Shows what would happen if the command were executed and would return the SQL statement that would be executed per instance.
     #>
@@ -77,7 +77,7 @@ function Get-DbaSsisExecutionHistory {
     )
     begin {
         $params = @{}
-        
+
         #build status parameter
         $statuses = @{
             'Created'   = 1

@@ -5,16 +5,11 @@ function Find-DbaDuplicateIndex {
 
         .DESCRIPTION
             This command will help you to find duplicate and overlapping indexes on a database or a list of databases.
-
             On SQL Server 2008 and higher, the IsFiltered property will also be checked
-
             Also tells how much space you can save by dropping the index.
-
             We show the type of compression so you can make a more considered decision.
-
             For now only supports CLUSTERED and NONCLUSTERED indexes.
-
-            You can select the indexes you want to drop on the gridview and when clicking OK, the DROP statement will be generated.
+            You can select the indexes you want to drop on the grid view and when clicking OK, the DROP statement will be generated.
 
             Output:
                 TableName
@@ -68,33 +63,32 @@ function Find-DbaDuplicateIndex {
             https://dbatools.io/Find-DbaDuplicateIndex
 
         .EXAMPLE
-            Find-DbaDuplicateIndex -SqlInstance sql2005 | Out-File -FilePath C:\temp\sql2005-DuplicateIndexes.sql
+            PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2005 | Out-File -FilePath C:\temp\sql2005-DuplicateIndexes.sql
 
             Generates SQL statements to drop the selected duplicate indexes in server "sql2005" and writes them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
 
         .EXAMPLE
-            Find-DbaDuplicateIndex -SqlInstance sql2005 | Out-File -FilePath C:\temp\sql2005-DuplicateIndexes.sql -Append
+            PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2005 | Out-File -FilePath C:\temp\sql2005-DuplicateIndexes.sql -Append
 
             Generates SQL statements to drop the selected duplicate indexes and writes/appends them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
 
         .EXAMPLE
-            Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -SqlCredential $cred
+            PS C:\> Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -SqlCredential $cred
 
             Finds exact duplicate indexes on all user databases present on sqlserver2014a, using SQL authentication.
 
         .EXAMPLE
-            Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -Database db1, db2
+            PS C:\> Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -Database db1, db2
 
             Finds exact duplicate indexes on the db1 and db2 databases.
 
         .EXAMPLE
-            Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -IncludeOverlapping
+            PS C:\> Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -IncludeOverlapping
 
             Finds both duplicate and overlapping indexes on all user databases.
-
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

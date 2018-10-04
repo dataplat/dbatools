@@ -68,7 +68,7 @@ Get-DbaDatabase -SqlInstance server\instance -ExcludeAllSystemDb | Remove-DbaDat
 Removes all the user databases from server\instance without any confirmation
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
-    Param (
+    param (
         [parameter(Mandatory, ParameterSetName = "instance")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

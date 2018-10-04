@@ -40,22 +40,22 @@ function Get-DbaPfDataCollector {
             https://dbatools.io/Get-DbaPfDataCollector
 
         .EXAMPLE
-            Get-DbaPfDataCollector
+            PS C:\> Get-DbaPfDataCollector
 
             Gets all Collectors on localhost.
 
         .EXAMPLE
-            Get-DbaPfDataCollector -ComputerName sql2017
+            PS C:\> Get-DbaPfDataCollector -ComputerName sql2017
 
             Gets all Collectors on sql2017.
 
         .EXAMPLE
-            Get-DbaPfDataCollector -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+            PS C:\> Get-DbaPfDataCollector -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
 
             Gets all Collectors for the 'System Correlation' CollectorSet on sql2017 and sql2016 using alternative credentials.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPfDataCollector
+            PS C:\> Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPfDataCollector
 
             Gets all Collectors for the 'System Correlation' CollectorSet.
     #>

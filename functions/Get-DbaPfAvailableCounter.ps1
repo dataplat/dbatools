@@ -29,6 +29,7 @@ function Get-DbaPfAvailableCounter {
         .NOTES
             Tags: Performance, DataCollector, PerfCounter
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -37,27 +38,27 @@ function Get-DbaPfAvailableCounter {
             https://dbatools.io/Get-DbaPfAvailableCounter
 
         .EXAMPLE
-            Get-DbaPfAvailableCounter
+            PS C:\> Get-DbaPfAvailableCounter
 
             Gets all available counters on the local machine.
 
         .EXAMPLE
-            Get-DbaPfAvailableCounter -Pattern *sql*
+            PS C:\> Get-DbaPfAvailableCounter -Pattern *sql*
 
             Gets all counters matching sql on the local machine.
 
         .EXAMPLE
-            Get-DbaPfAvailableCounter -ComputerName sql2017 -Pattern *sql*
+            PS C:\> Get-DbaPfAvailableCounter -ComputerName sql2017 -Pattern *sql*
 
             Gets all counters matching sql on the remote server sql2017.
 
         .EXAMPLE
-            Get-DbaPfAvailableCounter -Pattern *sql*
+            PS C:\> Get-DbaPfAvailableCounter -Pattern *sql*
 
             Gets all counters matching sql on the local machine.
 
         .EXAMPLE
-            Get-DbaPfAvailableCounter -Pattern *sql* | Add-DbaPfDataCollectorCounter -CollectorSet 'Test Collector Set' -Collector DataCollector01
+            PS C:\> Get-DbaPfAvailableCounter -Pattern *sql* | Add-DbaPfDataCollectorCounter -CollectorSet 'Test Collector Set' -Collector DataCollector01
 
            Adds all counters matching "sql" to the DataCollector01 within the 'Test Collector Set' CollectorSet.
     #>

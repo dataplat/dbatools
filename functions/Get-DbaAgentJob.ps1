@@ -39,32 +39,32 @@ function Get-DbaAgentJob {
             https://dbatools.io/Get-DbaAgentJob
 
         .EXAMPLE
-            Get-DbaAgentJob -SqlInstance localhost
+            PS C:\> Get-DbaAgentJob -SqlInstance localhost
 
             Returns all SQL Agent Jobs on the local default SQL Server instance
 
         .EXAMPLE
-            Get-DbaAgentJob -SqlInstance localhost, sql2016
+            PS C:\> Get-DbaAgentJob -SqlInstance localhost, sql2016
 
             Returns all SQl Agent Jobs for the local and sql2016 SQL Server instances
 
         .EXAMPLE
-            Get-DbaAgentJob -SqlInstance localhost -Job BackupData, BackupDiff
+            PS C:\> Get-DbaAgentJob -SqlInstance localhost -Job BackupData, BackupDiff
 
             Returns all SQL Agent Jobs named BackupData and BackupDiff from the local SQL Server instance.
 
         .EXAMPLE
-            Get-DbaAgentJob -SqlInstance localhost -ExcludeJob BackupDiff
+            PS C:\> Get-DbaAgentJob -SqlInstance localhost -ExcludeJob BackupDiff
 
             Returns all SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.
 
         .EXAMPLE
-            Get-DbaAgentJob -SqlInstance localhost -NoDisabledJobs
+            PS C:\> Get-DbaAgentJob -SqlInstance localhost -NoDisabledJobs
 
             Returns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.
 
         .EXAMPLE
-            $servers | Get-DbaAgentJob | Out-GridView -Passthru | Start-DbaAgentJob -WhatIf
+            PS C:\> $servers | Get-DbaAgentJob | Out-GridView -PassThru | Start-DbaAgentJob -WhatIf
 
             Find all of your Jobs from SQL Server instances in the $servers collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
     #>

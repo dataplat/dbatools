@@ -36,12 +36,6 @@ function Export-DbaLogin {
         .PARAMETER NoDatabases
             If this switch is enabled, mappings for databases will not be exported.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -53,9 +47,16 @@ function Export-DbaLogin {
         .PARAMETER DestinationVersion
             To say to which version the script should be generated. If not specified will use instance major version.
 
+        .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
         .NOTES
             Tags: Export, Login
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -64,32 +65,32 @@ function Export-DbaLogin {
             https://dbatools.io/Export-DbaLogin
 
         .EXAMPLE
-            Export-DbaLogin -SqlInstance sql2005 -Path C:\temp\sql2005-logins.sql
+            PS C:\> Export-DbaLogin -SqlInstance sql2005 -Path C:\temp\sql2005-logins.sql
 
             Exports the logins for SQL Server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
 
         .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2014a -Exclude realcajun -SqlCredential $scred -Path C:\temp\logins.sql -Append
+            PS C:\> Export-DbaLogin -SqlInstance sqlserver2014a -Exclude realcajun -SqlCredential $scred -Path C:\temp\logins.sql -Append
 
             Authenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to C:\temp\logins.sql, and appends to the file if it exists. If not, the file will be created.
 
         .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\temp\logins.sql
+            PS C:\> Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Path C:\temp\logins.sql
 
             Exports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\temp\logins.sql
 
         .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting
+            PS C:\> Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting
 
             Exports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting
 
         .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\temp\login.sql -ExcludeGoBatchSeparator
+            PS C:\> Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -Path C:\temp\login.sql -ExcludeGoBatchSeparator
 
             Exports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\login.sql file without the 'GO' batch separator.
 
         .EXAMPLE
-            Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -Path C:\temp\users.sql -DestinationVersion SQLServer2016
+            PS C:\> Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -Path C:\temp\users.sql -DestinationVersion SQLServer2016
 
             Exports login realcajun from sqlsever2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
     #>

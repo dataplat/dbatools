@@ -56,22 +56,22 @@ function Copy-DbaDataCollector {
             https://dbatools.io/Copy-DbaDataCollector
 
         .EXAMPLE
-            Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster
 
             Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using Windows credentials.
 
         .EXAMPLE
-            Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+            PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
             Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
         .EXAMPLE
-            Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster -WhatIf
+            PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
             Shows what would happen if the command were executed.
 
         .EXAMPLE
-            Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSet 'Server Activity', 'Table Usage Analysis'
+            PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSet 'Server Activity', 'Table Usage Analysis'
 
             Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlserver2014a to sqlcluster.
     #>
@@ -110,7 +110,7 @@ function Copy-DbaDataCollector {
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
-            
+
             try {
                 Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
@@ -122,7 +122,7 @@ function Copy-DbaDataCollector {
                 if ($Pscmdlet.ShouldProcess($destinstance, "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time.")) {
                     Write-Message -Level Verbose -Message "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
                     $NoServerReconfig = $true
-                    
+
             <# for future use when this support is added #>
                     $copyServerConfigStatus = [pscustomobject]@{
                         SourceServer = $sourceServer.Name
@@ -139,7 +139,7 @@ function Copy-DbaDataCollector {
             $destSqlConn = $destServer.ConnectionContext.SqlConnectionObject
             $destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
             $destStore = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $destSqlStoreConnection
-            
+
             if (!$NoServerReconfig) {
                 if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to modify Data Collector configuration")) {
                     try {
@@ -154,12 +154,12 @@ function Copy-DbaDataCollector {
                     }
                 }
             }
-            
+
             if ($destStore.Enabled -eq $false) {
                 Write-Message -Level Verbose -Message "The Data Collector must be setup initially for Collection Sets to be migrated. Setup the Data Collector and try again."
                 continue
             }
-            
+
             $storeCollectionSets = $sourceStore.CollectionSets | Where-Object { $_.IsSystem -eq $false }
             if ($CollectionSet) {
                 $storeCollectionSets = $storeCollectionSets | Where-Object Name -In $CollectionSet
@@ -167,11 +167,11 @@ function Copy-DbaDataCollector {
             if ($ExcludeCollectionSet) {
                 $storeCollectionSets = $storeCollectionSets | Where-Object Name -NotIn $ExcludeCollectionSet
             }
-            
+
             Write-Message -Level Verbose -Message "Migrating collection sets"
             foreach ($set in $storeCollectionSets) {
                 $collectionName = $set.Name
-                
+
                 $copyCollectionSetStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -181,12 +181,12 @@ function Copy-DbaDataCollector {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($null -ne $destStore.CollectionSets[$collectionName]) {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Collection Set '$collectionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate")) {
                             Write-Message -Level Verbose -Message "Collection Set '$collectionName' was skipped because it already exists on $destinstance. Use -Force to drop and recreate"
-                            
+
                             $copyCollectionSetStatus.Status = "Skipped"
                             $copyCollectionSetStatus.Notes = "Already exists"
                             $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -197,7 +197,7 @@ function Copy-DbaDataCollector {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $collectionName")) {
                             Write-Message -Level Verbose -Message "Collection Set '$collectionName' exists on $destinstance"
                             Write-Message -Level Verbose -Message "Force specified. Dropping $collectionName."
-                            
+
                             try {
                                 $destStore.CollectionSets[$collectionName].Drop()
                             }
@@ -210,7 +210,7 @@ function Copy-DbaDataCollector {
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Migrating collection set $collectionName")) {
                     try {
                         $sql = $set.ScriptCreate().GetScript() | Out-String
@@ -218,24 +218,24 @@ function Copy-DbaDataCollector {
                         Write-Message -Level Debug -Message $sql
                         Write-Message -Level Verbose -Message "Migrating collection set $collectionName"
                         $destServer.Query($sql)
-                        
+
                         $copyCollectionSetStatus.Status = "Successful"
                         $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     catch {
                         $copyCollectionSetStatus.Status = "Failed to create collection"
                         $copyCollectionSetStatus.Notes = (Get-ErrorMessage -Record $_)
-                        
+
                         Stop-Function -Message "Issue creating collection set" -Target $collectionName -ErrorRecord $_
                     }
-                    
+
                     try {
                         if ($set.IsRunning) {
                             Write-Message -Level Verbose -Message "Starting collection set $collectionName"
                             $destStore.CollectionSets.Refresh()
                             $destStore.CollectionSets[$collectionName].Start()
                         }
-                        
+
                         $copyCollectionSetStatus.Status = "Successful started Collection"
                         $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
@@ -243,7 +243,7 @@ function Copy-DbaDataCollector {
                         $copyCollectionSetStatus.Status = "Failed to start collection"
                         $copyCollectionSetStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Stop-Function -Message "Issue starting collection set" -Target $collectionName -ErrorRecord $_
                     }
                 }

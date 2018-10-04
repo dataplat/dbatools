@@ -28,34 +28,34 @@ function Get-DbaDbForeignKey {
 
         .NOTES
             Tags: Database,ForeignKey, Table
-            Author: Cláudio Silva ( @ClaudioESSilva | https://claudioessilva.eu)
+            Author: Cláudio Silva (@ClaudioESSilva), https://claudioessilva.eu
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
-            Get-DbaDbForeignKey -SqlInstance sql2016
+            PS C:\> Get-DbaDbForeignKey -SqlInstance sql2016
 
             Gets all database Foreign Keys.
 
         .EXAMPLE
-            Get-DbaDbForeignKey -SqlInstance Server1 -Database db1
+            PS C:\> Get-DbaDbForeignKey -SqlInstance Server1 -Database db1
 
             Gets the Foreign Keys for the db1 database.
 
         .EXAMPLE
-            Get-DbaDbForeignKey -SqlInstance Server1 -ExcludeDatabase db1
+            PS C:\> Get-DbaDbForeignKey -SqlInstance Server1 -ExcludeDatabase db1
 
             Gets the Foreign Keys for all databases except db1.
 
         .EXAMPLE
-            Get-DbaDbForeignKey -SqlInstance Server1 -ExcludeSystemTable
+            PS C:\> Get-DbaDbForeignKey -SqlInstance Server1 -ExcludeSystemTable
 
             Gets the Foreign Keys from all tables that are not system objects from all databases.
 
         .EXAMPLE
-            'Sql1','Sql2/sqlexpress' | Get-DbaDbForeignKey
+            PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaDbForeignKey
 
             Gets the Foreign Keys for the databases on Sql1 and Sql2/sqlexpress.
     #>

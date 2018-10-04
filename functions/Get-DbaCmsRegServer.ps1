@@ -45,8 +45,8 @@ function Get-DbaCmsRegServer {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Author: Bryan Hamby (@galador)
             Tags: RegisteredServer, CMS
+            Author: Bryan Hamby (@galador)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -56,27 +56,27 @@ function Get-DbaCmsRegServer {
             https://dbatools.io/Get-DbaCmsRegServer
 
         .EXAMPLE
-            Get-DbaCmsRegServer -SqlInstance sqlserver2014a
+            PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a
 
             Gets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.
 
         .EXAMPLE
-            Get-DbaCmsRegServer -SqlInstance sqlserver2014a -IncludeSelf
+            PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -IncludeSelf
 
             Gets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.
 
         .EXAMPLE
-            Get-DbaCmsRegServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
+            PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
 
             Returns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
 
         .EXAMPLE
-            Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR, Accounting
+            PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR, Accounting
 
             Gets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.
 
         .EXAMPLE
-            Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR\Development
+            PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR\Development
 
             Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.
     #>
@@ -126,7 +126,7 @@ function Get-DbaCmsRegServer {
                 $serverstore.ServerConnection.Disconnect()
             }
         }
-        
+
         if ($Name) {
             Write-Message -Level Verbose -Message "Filtering by name for $name"
             $servers = $servers | Where-Object Name -in $Name

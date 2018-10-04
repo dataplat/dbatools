@@ -11,18 +11,19 @@
 
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
         .PARAMETER Proxy
             The proxy to process - this list is auto-populated from the server. If unspecified, all proxies will be processed.
-            
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Author: Chrissy LeMaire (@cl), netnerds.net
             Tags: Agent, SMO
+            Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -31,11 +32,13 @@
             https://dbatools.io/Get-DbaAgentProxy
 
         .EXAMPLE
-            Get-DbaAgentProxy -SqlInstance ServerA,ServerB\instanceB
+            PS C:\> Get-DbaAgentProxy -SqlInstance ServerA,ServerB\instanceB
+
             Returns all SQL Agent proxies on serverA and serverB\instanceB
 
         .EXAMPLE
-            'serverA','serverB\instanceB' | Get-DbaAgentProxy
+            PS C:\> 'serverA','serverB\instanceB' | Get-DbaAgentProxy
+
             Returns all SQL Agent proxies  on serverA and serverB\instanceB
     #>
     [CmdletBinding()]
@@ -56,22 +59,22 @@
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             Write-Message -Level Verbose -Message "Getting Edition from $server"
             Write-Message -Level Verbose -Message "$server is a $($server.Edition)"
-            
+
             if ($server.Edition -like 'Express*') {
                 Stop-Function -Message "There is no SQL Agent on $server, it's a $($server.Edition)" -Continue
             }
-            
+
             $defaults = "ComputerName", "SqlInstance", "InstanceName", "Name", "ID", "CredentialID", "CredentialIdentity", "CredentialName", "Description", "IsEnabled"
-            
+
             $proxies = $server.Jobserver.ProxyAccounts
-            
+
             if ($proxy) {
                 $proxies = $proxies | Where-Object Name -In $proxy
             }
-            
+
             foreach ($px in $proxies) {
                 Add-Member -Force -InputObject $px -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $px -MemberType NoteProperty -Name InstanceName -value $server.ServiceName

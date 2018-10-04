@@ -45,17 +45,17 @@ function Get-DbaCredential {
             https://dbatools.io/Get-DbaCredential
 
         .EXAMPLE
-            Get-DbaCredential -SqlInstance localhost
+            PS C:\> Get-DbaCredential -SqlInstance localhost
 
             Returns all SQL Credentials on the local default SQL Server instance
 
         .EXAMPLE
-            Get-DbaCredential -SqlInstance localhost, sql2016 -Name 'PowerShell Proxy'
+            PS C:\> Get-DbaCredential -SqlInstance localhost, sql2016 -Name 'PowerShell Proxy'
 
             Returns the SQL Credentials named 'PowerShell Proxy' for the local and sql2016 SQL Server instances
 
         .EXAMPLE
-            Get-DbaCredential -SqlInstance localhost, sql2016 -Identity ad\powershell
+            PS C:\> Get-DbaCredential -SqlInstance localhost, sql2016 -Identity ad\powershell
 
             Returns the SQL Credentials for the account 'ad\powershell' on the local and sql2016 SQL Server instances
     #>

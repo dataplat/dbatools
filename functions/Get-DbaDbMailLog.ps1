@@ -1,55 +1,55 @@
 function Get-DbaDbMailLog {
     <#
-    .SYNOPSIS
-        Gets the DBMail log from a SQL instance
+        .SYNOPSIS
+            Gets the DBMail log from a SQL instance
 
-    .DESCRIPTION
-        Gets the DBMail log from a SQL instance
+        .DESCRIPTION
+            Gets the DBMail log from a SQL instance
 
-    .PARAMETER SqlInstance
-        The SQL Server instance, or instances.
+        .PARAMETER SqlInstance
+            The SQL Server instance, or instances.
 
-    .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
-    .PARAMETER Since
-    Datetime object used to narrow the results to the send request date
+        .PARAMETER Since
+            Datetime object used to narrow the results to the send request date
 
-    .PARAMETER Type
-    Narrow the results by type. Valid values include Error, Warning, Success, Information, Internal
+        .PARAMETER Type
+            Narrow the results by type. Valid values include Error, Warning, Success, Information, Internal
 
-    .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .NOTES
-        Tags: databasemail, dbmail, mail
-        Author: Chrissy LeMaire (@cl), netnerds.net
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MIT
+        .NOTES
+            Tags: DatabaseMail, DBMail, Mail
+            Author: Chrissy LeMaire (@cl), netnerds.net
 
-    .LINK
-        https://dbatools.io/Get-DbaDbMailLog
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-    .EXAMPLE
-        Get-DbaDbMailLog -SqlInstance sql01\sharepoint
+        .LINK
+            https://dbatools.io/Get-DbaDbMailLog
 
-        Returns the entire dbmail log on sql01\sharepoint
+        .EXAMPLE
+            PS C:\> Get-DbaDbMailLog -SqlInstance sql01\sharepoint
 
-    .EXAMPLE
-        Get-DbaDbMailLog -SqlInstance sql01\sharepoint | Select *
+            Returns the entire DBMail log on sql01\sharepoint
 
-        Returns the entire dbmail log on sql01\sharepoint, includes all returned information.
+        .EXAMPLE
+            PS C:\> Get-DbaDbMailLog -SqlInstance sql01\sharepoint | Select *
 
-    .EXAMPLE
-        $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
-        $servers | Get-DbaDbMailLog -Type Error, Information
+            Returns the entire DBMail log on sql01\sharepoint, includes all returned information.
 
-        Returns only the Error and Information dbmail log for "sql2014","sql2016" and "sqlcluster\sharepoint"
+        .EXAMPLE
+            PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+            PS C:\> $servers | Get-DbaDbMailLog -Type Error, Information
 
-#>
+            Returns only the Error and Information DBMail log for "sql2014","sql2016" and "sqlcluster\sharepoint"
+    #>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]

@@ -45,7 +45,7 @@ function Set-DbaPrivilege {
 
   #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(ValueFromPipeline)]
         [Alias("cn", "host", "Server")]
         [dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
@@ -56,7 +56,7 @@ function Set-DbaPrivilege {
         [switch][Alias('Silent')]
         $EnableException
     )
-    
+
     begin {
         $ResolveAccountToSID = @"
 function Convert-UserNameToSID ([string] `$Acc ) {
@@ -83,7 +83,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                         Write-Message -Level Verbose -Message "Setting Privileges on $Computer"
                         Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $BatchLogon, $IFI, $LPIM -ScriptBlock {
                             [CmdletBinding()]
-                            Param ($ResolveAccountToSID,
+                            param ($ResolveAccountToSID,
                                 $SQLServiceAccounts,
                                 $BatchLogon,
                                 $IFI,

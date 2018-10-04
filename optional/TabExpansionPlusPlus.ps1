@@ -820,7 +820,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     function global:TabExpansion2
     {
         [CmdletBinding(DefaultParameterSetName = 'ScriptInputSet')]
-        Param (
+        param (
             [Parameter(ParameterSetName = 'ScriptInputSet', Mandatory, Position = 0)]
             [string]
             $inputScript,
