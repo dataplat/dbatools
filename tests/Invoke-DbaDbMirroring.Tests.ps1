@@ -11,13 +11,15 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1 -Confirm:$false
         Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
         $server.Query("CREATE DATABASE $db1")
+        $backups = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $db1 -BackupDirectory C:\temp
     }
     AfterAll {
+        Remove-Item $backups.Path
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $db1 -ErrorAction SilentlyContinue
     }
     
     It "returns success" {
-        $results = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -NetworkShare C:\temp -Force -Confirm:$false
+        $results = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -NetworkShare C:\temp -Force -Confirm:$false -UseLastBackups
         $results.Status -eq 'Success' | Should Be $true
     }
 }
