@@ -267,14 +267,14 @@ function Invoke-DbaDbMirroring {
             
             if (-not $primaryendpoint) {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up endpoint for primary"
-                $primaryendpoint = New-DbaEndpoint -SqlInstance $source -Type DatabaseMirroring -Role Partner
+                $primaryendpoint = New-DbaEndpoint -SqlInstance $source -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4
                 $null = $primaryendpoint | Stop-DbaEndpoint
                 $null = $primaryendpoint | Start-DbaEndpoint
             }
             
             if (-not $mirrorendpoint) {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up endpoint for mirror"
-                $mirrorendpoint = New-DbaEndpoint -SqlInstance $dest -Type DatabaseMirroring -Role Partner
+                $mirrorendpoint = New-DbaEndpoint -SqlInstance $dest -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4
                 $null = $mirrorendpoint | Stop-DbaEndpoint
                 $null = $mirrorendpoint | Start-DbaEndpoint
             }
@@ -283,7 +283,7 @@ function Invoke-DbaDbMirroring {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up endpoint for witness"
                 $witnessendpoint = Get-DbaEndpoint -SqlInstance $witserver | Where-Object EndpointType -eq DatabaseMirroring
                 if (-not $witnessendpoint) {
-                    $witnessendpoint = New-DbaEndpoint -SqlInstance $witserver -Type DatabaseMirroring -Role Witness
+                    $witnessendpoint = New-DbaEndpoint -SqlInstance $witserver -Type DatabaseMirroring -Role Witness -Name Mirroring -EncryptionAlgorithm RC4
                     $null = $witnessendpoint | Stop-DbaEndpoint
                     $null = $witnessendpoint | Start-DbaEndpoint
                 }

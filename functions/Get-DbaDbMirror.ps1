@@ -2,10 +2,10 @@
 function Get-DbaDbMirror {
     <#
         .SYNOPSIS
-            Gets properties of database mirrors.
+            Gets properties of database mirrors and mirror witnesses.
 
         .DESCRIPTION
-            Gets properties of database mirrors.
+            Gets properties of database mirrors and mirror witnesses.
 
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
@@ -32,12 +32,12 @@ function Get-DbaDbMirror {
         .EXAMPLE
             PS C:\> Get-DbaDbMirror -SqlInstance localhost
 
-            Gets properties of database mirrors on localhost
+            Gets properties of database mirrors and mirror witnesses on localhost
 
         .EXAMPLE
             PS C:\> Get-DbaDbMirror -SqlInstance localhost, sql2016
 
-            Gets properties of database mirrors on localhost and sql2016 SQL Server instances
+            Gets properties of database mirrors and mirror witnesses on localhost and sql2016 SQL Server instances
     #>
     [CmdletBinding()]
     param (

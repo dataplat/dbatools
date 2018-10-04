@@ -2,13 +2,14 @@
 function Start-DbaEndpoint {
     <#
         .SYNOPSIS
-            Starts endpoints.
+            Starts endpoints on a SQL Server instance.
 
         .DESCRIPTION
-            This script starts endpoints on a SQL Server instance.
+            Starts endpoints on a SQL Server instance.
 
         .PARAMETER SqlInstance
-            Target SQL Server.
+            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
+            to be executed against multiple SQL Server instances.
 
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
