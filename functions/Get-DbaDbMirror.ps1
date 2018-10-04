@@ -32,12 +32,12 @@ function Get-DbaDbMirror {
         .EXAMPLE
             PS C:\> Get-DbaDbMirror -SqlInstance localhost
 
-            Returns all Endpoint(s) on the local default SQL Server instance
+            Gets properties of database mirrors on localhost
 
         .EXAMPLE
             PS C:\> Get-DbaDbMirror -SqlInstance localhost, sql2016
 
-            Returns all Endpoint(s) for the local and sql2016 SQL Server instances
+            Gets properties of database mirrors on localhost and sql2016 SQL Server instances
     #>
     [CmdletBinding()]
     param (

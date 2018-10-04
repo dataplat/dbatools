@@ -46,14 +46,19 @@ function Repair-DbaDbMirror {
             https://dbatools.io/Repair-DbaDbMirror
 
         .EXAMPLE
-            PS C:\> Repair-DbaDbMirror -SqlInstance localhost
+            PS C:\> Repair-DbaDbMirror -SqlInstance sql2017 -Database pubs
 
-            Returns all Endpoint(s) on the local default SQL Server instance
-
+            Attempts to repair the mirrored but suspended pubs database on sql2017.
+    
+            Restarts the endpoints then sets the partner to resume. Prompts for confirmation.
+    
         .EXAMPLE
-            PS C:\> Repair-DbaDbMirror -SqlInstance localhost, sql2016
+            PS C:\> Get-DbaDatabase -SqlInstance sql2017 -Database pubs | Repair-DbaDbMirror -Confirm:$false
 
-            Returns all Endpoint(s) for the local and sql2016 SQL Server instances
+            Attempts to repair the mirrored but suspended pubs database on sql2017.
+    
+            Restarts the endpoints then sets the partner to resume. Does not prompt for confirmation.
+    
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (

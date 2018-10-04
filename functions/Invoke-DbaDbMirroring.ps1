@@ -2,13 +2,23 @@
 function Invoke-DbaDbMirroring {
     <#
         .SYNOPSIS
-            Gets SQL Endpoint(s) information for each instance(s) of SQL Server.
+            Automates the creation of database mirrors.
 
         .DESCRIPTION
-            Creates a new mirror for some dbs
+            Automates the creation of database mirrors.
 
-            Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1
-    
+            * Verifies that a mirror is possible
+            * Sets the recovery model to Full if needed
+            * If the database does not exist on mirror or witness, a backup/restore is performed
+            * Sets up endpoints if necessary
+            * Creates a login and grants permissions to service accounts if needed
+            * Starts endpoints if needed
+            * Sets up partner for mirror
+            * Sets up partner for primary
+            * Sets up witness if one is specified
+
+            NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
+        
         .PARAMETER Primary
             SQL Server name or SMO object representing the primary SQL Server.
 
@@ -28,19 +38,23 @@ function Invoke-DbaDbMirroring {
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
     
         .PARAMETER Database
-                The database or databases to mirror
+            The database or databases to mirror.
     
         .PARAMETER NetworkShare
-                The network share where the backups will be
-    
+            The network share where the backups will be backed up and restored from.
+            
+            Each SQL Server service account must have access to this share.
+        
+            NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
+
         .PARAMETER InputObject
-                Enables piping from Get-DbaDatabase
+            Enables piping from Get-DbaDatabase.
   
         .PARAMETER UseLastBackups
-                Use the last full backup of database
+            Use the last full backup of database.
   
         .PARAMETER Force
-                Drop and recreate the database on remote servers using fresh backup
+            Drop and recreate the database on remote servers using fresh backup.
     
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
@@ -59,8 +73,6 @@ function Invoke-DbaDbMirroring {
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
-            
-            TODO: add service accounts
 
         .LINK
             https://dbatools.io/Invoke-DbaDbMirroring
@@ -71,14 +83,54 @@ function Invoke-DbaDbMirroring {
                     Mirror = 'sql2017b'
                     MirrorSqlCredential = 'sqladmin'
                     Witness = 'sql2019'
-                    Database = 'onthewall'
+                    Database = 'pubs'
                     NetworkShare = '\\nas\sql\share'
                 }
     
-            PS C:\> Invoke-DbaDbMirroring @params
+            PS C:\> Invoke-DbaDbMirror @params
     
-            Do that
+            Performs a bunch of checks to ensure the pubs database on sql2017a 
+            can be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a
+            using Windows credentials and sql2017b using a SQL credential.
+    
+            Prompts for confirmation for most changes. To avoid confirmation, use -Confirm:$false or 
+            use the syntax in the second example.
+    
+        .EXAMPLE
+            PS C:\> $params = @{
+                    Primary = 'sql2017a'
+                    Mirror = 'sql2017b'
+                    MirrorSqlCredential = 'sqladmin'
+                    Witness = 'sql2019'
+                    Database = 'pubs'
+                    NetworkShare = '\\nas\sql\share'
+                    Force = $true
+                    Confirm = $false
+                }
+    
+            PS C:\> Invoke-DbaDbMirror @params
+    
+            Performs a bunch of checks to ensure the pubs database on sql2017a 
+            can be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a
+            using Windows credentials and sql2017b using a SQL credential.
+    
+            Drops existing pubs database on Mirror and Witness and restores them with
+            a fresh backup.
+    
+            Does all the things in the decription, does not prompt for confirmation.
+    
+        .EXAMPLE
+            PS C:\> $map = @{ 'database_data' = 'M:\Data\database_data.mdf' 'database_log' = 'L:\Log\database_log.ldf' }
+            PS C:\> Get-ChildItem \\nas\seed | Restore-DbaDatabase -SqlInstance sql2017b -FileMapping $map -NoRecovery
+            PS C:\> Get-DbaDatabase -SqlInstance sql2017a -Database pubs | Invoke-DbaDbMirroring -Mirror sql2017b -Confirm:$false
+    
+            Restores backups from sql2017a to a specific file struture on sql2017b then creates mirror with no prompts for confirmation.
         
+        .EXAMPLE
+            PS C:\> Get-DbaDatabase -SqlInstance sql2017a -Database pubs |
+            >> Invoke-DbaDbMirroring -Mirror sql2017b -UseLastBackups -Confirm:$false
+            
+            Mirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -138,6 +190,8 @@ function Invoke-DbaDbMirroring {
             $dbName = $primarydb.Name
             
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Validating mirror setup"
+            # Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1 for the tips
+            
             $validation = Invoke-DbMirrorValidation @params
             
             if ((Test-Bound -ParameterName NetworkShare) -and -not $validation.AccessibleShare) {
@@ -172,6 +226,7 @@ function Invoke-DbaDbMirroring {
             if (-not $validation.DatabaseExistsOnMirror -or $Force) {
                 $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
                 $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
+                Write-Message -Level Verbose -Message "Backups still exist on $NetworkShare"
                 if ($Pscmdlet.ShouldProcess("$Mirror", "restoring full and log backups of $primarydb from $Primary")) {
                     try {
                         $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $Mirror -SqlCredential $MirrorSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException

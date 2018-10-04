@@ -60,8 +60,13 @@ function Get-DbaDbMirrorMonitor {
         .EXAMPLE
             PS C:\> Get-DbaDbMirrorMonitor -SqlInstance sql2008, sql2012
 
-            Returns status rows for a monitored database from the status table on sql2008 and sql2012.
-#>
+            Returns last two hours' worth of status rows for a monitored database from the status table on sql2008 and sql2012.
+            
+        .EXAMPLE
+            PS C:\> Get-DbaDbMirrorMonitor -SqlInstance sql2005 -LimitResults LastDay -Update
+
+            Updates monitor stats then returns the last 24 hours worth of status rows for a monitored database from the status table on sql2008 and sql2012.
+    #>
     [CmdletBinding()]
     Param (
         [DbaInstanceParameter[]]$SqlInstance,

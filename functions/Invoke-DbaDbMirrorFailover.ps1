@@ -46,19 +46,18 @@ function Invoke-DbaDbMirrorFailover {
             https://dbatools.io/Invoke-DbaDbMirrorFailover
 
         .EXAMPLE
-            PS C:\> $params = @{
-                    Primary = 'sql2017a'
-                    Mirror = 'sql2017b'
-                    MirrorSqlCredential = 'sqladmin'
-                    Witness = 'sql2019'
-                    Database = 'onthewall'
-                    NetworkShare = '\\nas\sql\share'
-                }
     
-            PS C:\> Invoke-DbaDbMirrorFailover @params
+            PS C:\> Invoke-DbaDbMirrorFailover -SqlInstance sql2016 -Database pubs
     
-            Failover to stuff
+            Fails over the pubs database on sql2016. Prompts for confirmation.
         
+        .EXAMPLE
+    
+            PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database pubs | Invoke-DbaDbMirrorFailover -Force -Confirm:$false
+    
+            Forces the failover of the pubs database on sql2016 and allows data loss. 
+    
+            Does not prompt for confirmation. 
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
