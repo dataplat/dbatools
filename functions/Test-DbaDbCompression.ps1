@@ -245,6 +245,48 @@ function Test-DbaDbCompression {
 
         }
 
+        $sqlVersion = $(Get-DbaBuildReference -SqlInstance svtsqlrestore).Build.Major
+
+        $sqlVersionRestrictions = @()
+
+        if ($sqlVersion -ge 12) {
+            $sqlVersionRestrictions += "
+            BEGIN
+                -- remove memory optimized tables
+                DELETE tdc
+                FROM ##testdbacompression tdc
+                INNER JOIN sys.tables t
+                    ON SCHEMA_NAME(t.schema_id) = tdc.[Schema] COLLATE DATABASE_DEFAULT
+                    AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
+                WHERE t.is_memory_optimized = 1
+            END"
+        }
+        if ($sqlVersion -ge 13) {
+            $sqlVersionRestrictions += "
+            BEGIN
+                -- remove tables with encrypted columns
+                DELETE tdc
+                FROM ##testdbacompression tdc
+                INNER JOIN sys.tables t
+                    ON SCHEMA_NAME(t.schema_id) = tdc.[Schema] COLLATE DATABASE_DEFAULT
+                    AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
+                INNER JOIN sys.columns c
+                    ON t.object_id = c.object_id
+                WHERE encryption_type IS NOT NULL
+            END"
+        }
+        if ($sqlVersion -ge 14) {
+            $sqlVersionRestrictions += "
+            BEGIN
+                -- remove graph (node/edge) tables
+                DELETE tdc
+                FROM ##testdbacompression tdc
+                INNER JOIN sys.tables t
+                    ON tdc.[Schema] = SCHEMA_NAME(t.schema_id) COLLATE DATABASE_DEFAULT
+                    AND tdc.TableName = t.name COLLATE DATABASE_DEFAULT
+                WHERE (is_node = 1 OR is_edge = 1)
+            END"
+        }
         $sql = "SET NOCOUNT ON;
 
 IF OBJECT_ID('tempdb..##testdbacompression', 'U') IS NOT NULL
@@ -259,6 +301,7 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
 CREATE TABLE ##testdbacompression (
     [Schema] SYSNAME
     ,[TableName] SYSNAME
+    ,[ObjectId] INT
     ,[IndexName] SYSNAME NULL
     ,[Partition] INT
     ,[IndexID] INT
@@ -298,6 +341,7 @@ CREATE TABLE ##tmpEstimatePage (
 INSERT INTO ##testdbacompression (
     [Schema]
     ,[TableName]
+    ,[ObjectId]
     ,[IndexName]
     ,[Partition]
     ,[IndexID]
@@ -307,6 +351,7 @@ INSERT INTO ##testdbacompression (
     )
     SELECT s.NAME AS [Schema]
     ,t.NAME AS [TableName]
+    ,t.OBJECT_ID AS [OBJECTID]
     ,x.NAME AS [IndexName]
     ,p.partition_number AS [Partition]
     ,x.Index_ID AS [IndexID]
@@ -327,40 +372,7 @@ ORDER BY [TableName] ASC;
 
 $sqlRestrict
 
-DECLARE @sqlVersion int
-SELECT @sqlVersion = substring(CONVERT(VARCHAR,SERVERPROPERTY('ProductVersion')),0,CHARINDEX('.',(CONVERT(VARCHAR,SERVERPROPERTY('ProductVersion')))))
-IF @sqlVersion >= '12'
-    BEGIN
-        -- remove memory optimized tables
-        DELETE tdc
-        FROM ##testdbacompression tdc
-        INNER JOIN sys.tables t
-            ON SCHEMA_NAME(t.schema_id) = tdc.[Schema] COLLATE DATABASE_DEFAULT
-            AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
-        WHERE t.is_memory_optimized = 1
-    END
-IF @sqlVersion >= '13'
-    BEGIN
-        -- remove tables with encrypted columns
-        DELETE tdc
-        FROM ##testdbacompression tdc
-        INNER JOIN sys.tables t
-            ON SCHEMA_NAME(t.schema_id) = tdc.[Schema] COLLATE DATABASE_DEFAULT
-            AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
-        INNER JOIN sys.columns c
-            ON t.object_id = c.object_id
-        WHERE encryption_type IS NOT NULL
-    END
-IF @sqlVersion >= '14'
-    BEGIN
-        -- remove graph (node/edge) tables
-        DELETE tdc
-        FROM ##testdbacompression tdc
-        INNER JOIN sys.tables t
-            ON tdc.[Schema] = SCHEMA_NAME(t.schema_id) COLLATE DATABASE_DEFAULT
-            AND tdc.TableName = t.name COLLATE DATABASE_DEFAULT
-        WHERE (is_node = 1 OR is_edge = 1)
-    END
+$sqlVersionRestrictions
 
 DECLARE @schema SYSNAME
     ,@tbname SYSNAME
@@ -426,11 +438,20 @@ DEALLOCATE cur;
 
 --Update usage and partition_number - If database was restore the sys.dm_db_index_operational_stats will be empty until tables have accesses. Executing the sp_estimate_data_compression_savings first will make those entries appear
 UPDATE ##testdbacompression
-SET  [PercentScan] = i.range_scan_count * 100.0 / NULLIF((i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count), 0)
-    ,[PercentUpdate] = i.leaf_update_count * 100.0 / NULLIF((i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count), 0)
+SET
+ [PercentScan] =
+     case when (i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count) = 0 THEN 0
+     ELSE i.range_scan_count * 100.0 / NULLIF((i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count), 0)
+     END
+ ,[PercentUpdate] =
+    case when (i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count) = 0 THEN 0
+    ELSE i.leaf_update_count * 100.0 / NULLIF((i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count), 0)
+    END
 FROM sys.dm_db_index_operational_stats(db_id(), NULL, NULL, NULL) i
-INNER JOIN ##testdbacompression tmp ON OBJECT_ID(tmp.TableName) = i.[object_id]
+INNER JOIN ##testdbacompression tmp
+    ON tmp.ObjectId = i.object_id
     AND tmp.IndexID = i.index_id;
+
 
 WITH tmp_cte (
     objname
