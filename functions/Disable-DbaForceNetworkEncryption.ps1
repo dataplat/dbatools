@@ -27,27 +27,28 @@ function Disable-DbaForceNetworkEncryption {
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+        .NOTES
+            Tags: Certificate
+            Author: Chrissy LeMaire (@cl), netnerds.net
+
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
+
         .EXAMPLE
-            Disable-DbaForceNetworkEncryption
+            PS C:\> Disable-DbaForceNetworkEncryption
 
             Disables Force Encryption on the default (MSSQLSERVER) instance on localhost - requires (and checks for) RunAs admin.
 
         .EXAMPLE
-            Disable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
+            PS C:\> Disable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
 
             Disables Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and modify the registry.
 
         .EXAMPLE
-            Disable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2 -WhatIf
+            PS C:\> Disable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2 -WhatIf
 
             Shows what would happen if the command were executed.
-
-        .NOTES
-            Tags: Certificate
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (

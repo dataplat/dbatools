@@ -30,12 +30,12 @@ function Get-DbaServerAuditSpecification {
             https://dbatools.io/Get-DbaServerAuditSpecification
 
         .EXAMPLE
-            Get-DbaServerAuditSpecification -SqlInstance localhost
+            PS C:\> Get-DbaServerAuditSpecification -SqlInstance localhost
 
             Returns all Security Audit Specifications on the local default SQL Server instance
 
         .EXAMPLE
-            Get-DbaServerAuditSpecification -SqlInstance localhost, sql2016
+            PS C:\> Get-DbaServerAuditSpecification -SqlInstance localhost, sql2016
 
             Returns all Security Audit Specifications for the local and sql2016 SQL Server instances
     #>

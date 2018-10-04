@@ -73,56 +73,52 @@ function Get-DbaBackupInformation {
 
         .NOTES
             Tags: DisasterRecovery, Backup, Restore
+            Author: Chrissy LeMaire (@ctrlb) | Stuart Moore (@napalmgram)
 
-            dbatools PowerShell module (https://dbatools.io)
-            Copyright (C) 2016 Chrissy LeMaire
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Get-DbaBackupInformation
 
         .EXAMPLE
-            Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse
+            PS C:\> Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse
 
             Will use the Server1 instance to recursively read all backup files under c:\backups, and return a dbatools BackupHistory object
 
         .EXAMPLE
-            Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath c:\store\BackupHistory.xml
+            PS C:\> Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath c:\store\BackupHistory.xml
+            PS C:\> robocopy c:\store\ \\remoteMachine\C$\store\ BackupHistory.xml
+            PS C:\> Get-DbaBackupInformation -Import -Path  c:\store\BackupHistory.xml | Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
 
-            #Copy the file  c:\store\BackupHistory.xml to another machine via preferred technique, and the on 2nd machine:
-
-            Get-DbaBackupInformation -Import -Path  c:\store\BackupHistory.xml | Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
-
-            This allows you to move backup history across servers, or to preserve backup history even after the original server has been purged
+            This example creates backup history output from server1 and copies the file to the remote machine in order to preserve backup history. It is then used to restore the databases onto server2.
 
         .EXAMPLE
-            Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath c:\store\BackupHistory.xml -PassThru |
-                    Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
+            PS C:\> Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath C:\store\BackupHistory.xml -PassThru | Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
 
-            In this example we gather backup information, export it to an xml file, and then pass it on through to Restore-DbaDatabase
+            In this example we gather backup information, export it to an xml file, and then pass it on through to Restore-DbaDatabase.
             This allows us to repeat the restore without having to scan all the backup files again
 
         .EXAMPLE
-            Get-ChildItem c:\backups\ -recurse -files |
-                Where {$_.extension -in ('.bak','.trn') -and $_.LastWriteTime -gt (get-date).AddMonths(-1)} |
-                Get-DbaBackupInformation -SqlInstance Server1 -ExportPath c:\backupHistory.xml
+            PS C:\> Get-ChildItem c:\backups\ -recurse -files | Where-Object {$_.extension -in ('.bak','.trn') -and $_.LastWriteTime -gt (get-date).AddMonths(-1)} | Get-DbaBackupInformation -SqlInstance Server1 -ExportPath C:\backupHistory.xml
 
             This lets you keep a record of all backup history from the last month on hand to speed up refreshes
 
         .EXAMPLE
-            $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups
-            $Backups += Get-DbaBackupInformation -SqlInstance Server2 -NoXpDirTree -Path c:\backups
+            PS C:\> $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups
+            PS C:\> $Backups += Get-DbaBackupInformation -SqlInstance Server2 -NoXpDirTree -Path c:\backups
 
             Scan the unc folder \\network\backups with Server1, and then scan the C:\backups folder on
             Server2 not using xp_dirtree, adding the results to the first set.
 
         .EXAMPLE
-            $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups -MaintenanceSolution
+            PS C:\> $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups -MaintenanceSolution
 
-            When MaintenanceSolution is indicated we know we are dealing with the output from Ola Hallengren's backup scripts. So we make sure that a FULL folder exists in the first level of Path, if not we shortcut scanning all the files as we have nothing to work with
+            When MaintenanceSolution is indicated we know we are dealing with the output from Ola Hallengren backup scripts. So we make sure that a FULL folder exists in the first level of Path, if not we shortcut scanning all the files as we have nothing to work with
 
         .EXAMPLE
-            $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups -MaintenanceSolution -IgnoreLogBackup
+            PS C:\> $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups -MaintenanceSolution -IgnoreLogBackup
 
             As we know we are dealing with an Ola Hallengren style backup folder from the MaintenanceSolution switch, when IgnoreLogBackup is also included we can ignore the LOG folder to skip any scanning of log backups. Note this also means they WON'T be restored
     #>

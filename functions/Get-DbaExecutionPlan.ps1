@@ -80,7 +80,7 @@ function Get-DbaExecutionPlan {
             Gets super detailed information for execution plans on sqlserver2014a and sql2016
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

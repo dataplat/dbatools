@@ -48,7 +48,7 @@ function Stop-DbaTrace {
 
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

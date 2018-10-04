@@ -26,6 +26,7 @@ function Get-DbaPfDataCollectorSet {
         .NOTES
             Tags: Performance, DataCollector, PerfCounter
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -34,22 +35,22 @@ function Get-DbaPfDataCollectorSet {
             https://dbatools.io/Get-DbaPfDataCollectorSet
 
         .EXAMPLE
-            Get-DbaPfDataCollectorSet
+            PS C:\> Get-DbaPfDataCollectorSet
 
             Gets all Collector Sets on localhost.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorSet -ComputerName sql2017
+            PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2017
 
             Gets all Collector Sets on sql2017.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorSet -ComputerName sql2017 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+            PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2017 -Credential (Get-Credential) -CollectorSet 'System Correlation'
 
             Gets the 'System Correlation' CollectorSet on sql2017 using alternative credentials.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorSet | Select *
+            PS C:\> Get-DbaPfDataCollectorSet | Select-Object *
 
             Displays extra columns and also exposes the original COM object in DataCollectorSetObject.
     #>

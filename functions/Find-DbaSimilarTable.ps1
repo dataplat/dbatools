@@ -49,7 +49,7 @@ function Find-DbaSimilarTable {
 
         .NOTES
             Tags: Table
-            Author: Jana Sattainathan (@SQLJana - http://sqljana.wordpress.com)
+            Author: Jana Sattainathan (@SQLJana), http://sqljana.wordpress.com
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -59,32 +59,32 @@ function Find-DbaSimilarTable {
             https://dbatools.io/Find-DbaSimilarTable
 
         .EXAMPLE
-            Find-DbaSimilarTable -SqlInstance DEV01
+            PS C:\> Find-DbaSimilarTable -SqlInstance DEV01
 
             Searches all user database tables and views for each, returns all tables or views with their matching tables/views and match percent
 
         .EXAMPLE
-            Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks
+            PS C:\> Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks
 
             Searches AdventureWorks database and lists tables/views and their corresponding matching tables/views with match percent
 
         .EXAMPLE
-            Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -SchemaName HumanResource
+            PS C:\> Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -SchemaName HumanResource
 
             Searches AdventureWorks database and lists tables/views in the HumanResource schema with their corresponding matching tables/views with match percent
 
         .EXAMPLE
-            Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -SchemaName HumanResource -Table Employee
+            PS C:\> Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -SchemaName HumanResource -Table Employee
 
             Searches AdventureWorks database and lists tables/views in the HumanResource schema and table Employee with its corresponding matching tables/views with match percent
 
         .EXAMPLE
-            Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -MatchPercentThreshold 60
+            PS C:\> Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -MatchPercentThreshold 60
 
             Searches AdventureWorks database and lists all tables/views with its corresponding matching tables/views with match percent greater than or equal to 60
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,

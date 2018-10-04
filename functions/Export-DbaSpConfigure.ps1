@@ -26,8 +26,9 @@ function Export-DbaSpConfigure {
 
         .NOTES
             Tags: SpConfig, Configure, Configuration
-            Website: https://dbatools.io
             Author: Chrissy LeMaire (@cl), netnerds.net
+
+            Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
@@ -41,23 +42,23 @@ function Export-DbaSpConfigure {
             Creates a new file for each SQL Server Instance
 
         .EXAMPLE
-            Export-DbaSpConfigure -SqlInstance sourceserver
+            PS C:\> Export-DbaSpConfigure -SqlInstance sourceserver
 
             Exports the SPConfigure settings on sourceserver. As no Path was defined outputs to My Documents folder with default name format of Servername-MMDDYYYYhhmmss-sp_configure.sql
 
         .EXAMPLE
-            Export-DbaSpConfigure -SqlInstance sourceserver -Path C:\temp
+            PS C:\> Export-DbaSpConfigure -SqlInstance sourceserver -Path C:\temp
 
             Exports the SPConfigure settings on sourceserver to the directory C:\temp using the default name format
 
         .EXAMPLE
-            $cred = Get-Credential sqladmin
-            Export-DbaSpConfigure -SqlInstance sourceserver -SqlCredential $cred -Path C:\temp\sp_configure.sql
+            PS C:\> $cred = Get-Credential sqladmin
+            PS C:\> Export-DbaSpConfigure -SqlInstance sourceserver -SqlCredential $cred -Path C:\temp\sp_configure.sql
 
             Exports the SPConfigure settings on sourceserver to the file C:\temp\sp_configure.sql. Uses SQL Authentication to connect. Will require SysAdmin rights if needs to set 'show advanced options'
 
         .EXAMPLE
-            'Server1', 'Server2' | Export-DbaSpConfigure -Path C:\temp\configure.sql
+            PS C:\> 'Server1', 'Server2' | Export-DbaSpConfigure -Path C:\temp\configure.sql
 
             Exports the SPConfigure settings for Server1 and Server2 using pipeline. As more than 1 Server adds prefix of Servername and date to the file name and saves to file like  C:\temp\Servername-MMDDYYYYhhmmss-configure.sql
     #>

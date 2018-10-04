@@ -51,7 +51,7 @@ function Get-DbaDependency {
             Returns everything that depends on the "Customers" table
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(ValueFromPipeline)]
         $InputObject,
 
@@ -72,7 +72,7 @@ function Get-DbaDependency {
         #region Utility functions
         function Get-DependencyTree {
             [CmdletBinding()]
-            Param (
+            param (
                 $Object,
 
                 $Server,
@@ -115,7 +115,7 @@ function Get-DbaDependency {
 
         function Read-DependencyTree {
             [CmdletBinding()]
-            Param (
+            param (
                 [System.Object]
                 $InputObject,
 
@@ -139,7 +139,7 @@ function Get-DbaDependency {
 
         function Get-DependencyTreeNodeDetail {
             [CmdletBinding()]
-            Param (
+            param (
                 [Parameter(ValueFromPipeline)]
                 $SmoObject,
 
@@ -195,7 +195,7 @@ function Get-DbaDependency {
 
         function Select-DependencyPrecedence {
             [CmdletBinding()]
-            Param (
+            param (
                 [Parameter(ValueFromPipeline)]
                 $Dependency
             )

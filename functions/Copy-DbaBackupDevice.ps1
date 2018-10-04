@@ -50,17 +50,17 @@ function Copy-DbaBackupDevice {
             https://dbatools.io/Copy-DbaBackupDevice
 
         .EXAMPLE
-            Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster
 
             Copies all server backup devices from sqlserver2014a to sqlcluster using Windows credentials. If backup devices with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -BackupDevice backup01 -SourceSqlCredential $cred -Force
+            PS C:\> Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -BackupDevice backup01 -SourceSqlCredential $cred -Force
 
             Copies only the backup device named backup01 from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a    and Windows credentials for sqlcluster. If a backup device with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
         .EXAMPLE
-            Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            PS C:\> Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
     #>
@@ -101,10 +101,10 @@ function Copy-DbaBackupDevice {
             }
             $destBackupDevices = $destServer.BackupDevices
             $destNetBios = $destinstance.ComputerName
-            
+
             foreach ($currentBackupDevice in $serverBackupDevices) {
                 $deviceName = $currentBackupDevice.Name
-                
+
                 $copyBackupDeviceStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -114,17 +114,17 @@ function Copy-DbaBackupDevice {
                     Notes        = $null
                     DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
-                
+
                 if ($BackupDevice -and $BackupDevice -notcontains $deviceName) {
                     continue
                 }
-                
+
                 if ($destBackupDevices.Name -contains $deviceName) {
                     if ($force -eq $false) {
                         $copyBackupDeviceStatus.Status = "Skipped"
                         $copyBackupDeviceStatus.Notes = "Already exists"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Write-Message -Level Verbose -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."
                         continue
                     }
@@ -137,13 +137,13 @@ function Copy-DbaBackupDevice {
                             catch {
                                 $copyBackupDeviceStatus.Status = "Failed"
                                 $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                
+
                                 Stop-Function -Message "Issue dropping backup device" -Target $deviceName -ErrorRecord $_ -Continue
                             }
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Generating SQL code for $deviceName")) {
                     Write-Message -Level Verbose -Message "Scripting out SQL for $deviceName"
                     try {
@@ -153,29 +153,29 @@ function Copy-DbaBackupDevice {
                     catch {
                         $copyBackupDeviceStatus.Status = "Failed"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Stop-Function -Message "Issue scripting out backup device" -Target $deviceName -ErrorRecord $_ -Continue
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess("console", "Stating that the actual file copy is about to occur")) {
                     Write-Message -Level Verbose -Message "Preparing to copy actual backup file"
                 }
-                
+
                 $path = Split-Path $sourceServer.BackupDevices[$deviceName].PhysicalLocation
                 $destPath = Join-AdminUnc $destNetBios $path
                 $sourcepath = Join-AdminUnc $sourceNetBios $sourceServer.BackupDevices[$deviceName].PhysicalLocation
-                
+
                 Write-Message -Level Verbose -Message "Checking if directory $destPath exists"
-                
+
                 if ($(Test-DbaPath -SqlInstance $destinstance -Path $path) -eq $false) {
                     $backupDirectory = $destServer.BackupDirectory
                     $destPath = Join-AdminUnc $destNetBios $backupDirectory
-                    
+
                     if ($Pscmdlet.ShouldProcess($destinstance, "Updating create code to use new path")) {
                         Write-Message -Level Verbose -Message "$path doesn't exist on $destinstance"
                         Write-Message -Level Verbose -Message "Using default backup directory $backupDirectory"
-                        
+
                         try {
                             Write-Message -Level Verbose -Message "Updating $deviceName to use $backupDirectory"
                             $sql = $sql -replace [Regex]::Escape($path), $backupDirectory
@@ -183,12 +183,12 @@ function Copy-DbaBackupDevice {
                         catch {
                             $copyBackupDeviceStatus.Status = "Failed"
                             $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             Stop-Function -Message "Issue updating script of backup device with new path" -Target $deviceName -ErrorRecord $_ -Continue
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Copying $sourcepath to $destPath using BITSTransfer")) {
                     try {
                         Start-BitsTransfer -Source $sourcepath -Destination $destPath -ErrorAction Stop
@@ -197,24 +197,24 @@ function Copy-DbaBackupDevice {
                     catch {
                         $copyBackupDeviceStatus.Status = "Failed"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Stop-Function -Message "Issue copying backup device to destination" -Target $deviceName -ErrorRecord $_ -Continue
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Adding backup device $deviceName")) {
                     Write-Message -Level Verbose -Message "Adding backup device $deviceName on $destinstance"
                     try {
                         $destServer.Query($sql)
                         $destServer.BackupDevices.Refresh()
-                        
+
                         $copyBackupDeviceStatus.Status = "Successful"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     catch {
                         $copyBackupDeviceStatus.Status = "Failed"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Stop-Function -Message "Issue adding backup device" -Target $deviceName -ErrorRecord $_ -Continue
                     }
                 }

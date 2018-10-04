@@ -55,19 +55,19 @@ function Copy-DbaDbAssembly {
             http://dbatools.io/Get-SqlDatabaseAssembly
 
         .EXAMPLE
-            Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster
 
             Copies all assemblies from sqlserver2014a to sqlcluster using Windows credentials. If assemblies with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster -Assembly dbname.assemblyname, dbname3.anotherassembly -SourceSqlCredential $cred -Force
+            PS C:\> Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster -Assembly dbname.assemblyname, dbname3.anotherassembly -SourceSqlCredential $cred -Force
 
             Copies two assemblies, the dbname.assemblyname and dbname3.anotherassembly from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an assembly with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
             In this example, anotherassembly will be copied to the dbname3 database on the server sqlcluster.
 
         .EXAMPLE
-            Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            PS C:\> Copy-DbaDbAssembly -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
     #>

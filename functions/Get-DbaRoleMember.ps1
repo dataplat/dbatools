@@ -1,63 +1,62 @@
 function Get-DbaRoleMember {
     <#
-.SYNOPSIS
-Get members of all roles on a Sql instance.
+        .SYNOPSIS
+            Get members of all roles on a Sql instance.
 
-.DESCRIPTION
-Get members of all roles on a Sql instance.
+        .DESCRIPTION
+            Get members of all roles on a Sql instance.
 
-Default output includes columns SQLServer, Database, Role, Member.
+            Default output includes columns SQLServer, Database, Role, Member.
 
-.PARAMETER SQLInstance
-The SQL Server that you're connecting to.
+        .PARAMETER SQLInstance
+            The SQL Server that you're connecting to.
 
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        .PARAMETER SqlCredential
+            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        .PARAMETER Database
+            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+        .PARAMETER ExcludeDatabase
+            The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER IncludeServerLevel
-Shows also information on Server Level Permissions.
+        .PARAMETER IncludeServerLevel
+            Shows also information on Server Level Permissions.
 
-.PARAMETER NoFixedRole
-Excludes all members of fixed roles.
+        .PARAMETER NoFixedRole
+            Excludes all members of fixed roles.
 
-.PARAMETER Credential
-Credential object used to connect to the SQL Server as a different user.
+        .PARAMETER Credential
+            Credential object used to connect to the SQL Server as a different user.
 
-.NOTES
-Tags: Role, Database, Security, Login
-Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        .NOTES
+            Tags: Role, Database, Security, Login
+            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-.LINK
- https://dbatools.io/Get-DbaRoleMember
+        .LINK
+            https://dbatools.io/Get-DbaRoleMember
 
-.EXAMPLE
-Get-DbaRoleMember -SqlInstance ServerA
+        .EXAMPLE
+            PS C:\> Get-DbaRoleMember -SqlInstance ServerA
 
-Returns a custom object displaying SQLServer, Database, Role, Member for all DatabaseRoles.
+            Returns a custom object displaying SQLServer, Database, Role, Member for all DatabaseRoles.
 
-.EXAMPLE
-Get-DbaRoleMember -SqlInstance sql2016 | Out-Gridview
+        .EXAMPLE
+            PS C:\> Get-DbaRoleMember -SqlInstance sql2016 | Out-GridView
 
-Returns a gridview displaying SQLServer, Database, Role, Member for all DatabaseRoles.
+            Returns a grid view displaying SQLServer, Database, Role, Member for all DatabaseRoles.
 
-.EXAMPLE
-Get-DbaRoleMember -SqlInstance ServerA\sql987 -IncludeServerLevel
+        .EXAMPLE
+            PS C:\> Get-DbaRoleMember -SqlInstance ServerA\sql987 -IncludeServerLevel | Out-GridView
 
-Returns a gridview displaying SQLServer, Database, Role, Member for both ServerRoles and DatabaseRoles.
-
-#>
+            Returns a grid view displaying SQLServer, Database, Role, Member for both ServerRoles and DatabaseRoles.
+    #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias('SqlServer', 'ServerInstance')]
         [DbaInstanceParameter[]]$SqlInstance,

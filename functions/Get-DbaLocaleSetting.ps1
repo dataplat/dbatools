@@ -47,7 +47,7 @@ function Get-DbaLocaleSetting {
 
   #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(ValueFromPipeline)]
         [Alias("cn", "host", "Server")]
         [string[]]$ComputerName = $env:COMPUTERNAME,

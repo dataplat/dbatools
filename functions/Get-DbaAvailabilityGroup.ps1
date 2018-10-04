@@ -35,22 +35,22 @@ function Get-DbaAvailabilityGroup {
             https://dbatools.io/Get-DbaAvailabilityGroup
 
         .EXAMPLE
-            Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a
+            PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a
 
             Returns basic information on all the Availability Group(s) found on sqlserver2014a.
 
         .EXAMPLE
-            Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
+            PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
 
             Shows basic information on the Availability Group AG-a on sqlserver2014a.
 
         .EXAMPLE
-            Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select *
+            PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select *
 
             Returns full object properties on all Availability Group(s) on sqlserver2014a.
 
         .EXAMPLE
-            Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
+            PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
 
             Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group.
     #>

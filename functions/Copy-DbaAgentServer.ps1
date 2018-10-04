@@ -53,17 +53,17 @@ function Copy-DbaAgentServer {
             https://dbatools.io/Copy-DbaAgentServer
 
         .EXAMPLE
-            Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster
 
             Copies all job server objects from sqlserver2014a to sqlcluster using Windows credentials for authentication. If job objects with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+            PS C:\> Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
             Copies all job objects from sqlserver2014a to sqlcluster using SQL credentials to authentication to sqlserver2014a and Windows credentials to authenticate to sqlcluster.
 
         .EXAMPLE
-            Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster -WhatIf
+            PS C:\> Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
             Shows what would happen if the command were executed.
     #>
@@ -107,34 +107,34 @@ function Copy-DbaAgentServer {
             Invoke-SmoCheck -SqlInstance $destServer
             # All of these support whatif inside of them
             Copy-DbaAgentCategory -Source $sourceServer -Destination $destServer -Force:$force
-            
+
             $destServer.JobServer.JobCategories.Refresh()
             $destServer.JobServer.OperatorCategories.Refresh()
             $destServer.JobServer.AlertCategories.Refresh()
-            
+
             Copy-DbaAgentOperator -Source $sourceServer -Destination $destServer -Force:$force
             $destServer.JobServer.Operators.Refresh()
-            
+
             Copy-DbaAgentAlert -Source $sourceServer -Destination $destServer -Force:$force -IncludeDefaults
             $destServer.JobServer.Alerts.Refresh()
-            
+
             Copy-DbaAgentProxyAccount -Source $sourceServer -Destination $destServer -Force:$force
             $destServer.JobServer.ProxyAccounts.Refresh()
-            
+
             Copy-DbaAgentSharedSchedule -Source $sourceServer -Destination $destServer -Force:$force
             $destServer.JobServer.SharedSchedules.Refresh()
-            
+
             $destServer.JobServer.Refresh()
             $destServer.Refresh()
             Copy-DbaAgentJob -Source $sourceServer -Destination $destServer -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
-            
+
             # To do
         <#
             Copy-DbaAgentMasterServer -Source $sourceServer -Destination $destServer -Force:$force
             Copy-DbaAgentTargetServer -Source $sourceServer -Destination $destServer -Force:$force
             Copy-DbaAgentTargetServerGroup -Source $sourceServer -Destination $destServer -Force:$force
         #>
-            
+
         <# Here are the properties which must be migrated separately #>
             $copyAgentPropStatus = [pscustomobject]@{
                 SourceServer = $sourceServer.Name
@@ -145,7 +145,7 @@ function Copy-DbaAgentServer {
                 Notes        = $null
                 DateTime     = [DbaDateTime](Get-Date)
             }
-            
+
             if ($Pscmdlet.ShouldProcess($destinstance, "Copying Agent Properties")) {
                 try {
                     Write-Message -Level Verbose -Message "Copying SQL Agent Properties"
@@ -155,7 +155,7 @@ function Copy-DbaAgentServer {
                     $sql = $sql -replace [Regex]::Escape("@auto_start="), [Regex]::Escape("--@auto_start=")
                     Write-Message -Level Debug -Message $sql
                     $null = $destServer.Query($sql)
-                    
+
                     $copyAgentPropStatus.Status = "Successful"
                     $copyAgentPropStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }

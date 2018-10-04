@@ -53,17 +53,17 @@ function Copy-DbaAgentOperator {
             https://dbatools.io/Copy-DbaAgentOperator
 
         .EXAMPLE
-            Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster
 
             Copies all operators from sqlserver2014a to sqlcluster using Windows credentials. If operators with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster -Operator PSOperator -SourceSqlCredential $cred -Force
+            PS C:\> Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster -Operator PSOperator -SourceSqlCredential $cred -Force
 
             Copies only the PSOperator operator from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an operator with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
         .EXAMPLE
-            Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            PS C:\> Copy-DbaAgentOperator -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
     #>
@@ -105,12 +105,12 @@ function Copy-DbaAgentOperator {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             $destOperator = $destServer.JobServer.Operators
             $failsafe = $destServer.JobServer.AlertSystem | Select-Object FailSafeOperator
             foreach ($sOperator in $serverOperator) {
                 $operatorName = $sOperator.Name
-                
+
                 $copyOperatorStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -120,11 +120,11 @@ function Copy-DbaAgentOperator {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($Operator -and $Operator -notcontains $operatorName -or $ExcludeOperator -in $operatorName) {
                     continue
                 }
-                
+
                 if ($destOperator.Name -contains $sOperator.Name) {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Operator $operatorName exists at destination. Use -Force to drop and migrate.")) {
@@ -140,7 +140,7 @@ function Copy-DbaAgentOperator {
                             Write-Message -Level Verbose -Message "$operatorName is the failsafe operator. Skipping drop."
                             continue
                         }
-                        
+
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping operator $operatorName and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping Operator $operatorName"
@@ -149,20 +149,20 @@ function Copy-DbaAgentOperator {
                             catch {
                                 $copyOperatorStatus.Status = "Failed"
                                 $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                
+
                                 Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue
                             }
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating Operator $operatorName")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying Operator $operatorName"
                         $sql = $sOperator.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
-                        
+
                         $copyOperatorStatus.Status = "Successful"
                         $copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }

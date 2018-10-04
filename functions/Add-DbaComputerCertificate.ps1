@@ -47,12 +47,12 @@ function Add-DbaComputerCertificate {
             License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
-            Add-DbaComputerCertificate -ComputerName Server1 -Path C:\temp\cert.cer
+            PS C:\> Add-DbaComputerCertificate -ComputerName Server1 -Path C:\temp\cert.cer
 
             Adds the local C:\temp\cert.cer to the remote server Server1 in LocalMachine\My (Personal).
 
         .EXAMPLE
-            Add-DbaComputerCertificate -Path C:\temp\cert.cer
+            PS C:\> Add-DbaComputerCertificate -Path C:\temp\cert.cer
 
             Adds the local C:\temp\cert.cer to the local computer's LocalMachine\My (Personal) certificate store.
     #>
@@ -61,7 +61,7 @@ function Add-DbaComputerCertificate {
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [securestring]$Password,
+        [SecureString]$Password,
         [parameter(ValueFromPipeline)]
         [System.Security.Cryptography.X509Certificates.X509Certificate2[]]$Certificate,
         [string]$Path,
@@ -97,7 +97,7 @@ function Add-DbaComputerCertificate {
             param (
                 $CertificateData,
 
-                [securestring]$Password,
+                [SecureString]$Password,
 
                 $Store,
 
@@ -136,7 +136,7 @@ function Add-DbaComputerCertificate {
 
             foreach ($computer in $ComputerName) {
 
-                if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
+                if ($PSCmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
                     try {
                         Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
                             Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer

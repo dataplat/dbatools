@@ -34,27 +34,27 @@ function Find-DbaDatabase {
 
         .NOTES
             Tags: Database
-            Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
+            Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 
-            dbatools PowerShell module (https://dbatools.io)
-            Copyright (C) 2016 Chrissy LeMaire
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
             https://dbatools.io/Find-DbaDatabase
 
         .EXAMPLE
-            Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report
+            PS C:\> Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report
 
             Returns all database from the SqlInstances that have a database with Report in the name
 
         .EXAMPLE
-            Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Exact | Select-Object *
+            PS C:\> Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Exact | Select-Object *
 
             Returns all database from the SqlInstances that have a database named TestDB with a detailed output.
 
         .EXAMPLE
-            Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern '-faeb-495a-9898-f25a782835f5' | Select-Object *
+            PS C:\> Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern '-faeb-495a-9898-f25a782835f5' | Select-Object *
 
             Returns all database from the SqlInstances that have the same Service Broker GUID with a detailed output
     #>

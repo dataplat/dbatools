@@ -73,12 +73,12 @@ function Copy-DbaCredential {
             https://dbatools.io/Copy-DbaCredential
 
         .EXAMPLE
-            Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster
 
             Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If Credentials exist on destination, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -Name "PowerShell Proxy Account" -Force
+            PS C:\> Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -Name "PowerShell Proxy Account" -Force
 
             Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the Credential already exists on the destination, it will be dropped and recreated.
     #>
