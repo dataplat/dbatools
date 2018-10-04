@@ -83,7 +83,7 @@ function Remove-DbaDbMasterKey {
     begin {
         function Drop-Masterkey {
             [CmdletBinding()]
-            Param (
+            param (
                 $masterkey,
 
                 $mode = $Mode,

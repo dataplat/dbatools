@@ -20,6 +20,7 @@ function Get-DbaClientAlias {
         .NOTES
             Tags: Alias
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -28,22 +29,22 @@ function Get-DbaClientAlias {
             https://dbatools.io/Get-DbaClientAlias
 
         .EXAMPLE
-            Get-DbaClientAlias
+            PS C:\> Get-DbaClientAlias
 
             Gets all SQL Server client aliases on the local computer
 
         .EXAMPLE
-            Get-DbaClientAlias -ComputerName workstationx
+            PS C:\> Get-DbaClientAlias -ComputerName workstationx
 
             Gets all SQL Server client aliases on Workstationx
 
         .EXAMPLE
-            'Server1', 'Server2' | Get-DbaClientAlias
+            PS C:\> 'Server1', 'Server2' | Get-DbaClientAlias
 
             Gets all SQL Server client aliases on Server1 and Server2
-#>
-        [CmdletBinding()]
-    Param (
+    #>
+    [CmdletBinding()]
+    param (
         [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
@@ -56,7 +57,7 @@ function Get-DbaClientAlias {
             $scriptblock = {
 
                 function Get-ItemPropertyValue {
-                    Param (
+                    param (
                         [parameter()]
                         [String]$Path,
                         [parameter()]

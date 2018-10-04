@@ -42,7 +42,7 @@ function Show-DbaServerFileSystem {
 
     #>
     [CmdletBinding(SupportsShouldProcess)]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
@@ -99,7 +99,7 @@ function Show-DbaServerFileSystem {
         }
 
         function Get-SubDirectory {
-            Param (
+            param (
                 [string]$nameSpace,
                 [object]$treeviewItem
             )

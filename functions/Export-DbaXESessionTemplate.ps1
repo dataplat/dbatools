@@ -30,6 +30,7 @@ function Export-DbaXESessionTemplate {
         .NOTES
             Tags: ExtendedEvent, XE, XEvent
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -38,15 +39,14 @@ function Export-DbaXESessionTemplate {
             https://dbatools.io/Export-DbaXESessionTemplate
 
         .EXAMPLE
-            Export-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\temp\xe
+            PS C:\> Export-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\temp\xe
 
             Exports an XESession XML Template for all Extended Event Sessions on sql2017 to the C:\temp\xe folder.
 
         .EXAMPLE
-            Get-DbaXESession -SqlInstance sql2017 -Session system_health | Export-DbaXESessionTemplate -Path C:\temp\xe
+            PS C:\> Get-DbaXESession -SqlInstance sql2017 -Session system_health | Export-DbaXESessionTemplate -Path C:\temp\xe
 
             Gets the system_health Extended Events Session from sql2017 and then exports as an XESession XML Template to C:\temp\xe
-
     #>
     [CmdletBinding()]
     param (

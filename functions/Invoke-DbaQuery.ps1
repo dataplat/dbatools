@@ -87,7 +87,7 @@ function Invoke-DbaQuery {
             Runs the sql commands stored in rebuild.sql against all accessible databases of the instances "server1", "server1\nordwind" and "server2"
     #>
     [CmdletBinding(DefaultParameterSetName = "Query")]
-    Param (
+    param (
         [parameter(ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstance[]]

@@ -26,6 +26,7 @@ function Get-DbaAgentOperator {
         .NOTES
             Tags: Agent, Operator
             Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -34,27 +35,27 @@ function Get-DbaAgentOperator {
             https://dbatools.io/Get-DbaAgentOperator
 
         .EXAMPLE
-            Get-DbaAgentOperator -SqlInstance ServerA,ServerB\instanceB
+            PS C:\> Get-DbaAgentOperator -SqlInstance ServerA,ServerB\instanceB
 
             Returns any SQL Agent operators on serverA and serverB\instanceB
 
         .EXAMPLE
-            'ServerA','ServerB\instanceB' | Get-DbaAgentOperator
+            PS C:\> 'ServerA','ServerB\instanceB' | Get-DbaAgentOperator
 
             Returns all SQL Agent operators  on serverA and serverB\instanceB
 
         .EXAMPLE
-            Get-DbaAgentOperator -SqlInstance ServerA -Operator Dba1,Dba2
+            PS C:\> Get-DbaAgentOperator -SqlInstance ServerA -Operator Dba1,Dba2
 
             Returns only the SQL Agent Operators Dba1 and Dba2 on ServerA.
 
         .EXAMPLE
-            Get-DbaAgentOperator -SqlInstance ServerA,ServerB -ExcludeOperator Dba3
+            PS C:\> Get-DbaAgentOperator -SqlInstance ServerA,ServerB -ExcludeOperator Dba3
 
             Returns all the SQL Agent operators on ServerA and ServerB, except the Dba3 operator.
     #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -109,7 +110,7 @@ function Get-DbaAgentOperator {
                         $alertlastemail = [dbadatetime]$alert.LastOccurrenceDate
                     }
                 }
-                
+
                 Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
                 Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName

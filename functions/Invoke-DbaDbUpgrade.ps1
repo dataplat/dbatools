@@ -92,7 +92,7 @@ function Invoke-DbaDbUpgrade {
         Get only specific databases using GridView and pass those to Invoke-DbaDbUpgrade
 #>
     [CmdletBinding(SupportsShouldProcess)]
-    Param (
+    param (
         [parameter(Position = 0)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

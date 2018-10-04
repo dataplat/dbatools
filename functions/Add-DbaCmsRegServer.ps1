@@ -54,23 +54,23 @@ function Add-DbaCmsRegServer {
             https://dbatools.io/Add-DbaCmsRegServer
 
         .EXAMPLE
-           Add-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01
+           PS C:\> Add-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01
 
            Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible.
 
         .EXAMPLE
-           Add-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Name "The 2008 Clustered Instance" -Description "HR's Dedicated SharePoint instance"
+           PS C:\> Add-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Name "The 2008 Clustered Instance" -Description "HR's Dedicated SharePoint instance"
 
            Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, "The 2008 Clustered Instance" will be visible.
            Clearly this is hard to explain ;)
 
         .EXAMPLE
-           Add-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Group hr\Seattle
+           PS C:\> Add-DbaCmsRegServer -SqlInstance sql2008 -ServerName sql01 -Group hr\Seattle
 
            Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible within the Seattle group which is in the hr group.
 
         .EXAMPLE
-           Get-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\Seattle | Add-DbaCmsRegServer -ServerName sql01111
+           PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\Seattle | Add-DbaCmsRegServer -ServerName sql01111
 
            Creates a registered server on sql2008's CMS which points to the SQL Server, sql01. When scrolling in CMS, the name "sql01" will be visible within the Seattle group which is in the hr group.
     #>
@@ -93,12 +93,12 @@ function Add-DbaCmsRegServer {
             Stop-Function -Message "You must either pipe in a registered server group or specify a sqlinstance"
             return
         }
-        
+
         # double check in case a null name was bound
         if (-not $Name) {
             $Name = $ServerName
         }
-        
+
         foreach ($instance in $SqlInstance) {
             if (($Group)) {
                 if ($Group -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {

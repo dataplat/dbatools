@@ -24,6 +24,7 @@ function Get-DbaPfDataCollectorSetTemplate {
         .NOTES
             Tags: Performance, DataCollector, PerfCounter
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -32,17 +33,17 @@ function Get-DbaPfDataCollectorSetTemplate {
             https://dbatools.io/Get-DbaPfDataCollectorSetTemplate
 
         .EXAMPLE
-            Get-DbaPfDataCollectorSetTemplate
+            PS C:\> Get-DbaPfDataCollectorSetTemplate
 
             Returns information about all the templates in the local dbatools repository.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 | Start-DbaPfDataCollectorSet
+            PS C:\> Get-DbaPfDataCollectorSetTemplate | Out-GridView -PassThru | Import-DbaPfDataCollectorSetTemplate -ComputerName sql2017 | Start-DbaPfDataCollectorSet
 
             Allows you to select a template, then deploys it to sql2017 and immediately starts the DataCollectorSet.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorSetTemplate | Select-Object *
+            PS C:\> Get-DbaPfDataCollectorSetTemplate | Select-Object *
 
             Returns more information about the template, including the full path/filename.
     #>

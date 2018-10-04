@@ -47,28 +47,27 @@
             https://dbatools.io/Find-DbadisabledIndex
 
         .EXAMPLE
-            Find-DbadisabledIndex -SqlInstance sql2005
+            PS C:\> Find-DbaDisabledIndex -SqlInstance sql2005
 
             Generates the SQL statements to drop the selected disabled indexes on server "sql2005".
 
         .EXAMPLE
-            Find-DbadisabledIndex -SqlInstance sqlserver2016 -SqlCredential $cred
+            PS C:\> Find-DbaDisabledIndex -SqlInstance sqlserver2016 -SqlCredential $cred
 
             Generates the SQL statements to drop the selected disabled indexes on server "sqlserver2016", using SQL Authentication to connect to the database.
 
         .EXAMPLE
-            Find-DbadisabledIndex -SqlInstance sqlserver2016 -Database db1, db2
+            PS C:\> Find-DbaDisabledIndex -SqlInstance sqlserver2016 -Database db1, db2
 
             Generates the SQL Statement to drop selected indexes in databases db1 & db2 on server "sqlserver2016".
 
         .EXAMPLE
-            Find-DbadisabledIndex -SqlInstance sqlserver2016
+            PS C:\> Find-DbaDisabledIndex -SqlInstance sqlserver2016
 
             Generates the SQL statements to drop selected indexes on all user databases.
-
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,

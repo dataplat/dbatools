@@ -58,17 +58,17 @@ function Copy-DbaAgentJob {
             https://dbatools.io/Copy-DbaAgentJob
 
         .EXAMPLE
-            Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster
 
             Copies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force
+            PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force
 
             Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
         .EXAMPLE
-            Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
     #>
@@ -97,7 +97,7 @@ function Copy-DbaAgentJob {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-        
+
         $serverJobs = $sourceServer.JobServer.Jobs
     }
     process {
@@ -111,11 +111,11 @@ function Copy-DbaAgentJob {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
             $destJobs = $destServer.JobServer.Jobs
-            
+
             foreach ($serverJob in $serverJobs) {
                 $jobName = $serverJob.name
                 $jobId = $serverJob.JobId
-                
+
                 $copyJobStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -125,7 +125,7 @@ function Copy-DbaAgentJob {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($Job -and $jobName -notin $Job -or $jobName -in $ExcludeJob) {
                     Write-Message -Level Verbose -Message "Job [$jobName] filtered. Skipping."
                     continue
@@ -138,9 +138,9 @@ function Copy-DbaAgentJob {
                     ON sps.plan_id = sp.id
                 WHERE job_id = '$($jobId)'"
                 Write-Message -Message $sql -Level Debug
-                
+
                 $MaintenancePlanName = $sourceServer.Query($sql).MaintenancePlanName
-                
+
                 if ($MaintenancePlanName) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanNam")) {
                         $copyJobStatus.Status = "Skipped"
@@ -150,10 +150,10 @@ function Copy-DbaAgentJob {
                     }
                     continue
                 }
-                
+
                 $dbNames = ($serverJob.JobSteps | where-object {$_.SubSystem -ne 'ActiveScripting'}).DatabaseName | Where-Object { $_.Length -gt 0 }
                 $missingDb = $dbNames | Where-Object { $destServer.Databases.Name -notcontains $_ }
-                
+
                 if ($missingDb.Count -gt 0 -and $dbNames.Count -gt 0) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName].")) {
                         $missingDb = ($missingDb | Sort-Object | Get-Unique) -join ", "
@@ -164,9 +164,9 @@ function Copy-DbaAgentJob {
                     }
                     continue
                 }
-                
+
                 $missingLogin = $serverJob.OwnerLoginName | Where-Object { $destServer.Logins.Name -notcontains $_ }
-                
+
                 if ($missingLogin.Count -gt 0) {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName].")) {
@@ -179,10 +179,10 @@ function Copy-DbaAgentJob {
                         continue
                     }
                 }
-                
+
                 $proxyNames = $serverJob.JobSteps.ProxyName | Where-Object { $_.Length -gt 0 }
                 $missingProxy = $proxyNames | Where-Object { $destServer.JobServer.ProxyAccounts.Name -notcontains $_ }
-                
+
                 if ($missingProxy.Count -gt 0 -and $proxyNames.Count -gt 0) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName].")) {
                         $missingProxy = ($missingProxy | Sort-Object | Get-Unique) -join ", "
@@ -193,10 +193,10 @@ function Copy-DbaAgentJob {
                     }
                     continue
                 }
-                
+
                 $operators = $serverJob.OperatorToEmail, $serverJob.OperatorToNetSend, $serverJob.OperatorToPage | Where-Object { $_.Length -gt 0 }
                 $missingOperators = $operators | Where-Object { $destServer.JobServer.Operators.Name -notcontains $_ }
-                
+
                 if ($missingOperators.Count -gt 0 -and $operators.Count -gt 0) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]")) {
                         $missingOperator = ($operators | Sort-Object | Get-Unique) -join ", "
@@ -207,7 +207,7 @@ function Copy-DbaAgentJob {
                     }
                     continue
                 }
-                
+
                 if ($destJobs.name -contains $serverJob.name) {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Job $jobName exists at destination. Use -Force to drop and migrate.")) {
@@ -233,20 +233,20 @@ function Copy-DbaAgentJob {
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating Job $jobName")) {
                     try {
                         Write-Message -Message "Copying Job $jobName" -Level Verbose
                         $sql = $serverJob.Script() | Out-String
-                        
+
                         if ($missingLogin.Count -gt 0 -and $force) {
                             $saLogin = Get-SqlSaLogin -SqlInstance $destServer
                             $sql = $sql -replace [Regex]::Escape("@owner_login_name=N'$missingLogin'"), [Regex]::Escape("@owner_login_name=N'$saLogin'")
                         }
-                        
+
                         Write-Message -Message $sql -Level Debug
                         $destServer.Query($sql)
-                        
+
                         $destServer.JobServer.Jobs.Refresh()
                         $destServer.JobServer.Jobs[$serverJob.name].IsEnabled = $sourceServer.JobServer.Jobs[$serverJob.name].IsEnabled
                         $destServer.JobServer.Jobs[$serverJob.name].Alter()
@@ -258,7 +258,7 @@ function Copy-DbaAgentJob {
                         Stop-Function -Message "Issue copying job" -Target $jobName -ErrorRecord $_ -Continue
                     }
                 }
-                
+
                 if ($DisableOnDestination) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Disabling $jobName")) {
                         Write-Message -Message "Disabling $jobName on $destinstance" -Level Verbose
@@ -266,7 +266,7 @@ function Copy-DbaAgentJob {
                         $destServer.JobServer.Jobs[$serverJob.name].Alter()
                     }
                 }
-                
+
                 if ($DisableOnSource) {
                     if ($Pscmdlet.ShouldProcess($source, "Disabling $jobName")) {
                         Write-Message -Message "Disabling $jobName on $source" -Level Verbose

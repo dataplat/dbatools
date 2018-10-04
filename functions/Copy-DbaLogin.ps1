@@ -79,51 +79,50 @@ function Copy-DbaLogin {
             https://dbatools.io/Copy-DbaLogin
 
         .EXAMPLE
-            Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force
+            PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force
 
             Copies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.
 
             If active connections are found for a login, the copy of that Login will fail as it cannot be dropped.
 
         .EXAMPLE
-            Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection
+            PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection
 
             Copies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.
 
             If any active connections are found they will be killed.
 
         .EXAMPLE
-            Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
+            PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
 
             Copies all Logins from Source to Destination except for realcajun using SQL Authentication to connect to both instances.
 
             If a Login already exists on the destination, it will not be migrated.
 
         .EXAMPLE
-            Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force
+            PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force
 
             Copies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.
 
         .EXAMPLE
-            Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
+            PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
 
             Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users.
 
             If a matching Login does not exist on Destination, the Login will be skipped.
 
         .EXAMPLE
-            Copy-DbaLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
+            PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
 
             Copies OldUser and then renames it to newlogin.
 
         .EXAMPLE
-            Get-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017
+            PS C:\> Get-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017
 
             Displays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.
     #>
-
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
-    Param (
+    param (
         [parameter(ParameterSetName = "SqlInstance", Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
@@ -152,7 +151,7 @@ function Copy-DbaLogin {
         function Copy-Login {
             foreach ($sourceLogin in $sourceServer.Logins) {
                 $userName = $sourceLogin.name
-                
+
                 $copyLoginStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -164,7 +163,7 @@ function Copy-DbaLogin {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($Login -and $Login -notcontains $userName -or $ExcludeLogin -contains $userName) { continue }
 
                 if ($sourceLogin.id -eq 1) { continue }
@@ -187,7 +186,7 @@ function Copy-DbaLogin {
                     }
                     continue
                 }
-                
+
                 if (($destServer.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($sourceLogin.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin)) {
                     Write-Message -Level Verbose -Message "$Destination does not have Mixed Mode enabled. [$userName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login."
                 }
@@ -208,20 +207,20 @@ function Copy-DbaLogin {
                         if ($ExcludeSystemLogin) {
                             if ($Pscmdlet.ShouldProcess("console", "$userName was skipped because ExcludeSystemLogin was specified.")) {
                                 Write-Message -Level Verbose -Message "$userName was skipped because ExcludeSystemLogin was specified."
-                                
+
                                 $copyLoginStatus.Status = "Skipped"
                                 $copyLoginStatus.Notes = "System login"
                                 $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             }
                             continue
                         }
-                        
+
                         if ($Pscmdlet.ShouldProcess("console", "Stating local login $userName since the source and destination server reside on the same machine.")) {
                             Write-Message -Level Verbose -Message "Copying local login $userName since the source and destination server reside on the same machine."
                         }
                     }
                 }
-                
+
                 if ($null -ne $destServer.Logins.Item($userName) -and !$force) {
                     if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it exists at destination.")) {
                         Write-Message -Level Verbose -Message "$userName already exists in destination. Use -Force to drop and recreate."
@@ -231,19 +230,19 @@ function Copy-DbaLogin {
                     }
                     continue
                 }
-                
+
                 if ($null -ne $destServer.Logins.Item($userName) -and $force) {
                     if ($userName -eq $destServer.ServiceAccount) {
                         if ($Pscmdlet.ShouldProcess("console", "$userName is the destination service account. Skipping drop.")) {
                             Write-Message -Level Verbose -Message "$userName is the destination service account. Skipping drop."
-                            
+
                             $copyLoginStatus.Status = "Skipped"
                             $copyLoginStatus.Notes = "Destination service account"
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         continue
                     }
-                    
+
                     if ($Pscmdlet.ShouldProcess($destinstance, "Dropping $userName")) {
 
                         # Kill connections, delete user
@@ -522,7 +521,7 @@ function Copy-DbaLogin {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             $destVersionMajor = $destServer.VersionMajor
             if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
                 Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
@@ -531,14 +530,14 @@ function Copy-DbaLogin {
             if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
                 Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
-            
+
             if ($SyncOnly) {
                 if ($Pscmdlet.ShouldProcess($destinstance, "Syncing $Login permissions")) {
                     Sync-DbaLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
                     continue
                 }
             }
-            
+
             Write-Message -Level Verbose -Message "Attempting Login Migration."
             Copy-Login -sourceserver $sourceServer -destserver $destServer -Login $Login -Exclude $ExcludeLogin
 

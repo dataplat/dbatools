@@ -53,22 +53,22 @@ function Copy-DbaCustomError {
             https://dbatools.io/Copy-DbaCustomError
 
         .EXAMPLE
-            Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster
 
             Copies all server custom errors from sqlserver2014a to sqlcluster using Windows credentials. If custom errors with the same name exist on sqlcluster, they will be skipped.
 
         .EXAMPLE
-            Copy-DbaCustomError -Source sqlserver2014a -SourceSqlCredential $scred -Destination sqlcluster -DestinationSqlCredential $dcred -CustomError 60000 -Force
+            PS C:\> Copy-DbaCustomError -Source sqlserver2014a -SourceSqlCredential $scred -Destination sqlcluster -DestinationSqlCredential $dcred -CustomError 60000 -Force
 
             Copies only the custom error with ID number 60000 from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
 
         .EXAMPLE
-            Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -ExcludeCustomError 60000 -Force
+            PS C:\> Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -ExcludeCustomError 60000 -Force
 
             Copies all the custom errors found on sqlserver2014a except the custom error with ID number 60000 to sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
 
         .EXAMPLE
-            Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            PS C:\> Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
     #>
@@ -113,11 +113,11 @@ function Copy-DbaCustomError {
             }
             # US has to go first
             $destCustomErrors = $destServer.UserDefinedMessages
-            
+
             foreach ($currentCustomError in $orderedCustomErrors) {
                 $customErrorId = $currentCustomError.ID
                 $language = $currentCustomError.Language.ToString()
-                
+
                 $copyCustomErrorStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -127,17 +127,17 @@ function Copy-DbaCustomError {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($CustomError -and ($customErrorId -notin $CustomError -or $customErrorId -in $ExcludeCustomError)) {
                     continue
                 }
-                
+
                 if ($destCustomErrors.ID -contains $customErrorId) {
                     if ($force -eq $false) {
                         $copyCustomErrorStatus.Status = "Skipped"
                         $copyCustomErrorStatus.Notes = "Already exists"
                         $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Write-Message -Level Verbose -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
                         continue
                     }
@@ -150,27 +150,27 @@ function Copy-DbaCustomError {
                             catch {
                                 $copyCustomErrorStatus.Status = "Failed"
                                 $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                
+
                                 Stop-Function -Message "Issue dropping custom error" -Target $customErrorId -ErrorRecord $_ -Continue
                             }
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating custom error $customErrorId $language")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying custom error $customErrorId $language"
                         $sql = $currentCustomError.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
-                        
+
                         $copyCustomErrorStatus.Status = "Successful"
                         $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     catch {
                         $copyCustomErrorStatus.Status = "Failed"
                         $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Stop-Function -Message "Issue creating custom error" -Target $customErrorId -ErrorRecord $_
                     }
                 }

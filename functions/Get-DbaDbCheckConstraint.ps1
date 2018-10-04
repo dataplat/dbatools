@@ -28,34 +28,34 @@ function Get-DbaDbCheckConstraint {
 
         .NOTES
             Tags: Database
-            Author: Cláudio Silva ( @ClaudioESSilva | https://claudioessilva.eu)
+            Author: Cláudio Silva (@ClaudioESSilva), https://claudioessilva.eu
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE
-            Get-DbaDbCheckConstraint -SqlInstance sql2016
+            PS C:\> Get-DbaDbCheckConstraint -SqlInstance sql2016
 
             Gets all database check constraints.
 
         .EXAMPLE
-            Get-DbaDbCheckConstraint -SqlInstance Server1 -Database db1
+            PS C:\> Get-DbaDbCheckConstraint -SqlInstance Server1 -Database db1
 
             Gets the check constraints for the db1 database.
 
         .EXAMPLE
-            Get-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeDatabase db1
+            PS C:\> Get-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeDatabase db1
 
             Gets the check constraints for all databases except db1.
 
         .EXAMPLE
-            Get-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeSystemTable
+            PS C:\> Get-DbaDbCheckConstraint -SqlInstance Server1 -ExcludeSystemTable
 
             Gets the check constraints for all databases that are not system objects.
 
         .EXAMPLE
-            'Sql1','Sql2/sqlexpress' | Get-DbaDbCheckConstraint
+            PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaDbCheckConstraint
 
             Gets the check constraints for the databases on Sql1 and Sql2/sqlexpress.
     #>

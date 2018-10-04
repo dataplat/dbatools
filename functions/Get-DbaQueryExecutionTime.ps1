@@ -48,17 +48,17 @@ function Get-DbaQueryExecutionTime {
             https://dbatools.io/Get-DbaQueryExecutionTime
 
         .EXAMPLE
-            Get-DbaQueryExecutionTime -SqlInstance sql2008, sqlserver2012
+            PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008, sqlserver2012
 
             Return the top 100 slowest stored procedures or statements for servers sql2008 and sqlserver2012.
 
         .EXAMPLE
-            Get-DbaQueryExecutionTime -SqlInstance sql2008 -Database TestDB
+            PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008 -Database TestDB
 
             Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database.
 
         .EXAMPLE
-            Get-DbaQueryExecutionTime -SqlInstance sql2008 -Database TestDB -MaxResultsPerDb 100 -MinExecs 200 -MinExecMs 1000
+            PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008 -Database TestDB -MaxResultsPerDb 100 -MinExecs 200 -MinExecMs 1000
 
             Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database, limiting results to queries with more than 200 total executions and an execution time over 1000ms or higher.
     #>

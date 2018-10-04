@@ -32,6 +32,7 @@ function Export-DbaPfDataCollectorSetTemplate {
         .NOTES
             Tags: Performance, DataCollector
             Author: Chrissy LeMaire (@cl), netnerds.net
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: MIT https://opensource.org/licenses/MIT
@@ -40,12 +41,12 @@ function Export-DbaPfDataCollectorSetTemplate {
             https://dbatools.io/Export-DbaPfDataCollectorSetTemplate
 
         .EXAMPLE
-            Export-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Path C:\temp\pf
+            PS C:\> Export-DbaPfDataCollectorSetTemplate -ComputerName sql2017 -Path C:\temp\pf
 
             Exports all data collector sets from to the C:\temp\pf folder.
 
         .EXAMPLE
-            Get-DbaPfDataCollectorSet ComputerName sql2017 -CollectorSet 'System Correlation' | Export-DbaPfDataCollectorSetTemplate -Path C:\temp
+            PS C:\> Get-DbaPfDataCollectorSet ComputerName sql2017 -CollectorSet 'System Correlation' | Export-DbaPfDataCollectorSetTemplate -Path C:\temp
 
             Exports the 'System Correlation' data collector set from sql2017 to C:\temp.
     #>

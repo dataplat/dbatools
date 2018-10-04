@@ -13,11 +13,11 @@ function Get-DbaAgentJobCategory {
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Category
-            The name of the category to filter out. If no category is used all catgories will be returned.
+            The name of the category to filter out. If no category is used all categories will be returned.
 
         .PARAMETER CategoryType
             The type of category. This can be "LocalJob", "MultiServerJob" or "None".
-            If no category is used all catgories types will be returned.
+            If no category is used all categories types will be returned.
 
         .PARAMETER Force
             The force parameter will ignore some errors in the parameters and assume defaults.
@@ -39,17 +39,17 @@ function Get-DbaAgentJobCategory {
             https://dbatools.io/Get-DbaAgentJobCategory
 
         .EXAMPLE
-            Get-DbaAgentJobCategory -SqlInstance sql1
+            PS C:\> Get-DbaAgentJobCategory -SqlInstance sql1
 
             Return all the job categories.
 
         .EXAMPLE
-            Get-DbaAgentJobCategory -SqlInstance sql1 -Category 'Log Shipping'
+            PS C:\> Get-DbaAgentJobCategory -SqlInstance sql1 -Category 'Log Shipping'
 
             Return all the job categories that have the name 'Log Shipping'.
 
         .EXAMPLE
-            Get-DbaAgentJobCategory -SqlInstance sstad-pc -CategoryType MultiServerJob
+            PS C:\> Get-DbaAgentJobCategory -SqlInstance sstad-pc -CategoryType MultiServerJob
 
             Return all the job categories that have a type MultiServerJob.
     #>

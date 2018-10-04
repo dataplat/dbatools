@@ -10,7 +10,7 @@ function Find-DbaUnusedIndex {
             We show the type of compression so you can make a more considered decision.
             For now only supported for CLUSTERED and NONCLUSTERED indexes
 
-            You can select the indexes you want to drop on the gridview and by clicking OK the drop statement will be generated.
+            You can select the indexes you want to drop on the grid view and by clicking OK the drop statement will be generated.
 
         .PARAMETER SqlInstance
             The SQL Server you want to check for unused indexes.
@@ -36,7 +36,7 @@ function Find-DbaUnusedIndex {
         .PARAMETER IgnoreUptime
             Less than 7 days uptime can mean that analysis of unused indexes is unreliable, and normally no results will be returned. By setting this option results will be returned even if the Instance has been running for less that 7 days.
 
-            .PARAMETER WhatIf
+        .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
         .PARAMETER Confirm
@@ -59,36 +59,35 @@ function Find-DbaUnusedIndex {
             https://dbatools.io/Find-DbaUnusedIndex
 
         .EXAMPLE
-            Find-DbaUnusedIndex -SqlInstance sql2005 -Path C:\temp\sql2005-UnusedIndexes.sql
+            PS C:\> Find-DbaUnusedIndex -SqlInstance sql2005 -Path C:\temp\sql2005-UnusedIndexes.sql
 
             Generates the SQL statements to drop the selected unused indexes on server "sql2005". The statements are written to the file "C:\temp\sql2005-UnusedIndexes.sql"
 
         .EXAMPLE
-            Find-DbaUnusedIndex -SqlInstance sql2005 -Path C:\temp\sql2005-UnusedIndexes.sql -Append
+            PS C:\> Find-DbaUnusedIndex -SqlInstance sql2005 -Path C:\temp\sql2005-UnusedIndexes.sql -Append
 
             Generates the SQL statements to drop the selected unused indexes on server "sql2005". The statements are written to the file "C:\temp\sql2005-UnusedIndexes.sql", appending if the file already exists.
 
         .EXAMPLE
-            Find-DbaUnusedIndex -SqlInstance sqlserver2016 -SqlCredential $cred
+            PS C:\> Find-DbaUnusedIndex -SqlInstance sqlserver2016 -SqlCredential $cred
 
             Generates the SQL statements to drop the selected unused indexes on server "sqlserver2016", using SQL Authentication to connect to the database.
 
         .EXAMPLE
-            Find-DbaUnusedIndex -SqlInstance sqlserver2016 -Database db1, db2
+            PS C:\> Find-DbaUnusedIndex -SqlInstance sqlserver2016 -Database db1, db2
 
             Generates the SQL Statement to drop the selected unused indexes in databases db1 & db2 on server "sqlserver2016".
 
         .EXAMPLE
-            Find-DbaUnusedIndex -SqlInstance sqlserver2016
+            PS C:\> Find-DbaUnusedIndex -SqlInstance sqlserver2016
 
             Generates the SQL statements to drop the selected unused indexes on all user databases.
 
         .EXAMPLE
-            Fine-DbaUnusedIndex -SqlInstance sqlserver2016 -IgnoreUptime
+            PS C:\> Fine-DbaUnusedIndex -SqlInstance sqlserver2016 -IgnoreUptime
 
             Generates the SQL statements to drop the selected unused indexes on all user databases even if the instance has been online for less than 7 days.
             Note that results may not have enough detail for all indexes, so care should be taken when using them or the generated scripts. Best practice is to allow a full week to capture the majority of index use cases
-
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (

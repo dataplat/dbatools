@@ -6,7 +6,7 @@ function Restore-DbaBackupFromDirectory {
 
         .DESCRIPTION
             Please use `Get-ChildItem | Restore-DbaDatabase` instead. This command is no longer supported.
-    
+
         .PARAMETER SqlInstance
             The SQL Server instance to which you will be restoring the database.
 
@@ -48,7 +48,7 @@ function Restore-DbaBackupFromDirectory {
     #>
     #Requires -Version 3.0
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,

@@ -51,7 +51,7 @@ function New-DbaClientAlias {
 
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [parameter(Mandatory, ValueFromPipeline)]

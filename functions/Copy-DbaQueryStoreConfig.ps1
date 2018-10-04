@@ -53,12 +53,12 @@ function Copy-DbaQueryStoreConfig {
             https://dbatools.io/Copy-QueryStoreConfig
 
         .EXAMPLE
-            Copy-DbaQueryStoreConfig -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -AllDatabases
+            PS C:\> Copy-DbaQueryStoreConfig -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -AllDatabases
 
             Copy the Query Store configuration of the AdventureWorks database in the ServerA\SQL instance and apply it on all user databases in the ServerB\SQL Instance.
 
         .EXAMPLE
-            Copy-DbaQueryStoreConfig -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -DestinationDatabase WorldWideTraders
+            PS C:\> Copy-DbaQueryStoreConfig -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -DestinationDatabase WorldWideTraders
 
             Copy the Query Store configuration of the AdventureWorks database in the ServerA\SQL instance and apply it to the WorldWideTraders database in the ServerB\SQL Instance.
     #>
@@ -89,19 +89,19 @@ function Copy-DbaQueryStoreConfig {
             return
         }
     }
-    
+
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             # Grab the Query Store configuration from the SourceDatabase through the Get-DbaQueryStoreConfig function
             $SourceQSConfig = Get-DbaDbQueryStoreOption -SqlInstance $sourceServer -Database $SourceDatabase
-            
+
             if (!$DestinationDatabase -and !$Exclude -and !$AllDatabases) {
                 Stop-Function -Message "You must specify databases to execute against using either -DestinationDatabase, -Exclude or -AllDatabases." -Continue
             }
-            
+
             foreach ($destinationServer in $destinstance) {
-                
+
                 try {
                     Write-Message -Level Verbose -Message "Connecting to $destinstance"
                     $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
@@ -109,22 +109,22 @@ function Copy-DbaQueryStoreConfig {
                 catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
                 }
-                
+
                 # We have to exclude all the system databases since they cannot have the Query Store feature enabled
                 $dbs = Get-DbaDatabase -SqlInstance $destServer -ExcludeAllSystemDb
-                
+
                 if ($DestinationDatabase.count -gt 0) {
                     $dbs = $dbs | Where-Object { $DestinationDatabase -contains $_.Name }
                 }
-                
+
                 if ($Exclude.count -gt 0) {
                     $dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
                 }
-                
+
                 if ($dbs.count -eq 0) {
                     Stop-Function -Message "No matching databases found. Check the spelling and try again." -Continue
                 }
-                
+
                 foreach ($db in $dbs) {
                     # skipping the database if the source and destination are the same instance
                     if (($sourceServer.Name -eq $destinationServer) -and ($SourceDatabase -eq $db.Name)) {
@@ -140,12 +140,12 @@ function Copy-DbaQueryStoreConfig {
                         Status       = $null
                         DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
-                    
+
                     if ($db.IsAccessible -eq $false) {
                         $copyQueryStoreStatus.Status = "Skipped"
                         Stop-Function -Message "The database $db on server $destinationServer is not accessible. Skipping database." -Continue
                     }
-                    
+
                     Write-Message -Message "Executing Set-DbaQueryStoreConfig." -Level Verbose
                     # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
                     try {

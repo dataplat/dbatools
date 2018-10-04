@@ -52,7 +52,7 @@
 #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWriteHost", "")]
     [CmdletBinding()]
-    Param (
+    param (
         [Parameter(ValueFromPipeline)]
         [string[]]
         $String,

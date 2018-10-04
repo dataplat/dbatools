@@ -184,7 +184,7 @@
                 $pool.Open()
                 $runspaces = @()
                 $scriptblock = {
-                    Param ($da, $ds, $conn, $queue )
+                    param ($da, $ds, $conn, $queue )
                     $conn.FireInfoMessageEventOnUserErrors = $false
                     $handler = [System.Data.SqlClient.SqlInfoMessageEventHandler] { $queue.Enqueue($_) }
                     $conn.add_InfoMessage($handler)
@@ -257,7 +257,7 @@
                 #Basics from Chad Miller
                 $Column = New-Object Data.DataColumn
                 $Column.ColumnName = "ServerInstance"
-                
+
                 if ($ds.Tables.Count -ne 0) {
                     $ds.Tables[0].Columns.Add($Column)
                     Foreach ($row in $ds.Tables[0]) {

@@ -22,7 +22,7 @@ function Get-DbaClientProtocol {
 
         .NOTES
             Tags: Protocol
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+            Author: Klaas Vandenberghe (@PowerDBAKlaas)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -32,26 +32,26 @@ function Get-DbaClientProtocol {
             https://dbatools.io/Get-DbaClientProtocol
 
         .EXAMPLE
-            Get-DbaClientProtocol -ComputerName sqlserver2014a
+            PS C:\> Get-DbaClientProtocol -ComputerName sqlserver2014a
 
             Gets the SQL Server related client protocols on computer sqlserver2014a.
 
         .EXAMPLE
-            'sql1','sql2','sql3' | Get-DbaClientProtocol
+            PS C:\> 'sql1','sql2','sql3' | Get-DbaClientProtocol
 
             Gets the SQL Server related client protocols on computers sql1, sql2 and sql3.
 
         .EXAMPLE
-            Get-DbaClientProtocol -ComputerName sql1,sql2 | Out-Gridview
+            PS C:\> Get-DbaClientProtocol -ComputerName sql1,sql2 | Out-GridView
 
             Gets the SQL Server related client protocols on computers sql1 and sql2, and shows them in a grid view.
 
         .EXAMPLE
-            (Get-DbaClientProtocol -ComputerName sql2 | Where { $_.DisplayName = 'via' }).Disable()
+            PS C:\> (Get-DbaClientProtocol -ComputerName sql2 | Where { $_.DisplayName = 'via' }).Disable()
 
             Disables the VIA ClientNetworkProtocol on computer sql2.
-            If successful, returncode 0 is shown.
-#>
+            If successful, return code 0 is shown.
+    #>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]

@@ -23,7 +23,7 @@ function Get-DbaComputerSystem {
 
         .NOTES
             Tags: ServerInfo
-            Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
+            Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -33,17 +33,17 @@ function Get-DbaComputerSystem {
             https://dbatools.io/Get-DbaComputerSystem
 
         .EXAMPLE
-            Get-DbaComputerSystem
+            PS C:\> Get-DbaComputerSystem
 
             Returns information about the local computer's computer system
 
         .EXAMPLE
-            Get-DbaComputerSystem -ComputerName sql2016
+            PS C:\> Get-DbaComputerSystem -ComputerName sql2016
 
             Returns information about the sql2016's computer system
 
         .EXAMPLE
-            Get-DbaComputerSystem -ComputerName sql2016 -IncludeAws
+            PS C:\> Get-DbaComputerSystem -ComputerName sql2016 -IncludeAws
 
             Returns information about the sql2016's computer system and includes additional properties around the EC2 instance.
     #>

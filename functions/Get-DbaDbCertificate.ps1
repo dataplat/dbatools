@@ -1,54 +1,54 @@
 function Get-DbaDbCertificate {
     <#
-.SYNOPSIS
-Gets database certificates
+        .SYNOPSIS
+            Gets database certificates
 
-.DESCRIPTION
-Gets database certificates
+        .DESCRIPTION
+            Gets database certificates
 
-.PARAMETER SqlInstance
-The target SQL Server instance
+        .PARAMETER SqlInstance
+            The target SQL Server instance
 
-.PARAMETER SqlCredential
-Allows you to login to SQL Server using alternative credentials
+        .PARAMETER SqlCredential
+            Allows you to login to SQL Server using alternative credentials
 
-.PARAMETER Database
-Get certificate from specific database
+        .PARAMETER Database
+            Get certificate from specific database
 
-.PARAMETER ExcludeDatabase
-Database(s) to ignore when retrieving certificates.
+        .PARAMETER ExcludeDatabase
+            Database(s) to ignore when retrieving certificates.
 
-.PARAMETER Certificate
-Get specific certificate
+        .PARAMETER Certificate
+            Get specific certificate
 
-.PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Certificate
-Author: Chrissy LeMaire (@cl), netnerds.net
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        .NOTES
+            Tags: Certificate
+            Author: Chrissy LeMaire (@cl), netnerds.net
 
-.EXAMPLE
-Get-DbaDbCertificate -SqlInstance sql2016
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: MIT https://opensource.org/licenses/MIT
 
-Gets all certificates
+        .EXAMPLE
+            PS C:\> Get-DbaDbCertificate -SqlInstance sql2016
 
-.EXAMPLE
-Get-DbaDbCertificate -SqlInstance Server1 -Database db1
+            Gets all certificates
 
-Gets the certificate for the db1 database
+        .EXAMPLE
+            PS C:\> Get-DbaDbCertificate -SqlInstance Server1 -Database db1
 
-.EXAMPLE
-Get-DbaDbCertificate -SqlInstance Server1 -Database db1 -Certificate cert1
+            Gets the certificate for the db1 database
 
-Gets the cert1 certificate within the db1 database
+        .EXAMPLE
+            PS C:\> Get-DbaDbCertificate -SqlInstance Server1 -Database db1 -Certificate cert1
 
-#>
+            Gets the cert1 certificate within the db1 database
+    #>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

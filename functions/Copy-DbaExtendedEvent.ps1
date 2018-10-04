@@ -53,22 +53,22 @@ function Copy-DbaExtendedEvent {
             https://dbatools.io/Copy-DbaExtendedEvent
 
         .EXAMPLE
-            Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster
+            PS C:\> Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster
 
             Copies all Extended Event sessions from sqlserver2014a to sqlcluster using Windows credentials.
 
         .EXAMPLE
-            Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+            PS C:\> Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
             Copies all Extended Event sessions from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
         .EXAMPLE
-            Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -WhatIf
+            PS C:\> Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
             Shows what would happen if the command were executed.
 
         .EXAMPLE
-            Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -XeSession CheckQueries, MonitorUserDefinedException
+            PS C:\> Copy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -XeSession CheckQueries, MonitorUserDefinedException
 
             Copies only the Extended Events named CheckQueries and MonitorUserDefinedException from sqlserver2014a to sqlcluster.
     #>
@@ -118,15 +118,15 @@ function Copy-DbaExtendedEvent {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             $destSqlConn = $destServer.ConnectionContext.SqlConnectionObject
             $destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
             $destStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $destSqlStoreConnection
-            
+
             Write-Message -Level Verbose -Message "Migrating sessions."
             foreach ($session in $storeSessions) {
                 $sessionName = $session.Name
-                
+
                 $copyXeSessionStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -136,14 +136,14 @@ function Copy-DbaExtendedEvent {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($null -ne $destStore.Sessions[$sessionName]) {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Extended Event Session '$sessionName' was skipped because it already exists on $destinstance.")) {
                             $copyXeSessionStatus.Status = "Skipped"
                             $copyXeSessionStatus.Notes = "Already exists"
                             $copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             Write-Message -Level Verbose -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destinstance."
                             Write-Message -Level Verbose -Message "Use -Force to drop and recreate."
                         }
@@ -153,40 +153,40 @@ function Copy-DbaExtendedEvent {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to drop $sessionName")) {
                             Write-Message -Level Verbose -Message "Extended Event Session '$sessionName' exists on $destinstance."
                             Write-Message -Level Verbose -Message "Force specified. Dropping $sessionName."
-                            
+
                             try {
                                 $destStore.Sessions[$sessionName].Drop()
                             }
                             catch {
                                 $copyXeSessionStatus.Status = "Failed"
                                 $copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                
+
                                 Stop-Function -Message "Unable to drop session. Moving on." -Target $sessionName -ErrorRecord $_ -Continue
                             }
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Migrating session $sessionName")) {
                     try {
                         $sql = $session.ScriptCreate().GetScript() | Out-String
-                        
+
                         Write-Message -Level Debug -Message $sql
                         Write-Message -Level Verbose -Message "Migrating session $sessionName."
                         $null = $destServer.Query($sql)
-                        
+
                         if ($session.IsRunning -eq $true) {
                             $destStore.Sessions.Refresh()
                             $destStore.Sessions[$sessionName].Start()
                         }
-                        
+
                         $copyXeSessionStatus.Status = "Successful"
                         $copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
                     catch {
                         $copyXeSessionStatus.Status = "Failed"
                         $copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Stop-Function -Message "Unable to create session." -Target $sessionName -ErrorRecord $_
                     }
                 }

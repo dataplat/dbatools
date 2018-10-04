@@ -92,7 +92,7 @@ function Stop-DbaProcess {
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
-    Param (
+    param (
         [parameter(Mandatory, ParameterSetName = "Server")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
