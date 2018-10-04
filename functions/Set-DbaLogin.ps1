@@ -135,7 +135,7 @@ function Set-DbaLogin {
 
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer")]
+        [Alias('ServerInstance', 'SqlServer')]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Login,
@@ -148,9 +148,9 @@ function Set-DbaLogin {
         [switch]$DenyLogin,
         [switch]$GrantLogin,
         [switch]$PasswordPolicyEnforced,
-        [ValidateSet("bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin")]
+        [ValidateSet('bulkadmin', 'dbcreator', 'diskadmin', 'processadmin', 'public', 'securityadmin', 'serveradmin', 'setupadmin', 'sysadmin')]
         [string[]]$AddRole,
-        [ValidateSet("bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin")]
+        [ValidateSet('bulkadmin', 'dbcreator', 'diskadmin', 'processadmin', 'public', 'securityadmin', 'serveradmin', 'setupadmin', 'sysadmin')]
         [string[]]$RemoveRole,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Login[]]$InputObject,
@@ -162,30 +162,30 @@ function Set-DbaLogin {
 
         # Check the parameters
         if ($Login -eq $NewName) {
-            Stop-Function -Message "Login name is the same as the value in -NewName" -Target $Login -Continue
+            Stop-Function -Message 'Login name is the same as the value in -NewName' -Target $Login -Continue
         }
 
         if ($Disable -and $Enable) {
-            Stop-Function -Message "You cannot use both -Enable and -Disable together" -Target $Login -Continue
+            Stop-Function -Message 'You cannot use both -Enable and -Disable together' -Target $Login -Continue
         }
 
         if ($GrantLogin -and $DenyLogin) {
-            Stop-Function -Message "You cannot use both -GrantLogin and -DenyLogin together" -Target $Login -Continue
+            Stop-Function -Message 'You cannot use both -GrantLogin and -DenyLogin together' -Target $Login -Continue
         }
 
         # Check the password
         if ($Password) {
             switch ($Password.GetType().Name) {
-                "PSCredential" { $newPassword = $Password.Password }
-                "SecureString" { $newPassword = $Password }
+                'PSCredential' { $newPassword = $Password.Password }
+                'SecureString' { $newPassword = $Password }
                 default {
-                    Stop-Function -Message "Password must be a PSCredential or SecureString" -Target $Login
+                    Stop-Function -Message 'Password must be a PSCredential or SecureString' -Target $Login
                 }
             }
         }
 
         if ((Test-Bound -ParameterName SqlInstance) -And (Test-Bound -ParameterName Login -Not)) {
-            Stop-Function -Message "You must specify a Login when using SqlInstance"
+            Stop-Function -Message 'You must specify a Login when using SqlInstance'
         }
     }
 
@@ -194,12 +194,12 @@ function Set-DbaLogin {
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Connecting to $instance" -Level Verbose
+            Write-Message -Message 'Connecting to $instance' -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
             catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $InputObject += Get-DbaLogin -SqlInstance $server -Login $Login | Where-Object { ($_.IsSystemObject -eq $false) -and ($_.Name -notlike '##*') }
         }
@@ -225,7 +225,7 @@ function Set-DbaLogin {
                     }
                 }
                 else {
-                    $notes += "New login name already exists"
+                    $notes += 'New login name already exists'
                     Write-Message -Message "New login name $NewName already exists on $instance" -Level Verbose
                 }
             }
@@ -359,7 +359,7 @@ function Set-DbaLogin {
                     PasswordPolicyEnforced = $l.PasswordPolicyEnforced
                     MustChangePassword     = $l.MustChangePassword
                     PasswordChanged        = $passwordChanged
-                    ServerRole             = $roles.Role -join ","
+                    ServerRole             = $roles.Role -join ','
                     Notes                  = $notes
                 } | Select-DefaultView -ExcludeProperty Login
                 # Change output and update tests when there's time
