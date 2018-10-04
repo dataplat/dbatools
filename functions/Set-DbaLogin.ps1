@@ -166,20 +166,23 @@ function Set-DbaLogin {
 
     begin {
         # Check the parameters
-        if ($Login -eq $NewName) {
+        if ((Test-Bound -ParameterName 'SqlInstance') -and (Test-Bound -ParameterName 'Login' -Not)) {
+            Stop-Function -Message 'You must specify a Login when using SqlInstance'
+        }
+
+        if ((Test-Bound -ParameterName 'NewName') -and $Login -eq $NewName) {
             Stop-Function -Message 'Login name is the same as the value in -NewName' -Target $Login -Continue
         }
 
-        if ($Disable -and $Enable) {
+        if ((Test-Bound -ParameterName 'Disable') -and (Test-Bound -ParameterName 'Enable')) {
             Stop-Function -Message 'You cannot use both -Enable and -Disable together' -Target $Login -Continue
         }
 
-        if ($GrantLogin -and $DenyLogin) {
+        if ((Test-Bound -ParameterName 'GrantLogin') -and (Test-Bound -ParameterName 'DenyLogin')) {
             Stop-Function -Message 'You cannot use both -GrantLogin and -DenyLogin together' -Target $Login -Continue
         }
 
-        # Check the password
-        if ($Password) {
+        if (Test-bound -ParameterName 'Password') {
             switch ($Password.GetType().Name) {
                 'PSCredential' { $newPassword = $Password.Password }
                 'SecureString' { $newPassword = $Password }
@@ -187,10 +190,6 @@ function Set-DbaLogin {
                     Stop-Function -Message 'Password must be a PSCredential or SecureString' -Target $Login
                 }
             }
-        }
-
-        if ((Test-Bound -ParameterName SqlInstance) -And (Test-Bound -ParameterName Login -Not)) {
-            Stop-Function -Message 'You must specify a Login when using SqlInstance'
         }
     }
 
@@ -217,7 +216,7 @@ function Set-DbaLogin {
             $notes = @()
 
             # Change the name
-            if ($NewName) {
+            if (Test-Bound -ParameterName 'NewName') {
                 $allLogins = Get-DbaLogin -SqlInstance $server
 
                 # Check if the new name doesn't already exist
@@ -237,7 +236,7 @@ function Set-DbaLogin {
             }
 
             # Change the password
-            if ($Password) {
+            if (Test-Bound -ParameterName 'Password') {
                 try {
                     $l.ChangePassword($newPassword, $Unlock, $MustChange)
                     $passwordChanged = $true
@@ -250,7 +249,7 @@ function Set-DbaLogin {
             }
 
             # Disable the login
-            if ($Disable) {
+            if (Test-Bound -ParameterName 'Disable') {
                 if ($l.IsDisabled) {
                     Write-Message -Message "Login $l is already disabled" -Level Verbose
                 }
@@ -266,7 +265,7 @@ function Set-DbaLogin {
             }
 
             # Enable the login
-            if ($Enable) {
+            if (Test-Bound -ParameterName 'Enable') {
                 if (-not $l.IsDisabled) {
                     Write-Message -Message "Login $l is already enabled" -Level Verbose
                 }
@@ -282,7 +281,7 @@ function Set-DbaLogin {
             }
 
             # Deny access
-            if ($DenyLogin) {
+            if (Test-Bound -ParameterName 'DenyLogin') {
                 if ($l.DenyWindowsLogin) {
                     Write-Message -Message "Login $l already has login access denied" -Level Verbose
                 }
@@ -292,7 +291,7 @@ function Set-DbaLogin {
             }
 
             # Grant access
-            if ($GrantLogin) {
+            if (Test-Bound -ParameterName 'GrantLogin') {
                 if (-not $l.DenyWindowsLogin) {
                     Write-Message -Message "Login $l already has login access granted" -Level Verbose
                 }
@@ -302,7 +301,7 @@ function Set-DbaLogin {
             }
 
             # Enforce password policy
-            if (Test-Bound PasswordPolicyEnforced) {
+            if (Test-Bound -ParameterName 'PasswordPolicyEnforced') {
                 if ($l.PasswordPolicyEnforced -eq $PasswordPolicyEnforced) {
                     Write-Message -Message "Login $l password policy is already set to $($l.PasswordPolicyEnforced)" -Level Verbose
                 }
