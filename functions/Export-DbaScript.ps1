@@ -115,8 +115,8 @@ function Export-DbaScript {
             PS C:\> $Options.AnsiFile = $true
             PS C:\> $Databases = Get-DbaDatabase -SqlInstance sql2016 -ExcludeDatabase master, model, msdb, tempdb
             PS C:\> foreach ($db in $Databases) {
-                Export-DbaScript -InputObject $db -Path C:\temp\export.sql -Append -Encoding UTF8 -ScriptingOptionsObject $options -NoPrefix
-            }
+            >>        Export-DbaScript -InputObject $db -Path C:\temp\export.sql -Append -Encoding UTF8 -ScriptingOptionsObject $options -NoPrefix
+            >> }
 
             Exports Script for each database on sql2016 excluding system databases
             Uses Scripting options to ensure Batch Terminator is set

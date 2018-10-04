@@ -151,14 +151,14 @@ function Get-DbaHelpIndex {
         #Add Fragmentation info if requested
         $FragSelectColumn = ", NULL as avg_fragmentation_in_percent"
         $FragJoin = ''
-        $OutputProperties = 'DatabaseName,ObjectName,IndexName,IndexType,KeyColumns,IncludeColumns,FilterDefinition,DataCompression,IndexReads,IndexUpdates,SizeKB,IndexRows,IndexLookups,MostRecentlyUsed,StatsSampleRows,StatsRowMods,HistogramSteps,StatsLastUpdated'
+        $OutputProperties = 'Database,Object,Index,IndexType,KeyColumns,IncludeColumns,FilterDefinition,DataCompression,IndexReads,IndexUpdates,SizeKB,IndexRows,IndexLookups,MostRecentlyUsed,StatsSampleRows,StatsRowMods,HistogramSteps,StatsLastUpdated'
         if ($IncludeFragmentation) {
             $FragSelectColumn = ', pstat.avg_fragmentation_in_percent'
             $FragJoin = "LEFT JOIN sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL , 'DETAILED') pstat
              ON pstat.database_id = ustat.database_id
              AND pstat.object_id = ustat.object_id
              AND pstat.index_id = ustat.index_id"
-            $OutputProperties = 'DatabaseName,ObjectName,IndexName,IndexType,KeyColumns,IncludeColumns,FilterDefinition,DataCompression,IndexReads,IndexUpdates,SizeKB,IndexRows,IndexLookups,MostRecentlyUsed,StatsSampleRows,StatsRowMods,HistogramSteps,StatsLastUpdated,IndexFragInPercent'
+            $OutputProperties = 'Database,Object,Index,IndexType,KeyColumns,IncludeColumns,FilterDefinition,DataCompression,IndexReads,IndexUpdates,SizeKB,IndexRows,IndexLookups,MostRecentlyUsed,StatsSampleRows,StatsRowMods,HistogramSteps,StatsLastUpdated,IndexFragInPercent'
         }
         $OutputProperties = $OutputProperties.Split(',')
         #Figure out if we are including stats in the results
