@@ -1,10 +1,12 @@
 ﻿function Get-DbaDbFeatureUsage {
     <#
         .SYNOPSIS
-            Shows features that are enabled in the database but not supported on the all the editions of SQL Server.
+            Shows features that are enabled in the database but not supported on all editions of SQL Server. Basically checks for Enterprise feature usage.
 
         .DESCRIPTION
-            Shows features that are enabled in the database but not supported on the all the editions of SQL Server.
+            Shows features that are enabled in the database but not supported on all editions of SQL Server.
+    
+            Basically checks for Enterprise feature usage.
 
             This feature must be removed before the database can be migrated to all available editions of SQL Server.
 
