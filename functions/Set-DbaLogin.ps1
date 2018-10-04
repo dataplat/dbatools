@@ -165,7 +165,6 @@ function Set-DbaLogin {
     )
 
     begin {
-
         # Check the parameters
         if ($Login -eq $NewName) {
             Stop-Function -Message 'Login name is the same as the value in -NewName' -Target $Login -Continue
@@ -207,7 +206,7 @@ function Set-DbaLogin {
             catch {
                 Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $InputObject += Get-DbaLogin -SqlInstance $server -Login $Login | Where-Object { ($_.IsSystemObject -eq $false) -and ($_.Name -notlike '##*') }
+            $InputObject += Get-DbaLogin -SqlInstance $server -Login $Login -NoSystem -ExcludeFilter '##*'
         }
 
         # Loop through all the logins
