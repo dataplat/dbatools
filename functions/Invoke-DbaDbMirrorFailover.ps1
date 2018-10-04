@@ -14,10 +14,13 @@ function Invoke-DbaDbMirrorFailover {
             Login to the primary instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
         .PARAMETER Database
-                The database or databases to mirror
-  
+            The database or databases to mirror
+
+        .PARAMETER InputObject
+            Allows piping from Get-DbaDatabase
+
         .PARAMETER Force
-                Drop and recreate the database on remote servers using fresh backup
+            Force Failover and allow data loss
     
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
