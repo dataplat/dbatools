@@ -81,7 +81,7 @@ function Start-DbaEndpoint {
         
         foreach ($ep in $InputObject) {
             try {
-                if ($Pscmdlet.ShouldProcess("Starting $ep", "$($ep.Parent)")) {
+                if ($Pscmdlet.ShouldProcess($ep.Parent.Name, "Starting $ep")) {
                     $ep.Start()
                     $ep
                 }

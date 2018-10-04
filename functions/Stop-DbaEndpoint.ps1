@@ -81,7 +81,7 @@ function Stop-DbaEndpoint {
         
         foreach ($ep in $InputObject) {
             try {
-                if ($Pscmdlet.ShouldProcess("Stopping $ep", "$($ep.Parent)")) {
+                if ($Pscmdlet.ShouldProcess($ep.Parent.Name, "Stopping $ep")) {
                     $ep.Stop()
                     $ep
                 }

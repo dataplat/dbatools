@@ -117,7 +117,7 @@ function New-DbaEndpoint {
                 }
             }
             
-            if ($Pscmdlet.ShouldProcess("Creating endpoint $Name of type $Type using protocol $Protocol and if TCP then using Port $tcpPort", $server)) {
+            if ($Pscmdlet.ShouldProcess($server.Name, "Creating endpoint $Name of type $Type using protocol $Protocol and if TCP then using Port $tcpPort")) {
                 try {
                     $endpoint = New-Object Microsoft.SqlServer.Management.Smo.EndPoint $server, $Name
                     $endpoint.ProtocolType = [Microsoft.SqlServer.Management.Smo.ProtocolType]::$Protocol

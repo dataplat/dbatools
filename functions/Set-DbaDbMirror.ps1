@@ -90,30 +90,30 @@ function Set-DbaDbMirror {
         foreach ($db in $InputObject) {
             try {
                 if ($Partner) {
-                    if ($Pscmdlet.ShouldProcess("Setting partner on $db", "$($db.Parent)")) {
+                    if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Setting partner on $db")) {
                         # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
                         $db.Parent.Query("ALTER DATABASE $db SET PARTNER = N'$Partner'")
                     }
                 }
                 elseif ($Witness) {
-                    if ($Pscmdlet.ShouldProcess("Setting witness on $db", "$($db.Parent)")) {
+                    if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Setting witness on $db")) {
                         $db.Parent.Query("ALTER DATABASE $db SET WITNESS = N'$Witness'")
                     }
                 }
                 
                 if ($SafetyLevel) {
-                    if ($Pscmdlet.ShouldProcess("Changing safety level to $SafetyLevel on $db", "$($db.Parent)")) {
+                    if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Changing safety level to $SafetyLevel on $db")) {
                         $db.MirroringSafetyLevel = $SafetyLevel
                     }
                 }
                 
                 if ($State) {
-                    if ($Pscmdlet.ShouldProcess("Changing mirror state to $State on $db", "$($db.Parent)")) {
+                    if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Changing mirror state to $State on $db")) {
                         $db.ChangeMirroringState($State)
                     }
                 }
                 
-                if ($Pscmdlet.ShouldProcess("Committing changes to $db", "$($db.Parent)")) {
+                if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Committing changes to $db")) {
                     $db.Alter()
                     $db
                 }

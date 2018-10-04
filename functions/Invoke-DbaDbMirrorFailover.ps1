@@ -83,12 +83,12 @@ function Invoke-DbaDbMirrorFailover {
             # alter database set partner force_service_allow_data_loss
             # if it's sync mirroring you know it's all in sync, so you can just do alter database [dbname] set partner failover
             if ($Force) {
-                if ($Pscmdlet.ShouldProcess("Forcing failover of $db and allowing data loss", "$($db.Parent.Name)")) {
+                if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Forcing failover of $db and allowing data loss")) {
                     $db | Set-DbaDbMirror -State ForceFailoverAndAllowDataLoss
                 }
             }
             else {
-                if ($Pscmdlet.ShouldProcess("Setting safety level to full and failing over $db to partner server", "$($db.Parent.Name)")) {
+                if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Setting safety level to full and failing over $db to partner server")) {
                     $db | Set-DbaDbMirror -SafetyLevel Full
                     $db | Set-DbaDbMirror -State Failover
                 }

@@ -172,7 +172,7 @@ function Invoke-DbaDbMirroring {
             if (-not $validation.DatabaseExistsOnMirror -or $Force) {
                 $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
                 $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
-                if ($Pscmdlet.ShouldProcess("restoring full and log backups of $primarydb from $Primary", "$Mirror")) {
+                if ($Pscmdlet.ShouldProcess("$Mirror", "restoring full and log backups of $primarydb from $Primary")) {
                     try {
                         $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $Mirror -SqlCredential $MirrorSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                     }
@@ -192,7 +192,7 @@ function Invoke-DbaDbMirroring {
                     $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
                     $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
                 }
-                if ($Pscmdlet.ShouldProcess("restoring full and log backups of $primarydb from $Primary", "$Witness")) {
+                if ($Pscmdlet.ShouldProcess("$Witness", "restoring full and log backups of $primarydb from $Primary")) {
                     try {
                         $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $Witness -SqlCredential $WitnessSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                     }
@@ -239,7 +239,7 @@ function Invoke-DbaDbMirroring {
             $serviceaccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
             
             foreach ($account in $serviceaccounts) {
-                if ($Pscmdlet.ShouldProcess("Creating login $account and granting CONNECT ON ENDPOINT", "primary, mirror and witness (if specified)")) {
+                if ($Pscmdlet.ShouldProcess("primary, mirror and witness (if specified)", "Creating login $account and granting CONNECT ON ENDPOINT")) {
                     $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
                     $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
                     try {
@@ -289,7 +289,7 @@ function Invoke-DbaDbMirroring {
                 Stop-Function -Continue -Message "Failure with the new last part" -ErrorRecord $_
             }
             
-            if ($Pscmdlet.ShouldProcess("Showing results", "console")) {
+            if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
                 $results = [pscustomobject]@{
                     Primary  = $Primary
                     Mirror   = $Mirror

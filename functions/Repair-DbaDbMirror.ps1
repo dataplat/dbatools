@@ -78,7 +78,7 @@ function Repair-DbaDbMirror {
                 Get-DbaEndpoint -SqlInstance $db.Parent | Where-Object EndpointType -eq DatabaseMirroring | Stop-DbaEndPoint
                 Get-DbaEndpoint -SqlInstance $db.Parent | Where-Object EndpointType -eq DatabaseMirroring | Start-DbaEndPoint
                 $db | Set-DbaDbMirror -State Resume
-                if ($Pscmdlet.ShouldProcess("displaying output", "console")) {
+                if ($Pscmdlet.ShouldProcess("console", "displaying output")) {
                     $db
                 }
             }

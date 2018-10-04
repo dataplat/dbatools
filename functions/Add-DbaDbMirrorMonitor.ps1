@@ -56,7 +56,7 @@ function Add-DbaDbMirrorMonitor {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             
-            if ($Pscmdlet.ShouldProcess("add mirror monitoring", "$instance")) {
+            if ($Pscmdlet.ShouldProcess($instance, "add mirror monitoring")) {
                 try {
                     $server.Query("msdb.dbo.sp_dbmmonitoraddmonitoring")
                 }

@@ -76,7 +76,7 @@ function Remove-DbaDbMirror {
         }
         
         foreach ($db in $InputObject) {
-            if ($Pscmdlet.ShouldProcess("Turning off mirror for $db", "$($db.Parent.Name)")) {
+            if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Turning off mirror for $db")) {
                 # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
                 try {
                     $db.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
