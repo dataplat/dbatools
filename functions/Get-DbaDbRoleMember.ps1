@@ -61,6 +61,21 @@ function Get-DbaDbRoleMember {
             PS C:\> $servers | Get-DbaDbRoleMember
 
 			Returns all members of all database roles for every server in C:\servers.txt
+
+		.EXAMPLE
+			PS C:\> Get-DbaDbRoleMember -SqlInstance localhost -Database msdb
+
+			Returns non-system members of all roles in the msdb database on localhost.
+
+		.EXAMPLE
+			PS C:\> Get-DbaDbRoleMember -SqlInstance localhost -Database msdb -IncludeSystemUser -ExcludeFixedRole
+
+			Returns all members of non-fixed roles in the msdb database on localhost.
+
+		.EXAMPLE
+			PS C:\> Get-DbaDbRoleMember -SqlInstance localhost -Database msdb -Role 'db_owner'
+
+			Returns all members of the db_owner role in the msdb database on localhost.
     #>
 	[CmdletBinding()]
 	param (
