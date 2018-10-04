@@ -32,6 +32,26 @@ function New-DbaEndpoint {
         .PARAMETER SslPort
             Port for SSL
 
+        .PARAMETER EndpointEncryption
+            Used to specify the state of encryption on the endpoint. Defaults to required.
+            Disabled
+            Required
+            Supported
+    
+            Required by default.
+    
+        .PARAMETER EncryptionAlgorithm
+            Specifies an encryption algorithm used on an endpoint.
+        
+            Options are:
+            AesRC4
+            Aes
+            None
+            RC4
+            RC4Aes
+    
+            RC4 by default.
+
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -56,7 +76,7 @@ function New-DbaEndpoint {
         .EXAMPLE
             New-DbaEndpoint -SqlInstance localhost
 
-            Returns all Endpoint(s) on the local default SQL Server instance
+            Creates all Endpoint(s) on the local default SQL Server instance
 
         .EXAMPLE
             Net-DbaEndpoint -SqlInstance localhost, sql2016
@@ -75,6 +95,10 @@ function New-DbaEndpoint {
         [string]$Protocol = 'Tcp',
         [ValidateSet('All', 'None', 'Partner', 'Witness')]
         [string]$Role = 'All',
+        [ValidateSet('Disabled', 'Required', 'Supported')]
+        [string]$EndpointEncryption = 'Required',
+        [ValidateSet('Aes', 'AesRC4', 'None', 'RC4', 'RC4Aes')]
+        [string]$EncryptionAlgorithm = 'RC4',
         [int]$Port,
         [int]$SslPort,
         [switch]$EnableException
@@ -128,6 +152,10 @@ function New-DbaEndpoint {
                         if (Test-Bound -ParameterName SslPort) {
                             $endpoint.Protocol.Tcp.SslPort = $SslPort
                         }
+                        
+                        $endpoint.Payload.DatabaseMirroring.EndpointEncryption = [Microsoft.SqlServer.Management.Smo.EndpointEncryption]::$EndpointEncryption
+                        $endpoint.Payload.DatabaseMirroring.EndpointEncryptionAlgorithm = [Microsoft.SqlServer.Management.Smo.EndpointEncryptionAlgorithm]::$EncryptionAlgorithm
+                        
                     }
                     $null = $endpoint.Create()
                     $server.Endpoints.Refresh()
