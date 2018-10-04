@@ -196,6 +196,7 @@ function Set-DbaLogin {
     process {
         if (Test-FunctionInterrupt) { return }
 
+        $allLogins = @{}
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
             Write-Message -Message 'Connecting to $instance' -Level Verbose
@@ -205,7 +206,8 @@ function Set-DbaLogin {
             catch {
                 Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $InputObject += Get-DbaLogin -SqlInstance $server -Login $Login -NoSystem -ExcludeFilter '##*'
+            $allLogins[$instance.ToString()] = Get-DbaLogin -SqlInstance $server
+            $InputObject += $allLogins[$instance.ToString()] | Where-Object { ($_.Name -eq $Login) -and ($_.IsSystemObject -eq $false) -and ($_.Name -notlike '##*') }
         }
 
         # Loop through all the logins
@@ -217,10 +219,8 @@ function Set-DbaLogin {
 
             # Change the name
             if (Test-Bound -ParameterName 'NewName') {
-                $allLogins = Get-DbaLogin -SqlInstance $server
-
                 # Check if the new name doesn't already exist
-                if ($allLogins.Name -notcontains $NewName) {
+                if ($allLogins[$server.Name].Name -notcontains $NewName) {
                     try {
                         $l.Rename($NewName)
                     }
