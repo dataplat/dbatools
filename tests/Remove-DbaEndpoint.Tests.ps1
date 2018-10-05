@@ -6,16 +6,17 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $endpoint = Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring
         $create = $endpoint | Export-DbaScript -Passthru
-        Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint
+        $null = $endpoint | Remove-DbaEndpoint
+        $results = New-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4 -Confirm:$false | Start-DbaEndpoint -Confirm:$false
     }
     AfterAll {
-        Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint
         if ($create) {
             Invoke-DbaQuery -SqlInstance $script:instance2 -Query "$create"
         }
     }
-    It "creates an endpoint" {
-        $results = New-DbaEndpoint -SqlInstance $script:instance2 -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4 -Confirm:$false | Start-DbaEndpoint -Confirm:$false
-        $results.EndpointType | Should -Be 'DatabaseMirroring'
+    
+    It "removes an endpoint" {
+        $results = Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint
+        $results.Status | Should -Be 'Removed'
     }
 }
