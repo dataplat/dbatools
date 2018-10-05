@@ -20,6 +20,6 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     
     It "returns success" {
         $results = Invoke-DbaDbMirroring -Primary $script:instance2 -Mirror $script:instance3 -Database $db1 -Confirm:$false
-        $results.Status -eq 'Success' | Should Be $true
+        $results.Status | Should -Be 'Success'
     }
 }
