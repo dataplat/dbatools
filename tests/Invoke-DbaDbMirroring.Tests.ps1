@@ -4,18 +4,18 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        Get-DbaProcess -SqlInstance $script:instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
+        $null = Get-DbaProcess -SqlInstance $script:instance2 | Where-Object Program -match dbatools | Stop-DbaProcess -Confirm:$false -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         $db1 = "dbatoolsci_mirroring"
         
         Remove-DbaDbSnapshot -SqlInstance $script:instance2 -Database $db1 -Confirm:$false
-        Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
-        $server.Query("CREATE DATABASE $db1")
-        Backup-DbaDatabase -SqlInstance $script:instance2 -Database $db1 -BackupDirectory C:\temp -Type Full | Restore-DbaDatabase -SqlInstance $script:instance3 -NoRecovery
-        Backup-DbaDatabase -SqlInstance $script:instance2 -Database $db1 -BackupDirectory C:\temp -Type Log | Restore-DbaDatabase -SqlInstance $script:instance3 -NoRecovery -Continue
+        $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1 | Remove-DbaDatabase -Confirm:$false
+        $null = $server.Query("CREATE DATABASE $db1")
+        $null = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $db1 -BackupDirectory C:\temp -Type Full | Restore-DbaDatabase -SqlInstance $script:instance3 -NoRecovery | Out-Null
+        $null = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $db1 -BackupDirectory C:\temp -Type Log | Restore-DbaDatabase -SqlInstance $script:instance3 -NoRecovery -Continue | Out-Null
     }
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $db1 -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2, $script:instance3 -Database $db1 -ErrorAction SilentlyContinue
     }
     
     It "returns success" {
