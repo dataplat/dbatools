@@ -88,7 +88,7 @@ function Remove-DbaDbMirror {
                             $db.Parent.Query("ALTER DATABASE $db SET PARTNER OFF")
                         }
                         catch {
-                            Stop-Function -Message "Failure on $($db.Parent) for $db" -ErrorRecord $_
+                            Stop-Function -Message "Failure on $($db.Parent) for $db" -ErrorRecord $_ -Continue
                         }
                     }
                     [pscustomobject]@{
