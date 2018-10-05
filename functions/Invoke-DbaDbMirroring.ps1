@@ -222,14 +222,20 @@ function Invoke-DbaDbMirroring {
             }
 
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to mirror"
-
+            
             if (-not $validation.DatabaseExistsOnMirror -or $Force) {
-                $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
-                $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
+                if ($UseLastBackups) {
+                    $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
+                }
+                else {
+                    $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
+                    $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
+                    $allbackups = $fullbackup, $logbackup
+                }
                 Write-Message -Level Verbose -Message "Backups still exist on $NetworkShare"
                 if ($Pscmdlet.ShouldProcess("$Mirror", "restoring full and log backups of $primarydb from $Primary")) {
                     try {
-                        $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $Mirror -SqlCredential $MirrorSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+                        $null = $allbackups | Restore-DbaDatabase -SqlInstance $Mirror -SqlCredential $MirrorSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                     }
                     catch {
                         $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
@@ -249,13 +255,19 @@ function Invoke-DbaDbMirroring {
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to witness"
 
             if ($Witness -and (-not $validation.DatabaseExistsOnWitness -or $Force)) {
-                if (-not $fullbackup) {
-                    $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
-                    $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
+                if (-not $allbackups) {
+                    if ($UseLastBackups) {
+                        $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
+                    }
+                    else {
+                        $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
+                        $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
+                        $allbackups = $fullbackup, $logbackup
+                    }
                 }
                 if ($Pscmdlet.ShouldProcess("$Witness", "restoring full and log backups of $primarydb from $Primary")) {
                     try {
-                        $null = $fullbackup, $logbackup | Restore-DbaDatabase -SqlInstance $Witness -SqlCredential $WitnessSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+                        $null = $allbackups | Restore-DbaDatabase -SqlInstance $Witness -SqlCredential $WitnessSqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                     }
                     catch {
                         $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
