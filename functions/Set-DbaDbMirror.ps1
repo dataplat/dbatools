@@ -113,19 +113,17 @@ function Set-DbaDbMirror {
                 
                 if ($SafetyLevel) {
                     if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Changing safety level to $SafetyLevel on $db")) {
-                        $db.MirroringSafetyLevel = $SafetyLevel
+                        $db.Parent.Query("ALTER DATABASE $db SET PARTNER SAFETY $SafetyLevel")
+                        # $db.MirroringSafetyLevel = $SafetyLevel
                     }
                 }
                 
                 if ($State) {
                     if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Changing mirror state to $State on $db")) {
                         $db.ChangeMirroringState($State)
+                        $db.Alter()
+                        $db
                     }
-                }
-                
-                if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Committing changes to $db")) {
-                    $db.Alter()
-                    $db
                 }
             }
             catch {

@@ -79,8 +79,18 @@ function Remove-DbaDbMirror {
             if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Turning off mirror for $db")) {
                 # use t-sql cuz $db.Alter() doesnt always work against restoring dbs
                 try {
-                    $db.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
-                    $db.Alter()
+                    try {
+                        $db.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
+                        $db.Alter()
+                    }
+                    catch {
+                        try {
+                            $db.Parent.Query("ALTER DATABASE $db SET PARTNER OFF")
+                        }
+                        catch {
+                            Stop-Function -Message "Failure on $($db.Parent) for $db" -ErrorRecord $_
+                        }
+                    }
                     [pscustomobject]@{
                         ComputerName = $db.ComputerName
                         InstanceName = $db.InstanceName

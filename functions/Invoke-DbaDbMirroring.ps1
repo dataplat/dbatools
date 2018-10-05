@@ -163,8 +163,8 @@ function Invoke-DbaDbMirroring {
             Stop-Function -Message "Database is required when SqlInstance is specified"
             return
         }
-
-        if ($Force -and (Test-Bound -Not -ParameterName NetworkShare) -and (Test-Bound -Not -ParameterName UseLastBackups)) {
+        
+        if ($Force -and (-not $NetworkShare -and -not $UseLastBackups)) {
             Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
             return
         }
@@ -233,6 +233,12 @@ function Invoke-DbaDbMirroring {
                     }
                     catch {
                         $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                        if (-not $msg) {
+                            $msg = $_.Exception.InnerException.InnerException.InnerException.Message
+                        }
+                        if (-not $msg) {
+                            $msg = $_
+                        }
                         Stop-Function -Message $msg -ErrorRecord $_ -Target $dest -Continue
                     }
                 }
