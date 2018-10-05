@@ -532,7 +532,8 @@
         'Invoke-DbaDbMirrorFailover',
         'Get-DbaDbMirrorMonitor',
         'Get-DbaDbMirror',
-        'Add-DbaDbMirrorMonitor'
+        'Add-DbaDbMirrorMonitor',
+        'Test-DbaEndpoint'
     )
 
     # Cmdlets to export from this module
