@@ -18,6 +18,9 @@ function Get-DbaServerRoleMember {
 		.PARAMETER ExcludeServerRole
 			The role(s) to exclude.
 
+		.PARAMETER Login
+			The login(s) to process. If unspecified, all logins will be processed.
+
 		.PARAMETER ExcludeFixedRole
             Filter the fixed server-level roles. Only applies to SQL Server 2017 that supports creation of server-level roles.
 
@@ -66,7 +69,12 @@ function Get-DbaServerRoleMember {
 		.EXAMPLE
             PS C:\> Get-DbaServerRoleMember -SqlInstance sql2017a -ExcludeFixedRole
 
-            Returns all members of server-level role(s) that are not fixed roles on sql2017a instance.
+			Returns all members of server-level role(s) that are not fixed roles on sql2017a instance.
+
+		.EXAMPLE
+			PS C:\> Get-DbaServerRoleMember -SqlInstance localhost -Login 'MyFriendlyDeveloper'
+
+			Returns all server-level role(s) for the MyFriendlyDeveloper login on localhost.
     #>
 	[CmdletBinding()]
 	param (
