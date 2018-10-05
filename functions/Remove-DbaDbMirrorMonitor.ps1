@@ -58,6 +58,12 @@ function Remove-DbaDbMirrorMonitor {
             if ($Pscmdlet.ShouldProcess($instance, "Removing mirror monitoring")) {
                 try {
                     $server.Query("msdb.dbo.sp_dbmmonitordropmonitoring")
+                    [pscustomobject]@{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        MonitorStatus       = "Removed"
+                    }
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
