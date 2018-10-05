@@ -21,7 +21,7 @@ function Invoke-DbaDbMirrorFailover {
 
         .PARAMETER Force
             Force Failover and allow data loss
-    
+
         .PARAMETER WhatIf
             Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -39,25 +39,25 @@ function Invoke-DbaDbMirrorFailover {
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2018 Chrissy LeMaire
             License: MIT https://opensource.org/licenses/MIT
-            
+
             TODO: add service accounts
 
         .LINK
             https://dbatools.io/Invoke-DbaDbMirrorFailover
 
         .EXAMPLE
-    
+
             PS C:\> Invoke-DbaDbMirrorFailover -SqlInstance sql2016 -Database pubs
-    
+
             Fails over the pubs database on sql2016. Prompts for confirmation.
-        
+
         .EXAMPLE
-    
+
             PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database pubs | Invoke-DbaDbMirrorFailover -Force -Confirm:$false
-    
-            Forces the failover of the pubs database on sql2016 and allows data loss. 
-    
-            Does not prompt for confirmation. 
+
+            Forces the failover of the pubs database on sql2016 and allows data loss.
+
+            Does not prompt for confirmation.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -74,9 +74,9 @@ function Invoke-DbaDbMirrorFailover {
             Stop-Function -Message "Database is required when SqlInstance is specified"
             return
         }
-        
+
         $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
-        
+
         foreach ($db in $InputObject) {
             # if it's async, you have to break the mirroring and allow data loss
             # alter database set partner force_service_allow_data_loss
