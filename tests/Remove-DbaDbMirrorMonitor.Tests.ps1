@@ -4,12 +4,19 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        # make sure it's there
-        $null = Add-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
+        $db = Get-DbaDatabase -SqlInstance $script:instance2 -Database msdb
+        if (($db.Tables['dbm_monitor_data'].Name)) {
+            $putback = $true
+        }
+        else {
+            $null = Add-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
+        }
     }
     AfterAll {
-        # add it back
-        $results = Add-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
+        if ($putback) {
+            # add it back
+            $results = Add-DbaDbMirrorMonitor -SqlInstance $script:instance2 -WarningAction SilentlyContinue
+        }
     }
     
     It "removes the mirror monitor" {
