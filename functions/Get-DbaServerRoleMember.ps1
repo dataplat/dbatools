@@ -62,7 +62,7 @@ function Get-DbaServerRoleMember {
 			Returns all members of the sysadmin or dbcreator roles on localhost.
 
 		.EXAMPLE
-			PS C:\> Get-DbaServerRoleMember -SqlInstance localhost -ExcludeRole 'sysadmin'
+			PS C:\> Get-DbaServerRoleMember -SqlInstance localhost -ExcludeServerRole 'sysadmin'
 
 			Returns all members of server-level roles other than sysadmin.
 
