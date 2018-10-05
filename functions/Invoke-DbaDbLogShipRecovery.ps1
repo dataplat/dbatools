@@ -65,7 +65,7 @@ function Invoke-DbaDbLogShipRecovery {
             https://dbatools.io/Invoke-DbaDbLogShipRecovery
 
         .EXAMPLE
-            Invoke-DbaDbLogShipRecovery -SqlInstance server1
+            PS C:\> Invoke-DbaDbLogShipRecovery -SqlInstance server1
 
             Recovers all the databases on the instance that are enabled for log shipping
 
