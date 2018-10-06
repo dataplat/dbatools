@@ -131,7 +131,7 @@ function Copy-DbaDatabase {
             Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.
 
             Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK

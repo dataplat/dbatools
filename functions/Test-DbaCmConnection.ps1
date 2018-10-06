@@ -42,7 +42,7 @@ function Test-DbaCmConnection {
             Author: Fred Winmann (@FredWeinmann)
 
             Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
             **This function should not be called from within dbatools. It is meant as a tool for users only.**
