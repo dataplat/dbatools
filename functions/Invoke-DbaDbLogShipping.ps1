@@ -1443,7 +1443,7 @@ function Invoke-DbaDbLogShipping {
                             Write-Message -Message "No path to the full backup is set. Trying to retrieve the last full backup for $db from $SourceSqlInstance" -Level Verbose
 
                             # Get the last full backup
-                            $LastBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -Databases $($db.Name) -LastFull -Credential $SourceSqlCredential
+                            $LastBackup = Get-DbaBackupHistory -SqlInstance $SourceSqlInstance -Databases $($db.Name) -LastFull -Credential $SourceSqlCredential
 
                             # Check if there was a last backup
                             if ($null -eq $LastBackup) {
@@ -1639,7 +1639,7 @@ function Invoke-DbaDbLogShipping {
                                 Write-Message -Message "Start database restore" -Level Verbose
                                 if ($NoRecovery -or (-not $Standby)) {
                                     if ($Force) {
-                                        $null = Restore-DbaDatabase -SqlServer $destInstance `
+                                        $null = Restore-DbaDatabase -SqlInstance $destInstance `
                                             -SqlCredential $DestinationSqlCredential `
                                             -Path $BackupPath `
                                             -DestinationFilePrefix $SecondaryDatabasePrefix `
@@ -1652,7 +1652,7 @@ function Invoke-DbaDbLogShipping {
                                             -WithReplace
                                     }
                                     else {
-                                        $null = Restore-DbaDatabase -SqlServer $destInstance `
+                                        $null = Restore-DbaDatabase -SqlInstance $destInstance `
                                             -SqlCredential $DestinationSqlCredential `
                                             -Path $BackupPath `
                                             -DestinationFilePrefix $SecondaryDatabasePrefix `
@@ -1672,7 +1672,7 @@ function Invoke-DbaDbLogShipping {
 
                                     # Check if credentials need to be used
                                     if ($DestinationSqlCredential) {
-                                        $null = Restore-DbaDatabase -ServerInstance $destInstance `
+                                        $null = Restore-DbaDatabase -SqlInstance $destInstance `
                                             -SqlCredential $DestinationSqlCredential `
                                             -Path $BackupPath `
                                             -DestinationFilePrefix $SecondaryDatabasePrefix `
@@ -1684,7 +1684,7 @@ function Invoke-DbaDbLogShipping {
                                             -StandbyDirectory $StandbyDirectory
                                     }
                                     else {
-                                        $null = Restore-DbaDatabase -ServerInstance $destInstance `
+                                        $null = Restore-DbaDatabase -SqlInstance $destInstance `
                                             -Path $BackupPath `
                                             -DestinationFilePrefix $SecondaryDatabasePrefix `
                                             -DestinationFileSuffix $SecondaryDatabaseSuffix `
