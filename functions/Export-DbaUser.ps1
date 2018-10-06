@@ -1,111 +1,112 @@
-function Export-DbaUser {
-    <#
-        .SYNOPSIS
-            Exports users creation and its permissions to a T-SQL file or host.
-
-        .DESCRIPTION
-            Exports users creation and its permissions to a T-SQL file or host. Export includes user, create and add to role(s), database level permissions, object level permissions.
-
-        .PARAMETER SqlInstance
-            The SQL Server instance name. SQL Server 2000 and above supported.
-
-        .PARAMETER SqlCredential
-            Allows you to login to servers using alternative credentials
-
-            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
-
-            Windows Authentication will be used if SqlCredential is not specified
-
-        .PARAMETER Database
-            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
-
-        .PARAMETER User
-            Export only the specified database user(s). If not specified will export all users from the database(s)
-
-        .PARAMETER DestinationVersion
-            To say to which version the script should be generated. If not specified will use database compatibility level
-
-        .PARAMETER Path
-            Specifies the full path of a file to write the script to.
-
-        .PARAMETER NoClobber
-            Do not overwrite file
-
-        .PARAMETER Append
-            Append to file
-
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
-
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .PARAMETER ScriptingOptionsObject
-            A Microsoft.SqlServer.Management.Smo.ScriptingOptions object with the options that you want to use to generate the t-sql script.
-            You can use the NEw-DbaScriptingOption to generate it.
-
-        .PARAMETER ExcludeGoBatchSeparator
-            If specified, will NOT script the 'GO' batch separator.
-
-        .NOTES
-            Tags: User, Export
-            Author: Claudio Silva (@ClaudioESSilva)
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Export-DbaUser
-
-        .EXAMPLE
-            PS C:\> Export-DbaUser -SqlInstance sql2005 -Path C:\temp\sql2005-users.sql
-
-            Exports SQL for the users in server "sql2005" and writes them to the file "C:\temp\sql2005-users.sql"
-
-        .EXAMPLE
-            PS C:\> Export-DbaUser -SqlInstance sqlserver2014a $scred -Path C:\temp\users.sql -Append
-
-            Authenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\temp\users.sql, and appends to the file if it exists. If not, the file will be created.
-
-        .EXAMPLE
-            PS C:\> Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -Path C:\temp\users.sql
-
-            Exports ONLY users User1 and User2 from sqlsever2014a to the file  C:\temp\users.sql
-
-        .EXAMPLE
-            PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -User User1 -Path C:\temp\users.sql -DestinationVersion SQLServer2016
-
-            Exports user User1 from sqlsever2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
-
-        .EXAMPLE
-            PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql
-
-            Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
-
-        .EXAMPLE
-            PS C:\> $options = New-DbaScriptingOption
-            PS C:\> $options.ScriptDrops = $false
-            PS C:\> $options.WithDependencies = $true
-            PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql -ScriptingOptionsObject $options
-
-            Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
-            It will not script drops but will script dependencies.
-
-        .EXAMPLE
-            PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql -ExcludeGoBatchSeparator
-
-            Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file without the 'GO' batch separator.
-
-    #>
+﻿function Export-DbaUser {
+<#
+    .SYNOPSIS
+        Exports users creation and its permissions to a T-SQL file or host.
+        
+    .DESCRIPTION
+        Exports users creation and its permissions to a T-SQL file or host. Export includes user, create and add to role(s), database level permissions, object level permissions.
+        
+    .PARAMETER SqlInstance
+        The SQL Server instance name. SQL Server 2000 and above supported.
+        
+    .PARAMETER SqlCredential
+        Allows you to login to servers using alternative credentials
+        
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
+        
+        Windows Authentication will be used if SqlCredential is not specified
+        
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
+        
+    .PARAMETER User
+        Export only the specified database user(s). If not specified will export all users from the database(s)
+        
+    .PARAMETER DestinationVersion
+        To say to which version the script should be generated. If not specified will use database compatibility level
+        
+    .PARAMETER Path
+        Specifies the full path of a file to write the script to.
+        
+    .PARAMETER NoClobber
+        Do not overwrite file
+        
+    .PARAMETER Append
+        Append to file
+        
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+        
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .PARAMETER ScriptingOptionsObject
+        A Microsoft.SqlServer.Management.Smo.ScriptingOptions object with the options that you want to use to generate the t-sql script.
+        You can use the NEw-DbaScriptingOption to generate it.
+        
+    .PARAMETER ExcludeGoBatchSeparator
+        If specified, will NOT script the 'GO' batch separator.
+        
+    .NOTES
+        Tags: User, Export
+        Author: Claudio Silva (@ClaudioESSilva)
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Export-DbaUser
+        
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sql2005 -Path C:\temp\sql2005-users.sql
+        
+        Exports SQL for the users in server "sql2005" and writes them to the file "C:\temp\sql2005-users.sql"
+        
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a $scred -Path C:\temp\users.sql -Append
+        
+        Authenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\temp\users.sql, and appends to the file if it exists. If not, the file will be created.
+        
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -Path C:\temp\users.sql
+        
+        Exports ONLY users User1 and User2 from sqlsever2014a to the file  C:\temp\users.sql
+        
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -User User1 -Path C:\temp\users.sql -DestinationVersion SQLServer2016
+        
+        Exports user User1 from sqlsever2008 to the file C:\temp\users.sql with syntax to run on SQL Server 2016
+        
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql
+        
+        Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
+        
+    .EXAMPLE
+        PS C:\> $options = New-DbaScriptingOption
+        PS C:\> $options.ScriptDrops = $false
+        PS C:\> $options.WithDependencies = $true
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql -ScriptingOptionsObject $options
+        
+        Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
+        It will not script drops but will script dependencies.
+        
+    .EXAMPLE
+        PS C:\> Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -Path C:\temp\users.sql -ExcludeGoBatchSeparator
+        
+        Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file without the 'GO' batch separator.
+        
+        
+#>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [OutputType([String])]
     param (

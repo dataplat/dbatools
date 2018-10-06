@@ -1,94 +1,95 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaDbSnapshot {
-    <#
+<#
     .SYNOPSIS
         Creates database snapshots
-
+        
     .DESCRIPTION
         Creates database snapshots without hassles
-
+        
     .PARAMETER SqlInstance
         The SQL Server that you're connecting to.
-
+        
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user
-
+        
     .PARAMETER AllDatabases
         Creates snapshot for all eligible databases
-
+        
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-
+        
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
-
+        
     .PARAMETER WhatIf
         Shows what would happen if the command were to run
-
+        
     .PARAMETER Confirm
         Prompts for confirmation of every step.
-
+        
     .PARAMETER Name
         The specific snapshot name you want to create. Works only if you target a single database. If you need to create multiple snapshot,
         you must use the NameSuffix parameter
-
+        
     .PARAMETER NameSuffix
         When you pass a simple string, it'll be appended to use it to build the name of the snapshot. By default snapshots are created with yyyyMMdd_HHmmss suffix
         You can also pass a standard placeholder, in which case it'll be interpolated (e.g. '{0}' gets replaced with the database name)
-
+        
     .PARAMETER Path
         Snapshot files will be created here (by default the filestructure will be created in the same folder as the base db)
-
+        
     .PARAMETER InputObject
-       Allows Piping from Get-DbaDatabase
-
+        Allows Piping from Get-DbaDatabase
+        
     .PARAMETER Force
         Databases with Filestream FG can be snapshotted, but the Filestream FG is marked offline
         in the snapshot. To create a "partial" snapshot, you need to pass -Force explicitely
-
+        
         NB: You can't then restore the Database from the newly-created snapshot.
         For details, check https://msdn.microsoft.com/en-us/library/bb895334.aspx
-
+        
     .PARAMETER EnableException
-                By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-                This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-                Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
     .NOTES
         Tags: Snapshot, Restore, Database
         Author: niphlod
-
+        
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-
+        
     .LINK
-         https://dbatools.io/New-DbaDbSnapshot
-
+        https://dbatools.io/New-DbaDbSnapshot
+        
     .EXAMPLE
         New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
-
+        
         Creates snapshot for HR and Accounting, returning a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes
-
+        
     .EXAMPLE
         New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -Name HR_snap
-
+        
         Creates snapshot named "HR_snap" for HR
-
+        
     .EXAMPLE
         New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -NameSuffix 'fool_{0}_snap'
-
+        
         Creates snapshot named "fool_HR_snap" for HR
-
+        
     .EXAMPLE
         New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting -Path F:\snapshotpath
-
+        
         Creates snapshots for HR and Accounting databases, storing files under the F:\snapshotpath\ dir
-
+        
     .EXAMPLE
         Get-DbaDatabase -SqlInstance sql2016 -Database df | New-DbaDbSnapshot
-
+        
         Creates a snapshot for the database df on sql2016
+        
 #>
 
     [CmdletBinding(SupportsShouldProcess)]

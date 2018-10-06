@@ -1,65 +1,66 @@
-#ValidationTags#FlowControl,Pipeline#
+﻿#ValidationTags#FlowControl,Pipeline#
 function Test-DbaSpn {
-    <#
-        .SYNOPSIS
-            Test-DbaSpn will determine what SPNs *should* be set for a given server (and any instances of SQL running on it) and return
-            whether the SPNs are set or not.
-
-        .DESCRIPTION
-            This function is designed to take in a server name(s) and attempt to determine required SPNs. It was initially written to mimic the (previously)
-            broken functionality of the Microsoft Kerberos Configuration manager and SQL Server 2016. The functon will connect to a remote server and,
-            through WMI, discover all running intances of SQL Server. For any instances with TCP/IP enabled, the script will determine which port(s)
-            the instances are listening on and generate the required SPNs. For named instances NOT using dynamic ports, the script will generate a port-
-            based SPN for those instances as well.  At a minimum, the script will test a base, port-less SPN for each instance discovered.
-
-            Once the required SPNs are generated, the script will connect to Active Directory and search for any of the SPNs (if any) that are already
-            set.
-
-            The function will return a custom object(s) that contains the server name checked, the instance name discovered, the account the service is
-            running under, and what the "required" SPN should be. It will also return a boolean property indicating if the SPN is set in Active Directory
-            or not.
-
-        .PARAMETER ComputerName
-            The computer you want to discover any SQL Server instances on. This parameter is required.
-
-        .PARAMETER Credential
-            The credential you want to use to connect to the remote server and active directory.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: SPN
-            Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
-            Editor: niphlod
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Test-DbaSpn
-
-        .EXAMPLE
-            Test-DbaSpn -ComputerName SQLSERVERA -Credential (Get-Credential)
-
-            Connects to a computer (SQLSERVERA) and queries WMI for all SQL instances and return "required" SPNs. It will then take each SPN it generates
-            and query Active Directory to make sure the SPNs are set.
-
-        .EXAMPLE
-            Test-DbaSpn -ComputerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
-
-            Connects to multiple computers (SQLSERVERA, SQLSERVERB) and queries WMI for all SQL instances and return "required" SPNs.
-            It will then take each SPN it generates and query Active Directory to make sure the SPNs are set.
-
-        .EXAMPLE
-            Test-DbaSpn -ComputerName SQLSERVERC -Credential (Get-Credential)
-
-            Connects to a computer (SQLSERVERC) on a specified and queries WMI for all SQL instances and return "required" SPNs.
-            It will then take each SPN it generates and query Active Directory to make sure the SPNs are set. Note that the credential you pass must have be a valid login with appropriate rights on the domain
-    #>
+<#
+    .SYNOPSIS
+        Test-DbaSpn will determine what SPNs *should* be set for a given server (and any instances of SQL running on it) and return
+        whether the SPNs are set or not.
+        
+    .DESCRIPTION
+        This function is designed to take in a server name(s) and attempt to determine required SPNs. It was initially written to mimic the (previously)
+        broken functionality of the Microsoft Kerberos Configuration manager and SQL Server 2016. The functon will connect to a remote server and,
+        through WMI, discover all running intances of SQL Server. For any instances with TCP/IP enabled, the script will determine which port(s)
+        the instances are listening on and generate the required SPNs. For named instances NOT using dynamic ports, the script will generate a port-
+        based SPN for those instances as well.  At a minimum, the script will test a base, port-less SPN for each instance discovered.
+        
+        Once the required SPNs are generated, the script will connect to Active Directory and search for any of the SPNs (if any) that are already
+        set.
+        
+        The function will return a custom object(s) that contains the server name checked, the instance name discovered, the account the service is
+        running under, and what the "required" SPN should be. It will also return a boolean property indicating if the SPN is set in Active Directory
+        or not.
+        
+    .PARAMETER ComputerName
+        The computer you want to discover any SQL Server instances on. This parameter is required.
+        
+    .PARAMETER Credential
+        The credential you want to use to connect to the remote server and active directory.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: SPN
+        Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
+        Editor: niphlod
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Test-DbaSpn
+        
+    .EXAMPLE
+        Test-DbaSpn -ComputerName SQLSERVERA -Credential (Get-Credential)
+        
+        Connects to a computer (SQLSERVERA) and queries WMI for all SQL instances and return "required" SPNs. It will then take each SPN it generates
+        and query Active Directory to make sure the SPNs are set.
+        
+    .EXAMPLE
+        Test-DbaSpn -ComputerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
+        
+        Connects to multiple computers (SQLSERVERA, SQLSERVERB) and queries WMI for all SQL instances and return "required" SPNs.
+        It will then take each SPN it generates and query Active Directory to make sure the SPNs are set.
+        
+    .EXAMPLE
+        Test-DbaSpn -ComputerName SQLSERVERC -Credential (Get-Credential)
+        
+        Connects to a computer (SQLSERVERC) on a specified and queries WMI for all SQL instances and return "required" SPNs.
+        It will then take each SPN it generates and query Active Directory to make sure the SPNs are set. Note that the credential you pass must have be a valid login with appropriate rights on the domain
+        
+#>
     [cmdletbinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]

@@ -1,60 +1,61 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaLastBackup {
-    <#
-        .SYNOPSIS
-            Get date/time for last known backups of databases.
-
-        .DESCRIPTION
-            Retrieves and compares the date/time for the last known backups, as well as the creation date/time for the database.
-
-            Default output includes columns Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
-
-        .PARAMETER SqlInstance
-            The SQL Server instance to connect to.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Database
-            Specifies one or more database(s) to process. If unspecified, all databases will be processed.
-
-        .PARAMETER ExcludeDatabase
-            Specifies one or more database(s) to exclude from processing.
-
-        .PARAMETER EnableException
-            If this switch is enabled exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
-
-        .NOTES
-            Tags: DisasterRecovery, Backup
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaLastBackup
-
-        .EXAMPLE
-            Get-DbaLastBackup -SqlInstance ServerA\sql987
-
-            Returns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
-
-        .EXAMPLE
-            Get-DbaLastBackup -SqlInstance ServerA\sql987
-
-            Returns a custom object with Server name, Database name, and the date the last time backups were performed.
-
-        .EXAMPLE
-            Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select *
-
-            Returns a custom object with Server name, Database name, and the date the last time backups were performed, and also recoverymodel and calculations on how long ago backups were taken and what the status is.
-
-        .EXAMPLE
-            Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select * | Out-Gridview
-
-            Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
-    #>
+<#
+    .SYNOPSIS
+        Get date/time for last known backups of databases.
+        
+    .DESCRIPTION
+        Retrieves and compares the date/time for the last known backups, as well as the creation date/time for the database.
+        
+        Default output includes columns Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
+        
+    .PARAMETER SqlInstance
+        The SQL Server instance to connect to.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Database
+        Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+        
+    .PARAMETER ExcludeDatabase
+        Specifies one or more database(s) to exclude from processing.
+        
+    .PARAMETER EnableException
+        If this switch is enabled exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
+        
+    .NOTES
+        Tags: DisasterRecovery, Backup
+        Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaLastBackup
+        
+    .EXAMPLE
+        Get-DbaLastBackup -SqlInstance ServerA\sql987
+        
+        Returns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
+        
+    .EXAMPLE
+        Get-DbaLastBackup -SqlInstance ServerA\sql987
+        
+        Returns a custom object with Server name, Database name, and the date the last time backups were performed.
+        
+    .EXAMPLE
+        Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select *
+        
+        Returns a custom object with Server name, Database name, and the date the last time backups were performed, and also recoverymodel and calculations on how long ago backups were taken and what the status is.
+        
+    .EXAMPLE
+        Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select * | Out-Gridview
+        
+        Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

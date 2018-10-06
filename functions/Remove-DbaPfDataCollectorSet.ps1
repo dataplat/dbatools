@@ -1,72 +1,73 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaPfDataCollectorSet {
-    <#
-        .SYNOPSIS
-            Removes a Performance Monitor Data Collector Set
-
-        .DESCRIPTION
-            Removes a Performance Monitor Data Collector Set. When removing data collector sets from the local instance, Run As Admin is required.
-
-        .PARAMETER ComputerName
-            The target computer. Defaults to localhost.
-
-        .PARAMETER Credential
-            Allows you to login to $ComputerName using alternative credentials. To use:
-
-            $cred = Get-Credential, then pass $cred object to the -Credential parameter.
-
-        .PARAMETER CollectorSet
-            The name of the Collector Set to remove.
-
-        .PARAMETER InputObject
-            Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
-
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: PerfMon
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Remove-DbaPfDataCollectorSet
-
-        .EXAMPLE
-            Remove-DbaPfDataCollectorSet
-
-            Prompts for confirmation then removes all ready Collectors on localhost.
-
-        .EXAMPLE
-            Remove-DbaPfDataCollectorSet -ComputerName sql2017 -Confirm:$false
-
-            Attempts to remove all ready Collectors on localhost and does not prompt to confirm.
-
-        .EXAMPLE
-            Remove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
-
-            Prompts for confirmation then removes the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
-
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Remove-DbaPfDataCollectorSet
-
-            Removes the 'System Correlation' Collector.
-
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Stop-DbaPfDataCollectorSet | Remove-DbaPfDataCollectorSet
-
-            Stops and removes the 'System Correlation' Collector.
-    #>
+<#
+    .SYNOPSIS
+        Removes a Performance Monitor Data Collector Set
+        
+    .DESCRIPTION
+        Removes a Performance Monitor Data Collector Set. When removing data collector sets from the local instance, Run As Admin is required.
+        
+    .PARAMETER ComputerName
+        The target computer. Defaults to localhost.
+        
+    .PARAMETER Credential
+        Allows you to login to $ComputerName using alternative credentials. To use:
+        
+        $cred = Get-Credential, then pass $cred object to the -Credential parameter.
+        
+    .PARAMETER CollectorSet
+        The name of the Collector Set to remove.
+        
+    .PARAMETER InputObject
+        Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
+        
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: PerfMon
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Remove-DbaPfDataCollectorSet
+        
+    .EXAMPLE
+        Remove-DbaPfDataCollectorSet
+        
+        Prompts for confirmation then removes all ready Collectors on localhost.
+        
+    .EXAMPLE
+        Remove-DbaPfDataCollectorSet -ComputerName sql2017 -Confirm:$false
+        
+        Attempts to remove all ready Collectors on localhost and does not prompt to confirm.
+        
+    .EXAMPLE
+        Remove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        
+        Prompts for confirmation then removes the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
+        
+    .EXAMPLE
+        Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Remove-DbaPfDataCollectorSet
+        
+        Removes the 'System Correlation' Collector.
+        
+    .EXAMPLE
+        Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Stop-DbaPfDataCollectorSet | Remove-DbaPfDataCollectorSet
+        
+        Stops and removes the 'System Correlation' Collector.
+        
+#>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [DbaInstance[]]$ComputerName=$env:COMPUTERNAME,
