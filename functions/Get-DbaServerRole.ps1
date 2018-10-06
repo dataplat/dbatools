@@ -66,19 +66,19 @@ function Get-DbaServerRole {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $roles = $server.Roles
+            $serverroles = $server.Roles
 
             if ($ServerRole) {
-                $roles = $roles | Where-Object Name -In $ServerRole
+                $serverroles = $serverroles | Where-Object Name -In $ServerRole
             }
             if ($ExcludeServerRole) {
-                $roles = $roles | Where-Object Name -NotIn $ExcludeServerRole
+                $serverroles = $serverroles | Where-Object Name -NotIn $ExcludeServerRole
             }
             if ($ExcludeFixedRole) {
-                $roles = $roles | Where-Object IsFixedRole -eq $false
+                $serverroles = $serverroles | Where-Object IsFixedRole -eq $false
             }
 
-            foreach ($role in $roles) {
+            foreach ($role in $serverroles) {
                 $members = $role.EnumMemberNames()
 
                 Add-Member -Force -InputObject $role -MemberType NoteProperty -Name Login -Value $members
