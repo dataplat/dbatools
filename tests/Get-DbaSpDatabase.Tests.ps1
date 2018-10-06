@@ -19,15 +19,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $spdb = 'SharePoint_AdminContent_802c8b65-e146-474b-becf-86af7c25ab82', 'WSS_Content', 'Profile DB', 'Sync_4ea3ab1e-ac35-4b86-8ec2-bf04f927262b DB', 'Social DB', 'SharePoint_Config'
-        Get-DbaProcess -SqlInstance $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $spdb = 'SharePoint_Admin_7c0c491d0e6f43858f75afa5399d49ab', 'WSS_Logging', 'SecureStoreService_20e1764876504335a6d8dd0b1937f4bf', 'DefaultWebApplicationDB', 'SharePoint_Config_4c524cb90be44c6f906290fe3e34f2e0', 'DefaultPowerPivotServiceApplicationDB-5b638361-c6fc-4ad9-b8ba-d05e63e48ac6', 'SharePoint_Config_4c524cb90be44c6f906290fe3e34f2e0'
+        Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $script:instance2
         foreach ($db in $spdb) {
-            if ($db -ne 'SharePoint_Config') {
+            try {
                 $null = $server.Query("Create Database [$db]")
-            }
+            } catch { continue }
         }
-        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path "$script:appveyorlabrepo\singlerestore\SharePoint_Config.bak"
+        # This takes a long time but I cannot figure out why every backup of this db is malformed
+        $bacpac = "$script:appveyorlabrepo\bacpac\sharepoint_config.bacpac"
+        . "$PSScriptRoot\..\bin\smo\sqlpackage.exe" /Action:Import /tsn:$script:instance2 /tdn:Sharepoint_Config /sf:$bacpac /p:Storage=File
     }
     AfterAll {
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database $spdb -Confirm:$false
@@ -35,7 +37,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "Command gets SharePoint Databases" {
         $results = Get-DbaSpDatabase -SqlInstance $script:instance2
         foreach ($db in $spdb) {
-            It "returns a db in the SharePoint database list" {
+            It "returns $db from in the SharePoint database list" {
                 $db | Should -BeIn $results.Name
             }
         }
