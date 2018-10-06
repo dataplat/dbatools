@@ -1,10 +1,10 @@
 function Get-DbaDbRoleMember {
-	<#
-		.SYNOPSIS
-			Get members of database roles for each instance(s) of SQL Server.
+    <#
+        .SYNOPSIS
+            Get members of database roles for each instance(s) of SQL Server.
 
-		.DESCRIPTION
-			The Get-DbaDbRoleMember returns connected SMO object for database roles for each instance(s) of SQL Server.
+        .DESCRIPTION
+            The Get-DbaDbRoleMember returns connected SMO object for database roles for each instance(s) of SQL Server.
 
         .PARAMETER SqlInstance
             SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -12,23 +12,23 @@ function Get-DbaDbRoleMember {
         .PARAMETER SqlCredential
             Login to the target instance using alternate Windows or SQL Login Authentication. Accepts credential objects (Get-Credential).
 
-		.PARAMETER Database
-			The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+        .PARAMETER Database
+            The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
 
-		.PARAMETER ExcludeDatabase
-			The database(s) to exclude. This list is auto-populated from the server.
+        .PARAMETER ExcludeDatabase
+            The database(s) to exclude. This list is auto-populated from the server.
 
-		.PARAMETER Role
-			The role(s) to process. If unspecified, all roles will be processed.
+        .PARAMETER Role
+            The role(s) to process. If unspecified, all roles will be processed.
 
-		.PARAMETER ExcludeRole
-			The role(s) to exclude.
+        .PARAMETER ExcludeRole
+            The role(s) to exclude.
 
-		.PARAMETER ExcludeFixedRole
-			Excludes all members of fixed roles.
+        .PARAMETER ExcludeFixedRole
+            Excludes all members of fixed roles.
 
-		.PARAMETER IncludeSystemUser
-			Includes system users. By default system users are not included.
+        .PARAMETER IncludeSystemUser
+            Includes system users. By default system users are not included.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -46,116 +46,116 @@ function Get-DbaDbRoleMember {
         .LINK
             https://dbatools.io/Get-DbaDbRoleMember
 
-		.EXAMPLE
-			PS C:\> Get-DbaDbRoleMember -SqlInstance localhost
+        .EXAMPLE
+            PS C:\> Get-DbaDbRoleMember -SqlInstance localhost
 
-			Returns all members of all database roles on the local default SQL Server instance
+            Returns all members of all database roles on the local default SQL Server instance
 
         .EXAMPLE
             PS C:\> Get-DbaDbRoleMember -SqlInstance localhost, sql2016
 
-			Returns all members of all database roles on the local and sql2016 SQL Server instances
+            Returns all members of all database roles on the local and sql2016 SQL Server instances
 
         .EXAMPLE
             PS C:\> $servers = Get-Content C:\servers.txt
             PS C:\> $servers | Get-DbaDbRoleMember
 
-			Returns all members of all database roles for every server in C:\servers.txt
+            Returns all members of all database roles for every server in C:\servers.txt
 
-		.EXAMPLE
-			PS C:\> Get-DbaDbRoleMember -SqlInstance localhost -Database msdb
+        .EXAMPLE
+            PS C:\> Get-DbaDbRoleMember -SqlInstance localhost -Database msdb
 
-			Returns non-system members of all roles in the msdb database on localhost.
+            Returns non-system members of all roles in the msdb database on localhost.
 
-		.EXAMPLE
-			PS C:\> Get-DbaDbRoleMember -SqlInstance localhost -Database msdb -IncludeSystemUser -ExcludeFixedRole
+        .EXAMPLE
+            PS C:\> Get-DbaDbRoleMember -SqlInstance localhost -Database msdb -IncludeSystemUser -ExcludeFixedRole
 
-			Returns all members of non-fixed roles in the msdb database on localhost.
+            Returns all members of non-fixed roles in the msdb database on localhost.
 
-		.EXAMPLE
-			PS C:\> Get-DbaDbRoleMember -SqlInstance localhost -Database msdb -Role 'db_owner'
+        .EXAMPLE
+            PS C:\> Get-DbaDbRoleMember -SqlInstance localhost -Database msdb -Role 'db_owner'
 
-			Returns all members of the db_owner role in the msdb database on localhost.
+            Returns all members of the db_owner role in the msdb database on localhost.
     #>
-	[CmdletBinding()]
-	param (
-		[parameter(Position = 0, Mandatory, ValueFromPipeline)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstance[]]$SqlInstance,
-		[Alias("Credential")]
-		[PSCredential]$SqlCredential,
-		[string[]]$Database,
-		[string[]]$ExcludeDatabase,
-		[string[]]$Role,
-		[string[]]$ExcludeRole,
-		[switch]$ExcludeFixedRole,
-		[switch]$IncludeSystemUser,
-		[Alias('Silent')]
-		[switch]$EnableException
-	)
+    [CmdletBinding()]
+    param (
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstance[]]$SqlInstance,
+        [Alias("Credential")]
+        [PSCredential]$SqlCredential,
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
+        [string[]]$Role,
+        [string[]]$ExcludeRole,
+        [switch]$ExcludeFixedRole,
+        [switch]$IncludeSystemUser,
+        [Alias('Silent')]
+        [switch]$EnableException
+    )
 
-	process {
-		foreach ($instance in $SqlInstance) {
-			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+    process {
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-			}
-			catch {
-				Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            }
+            catch {
+                Stop-Function -Message 'Failure' -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-			$databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
+            $databases = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
 
-			if (Test-Bound -Parameter 'Database') {
-				$databases = $databases | Where-Object { $_.Name -in $Database }
-			}
+            if (Test-Bound -Parameter 'Database') {
+                $databases = $databases | Where-Object { $_.Name -in $Database }
+            }
 
-			if (Test-Bound -Parameter 'ExcludeDatabase') {
-				$databases = $databases | Where-Object { $_.Name -notin $ExcludeDatabase}
-			}
+            if (Test-Bound -Parameter 'ExcludeDatabase') {
+                $databases = $databases | Where-Object { $_.Name -notin $ExcludeDatabase}
+            }
 
-			foreach ($db in $databases) {
-				Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
+            foreach ($db in $databases) {
+                Write-Message -Level 'Verbose' -Message "Getting Database Roles for $db on $instance"
 
-				$dbRoles = $db.roles
+                $dbRoles = $db.roles
 
-				if (Test-Bound -Parameter 'Role') {
-					$dbRoles = $dbRoles | Where-Object { $_.Name -in $Role }
-				}
+                if (Test-Bound -Parameter 'Role') {
+                    $dbRoles = $dbRoles | Where-Object { $_.Name -in $Role }
+                }
 
-				if (Test-Bound -Parameter 'ExcludeRole') {
-					$dbRoles = $dbRoles | Where-Object { $_.Name -notin $ExcludeRole }
-				}
+                if (Test-Bound -Parameter 'ExcludeRole') {
+                    $dbRoles = $dbRoles | Where-Object { $_.Name -notin $ExcludeRole }
+                }
 
-				if (Test-Bound -Parameter 'ExcludeFixedRole') {
-					$dbRoles = $dbRoles | Where-Object { $_.IsFixedRole -eq $false }
-				}
+                if (Test-Bound -Parameter 'ExcludeFixedRole') {
+                    $dbRoles = $dbRoles | Where-Object { $_.IsFixedRole -eq $false }
+                }
 
-				foreach ($dbRole in $dbRoles) {
-					Write-Message -Level 'Verbose' -Message "Getting Database Role Members for $dbRole in $db on $instance"
+                foreach ($dbRole in $dbRoles) {
+                    Write-Message -Level 'Verbose' -Message "Getting Database Role Members for $dbRole in $db on $instance"
 
-					$members = $dbRole.EnumMembers()
-					foreach ($member in $members) {
-						$user = $db.Users | Where-Object { $_.Name -eq $member }
+                    $members = $dbRole.EnumMembers()
+                    foreach ($member in $members) {
+                        $user = $db.Users | Where-Object { $_.Name -eq $member }
 
-						if (Test-Bound -Not -ParameterName 'IncludeSystemUser') {
-							$user = $user | Where-Object { $_.IsSystemObject -eq $false }
-						}
+                        if (Test-Bound -Not -ParameterName 'IncludeSystemUser') {
+                            $user = $user | Where-Object { $_.IsSystemObject -eq $false }
+                        }
 
-						if ($user) {
-							Add-Member -Force -InputObject $user -MemberType 'NoteProperty' -Name 'ComputerName' -Value $server.ComputerName
-							Add-Member -Force -InputObject $user -MemberType 'NoteProperty' -Name 'InstanceName' -Value $server.ServiceName
-							Add-Member -Force -InputObject $user -MemberType 'NoteProperty' -Name 'SqlInstance' -Value $server.DomainInstanceName
-							Add-Member -Force -InputObject $user -MemberType 'NoteProperty' -Name 'Database' -Value $db.Name
-							Add-Member -Force -InputObject $user -MemberType 'NoteProperty' -Name 'Role' -Value $dbRole.Name
-							Add-Member -Force -InputObject $user -MemberType 'NoteProperty' -Name 'UserName' -Value $user.Name
+                        if ($user) {
+                            Add-Member -Force -InputObject $user -MemberType 'NoteProperty' -Name 'ComputerName' -Value $server.ComputerName
+                            Add-Member -Force -InputObject $user -MemberType 'NoteProperty' -Name 'InstanceName' -Value $server.ServiceName
+                            Add-Member -Force -InputObject $user -MemberType 'NoteProperty' -Name 'SqlInstance' -Value $server.DomainInstanceName
+                            Add-Member -Force -InputObject $user -MemberType 'NoteProperty' -Name 'Database' -Value $db.Name
+                            Add-Member -Force -InputObject $user -MemberType 'NoteProperty' -Name 'Role' -Value $dbRole.Name
+                            Add-Member -Force -InputObject $user -MemberType 'NoteProperty' -Name 'UserName' -Value $user.Name
 
-							Select-DefaultView -InputObject $user -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Role', 'UserName', 'Login'
-						}
-					}
-				}
-			}
-		}
-	}
+                            Select-DefaultView -InputObject $user -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Role', 'UserName', 'Login'
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
