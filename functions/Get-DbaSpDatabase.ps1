@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaSpDatabase {
-<#        
+<#
     .SYNOPSIS
         Returns databases that are part of a SharePoint Farm.
         
