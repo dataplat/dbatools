@@ -45,7 +45,7 @@ function Invoke-DbMirrorValidation {
             Tags: Mirror, HA
             Author: Chrissy LeMaire (@cl), netnerds.net
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-           Copyright (c) 2018 by dbatools, licensed under MIT
+           Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
         .EXAMPLE
             PS C:\> $params = @{

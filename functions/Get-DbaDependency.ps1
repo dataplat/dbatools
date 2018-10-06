@@ -38,7 +38,7 @@ function Get-DbaDependency {
             Tags: Database, Dependent, Dependency, Object
             dbatools PowerShell module (https://dbatools.io)
             Author: Chrissy LeMaire (@cl), netnerds.net
-           Copyright (c) 2018 by dbatools, licensed under MIT
+           Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK

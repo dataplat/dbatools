@@ -59,7 +59,7 @@ function Invoke-DbaDbUpgrade {
         Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 
         Website: https://dbatools.io
-        Copyright (c) 2018 by dbatools, licensed under MIT
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
 

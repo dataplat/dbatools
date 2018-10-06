@@ -344,7 +344,7 @@
     },
     {
         "CommandName":  "Copy-DbaCredential",
-        "Description":  "By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another while maintaining username and password.\n\nCredit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/\n\nWebsite: https://dbatools.io\nCopyright: (C) Chrissy LeMaire, clemaire@gmail.com\nLicense: MIT https://opensource.org/licenses/MIT",
+        "Description":  "By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another while maintaining username and password.\n\nCredit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/\n\nWebsite: https://dbatools.io\nCopyright (c) 2018 by dbatools, licensed under MIT\nLicense: MIT https://opensource.org/licenses/MIT",
         "Tags":  [
                      "WSMan",
                      "Migration"
@@ -478,7 +478,7 @@
     },
     {
         "CommandName":  "Copy-DbaLinkedServer",
-        "Description":  "By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.\n\nCredit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/\n\nWebsite: https://dbatools.io\nCopyright: (C) Chrissy LeMaire, clemaire@gmail.com\nLicense: MIT https://opensource.org/licenses/MIT",
+        "Description":  "By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.\n\nCredit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/\n\nWebsite: https://dbatools.io\nCopyright (c) 2018 by dbatools, licensed under MIT\nLicense: MIT https://opensource.org/licenses/MIT",
         "Tags":  [
                      "WSMan",
                      "Migration",

@@ -35,7 +35,7 @@ function Get-DbaDbExtentDiff {
             Author: Viorel Ciucu, cviorel.com
 
             Website: https://dbatools.io
-            Copyright (c) 2018 by dbatools, licensed under MIT
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
         .LINK

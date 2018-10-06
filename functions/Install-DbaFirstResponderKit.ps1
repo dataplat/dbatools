@@ -46,7 +46,7 @@ function Install-DbaFirstResponderKit {
             Tags: BrentOzar, FRK, FirstResponderKit
             Author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
             Website: https://dbatools.io
-            Copyright (c) 2018 by dbatools, licensed under MIT
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK

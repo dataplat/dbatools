@@ -25,7 +25,7 @@ function Test-DbaManagementObject {
             Author: Ben Miller (@DBAduck - http://dbaduck.com)
 
             Website: https://dbatools.io
-            Copyright (c) 2018 by dbatools, licensed under MIT
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK

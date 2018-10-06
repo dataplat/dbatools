@@ -41,7 +41,7 @@ function Copy-DbaSysDbUserObject {
             Tags: Migration, SystemDatabase, UserObject
             Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
-            Copyright (c) 2018 by dbatools, licensed under MIT
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
