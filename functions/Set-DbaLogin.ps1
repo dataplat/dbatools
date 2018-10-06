@@ -352,12 +352,13 @@ function Set-DbaLogin {
             else {
                 $notes = $null
             }
-
+            $rolenames = $roles.Role | Select-Object -Unique
+            
             Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'ComputerName' -Value $server.ComputerName
             Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'InstanceName' -Value $server.ServiceName
             Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'SqlInstance' -Value $server.DomainInstanceName
             Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'PasswordChanged' -Value $passwordChanged
-            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'ServerRole' -Value ($roles.Role -join ',')
+            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'ServerRole' -Value ($rolenames -join ', ')
             Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'Notes' -Value $notes
 
             # backwards compatibility: LoginName, DenyLogin

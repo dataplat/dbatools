@@ -145,12 +145,12 @@ function Get-DbaServerRoleMember {
                     $l = $server.Logins | Where-Object { $_.Name -eq $member }
 
                     if ($l) {
-                        Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'ComputerName' -Value $server.ComputerName
-                        Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'InstanceName' -Value $server.ServiceName
-                        Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'SqlInstance' -Value $server.DomainInstanceName
-                        Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'Role' -Value $role.Name
-
-                        Select-DefaultView -InputObject $l -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Role', 'Name'
+                        $l | Add-Member -Force -MemberType 'NoteProperty' -Name 'ComputerName' -Value $server.ComputerName
+                        $l | Add-Member -Force -MemberType 'NoteProperty' -Name 'InstanceName' -Value $server.ServiceName
+                        $l | Add-Member -Force -MemberType 'NoteProperty' -Name 'SqlInstance' -Value $server.DomainInstanceName
+                        $l | Add-Member -Force -MemberType 'NoteProperty' -Name 'Role' -Value $role.Name
+                        
+                        $l | Select-DefaultView -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Role', 'Name'
                     }
                 }
 
