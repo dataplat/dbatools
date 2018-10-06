@@ -42,6 +42,17 @@
         "Syntax":  "Add-DbaComputerCertificate [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [[-Password] \u003cSecureString\u003e] [[-Certificate] \u003cX509Certificate2[]\u003e] [[-Path] \u003cString\u003e] [[-Store] \u003cString\u003e] [[-Folder] \u003cString\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Add-DbaDbMirrorMonitor",
+        "Description":  "Creates a database mirroring monitor job that periodically updates the mirroring status for every mirrored database on the server instance.\n\nBasically executes sp_dbmmonitoraddmonitoring.",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Creates a database mirroring monitor job that periodically updates the mirroring status for every mirrored database on the server instance.",
+        "Name":  "Add-DbaDbMirrorMonitor",
+        "Links":  "https://dbatools.io/Add-DbaDbMirrorMonitor",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eAdd-DbaDbMirrorMonitor -SqlInstance sql2008, sql2012\nCreates a database mirroring monitor job that periodically updates the mirroring status for every mirrored database on sql2008 and sql2012.",
+        "Syntax":  "Add-DbaDbMirrorMonitor [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Add-DbaPfDataCollectorCounter",
         "Description":  "Adds a Performance Data Collector Counter.",
         "Tags":  "PerfMon",
@@ -1960,6 +1971,32 @@
         "Syntax":  "Get-DbaDbMasterKey [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Get-DbaDbMirror",
+        "Description":  "Gets properties of database mirrors and mirror witnesses.",
+        "Tags":  [
+                     "Mirror",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Gets properties of database mirrors and mirror witnesses.",
+        "Name":  "Get-DbaDbMirror",
+        "Links":  "https://dbatools.io/Get-DbaDbMirror",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMirror -SqlInstance localhost\nGets properties of database mirrors and mirror witnesses on localhost\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMirror -SqlInstance localhost, sql2016\nGets properties of database mirrors and mirror witnesses on localhost and sql2016 SQL Server instances",
+        "Syntax":  "Get-DbaDbMirror [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaDbMirrorMonitor",
+        "Description":  "Returns status rows for a monitored database from the status table in which database mirroring monitoring history is stored and allows you to choose whether the procedure obtains the latest status beforehand.\n\nBasically executes sp_dbmmonitorresults.",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Returns status rows for a monitored database from the status table in which database mirroring monitoring history is stored and allows you to choose whether the procedure obtains the latest status beforehand.",
+        "Name":  "Get-DbaDbMirrorMonitor",
+        "Links":  "https://dbatools.io/Get-DbaDbMirrorMonitor",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMirrorMonitor -SqlInstance sql2008, sql2012\nReturns last two hours\u0027 worth of status rows for a monitored database from the status table on sql2008 and sql2012.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMirrorMonitor -SqlInstance sql2005 -LimitResults LastDay -Update\nUpdates monitor stats then returns the last 24 hours worth of status rows for a monitored database from the status table on sql2008 and sql2012.",
+        "Syntax":  "Get-DbaDbMirrorMonitor [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-Update] [[-LimitResults] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Get-DbaDbPageInfo",
         "Description":  "Get-DbaDbPageInfo is able to return information about the pages in a database.\nIt\u0027s possible to return the information for multiple databases and filter on specific databases, schemas and tables.",
         "Tags":  [
@@ -2030,20 +2067,21 @@
         "Syntax":  "Get-DbaDbRecoveryModel [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-RecoveryModel] \u003cString[]\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
-        "CommandName":  "Get-DbaDbRole",
-        "Description":  "Get database roles on a Sql instance.\n\nDefault output includes columns SQLServer, Database, Role.",
+        "CommandName":  "Get-DbaDbRoleMember",
+        "Description":  "The Get-DbaDbRoleMember returns connected SMO object for database roles for each instance(s) of SQL Server.",
         "Tags":  [
-                     "Roles",
+                     "Role",
                      "Database",
-                     "Security"
+                     "Security",
+                     "Login"
                  ],
-        "Alias":  "",
+        "Alias":  "Get-DbaRoleMember",
         "Author":  "Klaas Vandenberghe (@PowerDBAKlaas)",
-        "Synopsis":  "Get database roles on a Sql instance.",
-        "Name":  "Get-DbaDbRole",
-        "Links":  "https://dbatools.io/Get-DbaDbRole",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerA\nReturns a custom object displaying SQLServer, Database, Role for all DatabaseRoles on sql instance ServerA.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerA | Out-GridView\nReturns a grid view displaying SQLServer, Database, Role for all DatabaseRoles on sql instance ServerA.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerB\\sql16 -ExcludeDatabase DBADB,TestDB\nReturns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\\sql16, except those in databases DBADB and TestDB.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e\u0027ServerB\\sql16\u0027,\u0027ServerA\u0027 | Get-DbaDbRole\nReturns SQLServer, Database, Role for DatabaseRoles on sql instances ServerA and ServerB\\sql16.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerB\\sql16 -Database AccountingDB\nReturns SQLServer, Database, Role for DatabaseRoles in database AccountingDB on sql instance ServerB\\sql16.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerB\\sql16 -ExcludeFixedRoles\nReturns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\\sql16, but not the fixed roles.",
-        "Syntax":  "Get-DbaDbRole [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-ExcludeFixedRole] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Synopsis":  "Get members of database roles for each instance(s) of SQL Server.",
+        "Name":  "Get-DbaDbRoleMember",
+        "Links":  "https://dbatools.io/Get-DbaDbRoleMember",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbRoleMember -SqlInstance localhost\nReturns all members of all database roles on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbRoleMember -SqlInstance localhost, sql2016\nReturns all members of all database roles on the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$servers = Get-Content C:\\servers.txt\nPS C:\\\u003e $servers | Get-DbaDbRoleMember\nReturns all members of all database roles for every server in C:\\servers.txt\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbRoleMember -SqlInstance localhost -Database msdb\nReturns non-system members of all roles in the msdb database on localhost.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaDbRoleMember -SqlInstance localhost -Database msdb -IncludeSystemUser -ExcludeFixedRole\nReturns all members of non-fixed roles in the msdb database on localhost.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaDbRoleMember -SqlInstance localhost -Database msdb -Role \u0027db_owner\u0027\nReturns all members of the db_owner role in the msdb database on localhost.",
+        "Syntax":  "Get-DbaDbRoleMember [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cString[]\u003e] [-ExcludeDatabase \u003cString[]\u003e] [-Role \u003cString[]\u003e] [-ExcludeRole \u003cString[]\u003e] [-ExcludeFixedRole] [-IncludeSystemUser] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaDbSnapshot",
@@ -2288,7 +2326,7 @@
         "Name":  "Get-DbaEndpoint",
         "Links":  "https://dbatools.io/Get-DbaEndpoint",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaEndpoint -SqlInstance localhost\nReturns all Endpoint(s) on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaEndpoint -SqlInstance localhost, sql2016\nReturns all Endpoint(s) for the local and sql2016 SQL Server instances",
-        "Syntax":  "Get-DbaEndpoint [-SqlInstance] \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaEndpoint [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Endpoint \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaErrorLog",
@@ -3061,23 +3099,6 @@
         "Syntax":  "Get-DbaRgWorkloadGroup [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-InputObject] \u003cResourcePool[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
-        "CommandName":  "Get-DbaRoleMember",
-        "Description":  "Get members of all roles on a Sql instance.\n\nDefault output includes columns SQLServer, Database, Role, Member.",
-        "Tags":  [
-                     "Role",
-                     "Database",
-                     "Security",
-                     "Login"
-                 ],
-        "Alias":  "",
-        "Author":  "Klaas Vandenberghe ( @PowerDBAKlaas )",
-        "Synopsis":  "Get members of all roles on a Sql instance.",
-        "Name":  "Get-DbaRoleMember",
-        "Links":  "https://dbatools.io/Get-DbaRoleMember",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaRoleMember -SqlInstance ServerA\nReturns a custom object displaying SQLServer, Database, Role, Member for all DatabaseRoles.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaRoleMember -SqlInstance sql2016 | Out-GridView\nReturns a grid view displaying SQLServer, Database, Role, Member for all DatabaseRoles.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaRoleMember -SqlInstance ServerA\\sql987 -IncludeServerLevel | Out-GridView\nReturns a grid view displaying SQLServer, Database, Role, Member for both ServerRoles and DatabaseRoles.",
-        "Syntax":  "Get-DbaRoleMember [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-IncludeServerLevel] [-NoFixedRole] [\u003cCommonParameters\u003e]"
-    },
-    {
         "CommandName":  "Get-DbaRunningJob",
         "Description":  "This function returns agent jobs that active on the SQL Server instance when calling the command. The information is gathered the SMO JobServer.jobs and be returned either in detailed or standard format.",
         "Tags":  [
@@ -3178,6 +3199,22 @@
         "Links":  "https://dbatools.io/Get-DbaServerRole",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sql2016a\nOutputs list of server-level roles for sql2016a instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sql2017a -ExcludeFixedRole\nOutputs the server-level role(s) that are not fixed roles on sql2017a instance.",
         "Syntax":  "Get-DbaServerRole [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ServerRole \u003cObject[]\u003e] [-ExcludeServerRole \u003cObject[]\u003e] [-ExcludeFixedRole] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaServerRoleMember",
+        "Description":  "The Get-DbaServerRoleMember returns connected SMO object for server roles for each instance(s) of SQL Server.",
+        "Tags":  [
+                     "ServerRole",
+                     "Security",
+                     "Login"
+                 ],
+        "Alias":  "",
+        "Author":  "Klaas Vandenberghe (@PowerDBAKlaas)",
+        "Synopsis":  "Get members of server roles for each instance(s) of SQL Server.",
+        "Name":  "Get-DbaServerRoleMember",
+        "Links":  "https://dbatools.io/Get-DbaServerRoleMember",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaServerRoleMember -SqlInstance localhost\nReturns all members of all server roles on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaServerRoleMember -SqlInstance localhost, sql2016\nReturns all members of all server roles on the local and sql2016 SQL Server instances\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$servers = Get-Content C:\\servers.txt\nPS C:\\\u003e $servers | Get-DbaServerRoleMember\nReturns all members of all server roles for every server in C:\\servers.txt\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaServerRoleMember -SqlInstance localhost -ServerRole \u0027sysadmin\u0027, \u0027dbcreator\u0027\nReturns all members of the sysadmin or dbcreator roles on localhost.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eGet-DbaServerRoleMember -SqlInstance localhost -ExcludeServerRole \u0027sysadmin\u0027\nReturns all members of server-level roles other than sysadmin.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003eGet-DbaServerRoleMember -SqlInstance sql2017a -ExcludeFixedRole\nReturns all members of server-level role(s) that are not fixed roles on sql2017a instance.\n-------------------------- EXAMPLE 7 --------------------------\nPS C:\\\u003eGet-DbaServerRoleMember -SqlInstance localhost -Login \u0027MyFriendlyDeveloper\u0027\nReturns all server-level role(s) for the MyFriendlyDeveloper login on localhost.",
+        "Syntax":  "Get-DbaServerRoleMember [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ServerRole \u003cString[]\u003e] [-ExcludeServerRole \u003cString[]\u003e] [-Login \u003cObject[]\u003e] [-ExcludeFixedRole] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaServerTrigger",
@@ -3990,8 +4027,38 @@
         "Synopsis":  "Invoke-DbaDbLogShipRecovery recovers log shipped databases to a normal state to act upon a migration or disaster.",
         "Name":  "Invoke-DbaDbLogShipRecovery",
         "Links":  "https://dbatools.io/Invoke-DbaDbLogShipRecovery",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlServer server1\nRecovers all the databases on the instance that are enabled for log shipping\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlServer server1 -SqlCredential $cred -Verbose\nRecovers all the databases on the instance that are enabled for log shipping using a credential\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlServer server1 -database db_logship -Verbose\nRecovers the database \"db_logship\" to a normal status\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003edb1, db2, db3, db4 | Invoke-DbaDbLogShipRecovery -SqlServer server1 -Verbose\nRecovers the database db1, db2, db3, db4 to a normal status\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlServer server1 -WhatIf\nShows what would happen if the command were executed.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlInstance server1\nRecovers all the databases on the instance that are enabled for log shipping\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlInstance server1 -SqlCredential $cred -Verbose\nRecovers all the databases on the instance that are enabled for log shipping using a credential\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlInstance server1 -database db_logship -Verbose\nRecovers the database \"db_logship\" to a normal status\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003edb1, db2, db3, db4 | Invoke-DbaDbLogShipRecovery -SqlInstance server1 -Verbose\nRecovers the database db1, db2, db3, db4 to a normal status\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003eInvoke-DbaDbLogShipRecovery -SqlInstance server1 -WhatIf\nShows what would happen if the command were executed.",
         "Syntax":  "Invoke-DbaDbLogShipRecovery [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-Database] \u003cString[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [-NoRecovery] [-EnableException] [-Force] [[-InputObject] \u003cDatabase[]\u003e] [[-Delay] \u003cInt32\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Invoke-DbaDbMirrorFailover",
+        "Description":  "Failover a mirrored database",
+        "Tags":  [
+                     "Mirror",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Failover a mirrored database",
+        "Name":  "Invoke-DbaDbMirrorFailover",
+        "Links":  "https://dbatools.io/Invoke-DbaDbMirrorFailover",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eInvoke-DbaDbMirrorFailover -SqlInstance sql2016 -Database pubs\nFails over the pubs database on sql2016. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 -Database pubs | Invoke-DbaDbMirrorFailover -Force -Confirm:$false\nForces the failover of the pubs database on sql2016 and allows data loss.\nDoes not prompt for confirmation.",
+        "Syntax":  "Invoke-DbaDbMirrorFailover [[-SqlInstance] \u003cDbaInstanceParameter\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Invoke-DbaDbMirroring",
+        "Description":  "Automates the creation of database mirrors.\n\n* Verifies that a mirror is possible\n* Sets the recovery model to Full if needed\n* If the database does not exist on mirror or witness, a backup/restore is performed\n* Sets up endpoints if necessary\n* Creates a login and grants permissions to service accounts if needed\n* Starts endpoints if needed\n* Sets up partner for mirror\n* Sets up partner for primary\n* Sets up witness if one is specified\n\nNOTE: If a backup / restore is performed, the backups will be left in tact on the network share.",
+        "Tags":  [
+                     "Mirror",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Automates the creation of database mirrors.",
+        "Name":  "Invoke-DbaDbMirroring",
+        "Links":  "https://dbatools.io/Invoke-DbaDbMirroring",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003e$params = @{\nPrimary = \u0027sql2017a\u0027\r\n        Mirror = \u0027sql2017b\u0027\r\n        MirrorSqlCredential = \u0027sqladmin\u0027\r\n        Witness = \u0027sql2019\u0027\r\n        Database = \u0027pubs\u0027\r\n        NetworkShare = \u0027\\\\nas\\sql\\share\u0027\r\n    }\nPS C:\\\u003e Invoke-DbaDbMirror @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nPrompts for confirmation for most changes. To avoid confirmation, use -Confirm:$false or\r\nuse the syntax in the second example.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$params = @{\nPrimary = \u0027sql2017a\u0027\r\n        Mirror = \u0027sql2017b\u0027\r\n        MirrorSqlCredential = \u0027sqladmin\u0027\r\n        Witness = \u0027sql2019\u0027\r\n        Database = \u0027pubs\u0027\r\n        NetworkShare = \u0027\\\\nas\\sql\\share\u0027\r\n        Force = $true\r\n        Confirm = $false\r\n    }\nPS C:\\\u003e Invoke-DbaDbMirror @params\nPerforms a bunch of checks to ensure the pubs database on sql2017a\r\ncan be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a\r\nusing Windows credentials and sql2017b using a SQL credential.\nDrops existing pubs database on Mirror and Witness and restores them with\r\na fresh backup.\nDoes all the things in the decription, does not prompt for confirmation.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$map = @{ \u0027database_data\u0027 = \u0027M:\\Data\\database_data.mdf\u0027 \u0027database_log\u0027 = \u0027L:\\Log\\database_log.ldf\u0027 }\nPS C:\\\u003e Get-ChildItem \\\\nas\\seed | Restore-DbaDatabase -SqlInstance sql2017b -FileMapping $map -NoRecovery\r\nPS C:\\\u003e Get-DbaDatabase -SqlInstance sql2017a -Database pubs | Invoke-DbaDbMirroring -Mirror sql2017b -Confirm:$false\nRestores backups from sql2017a to a specific file struture on sql2017b then creates mirror with no prompts for confirmation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2017a -Database pubs |\n\u003e\u003e Invoke-DbaDbMirroring -Mirror sql2017b -UseLastBackups -Confirm:$false\nMirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed.",
+        "Syntax":  "Invoke-DbaDbMirroring [[-Primary] \u003cDbaInstanceParameter\u003e] [[-PrimarySqlCredential] \u003cPSCredential\u003e] [-Mirror] \u003cDbaInstanceParameter\u003e [[-MirrorSqlCredential] \u003cPSCredential\u003e] [[-Witness] \u003cDbaInstanceParameter\u003e] [[-WitnessSqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-NetworkShare] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-UseLastBackups] [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Invoke-DbaDbShrink",
@@ -4453,6 +4520,18 @@
         "Links":  "https://dbatools.io/New-DbaDirectory",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaDirectory -SqlInstance sqlcluster -Path L:\\MSAS12.MSSQLSERVER\\OLAP\nIf the SQL Server instance sqlcluster can create the path L:\\MSAS12.MSSQLSERVER\\OLAP it will do and return $true, if not it will return $false.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$credential = Get-Credential\nNew-DbaDirectory -SqlInstance sqlcluster -SqlCredential $credential -Path L:\\MSAS12.MSSQLSERVER\\OLAP\nIf the SQL Server instance sqlcluster can create the path L:\\MSAS12.MSSQLSERVER\\OLAP it will do and return $true, if not it will return $false. Uses a SqlCredential to connect",
         "Syntax":  "New-DbaDirectory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-Path] \u003cString\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "New-DbaEndpoint",
+        "Description":  "Creates SQL Server endpoints.",
+        "Tags":  "Endpoint",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Creates SQL Server endpoints.",
+        "Name":  "New-DbaEndpoint",
+        "Links":  "https://dbatools.io/New-DbaEndpoint",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eNew-DbaEndpoint -SqlInstance localhost\nCreates all Endpoint(s) on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eNet-DbaEndpoint -SqlInstance localhost, sql2016\nReturns all Endpoint(s) for the local and sql2016 SQL Server instances",
+        "Syntax":  "New-DbaEndpoint [-SqlInstance] \u003cDbaInstanceParameter\u003e [-SqlCredential \u003cPSCredential\u003e] [-Name \u003cString\u003e] [-Type \u003cString\u003e] [-Protocol \u003cString\u003e] [-Role \u003cString\u003e] [-EndpointEncryption \u003cString\u003e] [-EncryptionAlgorithm \u003cString\u003e] [-Port \u003cInt32\u003e] [-SslPort \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "New-DbaLogin",
@@ -4930,6 +5009,32 @@
         "Syntax":  "Remove-DbaDbMasterKey [-SqlCredential \u003cPSCredential\u003e] [-Mode {Strict | Lazy | Report}] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDbMasterKey -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-ExcludeDatabase \u003cObject[]\u003e] -All [-Mode {Strict | Lazy | Report}] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDbMasterKey -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] -Database \u003cObject[]\u003e [-Mode {Strict | Lazy | Report}] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDbMasterKey [-SqlCredential \u003cPSCredential\u003e] [-MasterKeyCollection \u003cMasterKey[]\u003e] [-Mode {Strict | Lazy | Report}] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Remove-DbaDbMirror",
+        "Description":  "Removes database mirrors. Does not set databases in recovery to recovered.",
+        "Tags":  [
+                     "Mirror",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Removes database mirrors.",
+        "Name":  "Remove-DbaDbMirror",
+        "Links":  "https://dbatools.io/Set-DbaDbMirror",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbMirror -SqlInstance localhost\nReturns all Endpoint(s) on the local default SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaDbMirror -SqlInstance localhost, sql2016\nReturns all Endpoint(s) for the local and sql2016 SQL Server instances",
+        "Syntax":  "Remove-DbaDbMirror [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Remove-DbaDbMirrorMonitor",
+        "Description":  "Stops and deletes the mirroring monitor job for all the databases on the server instance.\n\nBasically executes sp_dbmmonitordropmonitoring.",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Stops and deletes the mirroring monitor job for all the databases on the server instance.",
+        "Name":  "Remove-DbaDbMirrorMonitor",
+        "Links":  "https://dbatools.io/Remove-DbaDbMirrorMonitor",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbMirrorMonitor -SqlInstance sql2008, sql2012\nStops and deletes the mirroring monitor job for all the databases on sql2008 and sql2012.",
+        "Syntax":  "Remove-DbaDbMirrorMonitor [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Remove-DbaDbSnapshot",
         "Description":  "Removes (drops) database snapshots from the server",
         "Tags":  [
@@ -4960,6 +5065,18 @@
         "Links":  "https://dbatools.io/Remove-DbaDbUser",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaDbUser -SqlInstance sqlserver2014 -User user1\nDrops user1 from all databases it exists in on server \u0027sqlserver2014\u0027.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaDbUser -SqlInstance sqlserver2014 -Database database1 -User user1\nDrops user1 from the database1 database on server \u0027sqlserver2014\u0027.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRemove-DbaDbUser -SqlInstance sqlserver2014 -ExcludeDatabase model -User user1\nDrops user1 from all databases it exists in on server \u0027sqlserver2014\u0027 except for the model database.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaDbUser sqlserver2014 | Where-Object Name -In \"user1\" | Remove-DbaDbUser\nDrops user1 from all databases it exists in on server \u0027sqlserver2014\u0027.",
         "Syntax":  "Remove-DbaDbUser [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] -User \u003cObject[]\u003e [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nRemove-DbaDbUser -InputObject \u003cUser[]\u003e [-Force] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Remove-DbaEndpoint",
+        "Description":  "Removes endpoints on a SQL Server instance.",
+        "Tags":  "Endpoint",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Removes endpoints on a SQL Server instance.",
+        "Name":  "Remove-DbaEndpoint",
+        "Links":  "https://dbatools.io/Remove-DbaEndpoint",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRemove-DbaEndpoint -SqlInstance sqlserver2012 -AllEndpoints\nRemoves all endpoints on the sqlserver2014 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRemove-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1,endpoint2\nRemoves the endpoint1 and endpoint2 endpoints.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-Endpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Remove-DbaEndpoint\nRemoves the endpoints returned from the Get-Endpoint function.",
+        "Syntax":  "Remove-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Remove-DbaLogin",
@@ -5114,6 +5231,21 @@
         "Links":  "https://dbatools.io/Rename-DbaLogin",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRename-DbaLogin -SqlInstance localhost -Login DbaToolsUser -NewLogin captain\nSQL Login Example\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eRename-DbaLogin -SqlInstance localhost -Login domain\\oldname -NewLogin domain\\newname\nChange the windowsuser login name.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eRename-DbaLogin -SqlInstance localhost -Login dbatoolsuser -NewLogin captain -WhatIf\nWhatIf Example",
         "Syntax":  "Rename-DbaLogin [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-Login] \u003cString\u003e [-NewLogin] \u003cString\u003e [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Repair-DbaDbMirror",
+        "Description":  "Attempts to repair a suspended mirroring database.\n\nRestarts the endpoints then sets the partner to resume. See this article for more info:\n\nhttp://www.sqlservercentral.com/blogs/vivekssqlnotes/2016/09/03/how-to-resume-suspended-database-mirroring-in-sql-server-/",
+        "Tags":  [
+                     "Mirror",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Attempts to repair a suspended or paused mirroring database.",
+        "Name":  "Repair-DbaDbMirror",
+        "Links":  "https://dbatools.io/Repair-DbaDbMirror",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eRepair-DbaDbMirror -SqlInstance sql2017 -Database pubs\nAttempts to repair the mirrored but suspended pubs database on sql2017.\nRestarts the endpoints then sets the partner to resume. Prompts for confirmation.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2017 -Database pubs | Repair-DbaDbMirror -Confirm:$false\nAttempts to repair the mirrored but suspended pubs database on sql2017.\nRestarts the endpoints then sets the partner to resume. Does not prompt for confirmation.",
+        "Syntax":  "Repair-DbaDbMirror [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Repair-DbaOrphanUser",
@@ -5401,6 +5533,21 @@
         "Links":  "https://dbatools.io/Set-DbaDbCompression",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbCompression -SqlInstance localhost -MaxRunTime 60 -PercentCompression 25\nSet the compression run time to 60 minutes and will start the compression of tables/indexes that have a difference of 25% or higher between current and recommended.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaDbCompression -SqlInstance ServerA -Database DBName -CompressionType Page\nUtilizes Page compression for all objects in DBName on ServerA with no time limit.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eSet-DbaDbCompression -SqlInstance ServerA -Database DBName -PercentCompression 25 | Out-GridView\nWill compress tables/indexes within the specified database that would show any % improvement with compression and with no time limit. The results will be piped into a nicely formatted GridView.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$testCompression = Test-DbaDbCompression -SqlInstance ServerA -Database DBName\nSet-DbaDbCompression -SqlInstance ServerA -Database DBName -InputObject $testCompression\nGets the compression suggestions from Test-DbaDbCompression into a variable, this can then be reviewed and passed into Set-DbaDbCompression.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nSet-DbaDbCompression -SqlInstance ServerA -ExcludeDatabase Database -SqlCredential $cred -MaxRunTime 60 -PercentCompression 25\nSet the compression run time to 60 minutes and will start the compression of tables/indexes for all databases except the specified excluded database. Only objects that have a difference of 25% or \r\nhigher between current and recommended will be compressed.\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$servers = \u0027Server1\u0027,\u0027Server2\u0027\nforeach ($svr in $servers)\r\n{\r\n    Set-DbaDbCompression -SqlInstance $svr -MaxRunTime 60 -PercentCompression 25 | Export-Csv -Path C:\\temp\\CompressionAnalysisPAC.csv -Append\r\n}\nSet the compression run time to 60 minutes and will start the compression of tables/indexes across all listed servers that have a difference of 25% or higher between current and recommended. Output \r\nof command is exported to a csv.",
         "Syntax":  "Set-DbaDbCompression [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [[-CompressionType] \u003cObject\u003e] [[-MaxRunTime] \u003cInt32\u003e] [[-PercentCompression] \u003cInt32\u003e] [[-InputObject] \u003cObject\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Set-DbaDbMirror",
+        "Description":  "Sets properties of database mirrors.",
+        "Tags":  [
+                     "Mirror",
+                     "HA"
+                 ],
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Sets properties of database mirrors.",
+        "Name":  "Set-DbaDbMirror",
+        "Links":  "https://dbatools.io/Set-DbaDbMirror",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eSet-DbaDbMirror -SqlInstance sql2005 -Database dbatools -Partner TCP://SQL2008.ad.local:5374\nPrompts for confirmation then sets the partner to TCP://SQL2008.ad.local:5374 for the database \"dbtools\"\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eSet-DbaDbMirror -SqlInstance sql2005 -Database dbatools -Witness TCP://SQL2012.ad.local:5502 -Confirm:$false\nDoes not prompt for confirmation and sets the witness to TCP://SQL2012.ad.local:5502 for the database \"dbtools\"\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2005 | Out-GridView -Passthru | Set-DbaDbMirror -SafetyLevel Full -Confirm:$false\nSets the safety level to Full for databases selected from a gridview. Does not prompt for confirmation.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eSet-DbaDbMirror -SqlInstance sql2005 -Database dbatools -State Suspend -Confirm:$false\nDoes not prompt for confirmation and sets the state to suspend for the database \"dbtools\"",
+        "Syntax":  "Set-DbaDbMirror [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cString[]\u003e] [[-Partner] \u003cString\u003e] [[-Witness] \u003cString\u003e] [[-SafetyLevel] \u003cString\u003e] [[-State] \u003cString\u003e] [[-InputObject] \u003cDatabase[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Set-DbaDbOwner",
@@ -5711,6 +5858,18 @@
         "Syntax":  "Start-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-AllJobs] [-Wait] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStart-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] -InputObject \u003cJob[]\u003e [-AllJobs] [-Wait] [-WaitPeriod \u003cInt32\u003e] [-SleepPeriod \u003cInt32\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Start-DbaEndpoint",
+        "Description":  "Starts endpoints on a SQL Server instance.",
+        "Tags":  "Endpoint",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Starts endpoints on a SQL Server instance.",
+        "Name":  "Start-DbaEndpoint",
+        "Links":  "https://dbatools.io/Start-DbaEndpoint",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStart-DbaEndpoint -SqlInstance sqlserver2012 -AllEndpoints\nStarts all endpoints on the sqlserver2014 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eStart-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1,endpoint2\nStarts the endpoint1 and endpoint2 endpoints.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-Endpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Start-DbaEndpoint\nStarts the endpoints returned from the Get-Endpoint function.",
+        "Syntax":  "Start-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Start-DbaMigration",
         "Description":  "Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you\u0027re looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:\n\nAll user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -NoDatabases to skip.\nAll logins. Use -NoLogins to skip.\nAll database mail objects. Use -NoDatabaseMail\nAll credentials. Use -NoCredentials to skip.\nAll objects within the Job Server (SQL Agent). Use -NoAgentServer to skip.\nAll linked servers. Use -NoLinkedServers to skip.\nAll groups and servers within Central Management Server. Use -NoCentralManagementServer to skip.\nAll SQL Server configuration objects (everything in sp_configure). Use -NoSpConfigure to skip.\nAll user objects in system databases. Use -NoSysDbUserObjects to skip.\nAll system triggers. Use -NoSystemTriggers to skip.\nAll system backup devices. Use -NoBackupDevices to skip.\nAll Audits. Use -NoAudits to skip.\nAll Endpoints. Use -NoEndpoints to skip.\nAll Extended Events. Use -NoExtendedEvents to skip.\nAll Policy Management objects. Use -NoPolicyManagement to skip.\nAll Resource Governor objects. Use -NoResourceGovernor to skip.\nAll Server Audit Specifications. Use -NoServerAuditSpecifications to skip.\nAll Custom Errors (User Defined Messages). Use -NoCustomErrors to skip.\nCopies All Data Collector collection sets. Does not configure the server. Use -NoDataCollector to skip.\n\nThis script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.\n\nBy default, databases will be migrated to the destination SQL Server\u0027s default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.",
         "Tags":  "Migration",
@@ -5812,6 +5971,18 @@
         "Links":  "https://dbatools.io/Stop-DbaAgentJob",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStop-DbaAgentJob -SqlInstance localhost\nStops all running SQL Agent Jobs on the local SQL Server instance\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Stop-DbaAgentJob\nStops the cdc.DBWithCDC_capture SQL Agent Job on sql2016\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eStop-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture\nStops the cdc.DBWithCDC_capture SQL Agent Job on sql2016",
         "Syntax":  "Stop-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-Wait] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStop-DbaAgentJob -SqlInstance \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] [-Wait] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]\nStop-DbaAgentJob [-SqlCredential \u003cPSCredential\u003e] [-Job \u003cString[]\u003e] [-ExcludeJob \u003cString[]\u003e] -InputObject \u003cJob[]\u003e [-Wait] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Stop-DbaEndpoint",
+        "Description":  "Stops endpoints on a SQL Server instance.",
+        "Tags":  "Endpoint",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Stops endpoints on a SQL Server instance.",
+        "Name":  "Stop-DbaEndpoint",
+        "Links":  "https://dbatools.io/Stop-DbaEndpoint",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eStop-DbaEndpoint -SqlInstance sqlserver2012 -AllEndpoints\nStops all endpoints on the sqlserver2014 instance.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eStop-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1,endpoint2\nStops the endpoint1 and endpoint2 endpoints.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-Endpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Stop-DbaEndpoint\nStops the endpoints returned from the Get-Endpoint function.",
+        "Syntax":  "Stop-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-EndPoint] \u003cString[]\u003e] [-AllEndpoints] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Stop-DbaPfDataCollectorSet",
@@ -6129,6 +6300,18 @@
         "Links":  "https://dbatools.io/Test-DbaDiskSpeed",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaDiskSpeed -SqlInstance sql2008, sqlserver2012\nTests how disks are performing on sql2008 and sqlserver2012.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eTest-DbaDiskSpeed -SqlInstance sql2008 -Database tempdb\nTests how disks storing tempdb files on sql2008 are performing.",
         "Syntax":  "Test-DbaDiskSpeed [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Test-DbaEndpoint",
+        "Description":  "Tests connectivity for TCP enabled endpoints.\n\nNote that if an endpoint does not have a tcp listener port, it will be skipped.",
+        "Tags":  "Endpoint",
+        "Alias":  "",
+        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
+        "Synopsis":  "Tests connectivity for TCP enabled endpoints.",
+        "Name":  "Test-DbaEndpoint",
+        "Links":  "https://dbatools.io/Test-DbaEndpoint",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eTest-DbaEndpoint -SqlInstance localhost\nTests all endpoints on the local default SQL Server instance.\nNote that if an endpoint does not have a tcp listener port, it will be skipped.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaEndpoint -SqlInstance localhost, sql2016 -Endpoint Mirror | Test-DbaEndpoint\nTests all endpoints named Mirroring on sql2016 and localhost.\nNote that if an endpoint does not have a tcp listener port, it will be skipped.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eTest-DbaEndpoint -SqlInstance localhost, sql2016 -Endpoint Mirror\nTests all endpoints named Mirroring on sql2016 and localhost.\nNote that if an endpoint does not have a tcp listener port, it will be skipped.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eTest-DbaEndpoint -SqlInstance localhost -Verbose\nTests all endpoints on the local default SQL Server instance.\nSee all endpoints that were skipped due to not having a tcp listener port.",
+        "Syntax":  "Test-DbaEndpoint [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Endpoint] \u003cString[]\u003e] [[-InputObject] \u003cEndpoint[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Test-DbaIdentityUsage",
