@@ -50,8 +50,8 @@ function Get-DbaServerRole {
         [Parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$ServerRole,
-        [object[]]$ExcludeServerRole,
+        [string[]]$ServerRole,
+        [string[]]$ExcludeServerRole,
         [switch]$ExcludeFixedRole,
         [switch]$EnableException
     )
