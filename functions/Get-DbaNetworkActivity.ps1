@@ -1,51 +1,52 @@
-function Get-DbaNetworkActivity {
-    <#
-      .SYNOPSIS
-      Gets the Current traffic on every Network Interface on a computer.
-
-      .DESCRIPTION
-      Gets the Current traffic on every Network Interface on a computer.
-      See https://msdn.microsoft.com/en-us/library/aa394293(v=vs.85).aspx
-
-      Requires Local Admin rights on destination computer(s).
-
-      .PARAMETER ComputerName
-      The SQL Server (or server in general) that you're connecting to. This command handles named instances.
-
-      .PARAMETER Credential
-      Credential object used to connect to the computer as a different user.
-
-      .PARAMETER EnableException
-      By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-      This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-      Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-      .NOTES
-      Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-      Tags: Network
-      dbatools PowerShell module (https://dbatools.io)
-     Copyright: (c) 2018 by dbatools, licensed under MIT
-      License: MIT https://opensource.org/licenses/MIT
-
-      .LINK
-      https://dbatools.io/Get-DbaNetworkActivity
-
-      .EXAMPLE
-      Get-DbaNetworkActivity -ComputerName sqlserver2014a
-
-      Gets the Current traffic on every Network Interface on computer sqlserver2014a.
-
-      .EXAMPLE
-      'sql1','sql2','sql3' | Get-DbaNetworkActivity
-
-      Gets the Current traffic on every Network Interface on computers sql1, sql2 and sql3.
-
-      .EXAMPLE
-      Get-DbaNetworkActivity -ComputerName sql1,sql2 | Out-Gridview
-
-      Gets the Current traffic on every Network Interface on computers sql1 and sql2, and shows them in a grid view.
-
-  #>
+﻿function Get-DbaNetworkActivity {
+<#
+    .SYNOPSIS
+        Gets the Current traffic on every Network Interface on a computer.
+        
+    .DESCRIPTION
+        Gets the Current traffic on every Network Interface on a computer.
+        See https://msdn.microsoft.com/en-us/library/aa394293(v=vs.85).aspx
+        
+        Requires Local Admin rights on destination computer(s).
+        
+    .PARAMETER ComputerName
+        The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+        
+    .PARAMETER Credential
+        Credential object used to connect to the computer as a different user.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        Tags: Network
+        dbatools PowerShell module (https://dbatools.io)
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaNetworkActivity
+        
+    .EXAMPLE
+        Get-DbaNetworkActivity -ComputerName sqlserver2014a
+        
+        Gets the Current traffic on every Network Interface on computer sqlserver2014a.
+        
+    .EXAMPLE
+        'sql1','sql2','sql3' | Get-DbaNetworkActivity
+        
+        Gets the Current traffic on every Network Interface on computers sql1, sql2 and sql3.
+        
+    .EXAMPLE
+        Get-DbaNetworkActivity -ComputerName sql1,sql2 | Out-Gridview
+        
+        Gets the Current traffic on every Network Interface on computers sql1 and sql2, and shows them in a grid view.
+        
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]

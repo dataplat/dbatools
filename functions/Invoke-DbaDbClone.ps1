@@ -1,55 +1,56 @@
-function Invoke-DbaDbClone {
-    <#
+﻿function Invoke-DbaDbClone {
+<#
     .SYNOPSIS
         Clones a database schema and statistics
-
+        
     .DESCRIPTION
         Clones a database schema and statistics.
-
+        
         This can be useful for testing query performance without requiring all the space needed for the data in the database.
-
+        
         Read more at sqlperformance: https://sqlperformance.com/2016/08/sql-statistics/expanding-dbcc-clonedatabase
-
+        
         Thanks to Microsoft Tiger Team for the code and idea https://github.com/Microsoft/tigertoolbox/
-
+        
     .PARAMETER SqlInstance
         Allows you to specify a comma separated list of servers to query.
-
+        
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
+        
     .PARAMETER Database
         The database to clone - this list is auto-populated from the server.
-
+        
     .PARAMETER CloneDatabase
         The name(s) to clone to.
-
+        
     .PARAMETER UpdateStatistics
         Update the statistics prior to cloning (per Microsoft Tiger Team formula)
-
+        
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
+        
     .NOTES
         Tags: Statistics, Performance
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-
+        
     .LINK
         https://dbatools.io/Invoke-DbaDbClone
-
+        
     .EXAMPLE
         Invoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone
         Clones mydb to myclone on sql2016
-
+        
     .EXAMPLE
         Invoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone, myclone2 -UpdateStatistics
         Updates the statistics of mydb then clones to myclone and myclone2
-
-    #>
+        
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Position = 0)]

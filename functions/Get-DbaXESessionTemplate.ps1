@@ -1,72 +1,73 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaXESessionTemplate {
-    <#
-        .SYNOPSIS
-            Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\bin\xetemplates\).
-
-        .DESCRIPTION
-            Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\bin\xetemplates\).
-
-            The default repository contains templates from:
-                    Microsoft's Templates that come with SSMS
-                    Jes Borland's "Everyday Extended Events" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)
-                    Christian Gräfe's XE Repo: https://github.com/chrgraefe/sqlscripts/blob/master/XE-Events/
-                    Erin Stellato's Blog: https://www.sqlskills.com/blogs/erin/
-
-            Some profile templates converted using:
-                    sp_SQLskills_ConvertTraceToExtendedEvents.sql
-                    Jonathan M. Kehayias, SQLskills.com
-                    http://sqlskills.com/blogs/jonathan
-
-        .PARAMETER Path
-            The path to the template directory. Defaults to the dbatools template repository (\bin\xetemplates\).
-
-        .PARAMETER Pattern
-            Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaXESessionTemplate
-
-        .PARAMETER Template
-            Specifies one or more of the templates provided by dbatools. Press tab to cycle through the list of options.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: ExtendedEvent, XE, XEvent
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaXESessionTemplate
-
-        .EXAMPLE
-            Get-DbaXESessionTemplate
-
-            Returns information about all the templates in the local dbatools repository.
-
-        .EXAMPLE
-            Get-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017 | Start-DbaXESession
-
-            Allows you to select a Session template, then import it to the specified instance and start the session.
-
-        .EXAMPLE
-            Get-DbaXESessionTemplate -Path "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates"
-
-            Returns information about all the templates in your local XEventTemplates repository.
-
-        .EXAMPLE
-            Get-DbaXESessionTemplate -Pattern duration
-
-            Returns information about all the templates that match the word "duration" in the title, category or body.
-
-        .EXAMPLE
-            Get-DbaXESessionTemplate | Select-Object *
-
-            Returns more information about the template, including the full path/filename.
-        #>
+<#
+    .SYNOPSIS
+        Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\bin\xetemplates\).
+        
+    .DESCRIPTION
+        Parses Extended Event XML templates. Defaults to parsing templates in the dbatools template repository (\bin\xetemplates\).
+        
+        The default repository contains templates from:
+        Microsoft's Templates that come with SSMS
+        Jes Borland's "Everyday Extended Events" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)
+        Christian Gräfe's XE Repo: https://github.com/chrgraefe/sqlscripts/blob/master/XE-Events/
+        Erin Stellato's Blog: https://www.sqlskills.com/blogs/erin/
+        
+        Some profile templates converted using:
+        sp_SQLskills_ConvertTraceToExtendedEvents.sql
+        Jonathan M. Kehayias, SQLskills.com
+        http://sqlskills.com/blogs/jonathan
+        
+    .PARAMETER Path
+        The path to the template directory. Defaults to the dbatools template repository (\bin\xetemplates\).
+        
+    .PARAMETER Pattern
+        Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaXESessionTemplate
+        
+    .PARAMETER Template
+        Specifies one or more of the templates provided by dbatools. Press tab to cycle through the list of options.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaXESessionTemplate
+        
+    .EXAMPLE
+        Get-DbaXESessionTemplate
+        
+        Returns information about all the templates in the local dbatools repository.
+        
+    .EXAMPLE
+        Get-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017 | Start-DbaXESession
+        
+        Allows you to select a Session template, then import it to the specified instance and start the session.
+        
+    .EXAMPLE
+        Get-DbaXESessionTemplate -Path "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates"
+        
+        Returns information about all the templates in your local XEventTemplates repository.
+        
+    .EXAMPLE
+        Get-DbaXESessionTemplate -Pattern duration
+        
+        Returns information about all the templates that match the word "duration" in the title, category or body.
+        
+    .EXAMPLE
+        Get-DbaXESessionTemplate | Select-Object *
+        
+        Returns more information about the template, including the full path/filename.
+        
+#>
 
     [CmdletBinding()]
     param (

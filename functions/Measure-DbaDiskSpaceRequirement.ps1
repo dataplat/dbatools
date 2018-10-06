@@ -1,73 +1,74 @@
-function Measure-DbaDiskSpaceRequirement {
-    <#
-        .SYNOPSIS
-            Calculate the space needed to copy and possibly replace a database from one SQL server to another.
-
-        .DESCRIPTION
-            Returns a file list from source and destination where source file may overwrite destination. Complex scenarios where a new file may exist is taken into account.
-            This command will accept a hash object in pipeline with the following keys: Source, SourceDatabase, Destination. Using this command will provide a way to prepare before a complex migration with multiple databases from different sources and destinations.
-
-        .PARAMETER Source
-            Source SQL Server.
-
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Database
-            The database to copy. It MUST exist.
-
-        .PARAMETER Destination
-            Destination SQL Server instance.
-
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER DestinationDatabase
-            The database name at destination.
-            May or may not be present, if unspecified it will default to the database name provided in SourceDatabase.
-
-        .PARAMETER Credential
-            The credentials to use to connect via CIM/WMI/PowerShell remoting.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Database, DiskSpace, Migration
-            Author: Pollus Brodeur (@pollusb)
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Measure-DbaDiskSpaceRequirement
-
-        .EXAMPLE
-            Measure-DbaDiskSpaceRequirement -Source INSTANCE1 -Database DB1 -Destination INSTANCE2
-
-            Calculate space needed for a simple migration with one database with the same name at destination.
-
-        .EXAMPLE
-            @([PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB1'},
-              [PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB2'}
-            ) | Measure-DbaDiskSpaceRequirement
-
-            Using a PSCustomObject with 2 databases to migrate on SQL2.
-
-        .EXAMPLE
-            Import-Csv -Path .\migration.csv -Delimiter "`t" | Measure-DbaDiskSpaceRequirement | Format-Table -AutoSize
-
-            Using a CSV file. You will need to use this header line "Source<tab>Destination<tab>Database<tab>DestinationDatabase".
-
-        .EXAMPLE
-            Invoke-DbaCmd -SqlInstance DBA -Database Migrations -Query 'select Source, Destination, Database from dbo.Migrations' `
-                | Measure-DbaDiskSpaceRequirement
-
-            Using a SQL table. We are DBA after all!
-    #>
+﻿function Measure-DbaDiskSpaceRequirement {
+<#
+    .SYNOPSIS
+        Calculate the space needed to copy and possibly replace a database from one SQL server to another.
+        
+    .DESCRIPTION
+        Returns a file list from source and destination where source file may overwrite destination. Complex scenarios where a new file may exist is taken into account.
+        This command will accept a hash object in pipeline with the following keys: Source, SourceDatabase, Destination. Using this command will provide a way to prepare before a complex migration with multiple databases from different sources and destinations.
+        
+    .PARAMETER Source
+        Source SQL Server.
+        
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Database
+        The database to copy. It MUST exist.
+        
+    .PARAMETER Destination
+        Destination SQL Server instance.
+        
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER DestinationDatabase
+        The database name at destination.
+        May or may not be present, if unspecified it will default to the database name provided in SourceDatabase.
+        
+    .PARAMETER Credential
+        The credentials to use to connect via CIM/WMI/PowerShell remoting.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Database, DiskSpace, Migration
+        Author: Pollus Brodeur (@pollusb)
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Measure-DbaDiskSpaceRequirement
+        
+    .EXAMPLE
+        Measure-DbaDiskSpaceRequirement -Source INSTANCE1 -Database DB1 -Destination INSTANCE2
+        
+        Calculate space needed for a simple migration with one database with the same name at destination.
+        
+    .EXAMPLE
+        @([PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB1'},
+        [PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB2'}
+        ) | Measure-DbaDiskSpaceRequirement
+        
+        Using a PSCustomObject with 2 databases to migrate on SQL2.
+        
+    .EXAMPLE
+        Import-Csv -Path .\migration.csv -Delimiter "`t" | Measure-DbaDiskSpaceRequirement | Format-Table -AutoSize
+        
+        Using a CSV file. You will need to use this header line "Source<tab>Destination<tab>Database<tab>DestinationDatabase".
+        
+    .EXAMPLE
+        Invoke-DbaCmd -SqlInstance DBA -Database Migrations -Query 'select Source, Destination, Database from dbo.Migrations' `
+        | Measure-DbaDiskSpaceRequirement
+        
+        Using a SQL table. We are DBA after all!
+        
+#>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory, ValueFromPipelineByPropertyName = $true)]

@@ -1,146 +1,147 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentJob {
-    <#
-.SYNOPSIS
-Set-DbaAgentJob updates a job.
-
-.DESCRIPTION
-Set-DbaAgentJob updates a job in the SQL Server Agent with parameters supplied.
-
-.PARAMETER SqlInstance
-SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-.PARAMETER Job
-The name of the job.
-
-.PARAMETER Schedule
-Schedule to attach to job. This can be more than one schedule.
-
-.PARAMETER ScheduleId
-Schedule ID to attach to job. This can be more than one schedule ID.
-
-.PARAMETER NewName
-The new name for the job.
-
-.PARAMETER Enabled
-Enabled the job.
-
-.PARAMETER Disabled
-Disabled the job
-
-.PARAMETER Description
-The description of the job.
-
-.PARAMETER StartStepId
-The identification number of the first step to execute for the job.
-
-.PARAMETER Category
-The category of the job.
-
-.PARAMETER OwnerLogin
-The name of the login that owns the job.
-
-.PARAMETER EventlogLevel
-Specifies when to place an entry in the Microsoft Windows application log for this job.
-Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
-
-.PARAMETER EmailLevel
-Specifies when to send an e-mail upon the completion of this job.
-Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
-
-.PARAMETER NetsendLevel
-Specifies when to send a network message upon the completion of this job.
-Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
-
-.PARAMETER PageLevel
-Specifies when to send a page upon the completion of this job.
-Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
-
-.PARAMETER EmailOperator
-The e-mail name of the operator to whom the e-mail is sent when EmailLevel is reached.
-
-.PARAMETER NetsendOperator
-The name of the operator to whom the network message is sent.
-
-.PARAMETER PageOperator
-The name of the operator to whom a page is sent.
-
-.PARAMETER DeleteLevel
-Specifies when to delete the job.
-Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
-
-.PARAMETER Force
-The force parameter will ignore some errors in the parameters and assume defaults.
-
-.PARAMETER InputObject
-Enables piping job objects
-
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
-
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
-
-.PARAMETER EnableException
+<#
+    .SYNOPSIS
+        Set-DbaAgentJob updates a job.
+        
+    .DESCRIPTION
+        Set-DbaAgentJob updates a job in the SQL Server Agent with parameters supplied.
+        
+    .PARAMETER SqlInstance
+        SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Job
+        The name of the job.
+        
+    .PARAMETER Schedule
+        Schedule to attach to job. This can be more than one schedule.
+        
+    .PARAMETER ScheduleId
+        Schedule ID to attach to job. This can be more than one schedule ID.
+        
+    .PARAMETER NewName
+        The new name for the job.
+        
+    .PARAMETER Enabled
+        Enabled the job.
+        
+    .PARAMETER Disabled
+        Disabled the job
+        
+    .PARAMETER Description
+        The description of the job.
+        
+    .PARAMETER StartStepId
+        The identification number of the first step to execute for the job.
+        
+    .PARAMETER Category
+        The category of the job.
+        
+    .PARAMETER OwnerLogin
+        The name of the login that owns the job.
+        
+    .PARAMETER EventlogLevel
+        Specifies when to place an entry in the Microsoft Windows application log for this job.
+        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+        
+    .PARAMETER EmailLevel
+        Specifies when to send an e-mail upon the completion of this job.
+        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+        
+    .PARAMETER NetsendLevel
+        Specifies when to send a network message upon the completion of this job.
+        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+        
+    .PARAMETER PageLevel
+        Specifies when to send a page upon the completion of this job.
+        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+        
+    .PARAMETER EmailOperator
+        The e-mail name of the operator to whom the e-mail is sent when EmailLevel is reached.
+        
+    .PARAMETER NetsendOperator
+        The name of the operator to whom the network message is sent.
+        
+    .PARAMETER PageOperator
+        The name of the operator to whom a page is sent.
+        
+    .PARAMETER DeleteLevel
+        Specifies when to delete the job.
+        Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+        
+    .PARAMETER Force
+        The force parameter will ignore some errors in the parameters and assume defaults.
+        
+    .PARAMETER InputObject
+        Enables piping job objects
+        
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+        
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+        
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-.NOTES
-Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job
-
-Website: https://dbatools.io
-Copyright: (c) 2018 by dbatools, licensed under MIT
-License: MIT https://opensource.org/licenses/MIT
-
-.LINK
-https://dbatools.io/Set-DbaAgentJob
-
-.EXAMPLE
-Set-DbaAgentJob sql1 -Job Job1 -Disabled
-Changes the job to disabled
-
-.EXAMPLE
-Set-DbaAgentJob sql1 -Job Job1 -OwnerLogin user1
-Changes the owner of the job
-
-.EXAMPLE
-Set-DbaAgentJob -SqlInstance sql1 -Job Job1 -EventLogLevel OnSuccess
-Changes the job and sets the notification to write to the Windows Application event log on success
-
-.EXAMPLE
-Set-DbaAgentJob -SqlInstance sql1 -Job Job1 -EmailLevel OnFailure -EmailOperator dba
-Changes the job and sets the notification to send an e-mail to the e-mail operator
-
-.EXAMPLE
-Set-DbaAgentJob -SqlInstance sql1 -Job Job1, Job2, Job3 -Enabled
-Changes multiple jobs to enabled
-
-.EXAMPLE
-Set-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, Job3 -Enabled
-Changes multiple jobs to enabled on multiple servers
-
-.EXAMPLE
-Set-DbaAgentJob -SqlInstance sql1 -Job Job1 -Description 'Just another job' -Whatif
-Doesn't Change the job but shows what would happen.
-
-.EXAMPLE
-Set-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job 'Job One' -Description 'Job One'
-Changes a job with the name "Job1" on multiple servers to have another description
-
-.EXAMPLE
-sql1, sql2, sql3 | Set-DbaAgentJob -Job Job1 -Description 'Job One'
-Changes a job with the name "Job1" on multiple servers to have another description using pipe line
-
+        
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
+        Tags: Agent, Job
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Set-DbaAgentJob
+        
+    .EXAMPLE
+        Set-DbaAgentJob sql1 -Job Job1 -Disabled
+        Changes the job to disabled
+        
+    .EXAMPLE
+        Set-DbaAgentJob sql1 -Job Job1 -OwnerLogin user1
+        Changes the owner of the job
+        
+    .EXAMPLE
+        Set-DbaAgentJob -SqlInstance sql1 -Job Job1 -EventLogLevel OnSuccess
+        Changes the job and sets the notification to write to the Windows Application event log on success
+        
+    .EXAMPLE
+        Set-DbaAgentJob -SqlInstance sql1 -Job Job1 -EmailLevel OnFailure -EmailOperator dba
+        Changes the job and sets the notification to send an e-mail to the e-mail operator
+        
+    .EXAMPLE
+        Set-DbaAgentJob -SqlInstance sql1 -Job Job1, Job2, Job3 -Enabled
+        Changes multiple jobs to enabled
+        
+    .EXAMPLE
+        Set-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, Job3 -Enabled
+        Changes multiple jobs to enabled on multiple servers
+        
+    .EXAMPLE
+        Set-DbaAgentJob -SqlInstance sql1 -Job Job1 -Description 'Just another job' -Whatif
+        Doesn't Change the job but shows what would happen.
+        
+    .EXAMPLE
+        Set-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job 'Job One' -Description 'Job One'
+        Changes a job with the name "Job1" on multiple servers to have another description
+        
+    .EXAMPLE
+        sql1, sql2, sql3 | Set-DbaAgentJob -Job Job1 -Description 'Job One'
+        Changes a job with the name "Job1" on multiple servers to have another description using pipe line
+        
+        
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (

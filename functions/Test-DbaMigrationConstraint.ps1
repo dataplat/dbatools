@@ -1,74 +1,75 @@
-function Test-DbaMigrationConstraint {
-    <#
-        .SYNOPSIS
-            Show if you can migrate the database(s) between the servers.
-
-        .DESCRIPTION
-            When you want to migrate from a higher edition to a lower one there are some features that can't be used.
-            This function will validate if you have any of this features in use and will report to you.
-            The validation will be made ONLY on on SQL Server 2008 or higher using the 'sys.dm_db_persisted_sku_features' dmv.
-
-            This function only validate SQL Server 2008 versions or higher.
-            The editions supported by this function are:
-                - Enterprise
-                - Developer
-                - Evaluation
-                - Standard
-                - Express
-
-            Take into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
-
-            The -Database parameter is auto-populated for command-line completion.
-
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
-
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Database
-            The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
-
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude. Options for this list are auto-populated from the server.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Migration
-
-            Author: Claudio Silva (@ClaudioESSilva)
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Test-DbaMigrationConstraint
-
-        .EXAMPLE
-            Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster
-
-            All databases on sqlserver2014a will be verified for features in use that can't be supported on sqlcluster.
-
-        .EXAMPLE
-            Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
-
-            All databases will be verified for features in use that can't be supported on the destination server. SQL credentials are used to authenticate against sqlserver2014 and Windows Authentication is used for sqlcluster.
-
-        .EXAMPLE
-            Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Database db1
-
-            Only db1 database will be verified for features in use that can't be supported on the destination server.
-    #>
+﻿function Test-DbaMigrationConstraint {
+<#
+    .SYNOPSIS
+        Show if you can migrate the database(s) between the servers.
+        
+    .DESCRIPTION
+        When you want to migrate from a higher edition to a lower one there are some features that can't be used.
+        This function will validate if you have any of this features in use and will report to you.
+        The validation will be made ONLY on on SQL Server 2008 or higher using the 'sys.dm_db_persisted_sku_features' dmv.
+        
+        This function only validate SQL Server 2008 versions or higher.
+        The editions supported by this function are:
+        - Enterprise
+        - Developer
+        - Evaluation
+        - Standard
+        - Express
+        
+        Take into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
+        
+        The -Database parameter is auto-populated for command-line completion.
+        
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Database
+        The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude. Options for this list are auto-populated from the server.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Migration
+        
+        Author: Claudio Silva (@ClaudioESSilva)
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Test-DbaMigrationConstraint
+        
+    .EXAMPLE
+        Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster
+        
+        All databases on sqlserver2014a will be verified for features in use that can't be supported on sqlcluster.
+        
+    .EXAMPLE
+        Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
+        
+        All databases will be verified for features in use that can't be supported on the destination server. SQL credentials are used to authenticate against sqlserver2014 and Windows Authentication is used for sqlcluster.
+        
+    .EXAMPLE
+        Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Database db1
+        
+        Only db1 database will be verified for features in use that can't be supported on the destination server.
+        
+#>
     [CmdletBinding(DefaultParameterSetName = "DbMigration")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
