@@ -34,7 +34,7 @@ function Start-DbaXESession {
             Tags: ExtendedEvent, XE, XEvent
             Author: Doug Meyers
             Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Copyright (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK

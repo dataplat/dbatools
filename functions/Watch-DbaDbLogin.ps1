@@ -35,7 +35,7 @@ function Watch-DbaDbLogin {
             Tags: Login
             Author: Chrissy LeMaire (@cl), netnerds.net
             Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Copyright (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
             Requires: sysadmin access on all SQL Servers for the most accurate results
 
