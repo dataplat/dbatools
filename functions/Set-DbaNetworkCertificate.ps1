@@ -1,59 +1,60 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Set-DbaNetworkCertificate {
-    <#
+<#        
     .SYNOPSIS
         Sets the network certificate for SQL Server instance
-
+        
     .DESCRIPTION
         Sets the network certificate for SQL Server instance. This setting is found in Configuration Manager.
-
+        
         This command also grants read permissions for the service account on the certificate's private key.
-
+        
         References:
         http://sqlmag.com/sql-server/7-steps-ssl-encryption
         https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
         https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
-
+        
     .PARAMETER SqlInstance
         The target SQL Server - defaults to localhost.
-
+        
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative credentials.
-
+        
     .PARAMETER Certificate
         The target certificate object
-
+        
     .PARAMETER Thumbprint
         The thumbprint of the target certificate
-
+        
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
+        
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-
+        
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-
+        
     .EXAMPLE
         New-DbaComputerCertificate | Set-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2
-
+        
         Creates and imports a new certificate signed by an Active Directory CA on localhost then sets the network certificate for the SQL2008R2SP2 to that newly created certificate.
-
+        
     .EXAMPLE
         Set-DbaNetworkCertificate -SqlInstance sql1\SQL2008R2SP2 -Thumbprint 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2
-
+        
         Sets the network certificate for the SQL2008R2SP2 instance to the certificate with the thumbprint of 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2 in LocalMachine\My on sql1
-
+        
     .NOTES
         Tags: Certificate
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+        
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (

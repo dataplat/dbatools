@@ -1,41 +1,41 @@
-function Get-DbaWindowsLog {
-    <#
+﻿function Get-DbaWindowsLog {
+<#        
     .SYNOPSIS
         Gets Windows Application events associated with an instance
-
+        
     .DESCRIPTION
         Gets Windows Application events associated with an instance
-
+        
     .PARAMETER SqlInstance
         The instance(s) to retrieve the event logs from
-
+        
     .PARAMETER Start
         Default: 1970
         Retrieve all events starting from this timestamp.
-
+        
     .PARAMETER End
         Default: Now
         Retrieve all events that happened before this timestamp
-
+        
     .PARAMETER Credential
         Credential to be used to connect to the Server. Note this is a Windows credential, as this command requires we communicate with the computer and not with the SQL instance.
-
+        
     .PARAMETER MaxThreads
         Default: Unlimited
         The maximum number of parallel threads used on the local computer.
         Given that those will mostly be waiting for the remote system, there is usually no need to limit this.
-
+        
     .PARAMETER MaxRemoteThreads
         Default: 2
         The maximum number of parallel threads that are executed on the target sql server.
         These processes will cause considerable CPU load, so a low limit is advisable in most scenarios.
         Any value lower than 1 disables the limit
-
+        
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
+        
     .NOTES
         Tags: Logging
         Author: Drew Furgiuele
@@ -43,16 +43,17 @@ function Get-DbaWindowsLog {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-
+        
     .LINK
         https://dbatools.io/Get-DbaWindowsLog
-
+        
     .EXAMPLE
         $ErrorLogs = Get-DbaWindowsLog -SqlInstance sql01\sharepoint
         $ErrorLogs | Where-Object ErrorNumber -eq 18456
-
+        
         Returns all lines in the errorlogs that have event number 18456 in them
-
+        
+        
 #>
     [CmdletBinding()]
     param (

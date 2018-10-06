@@ -1,94 +1,95 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
+﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDiskSpace {
-    <#
-        .SYNOPSIS
-            Displays disk information for all local disk on a server.
-
-        .DESCRIPTION
-            Returns a custom object with server name, name of disk, label of disk, total size, free size, percent free, block size and filesystem.
-
-            By default, this function only shows drives of types 2 and 3 (removable disk and local disk).
-
-            Requires Windows administrator access on SQL Servers
-
-        .PARAMETER ComputerName
-            The target computer. Defaults to localhost.
-
-        .PARAMETER Credential
-            Credential object used to connect to the computer as a different user.
-
-        .PARAMETER Unit
-            This parameter has been deprecated and will be removed in 1.0.0
-            All properties previously generated through this command are present at the same time, but hidden by default.
-
-        .PARAMETER CheckForSql
-            If this switch is enabled, disks will be checked for SQL Server data and log files. Windows Authentication is always used for this.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER ExcludeDrive
-            Filter out drives - format is C:\
-
-        .PARAMETER Detailed
-            Output all properties, will be deprecated in 1.0.0 release. Use Force Instead
-
-        .PARAMETER CheckFragmentation
-            If this switch is enabled, fragmentation of all filesystems will be checked.
-
-            This will increase the runtime of the function by seconds or even minutes per volume.
-
-        .PARAMETER Force
-            Enabling this switch will cause the command to include ALL drives.
-            By default, only local disks and removable disks are shown, and hidden volumes are excluded.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .NOTES
-            Tags: Storage, Disk
-            Author: Chrissy LeMaire (clemaire@gmail.com) & Jakob Bindslet (jakob@bindslet.dk)
-
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-           Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaDiskSpace
-
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042
-
-            Get disk space for the server srv0042.
-
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042 -Unit MB
-
-            Get disk space for the server srv0042 and displays in megabytes (MB).
-
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042, srv0007 -Unit TB
-
-            Get disk space from two servers and displays in terabytes (TB).
-
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042 -Force
-
-            Get all disk and volume space information.
-
-        .EXAMPLE
-            Get-DbaDiskSpace -ComputerName srv0042 -ExcludeDrive 'C:\'
-
-            Get all disk and volume space information.
-    #>
+<#        
+    .SYNOPSIS
+        Displays disk information for all local disk on a server.
+        
+    .DESCRIPTION
+        Returns a custom object with server name, name of disk, label of disk, total size, free size, percent free, block size and filesystem.
+        
+        By default, this function only shows drives of types 2 and 3 (removable disk and local disk).
+        
+        Requires Windows administrator access on SQL Servers
+        
+    .PARAMETER ComputerName
+        The target computer. Defaults to localhost.
+        
+    .PARAMETER Credential
+        Credential object used to connect to the computer as a different user.
+        
+    .PARAMETER Unit
+        This parameter has been deprecated and will be removed in 1.0.0
+        All properties previously generated through this command are present at the same time, but hidden by default.
+        
+    .PARAMETER CheckForSql
+        If this switch is enabled, disks will be checked for SQL Server data and log files. Windows Authentication is always used for this.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER ExcludeDrive
+        Filter out drives - format is C:\
+        
+    .PARAMETER Detailed
+        Output all properties, will be deprecated in 1.0.0 release. Use Force Instead
+        
+    .PARAMETER CheckFragmentation
+        If this switch is enabled, fragmentation of all filesystems will be checked.
+        
+        This will increase the runtime of the function by seconds or even minutes per volume.
+        
+    .PARAMETER Force
+        Enabling this switch will cause the command to include ALL drives.
+        By default, only local disks and removable disks are shown, and hidden volumes are excluded.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        
+    .NOTES
+        Tags: Storage, Disk
+        Author: Chrissy LeMaire (clemaire@gmail.com) & Jakob Bindslet (jakob@bindslet.dk)
+        
+        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaDiskSpace
+        
+    .EXAMPLE
+        Get-DbaDiskSpace -ComputerName srv0042
+        
+        Get disk space for the server srv0042.
+        
+    .EXAMPLE
+        Get-DbaDiskSpace -ComputerName srv0042 -Unit MB
+        
+        Get disk space for the server srv0042 and displays in megabytes (MB).
+        
+    .EXAMPLE
+        Get-DbaDiskSpace -ComputerName srv0042, srv0007 -Unit TB
+        
+        Get disk space from two servers and displays in terabytes (TB).
+        
+    .EXAMPLE
+        Get-DbaDiskSpace -ComputerName srv0042 -Force
+        
+        Get all disk and volume space information.
+        
+    .EXAMPLE
+        Get-DbaDiskSpace -ComputerName srv0042 -ExcludeDrive 'C:\'
+        
+        Get all disk and volume space information.
+        
+#>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]

@@ -1,66 +1,67 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaWindowsLogin {
-    <#
-        .SYNOPSIS
-            Test-DbaWindowsLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist
-
-        .DESCRIPTION
-            The purpose of this function is to find SQL Server logins that are used by active directory users that are either disabled or removed from the domain. It allows you to keep your logins accurate and up to date by removing accounts that are no longer needed.
-
-        .PARAMETER SqlInstance
-            The SQL Server instance you're checking logins on. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Login
-            Specifies a list of logins to include in the results. Options for this list are auto-populated from the server.
-
-        .PARAMETER ExcludeLogin
-            Specifies a list of logins to exclude from the results. Options for this list are auto-populated from the server.
-
-        .PARAMETER FilterBy
-            Specifies the object types to return. By default, both Logins and Groups are returned. Valid options for this parameter are 'GroupsOnly' and 'LoginsOnly'.
-
-        .PARAMETER IgnoreDomains
-            Specifies a list of Active Directory domains to ignore. By default, all domains in the forest as well as all trusted domains are traversed.
-
-        .PARAMETER Detailed
-            Output all properties, will be depreciated in 1.0.0 release.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Login, Security
-            Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
-            Author: Chrissy LeMaire (@cl), netnerds.net
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Test-DbaWindowsLogin
-
-        .EXAMPLE
-            Test-DbaWindowsLogin -SqlInstance Dev01
-
-            Tests all logins in the current Active Directory domain that are either disabled or do not exist on the SQL Server instance Dev01
-
-        .EXAMPLE
-            Test-DbaWindowsLogin -SqlInstance Dev01 -FilterBy GroupsOnly | Select-Object -Property *
-
-            Tests all Active Directory groups that have logins on Dev01, and shows all information for those logins
-
-        .EXAMPLE
-            Test-DbaWindowsLogin -SqlInstance Dev01 -IgnoreDomains testdomain
-
-            Tests all Domain logins excluding any that are from the testdomain
-
-    #>
+<#        
+    .SYNOPSIS
+        Test-DbaWindowsLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist
+        
+    .DESCRIPTION
+        The purpose of this function is to find SQL Server logins that are used by active directory users that are either disabled or removed from the domain. It allows you to keep your logins accurate and up to date by removing accounts that are no longer needed.
+        
+    .PARAMETER SqlInstance
+        The SQL Server instance you're checking logins on. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Login
+        Specifies a list of logins to include in the results. Options for this list are auto-populated from the server.
+        
+    .PARAMETER ExcludeLogin
+        Specifies a list of logins to exclude from the results. Options for this list are auto-populated from the server.
+        
+    .PARAMETER FilterBy
+        Specifies the object types to return. By default, both Logins and Groups are returned. Valid options for this parameter are 'GroupsOnly' and 'LoginsOnly'.
+        
+    .PARAMETER IgnoreDomains
+        Specifies a list of Active Directory domains to ignore. By default, all domains in the forest as well as all trusted domains are traversed.
+        
+    .PARAMETER Detailed
+        Output all properties, will be depreciated in 1.0.0 release.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Login, Security
+        Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Test-DbaWindowsLogin
+        
+    .EXAMPLE
+        Test-DbaWindowsLogin -SqlInstance Dev01
+        
+        Tests all logins in the current Active Directory domain that are either disabled or do not exist on the SQL Server instance Dev01
+        
+    .EXAMPLE
+        Test-DbaWindowsLogin -SqlInstance Dev01 -FilterBy GroupsOnly | Select-Object -Property *
+        
+        Tests all Active Directory groups that have logins on Dev01, and shows all information for those logins
+        
+    .EXAMPLE
+        Test-DbaWindowsLogin -SqlInstance Dev01 -IgnoreDomains testdomain
+        
+        Tests all Domain logins excluding any that are from the testdomain
+        
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]

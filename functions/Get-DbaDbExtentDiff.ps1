@@ -1,56 +1,57 @@
-function Get-DbaDbExtentDiff {
-    <#
-        .SYNOPSIS
-            What percentage of a database has changed since the last full backup
-
-        .DESCRIPTION
-            This is only an implementation of the script created by Paul S. Randal to find what percentage of a database has changed since the last full backup.
-            https://www.sqlskills.com/blogs/paul/new-script-how-much-of-the-database-has-changed-since-the-last-full-backup/
-
-        .PARAMETER SqlInstance
-            The target SQL Server instance
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Database
-            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
-
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
-
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Backup, Database
-            Author: Viorel Ciucu, cviorel.com
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-
-        .LINK
-            http://dbatools.io/Get-DbaDbExtentDiff
-
-        .EXAMPLE
-            PS C:\> Get-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA
-
-            Get the changes for the DBA database.
-
-        .EXAMPLE
-            PS C:\> Get-DbaDbExtentDiff -SqlInstance $SQL2017N1, $SQL2017N2, $SQL2016 -Database DB01 -SqlCredential $Cred
-
-            Get the changes for the DB01 database on multiple servers.
-    #>
+﻿function Get-DbaDbExtentDiff {
+<#        
+    .SYNOPSIS
+        What percentage of a database has changed since the last full backup
+        
+    .DESCRIPTION
+        This is only an implementation of the script created by Paul S. Randal to find what percentage of a database has changed since the last full backup.
+        https://www.sqlskills.com/blogs/paul/new-script-how-much-of-the-database-has-changed-since-the-last-full-backup/
+        
+    .PARAMETER SqlInstance
+        The target SQL Server instance
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
+        
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+        
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Backup, Database
+        Author: Viorel Ciucu, cviorel.com
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        
+    .LINK
+        http://dbatools.io/Get-DbaDbExtentDiff
+        
+    .EXAMPLE
+        PS C:\> Get-DbaDbExtentDiff -SqlInstance SQL2016 -Database DBA
+        
+        Get the changes for the DBA database.
+        
+    .EXAMPLE
+        PS C:\> Get-DbaDbExtentDiff -SqlInstance $SQL2017N1, $SQL2017N2, $SQL2016 -Database DB01 -SqlCredential $Cred
+        
+        Get the changes for the DB01 database on multiple servers.
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

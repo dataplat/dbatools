@@ -1,26 +1,26 @@
-function New-DbaAgentProxy {
-    <#
-        .SYNOPSIS
+﻿function New-DbaAgentProxy {
+<#        
+    .SYNOPSIS
         Adds one or more proxies to SQL Server Agent
-
-        .DESCRIPTION
+        
+    .DESCRIPTION
         Adds one or more proxies to SQL Server Agent
-
-        .PARAMETER SqlInstance
+        
+    .PARAMETER SqlInstance
         The SQL Server instance holding the databases to be removed.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-
-        .PARAMETER SqlCredential
+        
+    .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Name
+        
+    .PARAMETER Name
         The name of the proxy or proxies you want to create
-
-        .PARAMETER Credential
+        
+    .PARAMETER Credential
         The associated SQL Server Credential. The credential must be created prior to creating the Proxy.
-
-        .PARAMETER SubSystem
+        
+    .PARAMETER SubSystem
         The associated subsystem or subsystems. Defaults to CmdExec.
-
+        
         Valid options include:
         ActiveScripting
         AnalysisCommand
@@ -34,64 +34,65 @@ function New-DbaAgentProxy {
         Snapshot
         Ssis
         TransactSql
-
-        .PARAMETER Description
+        
+    .PARAMETER Description
         A description of the proxy
-
-        .PARAMETER Login
+        
+    .PARAMETER Login
         The SQL Server login or logins (known as proxy principals) to assign to the proxy
-
-        .PARAMETER ServerRole
+        
+    .PARAMETER ServerRole
         The SQL Server role or roles (known as proxy principals) to assign to the proxy
-
-        .PARAMETER MsdbRole
+        
+    .PARAMETER MsdbRole
         The msdb role or roles (known as proxy principals) to assign to the proxy
-
-        .PARAMETER Disabled
+        
+    .PARAMETER Disabled
         Create the proxy as disabled
-
-        .PARAMETER Force
+        
+    .PARAMETER Force
         Drop and recreate the proxy if it already exists
-
-        .PARAMETER WhatIf
+        
+    .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
+        
+    .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .PARAMETER EnableException
+        
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
+        
+    .NOTES
         Tags: Agent, Proxy
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
+        
+    .LINK
         https://dbatools.io/New-DbaAgentProxy
-
-        .EXAMPLE
+        
+    .EXAMPLE
         New-DbaAgentProxy -SqlInstance sql2016 -Name STIG -Credential 'PowerShell Proxy'
-
+        
         Creates an Agent Proxy on sql2016 with the name STIG with the 'PowerShell Proxy' credential.
         The proxy is automatically added to the CmdExec subsystem.
-
-        .EXAMPLE
+        
+    .EXAMPLE
         New-DbaAgentProxy -SqlInstance localhost\sql2016 -Name STIG -Credential 'PowerShell Proxy' -Description "Used for auditing purposes" -Login ad\sqlstig -SubSystem CmdExec, PowerShell -ServerRole securtyadmin -MsdbRole ServerGroupAdministratorRole
-
+        
         Creates an Agent Proxy on sql2016 with the name STIG with the 'PowerShell Proxy' credential and the following principals:
-
+        
         Login: ad\sqlstig
         ServerRole: securtyadmin
         MsdbRole: ServerGroupAdministratorRole
-
+        
         By default, only sysadmins have access to create job steps with proxies. This will allow 3 additional principals access:
         The proxy is then added to the CmdExec and PowerShell subsystems
-
-    #>
+        
+        
+#>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

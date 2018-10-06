@@ -1,49 +1,50 @@
-#ValidationTags#Messaging#
+﻿#ValidationTags#Messaging#
 function Get-DbaMsdtc {
-    <#
-        .SYNOPSIS
-            Displays information about the Distributed Transaction Coordinator (MSDTC) on a server
-
-        .DESCRIPTION
-            Returns a custom object with Computer name, state of the MSDTC Service, security settings of MSDTC and CID's
-
-            Requires: Windows administrator access on Servers
-
-        .PARAMETER ComputerName
-            The SQL Server (or server in general) that you're connecting to.
-
-        .NOTES
-            Tags: Msdtc, dtc
-            Author: Klaas Vandenberghe ( powerdbaklaas )
-
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-           Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaMsdtc
-
-        .EXAMPLE
-            Get-DbaMsdtc -ComputerName srv0042
-
-            Get DTC status for the server srv0042
-
-        .EXAMPLE
-            $Computers = (Get-Content D:\configfiles\SQL\MySQLInstances.txt | % {$_.split('\')[0]})
-            $Computers | Get-DbaMsdtc
-
-            Get DTC status for all the computers in a .txt file
-
-        .EXAMPLE
-            Get-DbaMsdtc -Computername $Computers | where { $_.dtcservicestate -ne 'running' }
-
-            Get DTC status for all the computers where the MSDTC Service is not running
-
-        .EXAMPLE
-            Get-DbaMsdtc -ComputerName srv0042 | Out-Gridview
-
-            Get DTC status for the computer srv0042 and show in a grid view
-    #>
+<#        
+    .SYNOPSIS
+        Displays information about the Distributed Transaction Coordinator (MSDTC) on a server
+        
+    .DESCRIPTION
+        Returns a custom object with Computer name, state of the MSDTC Service, security settings of MSDTC and CID's
+        
+        Requires: Windows administrator access on Servers
+        
+    .PARAMETER ComputerName
+        The SQL Server (or server in general) that you're connecting to.
+        
+    .NOTES
+        Tags: Msdtc, dtc
+        Author: Klaas Vandenberghe ( powerdbaklaas )
+        
+        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaMsdtc
+        
+    .EXAMPLE
+        Get-DbaMsdtc -ComputerName srv0042
+        
+        Get DTC status for the server srv0042
+        
+    .EXAMPLE
+        $Computers = (Get-Content D:\configfiles\SQL\MySQLInstances.txt | % {$_.split('\')[0]})
+        $Computers | Get-DbaMsdtc
+        
+        Get DTC status for all the computers in a .txt file
+        
+    .EXAMPLE
+        Get-DbaMsdtc -Computername $Computers | where { $_.dtcservicestate -ne 'running' }
+        
+        Get DTC status for all the computers where the MSDTC Service is not running
+        
+    .EXAMPLE
+        Get-DbaMsdtc -ComputerName srv0042 | Out-Gridview
+        
+        Get DTC status for the computer srv0042 and show in a grid view
+        
+#>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]

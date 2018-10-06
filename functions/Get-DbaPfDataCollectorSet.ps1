@@ -1,59 +1,60 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaPfDataCollectorSet {
-    <#
-        .SYNOPSIS
-            Gets Performance Monitor Data Collector Set.
-
-        .DESCRIPTION
-            Gets Performance Monitor Data Collector Set.
-
-        .PARAMETER ComputerName
-            The target computer. Defaults to localhost.
-
-        .PARAMETER Credential
-            Allows you to login to servers using alternative credentials. To use:
-
-            $scred = Get-Credential, then pass $scred object to the -Credential parameter.
-
-        .PARAMETER CollectorSet
-            The Collector set name.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Performance, DataCollector, PerfCounter
-            Author: Chrissy LeMaire (@cl), netnerds.net
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaPfDataCollectorSet
-
-        .EXAMPLE
-            PS C:\> Get-DbaPfDataCollectorSet
-
-            Gets all Collector Sets on localhost.
-
-        .EXAMPLE
-            PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2017
-
-            Gets all Collector Sets on sql2017.
-
-        .EXAMPLE
-            PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2017 -Credential (Get-Credential) -CollectorSet 'System Correlation'
-
-            Gets the 'System Correlation' CollectorSet on sql2017 using alternative credentials.
-
-        .EXAMPLE
-            PS C:\> Get-DbaPfDataCollectorSet | Select-Object *
-
-            Displays extra columns and also exposes the original COM object in DataCollectorSetObject.
-    #>
+<#        
+    .SYNOPSIS
+        Gets Performance Monitor Data Collector Set.
+        
+    .DESCRIPTION
+        Gets Performance Monitor Data Collector Set.
+        
+    .PARAMETER ComputerName
+        The target computer. Defaults to localhost.
+        
+    .PARAMETER Credential
+        Allows you to login to servers using alternative credentials. To use:
+        
+        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+        
+    .PARAMETER CollectorSet
+        The Collector set name.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Performance, DataCollector, PerfCounter
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaPfDataCollectorSet
+        
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet
+        
+        Gets all Collector Sets on localhost.
+        
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2017
+        
+        Gets all Collector Sets on sql2017.
+        
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2017 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        
+        Gets the 'System Correlation' CollectorSet on sql2017 using alternative credentials.
+        
+    .EXAMPLE
+        PS C:\> Get-DbaPfDataCollectorSet | Select-Object *
+        
+        Displays extra columns and also exposes the original COM object in DataCollectorSetObject.
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]

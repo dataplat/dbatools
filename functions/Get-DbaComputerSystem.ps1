@@ -1,52 +1,53 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaComputerSystem {
-    <#
-        .SYNOPSIS
-            Gets computer system information from the server.
-
-        .DESCRIPTION
-            Gets computer system information from the server and returns as an object.
-
-        .PARAMETER ComputerName
-            Target computer(s). If no computer name is specified, the local computer is targeted
-
-        .PARAMETER Credential
-            Alternate credential object to use for accessing the target computer(s).
-
-        .PARAMETER IncludeAws
-            If computer is hosted in AWS Infrastructure as a Service (IaaS), additional information will be included.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: ServerInfo
-            Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaComputerSystem
-
-        .EXAMPLE
-            PS C:\> Get-DbaComputerSystem
-
-            Returns information about the local computer's computer system
-
-        .EXAMPLE
-            PS C:\> Get-DbaComputerSystem -ComputerName sql2016
-
-            Returns information about the sql2016's computer system
-
-        .EXAMPLE
-            PS C:\> Get-DbaComputerSystem -ComputerName sql2016 -IncludeAws
-
-            Returns information about the sql2016's computer system and includes additional properties around the EC2 instance.
-    #>
+<#        
+    .SYNOPSIS
+        Gets computer system information from the server.
+        
+    .DESCRIPTION
+        Gets computer system information from the server and returns as an object.
+        
+    .PARAMETER ComputerName
+        Target computer(s). If no computer name is specified, the local computer is targeted
+        
+    .PARAMETER Credential
+        Alternate credential object to use for accessing the target computer(s).
+        
+    .PARAMETER IncludeAws
+        If computer is hosted in AWS Infrastructure as a Service (IaaS), additional information will be included.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: ServerInfo
+        Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaComputerSystem
+        
+    .EXAMPLE
+        PS C:\> Get-DbaComputerSystem
+        
+        Returns information about the local computer's computer system
+        
+    .EXAMPLE
+        PS C:\> Get-DbaComputerSystem -ComputerName sql2016
+        
+        Returns information about the sql2016's computer system
+        
+    .EXAMPLE
+        PS C:\> Get-DbaComputerSystem -ComputerName sql2016 -IncludeAws
+        
+        Returns information about the sql2016's computer system and includes additional properties around the EC2 instance.
+        
+#>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline)]

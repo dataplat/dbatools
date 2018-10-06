@@ -1,51 +1,52 @@
 ﻿function Read-DbaAuditFile {
-    <#
-        .SYNOPSIS
-            Read Audit details from a sqlaudit file.
-
-        .DESCRIPTION
-            Read Audit details from a sqlaudit file.
-
-        .PARAMETER Path
-            The path to the sqlaudit file. This is relative to the computer executing the command. UNC paths are supported.
-
-        .PARAMETER Exact
-            If this switch is enabled, only an exact search will be used for the Path. By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters.
-
-        .PARAMETER Raw
-            If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object will be returned.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: ExtendedEvent, Audit
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Read-DbaAuditFile
-
-        .EXAMPLE
-            Read-DbaAuditFile -Path C:\temp\logins.sqlaudit
-
-            Returns events from C:\temp\logins.sqlaudit.
-
-        .EXAMPLE
-            Get-ChildItem C:\temp\audit\*.sqlaudit | Read-DbaAuditFile
-
-            Returns events from all .sqlaudit files in C:\temp\audit.
-
-        .EXAMPLE
-            Get-DbaServerAudit -SqlInstance sql2014 -Audit LoginTracker | Read-DbaAuditFile
-
-            Reads remote Audit details by accessing the file over the admin UNC share.
-
-    #>
+<#        
+    .SYNOPSIS
+        Read Audit details from a sqlaudit file.
+        
+    .DESCRIPTION
+        Read Audit details from a sqlaudit file.
+        
+    .PARAMETER Path
+        The path to the sqlaudit file. This is relative to the computer executing the command. UNC paths are supported.
+        
+    .PARAMETER Exact
+        If this switch is enabled, only an exact search will be used for the Path. By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters.
+        
+    .PARAMETER Raw
+        If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object will be returned.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: ExtendedEvent, Audit
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Read-DbaAuditFile
+        
+    .EXAMPLE
+        Read-DbaAuditFile -Path C:\temp\logins.sqlaudit
+        
+        Returns events from C:\temp\logins.sqlaudit.
+        
+    .EXAMPLE
+        Get-ChildItem C:\temp\audit\*.sqlaudit | Read-DbaAuditFile
+        
+        Returns events from all .sqlaudit files in C:\temp\audit.
+        
+    .EXAMPLE
+        Get-DbaServerAudit -SqlInstance sql2014 -Audit LoginTracker | Read-DbaAuditFile
+        
+        Reads remote Audit details by accessing the file over the admin UNC share.
+        
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

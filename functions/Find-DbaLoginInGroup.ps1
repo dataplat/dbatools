@@ -1,54 +1,55 @@
-#ValidationTags#Messaging#
+﻿#ValidationTags#Messaging#
 function Find-DbaLoginInGroup {
-    <#
-        .SYNOPSIS
-            Finds Logins in Active Directory groups that have logins on the SQL Instance.
-
-        .DESCRIPTION
-            Outputs all the active directory groups members for a server, or limits it to find a specific AD user in the groups
-
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a
-            collection and receive pipeline input.
-
-        .PARAMETER SqlCredential
-            PSCredential object to connect under. If not specified, current Windows login will be used.
-
-        .PARAMETER Login
-            Find all AD Groups used on the instance that an individual login is a member of.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Login, Group, Security
-            Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-            Author: Simone Bizzotto (@niphlod)
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Find-DbaLoginInGroup
-
-        .EXAMPLE
-            PS C:\> Find-DbaLoginInGroup -SqlInstance DEV01 -Login "MyDomain\Stephen.Bennett"
-
-            Returns all active directory groups with logins on Sql Instance DEV01 that contain the AD user Stephen.Bennett.
-
-        .EXAMPLE
-            PS C:\> Find-DbaLoginInGroup -SqlInstance DEV01
-
-            Returns all active directory users within all windows AD groups that have logins on the instance.
-
-        .EXAMPLE
-            PS C:\> Find-DbaLoginInGroup -SqlInstance DEV01 | Where-Object Login -like '*stephen*'
-
-            Returns all active directory users within all windows AD groups that have logins on the instance whose login contains "stephen"
-    #>
+<#        
+    .SYNOPSIS
+        Finds Logins in Active Directory groups that have logins on the SQL Instance.
+        
+    .DESCRIPTION
+        Outputs all the active directory groups members for a server, or limits it to find a specific AD user in the groups
+        
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to. This can be a
+        collection and receive pipeline input.
+        
+    .PARAMETER SqlCredential
+        PSCredential object to connect under. If not specified, current Windows login will be used.
+        
+    .PARAMETER Login
+        Find all AD Groups used on the instance that an individual login is a member of.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Login, Group, Security
+        Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+        Author: Simone Bizzotto (@niphlod)
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Find-DbaLoginInGroup
+        
+    .EXAMPLE
+        PS C:\> Find-DbaLoginInGroup -SqlInstance DEV01 -Login "MyDomain\Stephen.Bennett"
+        
+        Returns all active directory groups with logins on Sql Instance DEV01 that contain the AD user Stephen.Bennett.
+        
+    .EXAMPLE
+        PS C:\> Find-DbaLoginInGroup -SqlInstance DEV01
+        
+        Returns all active directory users within all windows AD groups that have logins on the instance.
+        
+    .EXAMPLE
+        PS C:\> Find-DbaLoginInGroup -SqlInstance DEV01 | Where-Object Login -like '*stephen*'
+        
+        Returns all active directory users within all windows AD groups that have logins on the instance whose login contains "stephen"
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

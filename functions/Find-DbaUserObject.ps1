@@ -1,58 +1,59 @@
-#ValidationTags#Messaging#
+﻿#ValidationTags#Messaging#
 function Find-DbaUserObject {
-    <#
-        .SYNOPSIS
-            Searches SQL Server to find user-owned objects (ie. not dbo or sa) or for any object owned by a specific user specified by the Pattern parameter.
-
-        .DESCRIPTION
-            Looks at the below list of objects to see if they are either owned by a user or a specific user (using the parameter -Pattern)
-                Database Owner
-                Agent Job Owner
-                Used in Credential
-                USed in Proxy
-                SQL Agent Steps using a Proxy
-                Endpoints
-                Server Roles
-                Database Schemas
-                Database Roles
-                Database Assembles
-                Database Synonyms
-
-        .PARAMETER SqlInstance
-            SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Pattern
-            The regex pattern that the command will search for
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Object
-            Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Find-DbaUserObject
-
-        .EXAMPLE
-            PS C:\> Find-DbaUserObject -SqlInstance DEV01 -Pattern ad\stephen
-
-            Searches user objects for owner ad\stephen
-
-        .EXAMPLE
-            PS C:\> Find-DbaUserObject -SqlInstance DEV01 -Verbose
-
-            Shows all user owned (non-sa, non-dbo) objects and verbose output
-    #>
+<#        
+    .SYNOPSIS
+        Searches SQL Server to find user-owned objects (ie. not dbo or sa) or for any object owned by a specific user specified by the Pattern parameter.
+        
+    .DESCRIPTION
+        Looks at the below list of objects to see if they are either owned by a user or a specific user (using the parameter -Pattern)
+        Database Owner
+        Agent Job Owner
+        Used in Credential
+        USed in Proxy
+        SQL Agent Steps using a Proxy
+        Endpoints
+        Server Roles
+        Database Schemas
+        Database Roles
+        Database Assembles
+        Database Synonyms
+        
+    .PARAMETER SqlInstance
+        SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Pattern
+        The regex pattern that the command will search for
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Object
+        Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Find-DbaUserObject
+        
+    .EXAMPLE
+        PS C:\> Find-DbaUserObject -SqlInstance DEV01 -Pattern ad\stephen
+        
+        Searches user objects for owner ad\stephen
+        
+    .EXAMPLE
+        PS C:\> Find-DbaUserObject -SqlInstance DEV01 -Verbose
+        
+        Shows all user owned (non-sa, non-dbo) objects and verbose output
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]

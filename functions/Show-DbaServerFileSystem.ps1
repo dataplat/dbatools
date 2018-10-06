@@ -1,46 +1,47 @@
-function Show-DbaServerFileSystem {
-    <#
-        .SYNOPSIS
-            Shows file system on remote SQL Server in a local GUI and returns the selected directory name
-
-        .DESCRIPTION
-            Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this function allows you to traverse the remote SQL Server's file structure.
-
-            Show-DbaServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
-
-        .PARAMETER SqlInstance
-            The SQL Server whose filesystem you want to view.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .NOTES
-            Tags: Storage, FileSystem
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Show-DbaServerFileSystem
-
-        .EXAMPLE
-            Show-DbaServerFileSystem -SqlInstance sqlserver2014a
-
-            Shows a list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected path.
-
-        .EXAMPLE
-            Show-DbaServerFileSystem -Source sqlserver2014a -SqlCredential $cred
-
-            Shows a list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected path.
-
-    #>
+﻿function Show-DbaServerFileSystem {
+<#        
+    .SYNOPSIS
+        Shows file system on remote SQL Server in a local GUI and returns the selected directory name
+        
+    .DESCRIPTION
+        Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this function allows you to traverse the remote SQL Server's file structure.
+        
+        Show-DbaServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
+        
+    .PARAMETER SqlInstance
+        The SQL Server whose filesystem you want to view.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        
+    .NOTES
+        Tags: Storage, FileSystem
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Show-DbaServerFileSystem
+        
+    .EXAMPLE
+        Show-DbaServerFileSystem -SqlInstance sqlserver2014a
+        
+        Shows a list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected path.
+        
+    .EXAMPLE
+        Show-DbaServerFileSystem -Source sqlserver2014a -SqlCredential $cred
+        
+        Shows a list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected path.
+        
+        
+#>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

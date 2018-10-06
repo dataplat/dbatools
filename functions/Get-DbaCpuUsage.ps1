@@ -1,65 +1,66 @@
 ﻿function Get-DbaCpuUsage {
-    <#
-        .SYNOPSIS
-            Provides detailed CPU usage information about a SQL Server's process
-
-        .DESCRIPTION
-            "If there are a lot of processes running on your instance and the CPU is very high,
-            then it's hard to find the exact process eating up your CPU using just the SQL Server
-            tools. One way to correlate the data between what is running within SQL Server and at
-            the Windows level is to use SPID and KPID values to get the exact process."
-
-            This command automates that process.
-
-            References: https://www.mssqltips.com/sqlservertip/2454/how-to-find-out-how-much-cpu-a-sql-server-process-is-really-using/
-
-            Note: This command returns results from all SQL instances on the destination server but the process
-            column is specific to -SqlInstance passed.
-
-        .PARAMETER SqlInstance
-            Allows you to specify a comma separated list of servers to query.
-
-        .PARAMETER SqlCredential
-            Allows you to login to the SQL instance using alternative credentials.
-
-        .PARAMETER Credential
-            Allows you to login to the Windows Server using alternative credentials.
-
-        .PARAMETER Threshold
-            CPU threshold.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: CPU
-            Author: Chrissy LeMaire (@cl), netnerds.net
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaCpuUsage
-
-        .EXAMPLE
-            PS C:\> Get-DbaCpuUsage -SqlInstance sql2017
-
-            Logs into the SQL Server instance "sql2017" and also the Computer itself (via WMI) to gather information
-
-        .EXAMPLE
-            PS C:\> $usage = Get-DbaCpuUsage -SqlInstance sql2017
-            PS C:\> $usage.Process
-
-            Explores the processes (from Get-DbaProcess) associated with the usage results
-
-        .EXAMPLE
-            PS C:\> Get-DbaCpuUsage -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin) -Credential (Get-Credential ad\sqldba)
-
-            Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
-    #>
+<#        
+    .SYNOPSIS
+        Provides detailed CPU usage information about a SQL Server's process
+        
+    .DESCRIPTION
+        "If there are a lot of processes running on your instance and the CPU is very high,
+        then it's hard to find the exact process eating up your CPU using just the SQL Server
+        tools. One way to correlate the data between what is running within SQL Server and at
+        the Windows level is to use SPID and KPID values to get the exact process."
+        
+        This command automates that process.
+        
+        References: https://www.mssqltips.com/sqlservertip/2454/how-to-find-out-how-much-cpu-a-sql-server-process-is-really-using/
+        
+        Note: This command returns results from all SQL instances on the destination server but the process
+        column is specific to -SqlInstance passed.
+        
+    .PARAMETER SqlInstance
+        Allows you to specify a comma separated list of servers to query.
+        
+    .PARAMETER SqlCredential
+        Allows you to login to the SQL instance using alternative credentials.
+        
+    .PARAMETER Credential
+        Allows you to login to the Windows Server using alternative credentials.
+        
+    .PARAMETER Threshold
+        CPU threshold.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: CPU
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaCpuUsage
+        
+    .EXAMPLE
+        PS C:\> Get-DbaCpuUsage -SqlInstance sql2017
+        
+        Logs into the SQL Server instance "sql2017" and also the Computer itself (via WMI) to gather information
+        
+    .EXAMPLE
+        PS C:\> $usage = Get-DbaCpuUsage -SqlInstance sql2017
+        PS C:\> $usage.Process
+        
+        Explores the processes (from Get-DbaProcess) associated with the usage results
+        
+    .EXAMPLE
+        PS C:\> Get-DbaCpuUsage -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin) -Credential (Get-Credential ad\sqldba)
+        
+        Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

@@ -1,84 +1,85 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Restore-DbaDbSnapshot {
-    <#
+<#        
     .SYNOPSIS
         Restores databases from snapshots
-
+        
     .DESCRIPTION
         Restores the database from the snapshot, discarding every modification made to the database
         NB: Restoring to a snapshot will result in every other snapshot of the same database to be dropped
         It also fixes some long-standing bugs in SQL Server when restoring from snapshots
-
+        
     .PARAMETER SqlInstance
         The SQL Server that you're connecting to
-
+        
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user
-
+        
     .PARAMETER Database
         Restores from the last snapshot databases with this names only. You can pass either Databases or Snapshots
-
+        
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
-
+        
     .PARAMETER Snapshot
         Restores databases from snapshots with this names only. You can pass either Databases or Snapshots
-
+        
     .PARAMETER InputObject
         Allows piping from other Snapshot commands
-
+        
     .PARAMETER Force
         If restoring from a snapshot involves dropping any other shapshot, you need to explicitly
         use -Force to let this command delete the ones not involved in the restore process.
         Also, -Force will forcibly kill all running queries that prevent the restore process.
-
+        
     .PARAMETER WhatIf
         Shows what would happen if the command were to run
-
+        
     .PARAMETER Confirm
         Prompts for confirmation of every step.
-
+        
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
+        
     .NOTES
         Tags: Snapshot, Backup, Restore, Database
         Author: niphlod
-
+        
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-
+        
     .LINK
         https://dbatools.io/Restore-DbaDbSnapshot
-
+        
     .EXAMPLE
         Restore-DbaDbSnapshot -SqlInstance sql2014 -Database HR, Accounting
-
+        
         Restores HR and Accounting databases using the latest snapshot available
-
+        
     .EXAMPLE
         Restore-DbaDbSnapshot -SqlInstance sql2014 -Database HR -Force
-
+        
         Restores HR database from latest snapshot and kills any active connections in the database on sql2014.
-
+        
     .EXAMPLE
         Get-DbaDbSnapshot -SqlInstance sql2016 -Database HR | Restore-DbaDbSnapshot -Force
-
+        
         Restores HR database from latest snapshot and kills any active connections in the database on sql2016.
-
+        
     .EXAMPLE
         Get-DbaDbSnapshot -SqlInstance sql2016 | Out-GridView -Passthru | Restore-DbaDbSnapshot
-
+        
         Allows the selection of snapshots on sql2016 to restore
-
+        
     .EXAMPLE
         Restore-DbaDbSnapshot -SqlInstance sql2014 -Snapshot HR_snap_20161201, Accounting_snap_20161101
-
+        
         Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101
-    #>
+        
+#>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]

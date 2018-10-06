@@ -1,134 +1,135 @@
-function Invoke-DbaDiagnosticQuery {
-    <#
+﻿function Invoke-DbaDiagnosticQuery {
+<#        
     .SYNOPSIS
-    Invoke-DbaDiagnosticQuery runs the scripts provided by Glenn Berry's DMV scripts on specified servers
-
+        Invoke-DbaDiagnosticQuery runs the scripts provided by Glenn Berry's DMV scripts on specified servers
+        
     .DESCRIPTION
-    This is the main function of the Sql Server Diagnostic Queries related functions in dbatools.
-    The diagnostic queries are developed and maintained by Glenn Berry and they can be found here along with a lot of documentation:
-    http://www.sqlskills.com/blogs/glenn/category/dmv-queries/
-
-    The most recent version of the diagnostic queries are included in the dbatools module.
-    But it is possible to download a newer set or a specific version to an alternative location and parse and run those scripts.
-    It will run all or a selection of those scripts on one or multiple servers and return the result as a PowerShell Object
-
+        This is the main function of the Sql Server Diagnostic Queries related functions in dbatools.
+        The diagnostic queries are developed and maintained by Glenn Berry and they can be found here along with a lot of documentation:
+        http://www.sqlskills.com/blogs/glenn/category/dmv-queries/
+        
+        The most recent version of the diagnostic queries are included in the dbatools module.
+        But it is possible to download a newer set or a specific version to an alternative location and parse and run those scripts.
+        It will run all or a selection of those scripts on one or multiple servers and return the result as a PowerShell Object
+        
     .PARAMETER SqlInstance
-    The target SQL Server. Can be either a string or SMO server
-
+        The target SQL Server. Can be either a string or SMO server
+        
     .PARAMETER SqlCredential
-    Allows alternative Windows or SQL login credentials to be used
-
+        Allows alternative Windows or SQL login credentials to be used
+        
     .PARAMETER Path
-    Alternate path for the diagnostic scripts
-
+        Alternate path for the diagnostic scripts
+        
     .PARAMETER Database
-    The database(s) to process. If unspecified, all databases will be processed
-
+        The database(s) to process. If unspecified, all databases will be processed
+        
     .PARAMETER ExcludeDatabase
-    The database(s) to exclude
-
+        The database(s) to exclude
+        
     .PARAMETER ExcludeQuery
-    The Queries to exclude
-
+        The Queries to exclude
+        
     .PARAMETER UseSelectionHelper
-    Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified.
-
+        Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified.
+        
     .PARAMETER QueryName
-    Only run specific query
-
+        Only run specific query
+        
     .PARAMETER InstanceOnly
-    Run only instance level queries
-
+        Run only instance level queries
+        
     .PARAMETER DatabaseSpecific
-    Run only database level queries
-
+        Run only database level queries
+        
     .PARAMETER NoQueryTextColumn
-    Use this switch to exclude the [Complete Query Text] column from relevant queries
-
+        Use this switch to exclude the [Complete Query Text] column from relevant queries
+        
     .PARAMETER NoPlanColumn
-    Use this switch to exclude the [Query Plan] column from relevant queries
-
+        Use this switch to exclude the [Query Plan] column from relevant queries
+        
     .PARAMETER NoColumnParsing
-    Does not parse the [Complete Query Text] and [Query Plan] columns and disregards the NoQueryTextColumn and NoColumnParsing switches
-
+        Does not parse the [Complete Query Text] and [Query Plan] columns and disregards the NoQueryTextColumn and NoColumnParsing switches
+        
     .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
     .PARAMETER Confirm
-    Prompts to confirm certain actions
-
+        Prompts to confirm certain actions
+        
     .PARAMETER WhatIf
-    Shows what would happen if the command would execute, but does not actually perform the command
-
+        Shows what would happen if the command would execute, but does not actually perform the command
+        
     .PARAMETER OutputPath
-    Directory to parsed diagnostict queries to. This will split them based on server, databasename, and query.
-
+        Directory to parsed diagnostict queries to. This will split them based on server, databasename, and query.
+        
     .PARAMETER ExportQueries
-    Use this switch to export the diagnostic queries to sql files. I
-    nstead of running the queries, the server will be evaluated to find the appropriate queries to run based on SQL Version.
-    These sql files will then be created in the OutputDirectory.
-
-
-
+        Use this switch to export the diagnostic queries to sql files. I
+        nstead of running the queries, the server will be evaluated to find the appropriate queries to run based on SQL Version.
+        These sql files will then be created in the OutputDirectory.
+        
+        
+        
     .NOTES
-    Tags: Database, DMV
-    Author: André Kamman (@AndreKamman), http://clouddba.io
-    Website: https://dbatools.io
-    Copyright: (c) 2018 by dbatools, licensed under MIT
-    License: MIT https://opensource.org/licenses/MIT
-
+        Tags: Database, DMV
+        Author: AndrÃ© Kamman (@AndreKamman), http://clouddba.io
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
     .LINK
-    https://dbatools.io/Invoke-DbaDiagnosticQuery
-
+        https://dbatools.io/Invoke-DbaDiagnosticQuery
+        
     .EXAMPLE
-    Invoke-DbaDiagnosticQuery -SqlInstance sql2016
-
-    Run the selection made by the user on the Sql Server instance specified.
-
+        Invoke-DbaDiagnosticQuery -SqlInstance sql2016
+        
+        Run the selection made by the user on the Sql Server instance specified.
+        
     .EXAMPLE
-    Invoke-DbaDiagnosticQuery -SqlInstance sql2016 -UseSelectionHelper | Export-DbaDiagnosticQuery -Path C:\temp\gboutput
-
-    Provides a gridview with all the queries to choose from and will run the selection made by the user on the SQL Server instance specified.
-    Then it will export the results to Export-DbaDiagnosticQuery.
-
+        Invoke-DbaDiagnosticQuery -SqlInstance sql2016 -UseSelectionHelper | Export-DbaDiagnosticQuery -Path C:\temp\gboutput
+        
+        Provides a gridview with all the queries to choose from and will run the selection made by the user on the SQL Server instance specified.
+        Then it will export the results to Export-DbaDiagnosticQuery.
+        
     .Example
-    # Exporting Queries To SQL Files
-    - Parse the appropriate diagnostic queries by connecting to server to get version matched queries
-    - Instead of running the diagnostic queries, export them to SQL files
-
-    # Export All Queries to Disk
-    Invoke-DbaDiagnosticQuery -sqlinstance localhost -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
-
-    # Export Database Specific Queries for all User Dbs
-    Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
-
-    # Export Database Specific Queries For One Target Database
-    Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
-
-    # Export Database Specific Queries For One Target Database and One Specific Query
-    Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries" -queryname 'Database-scoped Configurations'
-
-    # Choose Queries To Export
-    Invoke-DbaDiagnosticQuery -sqlinstance localhost -UseSelectionHelper
-
-    This will export with SqlInstance, DatabaseName, and QueryName as appropriate based on query.
-
+        # Exporting Queries To SQL Files
+        - Parse the appropriate diagnostic queries by connecting to server to get version matched queries
+        - Instead of running the diagnostic queries, export them to SQL files
+        
+        # Export All Queries to Disk
+        Invoke-DbaDiagnosticQuery -sqlinstance localhost -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+        
+        # Export Database Specific Queries for all User Dbs
+        Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+        
+        # Export Database Specific Queries For One Target Database
+        Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries"
+        
+        # Export Database Specific Queries For One Target Database and One Specific Query
+        Invoke-DbaDiagnosticQuery -sqlinstance localhost -DatabaseSpecific -DatabaseName 'tempdb' -ExportQueries -outputpath "C:\temp\DiagnosticQueries" -queryname 'Database-scoped Configurations'
+        
+        # Choose Queries To Export
+        Invoke-DbaDiagnosticQuery -sqlinstance localhost -UseSelectionHelper
+        
+        This will export with SqlInstance, DatabaseName, and QueryName as appropriate based on query.
+        
     .Example
-    # Export Queries (not run) as returned object
-
-    [System.Management.Automation.PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance localhost -whatif
-
-    Parse the appropriate diagnostic queries by connecting to server, and instead of running them, return as [pscustomobject[]] to work with further
-
+        # Export Queries (not run) as returned object
+        
+        [System.Management.Automation.PSObject[]]$results = Invoke-DbaDiagnosticQuery -SqlInstance localhost -whatif
+        
+        Parse the appropriate diagnostic queries by connecting to server, and instead of running them, return as [pscustomobject[]] to work with further
+        
     .Example
-    # Database Specific Handling
-    $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -queryname 'Database-scoped Configurations' -databasename $database
-
-    Run diagnostic queries targeted at specific database, and only run database level queries against this database.
-
-    #>
+        # Database Specific Handling
+        $results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance2 -DatabaseSpecific -queryname 'Database-scoped Configurations' -databasename $database
+        
+        Run diagnostic queries targeted at specific database, and only run database level queries against this database.
+        
+        
+#>
 
     [CmdletBinding(SupportsShouldProcess)]
     [outputtype([pscustomobject[]])]

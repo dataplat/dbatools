@@ -1,58 +1,59 @@
-function Restore-DbaDbCertificate {
-    <#
-        .SYNOPSIS
-            Imports certificates from .cer files using SMO.
-
-        .DESCRIPTION
-            Imports certificates from.cer files using SMO.
-
-        .PARAMETER SqlInstance
-            The SQL Server to create the certificates on.
-
-        .PARAMETER Path
-            The Path the contains the certificate and private key files. The path can be a directory or a specific certificate.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Password
-            Secure string used to decrypt the private key.
-
-        .PARAMETER EncryptionPassword
-            If specified this will be used to encrypt the private key.
-
-        .PARAMETER Database
-            The database where the certificate imports into. Defaults to master.
-
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
-
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Migration, Certificate
-            Author: Jess Pomfret (@jpomfret), jesspomfret.com
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .EXAMPLE
-            Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -Password (ConvertTo-SecureString -Force -AsPlainText GoodPass1234!!)
-
-            Restores all the certificates in the specified path, password is used to both decrypt and encrypt the private key.
-
-        .EXAMPLE
-            Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates\DatabaseTDE.cer -EncryptionType MasterKey -Password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
-
-            Restores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.
-    #>
+﻿function Restore-DbaDbCertificate {
+<#        
+    .SYNOPSIS
+        Imports certificates from .cer files using SMO.
+        
+    .DESCRIPTION
+        Imports certificates from.cer files using SMO.
+        
+    .PARAMETER SqlInstance
+        The SQL Server to create the certificates on.
+        
+    .PARAMETER Path
+        The Path the contains the certificate and private key files. The path can be a directory or a specific certificate.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Password
+        Secure string used to decrypt the private key.
+        
+    .PARAMETER EncryptionPassword
+        If specified this will be used to encrypt the private key.
+        
+    .PARAMETER Database
+        The database where the certificate imports into. Defaults to master.
+        
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+        
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Migration, Certificate
+        Author: Jess Pomfret (@jpomfret), jesspomfret.com
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .EXAMPLE
+        Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -Password (ConvertTo-SecureString -Force -AsPlainText GoodPass1234!!)
+        
+        Restores all the certificates in the specified path, password is used to both decrypt and encrypt the private key.
+        
+    .EXAMPLE
+        Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates\DatabaseTDE.cer -EncryptionType MasterKey -Password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+        
+        Restores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.
+        
+#>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [Parameter(Mandatory)]

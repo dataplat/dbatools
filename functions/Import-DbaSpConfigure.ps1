@@ -1,86 +1,87 @@
-function Import-DbaSpConfigure {
-    <#
-        .SYNOPSIS
-            Updates sp_configure settings on destination server.
-
-        .DESCRIPTION
-            Updates sp_configure settings on destination server.
-
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
-
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER SqlInstance
-            Specifies a SQL Server instance to set up sp_configure values on using a SQL file.
-
-        .PARAMETER SqlCredential
-            Use this SQL credential if you are setting up sp_configure values from a SQL file.
-
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Path
-            Specifies the path to a SQL script file holding sp_configure queries for each of the settings to be changed. Export-DbaSPConfigure creates a suitable file as its output.
-
-        .PARAMETER Force
-            If this switch is enabled, no version check between Source and Destination is performed. By default, the major and minor versions of Source and Destination must match when copying sp_configure settings.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .NOTES
-            Tags: SpConfig, Configure, Configuration
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Import-DbaSpConfigure
-
-        .INPUTS
-            None You cannot pipe objects to Import-DbaSpConfigure
-
-        .OUTPUTS
-            $true if success
-            $false if failure
-
-        .EXAMPLE
-            Import-DbaSpConfigure -Source sqlserver -Destination sqlcluster
-
-            Imports the sp_configure settings from the source server sqlserver and sets them on the sqlcluster server using Windows Authentication
-
-        .EXAMPLE
-            Import-DbaSpConfigure -Source sqlserver -Destination sqlcluster -Force
-
-            Imports the sp_configure settings from the source server sqlserver and sets them on the sqlcluster server using Windows Authentication. Will not do a version check between Source and Destination
-
-        .EXAMPLE
-            Import-DbaSpConfigure -Source sqlserver -Destination sqlcluster -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
-
-            Imports the sp_configure settings from the source server sqlserver and sets them on the sqlcluster server using the SQL credentials stored in the variables $SourceSqlCredential and $DestinationSqlCredential
-
-        .EXAMPLE
-            Import-DbaSpConfigure -SqlInstance sqlserver -Path .\spconfig.sql -SqlCredential $SqlCredential
-
-            Imports the sp_configure settings from the file .\spconfig.sql and sets them on the sqlserver server using the SQL credential stored in the variable $SqlCredential
-
-    #>
+﻿function Import-DbaSpConfigure {
+<#        
+    .SYNOPSIS
+        Updates sp_configure settings on destination server.
+        
+    .DESCRIPTION
+        Updates sp_configure settings on destination server.
+        
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER SqlInstance
+        Specifies a SQL Server instance to set up sp_configure values on using a SQL file.
+        
+    .PARAMETER SqlCredential
+        Use this SQL credential if you are setting up sp_configure values from a SQL file.
+        
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Path
+        Specifies the path to a SQL script file holding sp_configure queries for each of the settings to be changed. Export-DbaSPConfigure creates a suitable file as its output.
+        
+    .PARAMETER Force
+        If this switch is enabled, no version check between Source and Destination is performed. By default, the major and minor versions of Source and Destination must match when copying sp_configure settings.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        
+    .NOTES
+        Tags: SpConfig, Configure, Configuration
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Import-DbaSpConfigure
+        
+    .INPUTS
+        None You cannot pipe objects to Import-DbaSpConfigure
+        
+    .OUTPUTS
+        $true if success
+        $false if failure
+        
+    .EXAMPLE
+        Import-DbaSpConfigure -Source sqlserver -Destination sqlcluster
+        
+        Imports the sp_configure settings from the source server sqlserver and sets them on the sqlcluster server using Windows Authentication
+        
+    .EXAMPLE
+        Import-DbaSpConfigure -Source sqlserver -Destination sqlcluster -Force
+        
+        Imports the sp_configure settings from the source server sqlserver and sets them on the sqlcluster server using Windows Authentication. Will not do a version check between Source and Destination
+        
+    .EXAMPLE
+        Import-DbaSpConfigure -Source sqlserver -Destination sqlcluster -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
+        
+        Imports the sp_configure settings from the source server sqlserver and sets them on the sqlcluster server using the SQL credentials stored in the variables $SourceSqlCredential and $DestinationSqlCredential
+        
+    .EXAMPLE
+        Import-DbaSpConfigure -SqlInstance sqlserver -Path .\spconfig.sql -SqlCredential $SqlCredential
+        
+        Imports the sp_configure settings from the file .\spconfig.sql and sets them on the sqlserver server using the SQL credential stored in the variable $SqlCredential
+        
+        
+#>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [Parameter(ParameterSetName = "ServerCopy")]

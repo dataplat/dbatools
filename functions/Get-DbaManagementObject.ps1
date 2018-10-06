@@ -1,49 +1,50 @@
-function Get-DbaManagementObject {
-    <#
-        .SYNOPSIS
-            Gets SQL Mangaement Object versions installed on the machine.
-
-        .DESCRIPTION
-            The Get-DbaManagementObject returns an object with the Version and the
-            Add-Type Load Template for each version on the server.
-
-        .PARAMETER ComputerName
-            The name of the target you would like to check
-
-        .PARAMETER Credential
-            This command uses Windows credentials. This parameter allows you to connect remotely as a different user.
-
-        .PARAMETER VersionNumber
-            This is the specific version number you are looking for. The function will look
-            for that version only.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: SMO
-            Author: Ben Miller (@DBAduck - http://dbaduck.com)
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaManagementObject
-
-        .EXAMPLE
-            Get-DbaManagementObject
-
-            Returns all versions of SMO on the computer
-
-        .EXAMPLE
-            Get-DbaManagementObject -VersionNumber 13
-
-            Returns just the version specified. If the version does not exist then it will return nothing.
-
-    #>
+﻿function Get-DbaManagementObject {
+<#        
+    .SYNOPSIS
+        Gets SQL Mangaement Object versions installed on the machine.
+        
+    .DESCRIPTION
+        The Get-DbaManagementObject returns an object with the Version and the
+        Add-Type Load Template for each version on the server.
+        
+    .PARAMETER ComputerName
+        The name of the target you would like to check
+        
+    .PARAMETER Credential
+        This command uses Windows credentials. This parameter allows you to connect remotely as a different user.
+        
+    .PARAMETER VersionNumber
+        This is the specific version number you are looking for. The function will look
+        for that version only.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: SMO
+        Author: Ben Miller (@DBAduck - http://dbaduck.com)
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaManagementObject
+        
+    .EXAMPLE
+        Get-DbaManagementObject
+        
+        Returns all versions of SMO on the computer
+        
+    .EXAMPLE
+        Get-DbaManagementObject -VersionNumber 13
+        
+        Returns just the version specified. If the version does not exist then it will return nothing.
+        
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]

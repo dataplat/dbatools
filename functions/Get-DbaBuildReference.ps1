@@ -1,62 +1,63 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
+﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaBuildReference {
-    <#
-        .SYNOPSIS
-            Returns SQL Server Build infos on a SQL instance
-
-        .DESCRIPTION
-            Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, wherever possible.
-            It also includes End Of Support dates as specified on Microsoft Life Cycle Policy
-
-        .PARAMETER Build
-            Instead of connecting to a real instance, pass a string identifying the build to get the info back.
-
-        .PARAMETER SqlInstance
-            Target any number of instances, in order to return their build state.
-
-        .PARAMETER SqlCredential
-            When connecting to an instance, use the credentials specified.
-
-        .PARAMETER Update
-            Looks online for the most up to date reference, replacing the local one.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: SqlBuild
-            Author: Simone Bizzotto ( @niphlod )
-            Editor: Fred
-
-            Website: https://dbatools.io
-           Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaBuildReference
-
-        .EXAMPLE
-            PS C:\> Get-DbaBuildReference -Build "12.00.4502"
-
-            Returns information about a build identified by  "12.00.4502" (which is SQL 2014 with SP1 and CU11)
-
-        .EXAMPLE
-            PS C:\> Get-DbaBuildReference -Build "12.00.4502" -Update
-
-            Returns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten
-
-        .EXAMPLE
-            PS C:\> Get-DbaBuildReference -Build "12.0.4502","10.50.4260"
-
-            Returns information builds identified by these versions strings
-
-        .EXAMPLE
-            PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference
-
-            Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a
-    #>
+<#        
+    .SYNOPSIS
+        Returns SQL Server Build infos on a SQL instance
+        
+    .DESCRIPTION
+        Returns info about the specific build of a SQL instance, including the SP, the CU and the reference KB, wherever possible.
+        It also includes End Of Support dates as specified on Microsoft Life Cycle Policy
+        
+    .PARAMETER Build
+        Instead of connecting to a real instance, pass a string identifying the build to get the info back.
+        
+    .PARAMETER SqlInstance
+        Target any number of instances, in order to return their build state.
+        
+    .PARAMETER SqlCredential
+        When connecting to an instance, use the credentials specified.
+        
+    .PARAMETER Update
+        Looks online for the most up to date reference, replacing the local one.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: SqlBuild
+        Author: Simone Bizzotto ( @niphlod )
+        Editor: Fred
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaBuildReference
+        
+    .EXAMPLE
+        PS C:\> Get-DbaBuildReference -Build "12.00.4502"
+        
+        Returns information about a build identified by  "12.00.4502" (which is SQL 2014 with SP1 and CU11)
+        
+    .EXAMPLE
+        PS C:\> Get-DbaBuildReference -Build "12.00.4502" -Update
+        
+        Returns information about a build trying to fetch the most up to date index online. When the online version is newer, the local one gets overwritten
+        
+    .EXAMPLE
+        PS C:\> Get-DbaBuildReference -Build "12.0.4502","10.50.4260"
+        
+        Returns information builds identified by these versions strings
+        
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a | Get-DbaBuildReference
+        
+        Integrate with other cmdlets to have builds checked for all your registered servers on sqlserver2014a
+        
+#>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param (

@@ -1,64 +1,65 @@
-function Get-DbaDbSpace {
-    <#
-        .SYNOPSIS
-            Returns database file space information for database files on a SQL instance.
-
-        .DESCRIPTION
-            This function returns database file space information for a SQL Instance or group of SQL Instances. Information is based on a query against sys.database_files and the FILEPROPERTY function to query and return information.
-
-            File free space script borrowed and modified from Glenn Berry's DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)
-
-        .PARAMETER SqlInstance
-            Specifies the SQL Server instance(s) to scan.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Database
-            Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
-
-        .PARAMETER ExcludeDatabase
-            Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
-
-        .PARAMETER IncludeSystemDBs
-            If this switch is enabled, system databases will be processed. By default, only user databases are processed.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Database, Space, Storage
-            Author: Michael Fal (@Mike_Fal), http://mikefal.net
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaDbSpace
-
-        .EXAMPLE
-            PS C:\> Get-DbaDbSpace -SqlInstance localhost
-
-            Returns all user database files and free space information for the localhost.
-
-        .EXAMPLE
-            PS C:\> Get-DbaDbSpace -SqlInstance localhost | Where-Object {$_.PercentUsed -gt 80}
-
-            Returns all user database files and free space information for the local host. Filters the output object by any files that have a percent used of greater than 80%.
-
-        .EXAMPLE
-            PS C:\> 'localhost','localhost\namedinstance' | Get-DbaDbSpace
-
-            Returns all user database files and free space information for the localhost and localhost\namedinstance SQL Server instances. Processes data via the pipeline.
-
-        .EXAMPLE
-            PS C:\> Get-DbaDbSpace -SqlInstance localhost -Database db1, db2
-
-            Returns database files and free space information for the db1 and db2 on localhost.
-    #>
+﻿function Get-DbaDbSpace {
+<#        
+    .SYNOPSIS
+        Returns database file space information for database files on a SQL instance.
+        
+    .DESCRIPTION
+        This function returns database file space information for a SQL Instance or group of SQL Instances. Information is based on a query against sys.database_files and the FILEPROPERTY function to query and return information.
+        
+        File free space script borrowed and modified from Glenn Berry's DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)
+        
+    .PARAMETER SqlInstance
+        Specifies the SQL Server instance(s) to scan.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Database
+        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        
+    .PARAMETER ExcludeDatabase
+        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        
+    .PARAMETER IncludeSystemDBs
+        If this switch is enabled, system databases will be processed. By default, only user databases are processed.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Database, Space, Storage
+        Author: Michael Fal (@Mike_Fal), http://mikefal.net
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaDbSpace
+        
+    .EXAMPLE
+        PS C:\> Get-DbaDbSpace -SqlInstance localhost
+        
+        Returns all user database files and free space information for the localhost.
+        
+    .EXAMPLE
+        PS C:\> Get-DbaDbSpace -SqlInstance localhost | Where-Object {$_.PercentUsed -gt 80}
+        
+        Returns all user database files and free space information for the local host. Filters the output object by any files that have a percent used of greater than 80%.
+        
+    .EXAMPLE
+        PS C:\> 'localhost','localhost\namedinstance' | Get-DbaDbSpace
+        
+        Returns all user database files and free space information for the localhost and localhost\namedinstance SQL Server instances. Processes data via the pipeline.
+        
+    .EXAMPLE
+        PS C:\> Get-DbaDbSpace -SqlInstance localhost -Database db1, db2
+        
+        Returns database files and free space information for the db1 and db2 on localhost.
+        
+#>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
@@ -235,4 +236,3 @@ function Get-DbaDbSpace {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseSpace
     }
 }
-

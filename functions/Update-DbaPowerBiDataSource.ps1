@@ -1,34 +1,35 @@
 ﻿function Update-DbaPowerBiDataSource {
-    <#
-        .SYNOPSIS
-            Converts the results of dbatools commands for our PowerBI Dashboard related commands. This command is specific to our toolset and not a general Power BI command.
-
-        .DESCRIPTION
-            Converts the results of dbatools commands for our PowerBI Dashboard related commands. This command is specific to our toolset and not a general Power BI command.
-
-        .PARAMETER InputObject
-            Enables piping
-
-        .PARAMETER Path
-            The directory to store your files. "C:\windows\temp\dbatools\" by default
-
-        .PARAMETER Enviornment
-            Tag your data with an enviornment. Defaults to "Default"
-
-        .PARAMETER Append
-            Don't delete previous default data sources.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet -ComputerName sql2016 | Invoke-DbaPfRelog -AllowClobber | Update-DbaPowerBiDataSource | Start-DbaPowerBi
-
-            Converts the results of the performance monitor data source and stores it in the appropriate directory then launches our Power BI dashboard
-
-    #>
+<#        
+    .SYNOPSIS
+        Converts the results of dbatools commands for our PowerBI Dashboard related commands. This command is specific to our toolset and not a general Power BI command.
+        
+    .DESCRIPTION
+        Converts the results of dbatools commands for our PowerBI Dashboard related commands. This command is specific to our toolset and not a general Power BI command.
+        
+    .PARAMETER InputObject
+        Enables piping
+        
+    .PARAMETER Path
+        The directory to store your files. "C:\windows\temp\dbatools\" by default
+        
+    .PARAMETER Enviornment
+        Tag your data with an enviornment. Defaults to "Default"
+        
+    .PARAMETER Append
+        Don't delete previous default data sources.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .EXAMPLE
+        Get-DbaPfDataCollectorSet -ComputerName sql2016 | Invoke-DbaPfRelog -AllowClobber | Update-DbaPowerBiDataSource | Start-DbaPowerBi
+        
+        Converts the results of the performance monitor data source and stores it in the appropriate directory then launches our Power BI dashboard
+        
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline, Mandatory)]

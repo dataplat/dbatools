@@ -1,113 +1,114 @@
-function Remove-DbaDatabaseSafely {
-    <#
-        .SYNOPSIS
-            Safely removes a SQL Database and creates an Agent Job to restore it.
-
-        .DESCRIPTION
-            Performs a DBCC CHECKDB on the database, backs up the database with Checksum and verify only to a final (golden) backup location, creates an Agent Job to restore from that backup, drops the database, runs the agent job to restore the database, performs a DBCC CHECKDB and drops the database.
-
-            With huge thanks to Grant Fritchey and his verify your backups video. Take a look, it's only 3 minutes long. http://sqlps.io/backuprant
-
-        .PARAMETER SqlInstance
-            The SQL Server instance holding the databases to be removed. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Destination
-            If specified, Agent jobs will be created on this server. By default, the jobs will be created on the server specified by SqlInstance. You must have sysadmin access and the server must be SQL Server 2000 or higher. The SQL Agent service will be started if it is not already running.
-
-        .PARAMETER DestinationCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Database
-            Specifies one or more databases to remove.
-
-        .PARAMETER NoDbccCheckDb
-            If this switch is enabled, the initial DBCC CHECK DB will be skipped. This will make the process quicker but will also allow you to create an Agent job that restores a database backup containing a corrupt database.
-
-            A second DBCC CHECKDB is performed on the restored database so you will still be notified BUT USE THIS WITH CARE.
-
-        .PARAMETER BackupFolder
-            Specifies the path to a folder where the final backups of the removed databases will be stored. If you are using separate source and destination servers, you must specify a UNC path such as  \\SERVER1\BACKUPSHARE\
-
-        .PARAMETER JobOwner
-            Specifies the name of the account which will own the Agent jobs. By default, sa is used.
-
-        .PARAMETER UseDefaultFilePaths
-            If this switch is enabled, the default file paths for the data and log files on the instance where the database is restored will be used. By default, the original file paths will be used.
-
-        .PARAMETER CategoryName
-            Specifies the Category Name for the Agent job that is created for restoring the database(s). By default, the name is "Rationalisation".
-
-        .PARAMETER BackupCompression
-            If this switch is enabled, compression will be used for the backup regardless of the SQL Server instance setting. By default, the SQL Server instance setting for backup compression is used.
-
-        .PARAMETER AllDatabases
-            If this switch is enabled, all user databases on the server will be removed. This is useful when decommissioning a server. You should use a DestinationServer with this switch.
-
-        .PARAMETER ReuseSourceFolderStructure
-            If this switch is enabled, the source folder structure will be used when restoring instead of using the destination instance default folder structure.
-
-        .PARAMETER Force
-            If this switch is enabled, all actions will be performed even if DBCC errors are detected. An Agent job will be created with 'DBCCERROR' in the name and the backup file will have 'DBCC' in its name.
-
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Database, Remove
-            Author: Rob Sewell @SQLDBAWithBeard, sqldbawithabeard.com
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Remove-DbaDatabaseSafely
-
-        .EXAMPLE
-            Remove-DbaDatabaseSafely -SqlInstance 'Fade2Black' -Database RideTheLightning -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
-
-            Performs a DBCC CHECKDB on database RideTheLightning on server Fade2Black. If there are no errors, the database is backup to the folder C:\MSSQL\Backup\Rationalised - DO NOT DELETE. Then, an Agent job to restore the database from that backup is created. The database is then dropped, the Agent job to restore it run, a DBCC CHECKDB run against the restored database, and then it is dropped again.
-
-            Any DBCC errors will be written to your documents folder
-
-        .EXAMPLE
-            $Database = 'DemoNCIndex','RemoveTestDatabase'
-            Remove-DbaDatabaseSafely -SqlInstance 'Fade2Black' -Database $Database -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
-
-            Performs a DBCC CHECKDB on two databases, 'DemoNCIndex' and 'RemoveTestDatabase' on server Fade2Black. Then, an Agent job to restore each database from those backups is created. The databases are then dropped, the Agent jobs to restore them run, a DBCC CHECKDB run against the restored databases, and then they are dropped again.
-
-            Any DBCC errors will be written to your documents folder
-
-        .EXAMPLE
-            Remove-DbaDatabaseSafely -SqlInstance 'Fade2Black' -DestinationServer JusticeForAll -Database RideTheLightning -BackupFolder '\\BACKUPSERVER\BACKUPSHARE\MSSQL\Rationalised - DO NOT DELETE'
-
-            Performs a DBCC CHECKDB on database RideTheLightning on server Fade2Black. If there are no errors, the database is backup to the folder \\BACKUPSERVER\BACKUPSHARE\MSSQL\Rationalised - DO NOT DELETE . Then, an Agent job is created on server JusticeForAll to restore the database from that backup is created. The database is then dropped on Fade2Black, the Agent job to restore it on JusticeForAll is run, a DBCC CHECKDB run against the restored database, and then it is dropped from JusticeForAll.
-
-            Any DBCC errors will be written to your documents folder
-
-        .EXAMPLE
-            Remove-DbaDatabaseSafely -SqlInstance IronMaiden -Database $Database -DestinationServer TheWildHearts -BackupFolder Z:\Backups -NoDbccCheckDb -UseDefaultFilePaths -JobOwner 'THEBEARD\Rob'
-
-            For the databases $Database on the server IronMaiden a DBCC CHECKDB will not be performed before backing up the databases to the folder Z:\Backups. Then, an Agent job is created on server TheWildHearts with a Job Owner of THEBEARD\Rob to restore each database from that backup using the instance's default file paths. The database(s) is(are) then dropped on IronMaiden, the Agent job(s) run, a DBCC CHECKDB run on the restored database(s), and then the database(s) is(are) dropped.
-
-        .EXAMPLE
-            Remove-DbaDatabaseSafely -SqlInstance IronMaiden -Database $Database -DestinationServer TheWildHearts -BackupFolder Z:\Backups -UseDefaultFilePaths -ContinueAfterDbccError
-
-            The databases $Database on the server IronMaiden will be backed up the to the folder Z:\Backups. Then, an Agent job is created on server TheWildHearts with a Job Owner of THEBEARD\Rob to restore each database from that backup using the instance's default file paths. The database(s) is(are) then dropped on IronMaiden, the Agent job(s) run, a DBCC CHECKDB run on the restored database(s), and then the database(s) is(are) dropped.
-
-            If there is a DBCC Error, the function  will continue to perform rest of the actions and will create an Agent job with 'DBCCERROR' in the name and a Backup file with 'DBCCError' in the name.
-    #>
+﻿function Remove-DbaDatabaseSafely {
+<#        
+    .SYNOPSIS
+        Safely removes a SQL Database and creates an Agent Job to restore it.
+        
+    .DESCRIPTION
+        Performs a DBCC CHECKDB on the database, backs up the database with Checksum and verify only to a final (golden) backup location, creates an Agent Job to restore from that backup, drops the database, runs the agent job to restore the database, performs a DBCC CHECKDB and drops the database.
+        
+        With huge thanks to Grant Fritchey and his verify your backups video. Take a look, it's only 3 minutes long. http://sqlps.io/backuprant
+        
+    .PARAMETER SqlInstance
+        The SQL Server instance holding the databases to be removed. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Destination
+        If specified, Agent jobs will be created on this server. By default, the jobs will be created on the server specified by SqlInstance. You must have sysadmin access and the server must be SQL Server 2000 or higher. The SQL Agent service will be started if it is not already running.
+        
+    .PARAMETER DestinationCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Database
+        Specifies one or more databases to remove.
+        
+    .PARAMETER NoDbccCheckDb
+        If this switch is enabled, the initial DBCC CHECK DB will be skipped. This will make the process quicker but will also allow you to create an Agent job that restores a database backup containing a corrupt database.
+        
+        A second DBCC CHECKDB is performed on the restored database so you will still be notified BUT USE THIS WITH CARE.
+        
+    .PARAMETER BackupFolder
+        Specifies the path to a folder where the final backups of the removed databases will be stored. If you are using separate source and destination servers, you must specify a UNC path such as  \\SERVER1\BACKUPSHARE\
+        
+    .PARAMETER JobOwner
+        Specifies the name of the account which will own the Agent jobs. By default, sa is used.
+        
+    .PARAMETER UseDefaultFilePaths
+        If this switch is enabled, the default file paths for the data and log files on the instance where the database is restored will be used. By default, the original file paths will be used.
+        
+    .PARAMETER CategoryName
+        Specifies the Category Name for the Agent job that is created for restoring the database(s). By default, the name is "Rationalisation".
+        
+    .PARAMETER BackupCompression
+        If this switch is enabled, compression will be used for the backup regardless of the SQL Server instance setting. By default, the SQL Server instance setting for backup compression is used.
+        
+    .PARAMETER AllDatabases
+        If this switch is enabled, all user databases on the server will be removed. This is useful when decommissioning a server. You should use a DestinationServer with this switch.
+        
+    .PARAMETER ReuseSourceFolderStructure
+        If this switch is enabled, the source folder structure will be used when restoring instead of using the destination instance default folder structure.
+        
+    .PARAMETER Force
+        If this switch is enabled, all actions will be performed even if DBCC errors are detected. An Agent job will be created with 'DBCCERROR' in the name and the backup file will have 'DBCC' in its name.
+        
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Database, Remove
+        Author: Rob Sewell @SQLDBAWithBeard, sqldbawithabeard.com
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Remove-DbaDatabaseSafely
+        
+    .EXAMPLE
+        Remove-DbaDatabaseSafely -SqlInstance 'Fade2Black' -Database RideTheLightning -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
+        
+        Performs a DBCC CHECKDB on database RideTheLightning on server Fade2Black. If there are no errors, the database is backup to the folder C:\MSSQL\Backup\Rationalised - DO NOT DELETE. Then, an Agent job to restore the database from that backup is created. The database is then dropped, the Agent job to restore it run, a DBCC CHECKDB run against the restored database, and then it is dropped again.
+        
+        Any DBCC errors will be written to your documents folder
+        
+    .EXAMPLE
+        $Database = 'DemoNCIndex','RemoveTestDatabase'
+        Remove-DbaDatabaseSafely -SqlInstance 'Fade2Black' -Database $Database -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
+        
+        Performs a DBCC CHECKDB on two databases, 'DemoNCIndex' and 'RemoveTestDatabase' on server Fade2Black. Then, an Agent job to restore each database from those backups is created. The databases are then dropped, the Agent jobs to restore them run, a DBCC CHECKDB run against the restored databases, and then they are dropped again.
+        
+        Any DBCC errors will be written to your documents folder
+        
+    .EXAMPLE
+        Remove-DbaDatabaseSafely -SqlInstance 'Fade2Black' -DestinationServer JusticeForAll -Database RideTheLightning -BackupFolder '\\BACKUPSERVER\BACKUPSHARE\MSSQL\Rationalised - DO NOT DELETE'
+        
+        Performs a DBCC CHECKDB on database RideTheLightning on server Fade2Black. If there are no errors, the database is backup to the folder \\BACKUPSERVER\BACKUPSHARE\MSSQL\Rationalised - DO NOT DELETE . Then, an Agent job is created on server JusticeForAll to restore the database from that backup is created. The database is then dropped on Fade2Black, the Agent job to restore it on JusticeForAll is run, a DBCC CHECKDB run against the restored database, and then it is dropped from JusticeForAll.
+        
+        Any DBCC errors will be written to your documents folder
+        
+    .EXAMPLE
+        Remove-DbaDatabaseSafely -SqlInstance IronMaiden -Database $Database -DestinationServer TheWildHearts -BackupFolder Z:\Backups -NoDbccCheckDb -UseDefaultFilePaths -JobOwner 'THEBEARD\Rob'
+        
+        For the databases $Database on the server IronMaiden a DBCC CHECKDB will not be performed before backing up the databases to the folder Z:\Backups. Then, an Agent job is created on server TheWildHearts with a Job Owner of THEBEARD\Rob to restore each database from that backup using the instance's default file paths. The database(s) is(are) then dropped on IronMaiden, the Agent job(s) run, a DBCC CHECKDB run on the restored database(s), and then the database(s) is(are) dropped.
+        
+    .EXAMPLE
+        Remove-DbaDatabaseSafely -SqlInstance IronMaiden -Database $Database -DestinationServer TheWildHearts -BackupFolder Z:\Backups -UseDefaultFilePaths -ContinueAfterDbccError
+        
+        The databases $Database on the server IronMaiden will be backed up the to the folder Z:\Backups. Then, an Agent job is created on server TheWildHearts with a Job Owner of THEBEARD\Rob to restore each database from that backup using the instance's default file paths. The database(s) is(are) then dropped on IronMaiden, the Agent job(s) run, a DBCC CHECKDB run on the restored database(s), and then the database(s) is(are) dropped.
+        
+        If there is a DBCC Error, the function  will continue to perform rest of the actions and will create an Agent job with 'DBCCERROR' in the name and a Backup file with 'DBCCError' in the name.
+        
+#>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

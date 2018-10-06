@@ -1,55 +1,56 @@
-function Remove-DbaDbCertificate {
-    <#
-.SYNOPSIS
-Deletes specified database certificate
-
-.DESCRIPTION
-Deletes specified database certificate
-
-.PARAMETER SqlInstance
-The SQL Server to create the certificates on.
-
-.PARAMETER SqlCredential
-Allows you to login to SQL Server using alternative credentials.
-
-.PARAMETER Database
-The database where the certificate will be removed.
-
-.PARAMETER Certificate
-The certificate that will be removed
-
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
-
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
-
-.PARAMETER EnableException
+﻿function Remove-DbaDbCertificate {
+<#        
+    .SYNOPSIS
+        Deletes specified database certificate
+        
+    .DESCRIPTION
+        Deletes specified database certificate
+        
+    .PARAMETER SqlInstance
+        The SQL Server to create the certificates on.
+        
+    .PARAMETER SqlCredential
+        Allows you to login to SQL Server using alternative credentials.
+        
+    .PARAMETER Database
+        The database where the certificate will be removed.
+        
+    .PARAMETER Certificate
+        The certificate that will be removed
+        
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+        
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+        
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-.PARAMETER InputObject
-Piped certificate objects
-
-.NOTES
-Tags: Certificate
-Author: Chrissy LeMaire (@cl), netnerds.net
-Website: https://dbatools.io
-Copyright: (c) 2018 by dbatools, licensed under MIT
-License: MIT https://opensource.org/licenses/MIT
-
-.EXAMPLE
-Remove-DbaDbCertificate -SqlInstance Server1
-
-The certificate in the master database on server1 will be removed if it exists.
-
-.EXAMPLE
-Remove-DbaDbCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
-
-Suppresses all prompts to remove the certificate in the 'db1' database and drops the key.
-
-
+        
+    .PARAMETER InputObject
+        Piped certificate objects
+        
+    .NOTES
+        Tags: Certificate
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .EXAMPLE
+        Remove-DbaDbCertificate -SqlInstance Server1
+        
+        The certificate in the master database on server1 will be removed if it exists.
+        
+    .EXAMPLE
+        Remove-DbaDbCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
+        
+        Suppresses all prompts to remove the certificate in the 'db1' database and drops the key.
+        
+        
+        
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (

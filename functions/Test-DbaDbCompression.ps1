@@ -1,5 +1,5 @@
-function Test-DbaDbCompression {
-    <#
+﻿function Test-DbaDbCompression {
+<#        
     .SYNOPSIS
         Returns tables and indexes with preferred compression setting.
     .DESCRIPTION
@@ -7,7 +7,7 @@ function Test-DbaDbCompression {
         This function returns the estimated best option to date for either NONE, Page, or Row Compression.
         Remember Uptime is critical, the longer uptime, the more accurate the analysis is.
         You would probably be best if you utilized Get-DbaUptime first, before running this command.
-
+        
         Test-DbaDbCompression script derived from GitHub and the tigertoolbox
         (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
         In the output, you will find the following information:
@@ -23,130 +23,131 @@ function Test-DbaDbCompression {
         but this is where knowing your workload is essential. When the output is 'NO_GAIN' well, that means that according
         to sp_estimate_data_compression_savings no space gains will be attained when compressing, as in the above output example,
         where compressing would grow the affected object.
-
+        
         Note: This script will execute on the context of the current database.
         Also be aware that this may take a while to execute on large objects, because if the IS locks taken by the
         sp_estimate_data_compression_savings cannot be honored, the SP will be blocked.
         It only considers Row or Page Compression (not column compression)
         It only evaluates User Tables
-
-
+        
+        
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
-
+        
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
+        
     .PARAMETER Database
         The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
-
+        
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is autopopulated from the server
-
+        
     .PARAMETER Schema
         Filter to only get specific schemas If unspecified, all schemas will be processed.
-
+        
     .PARAMETER Table
         Filter to only get specific tables If unspecified, all User tables will be processed.
-
+        
     .PARAMETER ResultSize
         Allows you to limit the number of results returned, as some systems can have very large number of tables.  Default value is no restriction.
-
+        
     .PARAMETER Rank
         Allows you to specify the field used for ranking when determining the ResultSize
         Can be either TotalPages, UsedPages or TotalRows with default of TotalPages. Only applies when ResultSize is used.
-
+        
     .PARAMETER FilterBy
         Allows you to specify level of filtering when determining the ResultSize
         Can be at either Table, Index or Partition level with default of Partition. Only applies when ResultSize is used.
-
+        
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
+        
     .INPUTS
         Accepts a DbaInstanceParameter. Any collection of SQL Server Instance names or SMO objects can be piped to command.
-
+        
     .OUTPUTS
         Returns a PsCustomObject with following fields: ComputerName, InstanceName, SqlInstance, Database, IndexName, Partition, IndexID, PercentScan, PercentUpdate, RowEstimatePercentOriginal, PageEstimatePercentOriginal, CompressionTypeRecommendation, SizeCurrent, SizeRequested, PercentCompression
-
+        
     .NOTES
         Author: Jason Squires (@js_0505, jstexasdba@gmail.com)
         Tags: Compression, Table, Database
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-
+        
     .LINK
         https://dbatools.io/Test-DbaDbCompression
-
+        
     .EXAMPLE
         Test-DbaDbCompression -SqlInstance localhost
-
+        
         Returns results of all potential compression options for all databases for the default instance on the local host. Returns a recommendation of either Page, Row or NO_GAIN
-
+        
     .EXAMPLE
         Test-DbaDbCompression -SqlInstance ServerA
-
+        
         Returns results of all potential compression options for all databases on the instance ServerA
-
+        
     .EXAMPLE
         Test-DbaDbCompression -SqlInstance ServerA -Database DBName | Out-GridView
-
+        
         Returns results of all potential compression options for a single database DBName with the recommendation of either Page or Row or NO_GAIN in a nicely formatted GridView
-
+        
     .EXAMPLE
         $cred = Get-Credential sqladmin
         Test-DbaDbCompression -SqlInstance ServerA -ExcludeDatabase MyDatabase -SqlCredential $cred
-
+        
         Returns results of all potential compression options for all databases except MyDatabase on instance ServerA using SQL credentials to authentication to ServerA.
         Returns the recommendation of either Page, Row or NO_GAIN
-
+        
     .EXAMPLE
         Test-DbaDbCompression -SqlInstance ServerA -Schema Test -Table MyTable
-
+        
         Returns results of all potential compression options for the Table Test.MyTable in instance ServerA on ServerA and ServerB.
         Returns the recommendation of either Page, Row or NO_GAIN.
         Returns a result for each partiton of any Heap, Clustered or NonClustered index.
-
+        
     .EXAMPLE
         Test-DbaDbCompression -SqlInstance ServerA, ServerB -ResultSize 10
-
+        
         Returns results of all potential compression options for all databases on ServerA and ServerB.
         Returns the recommendation of either Page, Row or NO_GAIN.
         Returns results for the top 10 partitions by TotalPages used per database.
-
+        
     .EXAMPLE
         ServerA | Test-DbaDbCompression -Schema Test -ResultSize 10 -Rank UsedPages -FilterBy Table
-
+        
         Returns results of all potential compression options for all databases on ServerA containing a schema Test
         Returns results for the top 10 Tables by Used Pages per database.
         Results are split by Table, Index and Partition so more than 10 results may be returned.
-
+        
     .EXAMPLE
         $servers = 'Server1','Server2'
         $servers | Test-DbaDbCompression -Database DBName | Out-GridView
-
+        
         Returns results of all potential compression options for a single database DBName on Server1 or Server2
         Returns the recommendation of either Page, Row or NO_GAIN in a nicely formatted GridView
-
+        
     .EXAMPLE
         $cred = Get-Credential sqladmin
-
+        
         Test-DbaDbCompression -SqlInstance ServerA -Database MyDB -SqlCredential $cred -Schema Test -Table Test1, Test2
-
+        
         Returns results of all potential compression options for objects in Database MyDb on instance ServerA using SQL credentials to authentication to ServerA.
         Returns the recommendation of either Page, Row or NO_GAIN for tables with SchemA Test and name in Test1 or Test2
-
+        
     .EXAMPLE
         $servers = 'Server1','Server2'
         foreach ($svr in $servers)
         {
-            Test-DbaDbCompression -SqlInstance $svr | Export-Csv -Path C:\temp\CompressionAnalysisPAC.csv -Append
+        Test-DbaDbCompression -SqlInstance $svr | Export-Csv -Path C:\temp\CompressionAnalysisPAC.csv -Append
         }
-
+        
         This produces a full analysis of all your servers listed and is pushed to a csv for you to analyze.
+        
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (

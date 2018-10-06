@@ -1,66 +1,67 @@
-function Repair-DbaServerName {
-    <#
-        .SYNOPSIS
-            Renames @@SERVERNAME to match with the Windows name.
-
-        .DESCRIPTION
-            When a SQL Server's host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.
-
-            This command renames @@SERVERNAME to match with the Windows name. The new name is automatically determined. It does not matter if you use an alias to connect to the SQL instance.
-
-            If the automatically determined new name matches the old name, the command will not run.
-
-            https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
-
-        .PARAMETER SqlInstance
-            The SQL Server that you're connecting to.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER AutoFix
-            If this switch is enabled, the repair will be performed automatically.
-
-        .PARAMETER Force
-            If this switch is enabled, most confirmation prompts will be skipped.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .NOTES
-            Tags: SPN
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Repair-DbaServerName
-
-        .EXAMPLE
-            Repair-DbaServerName -SqlInstance sql2014
-
-            Checks to see if the server name is updatable and changes the name with a number of prompts.
-
-        .EXAMPLE
-            Repair-DbaServerName -SqlInstance sql2014 -AutoFix
-
-            Checks to see if the server name is updatable and automatically performs the change. Replication or mirroring will be broken if necessary.
-
-        .EXAMPLE
-            Repair-DbaServerName -SqlInstance sql2014 -AutoFix -Force
-
-            Checks to see if the server name is updatable and automatically performs the change, bypassing most prompts and confirmations. Replication or mirroring will be broken if necessary.
-    #>
+﻿function Repair-DbaServerName {
+<#        
+    .SYNOPSIS
+        Renames @@SERVERNAME to match with the Windows name.
+        
+    .DESCRIPTION
+        When a SQL Server's host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.
+        
+        This command renames @@SERVERNAME to match with the Windows name. The new name is automatically determined. It does not matter if you use an alias to connect to the SQL instance.
+        
+        If the automatically determined new name matches the old name, the command will not run.
+        
+        https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
+        
+    .PARAMETER SqlInstance
+        The SQL Server that you're connecting to.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER AutoFix
+        If this switch is enabled, the repair will be performed automatically.
+        
+    .PARAMETER Force
+        If this switch is enabled, most confirmation prompts will be skipped.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+        
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        
+    .NOTES
+        Tags: SPN
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Repair-DbaServerName
+        
+    .EXAMPLE
+        Repair-DbaServerName -SqlInstance sql2014
+        
+        Checks to see if the server name is updatable and changes the name with a number of prompts.
+        
+    .EXAMPLE
+        Repair-DbaServerName -SqlInstance sql2014 -AutoFix
+        
+        Checks to see if the server name is updatable and automatically performs the change. Replication or mirroring will be broken if necessary.
+        
+    .EXAMPLE
+        Repair-DbaServerName -SqlInstance sql2014 -AutoFix -Force
+        
+        Checks to see if the server name is updatable and automatically performs the change, bypassing most prompts and confirmations. Replication or mirroring will be broken if necessary.
+        
+#>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

@@ -1,38 +1,39 @@
-function Get-DbaServerTrigger {
-    <#
-        .SYNOPSIS
-            Get all existing server triggers on one or more SQL instances.
-
-        .DESCRIPTION
-            Get all existing server triggers on one or more SQL instances.
-
-        .PARAMETER SqlInstance
-            The SQL Instance that you're connecting to.
-
-        .PARAMETER SqlCredential
-            SqlCredential object used to connect to the SQL Server as a different user.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Database, Trigger
-            Author: Chrissy LeMaire (@cl), netnerds.net
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaServerTrigger
-
-        .EXAMPLE
-            PS C:\> Get-DbaServerTrigger -SqlInstance sql2017
-
-            Returns all server triggers on sql2017
-    #>
+﻿function Get-DbaServerTrigger {
+<#        
+    .SYNOPSIS
+        Get all existing server triggers on one or more SQL instances.
+        
+    .DESCRIPTION
+        Get all existing server triggers on one or more SQL instances.
+        
+    .PARAMETER SqlInstance
+        The SQL Instance that you're connecting to.
+        
+    .PARAMETER SqlCredential
+        SqlCredential object used to connect to the SQL Server as a different user.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Database, Trigger
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaServerTrigger
+        
+    .EXAMPLE
+        PS C:\> Get-DbaServerTrigger -SqlInstance sql2017
+        
+        Returns all server triggers on sql2017
+        
+#>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]

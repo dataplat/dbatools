@@ -1,83 +1,84 @@
-#ValidationTags#FlowControl,Pipeline#
+﻿#ValidationTags#FlowControl,Pipeline#
 function Find-DbaOrphanedFile {
-    <#
-        .SYNOPSIS
-            Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
-
-        .DESCRIPTION
-            This command searches all directories associated with SQL database files for database files that are not currently in use by the SQL Server instance.
-
-            By default, it looks for orphaned .mdf, .ldf and .ndf files in the root\data directory, the default data path, the default log path, the system paths and any directory in use by any attached directory.
-
-            You can specify additional filetypes using the -FileType parameter, and additional paths to search using the -Path parameter.
-
-        .PARAMETER SqlInstance
-            The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Path
-            Specifies one or more directories to search in addition to the default data and log directories.
-
-        .PARAMETER FileType
-            Specifies file extensions other than mdf, ldf and ndf to search for. Do not include the dot (".") when specifying the extension.
-
-        .PARAMETER LocalOnly
-            If this switch is enabled, only local filenames will be returned. Using this switch with multiple servers is not recommended since it does not return the associated server name.
-
-        .PARAMETER RemoteOnly
-            If this switch is enabled, only remote filenames will be returned.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Orphan, Database, DatabaseFile
-            Author: Sander Stad (@sqlstad), sqlstad.nl
-            Requires: sysadmin access on SQL Servers
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-            Thanks to Paul Randal's notes on FILESTREAM which can be found at http://www.sqlskills.com/blogs/paul/filestream-directory-structure/
-
-        .LINK
-            https://dbatools.io/Find-DbaOrphanedFile
-
-        .EXAMPLE
-            PS C:\> Find-DbaOrphanedFile -SqlInstance sqlserver2014a
-
-            Connects to sqlserver2014a, authenticating with Windows credentials, and searches for orphaned files. Returns server name, local filename, and unc path to file.
-
-        .EXAMPLE
-            PS C:\> Find-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred
-
-            Connects to sqlserver2014a, authenticating with SQL Server authentication, and searches for orphaned files. Returns server name, local filename, and unc path to file.
-
-        .EXAMPLE
-            PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -Path 'E:\Dir1', 'E:\Dir2'
-
-            Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
-
-        .EXAMPLE
-            PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly
-
-            Returns only the local file paths for orphaned files.
-
-        .EXAMPLE
-            PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly
-
-            Returns only the remote file path for orphaned files.
-
-        .EXAMPLE
-            PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld
-
-            Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
-    #>
+<#        
+    .SYNOPSIS
+        Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
+        
+    .DESCRIPTION
+        This command searches all directories associated with SQL database files for database files that are not currently in use by the SQL Server instance.
+        
+        By default, it looks for orphaned .mdf, .ldf and .ndf files in the root\data directory, the default data path, the default log path, the system paths and any directory in use by any attached directory.
+        
+        You can specify additional filetypes using the -FileType parameter, and additional paths to search using the -Path parameter.
+        
+    .PARAMETER SqlInstance
+        The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Path
+        Specifies one or more directories to search in addition to the default data and log directories.
+        
+    .PARAMETER FileType
+        Specifies file extensions other than mdf, ldf and ndf to search for. Do not include the dot (".") when specifying the extension.
+        
+    .PARAMETER LocalOnly
+        If this switch is enabled, only local filenames will be returned. Using this switch with multiple servers is not recommended since it does not return the associated server name.
+        
+    .PARAMETER RemoteOnly
+        If this switch is enabled, only remote filenames will be returned.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Orphan, Database, DatabaseFile
+        Author: Sander Stad (@sqlstad), sqlstad.nl
+        Requires: sysadmin access on SQL Servers
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+        Thanks to Paul Randal's notes on FILESTREAM which can be found at http://www.sqlskills.com/blogs/paul/filestream-directory-structure/
+        
+    .LINK
+        https://dbatools.io/Find-DbaOrphanedFile
+        
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sqlserver2014a
+        
+        Connects to sqlserver2014a, authenticating with Windows credentials, and searches for orphaned files. Returns server name, local filename, and unc path to file.
+        
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred
+        
+        Connects to sqlserver2014a, authenticating with SQL Server authentication, and searches for orphaned files. Returns server name, local filename, and unc path to file.
+        
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -Path 'E:\Dir1', 'E:\Dir2'
+        
+        Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
+        
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly
+        
+        Returns only the local file paths for orphaned files.
+        
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly
+        
+        Returns only the remote file path for orphaned files.
+        
+    .EXAMPLE
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld
+        
+        Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

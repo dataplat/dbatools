@@ -1,87 +1,88 @@
-function Copy-DbaCredential {
-    <#
-        .SYNOPSIS
-            Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another while maintaining Credential passwords.
-
-        .DESCRIPTION
-            By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another while maintaining username and password.
-
-            Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
-
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Credential
-             This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
-
-        .PARAMETER Name
-            Only include specific names
-            Note: if spaces exist in the credential name, you will have to type "" or '' around it.
-
-        .PARAMETER ExcludeName
-            Excluded credential names
-
-        .PARAMETER Identity
-            Only include specific identities
-            Note: if spaces exist in the credential identity, you will have to type "" or '' around it.
-
-        .PARAMETER ExcludeIdentity
-            Excluded identities
-
-        .PARAMETER Force
-            If this switch is enabled, the Credential will be dropped and recreated if it already exists on Destination.
-
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: WSMan, Migration
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires:
-                - PowerShell Version 3.0, SQL Server SMO,
-                - Administrator access on Windows
-                - sysadmin access on SQL Server.
-                - DAC access enabled for local (default)
-            Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Copy-DbaCredential
-
-        .EXAMPLE
-            PS C:\> Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster
-
-            Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If Credentials exist on destination, they will be skipped.
-
-        .EXAMPLE
-            PS C:\> Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -Name "PowerShell Proxy Account" -Force
-
-            Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the Credential already exists on the destination, it will be dropped and recreated.
-    #>
+﻿function Copy-DbaCredential {
+<#        
+    .SYNOPSIS
+        Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another while maintaining Credential passwords.
+        
+    .DESCRIPTION
+        By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another while maintaining username and password.
+        
+        Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Credential
+        This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
+        
+    .PARAMETER Name
+        Only include specific names
+        Note: if spaces exist in the credential name, you will have to type "" or '' around it.
+        
+    .PARAMETER ExcludeName
+        Excluded credential names
+        
+    .PARAMETER Identity
+        Only include specific identities
+        Note: if spaces exist in the credential identity, you will have to type "" or '' around it.
+        
+    .PARAMETER ExcludeIdentity
+        Excluded identities
+        
+    .PARAMETER Force
+        If this switch is enabled, the Credential will be dropped and recreated if it already exists on Destination.
+        
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: WSMan, Migration
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Requires:
+        - PowerShell Version 3.0, SQL Server SMO,
+        - Administrator access on Windows
+        - sysadmin access on SQL Server.
+        - DAC access enabled for local (default)
+        Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Copy-DbaCredential
+        
+    .EXAMPLE
+        PS C:\> Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster
+        
+        Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If Credentials exist on destination, they will be skipped.
+        
+    .EXAMPLE
+        PS C:\> Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -Name "PowerShell Proxy Account" -Force
+        
+        Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the Credential already exists on the destination, it will be dropped and recreated.
+        
+#>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory)]

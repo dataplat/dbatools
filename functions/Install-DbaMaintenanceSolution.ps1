@@ -1,106 +1,107 @@
-#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
+﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Install-DbaMaintenanceSolution {
-    <#
-        .SYNOPSIS
-            Download and Install SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)
-        .DESCRIPTION
-            This script will download and install the latest version of SQL Server Maintenance Solution created by Ola Hallengren
-
-        .PARAMETER SqlInstance
-            The target SQL Server instance onto which the Maintenance Solution will be installed.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Database
-            The database where Ola Hallengren's solution will be installed. Defaults to master.
-
-        .PARAMETER BackupLocation
-            Location of the backup root directory. If this is not supplied, the default backup directory will be used.
-
-        .PARAMETER CleanupTime
-            Time in hours, after which backup files are deleted.
-
-        .PARAMETER OutputFileDirectory
-            Specify the output file directory where the Maintenance Solution will write to.
-
-        .PARAMETER ReplaceExisting
-            If this switch is enabled, objects already present in the target database will be dropped and recreated.
-
-        .PARAMETER LogToTable
-            If this switch is enabled, the Maintenance Solution will be configured to log commands to a table.
-
-        .PARAMETER Solution
-            Specifies which portion of the Maintenance solution to install. Valid values are All (full solution), Backup, IntegrityCheck and IndexOptimize.
-
-        .PARAMETER InstallJobs
-            If this switch is enabled, the corresponding SQL Agent Jobs will be created.
-
-        .PARAMETER LocalFile
-            Specifies the path to a local file to install Ola's solution from. This *should* be the zipfile as distributed by the maintainers.
-            If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/olahallengren/sql-server-maintenance-solution
-
-        .PARAMETER Force
-            If this switch is enabled, the Ola's solution will be downloaded from the internet even if previously cached.
-
-       .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Ola, Maintenance
-            Author: Viorel Ciucu, viorel.ciucu@gmail.com, cviorel.com
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            http://dbatools.io/Install-DbaMaintenanceSolution
-
-        .EXAMPLE
-            Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72
-
-            Installs Ola Hallengren's Solution objects on RES14224 in the DBA database.
-            Backups will default to the default Backup Directory.
-            If the Maintenance Solution already exists, the script will be halted.
-
-        .EXAMPLE
-            Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72
-
-            This will create the Ola Hallengren's Solution objects. Existing objects are not affected in any way.
-
-        .EXAMPLE
-            Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting
-
-            This will drop and then recreate the Ola Hallengren's Solution objects
-            The cleanup script will drop and recreate:
-                - TABLE [dbo].[CommandLog]
-                - STORED PROCEDURE [dbo].[CommandExecute]
-                - STORED PROCEDURE [dbo].[DatabaseBackup]
-                - STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]
-                - STORED PROCEDURE [dbo].[IndexOptimize]
-
-            The following SQL Agent jobs will be deleted:
-                - 'Output File Cleanup'
-                - 'IndexOptimize - USER_DATABASES'
-                - 'sp_delete_backuphistory'
-                - 'DatabaseBackup - USER_DATABASES - LOG'
-                - 'DatabaseBackup - SYSTEM_DATABASES - FULL'
-                - 'DatabaseBackup - USER_DATABASES - FULL'
-                - 'sp_purge_jobhistory'
-                - 'DatabaseIntegrityCheck - SYSTEM_DATABASES'
-                - 'CommandLog Cleanup'
-                - 'DatabaseIntegrityCheck - USER_DATABASES'
-                - 'DatabaseBackup - USER_DATABASES - DIFF'
-    #>
+<#        
+    .SYNOPSIS
+        Download and Install SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)
+    .DESCRIPTION
+        This script will download and install the latest version of SQL Server Maintenance Solution created by Ola Hallengren
+        
+    .PARAMETER SqlInstance
+        The target SQL Server instance onto which the Maintenance Solution will be installed.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Database
+        The database where Ola Hallengren's solution will be installed. Defaults to master.
+        
+    .PARAMETER BackupLocation
+        Location of the backup root directory. If this is not supplied, the default backup directory will be used.
+        
+    .PARAMETER CleanupTime
+        Time in hours, after which backup files are deleted.
+        
+    .PARAMETER OutputFileDirectory
+        Specify the output file directory where the Maintenance Solution will write to.
+        
+    .PARAMETER ReplaceExisting
+        If this switch is enabled, objects already present in the target database will be dropped and recreated.
+        
+    .PARAMETER LogToTable
+        If this switch is enabled, the Maintenance Solution will be configured to log commands to a table.
+        
+    .PARAMETER Solution
+        Specifies which portion of the Maintenance solution to install. Valid values are All (full solution), Backup, IntegrityCheck and IndexOptimize.
+        
+    .PARAMETER InstallJobs
+        If this switch is enabled, the corresponding SQL Agent Jobs will be created.
+        
+    .PARAMETER LocalFile
+        Specifies the path to a local file to install Ola's solution from. This *should* be the zipfile as distributed by the maintainers.
+        If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/olahallengren/sql-server-maintenance-solution
+        
+    .PARAMETER Force
+        If this switch is enabled, the Ola's solution will be downloaded from the internet even if previously cached.
+        
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Ola, Maintenance
+        Author: Viorel Ciucu, viorel.ciucu@gmail.com, cviorel.com
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        http://dbatools.io/Install-DbaMaintenanceSolution
+        
+    .EXAMPLE
+        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72
+        
+        Installs Ola Hallengren's Solution objects on RES14224 in the DBA database.
+        Backups will default to the default Backup Directory.
+        If the Maintenance Solution already exists, the script will be halted.
+        
+    .EXAMPLE
+        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72
+        
+        This will create the Ola Hallengren's Solution objects. Existing objects are not affected in any way.
+        
+    .EXAMPLE
+        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting
+        
+        This will drop and then recreate the Ola Hallengren's Solution objects
+        The cleanup script will drop and recreate:
+        - TABLE [dbo].[CommandLog]
+        - STORED PROCEDURE [dbo].[CommandExecute]
+        - STORED PROCEDURE [dbo].[DatabaseBackup]
+        - STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]
+        - STORED PROCEDURE [dbo].[IndexOptimize]
+        
+        The following SQL Agent jobs will be deleted:
+        - 'Output File Cleanup'
+        - 'IndexOptimize - USER_DATABASES'
+        - 'sp_delete_backuphistory'
+        - 'DatabaseBackup - USER_DATABASES - LOG'
+        - 'DatabaseBackup - SYSTEM_DATABASES - FULL'
+        - 'DatabaseBackup - USER_DATABASES - FULL'
+        - 'sp_purge_jobhistory'
+        - 'DatabaseIntegrityCheck - SYSTEM_DATABASES'
+        - 'CommandLog Cleanup'
+        - 'DatabaseIntegrityCheck - USER_DATABASES'
+        - 'DatabaseBackup - USER_DATABASES - DIFF'
+        
+#>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

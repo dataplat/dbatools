@@ -1,66 +1,67 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaBackup {
-    <#
-        .SYNOPSIS
-            Finds SQL Server backups on disk.
-
-        .DESCRIPTION
-            Provides all of the same functionality for finding SQL backups to remove from disk as a standard maintenance plan would.
-
-            As an addition you have the ability to check the Archive bit on files before deletion. This will allow you to ensure backups have been archived to your archive location before removal.
-
-        .PARAMETER Path
-            Specifies the name of the base level folder to search for backup files.
-
-        .PARAMETER BackupFileExtension
-            Specifies the filename extension of the backup files you wish to find (typically 'bak', 'trn' or 'log'). Do not include the period.
-
-        .PARAMETER RetentionPeriod
-            Specifies the retention period for backup files. Correct format is ##U.
-
-            ## is the retention value and must be an integer value
-            U signifies the units where the valid units are:
-            h = hours
-            d = days
-            w = weeks
-            m = months
-
-            Formatting Examples:
-            '48h' = 48 hours
-            '7d' = 7 days
-            '4w' = 4 weeks
-            '1m' = 1 month
-
-        .PARAMETER CheckArchiveBit
-            If this switch is enabled, the filesystem Archive bit is checked.
-            If this bit is set (which translates to "it has not been backed up to another location yet"), the file won't be included.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Backup
-            Author: Chris Sommer (@cjsommer), www.cjsommer.com
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Find-DbaBackup
-
-        .EXAMPLE
-            PS C:\> Find-DbaBackup -Path 'C:\MSSQL\SQL Backup\' -BackupFileExtension trn -RetentionPeriod 48h
-
-            Searches for all trn files in C:\MSSQL\SQL Backup\ and all subdirectories that are more than 48 hours old will be included.
-
-        .EXAMPLE
-            PS C:\> Find-DbaBackup -Path 'C:\MSSQL\Backup\' -BackupFileExtension bak -RetentionPeriod 7d -CheckArchiveBit
-
-            Searches for all bak files in C:\MSSQL\Backup\ and all subdirectories that are more than 7 days old will be included, but only if the files have been backed up to another location as verified by checking the Archive bit.
-    #>
+<#        
+    .SYNOPSIS
+        Finds SQL Server backups on disk.
+        
+    .DESCRIPTION
+        Provides all of the same functionality for finding SQL backups to remove from disk as a standard maintenance plan would.
+        
+        As an addition you have the ability to check the Archive bit on files before deletion. This will allow you to ensure backups have been archived to your archive location before removal.
+        
+    .PARAMETER Path
+        Specifies the name of the base level folder to search for backup files.
+        
+    .PARAMETER BackupFileExtension
+        Specifies the filename extension of the backup files you wish to find (typically 'bak', 'trn' or 'log'). Do not include the period.
+        
+    .PARAMETER RetentionPeriod
+        Specifies the retention period for backup files. Correct format is ##U.
+        
+        ## is the retention value and must be an integer value
+        U signifies the units where the valid units are:
+        h = hours
+        d = days
+        w = weeks
+        m = months
+        
+        Formatting Examples:
+        '48h' = 48 hours
+        '7d' = 7 days
+        '4w' = 4 weeks
+        '1m' = 1 month
+        
+    .PARAMETER CheckArchiveBit
+        If this switch is enabled, the filesystem Archive bit is checked.
+        If this bit is set (which translates to "it has not been backed up to another location yet"), the file won't be included.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Backup
+        Author: Chris Sommer (@cjsommer), www.cjsommer.com
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Find-DbaBackup
+        
+    .EXAMPLE
+        PS C:\> Find-DbaBackup -Path 'C:\MSSQL\SQL Backup\' -BackupFileExtension trn -RetentionPeriod 48h
+        
+        Searches for all trn files in C:\MSSQL\SQL Backup\ and all subdirectories that are more than 48 hours old will be included.
+        
+    .EXAMPLE
+        PS C:\> Find-DbaBackup -Path 'C:\MSSQL\Backup\' -BackupFileExtension bak -RetentionPeriod 7d -CheckArchiveBit
+        
+        Searches for all bak files in C:\MSSQL\Backup\ and all subdirectories that are more than 7 days old will be included, but only if the files have been backed up to another location as verified by checking the Archive bit.
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, HelpMessage = "Full path to the root level backup folder (ex. 'C:\SQL\Backups'")]
