@@ -342,7 +342,7 @@ function Set-DbaLogin {
             $l.Alter()
 
             # Retrieve the server roles for the login
-            $roles = Get-DbaRoleMember -SqlInstance $server -Database 'master' -IncludeServerLevel | Where-Object { $null -eq $_.Database -and $_.Member -eq $l.Name }
+            $roles = Get-DbaServerRoleMember -SqlInstance $server | Where-Object { $_.Name -eq $l.Name }
 
             # Check if there were any notes to include in the results
             if ($notes) {
@@ -352,17 +352,18 @@ function Set-DbaLogin {
             else {
                 $notes = $null
             }
-
-            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'ComputerName' -Value $server.ComputerName
-            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'InstanceName' -Value $server.ServiceName
-            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'SqlInstance' -Value $server.DomainInstanceName
-            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'PasswordChanged' -Value $passwordChanged
-            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'ServerRole' -Value ($roles.Role -join ',')
-            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'Notes' -Value $notes
+            $rolenames = $roles.Role | Select-Object -Unique
+            
+            Add-Member -Force -InputObject $l -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+            Add-Member -Force -InputObject $l -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+            Add-Member -Force -InputObject $l -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+            Add-Member -Force -InputObject $l -MemberType NoteProperty -Name PasswordChanged -Value $passwordChanged
+            Add-Member -Force -InputObject $l -MemberType NoteProperty -Name ServerRole -Value ($rolenames -join ', ')
+            Add-Member -Force -InputObject $l -MemberType NoteProperty -Name Notes -Value $notes
 
             # backwards compatibility: LoginName, DenyLogin
-            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'LoginName' -Value $l.Name
-            Add-Member -Force -InputObject $l -MemberType 'NoteProperty' -Name 'DenyLogin' -Value $l.DenyWindowsLogin
+            Add-Member -Force -InputObject $l -MemberType NoteProperty -Name LoginName -Value $l.Name
+            Add-Member -Force -InputObject $l -MemberType NoteProperty -Name DenyLogin -Value $l.DenyWindowsLogin
 
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'LoginName', 'DenyLogin', 'IsDisabled', 'IsLocked',
                 'PasswordPolicyEnforced', 'MustChangePassword', 'PasswordChanged', 'ServerRole', 'Notes'

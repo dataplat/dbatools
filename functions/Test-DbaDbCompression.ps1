@@ -166,33 +166,32 @@ function Test-DbaDbCompression {
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    
     begin {
         Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
-
+        
         if ($Schema) {
             $sqlSchemaWhere = "AND s.name IN ('$($Schema -join "','")')"
         }
-
+        
         if ($Table) {
             $sqlTableWhere = "AND t.name IN ('$($Table -join "','")')"
         }
-
+        
         if ($ResultSize) {
-            $sqlOrderBy = switch ( $Rank )
-            {
+            $sqlOrderBy = switch ($Rank) {
                 UsedPages { 'UsedSpaceKB' }
                 TotalRows { 'RowCounts' }
                 default { 'TotalSpaceKB' }
             }
-
-            if ($FilterBy -eq 'Table'){
+            
+            if ($FilterBy -eq 'Table') {
                 $sqlJoinFiltered = 'AND t.TableName = tdc.TableName COLLATE DATABASE_DEFAULT'
                 $indexSQL = '0 as [IndexID]'
                 $partitionSQL = '0 AS [Partition]'
                 $groupBySQL = 's.Name, t.Name'
             }
-            elseif ($FilterBy -eq 'Index'){
+            elseif ($FilterBy -eq 'Index') {
                 $sqlJoinFiltered = 'AND t.TableName = tdc.TableName COLLATE DATABASE_DEFAULT AND t.IndexID = tdc.IndexID'
                 $indexSQL = 'i.index_id as [IndexID]'
                 $partitionSQL = '0 AS [Partition]'
@@ -204,7 +203,7 @@ function Test-DbaDbCompression {
                 $partitionSQL = 'p.partition_number AS [Partition]'
                 $groupBySQL = 's.Name, t.Name, i.index_id, p.partition_number'
             }
-
+            
             $sqlRestrict = "-- remove tables not in Top N
                 With TopN(SchemaName, TableName, IndexID, [Partition], RowCounts, TotalSpaceKB, UsedSpaceKB) as
                 (
@@ -242,15 +241,27 @@ function Test-DbaDbCompression {
                     ON t.SchemaName = tdc.[Schema] COLLATE DATABASE_DEFAULT
                     $sqlJoinFiltered
                 WHERE t.IndexID IS NULL;"
-
         }
-
-        $sqlVersion = $(Get-DbaBuildReference -SqlInstance svtsqlrestore).Build.Major
-
-        $sqlVersionRestrictions = @()
-
-        if ($sqlVersion -ge 12) {
-            $sqlVersionRestrictions += "
+    }
+    
+    process {
+        
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+            }
+            catch {
+                Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
+            }
+            
+            $Server.ConnectionContext.StatementTimeout = 0
+            $sqlVersion = $(Get-DbaBuildReference -SqlInstance $server).Build.Major
+            
+            $sqlVersionRestrictions = @()
+            
+            if ($sqlVersion -ge 12) {
+                $sqlVersionRestrictions += "
             BEGIN
                 -- remove memory optimized tables
                 DELETE tdc
@@ -260,9 +271,9 @@ function Test-DbaDbCompression {
                     AND t.name = tdc.TableName COLLATE DATABASE_DEFAULT
                 WHERE t.is_memory_optimized = 1
             END"
-        }
-        if ($sqlVersion -ge 13) {
-            $sqlVersionRestrictions += "
+            }
+            if ($sqlVersion -ge 13) {
+                $sqlVersionRestrictions += "
             BEGIN
                 -- remove tables with encrypted columns
                 DELETE tdc
@@ -274,9 +285,9 @@ function Test-DbaDbCompression {
                     ON t.object_id = c.object_id
                 WHERE encryption_type IS NOT NULL
             END"
-        }
-        if ($sqlVersion -ge 14) {
-            $sqlVersionRestrictions += "
+            }
+            if ($sqlVersion -ge 14) {
+                $sqlVersionRestrictions += "
             BEGIN
                 -- remove graph (node/edge) tables
                 DELETE tdc
@@ -286,8 +297,8 @@ function Test-DbaDbCompression {
                     AND tdc.TableName = t.name COLLATE DATABASE_DEFAULT
                 WHERE (is_node = 1 OR is_edge = 1)
             END"
-        }
-        $sql = "SET NOCOUNT ON;
+            }
+            $sql = "SET NOCOUNT ON;
 
 IF OBJECT_ID('tempdb..##testdbacompression', 'U') IS NOT NULL
     DROP TABLE ##testdbacompression
@@ -570,25 +581,10 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
     DROP TABLE ##tmpEstimatePage;
 
 "
-        Write-Message -Level Debug -Message "SQL Statement: $sql"
-    }
-
-    process {
-
-        foreach ($instance in $SqlInstance) {
-            try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-            }
-            catch {
-                Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            $Server.ConnectionContext.StatementTimeout = 0
-
+            Write-Message -Level Debug -Message "SQL Statement: $sql"
             [long]$instanceVersionNumber = $($server.VersionString).Replace(".", "")
-
-
+            
+            
             #If SQL Server 2016 SP1 (13.0.4001.0) or higher every version supports compression.
             if ($Server.EngineEdition -ne "EnterpriseOrDeveloper" -and $instanceVersionNumber -lt 13040010) {
                 Stop-Function -Message "Compression before SQLServer 2016 SP1 (13.0.4001.0) is only supported by enterprise, developer or evaluation edition. $Server has version $($server.VersionString) and edition is $($Server.EngineEdition)." -Target $db -Continue
@@ -596,15 +592,15 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
             #Filter Database list
             try {
                 $dbs = $server.Databases | Where-Object IsAccessible
-
+                
                 if ($Database) {
                     $dbs = $dbs | Where-Object { $Database -contains $_.Name -and $_.IsSystemObject -eq 0 }
                 }
-
+                
                 else {
                     $dbs = $dbs | Where-Object { $_.IsSystemObject -eq 0 }
                 }
-
+                
                 if (Test-Bound "ExcludeDatabase") {
                     $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
                 }
@@ -612,17 +608,17 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
             catch {
                 Stop-Function -Message "Unable to gather list of databases for $instance" -Target $instance -ErrorRecord $_ -Continue
             }
-
+            
             foreach ($db in $dbs) {
                 try {
                     $dbCompatibilityLevel = [int]($db.CompatibilityLevel.ToString().Replace('Version', ''))
-
+                    
                     Write-Message -Level Verbose -Message "Querying $instance - $db"
                     if ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) {
                         Write-Message -Level Warning -Message "$db is not accessible." -Target $db
                         Continue
                     }
-
+                    
                     if ($dbCompatibilityLevel -lt 100) {
                         Stop-Function -Message "$db has a compatibility level lower than Version100 and will be skipped." -Target $db -Continue
                         Continue
@@ -630,24 +626,24 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
                     #Execute query against individual database and add to output
                     foreach ($row in ($server.Query($sql, $db.Name))) {
                         [pscustomobject]@{
-                            ComputerName                  = $server.ComputerName
-                            InstanceName                  = $server.ServiceName
-                            SqlInstance                   = $server.DomainInstanceName
-                            Database                      = $row.DBName
-                            Schema                        = $row.Schema
-                            TableName                     = $row.TableName
-                            IndexName                     = $row.IndexName
-                            Partition                     = $row.Partition
-                            IndexID                       = $row.IndexID
-                            IndexType                     = $row.IndexType
-                            PercentScan                   = $row.PercentScan
-                            PercentUpdate                 = $row.PercentUpdate
-                            RowEstimatePercentOriginal    = $row.RowEstimatePercentOriginal
-                            PageEstimatePercentOriginal   = $row.PageEstimatePercentOriginal
+                            ComputerName = $server.ComputerName
+                            InstanceName = $server.ServiceName
+                            SqlInstance  = $server.DomainInstanceName
+                            Database     = $row.DBName
+                            Schema       = $row.Schema
+                            TableName    = $row.TableName
+                            IndexName    = $row.IndexName
+                            Partition    = $row.Partition
+                            IndexID      = $row.IndexID
+                            IndexType    = $row.IndexType
+                            PercentScan  = $row.PercentScan
+                            PercentUpdate = $row.PercentUpdate
+                            RowEstimatePercentOriginal = $row.RowEstimatePercentOriginal
+                            PageEstimatePercentOriginal = $row.PageEstimatePercentOriginal
                             CompressionTypeRecommendation = $row.CompressionTypeRecommendation
-                            SizeCurrent                   = [dbasize]($row.SizeCurrentKB * 1024)
-                            SizeRequested                 = [dbasize]($row.SizeRequestedKB * 1024)
-                            PercentCompression            = $row.PercentCompression
+                            SizeCurrent  = [dbasize]($row.SizeCurrentKB * 1024)
+                            SizeRequested = [dbasize]($row.SizeRequestedKB * 1024)
+                            PercentCompression = $row.PercentCompression
                         }
                     }
                 }
