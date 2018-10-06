@@ -144,12 +144,12 @@ function Get-DbaDbRoleMember {
                         }
 
                         if ($user) {
-                            $user | Add-Member -Force -MemberType 'NoteProperty' -Name 'ComputerName' -Value $server.ComputerName
-                            $user | Add-Member -Force -MemberType 'NoteProperty' -Name 'InstanceName' -Value $server.ServiceName
-                            $user | Add-Member -Force -MemberType 'NoteProperty' -Name 'SqlInstance' -Value $server.DomainInstanceName
-                            $user | Add-Member -Force -MemberType 'NoteProperty' -Name 'Database' -Value $db.Name
-                            $user | Add-Member -Force -MemberType 'NoteProperty' -Name 'Role' -Value $dbRole.Name
-                            $user | Add-Member -Force -MemberType 'NoteProperty' -Name 'UserName' -Value $user.Name
+                            Add-Member -Force -InputObject $user -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                            Add-Member -Force -InputObject $user -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                            Add-Member -Force -InputObject $user -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                            Add-Member -Force -InputObject $user -MemberType NoteProperty -Name Database -Value $db.Name
+                            Add-Member -Force -InputObject $user -MemberType NoteProperty -Name Role -Value $dbRole.Name
+                            Add-Member -Force -InputObject $user -MemberType NoteProperty -Name UserName -Value $user.Name
                             
                             $user | Select-DefaultView -Property 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Role', 'UserName', 'Login'
                         }
