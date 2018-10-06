@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function ConvertTo-DbaDataTable {
-<#        
+<#
     .SYNOPSIS
         Creates a DataTable for an object.
         

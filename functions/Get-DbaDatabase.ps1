@@ -1,6 +1,6 @@
 ﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDatabase {
-<#        
+<#
     .SYNOPSIS
         Gets SQL Database information for each database that is present on the target instance(s) of SQL Server.
         

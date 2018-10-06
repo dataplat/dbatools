@@ -1,5 +1,5 @@
 ﻿function Copy-DbaAgentServer {
-<#        
+<#
     .SYNOPSIS
         Copy SQL Server Agent from one server to another.
         

@@ -1,5 +1,5 @@
 ﻿function Get-DbaStartupParameter {
-<#        
+<#
     .SYNOPSIS
         Displays values for a detailed list of SQL Server Startup Parameters.
         

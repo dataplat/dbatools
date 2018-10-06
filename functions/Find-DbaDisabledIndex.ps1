@@ -1,5 +1,5 @@
 ﻿function Find-DbaDisabledIndex {
-<#        
+<#
     .SYNOPSIS
         Find Disabled indexes
         

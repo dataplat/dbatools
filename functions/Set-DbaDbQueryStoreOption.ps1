@@ -1,6 +1,6 @@
 ﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Set-DbaDbQueryStoreOption {
-<#        
+<#
     .SYNOPSIS
         Configure Query Store settings for a specific or multiple databases.
         

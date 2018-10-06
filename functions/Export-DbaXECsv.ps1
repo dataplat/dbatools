@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaXECsv {
-<#        
+<#
     .SYNOPSIS
         Exports Extended Events to a CSV file.
         

@@ -1,5 +1,5 @@
 ﻿function Get-DbaLogin {
-<#        
+<#
     .SYNOPSIS
         Function to get an SMO login object of the logins for a given SQL Instance. Takes a server object from the pipe
         

@@ -1,5 +1,5 @@
 ﻿function Measure-DbatoolsImport {
-<#        
+<#
     .SYNOPSIS
         Displays the import load times of the dbatools PowerShell module
         

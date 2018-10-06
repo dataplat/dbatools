@@ -1,5 +1,5 @@
 ﻿function Register-DbatoolsConfig {
-<#        
+<#
     .SYNOPSIS
         Registers an existing configuration object in registry.
         

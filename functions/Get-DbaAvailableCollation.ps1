@@ -1,5 +1,5 @@
 ﻿function Get-DbaAvailableCollation {
-<#        
+<#
     .SYNOPSIS
         Function to get available collations for a given SQL Server
         

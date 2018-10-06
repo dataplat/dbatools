@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaOrphanUser {
-<#        
+<#
     .SYNOPSIS
         Get orphaned users.
         

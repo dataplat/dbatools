@@ -1,5 +1,5 @@
 ﻿function Set-DbaDbOwner {
-<#        
+<#
     .SYNOPSIS
         Sets database owners with a desired login if databases do not match that owner.
         

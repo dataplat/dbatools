@@ -1,5 +1,5 @@
 ﻿function Get-DbaAgHadr {
-<#        
+<#
     .SYNOPSIS
         Gets the Hadr service setting on the specified SQL Server instance.
         

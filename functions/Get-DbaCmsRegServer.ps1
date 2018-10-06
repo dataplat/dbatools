@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaCmsRegServer {
-<#        
+<#
     .SYNOPSIS
         Gets list of SQL Server objects stored in SQL Server Central Management Server (CMS).
         

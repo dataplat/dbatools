@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentAlert {
-<#        
+<#
     .SYNOPSIS
         Set-DbaAgentAlert updates a the status of a SQL Agent Alert.
         

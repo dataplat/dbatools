@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaOperatingSystem {
-<#        
+<#
     .SYNOPSIS
         Gets operating system information from the server.
         

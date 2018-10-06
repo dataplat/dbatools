@@ -1,5 +1,5 @@
 ﻿function Test-DbaLinkedServerConnection {
-<#        
+<#
     .SYNOPSIS
         Test all linked servers from the sql servers passed
         

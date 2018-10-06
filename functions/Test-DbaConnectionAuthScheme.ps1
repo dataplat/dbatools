@@ -1,5 +1,5 @@
 ﻿function Test-DbaConnectionAuthScheme {
-<#        
+<#
     .SYNOPSIS
         Returns the transport protocol and authentication scheme of the connection. This is useful to determine if your connection is using Kerberos.
         

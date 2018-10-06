@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaPfAvailableCounter {
-<#        
+<#
     .SYNOPSIS
         Gathers list of all available counters on local or remote machines.
         

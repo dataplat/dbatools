@@ -1,5 +1,5 @@
 ﻿function Remove-DbaDbUser {
-<#        
+<#
     .SYNOPSIS
         Drop database user
         

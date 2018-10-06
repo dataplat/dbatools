@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbFile {
-<#        
+<#
     .SYNOPSIS
         Returns detailed information about database files.
         

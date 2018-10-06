@@ -1,5 +1,5 @@
 ﻿function Get-DbaPbmStore {
-<#        
+<#
     .SYNOPSIS
         Returns the policy based management store.
         

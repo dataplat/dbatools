@@ -1,5 +1,5 @@
 ﻿function Read-DbaAuditFile {
-<#        
+<#
     .SYNOPSIS
         Read Audit details from a sqlaudit file.
         

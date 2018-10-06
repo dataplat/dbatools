@@ -1,6 +1,6 @@
 ﻿#ValidationTags#FlowControl,Pipeline#
 function Test-DbaSpn {
-<#        
+<#
     .SYNOPSIS
         Test-DbaSpn will determine what SPNs *should* be set for a given server (and any instances of SQL running on it) and return
         whether the SPNs are set or not.

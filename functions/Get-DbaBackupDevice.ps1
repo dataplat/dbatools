@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging#
 function Get-DbaBackupDevice {
-<#        
+<#
     .SYNOPSIS
         Gets SQL Backup Device information for each instance(s) of SQL Server.
         

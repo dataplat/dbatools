@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaQueryExecutionTime {
-<#        
+<#
     .SYNOPSIS
         Displays Stored Procedures and Ad hoc queries with the highest execution times.  Works on SQL Server 2008 and above.
         

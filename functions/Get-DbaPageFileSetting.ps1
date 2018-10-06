@@ -1,7 +1,7 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Get-DbaPageFileSetting {
-<#        
+<#
     .SYNOPSIS
         Returns information on the page file configuration of the target computer.
         

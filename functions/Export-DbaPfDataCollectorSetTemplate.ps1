@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaPfDataCollectorSetTemplate {
-<#        
+<#
     .SYNOPSIS
         Exports a new Data Collector Set XML Template.
         

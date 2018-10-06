@@ -1,7 +1,7 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Test-DbaConnection {
-<#        
+<#
     .SYNOPSIS
         Tests the connection to a single instance.
         

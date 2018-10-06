@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaRepServerSetting {
-<#        
+<#
     .SYNOPSIS
         Exports replication server settings to file.
         

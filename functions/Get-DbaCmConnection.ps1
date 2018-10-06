@@ -1,5 +1,5 @@
 ﻿function Get-DbaCmConnection {
-<#        
+<#
     .SYNOPSIS
         Retrieves windows management connections from the cache
         

@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaTrace {
-<#        
+<#
     .SYNOPSIS
         Gets a list of trace(s) from specified SQL Server Instance
         

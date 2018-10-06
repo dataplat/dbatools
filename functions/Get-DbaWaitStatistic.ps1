@@ -1,5 +1,5 @@
 ﻿function Get-DbaWaitStatistic {
-<#        
+<#
     .SYNOPSIS
         Displays wait statistics
         

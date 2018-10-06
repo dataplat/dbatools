@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaDbMirrorMonitor {
-<#        
+<#
     .SYNOPSIS
         Stops and deletes the mirroring monitor job for all the databases on the server instance.
         

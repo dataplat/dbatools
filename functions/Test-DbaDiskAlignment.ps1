@@ -1,5 +1,5 @@
 ﻿function Test-DbaDiskAlignment {
-<#        
+<#
     .SYNOPSIS
         Verifies that your non-dynamic disks are aligned according to physical constraints.
         

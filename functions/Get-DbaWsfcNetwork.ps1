@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaWsfcNetwork {
-<#        
+<#
     .SYNOPSIS
         Gets information about one or more networks in a failover cluster.
         

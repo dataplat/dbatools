@@ -1,6 +1,6 @@
 ﻿#ValidationTags#FlowControl,Pipeline#
 function Find-DbaOrphanedFile {
-<#        
+<#
     .SYNOPSIS
         Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
         

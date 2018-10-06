@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaInstanceProperty {
-<#        
+<#
     .SYNOPSIS
         Gets SQL Server instance properties of one or more instance(s) of SQL Server.
         

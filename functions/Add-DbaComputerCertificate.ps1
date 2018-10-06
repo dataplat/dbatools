@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaComputerCertificate {
-<#        
+<#
     .SYNOPSIS
         Adds a computer certificate - useful for older systems.
         

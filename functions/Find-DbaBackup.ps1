@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaBackup {
-<#        
+<#
     .SYNOPSIS
         Finds SQL Server backups on disk.
         

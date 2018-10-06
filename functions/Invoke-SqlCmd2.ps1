@@ -1,5 +1,5 @@
 ﻿function Invoke-Sqlcmd2 {
-<#        
+<#
     .SYNOPSIS
         Runs a T-SQL script.
         

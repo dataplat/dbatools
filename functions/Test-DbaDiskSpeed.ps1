@@ -1,5 +1,5 @@
 ﻿function Test-DbaDiskSpeed {
-<#        
+<#
     .SYNOPSIS
         Tests how disks are performing.
         

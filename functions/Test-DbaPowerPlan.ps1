@@ -1,5 +1,5 @@
 ﻿function Test-DbaPowerPlan {
-<#        
+<#
     .SYNOPSIS
         Checks the Power Plan settings for compliance with best practices, which recommend High Performance for SQL Server.
         

@@ -1,5 +1,5 @@
 ﻿function Test-DbaRepLatency {
-<#        
+<#
     .SYNOPSIS
         Displays replication latency for all transactional publications for a server or database.
         

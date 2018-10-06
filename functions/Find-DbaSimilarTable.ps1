@@ -1,5 +1,5 @@
 ﻿function Find-DbaSimilarTable {
-<#        
+<#
     .SYNOPSIS
         Returns all tables/views that are similar in structure by comparing the column names of matching and matched tables/views
         

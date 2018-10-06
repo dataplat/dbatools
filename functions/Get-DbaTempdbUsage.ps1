@@ -1,5 +1,5 @@
 ﻿function Get-DbaTempdbUsage {
-<#        
+<#
     .SYNOPSIS
         Gets Tempdb usage for running queries.
         

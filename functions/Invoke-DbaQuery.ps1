@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaQuery {
-<#        
+<#
     .SYNOPSIS
         A command to run explicit T-SQL commands or files.
         

@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Move-DbaCmsRegServer {
-<#        
+<#
     .SYNOPSIS
         Moves registered servers around SQL Server Central Management Server (CMS)
         

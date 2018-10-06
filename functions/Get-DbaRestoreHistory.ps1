@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaRestoreHistory {
-<#        
+<#
     .SYNOPSIS
         Returns restore history details for databases on a SQL Server.
         

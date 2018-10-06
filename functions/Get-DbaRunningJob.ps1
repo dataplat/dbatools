@@ -1,5 +1,5 @@
 ﻿function Get-DbaRunningJob {
-<#        
+<#
     .SYNOPSIS
         Returns all non-idle Agent jobs running on the server.
         

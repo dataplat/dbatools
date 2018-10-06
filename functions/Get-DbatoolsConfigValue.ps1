@@ -1,5 +1,5 @@
 ﻿function Get-DbatoolsConfigValue {
-<#        
+<#
     .SYNOPSIS
         Returns the configuration value stored under the specified name.
         

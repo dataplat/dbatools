@@ -1,5 +1,5 @@
 ﻿function ConvertTo-DbaTimeline {
-<#        
+<#
     .SYNOPSIS
         Converts InputObject to a html timeline using Google Chart
         

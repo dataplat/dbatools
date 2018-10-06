@@ -1,5 +1,5 @@
 ﻿function Expand-DbaTLogResponsibly {
-<#        
+<#
     .SYNOPSIS
         This command will help you to automatically grow your transaction log  file in a responsible way (preventing the generation of too many VLFs).
         

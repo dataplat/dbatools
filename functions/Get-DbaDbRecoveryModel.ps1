@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbRecoveryModel {
-<#        
+<#
     .SYNOPSIS
         Get-DbaDbRecoveryModel displays the Recovery Model.
         

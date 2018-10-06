@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaComputerCertificate {
-<#        
+<#
     .SYNOPSIS
         Simplifies finding computer certificates that are candidates for using with SQL Server's network encryption
         

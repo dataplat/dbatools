@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbUdf {
-<#        
+<#
     .SYNOPSIS
         Gets database User Defined Functions
         

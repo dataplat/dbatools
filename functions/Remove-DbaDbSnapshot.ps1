@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaDbSnapshot {
-<#        
+<#
     .SYNOPSIS
         Removes database snapshots
         

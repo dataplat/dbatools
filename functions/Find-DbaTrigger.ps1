@@ -1,5 +1,5 @@
 ﻿function Find-DbaTrigger {
-<#        
+<#
     .SYNOPSIS
         Returns all triggers that contain a specific case-insensitive string or regex pattern.
         

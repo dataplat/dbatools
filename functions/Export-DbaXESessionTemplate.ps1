@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaXESessionTemplate {
-<#        
+<#
     .SYNOPSIS
         Exports an XESession XML Template using XE Session(s) output by Get-DbaXESession
         

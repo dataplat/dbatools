@@ -1,5 +1,5 @@
 ﻿function Start-DbaService {
-<#        
+<#
     .SYNOPSIS
         Starts SQL Server services on a computer.
         

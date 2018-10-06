@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Stop-DbaEndpoint {
-<#        
+<#
     .SYNOPSIS
         Stops endpoints on a SQL Server instance.
         

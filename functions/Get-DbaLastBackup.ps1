@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaLastBackup {
-<#        
+<#
     .SYNOPSIS
         Get date/time for last known backups of databases.
         

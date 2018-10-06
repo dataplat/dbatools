@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Update-Dbatools {
-<#        
+<#
     .SYNOPSIS
         Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
         

@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaConnectionStringBuilder {
-<#        
+<#
     .SYNOPSIS
         Returns a System.Data.SqlClient.SqlConnectionStringBuilder with the string specified
         

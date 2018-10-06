@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,CodeStyle#
 function Get-DbaDbAssembly {
-<#        
+<#
     .SYNOPSIS
         Gets SQL Database Assembly information for each instance(s) of SQL Server.
         

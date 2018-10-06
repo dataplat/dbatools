@@ -1,5 +1,5 @@
 ﻿function Test-DbaCmConnection {
-<#        
+<#
     .SYNOPSIS
         Tests over which paths a computer can be managed.
         

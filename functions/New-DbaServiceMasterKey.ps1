@@ -1,5 +1,5 @@
 ﻿function New-DbaServiceMasterKey {
-<#        
+<#
     .SYNOPSIS
         Creates a new service master key
         

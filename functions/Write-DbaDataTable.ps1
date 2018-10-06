@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Write-DbaDataTable {
-<#        
+<#
     .SYNOPSIS
         Writes data to a SQL Server Table.
         

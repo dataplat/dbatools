@@ -1,5 +1,5 @@
 ﻿function Copy-DbaAgentProxyAccount {
-<#        
+<#
     .SYNOPSIS
         Copy-DbaAgentProxyAccount migrates proxy accounts from one SQL Server to another.
         

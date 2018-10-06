@@ -1,6 +1,6 @@
 ﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaFeature {
-<#        
+<#
     .SYNOPSIS
         Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)
         

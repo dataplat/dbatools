@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbMailLog {
-<#        
+<#
     .SYNOPSIS
         Gets the DBMail log from a SQL instance
         

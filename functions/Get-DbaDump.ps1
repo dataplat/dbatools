@@ -1,5 +1,5 @@
 ﻿function Get-DbaDump {
-<#        
+<#
     .SYNOPSIS
         Locate a SQL Server that has generated any memory dump files.
         

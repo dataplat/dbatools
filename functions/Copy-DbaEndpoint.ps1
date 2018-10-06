@@ -1,5 +1,5 @@
 ﻿function Copy-DbaEndpoint {
-<#        
+<#
     .SYNOPSIS
         Copy-DbaEndpoint migrates server endpoints from one SQL Server to another.
         

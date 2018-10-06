@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Watch-DbaXESession {
-<#        
+<#
     .SYNOPSIS
         Watch live XEvent Data as it happens
         

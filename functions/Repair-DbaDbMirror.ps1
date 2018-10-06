@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Repair-DbaDbMirror {
-<#        
+<#
     .SYNOPSIS
         Attempts to repair a suspended or paused mirroring database.
         

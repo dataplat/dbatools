@@ -1,5 +1,5 @@
 ﻿function Test-DbaServerName {
-<#        
+<#
     .SYNOPSIS
         Tests to see if it's possible to easily rename the server at the SQL Server instance level, or if it even needs to be changed.
         

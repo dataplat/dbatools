@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentJobStep {
-<#        
+<#
     .SYNOPSIS
         New-DbaAgentJobStep creates a new job step for a job
         

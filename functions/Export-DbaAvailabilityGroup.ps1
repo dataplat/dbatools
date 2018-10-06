@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging#
 function Export-DbaAvailabilityGroup {
-<#        
+<#
     .SYNOPSIS
         Exports SQL Server Availability Groups to a T-SQL file.
         

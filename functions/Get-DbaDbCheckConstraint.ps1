@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbCheckConstraint {
-<#        
+<#
     .SYNOPSIS
         Gets database Check constraints.
         

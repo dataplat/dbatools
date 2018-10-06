@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging#
 function Find-DbaLoginInGroup {
-<#        
+<#
     .SYNOPSIS
         Finds Logins in Active Directory groups that have logins on the SQL Instance.
         

@@ -1,5 +1,5 @@
 ﻿function Copy-DbaCustomError {
-<#        
+<#
     .SYNOPSIS
         Copy-DbaCustomError migrates custom errors (user defined messages), by the custom error ID, from one SQL Server to another.
         

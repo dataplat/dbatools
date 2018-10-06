@@ -1,5 +1,5 @@
 ﻿function Set-DbaJobOwner {
-<#        
+<#
     .SYNOPSIS
         Sets SQL Agent job owners with a desired login if jobs do not match that owner.
         

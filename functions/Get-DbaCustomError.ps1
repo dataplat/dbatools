@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,CodeStyle#
 function Get-DbaCustomError {
-<#        
+<#
     .SYNOPSIS
         Gets SQL Custom Error Message information for each instance(s) of SQL Server.
         

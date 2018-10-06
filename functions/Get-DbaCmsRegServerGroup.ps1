@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaCmsRegServerGroup {
-<#        
+<#
     .SYNOPSIS
         Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
         

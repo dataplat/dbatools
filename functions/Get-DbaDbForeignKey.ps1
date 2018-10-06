@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbForeignKey {
-<#        
+<#
     .SYNOPSIS
         Gets database Foreign Keys.
         

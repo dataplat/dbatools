@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaDbMirroring {
-<#        
+<#
     .SYNOPSIS
         Automates the creation of database mirrors.
         

@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Stop-DbaXESmartTarget {
-<#        
+<#
     .SYNOPSIS
         Stops an XESmartTarget PowerShell Job. Useful if you want to run a target, but not right now.
         

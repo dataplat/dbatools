@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaHelpIndex {
-<#        
+<#
     .SYNOPSIS
         Returns size, row and configuration information for indexes in databases.
         

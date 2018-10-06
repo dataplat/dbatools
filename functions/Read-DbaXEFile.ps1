@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Read-DbaXEFile {
-<#        
+<#
     .SYNOPSIS
         Read XEvents from a xel or xem file.
         

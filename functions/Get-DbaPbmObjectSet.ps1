@@ -1,5 +1,5 @@
 ﻿function Get-DbaPbmObjectSet {
-<#        
+<#
     .SYNOPSIS
         Returns object sets from policy based management.
         

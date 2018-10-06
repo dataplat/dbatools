@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaWsfcAvailableDisk {
-<#        
+<#
     .SYNOPSIS
         Gets information about the disks that can support Failover Clustering and are visible to all nodes, but are not yet part of the set of clustered disks.
         

@@ -1,5 +1,5 @@
 ﻿function Set-DbaDbRecoveryModel {
-<#        
+<#
     .SYNOPSIS
         Set-DbaDbRecoveryModel sets the Recovery Model.
         

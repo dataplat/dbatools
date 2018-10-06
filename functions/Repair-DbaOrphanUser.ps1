@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Repair-DbaOrphanUser {
-<#        
+<#
     .SYNOPSIS
         Finds orphan users with existing login and remaps them.
         

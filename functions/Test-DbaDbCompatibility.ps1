@@ -1,5 +1,5 @@
 ﻿function Test-DbaDbCompatibility {
-<#        
+<#
     .SYNOPSIS
         Compares Database Compatibility level to Server Compatibility
         

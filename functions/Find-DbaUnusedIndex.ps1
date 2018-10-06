@@ -1,5 +1,5 @@
 ﻿function Find-DbaUnusedIndex {
-<#        
+<#
     .SYNOPSIS
         Find Unused indexes
         

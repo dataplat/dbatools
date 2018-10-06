@@ -1,7 +1,7 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Remove-DbaNetworkCertificate {
-<#        
+<#
     .SYNOPSIS
         Removes the network certificate for SQL Server instance
         

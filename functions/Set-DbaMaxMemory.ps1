@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaMaxMemory {
-<#        
+<#
     .SYNOPSIS
         Sets SQL Server 'Max Server Memory' configuration setting to a new value then displays information this setting.
         

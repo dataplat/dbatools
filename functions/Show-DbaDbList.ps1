@@ -1,5 +1,5 @@
 ﻿function Show-DbaDbList {
-<#        
+<#
     .SYNOPSIS
         Shows a list of databases in a GUI.
         

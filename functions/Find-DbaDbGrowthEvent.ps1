@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaDbGrowthEvent {
-<#        
+<#
     .SYNOPSIS
         Finds any database AutoGrow events in the Default Trace.
         

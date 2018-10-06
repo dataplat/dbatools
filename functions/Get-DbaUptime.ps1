@@ -1,5 +1,5 @@
 ﻿function Get-DbaUptime {
-<#        
+<#
     .SYNOPSIS
         Returns the uptime of the SQL Server instance, and if required the hosting windows server
         

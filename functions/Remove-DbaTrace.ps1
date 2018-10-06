@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaTrace {
-<#        
+<#
     .SYNOPSIS
         Stops and closes the specified trace and deletes its definition from the server.
         

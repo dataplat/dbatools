@@ -1,5 +1,5 @@
 ﻿function Get-DbaClientProtocol {
-<#        
+<#
     .SYNOPSIS
         Gets the SQL Server related client protocols on a computer.
         

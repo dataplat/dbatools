@@ -1,5 +1,5 @@
 ﻿function Get-DbaPbmPolicy {
-<#        
+<#
     .SYNOPSIS
         Returns polices from policy based management from an instance.
         

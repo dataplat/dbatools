@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbMailHistory {
-<#        
+<#
     .SYNOPSIS
         Gets the history of mail sent from a SQL instance
         

@@ -1,5 +1,5 @@
 ﻿function Get-DbaLastGoodCheckDb {
-<#        
+<#
     .SYNOPSIS
         Get date/time for last known good DBCC CHECKDB
         

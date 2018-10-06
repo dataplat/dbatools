@@ -1,5 +1,5 @@
 ﻿function Get-DbaSsisEnvironmentVariable {
-<#        
+<#
     .SYNOPSIS
         This command gets specified SSIS Environment and all its variables
         

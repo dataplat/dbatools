@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbPartitionScheme {
-<#        
+<#
     .SYNOPSIS
         Gets database Partition Schemes
         

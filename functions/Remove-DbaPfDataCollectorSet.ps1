@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaPfDataCollectorSet {
-<#        
+<#
     .SYNOPSIS
         Removes a Performance Monitor Data Collector Set
         

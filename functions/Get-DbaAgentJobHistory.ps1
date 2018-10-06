@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaAgentJobHistory {
-<#        
+<#
     .SYNOPSIS
         Gets execution history of SQL Agent Job on instance(s) of SQL Server.
         

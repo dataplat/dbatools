@@ -1,5 +1,5 @@
 ﻿function Get-DbaLocaleSetting {
-<#        
+<#
     .SYNOPSIS
         Gets the Locale settings on a computer.
         

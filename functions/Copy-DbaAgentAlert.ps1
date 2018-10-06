@@ -1,5 +1,5 @@
 ﻿function Copy-DbaAgentAlert {
-<#        
+<#
     .SYNOPSIS
         Copy-DbaAgentAlert migrates alerts from one SQL Server to another.
         

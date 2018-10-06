@@ -1,5 +1,5 @@
 ﻿function Copy-DbaDbMail {
-<#        
+<#
     .SYNOPSIS
         Migrates Mail Profiles, Accounts, Mail Servers and Mail Server Configs from one SQL Server to another.
         

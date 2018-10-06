@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaInstance {
-<#        
+<#
     .SYNOPSIS
         Search for SQL Server Instances.
         

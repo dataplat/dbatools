@@ -1,5 +1,5 @@
 ﻿function Get-DbaAgentJobStep {
-<#        
+<#
     .SYNOPSIS
         Gets SQL Agent Job Step information for each instance(s) of SQL Server.
         

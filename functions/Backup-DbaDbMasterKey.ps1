@@ -1,5 +1,5 @@
 ﻿function Backup-DbaDbMasterKey {
-<#        
+<#
     .SYNOPSIS
         Backs up specified database master key.
         

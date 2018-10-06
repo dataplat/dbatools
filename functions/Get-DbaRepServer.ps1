@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaRepServer {
-<#        
+<#
     .SYNOPSIS
         Gets a replication server object
         

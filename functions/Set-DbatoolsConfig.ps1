@@ -1,5 +1,5 @@
 ﻿function Set-DbatoolsConfig {
-<#        
+<#
     .SYNOPSIS
         Sets configuration entries.
         

@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaPfDataCollectorCounterSample {
-<#        
+<#
     .SYNOPSIS
         Gets Performance Counter Samples.
         

@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbRoleMember {
-<#        
+<#
     .SYNOPSIS
         Get members of database roles for each instance(s) of SQL Server.
         

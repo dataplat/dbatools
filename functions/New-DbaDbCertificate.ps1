@@ -1,5 +1,5 @@
 ﻿function New-DbaDbCertificate {
-<#        
+<#
     .SYNOPSIS
         Creates a new database certificate
         

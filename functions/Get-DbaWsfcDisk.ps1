@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaWsfcDisk {
-<#        
+<#
     .SYNOPSIS
         Gets information about the clustered disks on one or more failover clusters in a given domain.
         

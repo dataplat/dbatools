@@ -1,5 +1,5 @@
 ﻿function Copy-DbaSpConfigure {
-<#        
+<#
     .SYNOPSIS
         Copy-DbaSpConfigure migrates configuration values from one SQL Server to another.
         

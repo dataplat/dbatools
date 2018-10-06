@@ -1,5 +1,5 @@
 ﻿function Get-DbaAgDatabase {
-<#        
+<#
     .SYNOPSIS
         Outputs the databases involved in the Availability Group(s) found on the server.
         

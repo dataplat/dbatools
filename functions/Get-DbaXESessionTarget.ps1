@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaXESessionTarget {
-<#        
+<#
     .SYNOPSIS
         Get a list of Extended Events Session Targets from the specified SQL Server instance(s).
         

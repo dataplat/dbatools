@@ -1,5 +1,5 @@
 ﻿function Format-DbaBackupInformation {
-<#        
+<#
     .SYNOPSIS
         Transforms the data in a dbatools BackupHistory object for a restore
         

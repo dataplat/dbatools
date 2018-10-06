@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaSchemaChangeHistory {
-<#        
+<#
     .SYNOPSIS
         Gets DDL changes logged in the system trace.
         

@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaCmsRegServer {
-<#        
+<#
     .SYNOPSIS
         Removes registered servers found in SQL Server Central Management Server (CMS).
         

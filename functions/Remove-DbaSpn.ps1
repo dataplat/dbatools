@@ -1,6 +1,6 @@
 ﻿#ValidationTags#FlowControl,Pipeline#
 function Remove-DbaSpn {
-<#        
+<#
     .SYNOPSIS
         Removes an SPN for a given service account in active directory and also removes delegation to the same SPN, if found
         

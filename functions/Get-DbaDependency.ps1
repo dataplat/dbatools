@@ -1,5 +1,5 @@
 ﻿function Get-DbaDependency {
-<#        
+<#
     .SYNOPSIS
         Finds object dependencies and their relevant creation scripts.
         

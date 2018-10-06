@@ -1,5 +1,5 @@
 ﻿function Get-DbaRepDistributor {
-<#        
+<#
     .SYNOPSIS
         Gets the information about a replication distributor for a given SQL Server instance.
         

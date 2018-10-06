@@ -1,5 +1,5 @@
 ﻿function Remove-DbaCmConnection {
-<#        
+<#
     .SYNOPSIS
         Removes connection objects from the connection cache used for remote computer management.
         

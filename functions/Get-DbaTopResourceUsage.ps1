@@ -1,5 +1,5 @@
 ﻿function Get-DbaTopResourceUsage {
-<#        
+<#
     .SYNOPSIS
         Returns the top 20 resource consumers for cached queries based on four different metrics: duration, frequency, IO, and CPU.
         

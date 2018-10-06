@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaDbMirrorFailover {
-<#        
+<#
     .SYNOPSIS
         Failover a mirrored database
         

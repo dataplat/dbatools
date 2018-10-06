@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Stop-DbaXESession {
-<#        
+<#
     .SYNOPSIS
         Stops Extended Events sessions.
         

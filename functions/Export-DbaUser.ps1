@@ -1,5 +1,5 @@
 ﻿function Export-DbaUser {
-<#        
+<#
     .SYNOPSIS
         Exports users creation and its permissions to a T-SQL file or host.
         

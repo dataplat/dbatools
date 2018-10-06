@@ -1,5 +1,5 @@
 ﻿function Get-DbaSpConfigure {
-<#        
+<#
     .SYNOPSIS
         Returns all server level system configuration (sys.configuration/sp_configure) information
         

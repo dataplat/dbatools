@@ -1,5 +1,5 @@
 ﻿function Backup-DbaDbCertificate {
-<#        
+<#
     .SYNOPSIS
         Exports database certificates from SQL Server using SMO.
         

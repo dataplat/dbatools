@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaEndpoint {
-<#        
+<#
     .SYNOPSIS
         Gets SQL Endpoint(s) information for each instance(s) of SQL Server.
         

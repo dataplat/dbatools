@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Read-DbaTraceFile {
-<#        
+<#
     .SYNOPSIS
         Reads SQL Server trace files
         

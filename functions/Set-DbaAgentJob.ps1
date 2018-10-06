@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentJob {
-<#        
+<#
     .SYNOPSIS
         Set-DbaAgentJob updates a job.
         

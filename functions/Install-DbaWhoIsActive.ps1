@@ -1,5 +1,5 @@
 ﻿function Install-DbaWhoIsActive {
-<#        
+<#
     .SYNOPSIS
         Automatically installs or updates sp_WhoisActive by Adam Machanic.
         

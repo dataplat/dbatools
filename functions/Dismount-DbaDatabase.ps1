@@ -1,5 +1,5 @@
 ﻿function Dismount-DbaDatabase {
-<#        
+<#
     .SYNOPSIS
         Detach a SQL Server Database.
         

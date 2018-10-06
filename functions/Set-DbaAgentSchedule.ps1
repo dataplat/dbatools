@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentSchedule {
-<#        
+<#
     .SYNOPSIS
         Set-DbaAgentSchedule updates a schedule in the msdb database.
         

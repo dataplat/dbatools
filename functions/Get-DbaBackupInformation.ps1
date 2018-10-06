@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaBackupInformation {
-<#        
+<#
     .SYNOPSIS
         Scan backup files and creates a set, compatible with Restore-DbaDatabase
         

@@ -1,5 +1,5 @@
 ﻿function Clear-DbaWaitStatistics {
-<#        
+<#
     .SYNOPSIS
         Clears wait statistics
         

@@ -1,5 +1,5 @@
 ﻿function Get-DbaOpenTransaction {
-<#        
+<#
     .SYNOPSIS
         Displays all open transactions.
         

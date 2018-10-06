@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbUser {
-<#        
+<#
     .SYNOPSIS
         Gets database users
         

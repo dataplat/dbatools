@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentSchedule {
-<#        
+<#
     .SYNOPSIS
         Remove-DbaAgentJobSchedule removes a job schedule.
         

@@ -1,6 +1,6 @@
 ﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Install-DbaFirstResponderKit {
-<#        
+<#
     .SYNOPSIS
         Installs or updates the First Responder Kit stored procedures.
         

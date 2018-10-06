@@ -1,5 +1,5 @@
 ﻿function Get-DbaAgListener {
-<#        
+<#
     .SYNOPSIS
         Outputs the name of the Listener for the Availability Group(s) found on the server.
         

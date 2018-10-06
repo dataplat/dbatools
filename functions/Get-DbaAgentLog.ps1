@@ -1,5 +1,5 @@
 ﻿function Get-DbaAgentLog {
-<#        
+<#
     .SYNOPSIS
         Gets the "SQL Agent Error Log" of an instance
         

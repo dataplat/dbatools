@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaSpConfigure {
-<#        
+<#
     .SYNOPSIS
         Exports advanced sp_configure global configuration options to sql file.
         

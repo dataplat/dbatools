@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging#
 function Copy-DbaSsisCatalog {
-<#        
+<#
     .SYNOPSIS
         Copy-DbaSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another.
         

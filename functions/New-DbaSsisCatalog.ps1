@@ -1,5 +1,5 @@
 ﻿function New-DbaSsisCatalog {
-<#        
+<#
     .SYNOPSIS
         Enables the SSIS Catalog on a SQL Server 2012+
         

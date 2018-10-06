@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaCommand {
-<#        
+<#
     .SYNOPSIS
         Finds dbatools commands searching through the inline help text
         

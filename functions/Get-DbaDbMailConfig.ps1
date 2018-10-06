@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbMailConfig {
-<#        
+<#
     .SYNOPSIS
         Gets database mail configs from SQL Server
         

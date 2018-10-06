@@ -1,5 +1,5 @@
 ﻿function Get-DbaManagementObject {
-<#        
+<#
     .SYNOPSIS
         Gets SQL Mangaement Object versions installed on the machine.
         

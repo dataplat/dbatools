@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaXeReplay {
-<#        
+<#
     .SYNOPSIS
         This command replays events from Read-DbaXEFile on one or more target servers
         

@@ -1,5 +1,5 @@
 ﻿function Get-DbaClientAlias {
-<#        
+<#
     .SYNOPSIS
         Gets any SQL Server alias for the specified server(s)
         

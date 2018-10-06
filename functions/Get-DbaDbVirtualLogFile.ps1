@@ -1,6 +1,6 @@
 ﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDbVirtualLogFile {
-<#        
+<#
     .SYNOPSIS
         Returns database virtual log file information for database files on a SQL instance.
         

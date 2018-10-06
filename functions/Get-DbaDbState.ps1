@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline#
 function Get-DbaDbState {
-<#        
+<#
     .SYNOPSIS
         Gets various options for databases, hereby called "states"
         

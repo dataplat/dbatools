@@ -1,6 +1,6 @@
 ﻿#ValidationTags#FlowControl,Pipeline#
 function Get-DbaSpn {
-<#        
+<#
     .SYNOPSIS
         Returns a list of set service principal names for a given computer/AD account
         

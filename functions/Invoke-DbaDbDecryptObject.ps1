@@ -1,5 +1,5 @@
 ﻿function Invoke-DbaDbDecryptObject {
-<#        
+<#
     .SYNOPSIS
         Invoke-DbaDbDecryptObject returns the decrypted version of an object
         

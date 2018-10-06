@@ -1,5 +1,5 @@
 ﻿function Get-DbaAgentSchedule {
-<#        
+<#
     .SYNOPSIS
         Returns all SQL Agent Shared Schedules on a SQL Server Agent.
         

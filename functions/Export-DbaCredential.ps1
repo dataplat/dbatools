@@ -1,5 +1,5 @@
 ﻿function Export-DbaCredential {
-<#        
+<#
     .SYNOPSIS
         Exports credentials INCLUDING PASSWORDS, unless specified otherwise, to sql file.
         

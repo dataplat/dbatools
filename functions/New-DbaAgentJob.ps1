@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentJob {
-<#        
+<#
     .SYNOPSIS
         New-DbaAgentJob creates a new job
         

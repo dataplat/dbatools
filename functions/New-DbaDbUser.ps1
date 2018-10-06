@@ -1,5 +1,5 @@
 ﻿function New-DbaDbUser {
-<#        
+<#
     .SYNOPSIS
         Creates a new user for the specified database.
         

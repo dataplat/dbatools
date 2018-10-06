@@ -1,5 +1,5 @@
 ﻿function Get-DbaUserPermission {
-<#        
+<#
     .SYNOPSIS
         Displays detailed permissions information for the server and database roles and securables.
         

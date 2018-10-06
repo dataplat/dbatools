@@ -1,6 +1,6 @@
 ﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDbPageInfo {
-<#        
+<#
     .SYNOPSIS
         Get-DbaDbPageInfo will return page information for a database
         

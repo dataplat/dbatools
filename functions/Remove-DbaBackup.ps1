@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaBackup {
-<#        
+<#
     .SYNOPSIS
         Removes SQL Server backups from disk.
         

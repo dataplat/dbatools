@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Restore-DbaBackupFromDirectory {
-<#        
+<#
     .SYNOPSIS
         Please use `Get-ChildItem | Restore-DbaDatabase` instead. This command is no longer supported.
         

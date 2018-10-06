@@ -1,5 +1,5 @@
 ﻿function Get-DbaAgentOperator {
-<#        
+<#
     .SYNOPSIS
         Returns all SQL Agent operators on a SQL Server Agent.
         

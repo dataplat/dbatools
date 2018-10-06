@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbCertificate {
-<#        
+<#
     .SYNOPSIS
         Gets database certificates
         

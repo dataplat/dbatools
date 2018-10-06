@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaXESmartCsvWriter {
-<#        
+<#
     .SYNOPSIS
         This Response type is used to write Extended Events to a CSV file.
         

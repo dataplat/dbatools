@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaXESession {
-<#        
+<#
     .SYNOPSIS
         Gets a list of Extended Events Sessions from the specified SQL Server instance(s).
         

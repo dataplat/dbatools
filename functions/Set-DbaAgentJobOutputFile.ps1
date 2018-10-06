@@ -1,5 +1,5 @@
 ﻿function Set-DbaAgentJobOutputFile {
-<#        
+<#
     .Synopsis
         Set the output file for a step within an Agent job.
         

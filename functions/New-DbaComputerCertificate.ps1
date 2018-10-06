@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaComputerCertificate {
-<#        
+<#
     .SYNOPSIS
         Creates a new computer certificate useful for Forcing Encryption
         

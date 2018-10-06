@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaWindowsLogin {
-<#        
+<#
     .SYNOPSIS
         Test-DbaWindowsLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist
         

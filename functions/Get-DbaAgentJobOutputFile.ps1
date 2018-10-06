@@ -1,5 +1,5 @@
 ﻿function Get-DbaAgentJobOutputFile {
-<#        
+<#
     .Synopsis
         Returns the Output File for each step of one or many agent job with the Job Names provided dynamically if
         required for one or more SQL Instances

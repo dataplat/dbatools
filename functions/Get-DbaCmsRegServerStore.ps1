@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaCmsRegServerStore {
-<#        
+<#
     .SYNOPSIS
         Returns a SQL Server Registered Server Store Object
         

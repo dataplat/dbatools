@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaEndpoint {
-<#        
+<#
     .SYNOPSIS
         Removes endpoints on a SQL Server instance.
         

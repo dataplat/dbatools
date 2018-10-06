@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Disable-DbaAgHadr {
-<#        
+<#
     .SYNOPSIS
         Disables the Hadr service setting on the specified SQL Server.
         

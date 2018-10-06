@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaTrace {
-<#        
+<#
     .SYNOPSIS
         Starts SQL Server traces
         

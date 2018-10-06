@@ -1,5 +1,5 @@
 ﻿function Get-DbaWaitResource {
-<#        
+<#
     .SYNOPSIS
         Returns the resource being waited upon
         

@@ -1,5 +1,5 @@
 ﻿function Mount-DbaDatabase {
-<#        
+<#
     .SYNOPSIS
         Attach a SQL Server Database - aliased to Attach-DbaDatabase
         

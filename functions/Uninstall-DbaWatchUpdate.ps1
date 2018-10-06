@@ -1,5 +1,5 @@
 ﻿function Uninstall-DbaWatchUpdate {
-<#        
+<#
     .SYNOPSIS
         Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
         

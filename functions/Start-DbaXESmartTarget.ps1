@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaXESmartTarget {
-<#        
+<#
     .SYNOPSIS
         XESmartTarget runs as a client application for an Extended Events session running on a SQL Server instance.
         

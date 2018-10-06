@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentJobStep {
-<#        
+<#
     .SYNOPSIS
         Removes a step from the specified SQL Agent job.
         

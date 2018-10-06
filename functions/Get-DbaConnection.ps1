@@ -1,6 +1,6 @@
 ﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaConnection {
-<#        
+<#
     .SYNOPSIS
         Returns a bunch of information from dm_exec_connections.
         

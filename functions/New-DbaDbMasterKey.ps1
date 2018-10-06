@@ -1,5 +1,5 @@
 ﻿function New-DbaDbMasterKey {
-<#        
+<#
     .SYNOPSIS
         Creates a new database master key
         

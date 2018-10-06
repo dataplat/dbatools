@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaCmsRegServer {
-<#        
+<#
     .SYNOPSIS
         Adds registered servers to SQL Server Central Management Server (CMS)
         

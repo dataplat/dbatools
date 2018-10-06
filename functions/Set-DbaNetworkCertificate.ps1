@@ -1,7 +1,7 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Set-DbaNetworkCertificate {
-<#        
+<#
     .SYNOPSIS
         Sets the network certificate for SQL Server instance
         

@@ -1,5 +1,5 @@
 ﻿function Export-DbaInstance {
-<#        
+<#
     .SYNOPSIS
         Exports SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,
         Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,

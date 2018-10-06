@@ -1,5 +1,5 @@
 ﻿function Connect-DbaInstance {
-<#        
+<#
     .SYNOPSIS
         Creates a robust SMO SQL Server object.
         

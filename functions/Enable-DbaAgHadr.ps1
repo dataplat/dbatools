@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Enable-DbaAgHadr {
-<#        
+<#
     .SYNOPSIS
         Enables the Hadr service setting on the specified SQL Server.
         

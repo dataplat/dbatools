@@ -1,5 +1,5 @@
 ﻿function Set-DbaPowerPlan {
-<#        
+<#
     .SYNOPSIS
         Sets the SQL Server OS's Power Plan.
         

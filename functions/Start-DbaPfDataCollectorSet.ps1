@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaPfDataCollectorSet {
-<#        
+<#
     .SYNOPSIS
         Starts Performance Monitor Data Collector Set.
         

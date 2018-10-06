@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbMasterKey {
-<#        
+<#
     .SYNOPSIS
         Gets specified database master key
         

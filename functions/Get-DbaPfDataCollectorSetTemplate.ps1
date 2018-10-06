@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaPfDataCollectorSetTemplate {
-<#        
+<#
     .SYNOPSIS
         Parses Perf Monitor templates. Defaults to parsing templates in the dbatools template repository (\bin\perfmontemplates\).
         

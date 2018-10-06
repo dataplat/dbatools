@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentJob {
-<#        
+<#
     .SYNOPSIS
         Remove-DbaAgentJob removes a job.
         

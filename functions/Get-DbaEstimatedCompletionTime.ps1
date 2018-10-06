@@ -1,5 +1,5 @@
 ﻿function Get-DbaEstimatedCompletionTime {
-<#        
+<#
     .SYNOPSIS
         Gets execution and estimated completion time information for queries
         

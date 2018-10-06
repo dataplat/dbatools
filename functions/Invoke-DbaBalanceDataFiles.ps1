@@ -1,5 +1,5 @@
 ﻿function Invoke-DbaBalanceDataFiles {
-<#        
+<#
     .SYNOPSIS
         Re-balance data between data files
         

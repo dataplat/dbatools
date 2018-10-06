@@ -1,5 +1,5 @@
 ﻿function Copy-DbaExtendedEvent {
-<#        
+<#
     .SYNOPSIS
         Migrates SQL Extended Event Sessions except the two default sessions, AlwaysOn_health and system_health.
         

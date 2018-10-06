@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaCmsRegServer {
-<#        
+<#
     .SYNOPSIS
         Exports registered servers and registered server groups to file
         

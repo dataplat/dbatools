@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaDbSnapshot {
-<#        
+<#
     .SYNOPSIS
         Creates database snapshots
         

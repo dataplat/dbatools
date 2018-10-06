@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaXESmartEmail {
-<#        
+<#
     .SYNOPSIS
         This Response type can be used to send an email each time an event is captured.
         

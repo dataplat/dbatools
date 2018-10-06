@@ -1,5 +1,5 @@
 ﻿function Get-DbaRegistryRoot {
-<#        
+<#
     .SYNOPSIS
         Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer
         

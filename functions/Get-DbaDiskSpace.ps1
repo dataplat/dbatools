@@ -1,6 +1,6 @@
 ﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDiskSpace {
-<#        
+<#
     .SYNOPSIS
         Displays disk information for all local disk on a server.
         

@@ -1,5 +1,5 @@
 ﻿function Get-DbaAgentJobCategory {
-<#        
+<#
     .SYNOPSIS
         Get-DbaAgentJobCategory retrieves the job categories.
         

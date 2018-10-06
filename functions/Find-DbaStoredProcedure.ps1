@@ -1,5 +1,5 @@
 ﻿function Find-DbaStoredProcedure {
-<#        
+<#
     .SYNOPSIS
         Returns all stored procedures that contain a specific case-insensitive string or regex pattern.
         

@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Import-DbaCmsRegServer {
-<#        
+<#
     .SYNOPSIS
         Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)
         

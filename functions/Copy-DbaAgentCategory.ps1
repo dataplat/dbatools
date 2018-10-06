@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging#
 function Copy-DbaAgentCategory {
-<#        
+<#
     .SYNOPSIS
         Copy-DbaAgentCategory migrates SQL Agent categories from one SQL Server to another. This is similar to sp_add_category.
         

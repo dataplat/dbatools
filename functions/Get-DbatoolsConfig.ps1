@@ -1,5 +1,5 @@
 ﻿function Get-DbatoolsConfig {
-<#        
+<#
     .SYNOPSIS
         Retrieves configuration elements by name.
         

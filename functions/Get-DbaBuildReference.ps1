@@ -1,6 +1,6 @@
 ﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaBuildReference {
-<#        
+<#
     .SYNOPSIS
         Returns SQL Server Build infos on a SQL instance
         

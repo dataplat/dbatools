@@ -1,5 +1,5 @@
 ﻿function Copy-DbaServerAuditSpecification {
-<#        
+<#
     .SYNOPSIS
         Copy-DbaServerAuditSpecification migrates server audit specifications from one SQL Server to another.
         

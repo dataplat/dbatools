@@ -1,5 +1,5 @@
 ﻿function Set-DbaAgentJobCategory {
-<#        
+<#
     .SYNOPSIS
         Set-DbaAgentJobCategory changes a job category.
         

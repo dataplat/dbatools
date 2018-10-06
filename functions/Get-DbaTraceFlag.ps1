@@ -1,5 +1,5 @@
 ﻿function Get-DbaTraceFlag {
-<#        
+<#
     .SYNOPSIS
         Get global Trace Flag(s) information for each instance(s) of SQL Server.
         

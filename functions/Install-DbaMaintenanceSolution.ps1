@@ -1,6 +1,6 @@
 ﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Install-DbaMaintenanceSolution {
-<#        
+<#
     .SYNOPSIS
         Download and Install SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)
     .DESCRIPTION

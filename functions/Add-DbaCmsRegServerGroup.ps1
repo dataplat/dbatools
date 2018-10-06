@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaCmsRegServerGroup {
-<#        
+<#
     .SYNOPSIS
         Adds registered server groups to SQL Server Central Management Server (CMS)
         

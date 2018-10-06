@@ -1,5 +1,5 @@
 ﻿function Remove-DbaDbMasterKey {
-<#        
+<#
     .SYNOPSIS
         Deletes specified database master key
         

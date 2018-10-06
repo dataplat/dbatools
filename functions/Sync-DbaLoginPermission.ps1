@@ -1,5 +1,5 @@
 ﻿function Sync-DbaLoginPermission {
-<#        
+<#
     .SYNOPSIS
         Copies SQL login permissions from one server to another.
         

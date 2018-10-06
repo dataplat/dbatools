@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaXESessionTargetFile {
-<#        
+<#
     .SYNOPSIS
         Get a file system object from the Extended Events Session Target Files.
         

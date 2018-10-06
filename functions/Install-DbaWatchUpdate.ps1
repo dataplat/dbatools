@@ -1,5 +1,5 @@
 ﻿function Install-DbaWatchUpdate {
-<#        
+<#
     .SYNOPSIS
         Adds the scheduled task to support Watch-DbaUpdate.
         

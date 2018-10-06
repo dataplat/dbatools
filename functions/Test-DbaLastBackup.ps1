@@ -1,5 +1,5 @@
 ﻿function Test-DbaLastBackup {
-<#        
+<#
     .SYNOPSIS
         Quickly and easily tests the last set of full backups for a server.
         

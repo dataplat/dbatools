@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaOrphanUser {
-<#        
+<#
     .SYNOPSIS
         Drop orphan users with no existing login to map
         

@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Restore-DbaDbSnapshot {
-<#        
+<#
     .SYNOPSIS
         Restores databases from snapshots
         

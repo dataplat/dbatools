@@ -1,5 +1,5 @@
 ﻿function Export-DbaLogin {
-<#        
+<#
     .SYNOPSIS
         Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
         

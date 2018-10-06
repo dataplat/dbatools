@@ -1,6 +1,6 @@
 ﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Test-DbaDbVirtualLogFile {
-<#        
+<#
     .SYNOPSIS
         Returns calculations on the database virtual log files for database on a SQL instance.
         

@@ -1,5 +1,5 @@
 ﻿function Enable-DbaTraceFlag {
-<#        
+<#
     .SYNOPSIS
         Enable Global Trace Flag(s)
         

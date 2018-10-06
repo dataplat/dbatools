@@ -1,7 +1,7 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Get-DbaForceNetworkEncryption {
-<#        
+<#
     .SYNOPSIS
         Gets Force Encryption settings for a SQL Server instance
         

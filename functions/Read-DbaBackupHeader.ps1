@@ -1,7 +1,7 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Read-DbaBackupHeader {
-<#        
+<#
     .SYNOPSIS
         Reads and displays detailed information about a SQL Server backup.
         

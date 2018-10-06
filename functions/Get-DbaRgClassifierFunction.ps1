@@ -1,5 +1,5 @@
 ﻿function Get-DbaRgClassifierFunction {
-<#        
+<#
     .SYNOPSIS
         Gets the Resource Governor custom classifier Function
         

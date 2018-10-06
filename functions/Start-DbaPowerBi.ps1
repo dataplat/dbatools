@@ -1,5 +1,5 @@
 ﻿function Start-DbaPowerBi {
-<#        
+<#
     .SYNOPSIS
         Launches the PowerBi dashboard for dbatools
         

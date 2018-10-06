@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbStoredProcedure {
-<#        
+<#
     .SYNOPSIS
         Gets database Stored Procedures
         

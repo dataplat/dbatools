@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbMirror {
-<#        
+<#
     .SYNOPSIS
         Gets properties of database mirrors and mirror witnesses.
         

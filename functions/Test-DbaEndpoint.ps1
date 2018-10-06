@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaEndpoint {
-<#        
+<#
     .SYNOPSIS
         Tests connectivity for TCP enabled endpoints.
         

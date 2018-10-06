@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaDbMirror {
-<#        
+<#
     .SYNOPSIS
         Sets properties of database mirrors.
         

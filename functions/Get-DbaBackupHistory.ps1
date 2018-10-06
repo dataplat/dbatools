@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaBackupHistory {
-<#        
+<#
     .SYNOPSIS
         Returns backup history details for databases on a SQL Server.
         

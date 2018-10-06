@@ -1,5 +1,5 @@
 ﻿function Test-DbaIdentityUsage {
-<#        
+<#
     .SYNOPSIS
         Displays information relating to IDENTITY seed usage.  Works on SQL Server 2008 and above.
         

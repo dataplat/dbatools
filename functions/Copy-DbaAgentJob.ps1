@@ -1,5 +1,5 @@
 ﻿function Copy-DbaAgentJob {
-<#        
+<#
     .SYNOPSIS
         Copy-DbaAgentJob migrates jobs from one SQL Server to another.
         

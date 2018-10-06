@@ -1,5 +1,5 @@
 ﻿function Update-DbaPowerBiDataSource {
-<#        
+<#
     .SYNOPSIS
         Converts the results of dbatools commands for our PowerBI Dashboard related commands. This command is specific to our toolset and not a general Power BI command.
         

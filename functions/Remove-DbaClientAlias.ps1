@@ -1,5 +1,5 @@
 ﻿function Remove-DbaClientAlias {
-<#        
+<#
     .SYNOPSIS
         Removes a sql alias for the specified server - mimics cliconfg.exe
         

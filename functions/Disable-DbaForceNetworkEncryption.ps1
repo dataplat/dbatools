@@ -1,7 +1,7 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Disable-DbaForceNetworkEncryption {
-<#        
+<#
     .SYNOPSIS
         Disables Force Encryption for a SQL Server instance
         

@@ -1,5 +1,5 @@
 ﻿function Get-DbaAgReplica {
-<#        
+<#
     .SYNOPSIS
         Outputs the Availability Group(s)' Replica object found on the server.
         

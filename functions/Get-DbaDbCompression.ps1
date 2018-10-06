@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbCompression {
-<#        
+<#
     .SYNOPSIS
         Gets tables and indexes size and current compression settings.
         

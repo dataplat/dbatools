@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaXESmartQueryExec {
-<#        
+<#
     .SYNOPSIS
         This Response type executes a T-SQL command against a target database whenever an event is recorded.
         

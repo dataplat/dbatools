@@ -1,5 +1,5 @@
 ﻿function Remove-DbaDbCertificate {
-<#        
+<#
     .SYNOPSIS
         Deletes specified database certificate
         

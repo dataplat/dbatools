@@ -1,5 +1,5 @@
 ﻿function Copy-DbaAgentSharedSchedule {
-<#        
+<#
     .SYNOPSIS
         Copy-DbaAgentSharedSchedule migrates shared job schedules from one SQL Server to another.
         

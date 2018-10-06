@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentSchedule {
-<#        
+<#
     .SYNOPSIS
         New-DbaAgentSchedule creates a new schedule in the msdb database.
         

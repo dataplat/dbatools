@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline#
 function Set-DbaDbState {
-<#        
+<#
     .SYNOPSIS
         Sets various options for databases, hereby called "states"
         

@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaPath {
-<#        
+<#
     .SYNOPSIS
         Tests if file or directory exists from the perspective of the SQL Server service account.
         

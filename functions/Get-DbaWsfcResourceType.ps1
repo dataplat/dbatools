@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaWsfcResourceType {
-<#        
+<#
     .SYNOPSIS
         Gets information about one or more resource types in a failover cluster.
         

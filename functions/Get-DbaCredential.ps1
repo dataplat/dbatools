@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,CodeStyle#
 function Get-DbaCredential {
-<#        
+<#
     .SYNOPSIS
         Gets SQL Credential information for each instance(s) of SQL Server.
         

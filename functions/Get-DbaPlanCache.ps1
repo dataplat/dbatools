@@ -1,5 +1,5 @@
 ﻿function Get-DbaPlanCache {
-<#        
+<#
     .SYNOPSIS
         Provides information about adhoc and prepared plan cache usage
         

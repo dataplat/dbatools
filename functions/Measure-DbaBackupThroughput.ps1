@@ -1,5 +1,5 @@
 ﻿function Measure-DbaBackupThroughput {
-<#        
+<#
     .SYNOPSIS
         Determines how quickly SQL Server is backing up databases to media.
         

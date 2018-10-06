@@ -1,5 +1,5 @@
 ﻿function Set-DbaCmConnection {
-<#        
+<#
     .SYNOPSIS
         Configures a connection object for use in remote computer management.
         

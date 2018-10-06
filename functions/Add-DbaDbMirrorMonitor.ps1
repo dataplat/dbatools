@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Add-DbaDbMirrorMonitor {
-<#        
+<#
     .SYNOPSIS
         Creates a database mirroring monitor job that periodically updates the mirroring status for every mirrored database on the server instance.
         

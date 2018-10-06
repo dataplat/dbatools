@@ -1,5 +1,5 @@
 ﻿function Invoke-DbaAdvancedRestore {
-<#        
+<#
     .SYNOPSIS
         Allows the restore of modified BackupHistory Objects
         For 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk

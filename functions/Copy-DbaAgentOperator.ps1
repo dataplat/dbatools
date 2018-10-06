@@ -1,5 +1,5 @@
 ﻿function Copy-DbaAgentOperator {
-<#        
+<#
     .SYNOPSIS
         Copy-DbaAgentOperator migrates operators from one SQL Server to another.
         

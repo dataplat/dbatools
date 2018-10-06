@@ -1,5 +1,5 @@
 ﻿function Restore-DbaDbCertificate {
-<#        
+<#
     .SYNOPSIS
         Imports certificates from .cer files using SMO.
         

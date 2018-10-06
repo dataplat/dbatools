@@ -1,5 +1,5 @@
 ﻿function Invoke-DbaDiagnosticQuery {
-<#        
+<#
     .SYNOPSIS
         Invoke-DbaDiagnosticQuery runs the scripts provided by Glenn Berry's DMV scripts on specified servers
         

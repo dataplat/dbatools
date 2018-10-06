@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaExecutionPlan {
-<#        
+<#
     .SYNOPSIS
         Gets execution plans and metadata
         

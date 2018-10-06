@@ -1,5 +1,5 @@
 ﻿function Test-DbaDiskAllocation {
-<#        
+<#
     .SYNOPSIS
         Checks all disks on a computer to see if they are formatted with allocation units of 64KB.
         

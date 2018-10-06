@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaExecutionPlan {
-<#        
+<#
     .SYNOPSIS
         Exports execution plans to disk.
         

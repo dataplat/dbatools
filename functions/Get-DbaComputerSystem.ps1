@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaComputerSystem {
-<#        
+<#
     .SYNOPSIS
         Gets computer system information from the server.
         

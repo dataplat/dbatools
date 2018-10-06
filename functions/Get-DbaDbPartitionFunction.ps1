@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbPartitionFunction {
-<#        
+<#
     .SYNOPSIS
         Gets database Partition Functions
         

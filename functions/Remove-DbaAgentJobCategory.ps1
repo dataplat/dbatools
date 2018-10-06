@@ -1,5 +1,5 @@
 ﻿function Remove-DbaAgentJobCategory {
-<#        
+<#
     .SYNOPSIS
         Remove-DbaAgentJobCategory removes a job category.
         

@@ -1,5 +1,5 @@
 ﻿function New-DbaLogin {
-<#        
+<#
     .SYNOPSIS
         Creates a new SQL Server login
         

@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Test-DbaBuild {
-<#        
+<#
     .SYNOPSIS
         Returns SQL Server Build "compliance" level on a build
         

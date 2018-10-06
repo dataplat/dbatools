@@ -1,5 +1,5 @@
 ﻿function Set-DbaMaxDop {
-<#        
+<#
     .SYNOPSIS
         Sets SQL Server maximum degree of parallelism (Max DOP), then displays information relating to SQL Server Max DOP configuration settings. Works on SQL Server 2005 and higher.
         

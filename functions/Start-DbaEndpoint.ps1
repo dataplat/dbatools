@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaEndpoint {
-<#        
+<#
     .SYNOPSIS
         Starts endpoints on a SQL Server instance.
         

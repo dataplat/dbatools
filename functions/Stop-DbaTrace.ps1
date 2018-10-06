@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Stop-DbaTrace {
-<#        
+<#
     .SYNOPSIS
         Stops SQL Server traces
         

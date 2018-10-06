@@ -1,5 +1,5 @@
 ﻿function Show-DbaServerFileSystem {
-<#        
+<#
     .SYNOPSIS
         Shows file system on remote SQL Server in a local GUI and returns the selected directory name
         

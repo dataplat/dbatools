@@ -1,6 +1,6 @@
 ﻿#ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
 function Get-DbaDbQueryStoreOption {
-<#        
+<#
     .SYNOPSIS
         Get the Query Store configuration for Query Store enabled databases.
         

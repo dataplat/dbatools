@@ -1,5 +1,5 @@
 ﻿function Import-DbaCsvToSql {
-<#        
+<#
     .SYNOPSIS
         Efficiently imports very large (and small) CSV files into SQL Server using only the .NET Framework and PowerShell.
         

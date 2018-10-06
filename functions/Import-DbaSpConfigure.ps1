@@ -1,5 +1,5 @@
 ﻿function Import-DbaSpConfigure {
-<#        
+<#
     .SYNOPSIS
         Updates sp_configure settings on destination server.
         

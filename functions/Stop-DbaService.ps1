@@ -1,5 +1,5 @@
 ﻿function Stop-DbaService {
-<#        
+<#
     .SYNOPSIS
         Stops SQL Server services on a computer.
         

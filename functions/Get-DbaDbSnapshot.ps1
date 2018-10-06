@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbSnapshot {
-<#        
+<#
     .SYNOPSIS
         Get database snapshots with details
         

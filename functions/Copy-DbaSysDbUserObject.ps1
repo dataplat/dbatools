@@ -1,5 +1,5 @@
 ﻿function Copy-DbaSysDbUserObject {
-<#        
+<#
     .SYNOPSIS
         Imports all user objects found in source SQL Server's master, msdb and model databases to the destination.
         

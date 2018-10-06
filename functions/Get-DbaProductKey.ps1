@@ -1,5 +1,5 @@
 ﻿function Get-DbaProductKey {
-<#        
+<#
     .SYNOPSIS
         Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2005-2016
         

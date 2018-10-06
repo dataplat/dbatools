@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbMirrorMonitor {
-<#        
+<#
     .SYNOPSIS
         Returns status rows for a monitored database from the status table in which database mirroring monitoring history is stored and allows you to choose whether the procedure obtains the latest status beforehand.
         

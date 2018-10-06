@@ -1,5 +1,5 @@
 ﻿function Clear-DbaPlanCache {
-<#        
+<#
     .SYNOPSIS
         Removes ad-hoc and prepared plan caches is single use plans are over defined threshold.
         

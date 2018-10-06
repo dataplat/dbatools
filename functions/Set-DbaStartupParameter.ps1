@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaStartupParameter {
-<#        
+<#
     .SYNOPSIS
         Sets the Startup Parameters for a SQL Server instance
         

@@ -1,5 +1,5 @@
 ﻿function Get-DbaPrivilege {
-<#        
+<#
     .SYNOPSIS
         Gets the users with local privileges on one or more computers.
         

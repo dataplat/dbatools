@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Copy-DbaDbTableData {
-<#        
+<#
     .SYNOPSIS
         Copies data between SQL Server tables.
         
