@@ -31,7 +31,7 @@ function Get-DbaAgentJobOutputFile {
             Editor: niphlod
 
             Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Copyright (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE

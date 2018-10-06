@@ -24,7 +24,7 @@ function Get-DbaCustomError {
             Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
+           Copyright (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
