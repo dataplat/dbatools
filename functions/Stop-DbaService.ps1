@@ -51,7 +51,7 @@ function Stop-DbaService {
             Requires Local Admin rights on destination computer(s).
 
             dbatools PowerShell module (https://dbatools.io)
-            Copyright (c) 2018 by dbatools, licensed under MIT
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK

@@ -14,7 +14,7 @@ function Convert-HexStringToByte {
     Tags: Login, Internal
     Author: Kirill Kravtsov (@nvarscar)
     dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-   Copyright (c) 2018 by dbatools, licensed under MIT
+   Copyright: (c) 2018 by dbatools, licensed under MIT
     License: MIT https://opensource.org/licenses/MIT
 
     .EXAMPLE

@@ -9,7 +9,7 @@ function Copy-DbaLinkedServer {
             Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
 
             Website: https://dbatools.io
-            Copyright (c) 2018 by dbatools, licensed under MIT
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .PARAMETER Source

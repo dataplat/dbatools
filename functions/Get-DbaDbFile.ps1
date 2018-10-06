@@ -32,7 +32,7 @@ function Get-DbaDbFile {
             Author: Stuart Moore (@napalmgram), stuart-moore.com
 
             Website: https://dbatools.io
-            Copyright (c) 2018 by dbatools, licensed under MIT
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .EXAMPLE

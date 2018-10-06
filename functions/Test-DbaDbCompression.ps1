@@ -75,7 +75,7 @@ function Test-DbaDbCompression {
         Author: Jason Squires (@js_0505, jstexasdba@gmail.com)
         Tags: Compression, Table, Database
         Website: https://dbatools.io
-        Copyright (c) 2018 by dbatools, licensed under MIT
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
