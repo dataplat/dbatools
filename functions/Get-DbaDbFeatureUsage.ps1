@@ -61,8 +61,8 @@
     begin {
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
             ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-            SERVERPROPERTY('ServerName') AS SqlInstance, DB_NAME() as [Database], feature_id as Id,
-            feature_name as Feature FROM sys.dm_db_persisted_sku_features"
+            SERVERPROPERTY('ServerName') AS SqlInstance, feature_id as Id,
+            feature_name as Feature,  DB_NAME() as [Database] FROM sys.dm_db_persisted_sku_features"
     }
 
     process {
