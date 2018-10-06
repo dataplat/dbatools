@@ -155,7 +155,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result.PasswordPolicyEnforced | Should Be $false
         }
 
-        It "Add roles to login" {
+        It -Skip "Add roles to login" {
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -AddRole serveradmin, processadmin
 
             $result.ServerRole | Should -Be "processadmin,serveradmin"
