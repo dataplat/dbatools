@@ -1,4 +1,4 @@
-#ValidationTags#Messaging,FlowControl,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaEndpoint {
     <#
         .SYNOPSIS
@@ -14,6 +14,9 @@ function Get-DbaEndpoint {
         .PARAMETER SqlCredential
             Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+        .PARAMETER EndPoint
+            Return only specific endpoint or endpoints
+    
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -43,9 +46,9 @@ function Get-DbaEndpoint {
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [Alias('Silent')]
+        [string[]]$Endpoint,
         [switch]$EnableException
     )
 
@@ -53,18 +56,44 @@ function Get-DbaEndpoint {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            foreach ($endpoint in $server.Endpoints) {
-                Add-Member -Force -InputObject $endpoint -MemberType NoteProperty -Name ComputerName -value $endpoint.Parent.ComputerName
-                Add-Member -Force -InputObject $endpoint -MemberType NoteProperty -Name InstanceName -value $endpoint.Parent.ServiceName
-                Add-Member -Force -InputObject $endpoint -MemberType NoteProperty -Name SqlInstance -value $endpoint.Parent.DomainInstanceName
-
-                Select-DefaultView -InputObject $endpoint -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointType, Owner, IsAdminEndpoint, IsSystemObject
+            
+            # Not sure why minimumversion isnt working
+            if ($server.VersionMajor -lt 9) {
+                Stop-Function -Message "SQL Server version 9 required - $instance not supported." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+            
+            $endpoints = $server.Endpoints
+            
+            if (Test-Bound -ParameterName EndPoint) {
+                $endpoints = $endpoints | Where-Object Name -in $endpoint
+            }
+            
+            foreach ($end in $endpoints) {
+                if ($end.Protocol.Tcp.ListenerPort) {
+                    if ($instance.ComputerName -match '\.') {
+                        $dns = $instance.ComputerName
+                    }
+                    else {
+                        $dns = [System.Net.Dns]::GetHostEntry($instance.ComputerName).HostName
+                    }
+                                        
+                    $fqdn = "TCP://" + $dns + ":" + $end.Protocol.Tcp.ListenerPort
+                }
+                else {
+                    $fqdn = $null
+                }
+                
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name Fqdn -Value $fqdn
+                
+                Select-DefaultView -InputObject $end -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointState, EndpointType, Owner, IsAdminEndpoint, Fqdn, IsSystemObject
             }
         }
     }
