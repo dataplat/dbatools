@@ -34,12 +34,12 @@ function Get-DbaEndpoint {
         https://dbatools.io/Get-DbaEndpoint
         
     .EXAMPLE
-        Get-DbaEndpoint -SqlInstance localhost
+        PS C:\> Get-DbaEndpoint -SqlInstance localhost
         
         Returns all Endpoint(s) on the local default SQL Server instance
         
     .EXAMPLE
-        Get-DbaEndpoint -SqlInstance localhost, sql2016
+        PS C:\> Get-DbaEndpoint -SqlInstance localhost, sql2016
         
         Returns all Endpoint(s) for the local and sql2016 SQL Server instances
         

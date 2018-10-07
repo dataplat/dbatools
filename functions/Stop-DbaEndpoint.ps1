@@ -45,21 +45,20 @@ function Stop-DbaEndpoint {
         https://dbatools.io/Stop-DbaEndpoint
         
     .EXAMPLE
-        Stop-DbaEndpoint -SqlInstance sqlserver2012 -AllEndpoints
+        PS C:\> Stop-DbaEndpoint -SqlInstance sqlserver2012 -AllEndpoints
         
         Stops all endpoints on the sqlserver2014 instance.
         
     .EXAMPLE
-        Stop-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1,endpoint2
+        PS C:\> Stop-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1,endpoint2
         
         Stops the endpoint1 and endpoint2 endpoints.
         
     .EXAMPLE
-        Get-Endpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Stop-DbaEndpoint
+        PS C:\> Get-Endpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Stop-DbaEndpoint
         
         Stops the endpoints returned from the Get-Endpoint function.
-        
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (

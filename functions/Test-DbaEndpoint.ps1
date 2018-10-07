@@ -38,28 +38,28 @@ function Test-DbaEndpoint {
         https://dbatools.io/Test-DbaEndpoint
         
     .EXAMPLE
-        Test-DbaEndpoint -SqlInstance localhost
+        PS C:\> Test-DbaEndpoint -SqlInstance localhost
         
         Tests all endpoints on the local default SQL Server instance.
         
         Note that if an endpoint does not have a tcp listener port, it will be skipped.
         
     .EXAMPLE
-        Get-DbaEndpoint -SqlInstance localhost, sql2016 -Endpoint Mirror | Test-DbaEndpoint
+        PS C:\> Get-DbaEndpoint -SqlInstance localhost, sql2016 -Endpoint Mirror | Test-DbaEndpoint
         
         Tests all endpoints named Mirroring on sql2016 and localhost.
         
         Note that if an endpoint does not have a tcp listener port, it will be skipped.
         
     .EXAMPLE
-        Test-DbaEndpoint -SqlInstance localhost, sql2016 -Endpoint Mirror
+        PS C:\> Test-DbaEndpoint -SqlInstance localhost, sql2016 -Endpoint Mirror
         
         Tests all endpoints named Mirroring on sql2016 and localhost.
         
         Note that if an endpoint does not have a tcp listener port, it will be skipped.
         
     .EXAMPLE
-        Test-DbaEndpoint -SqlInstance localhost -Verbose
+        PS C:\> Test-DbaEndpoint -SqlInstance localhost -Verbose
         
         Tests all endpoints on the local default SQL Server instance.
         

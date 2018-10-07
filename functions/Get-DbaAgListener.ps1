@@ -42,16 +42,15 @@
         https://dbatools.io/Get-DbaAgListener
         
     .EXAMPLE
-        Get-DbaAgListener -SqlInstance sqlserver2014a
+        PS C:\> Get-DbaAgListener -SqlInstance sqlserver2014a
         
         Returns basic information on the listener found on sqlserver2014a
         
     .EXAMPLE
-        Get-DbaAgListener -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
+        PS C:\> Get-DbaAgListener -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
         
         Returns basic information on the listener found on sqlserver2014a in the Availability Group AG-a
-        
-        
+
 #>
     [CmdletBinding()]
     param (

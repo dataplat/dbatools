@@ -45,17 +45,17 @@ function Start-DbaEndpoint {
         https://dbatools.io/Start-DbaEndpoint
         
     .EXAMPLE
-        Start-DbaEndpoint -SqlInstance sqlserver2012 -AllEndpoints
+        PS C:\> Start-DbaEndpoint -SqlInstance sqlserver2012 -AllEndpoints
         
         Starts all endpoints on the sqlserver2014 instance.
         
     .EXAMPLE
-        Start-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1,endpoint2
+        PS C:\> Start-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1,endpoint2
         
         Starts the endpoint1 and endpoint2 endpoints.
         
     .EXAMPLE
-        Get-Endpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Start-DbaEndpoint
+        PS C:\> Get-Endpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Start-DbaEndpoint
         
         Starts the endpoints returned from the Get-Endpoint function.
         

@@ -17,7 +17,10 @@
         
     .PARAMETER ExcludeDatabase
         Database(s) to ignore when retrieving certificates.
-        
+    
+    .PARAMETER InputObject
+        Allows piping from Get-DbaDatabase.
+    
     .PARAMETER Certificate
         Get specific certificate
         
@@ -52,70 +55,53 @@
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
-        [object[]]$Certificate,
-        [Alias('Silent')]
+        [string[]]$Database,
+        [string[]]$ExcludeDatabase,
+        [string[]]$Certificate,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseCertificate
     }
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+        $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        
+        foreach ($db in $InputObject) {
+            if (!$db.IsAccessible) {
+                Write-Message -Level Warning -Message "$db is not accessible, skipping"
+                continue
             }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            $dbName = $db.Name
+            $currentdb = $server.Databases[$dbName]
+            
+            if ($null -eq $currentdb) {
+                Write-Message -Message "Database '$db' does not exist on $instance" -Target $currentdb -Level Verbose
+                continue
             }
-
-            $databases = Get-DbaDatabase -SqlInstance $server | Where-Object IsAccessible
-
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
+            
+            if ($null -eq $currentdb.Certificates) {
+                Write-Message -Message "No certificate exists in the $db database on $instance" -Target $currentdb -Level Verbose
+                continue
             }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+            
+            $certs = $currentdb.Certificates
+            if ($Certificate) {
+                $certs = $certs | Where-Object Name -in $Certificate
             }
-
-            foreach ($db in $databases) {
-                if (!$db.IsAccessible) {
-                    Write-Message -Level Warning -Message "$db is not accessible, skipping"
-                    continue
-                }
-                $dbName = $db.Name
-                $currentdb = $server.Databases[$dbName]
-
-                if ($null -eq $currentdb) {
-                    Write-Message -Message "Database '$db' does not exist on $instance" -Target $currentdb -Level Verbose
-                    continue
-                }
-
-                if ($null -eq $currentdb.Certificates) {
-                    Write-Message -Message "No certificate exists in the $db database on $instance" -Target $currentdb -Level Verbose
-                    continue
-                }
-
-                $certs = $currentdb.Certificates
-                if ($Certificate) {
-                    $certs = $certs | Where-Object Name -in $Certificate
-                }
-
-                foreach ($cert in $certs) {
-
-                    Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name Database -value $currentdb.Name
-
-                    Select-DefaultView -InputObject $cert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
-                }
+            
+            foreach ($cert in $certs) {
+                
+                Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name Database -value $currentdb.Name
+                
+                Select-DefaultView -InputObject $cert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
             }
         }
     }

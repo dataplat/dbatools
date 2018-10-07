@@ -54,12 +54,12 @@ function New-DbaAgReplica {
         https://dbatools.io/New-DbaAgReplica
         
     .EXAMPLE
-        New-DbaAgReplica -SqlInstance sql2017 -AvailabilityGroup SharePoint
+        PS C:\> New-DbaAgReplica -SqlInstance sql2017 -AvailabilityGroup SharePoint
         
         Creates a listener with no IP address. Does not prompt for confirmation.
         
     .EXAMPLE
-        Get-AvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availability group1 | New-DbaAgReplica
+        PS C:\> Get-AvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availability group1 | New-DbaAgReplica
         
         Adds the availability groups returned from the Get-AvailabilityGroup function. Prompts for confirmation.
 #>

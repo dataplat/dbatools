@@ -57,16 +57,15 @@ function New-DbaAgListener {
         https://dbatools.io/New-DbaAgListener
         
     .EXAMPLE
-        New-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint
+        PS C:\> New-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint
         
         Creates a listener with no IP address. Does not prompt for confirmation.
         
     .EXAMPLE
-        Get-AvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availability group1 | New-DbaAgListener
+        PS C:\> Get-AvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availability group1 | New-DbaAgListener
         
         Adds the availability groups returned from the Get-AvailabilityGroup function. Prompts for confirmation.
-        
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (

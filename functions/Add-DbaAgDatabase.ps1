@@ -42,27 +42,27 @@ function Add-DbaAgDatabase {
         https://dbatools.io/Add-DbaAgDatabase
         
     .EXAMPLE
-        Add-DbaAgDatabase -SqlInstance sqlserver2012 -AllAvailabilityGroup
+        PS C:\> Add-DbaAgDatabase -SqlInstance sqlserver2012 -AllAvailabilityGroup
         
         Adds all availability groups on the sqlserver2014 instance. Does not prompt for confirmation.
         
     .EXAMPLE
-        Add-DbaAgDatabase -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm
+        PS C:\> Add-DbaAgDatabase -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm
         
         Adds the ag1 and ag2 availability groups on sqlserver2012. Prompts for confirmation.
         
     .EXAMPLE
-        Get-DbaDatabase -SqlInstance sqlserver2012 | Out-GridView -Passthru | Add-DbaAgDatabase -AvailabilityGroup ag1
+        PS C:\> Get-DbaDatabase -SqlInstance sqlserver2012 | Out-GridView -Passthru | Add-DbaAgDatabase -AvailabilityGroup ag1
         
         Adds selected databases from sqlserver2012 to ag1
   
     .EXAMPLE
-        Get-DbaDbSharePoint -SqlInstance sqlcluster | Add-DbaAgDatabase -AvailabilityGroup SharePoint
+        PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster | Add-DbaAgDatabase -AvailabilityGroup SharePoint
         
         Adds SharePoint databases as found in SharePoint_Config on sqlcluster to ag1 on sqlcluster
     
     .EXAMPLE
-        Get-DbaDbSharePoint -SqlInstance sqlcluster -ConfigDatabase SharePoint_Config_2019 | Add-DbaAgDatabase -AvailabilityGroup SharePoint
+        PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster -ConfigDatabase SharePoint_Config_2019 | Add-DbaAgDatabase -AvailabilityGroup SharePoint
         
         Adds SharePoint databases as found in SharePoint_Config_2019 on sqlcluster to ag1 on sqlcluster
 #>

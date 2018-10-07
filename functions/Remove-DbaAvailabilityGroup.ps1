@@ -55,17 +55,17 @@ function Remove-DbaAvailabilityGroup {
         https://dbatools.io/Remove-DbaAvailabilityGroup
 
     .EXAMPLE
-        Remove-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AllAvailabilityGroups
+        PS C:\> Remove-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AllAvailabilityGroups
 
         Removes all availability groups on the sqlserver2014 instance. Prompts for confirmation.
 
     .EXAMPLE
-        Remove-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroups ag1, ag2 -Confirm:$false
+        PS C:\> Remove-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroups ag1, ag2 -Confirm:$false
 
         Removes the ag1 and ag2 availability groups on sqlserver2012.  Does not prompt for confirmation.
 
     .EXAMPLE
-        Get-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroups availability group1 | Remove-DbaAvailabilityGroup
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroups availability group1 | Remove-DbaAvailabilityGroup
 
         Removes the availability groups returned from the Get-DbaAvailabilityGroup function. Prompts for confirmation.
 #>

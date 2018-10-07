@@ -74,12 +74,12 @@ function New-DbaEndpoint {
         https://dbatools.io/New-DbaEndpoint
         
     .EXAMPLE
-        New-DbaEndpoint -SqlInstance localhost
+        PS C:\> New-DbaEndpoint -SqlInstance localhost
         
         Creates all Endpoint(s) on the local default SQL Server instance
         
     .EXAMPLE
-        Net-DbaEndpoint -SqlInstance localhost, sql2016
+        PS C:\> New-DbaEndpoint -SqlInstance localhost, sql2016
         
         Returns all Endpoint(s) for the local and sql2016 SQL Server instances
         
@@ -100,6 +100,7 @@ function New-DbaEndpoint {
         [string]$EndpointEncryption = 'Required',
         [ValidateSet('Aes', 'AesRC4', 'None', 'RC4', 'RC4Aes')]
         [string]$EncryptionAlgorithm = 'RC4',
+        [string]$Certificate,
         [int]$Port,
         [int]$SslPort,
         [switch]$EnableException
@@ -117,6 +118,13 @@ function New-DbaEndpoint {
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+            
+            if ($Certificate) {
+                $cert = Get-DbaDbCertificate -SqlInstance $server -Certificate $Certificate
+                if (-not $cert) {
+                    Stop-Function -Message "Certificate $Certificate does not exist on $instance" -ErrorRecord $_ -Target $Certificate -Continue
+                }
             }
             
             # Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1
@@ -158,7 +166,15 @@ function New-DbaEndpoint {
                         $endpoint.Payload.DatabaseMirroring.EndpointEncryptionAlgorithm = [Microsoft.SqlServer.Management.Smo.EndpointEncryptionAlgorithm]::$EncryptionAlgorithm
                         
                     }
-                    $null = $endpoint.Create()
+                    if ($Certificate) {
+                        $outscript = $endpoint.Script()
+                        $outscript = $outscript.Replace("ROLE = ALL,", "ROLE = ALL, AUTHENTICATION = CERTIFICATE $cert,")
+                        $server.Query($outscript)    
+                    }
+                    else {
+                        $null = $endpoint.Create()
+                    }
+                    
                     $server.Endpoints.Refresh()
                     Get-DbaEndpoint -SqlInstance $server -Endpoint $name
                 }
