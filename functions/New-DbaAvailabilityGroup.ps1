@@ -31,14 +31,8 @@ function Invoke-DbaDbMirroring {
     .PARAMETER SecondarySqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         
-    .PARAMETER Witness
-        SQL Server name or SMO object representing the witness SQL Server.
-        
-    .PARAMETER WitnessSqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
     .PARAMETER Database
-        The database or databases to secondary.
+        The database or databases to add.
         
     .PARAMETER NetworkShare
         The network share where the backups will be backed up and restored from.
@@ -148,15 +142,6 @@ function Invoke-DbaDbMirroring {
         [switch]$Force,
         [switch]$EnableException
     )
-    begin {
-        $params = $PSBoundParameters
-        $null = $params.Remove('UseLastBackups')
-        $null = $params.Remove('Force')
-        $null = $params.Remove('Confirm')
-        $null = $params.Remove('Whatif')
-        $totalSteps = 12
-        $Activity = "Setting up mirroring"
-    }
     process {
         if ((Test-Bound -ParameterName Primary) -and (Test-Bound -Not -ParameterName Database)) {
             Stop-Function -Message "Database is required when SqlInstance is specified"
