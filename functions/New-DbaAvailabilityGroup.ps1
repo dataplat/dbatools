@@ -26,7 +26,7 @@ function Invoke-DbaDbMirroring {
         Login to the primary instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         
     .PARAMETER Secondary
-        SQL Server name or SMO object representing the secondary SQL Server.
+        SQL Server name or SMO object representing secondary SQL Servers.
         
     .PARAMETER SecondarySqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
