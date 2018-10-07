@@ -40,7 +40,19 @@ function Invoke-DbaDbMirroring {
         Each SQL Server service account must have access to this share.
         
         NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
-        
+    
+    .PARAMETER IPAddress
+        Sets the IP address of the availability group listener.
+    
+    .PARAMETER SubnetMask
+        Sets the subnet IP mask of the availability group listener.
+    
+    .PARAMETER Port
+        Sets the number of the port used to communicate with the availability group.
+    
+    .PARAMETER Dhcp
+        Indicates whether the object is DHCP.
+    
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase.
         
@@ -136,6 +148,10 @@ function Invoke-DbaDbMirroring {
         [PSCredential]$SecondarySqlCredential,
         [string[]]$Database,
         [string]$NetworkShare,
+        [ipaddress[]]$IPAddress,
+        [ipaddress]$SubnetMask,
+        [int]$Port,
+        [switch]$Dhcp,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$UseLastBackups,
@@ -152,8 +168,6 @@ function Invoke-DbaDbMirroring {
             Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
             return
         }
-        
-        $InputObject += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $Database
         
         foreach ($primarydb in $InputObject) {
             $stepCounter = 0
@@ -207,6 +221,8 @@ function Invoke-DbaDbMirroring {
             
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to secondary"
             
+            $InputObject += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $Database
+
             if (-not $validation.DatabaseExistsOnMirror -or $Force) {
                 if ($UseLastBackups) {
                     $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
