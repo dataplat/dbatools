@@ -29,7 +29,7 @@ InModuleScope dbatools {
         }
         Context "gets ag replicas" {
             $results = Get-DbaAgReplica -SqlInstance sql2016c
-            It "returns results with proper data" {
+            It -Skip "returns results with proper data" {
                 $results.ConnectionState | Should -Be 'Unknown', 'Unknown', 'Disconnected'
                 $results.EndPointUrl -contains 'TCP://sql2016c.base.local:5022'| Should -Be $true
             }
