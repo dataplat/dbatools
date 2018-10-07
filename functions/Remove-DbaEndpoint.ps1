@@ -65,13 +65,6 @@ function Remove-DbaEndpoint {
         [Microsoft.SqlServer.Management.Smo.Endpoint[]]$InputObject,
         [switch]$EnableException
     )
-    begin {
-        function Remove-Endpoint {
-            [CmdletBinding()]
-            param ([Microsoft.SqlServer.Management.Smo.Endpoint[]]$epobject)
-            
-        }
-    }
     process {
         if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName Endpoint, AllEndpoints)) {
             Stop-Function -Message "You must specify AllEndpoints or Endpoint when using the SqlInstance parameter."
