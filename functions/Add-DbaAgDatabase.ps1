@@ -18,8 +18,14 @@ function Add-DbaAgDatabase {
         Only add specific availability groups.
         
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-DbaDatabase
+        Internal parameter to support piping from Get-DbaDatabase, Get-DbaDbSharePoint and more.
         
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+        
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -38,21 +44,29 @@ function Add-DbaAgDatabase {
     .EXAMPLE
         Add-DbaAgDatabase -SqlInstance sqlserver2012 -AllAvailabilityGroup
         
-        Adds all availability groups on the sqlserver2014 instance. Prompts for confirmation.
+        Adds all availability groups on the sqlserver2014 instance. Does not prompt for confirmation.
         
     .EXAMPLE
-        Add-DbaAgDatabase -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm:$false
+        Add-DbaAgDatabase -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm
         
-        Adds the ag1 and ag2 availability groups on sqlserver2012.  Does not prompt for confirmation.
+        Adds the ag1 and ag2 availability groups on sqlserver2012. Prompts for confirmation.
         
     .EXAMPLE
-        Get-AvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup availability group1 | Add-DbaAgDatabase
+        Get-DbaDatabase -SqlInstance sqlserver2012 | Out-GridView -Passthru | Add-DbaAgDatabase -AvailabilityGroup ag1
         
-        Adds the availability groups returned from the Get-AvailabilityGroup function. Prompts for confirmation.
+        Adds selected databases from sqlserver2012 to ag1
+  
+    .EXAMPLE
+        Get-DbaDbSharePoint -SqlInstance sqlcluster | Add-DbaAgDatabase -AvailabilityGroup SharePoint
         
+        Adds SharePoint databases as found in SharePoint_Config on sqlcluster to ag1 on sqlcluster
+    
+    .EXAMPLE
+        Get-DbaDbSharePoint -SqlInstance sqlcluster -ConfigDatabase SharePoint_Config_2019 | Add-DbaAgDatabase -AvailabilityGroup SharePoint
         
+        Adds SharePoint databases as found in SharePoint_Config_2019 on sqlcluster to ag1 on sqlcluster
 #>
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
