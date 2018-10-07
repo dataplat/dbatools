@@ -7,6 +7,16 @@ function Remove-DbaAvailabilityGroup {
     .DESCRIPTION
         Removes availability groups on a SQL Server instance.
         
+        If possible, remove the availability group only while connected to the server instance that hosts the primary replica.
+        When the availability group is dropped from the primary replica, changes are allowed in the former primary databases (without high availability protection).
+        Deleting an availability group from a secondary replica leaves the primary replica in the RESTORING state, and changes are not allowed on the databases.
+    
+        Avoid dropping an availability group when the Windows Server Failover Clustering (WSFC) cluster has no quorum.
+        If you must drop an availability group while the cluster lacks quorum, the metadata availability group that is stored in the cluster is not removed.
+        After the cluster regains quorum, you will need to drop the availability group again to remove it from the WSFC cluster.
+    
+        For more information: https://docs.microsoft.com/en-us/sql/t-sql/statements/drop-availability-group-transact-sql
+    
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
         to be executed against multiple SQL Server instances.
@@ -55,7 +65,7 @@ function Remove-DbaAvailabilityGroup {
         
         
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
