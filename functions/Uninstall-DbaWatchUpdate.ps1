@@ -2,25 +2,26 @@
 <#
     .SYNOPSIS
         Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
-        
+
     .DESCRIPTION
         Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
-        
+
     .NOTES
         Tags: JustForFun, Module
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Uninstall-DbaWatchUpdate
-        
+
     .EXAMPLE
-        Uninstall-DbaWatchUpdate
-        
+        PS C:\> Uninstall-DbaWatchUpdate
+
         Removes the scheduled task created by Install-DbaWatchUpdate.
-        
+
 #>
     process {
         if (([Environment]::OSVersion).Version.Major -lt 10) {
