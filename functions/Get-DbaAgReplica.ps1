@@ -20,11 +20,11 @@ function Get-DbaAgReplica {
         Specify the replica to pull information on, is dependent up name that you want to get information on.
         
     .PARAMETER Role
-        Filter results by role (Primary, Secondary, Resolving, Unknown)
+        Filter results by role (Primary, Secondary, Resolving, Unknown).
         
     .PARAMETER InputObject
-        Enables piping from Get-DbaAvailabilityGroup
-        
+        Enables piping from Get-DbaAvailabilityGroup.
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -63,7 +63,6 @@ function Get-DbaAgReplica {
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
