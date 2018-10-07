@@ -41,21 +41,21 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It 'Accepts a list of roles' {
             $result = Get-DbaServerRoleMember -SqlInstance $instance -ServerRole 'sysadmin'
 
-            $uniqueRoles = $result.Role | Select-Object -ExpandProperty 'Name' -Unique
+            $uniqueRoles = $result.Role | Select-Object -Unique
             $uniqueRoles | Should -Be 'sysadmin'
         }
 
         It 'Excludes roles' {
             $result = Get-DbaServerRoleMember -SqlInstance $instance -ExcludeServerRole 'dbcreator'
 
-            $uniqueRoles = $result.Role | Select-Object -ExpandProperty 'Name' -Unique
+            $uniqueRoles = $result.Role | Select-Object -Unique
             $uniqueRoles | Should -Not -Contain 'dbcreator'
             $uniqueRoles | Should -Contain 'sysadmin'
         }
 
         It 'Excludes fixed roles' {
             $result = Get-DbaServerRoleMember -SqlInstance $instance -ExcludeFixedRole
-            $uniqueRoles = $result.Role | Select-Object -ExpandProperty 'Name' -Unique
+            $uniqueRoles = $result.Role | Select-Object -Unique
             $uniqueRoles | Should -Not -Contain 'sysadmin'
         }
 

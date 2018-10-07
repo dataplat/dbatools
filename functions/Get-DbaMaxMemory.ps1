@@ -1,43 +1,44 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaMaxMemory {
-    <#
-        .SYNOPSIS
-            Gets the 'Max Server Memory' configuration setting and the memory of the server.  Works on SQL Server 2000-2014.
-
-        .DESCRIPTION
-            This command retrieves the SQL Server 'Max Server Memory' configuration setting as well as the total  physical installed on the server.
-
-        .PARAMETER SqlInstance
-            Allows you to specify a comma separated list of servers to query.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: MaxMemory, Memory
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaMaxMemory
-
-        .EXAMPLE
-            Get-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012
-
-            Get memory settings for all servers within the SQL Server Central Management Server "sqlcluster".
-
-        .EXAMPLE
-            Get-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB }
-
-            Find all servers in Server Central Management Server that have 'Max Server Memory' set to higher than the total memory of the server (think 2147483647)
-    #>
+<#
+    .SYNOPSIS
+        Gets the 'Max Server Memory' configuration setting and the memory of the server.  Works on SQL Server 2000-2014.
+        
+    .DESCRIPTION
+        This command retrieves the SQL Server 'Max Server Memory' configuration setting as well as the total  physical installed on the server.
+        
+    .PARAMETER SqlInstance
+        Allows you to specify a comma separated list of servers to query.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: MaxMemory, Memory
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaMaxMemory
+        
+    .EXAMPLE
+        Get-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012
+        
+        Get memory settings for all servers within the SQL Server Central Management Server "sqlcluster".
+        
+    .EXAMPLE
+        Get-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB }
+        
+        Find all servers in Server Central Management Server that have 'Max Server Memory' set to higher than the total memory of the server (think 2147483647)
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]

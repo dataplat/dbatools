@@ -1,43 +1,44 @@
-function Get-DbaDefaultPath {
-    <#
+﻿function Get-DbaDefaultPath {
+<#
     .SYNOPSIS
         Gets the default SQL Server paths for data, logs and backups
-
+        
     .DESCRIPTION
         Gets the default SQL Server paths for data, logs and backups
-
+        
     .PARAMETER SqlInstance
         The SQL Server instance, or instances.
-
+        
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
-
+        
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
+        
     .NOTES
         Tags: Config
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-
+        
     .LINK
         https://dbatools.io/Get-DbaDefaultPath
-
+        
     .EXAMPLE
         Get-DbaDefaultPath -SqlInstance sql01\sharepoint
-
+        
         Returns the default file paths for sql01\sharepoint
-
+        
     .EXAMPLE
         $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
         $servers | Get-DbaDefaultPath
-
+        
         Returns the default file paths for "sql2014","sql2016" and "sqlcluster\sharepoint"
-
+        
+        
 #>
     [CmdletBinding()]
     param (

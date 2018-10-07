@@ -1,89 +1,90 @@
-function Reset-DbaAdmin {
-    <#
-        .SYNOPSIS
-            This function allows administrators to regain access to SQL Servers in the event that passwords or access was lost.
-
-            Supports SQL Server 2005 and above. Windows administrator access is required.
-
-        .DESCRIPTION
-            This function allows administrators to regain access to local or remote SQL Servers by either resetting the sa password, adding the sysadmin role to existing login, or adding a new login (SQL or Windows) and granting it sysadmin privileges.
-
-            This is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line using the /mReset-DbaAdmin parameter which starts the server in Single-User mode and only allows this script to connect.
-
-            Once the service is restarted, the following tasks are performed:
-            - Login is added if it doesn't exist
-            - If login is a Windows User, an attempt is made to ensure it exists
-            - If login is a SQL Login, password policy will be set to OFF when creating the login, and SQL Server authentication will be set to Mixed Mode.
-            - Login will be enabled and unlocked
-            - Login will be added to sysadmin role
-
-            If failures occur at any point, a best attempt is made to restart the SQL Server.
-
-            In order to make this script as portable as possible, System.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).
-
-            If using this function against a remote SQL Server, ensure WinRM is configured and accessible. If this is not possible, run the script locally.
-
-            Tested on Windows XP, 7, 8.1, Server 2012 and Windows Server Technical Preview 2.
-            Tested on SQL Server 2005 SP4 through 2016 CTP2.
-
-        .PARAMETER SqlInstance
-            The SQL Server instance. SQL Server must be 2005 and above, and can be a clustered or stand-alone instance.
-
-        .PARAMETER Login
-            By default, the Login parameter is "sa" but any other SQL or Windows account can be specified. If a login does not currently exist, it will be added.
-
-            When adding a Windows login to remote servers, ensure the SQL Server can add the login (ie, don't add WORKSTATION\Admin to remoteserver\instance. Domain users and Groups are valid input.
-
-        .PARAMETER SecurePassword
-            By default, if a SQL Login is detected, you will be prompted for a password. Use this to securely bypass the prompt.
-
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .PARAMETER Force
-            If this switch is enabled, the Login(s) will be dropped and recreated on Destination. Logins that own Agent jobs cannot be dropped at this time.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .EXAMPLE
-            Reset-DbaAdmin -SqlInstance sqlcluster
-
-            Prompts for password, then resets the "sa" account password on sqlcluster.
-
-        .EXAMPLE
-            Reset-DbaAdmin -SqlInstance sqlserver\sqlexpress -Login ad\administrator
-
-            Prompts user to confirm that they understand the SQL Service will be restarted.
-
-            Adds the domain account "ad\administrator" as a sysadmin to the SQL instance.
-            If the account already exists, it will be added to the sysadmin role.
-
-        .EXAMPLE
-            Reset-DbaAdmin -SqlInstance sqlserver\sqlexpress -Login sqladmin -Force
-
-            Skips restart confirmation, prompts for password, then adds a SQL Login "sqladmin" with sysadmin privileges.
-            If the account already exists, it will be added to the sysadmin role and the password will be reset.
-
-        .NOTES
-            Tags: WSMan
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-            Requires: Admin access to server (not SQL Services),
-            Remoting must be enabled and accessible if $SqlInstance is not local
-
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-           Copyright: (c) 2018 by dbatools, licensed under MIT
-
-        .LINK
-            https://dbatools.io/Reset-DbaAdmin
+﻿function Reset-DbaAdmin {
+<#
+    .SYNOPSIS
+        This function allows administrators to regain access to SQL Servers in the event that passwords or access was lost.
+        
+        Supports SQL Server 2005 and above. Windows administrator access is required.
+        
+    .DESCRIPTION
+        This function allows administrators to regain access to local or remote SQL Servers by either resetting the sa password, adding the sysadmin role to existing login, or adding a new login (SQL or Windows) and granting it sysadmin privileges.
+        
+        This is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line using the /mReset-DbaAdmin parameter which starts the server in Single-User mode and only allows this script to connect.
+        
+        Once the service is restarted, the following tasks are performed:
+        - Login is added if it doesn't exist
+        - If login is a Windows User, an attempt is made to ensure it exists
+        - If login is a SQL Login, password policy will be set to OFF when creating the login, and SQL Server authentication will be set to Mixed Mode.
+        - Login will be enabled and unlocked
+        - Login will be added to sysadmin role
+        
+        If failures occur at any point, a best attempt is made to restart the SQL Server.
+        
+        In order to make this script as portable as possible, System.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).
+        
+        If using this function against a remote SQL Server, ensure WinRM is configured and accessible. If this is not possible, run the script locally.
+        
+        Tested on Windows XP, 7, 8.1, Server 2012 and Windows Server Technical Preview 2.
+        Tested on SQL Server 2005 SP4 through 2016 CTP2.
+        
+    .PARAMETER SqlInstance
+        The SQL Server instance. SQL Server must be 2005 and above, and can be a clustered or stand-alone instance.
+        
+    .PARAMETER Login
+        By default, the Login parameter is "sa" but any other SQL or Windows account can be specified. If a login does not currently exist, it will be added.
+        
+        When adding a Windows login to remote servers, ensure the SQL Server can add the login (ie, don't add WORKSTATION\Admin to remoteserver\instance. Domain users and Groups are valid input.
+        
+    .PARAMETER SecurePassword
+        By default, if a SQL Login is detected, you will be prompted for a password. Use this to securely bypass the prompt.
+        
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        
+    .PARAMETER Force
+        If this switch is enabled, the Login(s) will be dropped and recreated on Destination. Logins that own Agent jobs cannot be dropped at this time.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .EXAMPLE
+        Reset-DbaAdmin -SqlInstance sqlcluster
+        
+        Prompts for password, then resets the "sa" account password on sqlcluster.
+        
+    .EXAMPLE
+        Reset-DbaAdmin -SqlInstance sqlserver\sqlexpress -Login ad\administrator
+        
+        Prompts user to confirm that they understand the SQL Service will be restarted.
+        
+        Adds the domain account "ad\administrator" as a sysadmin to the SQL instance.
+        If the account already exists, it will be added to the sysadmin role.
+        
+    .EXAMPLE
+        Reset-DbaAdmin -SqlInstance sqlserver\sqlexpress -Login sqladmin -Force
+        
+        Skips restart confirmation, prompts for password, then adds a SQL Login "sqladmin" with sysadmin privileges.
+        If the account already exists, it will be added to the sysadmin role and the password will be reset.
+        
+    .NOTES
+        Tags: WSMan
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        Requires: Admin access to server (not SQL Services),
+        Remoting must be enabled and accessible if $SqlInstance is not local
+        
+        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        
+    .LINK
+        https://dbatools.io/Reset-DbaAdmin
+        
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (

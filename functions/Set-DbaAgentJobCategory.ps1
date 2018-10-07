@@ -1,58 +1,59 @@
-function Set-DbaAgentJobCategory {
-    <#
-.SYNOPSIS
-Set-DbaAgentJobCategory changes a job category.
-
-.DESCRIPTION
-Set-DbaAgentJobCategory makes it possible to change a job category.
-
-.PARAMETER SqlInstance
-SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-.PARAMETER Category
-The name of the category
-
-.PARAMETER NewName
-New name of the job category
-
-.PARAMETER Force
-The force parameter will ignore some errors in the parameters and assume defaults.
-
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
-
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
-
-.PARAMETER EnableException
+﻿function Set-DbaAgentJobCategory {
+<#
+    .SYNOPSIS
+        Set-DbaAgentJobCategory changes a job category.
+        
+    .DESCRIPTION
+        Set-DbaAgentJobCategory makes it possible to change a job category.
+        
+    .PARAMETER SqlInstance
+        SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Category
+        The name of the category
+        
+    .PARAMETER NewName
+        New name of the job category
+        
+    .PARAMETER Force
+        The force parameter will ignore some errors in the parameters and assume defaults.
+        
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+        
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+        
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-.NOTES
-Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job, JobCategory
-
-Website: https://dbatools.io
-Copyright: (c) 2018 by dbatools, licensed under MIT
-License: MIT https://opensource.org/licenses/MIT
-
-.LINK
-https://dbatools.io/Set-DbaAgentJobCategory
-
-.EXAMPLE
-New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1' -NewName 'Category 2'
-
-Change the name of the category from 'Category 1' to 'Category 2'.
-
-.EXAMPLE
-Set-DbaAgentJobCategory -SqlInstance sql1, sql2 -Category Category1, Category2 -NewName cat1, cat2
-
-Rename multiple jobs in one go on multiple servers.
-
+        
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
+        Tags: Agent, Job, JobCategory
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Set-DbaAgentJobCategory
+        
+    .EXAMPLE
+        New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1' -NewName 'Category 2'
+        
+        Change the name of the category from 'Category 1' to 'Category 2'.
+        
+    .EXAMPLE
+        Set-DbaAgentJobCategory -SqlInstance sql1, sql2 -Category Category1, Category2 -NewName cat1, cat2
+        
+        Rename multiple jobs in one go on multiple servers.
+        
+        
 #>
 
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
