@@ -163,14 +163,14 @@
                             if ($ParSet -eq "Class") { $connection.GetCimRMInstance($cred, $ClassName, $Namespace) }
                             else { $connection.QueryCimRMInstance($cred, $Query, "WQL", $Namespace) }
 
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over WinRM - Success!"
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over WinRM - Success"
                             $connection.ReportSuccess('CimRM')
                             $connection.AddGoodCredential($cred)
                             if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
                         }
                         catch {
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over WinRM - Failed!"
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over WinRM - Failed"
 
                             # 1 = Generic runtime error
                             if ($_.Exception.InnerException.StatusCode -eq 1) {
@@ -183,8 +183,8 @@
                                     Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
                                 }
                                 elseif ($_.Exception.InnerException.MessageId -eq "HRESULT 0x80041013") {
-                                    if ($ParSet -eq "Class") { Stop-Function -Message "[$computer] Failed to access $class in namespace $Namespace!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
-                                    else { Stop-Function -Message "[$computer] Failed to execute $query in namespace $Namespace!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
+                                    if ($ParSet -eq "Class") { Stop-Function -Message "[$computer] Failed to access $class in namespace $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
+                                    else { Stop-Function -Message "[$computer] Failed to execute $query in namespace $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
                                 }
                                 else {
                                     $connection.ReportFailure('CimRM')
@@ -195,7 +195,7 @@
 
                             # 2 = Access to specific resource denied
                             elseif ($_.Exception.InnerException.StatusCode -eq 2) {
-                                Stop-Function -Message "[$computer] Access to computer granted, but access to $Namespace\$ClassName denied!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
+                                Stop-Function -Message "[$computer] Access to computer granted, but access to $Namespace\$ClassName denied" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
                             }
 
                             # 3 = Invalid Namespace
@@ -228,14 +228,14 @@
                             if ($ParSet -eq "Class") { $connection.GetCimDCOMInstance($cred, $ClassName, $Namespace) }
                             else { $connection.QueryCimDCOMInstance($cred, $Query, "WQL", $Namespace) }
 
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over DCOM - Success!"
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over DCOM - Success"
                             $connection.ReportSuccess('CimDCOM')
                             $connection.AddGoodCredential($cred)
                             if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
                         }
                         catch {
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over DCOM - Failed!"
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using Cim over DCOM - Failed"
 
                             # 1 = Generic runtime error
                             if ($_.Exception.InnerException.StatusCode -eq 1) {
@@ -248,8 +248,8 @@
                                     Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
                                 }
                                 elseif ($_.Exception.InnerException.MessageId -eq "HRESULT 0x80041013") {
-                                    if ($ParSet -eq "Class") { Stop-Function -Message "[$computer] Failed to access $class in namespace $Namespace!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
-                                    else { Stop-Function -Message "[$computer] Failed to execute $query in namespace $Namespace!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
+                                    if ($ParSet -eq "Class") { Stop-Function -Message "[$computer] Failed to access $class in namespace $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
+                                    else { Stop-Function -Message "[$computer] Failed to execute $query in namespace $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
                                 }
                                 else {
                                     $connection.ReportFailure('CimDCOM')
@@ -260,7 +260,7 @@
 
                             # 2 = Access to specific resource denied
                             elseif ($_.Exception.InnerException.StatusCode -eq 2) {
-                                Stop-Function -Message "[$computer] Access to computer granted, but access to $Namespace\$ClassName denied!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
+                                Stop-Function -Message "[$computer] Access to computer granted, but access to $Namespace\$ClassName denied" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
                             }
 
                             # 3 = Invalid Namespace
@@ -316,14 +316,14 @@
 
                             Get-WmiObject @parameters
 
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Success!"
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Success"
                             $connection.ReportSuccess('Wmi')
                             $connection.AddGoodCredential($cred)
                             if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
                             continue main
                         }
                         catch {
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Failed!" -ErrorRecord $_
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using WMI - Failed" -ErrorRecord $_
 
                             if ($_.CategoryInfo.Reason -eq "UnauthorizedAccessException") {
                                 # Ignore the global setting for bad credential cache disabling, since the connection object is aware of that state and will ignore input if it should.
@@ -362,7 +362,7 @@
                             if ($Credential) { $parameters["Credential"] = $Credential }
                             Invoke-Command @parameters
 
-                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using PowerShell Remoting - Success!"
+                            Write-Message -Level Verbose -Message "[$computer] Accessing computer using PowerShell Remoting - Success"
                             $connection.ReportSuccess('PowerShellRemoting')
                             $connection.AddGoodCredential($cred)
                             if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
@@ -380,8 +380,5 @@
                 }
             }
         }
-    }
-    end {
-
     }
 }
