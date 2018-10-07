@@ -19,6 +19,9 @@ function New-DbaAvailabilityGroup {
         
         NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
         
+        Thanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/
+
+    
     .PARAMETER Primary
         SQL Server name or SMO object representing the primary SQL Server.
         
@@ -30,7 +33,10 @@ function New-DbaAvailabilityGroup {
         
     .PARAMETER SecondarySqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+      
+    .PARAMETER Name
+        The Name of the Availability Group  
+    
     .PARAMETER Database
         The database or databases to add.
         
@@ -58,7 +64,14 @@ function New-DbaAvailabilityGroup {
         
     .PARAMETER UseLastBackups
         Use the last full backup of database.
-        
+    
+    .PARAMETER DtcSupport
+        Indicates whether the DtcSupport is enabled
+
+    .PARAMETER ClusterType
+        Cluster type of the Availability Group.
+        Options include: External, Wsfc or None. External by default.
+    
     .PARAMETER Force
         Drop and recreate the database on remote servers using fresh backup.
         
@@ -68,6 +81,9 @@ function New-DbaAvailabilityGroup {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
         
+    .PARAMETER Passthru
+        Don't create the availability group, just pass thru an object that can be further customized before creation.
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -85,13 +101,13 @@ function New-DbaAvailabilityGroup {
         
     .EXAMPLE
         PS C:\> $params = @{
-        Primary = 'sql2017a'
-        Secondary = 'sql2017b'
-        SecondarySqlCredential = 'sqladmin'
-        Witness = 'sql2019'
-        Database = 'pubs'
-        NetworkShare = '\\nas\sql\share'
-        }
+        >>    Primary = 'sql2017a'
+        >>    Secondary = 'sql2017b'
+        >>    SecondarySqlCredential = 'sqladmin'
+        >>    Witness = 'sql2019'
+        >>    Database = 'pubs'
+        >>    NetworkShare = '\\nas\sql\share'
+        >>}
         
         PS C:\> Invoke-DbaDbMirror @params
         
@@ -145,16 +161,21 @@ function New-DbaAvailabilityGroup {
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Secondary,
         [PSCredential]$SecondarySqlCredential,
+        [string]$Name,
         [string[]]$Database,
         [string]$NetworkShare,
         [ipaddress[]]$IPAddress,
         [ipaddress]$SubnetMask,
         [int]$Port,
         [switch]$Dhcp,
+        [switch]$DtcSupport,
+        [ValidateSet('External', 'Wsfc', 'None')]
+        [string]$ClusterType = 'External',
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$UseLastBackups,
         [switch]$Force,
+        [switch]$Passthru,
         [switch]$EnableException
     )
     process {
@@ -173,6 +194,13 @@ function New-DbaAvailabilityGroup {
         }
         catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary -Continue
+        }
+        
+        if ($Certificate) {
+            $cert = Get-DbaDbCertificate -SqlInstance $source -Certificate $Certificate
+            if (-not $cert) {
+                Stop-Function -Message "Certificate $Certificate does not exist on $Primary" -ErrorRecord $_ -Target $Certificate -Continue
+            }
         }
         
         if ((Test-Bound -ParameterName NetworkShare)) {
@@ -197,6 +225,12 @@ function New-DbaAvailabilityGroup {
             }
         }
         
+        $ag = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroup -ArgumentList $source, $Name
+        
+        if ($PassThru) {
+            return $ag
+        }
+        
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting recovery model for $dbName on $($source.Name) to Full"
         
         if ($primarydb.RecoveryModel -ne "Full") {
@@ -219,41 +253,12 @@ function New-DbaAvailabilityGroup {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $second -Continue
             }
             
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to secondary"
-            
-            if (-not $validation.DatabaseExistsOnMirror -or $Force) {
-                if ($UseLastBackups) {
-                    $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
-                }
-                else {
-                    $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
-                    $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
-                    $allbackups = $fullbackup, $logbackup
-                }
-                Write-Message -Level Verbose -Message "Backups still exist on $NetworkShare"
-                if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
-                    try {
-                        $null = $allbackups | Restore-DbaDatabase -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
-                    }
-                    catch {
-                        $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
-                        if (-not $msg) {
-                            $msg = $_.Exception.InnerException.InnerException.InnerException.Message
-                        }
-                        if (-not $msg) {
-                            $msg = $_
-                        }
-                        Stop-Function -Message $msg -ErrorRecord $_ -Target $dest -Continue
-                    }
-                }
-            }
-            
             $primaryendpoint = Get-DbaEndpoint -SqlInstance $source | Where-Object EndpointType -eq DatabaseMirroring
             $mirrorendpoint = Get-DbaEndpoint -SqlInstance $dest | Where-Object EndpointType -eq DatabaseMirroring
             
             if (-not $primaryendpoint) {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up endpoint for primary"
-                $primaryendpoint = New-DbaEndpoint -SqlInstance $source -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4
+                $primaryendpoint = New-DbaEndpoint -SqlInstance $source -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm Aes
                 $null = $primaryendpoint | Stop-DbaEndpoint
                 $null = $primaryendpoint | Start-DbaEndpoint
             }
@@ -286,7 +291,37 @@ function New-DbaAvailabilityGroup {
                     }
                 }
             }
+        }
+        
+        foreach ($second in $Secondary) {
+            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to secondary"
             
+            if (-not $validation.DatabaseExistsOnMirror -or $Force) {
+                if ($UseLastBackups) {
+                    $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
+                }
+                else {
+                    $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
+                    $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
+                    $allbackups = $fullbackup, $logbackup
+                }
+                Write-Message -Level Verbose -Message "Backups still exist on $NetworkShare"
+                if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
+                    try {
+                        $null = $allbackups | Restore-DbaDatabase -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+                    }
+                    catch {
+                        $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
+                        if (-not $msg) {
+                            $msg = $_.Exception.InnerException.InnerException.InnerException.Message
+                        }
+                        if (-not $msg) {
+                            $msg = $_
+                        }
+                        Stop-Function -Message $msg -ErrorRecord $_ -Target $dest -Continue
+                    }
+                }
+            }
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting endpoints if necessary"
             try {
                 $null = $primaryendpoint, $mirrorendpoint | Start-DbaEndpoint -EnableException
@@ -294,7 +329,9 @@ function New-DbaAvailabilityGroup {
             catch {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_
             }
-            
+        }
+        
+        foreach ($second in $Secondary) {
             try {
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for secondary"
                 $null = $mirrordb | Set-DbaDbMirror -Partner $primaryendpoint.Fqdn -EnableException
@@ -311,15 +348,19 @@ function New-DbaAvailabilityGroup {
                 Stop-Function -Continue -Message "Failure on primary" -ErrorRecord $_
             }
             
-            if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
-                [pscustomobject]@{
-                    Primary   = $Primary
-                    Secondary = $Secondary
-                    Witness   = $Witness
-                    Database  = $primarydb.Name
-                    Status    = "Success"
-                } | Select-DefaultView -Property Primary, Secondary, Database, Status
-            }
+        }
+        
+        # add replica
+        # add databases
+        
+        if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
+            [pscustomobject]@{
+                Primary   = $Primary
+                Secondary = $Secondary
+                Witness   = $Witness
+                Database  = $primarydb.Name
+                Status    = "Success"
+            } | Select-DefaultView -Property Primary, Secondary, Database, Status
         }
     }
 }

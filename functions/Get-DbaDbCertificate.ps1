@@ -60,7 +60,8 @@
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
-        [string[]]$Certificate,
+        # sometimes it's text, other times cert
+        [object[]]$Certificate,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException

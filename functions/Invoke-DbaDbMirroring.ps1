@@ -138,8 +138,8 @@ function Invoke-DbaDbMirroring {
         [DbaInstanceParameter]$Primary,
         [PSCredential]$PrimarySqlCredential,
         [parameter(Mandatory)]
-        [DbaInstanceParameter[]]$Secondary,
-        [PSCredential]$SecondarySqlCredential,
+        [DbaInstanceParameter[]]$Mirror,
+        [PSCredential]$MirrorSqlCredential,
         [DbaInstanceParameter]$Witness,
         [PSCredential]$WitnessSqlCredential,
         [string[]]$Database,
