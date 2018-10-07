@@ -31,7 +31,7 @@ function Remove-DbaAvailabilityGroup {
         Remove all availability groups on an instance, ignoring the packaged availability groups: AlwaysOn_health, system_health, telemetry_xevents.
         
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-AvailabilityGroups
+        Internal parameter to support piping from Get-DbaAvailabilityGroup
         
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -59,9 +59,9 @@ function Remove-DbaAvailabilityGroup {
         Removes the ag1 and ag2 availability groups on sqlserver2012.  Does not prompt for confirmation.
         
     .EXAMPLE
-        Get-AvailabilityGroups -SqlInstance sqlserver2012 -AvailabilityGroups availability group1 | Remove-DbaAvailabilityGroup
+        Get-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroups availability group1 | Remove-DbaAvailabilityGroup
         
-        Removes the availability groups returned from the Get-AvailabilityGroups function. Prompts for confirmation.
+        Removes the availability groups returned from the Get-DbaAvailabilityGroup function. Prompts for confirmation.
         
         
 #>
@@ -76,12 +76,12 @@ function Remove-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     process {
-        if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName AvailabilityGroups, AllAvailabilityGroups groups)) {
+        if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName AvailabilityGroups, AllAvailabilityGroups)) {
             Stop-Function -Message "You must specify AllAvailabilityGroups groups or AvailabilityGroups when using the SqlInstance parameter."
             return
         }
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -EndPoint $AvailabilityGroups
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
         
         foreach ($ag in $InputObject) {
