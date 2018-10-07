@@ -11,7 +11,7 @@ function Get-DbaAgReplica {
         The SQL Server instance. Server version must be SQL Server version 2012 or higher.
         
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         
     .PARAMETER AvailabilityGroup
         Specify the Availability Group name that you want to get information on.
@@ -31,7 +31,7 @@ function Get-DbaAgReplica {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
         
     .NOTES
-        Tags: AG, AvailabilityGroup, Replica
+        Tags: AG, AvailabilityGroup, Replica, HA
         Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
         
         Website: https://dbatools.io
