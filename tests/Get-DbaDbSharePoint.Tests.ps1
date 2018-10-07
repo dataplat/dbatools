@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaSpDatabase).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Get-DbaDbSharePoint).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'ConfigDatabase', 'InputObject', 'EnableException'
         $paramCount = $knownParameters.Count
         It "Should contain our specific parameters" {
@@ -35,7 +35,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         Remove-DbaDatabase -SqlInstance $script:instance2 -Database $spdb -Confirm:$false
     }
     Context "Command gets SharePoint Databases" {
-        $results = Get-DbaSpDatabase -SqlInstance $script:instance2
+        $results = Get-DbaDbSharePoint -SqlInstance $script:instance2
         foreach ($db in $spdb) {
             It "returns $db from in the SharePoint database list" {
                 $db | Should -BeIn $results.Name

@@ -1,5 +1,5 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Get-DbaSpDatabase {
+function Get-DbaDbSharePoint {
 <#
     .SYNOPSIS
         Returns databases that are part of a SharePoint Farm.
@@ -29,19 +29,19 @@ function Get-DbaSpDatabase {
     .NOTES
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
-        Copyright: (c) 2018 by dbatools, licensed under MIT
-        -           License: MIT https://opensource.org/licenses/MIT
+        Copyright: (c) 2018 by dbatools, licensed under MIT        
+        License: MIT https://opensource.org/licenses/MIT
         
     .LINK
-        https://dbatools.io/Get-DbaSpDatabase
+        https://dbatools.io/Get-DbaDbSharePoint
         
     .EXAMPLE
-        PS C:\> Get-DbaSpDatabase -SqlInstance sqlcluster
+        PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster
         
         Returns databases that are part of a SharePoint Farm, as found in SharePoint_Config on sqlcluster
         
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sqlcluster -Database SharePoint_Config_2016 | Get-DbaSpDatabase
+        PS C:\> Get-DbaDatabase -SqlInstance sqlcluster -Database SharePoint_Config_2016 | Get-DbaDbSharePoint
         
         Returns databases that are part of a SharePoint Farm, as found in SharePoint_Config_2016 on sqlcluster
         
