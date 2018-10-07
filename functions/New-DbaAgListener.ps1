@@ -2,10 +2,10 @@
 function New-DbaAgListener {
 <#
     .SYNOPSIS
-        Adds a database to an availability group on a SQL Server instance.
+        Adds a listener to an availability group on a SQL Server instance.
         
     .DESCRIPTION
-        Adds a database to an availability group on a SQL Server instance.
+        Adds a listener to an availability group on a SQL Server instance.
     
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
