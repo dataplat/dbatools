@@ -1,49 +1,50 @@
-function Set-DbaPrivilege {
-    <#
-      .SYNOPSIS
-      Adds the SQL Service account to local privileges on one or more computers.
-
-      .DESCRIPTION
-      Adds the SQL Service account to local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch' on one or more computers.
-
-      Requires Local Admin rights on destination computer(s).
-
-      .PARAMETER ComputerName
-      The SQL Server (or server in general) that you're connecting to. This command handles named instances.
-
-      .PARAMETER Credential
-      Credential object used to connect to the computer as a different user.
-
-      .PARAMETER EnableException
+﻿function Set-DbaPrivilege {
+<#
+    .SYNOPSIS
+        Adds the SQL Service account to local privileges on one or more computers.
+        
+    .DESCRIPTION
+        Adds the SQL Service account to local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch' on one or more computers.
+        
+        Requires Local Admin rights on destination computer(s).
+        
+    .PARAMETER ComputerName
+        The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+        
+    .PARAMETER Credential
+        Credential object used to connect to the computer as a different user.
+        
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-      .PARAMETER Type
-      Use this to choose the privilege(s) to which you want to add the SQL Service account.
-      Accepts 'IFI', 'LPIM' and/or 'BatchLogon' for local privileges 'Instant File Initialization', 'Lock Pages in Memory' and 'Logon as Batch'.
-
-      .NOTES
-      Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-      Tags: Privilege
-      Website: https://dbatools.io
-      Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-      License: MIT https://opensource.org/licenses/MIT
-
+        
+    .PARAMETER Type
+        Use this to choose the privilege(s) to which you want to add the SQL Service account.
+        Accepts 'IFI', 'LPIM' and/or 'BatchLogon' for local privileges 'Instant File Initialization', 'Lock Pages in Memory' and 'Logon as Batch'.
+        
+    .NOTES
+        Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        Tags: Privilege
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
     .LINK
-      https://dbatools.io/Set-DbaPrivilege
-
-      .EXAMPLE
-      Set-DbaPrivilege -ComputerName sqlserver2014a -Type LPIM,IFI
-
-      Adds the SQL Service account(s) on computer sqlserver2014a to the local privileges 'SeManageVolumePrivilege' and 'SeLockMemoryPrivilege'.
-
-      .EXAMPLE
-      'sql1','sql2','sql3' | Set-DbaPrivilege -Type IFI
-
-      Adds the SQL Service account(s) on computers sql1, sql2 and sql3 to the local privilege 'SeManageVolumePrivilege'.
-
-  #>
+        https://dbatools.io/Set-DbaPrivilege
+        
+    .EXAMPLE
+        Set-DbaPrivilege -ComputerName sqlserver2014a -Type LPIM,IFI
+        
+        Adds the SQL Service account(s) on computer sqlserver2014a to the local privileges 'SeManageVolumePrivilege' and 'SeLockMemoryPrivilege'.
+        
+    .EXAMPLE
+        'sql1','sql2','sql3' | Set-DbaPrivilege -Type IFI
+        
+        Adds the SQL Service account(s) on computers sql1, sql2 and sql3 to the local privilege 'SeManageVolumePrivilege'.
+        
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]

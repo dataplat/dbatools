@@ -1,75 +1,76 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentSchedule {
-    <#
-.SYNOPSIS
-Remove-DbaAgentJobSchedule removes a job schedule.
-
-.DESCRIPTION
-Remove-DbaAgentJobSchedule removes a a job in the SQL Server Agent.
-
-.PARAMETER SqlInstance
-SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-.PARAMETER Schedule
-The name of the job schedule.
-
-.PARAMETER InputObject
-A collection of schedule (such as returned by Get-DbaAgentSchedule), to be removed.
-
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
-
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
-
-.PARAMETER EnableException
+<#
+    .SYNOPSIS
+        Remove-DbaAgentJobSchedule removes a job schedule.
+        
+    .DESCRIPTION
+        Remove-DbaAgentJobSchedule removes a a job in the SQL Server Agent.
+        
+    .PARAMETER SqlInstance
+        SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Schedule
+        The name of the job schedule.
+        
+    .PARAMETER InputObject
+        A collection of schedule (such as returned by Get-DbaAgentSchedule), to be removed.
+        
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+        
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+        
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-.PARAMETER Force
-The force parameter will ignore some errors in the parameters and assume defaults.
-It will also remove the any present schedules with the same name for the specific job.
-
-.NOTES
-Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job, Schedule
-
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
-
-.LINK
-https://dbatools.io/Remove-DbaAgentJobSchedule
-
-.EXAMPLE
-Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly
-Remove the schedule weekly
-
-.EXAMPLE
-Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly -Force
-Remove the schedule weekly from the job even if the schedule is being used by another job.
-
-.EXAMPLE
-Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule daily, weekly
-Remove multiple schedule
-
-.EXAMPLE
-Remove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Schedule daily, weekly
-Remove the schedule on multiple servers for multiple schedules
-
-.EXAMPLE
-sql1, sql2, sql3 | Remove-DbaAgentSchedule -Schedule daily, weekly
-Remove the schedule on multiple servers using pipe line
-
-.EXAMPLE
-Get-DbaAgentSchedule -SqlInstance sql1 -Schedule sched1, sched2, sched3 | Remove-DbaAgentSchedule
-
-Remove the schedules using a pipeline
-
+        
+    .PARAMETER Force
+        The force parameter will ignore some errors in the parameters and assume defaults.
+        It will also remove the any present schedules with the same name for the specific job.
+        
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
+        Tags: Agent, Job, Schedule
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Remove-DbaAgentJobSchedule
+        
+    .EXAMPLE
+        Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly
+        Remove the schedule weekly
+        
+    .EXAMPLE
+        Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly -Force
+        Remove the schedule weekly from the job even if the schedule is being used by another job.
+        
+    .EXAMPLE
+        Remove-DbaAgentSchedule -SqlInstance sql1 -Schedule daily, weekly
+        Remove multiple schedule
+        
+    .EXAMPLE
+        Remove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Schedule daily, weekly
+        Remove the schedule on multiple servers for multiple schedules
+        
+    .EXAMPLE
+        sql1, sql2, sql3 | Remove-DbaAgentSchedule -Schedule daily, weekly
+        Remove the schedule on multiple servers using pipe line
+        
+    .EXAMPLE
+        Get-DbaAgentSchedule -SqlInstance sql1 -Schedule sched1, sched2, sched3 | Remove-DbaAgentSchedule
+        
+        Remove the schedules using a pipeline
+        
+        
 #>
     
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]

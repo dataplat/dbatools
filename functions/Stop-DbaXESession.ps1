@@ -1,57 +1,58 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Stop-DbaXESession {
-    <#
-        .SYNOPSIS
-            Stops Extended Events sessions.
-
-        .DESCRIPTION
-            This script stops Extended Events sessions on a SQL Server instance.
-
-        .PARAMETER SqlInstance
-            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Session
-            Specifies individual Extended Events sessions to stop.
-
-        .PARAMETER AllSessions
-            If this switch is enabled, all Extended Events sessions will be stopped except the packaged sessions AlwaysOn_health, system_health, telemetry_xevents.
-
-        .PARAMETER InputObject
-            Accepts the object output by Get-DbaXESession as the list of sessions to be stopped.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: ExtendedEvent, XE, XEvent
-            Author: Doug Meyers
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Stop-DbaXESession
-
-        .EXAMPLE
-            Stop-DbaXESession -SqlInstance sqlserver2012 -AllSessions
-
-            Stops all Extended Event Session on the sqlserver2014 instance.
-
-        .EXAMPLE
-            Stop-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2
-
-            Stops the xesession1 and xesession2 Extended Event sessions.
-
-        .EXAMPLE
-            Get-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Stop-DbaXESession
-
-            Stops the sessions returned from the Get-DbaXESession function.
-    #>
+<#
+    .SYNOPSIS
+        Stops Extended Events sessions.
+        
+    .DESCRIPTION
+        This script stops Extended Events sessions on a SQL Server instance.
+        
+    .PARAMETER SqlInstance
+        Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Session
+        Specifies individual Extended Events sessions to stop.
+        
+    .PARAMETER AllSessions
+        If this switch is enabled, all Extended Events sessions will be stopped except the packaged sessions AlwaysOn_health, system_health, telemetry_xevents.
+        
+    .PARAMETER InputObject
+        Accepts the object output by Get-DbaXESession as the list of sessions to be stopped.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Doug Meyers
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Stop-DbaXESession
+        
+    .EXAMPLE
+        Stop-DbaXESession -SqlInstance sqlserver2012 -AllSessions
+        
+        Stops all Extended Event Session on the sqlserver2014 instance.
+        
+    .EXAMPLE
+        Stop-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2
+        
+        Stops the xesession1 and xesession2 Extended Event sessions.
+        
+    .EXAMPLE
+        Get-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Stop-DbaXESession
+        
+        Stops the sessions returned from the Get-DbaXESession function.
+        
+#>
     [CmdletBinding(DefaultParameterSetName = 'Session')]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]

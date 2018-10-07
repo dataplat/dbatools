@@ -1,61 +1,62 @@
-function Test-DbaRepLatency {
+﻿function Test-DbaRepLatency {
 <#
     .SYNOPSIS
-    Displays replication latency for all transactional publications for a server or database.
-
+        Displays replication latency for all transactional publications for a server or database.
+        
     .DESCRIPTION
-    Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber
-    for all transactional publications for a server, database, or publication.
-
+        Creates tracer tokens to determine latency between the publisher/distributor and the distributor/subscriber
+        for all transactional publications for a server, database, or publication.
+        
     .PARAMETER SqlInstance
-    Allows you to specify a comma separated list of servers to query.
-
+        Allows you to specify a comma separated list of servers to query.
+        
     .PARAMETER Database
-    The database(s) to process. If unspecified, all databases will be processed.
-
+        The database(s) to process. If unspecified, all databases will be processed.
+        
     .PARAMETER SqlCredential
-    Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
     .PARAMETER PublicationName
-    The publiction(s) to process. If unspecified, all publications will be processed.
-
+        The publiction(s) to process. If unspecified, all publications will be processed.
+        
     .PARAMETER TimeToLive
-    How long, in seconds, to wait for a tracer token to complete its journey from the publisher to the subscriber.
-    If unspecified, all tracer tokens will take as long as they need to process results.
-
+        How long, in seconds, to wait for a tracer token to complete its journey from the publisher to the subscriber.
+        If unspecified, all tracer tokens will take as long as they need to process results.
+        
     .PARAMETER RetainToken
-    Retains the tracer tokens created for each publication. If unspecified, all tracer tokens created will be discarded.
-
+        Retains the tracer tokens created for each publication. If unspecified, all tracer tokens created will be discarded.
+        
     .PARAMETER DisplayTokenHistory
-    Displays all tracer tokens in each publication. If unspecified, the current tracer token created will be only token displayed.
-
+        Displays all tracer tokens in each publication. If unspecified, the current tracer token created will be only token displayed.
+        
     .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
     .NOTES
-    Author: Colin Douglas
-    Tags: Replication
-
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: MIT https://opensource.org/licenses/MIT
-
+        Author: Colin Douglas
+        Tags: Replication
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
     .LINK
-    https://dbatools.io/Test-DbaRepLatency
-
+        https://dbatools.io/Test-DbaRepLatency
+        
     .EXAMPLE
-    Test-DbaRepLatency -SqlInstance sql2008, sqlserver2012
-    Return replication latency for all transactional publications for servers sql2008 and sqlserver2012.
-
+        Test-DbaRepLatency -SqlInstance sql2008, sqlserver2012
+        Return replication latency for all transactional publications for servers sql2008 and sqlserver2012.
+        
     .EXAMPLE
-    Test-DbaRepLatency -SqlInstance sql2008 -Database TestDB
-    Return replication latency for all transactional publications on server sql2008 for only the TestDB database
-
+        Test-DbaRepLatency -SqlInstance sql2008 -Database TestDB
+        Return replication latency for all transactional publications on server sql2008 for only the TestDB database
+        
     .EXAMPLE
-    Test-DbaRepLatency -SqlInstance sql2008 -Database TestDB -PublicationName TestDB_Pub
-    Return replication latency for the TestDB_Pub publication for the TestDB database located on the server sql2008.
+        Test-DbaRepLatency -SqlInstance sql2008 -Database TestDB -PublicationName TestDB_Pub
+        Return replication latency for the TestDB_Pub publication for the TestDB database located on the server sql2008.
+        
 #>
     [CmdletBinding()]
     param (

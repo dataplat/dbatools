@@ -1,77 +1,78 @@
-function Get-DbaTopResourceUsage {
-    <#
-        .SYNOPSIS
-            Returns the top 20 resource consumers for cached queries based on four different metrics: duration, frequency, IO, and CPU.
-
-        .DESCRIPTION
-            Returns the top 20 resource consumers for cached queries based on four different metrics: duration, frequency, IO, and CPU.
-
-            This command is based off of queries provided by Michael J. Swart at http://michaeljswart.com/go/Top20
-
-            Per Michael: "I've posted queries like this before, and others have written many other versions of this query. All these queries are based on sys.dm_exec_query_stats."
-
-        .PARAMETER SqlInstance
-            Allows you to specify a comma separated list of servers to query.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Database
-            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
-
-        .PARAMETER ExcludeSystem
-            This will exclude system objects like replication procedures from being returned.
-
-        .PARAMETER Type
-            By default, all Types run but you can specify one or more of the following: Duration, Frequency, IO, or CPU
-
-        .PARAMETER Limit
-            By default, these query the Top 20 worst offenders (though more than 20 results can be returned if each of the top 20 have more than 1 subsequent result)
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Query, Performance
-            Author: Chrissy LeMaire (@cl), netnerds.net
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaTopResourceUsage
-
-        .EXAMPLE
-            PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2008, sql2012
-
-            Return the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and sql2012
-
-        .EXAMPLE
-            PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2008 -Type Duration, Frequency -Database TestDB
-
-            Return the highest usage by duration (top 20) and frequency (top 20) for the TestDB on sql2008
-
-        .EXAMPLE
-            PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2016 -Limit 30
-
-            Return the highest usage by duration (top 30) and frequency (top 30) for the TestDB on sql2016
-
-        .EXAMPLE
-            PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2008, sql2012 -ExcludeSystem
-
-            Return the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and sql2012 without any System Objects
-
-        .EXAMPLE
-            PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2016| Select-Object *
-
-            Return all the columns plus the QueryPlan column
-    #>
+﻿function Get-DbaTopResourceUsage {
+<#
+    .SYNOPSIS
+        Returns the top 20 resource consumers for cached queries based on four different metrics: duration, frequency, IO, and CPU.
+        
+    .DESCRIPTION
+        Returns the top 20 resource consumers for cached queries based on four different metrics: duration, frequency, IO, and CPU.
+        
+        This command is based off of queries provided by Michael J. Swart at http://michaeljswart.com/go/Top20
+        
+        Per Michael: "I've posted queries like this before, and others have written many other versions of this query. All these queries are based on sys.dm_exec_query_stats."
+        
+    .PARAMETER SqlInstance
+        Allows you to specify a comma separated list of servers to query.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
+        
+    .PARAMETER ExcludeSystem
+        This will exclude system objects like replication procedures from being returned.
+        
+    .PARAMETER Type
+        By default, all Types run but you can specify one or more of the following: Duration, Frequency, IO, or CPU
+        
+    .PARAMETER Limit
+        By default, these query the Top 20 worst offenders (though more than 20 results can be returned if each of the top 20 have more than 1 subsequent result)
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Query, Performance
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaTopResourceUsage
+        
+    .EXAMPLE
+        PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2008, sql2012
+        
+        Return the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and sql2012
+        
+    .EXAMPLE
+        PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2008 -Type Duration, Frequency -Database TestDB
+        
+        Return the highest usage by duration (top 20) and frequency (top 20) for the TestDB on sql2008
+        
+    .EXAMPLE
+        PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2016 -Limit 30
+        
+        Return the highest usage by duration (top 30) and frequency (top 30) for the TestDB on sql2016
+        
+    .EXAMPLE
+        PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2008, sql2012 -ExcludeSystem
+        
+        Return the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and sql2012 without any System Objects
+        
+    .EXAMPLE
+        PS C:\> Get-DbaTopResourceUsage -SqlInstance sql2016| Select-Object *
+        
+        Return all the columns plus the QueryPlan column
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]

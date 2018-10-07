@@ -37,7 +37,7 @@ function Invoke-DbaDbCorruption {
       Author: Constantine Kokkinos (@mobileck https://constantinekokkinos.com)
       Reference: https://www.sqlskills.com/blogs/paul/dbcc-writepage/
       Website: https://dbatools.io
-      Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+      Copyright: (c) 2018 by dbatools, licensed under MIT
       License: MIT https://opensource.org/licenses/MIT
 
       .LINK

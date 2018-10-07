@@ -1,58 +1,59 @@
-function ConvertTo-DbaTimeline {
-    <#
-        .SYNOPSIS
-            Converts InputObject to a html timeline using Google Chart
-
-        .DESCRIPTION
-            This function accepts input as pipeline from the following dbatools functions:
-                Get-DbaAgentJobHistory
-                Get-DbaBackupHistory
-                (more to come...)
-            And generates Bootstrap based, HTML file with Google Chart Timeline
-
-        .PARAMETER InputObject
-
-            Pipe input, must an output from the above functions.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Chart
-            Author: Marcin Gminski (@marcingminski)
-            Dependency: ConvertTo-JsDate, Convert-DbaTimelineStatusColor
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
--           License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/ConvertTo-DbaTimeline
-
-        .EXAMPLE
-            PS C:\> Get-DbaAgentJobHistory -SqlInstance sql-1 -StartDate '2018-08-13 00:00' -EndDate '2018-08-13 23:59' -NoJobSteps | ConvertTo-DbaTimeline | Out-File C:\temp\DbaAgentJobHistory.html -Encoding ASCII
-
-            Creates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13
-
-        .EXAMPLE
-            PS C:\> Get-DbaCmsRegServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-File C:\temp\DbaBackupHistory.html -Encoding ASCII
-
-            Creates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm
-
-        .EXAMPLE
-            PS C:\> $messageParameters = @{
-                Subject = "Backup history for sql2017 and sql2016"
-                Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline
-                From = "dba@ad.local"
-                To = "dba@ad.local"
-                SmtpServer = "smtp.ad.local"
-            }
-            PS C:\> Send-MailMessage @messageParameters -BodyAsHtml
-
-            Sends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.
-    #>
+﻿function ConvertTo-DbaTimeline {
+<#
+    .SYNOPSIS
+        Converts InputObject to a html timeline using Google Chart
+        
+    .DESCRIPTION
+        This function accepts input as pipeline from the following dbatools functions:
+        Get-DbaAgentJobHistory
+        Get-DbaBackupHistory
+        (more to come...)
+        And generates Bootstrap based, HTML file with Google Chart Timeline
+        
+    .PARAMETER InputObject
+        
+        Pipe input, must an output from the above functions.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Chart
+        Author: Marcin Gminski (@marcingminski)
+        Dependency: ConvertTo-JsDate, Convert-DbaTimelineStatusColor
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        -           License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/ConvertTo-DbaTimeline
+        
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJobHistory -SqlInstance sql-1 -StartDate '2018-08-13 00:00' -EndDate '2018-08-13 23:59' -NoJobSteps | ConvertTo-DbaTimeline | Out-File C:\temp\DbaAgentJobHistory.html -Encoding ASCII
+        
+        Creates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13
+        
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-File C:\temp\DbaBackupHistory.html -Encoding ASCII
+        
+        Creates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm
+        
+    .EXAMPLE
+        PS C:\> $messageParameters = @{
+        Subject = "Backup history for sql2017 and sql2016"
+        Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline
+        From = "dba@ad.local"
+        To = "dba@ad.local"
+        SmtpServer = "smtp.ad.local"
+        }
+        PS C:\> Send-MailMessage @messageParameters -BodyAsHtml
+        
+        Sends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

@@ -1,78 +1,79 @@
-function Get-DbaProcess {
-    <#
-        .SYNOPSIS
-            This command displays SQL Server processes.
-
-        .DESCRIPTION
-            This command displays processes associated with a spid, login, host, program or database.
-
-            Thanks to Michael J Swart at https://sqlperformance.com/2017/07/sql-performance/find-database-connection-leaks for the query to get the last executed SQL statement, minutesasleep and host process ID.
-
-        .PARAMETER SqlInstance
-            The SQL Server instance to connect to.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Spid
-            Specifies one or more process IDs (Spid) to be displayed. Options for this parameter are auto-populated from the server.
-
-        .PARAMETER Login
-            Specifies one or more Login names with active processes to look for. Options for this parameter are auto-populated from the server.
-
-        .PARAMETER Hostname
-            Specifies one or more hostnames with active processes to look for. Options for this parameter are auto-populated from the server.
-
-        .PARAMETER Program
-            Specifies one or more program names with active processes to look for. Options for this parameter are auto-populated from the server.
-
-        .PARAMETER Database
-            Specifies one or more databases with active processes to look for. Options for this parameter are auto-populated from the server.
-
-        .PARAMETER ExcludeSpid
-            Specifies one ore more process IDs to exclude from display. Options for this parameter are auto-populated from the server.
-
-            This is the last filter to run, so even if a Spid matches another filter, it will be excluded by this filter.
-
-        .PARAMETER NoSystemSpid
-            If this switch is enabled, system Spids will be ignored.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Process, Session, ActivityMonitor
-            Author: Chrissy LeMaire (@cl), netnerds.net
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaProcess
-
-        .EXAMPLE
-            PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Login base\ctrlb, sa
-
-            Shows information about the processes for base\ctrlb and sa on sqlserver2014a. Windows Authentication is used in connecting to sqlserver2014a.
-
-        .EXAMPLE
-            PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spid 56, 77
-
-            Shows information about the processes for spid 56 and 57. Uses alternative (SQL or Windows) credentials to authenticate to sqlserver2014a.
-
-        .EXAMPLE
-            PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Program 'Microsoft SQL Server Management Studio'
-
-            Shows information about the processes that were created in Microsoft SQL Server Management Studio.
-
-        .EXAMPLE
-            PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Host workstationx, server100
-
-            Shows information about the processes that were initiated by hosts (computers/clients) workstationx and server 1000.
-    #>
+﻿function Get-DbaProcess {
+<#
+    .SYNOPSIS
+        This command displays SQL Server processes.
+        
+    .DESCRIPTION
+        This command displays processes associated with a spid, login, host, program or database.
+        
+        Thanks to Michael J Swart at https://sqlperformance.com/2017/07/sql-performance/find-database-connection-leaks for the query to get the last executed SQL statement, minutesasleep and host process ID.
+        
+    .PARAMETER SqlInstance
+        The SQL Server instance to connect to.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Spid
+        Specifies one or more process IDs (Spid) to be displayed. Options for this parameter are auto-populated from the server.
+        
+    .PARAMETER Login
+        Specifies one or more Login names with active processes to look for. Options for this parameter are auto-populated from the server.
+        
+    .PARAMETER Hostname
+        Specifies one or more hostnames with active processes to look for. Options for this parameter are auto-populated from the server.
+        
+    .PARAMETER Program
+        Specifies one or more program names with active processes to look for. Options for this parameter are auto-populated from the server.
+        
+    .PARAMETER Database
+        Specifies one or more databases with active processes to look for. Options for this parameter are auto-populated from the server.
+        
+    .PARAMETER ExcludeSpid
+        Specifies one ore more process IDs to exclude from display. Options for this parameter are auto-populated from the server.
+        
+        This is the last filter to run, so even if a Spid matches another filter, it will be excluded by this filter.
+        
+    .PARAMETER NoSystemSpid
+        If this switch is enabled, system Spids will be ignored.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Process, Session, ActivityMonitor
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaProcess
+        
+    .EXAMPLE
+        PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Login base\ctrlb, sa
+        
+        Shows information about the processes for base\ctrlb and sa on sqlserver2014a. Windows Authentication is used in connecting to sqlserver2014a.
+        
+    .EXAMPLE
+        PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spid 56, 77
+        
+        Shows information about the processes for spid 56 and 57. Uses alternative (SQL or Windows) credentials to authenticate to sqlserver2014a.
+        
+    .EXAMPLE
+        PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Program 'Microsoft SQL Server Management Studio'
+        
+        Shows information about the processes that were created in Microsoft SQL Server Management Studio.
+        
+    .EXAMPLE
+        PS C:\> Get-DbaProcess -SqlInstance sqlserver2014a -Host workstationx, server100
+        
+        Shows information about the processes that were initiated by hosts (computers/clients) workstationx and server 1000.
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

@@ -1,64 +1,65 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Invoke-DbaDbMirrorFailover {
-    <#
-        .SYNOPSIS
-            Failover a mirrored database
-
-        .DESCRIPTION
-            Failover a mirrored database
-
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the primary SQL Server.
-
-        .PARAMETER SqlCredential
-            Login to the primary instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Database
-            The database or databases to mirror
-
-        .PARAMETER InputObject
-            Allows piping from Get-DbaDatabase
-
-        .PARAMETER Force
-            Force Failover and allow data loss
-
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
-
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Mirror, HA
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2018 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
-
-            TODO: add service accounts
-
-        .LINK
-            https://dbatools.io/Invoke-DbaDbMirrorFailover
-
-        .EXAMPLE
-
-            PS C:\> Invoke-DbaDbMirrorFailover -SqlInstance sql2016 -Database pubs
-
-            Fails over the pubs database on sql2016. Prompts for confirmation.
-
-        .EXAMPLE
-
-            PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database pubs | Invoke-DbaDbMirrorFailover -Force -Confirm:$false
-
-            Forces the failover of the pubs database on sql2016 and allows data loss.
-
-            Does not prompt for confirmation.
-    #>
+<#
+    .SYNOPSIS
+        Failover a mirrored database
+        
+    .DESCRIPTION
+        Failover a mirrored database
+        
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the primary SQL Server.
+        
+    .PARAMETER SqlCredential
+        Login to the primary instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Database
+        The database or databases to mirror
+        
+    .PARAMETER InputObject
+        Allows piping from Get-DbaDatabase
+        
+    .PARAMETER Force
+        Force Failover and allow data loss
+        
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+        
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Mirror, HA
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+        TODO: add service accounts
+        
+    .LINK
+        https://dbatools.io/Invoke-DbaDbMirrorFailover
+        
+    .EXAMPLE
+        
+        PS C:\> Invoke-DbaDbMirrorFailover -SqlInstance sql2016 -Database pubs
+        
+        Fails over the pubs database on sql2016. Prompts for confirmation.
+        
+    .EXAMPLE
+        
+        PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database pubs | Invoke-DbaDbMirrorFailover -Force -Confirm:$false
+        
+        Forces the failover of the pubs database on sql2016 and allows data loss.
+        
+        Does not prompt for confirmation.
+        
+#>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter]$SqlInstance,

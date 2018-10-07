@@ -1,40 +1,41 @@
-function Get-DbaRegistryRoot {
-    <#
-        .SYNOPSIS
-            Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer
-
-        .DESCRIPTION
-            Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer
-
-        .PARAMETER ComputerName
-            The target computer. This is not a SQL Server service, though if you pass a named SQL instance, it'll parse properly down to the computer name
-
-        .PARAMETER Credential
-            Allows you to login to $ComputerName using alternative Windows credentials
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Configuration, Registry
-            Author: Chrissy LeMaire (@cl), netnerds.net
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .EXAMPLE
-            PS C:\> Get-DbaRegistryRoot
-
-            Gets the registry root for all instances on localhost
-
-        .EXAMPLE
-            PS C:\> Get-DbaRegistryRoot -ComputerName server1
-
-            Gets the registry root for all instances on server1
-    #>
+﻿function Get-DbaRegistryRoot {
+<#
+    .SYNOPSIS
+        Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer
+        
+    .DESCRIPTION
+        Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer
+        
+    .PARAMETER ComputerName
+        The target computer. This is not a SQL Server service, though if you pass a named SQL instance, it'll parse properly down to the computer name
+        
+    .PARAMETER Credential
+        Allows you to login to $ComputerName using alternative Windows credentials
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Configuration, Registry
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .EXAMPLE
+        PS C:\> Get-DbaRegistryRoot
+        
+        Gets the registry root for all instances on localhost
+        
+    .EXAMPLE
+        PS C:\> Get-DbaRegistryRoot -ComputerName server1
+        
+        Gets the registry root for all instances on server1
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]

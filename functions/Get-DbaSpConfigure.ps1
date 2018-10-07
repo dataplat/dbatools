@@ -1,72 +1,73 @@
-function Get-DbaSpConfigure {
-    <#
-        .SYNOPSIS
-            Returns all server level system configuration (sys.configuration/sp_configure) information
-
-        .DESCRIPTION
-            This function returns server level system configuration (sys.configuration/sp_configure) information. The information is gathered through SMO Configuration.Properties.
-            The data includes the default value for each configuration, for quick identification of values that may have been changed.
-
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Name
-            Return only specific configurations. Name can be either values from (sys.configuration/sp_configure) or from SMO object
-
-        .PARAMETER ExcludeName
-            Exclude specific configurations. Name can be either values from (sys.configuration/sp_configure) or from SMO object
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: SpConfig, Configure, Configuration
-            Author: Nic Cain, https://sirsql.net/
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaSpConfigure
-
-        .INPUTS
-            A DbaInstanceParameter representing an array of SQL Server instances.
-
-        .OUTPUTS
-            Returns PSCustomObject with properties ServerName, ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue
-
-        .EXAMPLE
-            PS C:\> Get-DbaSpConfigure -SqlInstance localhost
-
-            Returns all system configuration information on the localhost.
-
-        .EXAMPLE
-            PS C:\> 'localhost','localhost\namedinstance' | Get-DbaSpConfigure
-
-            Returns system configuration information on multiple instances piped into the function
-
-        .EXAMPLE
-            PS C:\> Get-DbaSpConfigure -SqlInstance sql2012 -Name 'max server memory (MB)'
-
-            Returns only the system configuration for MaxServerMemory on sql2012.
-
-        .EXAMPLE
-            PS C:\> Get-DbaSpConfigure -SqlInstance sql2012 -ExcludeName 'max server memory (MB)', RemoteAccess | Out-GridView
-
-            Returns system configuration information on sql2012 but excludes for max server memory (MB) and remote access. Values returned in grid view
-
-        .EXAMPLE
-            PS C:\> $cred = Get-Credential SqlCredential
-            PS C:\> 'sql2012' | Get-DbaSpConfigure -SqlCredential $cred -Name RemoteAccess, 'max server memory (MB)' -ExcludeName 'remote access' | Out-GridView
-
-            Returns system configuration information on sql2012 using SQL Server Authentication. Only MaxServerMemory is returned as RemoteAccess was also excluded.
-        #>
+﻿function Get-DbaSpConfigure {
+<#
+    .SYNOPSIS
+        Returns all server level system configuration (sys.configuration/sp_configure) information
+        
+    .DESCRIPTION
+        This function returns server level system configuration (sys.configuration/sp_configure) information. The information is gathered through SMO Configuration.Properties.
+        The data includes the default value for each configuration, for quick identification of values that may have been changed.
+        
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Name
+        Return only specific configurations. Name can be either values from (sys.configuration/sp_configure) or from SMO object
+        
+    .PARAMETER ExcludeName
+        Exclude specific configurations. Name can be either values from (sys.configuration/sp_configure) or from SMO object
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: SpConfig, Configure, Configuration
+        Author: Nic Cain, https://sirsql.net/
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaSpConfigure
+        
+    .INPUTS
+        A DbaInstanceParameter representing an array of SQL Server instances.
+        
+    .OUTPUTS
+        Returns PSCustomObject with properties ServerName, ComputerName, InstanceName, SqlInstance, Name, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue
+        
+    .EXAMPLE
+        PS C:\> Get-DbaSpConfigure -SqlInstance localhost
+        
+        Returns all system configuration information on the localhost.
+        
+    .EXAMPLE
+        PS C:\> 'localhost','localhost\namedinstance' | Get-DbaSpConfigure
+        
+        Returns system configuration information on multiple instances piped into the function
+        
+    .EXAMPLE
+        PS C:\> Get-DbaSpConfigure -SqlInstance sql2012 -Name 'max server memory (MB)'
+        
+        Returns only the system configuration for MaxServerMemory on sql2012.
+        
+    .EXAMPLE
+        PS C:\> Get-DbaSpConfigure -SqlInstance sql2012 -ExcludeName 'max server memory (MB)', RemoteAccess | Out-GridView
+        
+        Returns system configuration information on sql2012 but excludes for max server memory (MB) and remote access. Values returned in grid view
+        
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential SqlCredential
+        PS C:\> 'sql2012' | Get-DbaSpConfigure -SqlCredential $cred -Name RemoteAccess, 'max server memory (MB)' -ExcludeName 'remote access' | Out-GridView
+        
+        Returns system configuration information on sql2012 using SQL Server Authentication. Only MaxServerMemory is returned as RemoteAccess was also excluded.
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]

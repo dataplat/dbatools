@@ -1,77 +1,78 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentJob {
-    <#
-        .SYNOPSIS
-            Remove-DbaAgentJob removes a job.
-
-        .DESCRIPTION
-            Remove-DbaAgentJob removes a a job in the SQL Server Agent.
-
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Job
-            The name of the job. Can be null if the the job id is being used.
-
-        .PARAMETER KeepHistory
-            Specifies to keep the history for the job. By default history is deleted.
-
-        .PARAMETER KeepUnusedSchedule
-            Specifies to keep the schedules attached to this job if they are not attached to any other job.
-            By default the unused schedule is deleted.
-
-        .PARAMETER Mode
-            Default: Strict
-            How strict does the command take lesser issues?
-            Strict: Interrupt if the job specified doesn't exist.
-            Lazy:   Silently skip over jobs that don't exist.
-
-        .PARAMETER InputObject
-            Accepts piped input from Get-DbaAgentJob
-    
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
-
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Author: Sander Stad (@sqlstad, sqlstad.nl)
-            Tags: Agent, Job
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Remove-DbaAgentJob
-
-        .EXAMPLE
-            Remove-DbaAgentJob -SqlInstance sql1 -Job Job1
-
-            Removes the job from the instance with the name Job1
-
-        .EXAMPLE
-             GetDbaAgentJob -SqlInstance sql1 -Job Job1 | Remove-DbaAgentJob -KeepHistory
-
-        .EXAMPLE
-            Remove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepUnusedSchedule
-
-            Removes the job but keeps the unused schedules
-
-        .EXAMPLE
-            Remove-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1
-
-            Removes the job from multiple servers
-    #>
+<#
+    .SYNOPSIS
+        Remove-DbaAgentJob removes a job.
+        
+    .DESCRIPTION
+        Remove-DbaAgentJob removes a a job in the SQL Server Agent.
+        
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Job
+        The name of the job. Can be null if the the job id is being used.
+        
+    .PARAMETER KeepHistory
+        Specifies to keep the history for the job. By default history is deleted.
+        
+    .PARAMETER KeepUnusedSchedule
+        Specifies to keep the schedules attached to this job if they are not attached to any other job.
+        By default the unused schedule is deleted.
+        
+    .PARAMETER Mode
+        Default: Strict
+        How strict does the command take lesser issues?
+        Strict: Interrupt if the job specified doesn't exist.
+        Lazy:   Silently skip over jobs that don't exist.
+        
+    .PARAMETER InputObject
+        Accepts piped input from Get-DbaAgentJob
+        
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+        
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
+        Tags: Agent, Job
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Remove-DbaAgentJob
+        
+    .EXAMPLE
+        Remove-DbaAgentJob -SqlInstance sql1 -Job Job1
+        
+        Removes the job from the instance with the name Job1
+        
+    .EXAMPLE
+        GetDbaAgentJob -SqlInstance sql1 -Job Job1 | Remove-DbaAgentJob -KeepHistory
+        
+    .EXAMPLE
+        Remove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepUnusedSchedule
+        
+        Removes the job but keeps the unused schedules
+        
+    .EXAMPLE
+        Remove-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1
+        
+        Removes the job from multiple servers
+        
+#>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Alias("ServerInstance", "SqlServer")]

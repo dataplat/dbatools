@@ -1,44 +1,45 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbMirror {
-    <#
-        .SYNOPSIS
-            Gets properties of database mirrors and mirror witnesses.
-
-        .DESCRIPTION
-            Gets properties of database mirrors and mirror witnesses.
-
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
-            to be executed against multiple SQL Server instances.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-    
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Mirror, HA
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaDbMirror
-
-        .EXAMPLE
-            PS C:\> Get-DbaDbMirror -SqlInstance localhost
-
-            Gets properties of database mirrors and mirror witnesses on localhost
-
-        .EXAMPLE
-            PS C:\> Get-DbaDbMirror -SqlInstance localhost, sql2016
-
-            Gets properties of database mirrors and mirror witnesses on localhost and sql2016 SQL Server instances
-    #>
+<#
+    .SYNOPSIS
+        Gets properties of database mirrors and mirror witnesses.
+        
+    .DESCRIPTION
+        Gets properties of database mirrors and mirror witnesses.
+        
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
+        to be executed against multiple SQL Server instances.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Mirror, HA
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaDbMirror
+        
+    .EXAMPLE
+        PS C:\> Get-DbaDbMirror -SqlInstance localhost
+        
+        Gets properties of database mirrors and mirror witnesses on localhost
+        
+    .EXAMPLE
+        PS C:\> Get-DbaDbMirror -SqlInstance localhost, sql2016
+        
+        Gets properties of database mirrors and mirror witnesses on localhost and sql2016 SQL Server instances
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

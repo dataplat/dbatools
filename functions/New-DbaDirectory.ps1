@@ -1,51 +1,52 @@
-function New-DbaDirectory {
-    <#
-        .SYNOPSIS
-            Creates new path as specified by the path variable
-
-        .DESCRIPTION
-            Uses master.dbo.xp_create_subdir to create the path
-            Returns $true if the path can be created, $false otherwise
-
-        .PARAMETER SqlInstance
-            The SQL Server you want to run the test on.
-
-        .PARAMETER Path
-            The Path to tests. Can be a file or directory.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Path, Directory, Folder
-            Author: Stuart Moore
-
-            Requires: Admin access to server (not SQL Services),
-            Remoting must be enabled and accessible if $SqlInstance is not local
-
-            dbatools PowerShell module (https://dbatools.io)
-            Copyright (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/New-DbaDirectory
-
-        .EXAMPLE
-            New-DbaDirectory -SqlInstance sqlcluster -Path L:\MSAS12.MSSQLSERVER\OLAP
-
-            If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false.
-
-        .EXAMPLE
-            $credential = Get-Credential
-            New-DbaDirectory -SqlInstance sqlcluster -SqlCredential $credential -Path L:\MSAS12.MSSQLSERVER\OLAP
-
-            If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false. Uses a SqlCredential to connect
-    #>
+﻿function New-DbaDirectory {
+<#
+    .SYNOPSIS
+        Creates new path as specified by the path variable
+        
+    .DESCRIPTION
+        Uses master.dbo.xp_create_subdir to create the path
+        Returns $true if the path can be created, $false otherwise
+        
+    .PARAMETER SqlInstance
+        The SQL Server you want to run the test on.
+        
+    .PARAMETER Path
+        The Path to tests. Can be a file or directory.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Path, Directory, Folder
+        Author: Stuart Moore
+        
+        Requires: Admin access to server (not SQL Services),
+        Remoting must be enabled and accessible if $SqlInstance is not local
+        
+        dbatools PowerShell module (https://dbatools.io)
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/New-DbaDirectory
+        
+    .EXAMPLE
+        New-DbaDirectory -SqlInstance sqlcluster -Path L:\MSAS12.MSSQLSERVER\OLAP
+        
+        If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false.
+        
+    .EXAMPLE
+        $credential = Get-Credential
+        New-DbaDirectory -SqlInstance sqlcluster -SqlCredential $credential -Path L:\MSAS12.MSSQLSERVER\OLAP
+        
+        If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false. Uses a SqlCredential to connect
+        
+#>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]

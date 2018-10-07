@@ -1,50 +1,51 @@
-function Get-DbaPrivilege {
-    <#
-        .SYNOPSIS
-            Gets the users with local privileges on one or more computers.
-
-        .DESCRIPTION
-            Gets the users with local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch' on one or more computers.
-
-            Requires Local Admin rights on destination computer(s).
-
-        .PARAMETER ComputerName
-            The SQL Server (or server in general) that you're connecting to. This command handles named instances.
-
-        .PARAMETER Credential
-            Credential object used to connect to the computer as a different user.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Privilege
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaPrivilege
-
-        .EXAMPLE
-            PS C:\> Get-DbaPrivilege -ComputerName sqlserver2014a
-
-            Gets the local privileges on computer sqlserver2014a.
-
-        .EXAMPLE
-            PS C:\> 'sql1','sql2','sql3' | Get-DbaPrivilege
-
-            Gets the local privileges on computers sql1, sql2 and sql3.
-
-        .EXAMPLE
-            PS C:\> Get-DbaPrivilege -ComputerName sql1,sql2 | Out-GridView
-
-            Gets the local privileges on computers sql1 and sql2, and shows them in a grid view.
-    #>
+﻿function Get-DbaPrivilege {
+<#
+    .SYNOPSIS
+        Gets the users with local privileges on one or more computers.
+        
+    .DESCRIPTION
+        Gets the users with local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch' on one or more computers.
+        
+        Requires Local Admin rights on destination computer(s).
+        
+    .PARAMETER ComputerName
+        The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+        
+    .PARAMETER Credential
+        Credential object used to connect to the computer as a different user.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Privilege
+        Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaPrivilege
+        
+    .EXAMPLE
+        PS C:\> Get-DbaPrivilege -ComputerName sqlserver2014a
+        
+        Gets the local privileges on computer sqlserver2014a.
+        
+    .EXAMPLE
+        PS C:\> 'sql1','sql2','sql3' | Get-DbaPrivilege
+        
+        Gets the local privileges on computers sql1, sql2 and sql3.
+        
+    .EXAMPLE
+        PS C:\> Get-DbaPrivilege -ComputerName sql1,sql2 | Out-GridView
+        
+        Gets the local privileges on computers sql1 and sql2, and shows them in a grid view.
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]

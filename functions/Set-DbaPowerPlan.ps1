@@ -1,60 +1,61 @@
-function Set-DbaPowerPlan {
-    <#
-        .SYNOPSIS
-            Sets the SQL Server OS's Power Plan.
-
-        .DESCRIPTION
-            Sets the SQL Server OS's Power Plan. Defaults to High Performance which is best practice.
-
-            If your organization uses a custom power plan that is considered best practice, specify -CustomPowerPlan.
-
-            References:
-            https://support.microsoft.com/en-us/kb/2207548
-            http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
-
-        .PARAMETER ComputerName
-            The server(s) to set the Power Plan on.
-
-        .PARAMETER PowerPlan
-            Specifies the Power Plan that you wish to use. Valid options for this match the Windows default Power Plans of "Power Saver", "Balanced", and "High Performance".
-
-        .PARAMETER CustomPowerPlan
-            Specifies the name of a custom Power Plan to use.
-
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .NOTES
-            Tags: PowerPlan, OS, Configure
-            Requires: WMI access to servers
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Set-DbaPowerPlan
-
-        .EXAMPLE
-            Set-DbaPowerPlan -ComputerName sqlserver2014a
-
-            Sets the Power Plan to High Performance. Skips it if its already set.
-
-        .EXAMPLE
-            Set-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan 'Maximum Performance'
-
-            Sets the Power Plan to the custom power plan called "Maximum Performance". Skips it if its already set.
-
-    #>
+﻿function Set-DbaPowerPlan {
+<#
+    .SYNOPSIS
+        Sets the SQL Server OS's Power Plan.
+        
+    .DESCRIPTION
+        Sets the SQL Server OS's Power Plan. Defaults to High Performance which is best practice.
+        
+        If your organization uses a custom power plan that is considered best practice, specify -CustomPowerPlan.
+        
+        References:
+        https://support.microsoft.com/en-us/kb/2207548
+        http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
+        
+    .PARAMETER ComputerName
+        The server(s) to set the Power Plan on.
+        
+    .PARAMETER PowerPlan
+        Specifies the Power Plan that you wish to use. Valid options for this match the Windows default Power Plans of "Power Saver", "Balanced", and "High Performance".
+        
+    .PARAMETER CustomPowerPlan
+        Specifies the name of a custom Power Plan to use.
+        
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        
+    .NOTES
+        Tags: PowerPlan, OS, Configure
+        Requires: WMI access to servers
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Set-DbaPowerPlan
+        
+    .EXAMPLE
+        Set-DbaPowerPlan -ComputerName sqlserver2014a
+        
+        Sets the Power Plan to High Performance. Skips it if its already set.
+        
+    .EXAMPLE
+        Set-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan 'Maximum Performance'
+        
+        Sets the Power Plan to the custom power plan called "Maximum Performance". Skips it if its already set.
+        
+        
+#>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

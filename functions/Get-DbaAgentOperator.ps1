@@ -1,59 +1,60 @@
-function Get-DbaAgentOperator {
-    <#
-        .SYNOPSIS
-            Returns all SQL Agent operators on a SQL Server Agent.
-
-        .DESCRIPTION
-            This function returns SQL Agent operators.
-
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Operator
-            The operator(s) to process - this list is auto-populated from the server. If unspecified, all operators will be processed.
-
-        .PARAMETER ExcludeOperator
-            The operator(s) to exclude - this list is auto-populated from the server
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Agent, Operator
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Get-DbaAgentOperator
-
-        .EXAMPLE
-            PS C:\> Get-DbaAgentOperator -SqlInstance ServerA,ServerB\instanceB
-
-            Returns any SQL Agent operators on serverA and serverB\instanceB
-
-        .EXAMPLE
-            PS C:\> 'ServerA','ServerB\instanceB' | Get-DbaAgentOperator
-
-            Returns all SQL Agent operators  on serverA and serverB\instanceB
-
-        .EXAMPLE
-            PS C:\> Get-DbaAgentOperator -SqlInstance ServerA -Operator Dba1,Dba2
-
-            Returns only the SQL Agent Operators Dba1 and Dba2 on ServerA.
-
-        .EXAMPLE
-            PS C:\> Get-DbaAgentOperator -SqlInstance ServerA,ServerB -ExcludeOperator Dba3
-
-            Returns all the SQL Agent operators on ServerA and ServerB, except the Dba3 operator.
-    #>
+﻿function Get-DbaAgentOperator {
+<#
+    .SYNOPSIS
+        Returns all SQL Agent operators on a SQL Server Agent.
+        
+    .DESCRIPTION
+        This function returns SQL Agent operators.
+        
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Operator
+        The operator(s) to process - this list is auto-populated from the server. If unspecified, all operators will be processed.
+        
+    .PARAMETER ExcludeOperator
+        The operator(s) to exclude - this list is auto-populated from the server
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Agent, Operator
+        Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaAgentOperator
+        
+    .EXAMPLE
+        PS C:\> Get-DbaAgentOperator -SqlInstance ServerA,ServerB\instanceB
+        
+        Returns any SQL Agent operators on serverA and serverB\instanceB
+        
+    .EXAMPLE
+        PS C:\> 'ServerA','ServerB\instanceB' | Get-DbaAgentOperator
+        
+        Returns all SQL Agent operators  on serverA and serverB\instanceB
+        
+    .EXAMPLE
+        PS C:\> Get-DbaAgentOperator -SqlInstance ServerA -Operator Dba1,Dba2
+        
+        Returns only the SQL Agent Operators Dba1 and Dba2 on ServerA.
+        
+    .EXAMPLE
+        PS C:\> Get-DbaAgentOperator -SqlInstance ServerA,ServerB -ExcludeOperator Dba3
+        
+        Returns all the SQL Agent operators on ServerA and ServerB, except the Dba3 operator.
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]

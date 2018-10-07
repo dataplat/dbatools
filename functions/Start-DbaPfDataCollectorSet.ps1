@@ -1,64 +1,65 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaPfDataCollectorSet {
-    <#
-        .SYNOPSIS
-            Starts Performance Monitor Data Collector Set.
-
-        .DESCRIPTION
-            Starts Performance Monitor Data Collector Set.
-
-        .PARAMETER ComputerName
-            The target computer. Defaults to localhost.
-
-        .PARAMETER Credential
-            Allows you to login to $ComputerName using alternative credentials. To use:
-
-            $cred = Get-Credential, then pass $cred object to the -Credential parameter.
-
-        .PARAMETER CollectorSet
-            The name of the Collector Set to start.
-    
-        .PARAMETER NoWait
-            If this switch is enabled, the collector is started and the results are returned immediately.
-    
-        .PARAMETER InputObject
-            Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
-        .NOTES
-            Tags: PerfMon
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-    
-        .LINK
-            https://dbatools.io/Start-DbaPfDataCollectorSet
-
-        .EXAMPLE
-            Start-DbaPfDataCollectorSet
-    
-            Attempts to start all ready Collectors on localhost.
-
-        .EXAMPLE
-            Start-DbaPfDataCollectorSet -ComputerName sql2017
-    
-            Attempts to start all ready Collectors on localhost.
-    
-        .EXAMPLE
-            Start-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
-    
-            Starts the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
-    
-        .EXAMPLE
-            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Start-DbaPfDataCollectorSet
-    
-            Starts the 'System Correlation' Collector.
-    #>
+<#
+    .SYNOPSIS
+        Starts Performance Monitor Data Collector Set.
+        
+    .DESCRIPTION
+        Starts Performance Monitor Data Collector Set.
+        
+    .PARAMETER ComputerName
+        The target computer. Defaults to localhost.
+        
+    .PARAMETER Credential
+        Allows you to login to $ComputerName using alternative credentials. To use:
+        
+        $cred = Get-Credential, then pass $cred object to the -Credential parameter.
+        
+    .PARAMETER CollectorSet
+        The name of the Collector Set to start.
+        
+    .PARAMETER NoWait
+        If this switch is enabled, the collector is started and the results are returned immediately.
+        
+    .PARAMETER InputObject
+        Accepts the object output by Get-DbaPfDataCollectorSet via the pipeline.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: PerfMon
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Start-DbaPfDataCollectorSet
+        
+    .EXAMPLE
+        Start-DbaPfDataCollectorSet
+        
+        Attempts to start all ready Collectors on localhost.
+        
+    .EXAMPLE
+        Start-DbaPfDataCollectorSet -ComputerName sql2017
+        
+        Attempts to start all ready Collectors on localhost.
+        
+    .EXAMPLE
+        Start-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        
+        Starts the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
+        
+    .EXAMPLE
+        Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Start-DbaPfDataCollectorSet
+        
+        Starts the 'System Correlation' Collector.
+        
+#>
     [CmdletBinding()]
     param (
         [DbaInstance[]]$ComputerName=$env:COMPUTERNAME,

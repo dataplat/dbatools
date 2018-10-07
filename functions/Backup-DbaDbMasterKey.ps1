@@ -1,65 +1,66 @@
-function Backup-DbaDbMasterKey {
-    <#
-        .SYNOPSIS
-            Backs up specified database master key.
-
-        .DESCRIPTION
-            Backs up specified database master key.
-
-        .PARAMETER SqlInstance
-            The target SQL Server instance.
-
-        .PARAMETER SqlCredential
-            Allows you to login to SQL Server using alternative credentials.
-
-        .PARAMETER Database
-            Backup master key from specific database(s).
-
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server.
-
-        .PARAMETER Path
-            The directory to export the key. If no path is specified, the default backup directory for the instance will be used.
-
-        .PARAMETER Credential
-            Pass a credential object for the password
-
-        .PARAMETER Password
-            The password to encrypt the exported key. This must be a SecureString.
-
-        .PARAMETER InputObject
-            Database object piped in from Get-DbaDatabase
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Certificate, Database
-            Author: Chrissy LeMaire (@cl), netnerds.net
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .EXAMPLE
-            PS C:\> Backup-DbaDbMasterKey -SqlInstance server1\sql2016
-
-            ComputerName : SERVER1
-            InstanceName : SQL2016
-            SqlInstance  : SERVER1\SQL2016
-            Database     : master
-            Filename     : E:\MSSQL13.SQL2016\MSSQL\Backup\server1$sql2016-master-20170614162311.key
-            Status       : Success
-
-            Prompts for export password, then logs into server1\sql2016 with Windows credentials then backs up all database keys to the default backup directory.
-
-        .EXAMPLE
-            PS C:\> Backup-DbaDbMasterKey -SqlInstance Server1 -Database db1 -Path \\nas\sqlbackups\keys
-
-            Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas\sqlbackups\keys directory.
-    #>
+﻿function Backup-DbaDbMasterKey {
+<#
+    .SYNOPSIS
+        Backs up specified database master key.
+        
+    .DESCRIPTION
+        Backs up specified database master key.
+        
+    .PARAMETER SqlInstance
+        The target SQL Server instance.
+        
+    .PARAMETER SqlCredential
+        Allows you to login to SQL Server using alternative credentials.
+        
+    .PARAMETER Database
+        Backup master key from specific database(s).
+        
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server.
+        
+    .PARAMETER Path
+        The directory to export the key. If no path is specified, the default backup directory for the instance will be used.
+        
+    .PARAMETER Credential
+        Pass a credential object for the password
+        
+    .PARAMETER Password
+        The password to encrypt the exported key. This must be a SecureString.
+        
+    .PARAMETER InputObject
+        Database object piped in from Get-DbaDatabase
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Certificate, Database
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .EXAMPLE
+        PS C:\> Backup-DbaDbMasterKey -SqlInstance server1\sql2016
+        
+        ComputerName : SERVER1
+        InstanceName : SQL2016
+        SqlInstance  : SERVER1\SQL2016
+        Database     : master
+        Filename     : E:\MSSQL13.SQL2016\MSSQL\Backup\server1$sql2016-master-20170614162311.key
+        Status       : Success
+        
+        Prompts for export password, then logs into server1\sql2016 with Windows credentials then backs up all database keys to the default backup directory.
+        
+    .EXAMPLE
+        PS C:\> Backup-DbaDbMasterKey -SqlInstance Server1 -Database db1 -Path \\nas\sqlbackups\keys
+        
+        Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas\sqlbackups\keys directory.
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
