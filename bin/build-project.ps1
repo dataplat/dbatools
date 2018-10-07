@@ -10,12 +10,12 @@ param(
 
 if (-not $PSBoundParameters.ContainsKey('MsbuildConfiguration'))
 {
-	$_MsbuildConfiguration = switch ($PSVersionTable.PSVersion.Major)
-	{
-		3 { "ps3" }
-		4 { "ps4" }
-		default { "Release" }
-	}
+    $_MsbuildConfiguration = switch ($PSVersionTable.PSVersion.Major)
+    {
+        3 { "ps3" }
+        4 { "ps4" }
+        default { "Release" }
+    }
 }
 else { $_MsbuildConfiguration = $MsbuildConfiguration }
 
@@ -38,7 +38,7 @@ if (-not (Test-Path $msbuild)) {
 
 if ($env:APPVEYOR -eq 'True') {
     $MsbuildOptions = $MsbuildOptions + '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" '
-	$_MsbuildConfiguration = 'Debug'
+    $_MsbuildConfiguration = 'Debug'
 
     if (-not (Test-Path "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll")) {
         throw "msbuild logger not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
@@ -59,11 +59,11 @@ if ($MsbuildTarget -eq 'Build') {
         Write-Verbose -Message "Found library, trying to copy & import"
         if ($script:alwaysBuildLibrary) { Move-Item -Path "$PSModuleRoot\bin\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
         else { Copy-Item -Path "$PSModuleRoot\bin\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
-		Add-Type -Path "$PSModuleRoot\dbatools.dll" -ErrorAction Stop
+        Add-Type -Path "$PSModuleRoot\dbatools.dll" -ErrorAction Stop
     }
     catch {
         Write-Verbose -Message "Failed to copy & import, attempting to import straight from the module directory"
-		Add-Type -Path "$PSModuleRoot\bin\dbatools.dll" -ErrorAction Stop
+        Add-Type -Path "$PSModuleRoot\bin\dbatools.dll" -ErrorAction Stop
     }
     Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
 }
