@@ -2,10 +2,10 @@
 function Join-DbaAvailabilityGroup {
 <#
     .SYNOPSIS
-        Adds a database to an availability group on a SQL Server instance.
+        Joins a secondary replica to an availability group on a SQL Server instance.
         
     .DESCRIPTION
-        Adds a database to an availability group on a SQL Server instance.
+        Joins a secondary replica to an availability group on a SQL Server instance.
     
     .PARAMETER Primary
         SQL Server name or SMO object representing the primary SQL Server.
@@ -13,10 +13,10 @@ function Join-DbaAvailabilityGroup {
     .PARAMETER PrimarySqlCredential
         Login to the primary instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         
-    .PARAMETER Mirror
+    .PARAMETER Secondary
         SQL Server name or SMO object representing the secpondary SQL Server instance or instances.
         
-    .PARAMETER MirrorSqlCredential
+    .PARAMETER SecondarySqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         
     .PARAMETER AvailabilityGroup
@@ -86,11 +86,9 @@ function Join-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     process {
-        if ((Test-Bound -ParameterName SqlInstance)) {
-            if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName AvailabilityGroup)) {
-                Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
-                return
-            }
+        if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName AvailabilityGroup)) {
+            Stop-Function -Message "You must specify one or more Availability Groups when using the SqlInstance parameter."
+            return
         }
         
         foreach ($instance in $Primary) {
