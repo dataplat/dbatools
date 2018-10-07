@@ -51,7 +51,7 @@ function Remove-DbaEndpoint {
     .EXAMPLE
         Get-Endpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Remove-DbaEndpoint
         
-        Removes the endpoints returned from the Get-Endpoint function.Prompts for confirmation.
+        Removes the endpoints returned from the Get-Endpoint function. Prompts for confirmation.
 
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
