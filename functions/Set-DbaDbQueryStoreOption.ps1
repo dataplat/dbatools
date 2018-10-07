@@ -3,92 +3,92 @@ function Set-DbaDbQueryStoreOption {
 <#
     .SYNOPSIS
         Configure Query Store settings for a specific or multiple databases.
-        
+
     .DESCRIPTION
         Configure Query Store settings for a specific or multiple databases.
-        
+
     .PARAMETER SqlInstance
         The SQL Server that you're connecting to.
-        
+
     .PARAMETER SqlCredential
         SqlCredential object used to connect to the SQL Server as a different user.
-        
+
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-        
+
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
-        
+
     .PARAMETER AllDatabases
         Run command against all user databases
-        
+
     .PARAMETER State
         Set the state of the Query Store. Valid options are "ReadWrite", "ReadOnly" and "Off".
-        
+
     .PARAMETER FlushInterval
         Set the flush to disk interval of the Query Store in seconds.
-        
+
     .PARAMETER CollectionInterval
         Set the runtime statistics collection interval of the Query Store in minutes.
-        
+
     .PARAMETER MaxSize
         Set the maximum size of the Query Store in MB.
-        
+
     .PARAMETER CaptureMode
         Set the query capture mode of the Query Store. Valid options are "Auto" and "All".
-        
+
     .PARAMETER CleanupMode
         Set the query cleanup mode policy. Valid options are "Auto" and "Off".
-        
+
     .PARAMETER StaleQueryThreshold
         Set the stale query threshold in days.
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run
-        
+
     .PARAMETER Confirm
         Prompts for confirmation of every step. For example:
-        
+
         Are you sure you want to perform this action?
         Performing the operation "Changing Desired State" on target "pubs on SQL2016\VNEXT".
         [Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: QueryStore
-        Author: Enrico van de Laar ( @evdlaar )
-        
+        Author: Enrico van de Laar (@evdlaar)
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Set-DbaQueryStoreOptions
-        
+
     .EXAMPLE
-        Set-DbaDbQueryStoreOption -SqlInstance ServerA\SQL -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode All -CleanupMode Auto -StaleQueryThreshold 100 -AllDatabases
-        
+        PS C:\> Set-DbaDbQueryStoreOption -SqlInstance ServerA\SQL -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode All -CleanupMode Auto -StaleQueryThreshold 100 -AllDatabases
+
         Configure the Query Store settings for all user databases in the ServerA\SQL Instance.
-        
+
     .EXAMPLE
-        Set-DbaDbQueryStoreOption -SqlInstance ServerA\SQL -FlushInterval 600
-        
+        PS C:\> Set-DbaDbQueryStoreOption -SqlInstance ServerA\SQL -FlushInterval 600
+
         Only configure the FlushInterval setting for all Query Store databases in the ServerA\SQL Instance.
-        
+
     .EXAMPLE
-        Set-DbaDbQueryStoreOption -SqlInstance ServerA\SQL -Database AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
-        
+        PS C:\> Set-DbaDbQueryStoreOption -SqlInstance ServerA\SQL -Database AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
+
         Configure the Query Store settings for the AdventureWorks database in the ServerA\SQL Instance.
-        
+
     .EXAMPLE
-        Set-DbaDbQueryStoreOption -SqlInstance ServerA\SQL -Exclude AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
-        
+        PS C:\> Set-DbaDbQueryStoreOption -SqlInstance ServerA\SQL -Exclude AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
+
         Configure the Query Store settings for all user databases except the AdventureWorks database in the ServerA\SQL Instance.
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
