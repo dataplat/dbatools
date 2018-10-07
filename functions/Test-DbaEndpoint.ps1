@@ -2,10 +2,10 @@
 function Test-DbaEndpoint {
 <#
     .SYNOPSIS
-        Tests connectivity for TCP enabled endpoints.
+        Performs a simple connectivity test for TCP and SSL enabled endpoints.
         
     .DESCRIPTION
-        Tests connectivity for TCP enabled endpoints.
+        Performs a simple connectivity test for TCP and SSL enabled endpoints. Tests if port is accessible, not if endpoint is working.
         
         Note that if an endpoint does not have a tcp listener port, it will be skipped.
         
