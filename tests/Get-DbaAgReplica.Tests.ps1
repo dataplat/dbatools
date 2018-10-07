@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 5
+        $paramCount = 7
         <#
             Get commands, Default count = 11
             Commands with SupportShouldProcess = 13
@@ -28,8 +28,8 @@ InModuleScope dbatools {
             Import-Clixml $script:appveyorlabrepo\agserver.xml
         }
         Context "gets ag replicas" {
-            $results = Get-DbaAgReplica -SqlInstance sql2016c
             It -Skip "returns results with proper data" {
+                $results = Get-DbaAgReplica -SqlInstance sql2016c
                 $results.ConnectionState | Should -Be 'Unknown', 'Unknown', 'Disconnected'
                 $results.EndPointUrl -contains 'TCP://sql2016c.base.local:5022'| Should -Be $true
             }
