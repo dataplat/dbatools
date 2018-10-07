@@ -78,7 +78,7 @@ if ($ImportLibrary) {
                 Write-Verbose -Message "Total duration: $((Get-Date) - $start)"
             }
             elseif ($hasProject) {
-                "$($PSScriptRoot)\build-project.ps1"
+				. Import-ModuleFile "$($script:PSModuleRoot)\bin\build-project.ps1"
             }
             else {
                 throw "No valid dbatools library found! Check your module integrity"

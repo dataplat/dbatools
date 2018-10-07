@@ -21,9 +21,7 @@ function Get-MsBuildPath {
     [OutputType([string])]
     param()
     process{
-        $system = [Appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -like "System, *"
-        $frameworkFolder = "Framework$(if ([intptr]::Size -eq 8) { "64" })"
-        $rawPath = "$(Split-Path $system.Location)\..\..\..\..\$($frameworkFolder)\$($system.ImageRuntimeVersion)\msbuild.exe"
+        $rawPath = "$(Split-Path ([string].Assembly.Location))\msbuild.exe"
         (Resolve-Path $rawPath).Path
     }
 }
