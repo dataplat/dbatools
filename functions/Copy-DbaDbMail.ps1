@@ -1,72 +1,73 @@
-function Copy-DbaDbMail {
-    <#
-        .SYNOPSIS
-            Migrates Mail Profiles, Accounts, Mail Servers and Mail Server Configs from one SQL Server to another.
-
-        .DESCRIPTION
-            By default, all mail configurations for Profiles, Accounts, Mail Servers and Configs are copied.
-
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
-
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Type
-            Specifies the object type to migrate. Valid options are "Job", "Alert" and "Operator". When Type is specified, all categories from the selected type will be migrated.
-
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .PARAMETER Force
-            If this switch is enabled, existing objects on Destination with matching names from Source will be dropped.
-
-        .NOTES
-            Tags: Migration, Mail
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: sysadmin access on SQL Servers
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Copy-DbaDbMail
-
-        .EXAMPLE
-            PS C:\> Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster
-
-            Copies all database mail objects from sqlserver2014a to sqlcluster using Windows credentials. If database mail objects with the same name exist on sqlcluster, they will be skipped.
-
-        .EXAMPLE
-            PS C:\> Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
-
-            Copies all database mail objects from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
-
-        .EXAMPLE
-            PS C:\> Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster -WhatIf
-
-            Shows what would happen if the command were executed.
-
-        .EXAMPLE
-            PS C:\> Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster -EnableException
-
-            Performs execution of function, and will throw a terminating exception if something breaks
-    #>
+﻿function Copy-DbaDbMail {
+<#
+    .SYNOPSIS
+        Migrates Mail Profiles, Accounts, Mail Servers and Mail Server Configs from one SQL Server to another.
+        
+    .DESCRIPTION
+        By default, all mail configurations for Profiles, Accounts, Mail Servers and Configs are copied.
+        
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Type
+        Specifies the object type to migrate. Valid options are "Job", "Alert" and "Operator". When Type is specified, all categories from the selected type will be migrated.
+        
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .PARAMETER Force
+        If this switch is enabled, existing objects on Destination with matching names from Source will be dropped.
+        
+    .NOTES
+        Tags: Migration, Mail
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Requires: sysadmin access on SQL Servers
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Copy-DbaDbMail
+        
+    .EXAMPLE
+        PS C:\> Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster
+        
+        Copies all database mail objects from sqlserver2014a to sqlcluster using Windows credentials. If database mail objects with the same name exist on sqlcluster, they will be skipped.
+        
+    .EXAMPLE
+        PS C:\> Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+        
+        Copies all database mail objects from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
+        
+    .EXAMPLE
+        PS C:\> Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster -WhatIf
+        
+        Shows what would happen if the command were executed.
+        
+    .EXAMPLE
+        PS C:\> Copy-DbaDbMail -Source sqlserver2014a -Destination sqlcluster -EnableException
+        
+        Performs execution of function, and will throw a terminating exception if something breaks
+        
+#>
     [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]

@@ -1,69 +1,70 @@
-function Test-DbaRecoveryModel {
-    <#
-        .SYNOPSIS
-            Find if database is really a specific recovery model or not.
-
-        .DESCRIPTION
-            When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain.
-
-            However, you may also desire to validate if a database is SIMPLE or BULK LOGGED on an instance.
-
-            Inspired by Paul Randal's post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)
-
-        .PARAMETER SqlInstance
-            The SQL Server instance to connect to.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Database
-            Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
-
-        .PARAMETER ExcludeDatabase
-            Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
-
-        .PARAMETER RecoveryModel
-            Specifies the type of recovery model you wish to test. By default it will test for FULL Recovery Model.
-
-        .PARAMETER Detailed
-            Output all properties, will be deprecated in 1.0.0 release.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: DisasterRecovery, Backup
-            Author: Claudio Silva (@ClaudioESSilva)
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-
-        .LINK
-            https://dbatools.io/Test-DbaRecoveryModel
-
-        .EXAMPLE
-            Test-DbaRecoveryModel -SqlInstance sql2005
-
-            Shows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model.
-
-        .EXAMPLE
-            Test-DbaRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne "FULL"}
-
-            Only shows the databases that are functionally in 'simple' mode.
-
-        .EXAMPLE
-            Test-DbaRecoveryModel -SqlInstance sql2008 -RecoveryModel Bulk_Logged | Sort-Object Server  -Descending
-
-            Shows all databases where the configured recovery model is BULK_LOGGED and sort them by server name descending
-
-        .EXAMPLE
-            Test-DbaRecoveryModel -SqlInstance localhost | Select-Object -Property *
-
-            Shows all of the properties for the databases that have Full Recovery Model
-    #>
+﻿function Test-DbaRecoveryModel {
+<#
+    .SYNOPSIS
+        Find if database is really a specific recovery model or not.
+        
+    .DESCRIPTION
+        When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain.
+        
+        However, you may also desire to validate if a database is SIMPLE or BULK LOGGED on an instance.
+        
+        Inspired by Paul Randal's post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)
+        
+    .PARAMETER SqlInstance
+        The SQL Server instance to connect to.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Database
+        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        
+    .PARAMETER ExcludeDatabase
+        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        
+    .PARAMETER RecoveryModel
+        Specifies the type of recovery model you wish to test. By default it will test for FULL Recovery Model.
+        
+    .PARAMETER Detailed
+        Output all properties, will be deprecated in 1.0.0 release.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: DisasterRecovery, Backup
+        Author: Claudio Silva (@ClaudioESSilva)
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        
+    .LINK
+        https://dbatools.io/Test-DbaRecoveryModel
+        
+    .EXAMPLE
+        Test-DbaRecoveryModel -SqlInstance sql2005
+        
+        Shows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model.
+        
+    .EXAMPLE
+        Test-DbaRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne "FULL"}
+        
+        Only shows the databases that are functionally in 'simple' mode.
+        
+    .EXAMPLE
+        Test-DbaRecoveryModel -SqlInstance sql2008 -RecoveryModel Bulk_Logged | Sort-Object Server  -Descending
+        
+        Shows all databases where the configured recovery model is BULK_LOGGED and sort them by server name descending
+        
+    .EXAMPLE
+        Test-DbaRecoveryModel -SqlInstance localhost | Select-Object -Property *
+        
+        Shows all of the properties for the databases that have Full Recovery Model
+        
+#>
     [CmdletBinding()]
     [OutputType("System.Collections.ArrayList")]
     param (

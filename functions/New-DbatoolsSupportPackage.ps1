@@ -1,12 +1,12 @@
-function New-DbatoolsSupportPackage {
-    <#
+﻿function New-DbatoolsSupportPackage {
+<#
     .SYNOPSIS
-    Creates a package of troubleshooting information that can be used by dbatools to help debug issues.
-
+        Creates a package of troubleshooting information that can be used by dbatools to help debug issues.
+        
     .DESCRIPTION
-    This function creates an extensive debugging package that can help with reproducing and fixing issues.
-
-    The file will be created on the desktop by default and will contain quite a bit of information:
+        This function creates an extensive debugging package that can help with reproducing and fixing issues.
+        
+        The file will be created on the desktop by default and will contain quite a bit of information:
         - OS Information
         - Hardware Information (CPU, Ram, things like that)
         - .NET Information
@@ -15,35 +15,36 @@ function New-DbatoolsSupportPackage {
         - The In-Memory message log
         - The In-Memory error log
         - Screenshot of the console buffer (Basically, everything written in your current console, even if you have to scroll upwards to see it.
-
+        
     .PARAMETER Path
-    The folder where to place the output xml in.
-
+        The folder where to place the output xml in.
+        
     .PARAMETER Variables
-    Name of additional variables to attach.
-    This allows you to add the content of variables to the support package, if you believe them to be relevant to the case.
-
+        Name of additional variables to attach.
+        This allows you to add the content of variables to the support package, if you believe them to be relevant to the case.
+        
     .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
     .NOTES
-    Author: Fred Weinmann (@FredWeinmann)
-    Tags: Debug
-
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: MIT https://opensource.org/licenses/MIT
-
+        Author: Fred Weinmann (@FredWeinmann)
+        Tags: Debug
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
     .LINK
-    https://dbatools.io/New-DbatoolsSupportPackage
-
+        https://dbatools.io/New-DbatoolsSupportPackage
+        
     .EXAMPLE
-    New-DbatoolsSupportPackage
-
-    Creates a large support pack in order to help us troubleshoot stuff.
-    #>
+        New-DbatoolsSupportPackage
+        
+        Creates a large support pack in order to help us troubleshoot stuff.
+        
+#>
     [CmdletBinding()]
     param (
         [string]

@@ -1,51 +1,52 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Remove-DbaNetworkCertificate {
-    <#
+<#
     .SYNOPSIS
         Removes the network certificate for SQL Server instance
-
+        
     .DESCRIPTION
         Removes the network certificate for SQL Server instance. This setting is found in Configuration Manager.
-
+        
     .PARAMETER SqlInstance
         The target SQL Server - defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
-
+        
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative credentials.
-
+        
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
+        
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-
+        
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-
+        
     .EXAMPLE
         Remove-DbaNetworkCertificate
-
+        
         Removes the Network Certificate for the default instance (MSSQLSERVER) on localhost
-
+        
     .EXAMPLE
         Remove-DbaNetworkCertificate -SqlInstance sql1\SQL2008R2SP2
-
+        
         Removes the Network Certificate for the SQL2008R2SP2 instance on sql1
-
+        
     .EXAMPLE
         Remove-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2 -WhatIf
-
+        
         Shows what would happen if the command were run
-
+        
     .NOTES
         Tags: Certificate
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+        
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (

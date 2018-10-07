@@ -1,44 +1,45 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaXECsv {
-    <#
-        .SYNOPSIS
-            Exports Extended Events to a CSV file.
-
-        .DESCRIPTION
-            Exports Extended Events to a CSV file.
-
-        .PARAMETER Path
-            Specifies the InputObject to the output CSV file
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .PARAMETER InputObject
-            Allows Piping
-
-        .NOTES
-            Tags: ExtendedEvent, XE, XEvent
-            Author: Gianluca Sartori (@spaghettidba)
-
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-            SmartTarget: by Gianluca Sartori (@spaghettidba)
-
-        .LINK
-            https://dbatools.io/Export-DbaXECsv
-
-        .EXAMPLE
-            PS C:\> Get-ChildItem -Path C:\temp\sample.xel | Export-DbaXECsv -Path c:\temp\sample.csv
-
-            Writes Extended Events data to the file "C:\temp\events.csv".
-
-         .EXAMPLE
-            PS C:\> Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Export-DbaXECsv -Path c:\temp\events.csv
-
-            Writes Extended Events data to the file "C:\temp\events.csv".
-    #>
+<#
+    .SYNOPSIS
+        Exports Extended Events to a CSV file.
+        
+    .DESCRIPTION
+        Exports Extended Events to a CSV file.
+        
+    .PARAMETER Path
+        Specifies the InputObject to the output CSV file
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .PARAMETER InputObject
+        Allows Piping
+        
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Gianluca Sartori (@spaghettidba)
+        
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        SmartTarget: by Gianluca Sartori (@spaghettidba)
+        
+    .LINK
+        https://dbatools.io/Export-DbaXECsv
+        
+    .EXAMPLE
+        PS C:\> Get-ChildItem -Path C:\temp\sample.xel | Export-DbaXECsv -Path c:\temp\sample.csv
+        
+        Writes Extended Events data to the file "C:\temp\events.csv".
+        
+    .EXAMPLE
+        PS C:\> Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Export-DbaXECsv -Path c:\temp\events.csv
+        
+        Writes Extended Events data to the file "C:\temp\events.csv".
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

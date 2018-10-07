@@ -1,77 +1,78 @@
-function Copy-DbaAgentJob {
-    <#
-        .SYNOPSIS
-            Copy-DbaAgentJob migrates jobs from one SQL Server to another.
-
-        .DESCRIPTION
-            By default, all jobs are copied. The -Job parameter is auto-populated for command-line completion and can be used to copy only specific jobs.
-
-            If the job already exists on the destination, it will be skipped unless -Force is used.
-
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
-
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Job
-            The job(s) to process. This list is auto-populated from the server. If unspecified, all jobs will be processed.
-
-        .PARAMETER ExcludeJob
-            The job(s) to exclude. This list is auto-populated from the server.
-
-        .PARAMETER DisableOnSource
-            If this switch is enabled, the job will be disabled on the source server.
-
-        .PARAMETER DisableOnDestination
-            If this switch is enabled, the newly migrated job will be disabled on the destination server.
-
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .PARAMETER Force
-            If this switch is enabled, the Job will be dropped and recreated on Destination.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Migration, Agent, Job
-            Author: Chrissy LeMaire (@cl), netnerds.net
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Copy-DbaAgentJob
-
-        .EXAMPLE
-            PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster
-
-            Copies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.
-
-        .EXAMPLE
-            PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force
-
-            Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
-
-        .EXAMPLE
-            PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
-
-            Shows what would happen if the command were executed using force.
-    #>
+﻿function Copy-DbaAgentJob {
+<#
+    .SYNOPSIS
+        Copy-DbaAgentJob migrates jobs from one SQL Server to another.
+        
+    .DESCRIPTION
+        By default, all jobs are copied. The -Job parameter is auto-populated for command-line completion and can be used to copy only specific jobs.
+        
+        If the job already exists on the destination, it will be skipped unless -Force is used.
+        
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Job
+        The job(s) to process. This list is auto-populated from the server. If unspecified, all jobs will be processed.
+        
+    .PARAMETER ExcludeJob
+        The job(s) to exclude. This list is auto-populated from the server.
+        
+    .PARAMETER DisableOnSource
+        If this switch is enabled, the job will be disabled on the source server.
+        
+    .PARAMETER DisableOnDestination
+        If this switch is enabled, the newly migrated job will be disabled on the destination server.
+        
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        
+    .PARAMETER Force
+        If this switch is enabled, the Job will be dropped and recreated on Destination.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Migration, Agent, Job
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Copy-DbaAgentJob
+        
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster
+        
+        Copies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.
+        
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force
+        
+        Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+        
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+        
+        Shows what would happen if the command were executed using force.
+        
+#>
     [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]

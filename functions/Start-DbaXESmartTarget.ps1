@@ -1,86 +1,87 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Start-DbaXESmartTarget {
-    <#
-        .SYNOPSIS
-            XESmartTarget runs as a client application for an Extended Events session running on a SQL Server instance.
-
-        .DESCRIPTION
-            XESmartTarget offers the ability to set up complex actions in response to Extended Events captured in sessions, without writing a single line of code.
-
-            See more at https://github.com/spaghettidba/XESmartTarget/wiki
-
-        .PARAMETER SqlInstance
-            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
-
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Session
-            Name of the Extended Events session to attach to.
-
-            You can monitor a single session with an instance of XESmartTarget. In case you need to perform action on multiple sessions, run an additional instance of XESmartTarget, with its own configuration file.
-
-        .PARAMETER Database
-            Specifies the name of the database that contains the target table.
-
-        .PARAMETER FailOnProcessingError
-            If this switch is enabled, the a processing error will trigger a failure.
-
-        .PARAMETER Responder
-            The list of responses can include zero or more Response objects, each to be configured by specifying values for their public members.
-
-        .PARAMETER Template
-            Path to the dbatools built-in templates
-
-        .PARAMETER NotAsJob
-            If this switch is enabled, output will be sent to screen indefinitely. BY default, a job will be run in the background.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: ExtendedEvent, XE, XEvent
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-            SmartTarget: by Gianluca Sartori (@spaghettidba)
-
-        .LINK
-            https://dbatools.io/Start-DbaXESmartTarget
-            https://github.com/spaghettidba/XESmartTarget/wiki
-
-        .EXAMPLE
-            $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
-            Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
-
-            Executes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.
-
-        .EXAMPLE
-            $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
-            $params = @{
-                SmtpServer = "smtp.ad.local"
-                To = "admin@ad.local"
-                Sender = "reports@ad.local"
-                Subject = "Query executed"
-                Body = "Query executed at {collection_time}"
-                Attachment = "batch_text"
-                AttachmentFileName = "query.sql"
-            }
-            $emailresponse = New-DbaXESmartEmail @params
-            Start-DbaXESmartTarget -SqlInstance sql2017 -Session querytracker -Responder $response, $emailresponse
-
-            Executes a T-SQL command against dbadb on sql2017 and sends an email whenever a querytracker event is recorded.
-
-        .EXAMPLE
-            $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"
-            $response = New-DbaXESmartTableWriter -SqlInstance sql2017 -Database dbadb -Table deadlocktracker -OutputColumns $columns -Filter "duration > 10000"
-            Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
-
-            Writes Extended Events to the deadlocktracker table in dbadb on sql2017.
-    #>
+<#
+    .SYNOPSIS
+        XESmartTarget runs as a client application for an Extended Events session running on a SQL Server instance.
+        
+    .DESCRIPTION
+        XESmartTarget offers the ability to set up complex actions in response to Extended Events captured in sessions, without writing a single line of code.
+        
+        See more at https://github.com/spaghettidba/XESmartTarget/wiki
+        
+    .PARAMETER SqlInstance
+        Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Session
+        Name of the Extended Events session to attach to.
+        
+        You can monitor a single session with an instance of XESmartTarget. In case you need to perform action on multiple sessions, run an additional instance of XESmartTarget, with its own configuration file.
+        
+    .PARAMETER Database
+        Specifies the name of the database that contains the target table.
+        
+    .PARAMETER FailOnProcessingError
+        If this switch is enabled, the a processing error will trigger a failure.
+        
+    .PARAMETER Responder
+        The list of responses can include zero or more Response objects, each to be configured by specifying values for their public members.
+        
+    .PARAMETER Template
+        Path to the dbatools built-in templates
+        
+    .PARAMETER NotAsJob
+        If this switch is enabled, output will be sent to screen indefinitely. BY default, a job will be run in the background.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        SmartTarget: by Gianluca Sartori (@spaghettidba)
+        
+    .LINK
+        https://dbatools.io/Start-DbaXESmartTarget
+        https://github.com/spaghettidba/XESmartTarget/wiki
+        
+    .EXAMPLE
+        $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
+        Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
+        
+        Executes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.
+        
+    .EXAMPLE
+        $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
+        $params = @{
+        SmtpServer = "smtp.ad.local"
+        To = "admin@ad.local"
+        Sender = "reports@ad.local"
+        Subject = "Query executed"
+        Body = "Query executed at {collection_time}"
+        Attachment = "batch_text"
+        AttachmentFileName = "query.sql"
+        }
+        $emailresponse = New-DbaXESmartEmail @params
+        Start-DbaXESmartTarget -SqlInstance sql2017 -Session querytracker -Responder $response, $emailresponse
+        
+        Executes a T-SQL command against dbadb on sql2017 and sends an email whenever a querytracker event is recorded.
+        
+    .EXAMPLE
+        $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"
+        $response = New-DbaXESmartTableWriter -SqlInstance sql2017 -Database dbadb -Table deadlocktracker -OutputColumns $columns -Filter "duration > 10000"
+        Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
+        
+        Writes Extended Events to the deadlocktracker table in dbadb on sql2017.
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

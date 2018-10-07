@@ -1,80 +1,81 @@
-function Copy-DbaDataCollector {
-    <#
-        .SYNOPSIS
-            Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
-
-        .DESCRIPTION
-            By default, all data collector objects are migrated. If the object already exists on the destination, it will be skipped unless -Force is used.
-
-            The -CollectionSet parameter is auto-populated for command-line completion and can be used to copy only specific objects.
-
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
-
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER Destination
-            Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
-
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-        .PARAMETER CollectionSet
-            The collection set(s) to process - this list is auto-populated from the server. If unspecified, all collection sets will be processed.
-
-        .PARAMETER ExcludeCollectionSet
-            The collection set(s) to exclude - this list is auto-populated from the server
-
-        .PARAMETER NoServerReconfig
-            Upcoming parameter to enable server reconfiguration
-
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
-
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
-
-        .PARAMETER Force
-            If collection sets exists on destination server, it will be dropped and recreated.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Migration,DataCollection
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: sysadmin access on SQL Servers
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Copy-DbaDataCollector
-
-        .EXAMPLE
-            PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster
-
-            Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using Windows credentials.
-
-        .EXAMPLE
-            PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
-
-            Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
-
-        .EXAMPLE
-            PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster -WhatIf
-
-            Shows what would happen if the command were executed.
-
-        .EXAMPLE
-            PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSet 'Server Activity', 'Table Usage Analysis'
-
-            Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlserver2014a to sqlcluster.
-    #>
+﻿function Copy-DbaDataCollector {
+<#
+    .SYNOPSIS
+        Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
+        
+    .DESCRIPTION
+        By default, all data collector objects are migrated. If the object already exists on the destination, it will be skipped unless -Force is used.
+        
+        The -CollectionSet parameter is auto-populated for command-line completion and can be used to copy only specific objects.
+        
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+        
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Destination
+        Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+        
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER CollectionSet
+        The collection set(s) to process - this list is auto-populated from the server. If unspecified, all collection sets will be processed.
+        
+    .PARAMETER ExcludeCollectionSet
+        The collection set(s) to exclude - this list is auto-populated from the server
+        
+    .PARAMETER NoServerReconfig
+        Upcoming parameter to enable server reconfiguration
+        
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+        
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+        
+    .PARAMETER Force
+        If collection sets exists on destination server, it will be dropped and recreated.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Migration,DataCollection
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Requires: sysadmin access on SQL Servers
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Copy-DbaDataCollector
+        
+    .EXAMPLE
+        PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster
+        
+        Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using Windows credentials.
+        
+    .EXAMPLE
+        PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+        
+        Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
+        
+    .EXAMPLE
+        PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster -WhatIf
+        
+        Shows what would happen if the command were executed.
+        
+    .EXAMPLE
+        PS C:\> Copy-DbaDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSet 'Server Activity', 'Table Usage Analysis'
+        
+        Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlserver2014a to sqlcluster.
+        
+#>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]

@@ -1,55 +1,56 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbFile {
-    <#
-        .SYNOPSIS
-            Returns detailed information about database files.
-
-        .DESCRIPTION
-            Returns detailed information about database files. Does not use SMO - SMO causes enumeration and this command avoids that.
-
-        .PARAMETER SqlInstance
-            The target SQL Server instance(s)
-
-        .PARAMETER SqlCredential
-            Credentials to connect to the SQL Server instance if the calling user doesn't have permission
-
-        .PARAMETER Database
-            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto-populated from the server
-
-        .PARAMETER InputObject
-            A piped collection of database objects
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Database
-            Author: Stuart Moore (@napalmgram), stuart-moore.com
-
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .EXAMPLE
-            PS C:\> Get-DbaDbFile -SqlInstance sql2016
-
-            Will return an object containing all file groups and their contained files for every database on the sql2016 SQL Server instance
-
-        .EXAMPLE
-            PS C:\> Get-DbaDbFile -SqlInstance sql2016 -Database Impromptu
-
-            Will return an object containing all file groups and their contained files for the Impromptu Database on the sql2016 SQL Server instance
-
-        .EXAMPLE
-            PS C:\> Get-DbaDbFile -SqlInstance sql2016 -Database Impromptu, Trading
-
-            Will return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance
-    #>
+<#
+    .SYNOPSIS
+        Returns detailed information about database files.
+        
+    .DESCRIPTION
+        Returns detailed information about database files. Does not use SMO - SMO causes enumeration and this command avoids that.
+        
+    .PARAMETER SqlInstance
+        The target SQL Server instance(s)
+        
+    .PARAMETER SqlCredential
+        Credentials to connect to the SQL Server instance if the calling user doesn't have permission
+        
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
+        
+    .PARAMETER InputObject
+        A piped collection of database objects
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Database
+        Author: Stuart Moore (@napalmgram), stuart-moore.com
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .EXAMPLE
+        PS C:\> Get-DbaDbFile -SqlInstance sql2016
+        
+        Will return an object containing all file groups and their contained files for every database on the sql2016 SQL Server instance
+        
+    .EXAMPLE
+        PS C:\> Get-DbaDbFile -SqlInstance sql2016 -Database Impromptu
+        
+        Will return an object containing all file groups and their contained files for the Impromptu Database on the sql2016 SQL Server instance
+        
+    .EXAMPLE
+        PS C:\> Get-DbaDbFile -SqlInstance sql2016 -Database Impromptu, Trading
+        
+        Will return an object containing all file groups and their contained files for the Impromptu and Trading databases on the sql2016 SQL Server instance
+        
+#>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
         [parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]

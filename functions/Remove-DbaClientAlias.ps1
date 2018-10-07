@@ -1,51 +1,52 @@
-function Remove-DbaClientAlias {
-    <#
-        .SYNOPSIS
-            Removes a sql alias for the specified server - mimics cliconfg.exe
-
-        .DESCRIPTION
-            Removes a SQL Server alias by altering HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
-
-        .PARAMETER ComputerName
-            The target computer where the alias will be created
-
-        .PARAMETER Credential
-            Allows you to login to remote computers using alternative credentials
-
-        .PARAMETER Alias
-            The alias or array of aliases to be deleted
-
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Alias
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Remove-DbaClientAlias
-
-        .EXAMPLE
-            Remove-DbaClientAlias -ComputerName workstationx -Alias sqlps
-
-            Removes the sqlps SQL client alias on workstationx
-
-        .EXAMPLE
-            Get-DbaClientAlias | Remove-DbaClientAlias
-
-            Removes all SQL Server client aliases on the local computer
-    #>
+﻿function Remove-DbaClientAlias {
+<#
+    .SYNOPSIS
+        Removes a sql alias for the specified server - mimics cliconfg.exe
+        
+    .DESCRIPTION
+        Removes a SQL Server alias by altering HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
+        
+    .PARAMETER ComputerName
+        The target computer where the alias will be created
+        
+    .PARAMETER Credential
+        Allows you to login to remote computers using alternative credentials
+        
+    .PARAMETER Alias
+        The alias or array of aliases to be deleted
+        
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Alias
+        Author: Chrissy LeMaire (@cl), netnerds.net
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Remove-DbaClientAlias
+        
+    .EXAMPLE
+        Remove-DbaClientAlias -ComputerName workstationx -Alias sqlps
+        
+        Removes the sqlps SQL client alias on workstationx
+        
+    .EXAMPLE
+        Get-DbaClientAlias | Remove-DbaClientAlias
+        
+        Removes all SQL Server client aliases on the local computer
+        
+#>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(ValueFromPipelineByPropertyName = $true)]

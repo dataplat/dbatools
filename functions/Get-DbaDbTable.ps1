@@ -1,69 +1,70 @@
-function Get-DbaDbTable {
-    <#
-.SYNOPSIS
-Returns a summary of information on the tables
-
-.DESCRIPTION
-Shows table information around table row and data sizes and if it has any table type information.
-
-.PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a
-collection and receive pipeline input
-
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
-
-.PARAMETER IncludeSystemDBs
-Switch parameter that when used will display system database information
-
-.PARAMETER Table
-Define a specific table you would like to query. You can specify up to three-part name like db.sch.tbl.
-If the object has special characters please wrap them in square brackets [ ].
-This dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
-The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo.[First.Table]
-
-.PARAMETER EnableException
+﻿function Get-DbaDbTable {
+<#
+    .SYNOPSIS
+        Returns a summary of information on the tables
+        
+    .DESCRIPTION
+        Shows table information around table row and data sizes and if it has any table type information.
+        
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to. This can be a
+        collection and receive pipeline input
+        
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        
+    .PARAMETER Database
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto-populated from the server
+        
+    .PARAMETER IncludeSystemDBs
+        Switch parameter that when used will display system database information
+        
+    .PARAMETER Table
+        Define a specific table you would like to query. You can specify up to three-part name like db.sch.tbl.
+        If the object has special characters please wrap them in square brackets [ ].
+        This dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
+        The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo.[First.Table]
+        
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-.NOTES
-Tags: Database, Tables
-Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
-
-.LINK
-https://dbatools.io/Get-DbaDbTable
-
-.EXAMPLE
-Get-DbaDbTable -SqlInstance DEV01 -Database Test1
-Return all tables in the Test1 database
-
-.EXAMPLE
-Get-DbaDbTable -SqlInstance DEV01 -Database MyDB -Table MyTable
-Return only information on the table MyTable from the database MyDB
-
-.EXAMPLE
-Get-DbaDbTable -SqlInstance DEV01 -Table MyTable
-Returns information on table called MyTable if it exists in any database on the server, under any schema
-
-.EXAMPLE
-Get-DbaDbTable -SqlInstance DEV01 -Table dbo.[First.Table]
-Returns information on table called First.Table on schema dbo if it exists in any database on the server
-
-.EXAMPLE
-'localhost','localhost\namedinstance' | Get-DbaDbTable -Database DBA -Table Commandlog
-Returns information on the CommandLog table in the DBA database on both instances localhost and the named instance localhost\namedinstance
-
+        
+    .NOTES
+        Tags: Database, Tables
+        Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Get-DbaDbTable
+        
+    .EXAMPLE
+        Get-DbaDbTable -SqlInstance DEV01 -Database Test1
+        Return all tables in the Test1 database
+        
+    .EXAMPLE
+        Get-DbaDbTable -SqlInstance DEV01 -Database MyDB -Table MyTable
+        Return only information on the table MyTable from the database MyDB
+        
+    .EXAMPLE
+        Get-DbaDbTable -SqlInstance DEV01 -Table MyTable
+        Returns information on table called MyTable if it exists in any database on the server, under any schema
+        
+    .EXAMPLE
+        Get-DbaDbTable -SqlInstance DEV01 -Table dbo.[First.Table]
+        Returns information on table called First.Table on schema dbo if it exists in any database on the server
+        
+    .EXAMPLE
+        'localhost','localhost\namedinstance' | Get-DbaDbTable -Database DBA -Table Commandlog
+        Returns information on the CommandLog table in the DBA database on both instances localhost and the named instance localhost\namedinstance
+        
+        
 #>
     [CmdletBinding()]
     param ([parameter(ValueFromPipeline, Mandatory)]
