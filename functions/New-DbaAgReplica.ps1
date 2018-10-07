@@ -73,7 +73,6 @@ function New-DbaAgReplica {
         [string]$AvailabilityMode,
         [ValidateSet('Automatic', 'Manual')]
         [string]$FailoverMode,
-        [parameter(Mandatory)]
         [string]$Endpoint,
         [switch]$Passthru,
         [parameter(ValueFromPipeline)]
@@ -93,7 +92,7 @@ function New-DbaAgReplica {
         }
         
         foreach ($ag in $InputObject) {
-            if ($Pscmdlet.ShouldProcess("$instance", "Adding availability group $db to $($db.Parent)")) {
+            if ($Pscmdlet.ShouldProcess("$instance", "Adding availability group $ag to $($ag.Parent.Name)")) {
                 try {
                     $replica = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityReplica($AvailabilityGroup, $SqlServerPrimName)
                     $replica.EndpointUrl = "TCP://$($SqlServerPrim.NetName):$($EndpointPrim.Protocol.Tcp.ListenerPort)"
