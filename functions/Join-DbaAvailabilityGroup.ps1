@@ -78,8 +78,6 @@ function Join-DbaAvailabilityGroup {
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Secondary,
         [PSCredential]$SecondarySqlCredential,
-        [DbaInstanceParameter]$Witness,
-        [PSCredential]$WitnessSqlCredential,
         [string[]]$AvailabilityGroup,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
