@@ -16,7 +16,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     
     It "removes an endpoint" {
-        $results = Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint
+        $results = Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
         $results.Status | Should -Be 'Removed'
     }
 }
