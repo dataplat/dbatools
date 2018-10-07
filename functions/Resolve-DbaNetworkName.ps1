@@ -1,88 +1,89 @@
-function Resolve-DbaNetworkName {
-    <#
-        .SYNOPSIS
-            Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
-
-        .DESCRIPTION
-            Retrieves the IPAddress, ComputerName from one computer.
-            The object can be used to take action against its name or IPAddress.
-
-            First ICMP is used to test the connection, and get the connected IPAddress.
-
-            Multiple protocols (e.g. WMI, CIM, etc) are attempted before giving up.
-
-            Important: Remember that FQDN doesn't always match "ComputerName dot Domain" as AD intends.
-                There are network setup (google "disjoint domain") where AD and DNS do not match.
-                "Full computer name" (as reported by sysdm.cpl) is the only match between the two,
-                and it matches the "DNSHostName"  property of the computer object stored in AD.
-                This means that the notation of FQDN that matches "ComputerName dot Domain" is incorrect
-                in those scenarios.
-                In other words, the "suffix" of the FQDN CAN be different from the AD Domain.
-
-                This cmdlet has been providing good results since its inception but for lack of useful
-                names some doubts may arise.
-                Let this clear the doubts:
-                - InputName: whatever has been passed in
-                - ComputerName: hostname only
-                - IPAddress: IP Address
-                - DNSHostName: hostname only, coming strictly from DNS (as reported from the calling computer)
-                - DNSDomain: domain only, coming strictly from DNS (as reported from the calling computer)
-                - Domain: domain only, coming strictly from AD (i.e. the domain the ComputerName is joined to)
-                - DNSHostEntry: Fully name as returned by DNS [System.Net.Dns]::GetHostEntry
-                - FQDN: "legacy" notation of ComputerName "dot" Domain (coming from AD)
-                - FullComputerName: Full name as configured from within the Computer (i.e. the only secure match between AD and DNS)
-
-            So, if you need to use something, go with FullComputerName, always, as it is the most correct in every scenario.
-
-        .PARAMETER ComputerName
-            The Server that you're connecting to.
-            This can be the name of a computer, a SMO object, an IP address or a SQL Instance.
-
-        .PARAMETER Credential
-            Credential object used to connect to the SQL Server as a different user
-
-        .PARAMETER Turbo
-            Resolves without accessing the server itself. Faster but may be less accurate because it relies on DNS only,
-            so it may fail spectacularly for disjoin-domain setups. Also, everyone has its own DNS (i.e. results may vary
-            changing the computer where the function runs)
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Network, Resolve
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-            Editor: niphlod
-
-            Website: https://dbatools.io
-            Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-        .LINK
-            https://dbatools.io/Resolve-DbaNetworkName
-
-        .EXAMPLE
-            Resolve-DbaNetworkName -ComputerName ServerA
-
-            Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for ServerA
-
-        .EXAMPLE
-            Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress
-
-            Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\sqlexpress
-
-        .EXAMPLE
-            Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress, sql2014
-
-            Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\sqlexpress and sql2014
-
-        .EXAMPLE
-            Get-DbaCmsRegServer -SqlInstance sql2014 | Resolve-DbaNetworkName
-
-            Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaCmsRegServer
-    #>
+﻿function Resolve-DbaNetworkName {
+<#
+    .SYNOPSIS
+        Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
+        
+    .DESCRIPTION
+        Retrieves the IPAddress, ComputerName from one computer.
+        The object can be used to take action against its name or IPAddress.
+        
+        First ICMP is used to test the connection, and get the connected IPAddress.
+        
+        Multiple protocols (e.g. WMI, CIM, etc) are attempted before giving up.
+        
+        Important: Remember that FQDN doesn't always match "ComputerName dot Domain" as AD intends.
+        There are network setup (google "disjoint domain") where AD and DNS do not match.
+        "Full computer name" (as reported by sysdm.cpl) is the only match between the two,
+        and it matches the "DNSHostName"  property of the computer object stored in AD.
+        This means that the notation of FQDN that matches "ComputerName dot Domain" is incorrect
+        in those scenarios.
+        In other words, the "suffix" of the FQDN CAN be different from the AD Domain.
+        
+        This cmdlet has been providing good results since its inception but for lack of useful
+        names some doubts may arise.
+        Let this clear the doubts:
+        - InputName: whatever has been passed in
+        - ComputerName: hostname only
+        - IPAddress: IP Address
+        - DNSHostName: hostname only, coming strictly from DNS (as reported from the calling computer)
+        - DNSDomain: domain only, coming strictly from DNS (as reported from the calling computer)
+        - Domain: domain only, coming strictly from AD (i.e. the domain the ComputerName is joined to)
+        - DNSHostEntry: Fully name as returned by DNS [System.Net.Dns]::GetHostEntry
+        - FQDN: "legacy" notation of ComputerName "dot" Domain (coming from AD)
+        - FullComputerName: Full name as configured from within the Computer (i.e. the only secure match between AD and DNS)
+        
+        So, if you need to use something, go with FullComputerName, always, as it is the most correct in every scenario.
+        
+    .PARAMETER ComputerName
+        The Server that you're connecting to.
+        This can be the name of a computer, a SMO object, an IP address or a SQL Instance.
+        
+    .PARAMETER Credential
+        Credential object used to connect to the SQL Server as a different user
+        
+    .PARAMETER Turbo
+        Resolves without accessing the server itself. Faster but may be less accurate because it relies on DNS only,
+        so it may fail spectacularly for disjoin-domain setups. Also, everyone has its own DNS (i.e. results may vary
+        changing the computer where the function runs)
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Network, Resolve
+        Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        Editor: niphlod
+        
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+    .LINK
+        https://dbatools.io/Resolve-DbaNetworkName
+        
+    .EXAMPLE
+        Resolve-DbaNetworkName -ComputerName ServerA
+        
+        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry for ServerA
+        
+    .EXAMPLE
+        Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress
+        
+        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\sqlexpress
+        
+    .EXAMPLE
+        Resolve-DbaNetworkName -SqlInstance sql2016\sqlexpress, sql2014
+        
+        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\sqlexpress and sql2014
+        
+    .EXAMPLE
+        Get-DbaCmsRegServer -SqlInstance sql2014 | Resolve-DbaNetworkName
+        
+        Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaCmsRegServer
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]

@@ -158,7 +158,7 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         It "Add roles to login" {
             $result = Set-DbaLogin -SqlInstance $script:instance2 -Login testlogin -AddRole serveradmin, processadmin
 
-            $result.ServerRole | Should -Be "processadmin,serveradmin"
+            $result.ServerRole | Should -Be "processadmin, serveradmin"
         }
 
         It "Remove roles from login" {

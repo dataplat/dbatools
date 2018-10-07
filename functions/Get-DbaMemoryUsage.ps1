@@ -1,59 +1,60 @@
-#ValidationTags#Messaging,CodeStyle#
+﻿#ValidationTags#Messaging,CodeStyle#
 function Get-DbaMemoryUsage {
-    <#
-        .SYNOPSIS
-            Get amount of memory in use by *all* SQL Server components and instances
-
-        .DESCRIPTION
-            Retrieves the amount of memory per performance counter. Default output includes columns Server, counter instance, counter, number of pages, memory in KB, memory in MB
-            SSAS and SSIS are included.
-
-            SSRS does not have memory counters, only memory shrinks and memory pressure state.
-
-            This function requires local admin role on the targeted computers.
-
-        .PARAMETER ComputerName
-            The Windows Server that you are connecting to. Note that this will return all instances, but Out-GridView makes it easy to filter to specific instances.
-
-        .PARAMETER Credential
-            Credential object used to connect to the SQL Server as a different user
-
-        .PARAMETER Simple
-            Shows concise information including Server name, Database name, and the date the last time backups were performed
-
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-
-        .NOTES
-            Tags: Memory
-            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-
-            dbatools PowerShell module (https://dbatools.io)
-           Copyright: (c) 2018 by dbatools, licensed under MIT
-            License: MIT https://opensource.org/licenses/MIT
-
-            SSIS Counters: https://msdn.microsoft.com/en-us/library/ms137622.aspx
-
-        .LINK
-            https://dbatools.io/Get-DbaMemoryUsage
-
-        .EXAMPLE
-            Get-DbaMemoryUsage -ComputerName ServerA
-
-            Returns a custom object displaying Server, counter instance, counter, number of pages, memory in KB, memory in MB
-
-        .EXAMPLE
-            Get-DbaMemoryUsage -ComputerName ServerA\sql987 -Simple
-
-            Returns a custom object with Server, counter instance, counter, number of pages, memory in KB, memory in MB
-
-        .EXAMPLE
-            Get-DbaMemoryUsage -ComputerName ServerA\sql987 | Out-Gridview
-
-            Returns a gridview displaying Server, counter instance, counter, number of pages, memory in KB, memory in MB
-    #>
+<#
+    .SYNOPSIS
+        Get amount of memory in use by *all* SQL Server components and instances
+        
+    .DESCRIPTION
+        Retrieves the amount of memory per performance counter. Default output includes columns Server, counter instance, counter, number of pages, memory in KB, memory in MB
+        SSAS and SSIS are included.
+        
+        SSRS does not have memory counters, only memory shrinks and memory pressure state.
+        
+        This function requires local admin role on the targeted computers.
+        
+    .PARAMETER ComputerName
+        The Windows Server that you are connecting to. Note that this will return all instances, but Out-GridView makes it easy to filter to specific instances.
+        
+    .PARAMETER Credential
+        Credential object used to connect to the SQL Server as a different user
+        
+    .PARAMETER Simple
+        Shows concise information including Server name, Database name, and the date the last time backups were performed
+        
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .NOTES
+        Tags: Memory
+        Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        
+        dbatools PowerShell module (https://dbatools.io)
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+        
+        SSIS Counters: https://msdn.microsoft.com/en-us/library/ms137622.aspx
+        
+    .LINK
+        https://dbatools.io/Get-DbaMemoryUsage
+        
+    .EXAMPLE
+        Get-DbaMemoryUsage -ComputerName ServerA
+        
+        Returns a custom object displaying Server, counter instance, counter, number of pages, memory in KB, memory in MB
+        
+    .EXAMPLE
+        Get-DbaMemoryUsage -ComputerName ServerA\sql987 -Simple
+        
+        Returns a custom object with Server, counter instance, counter, number of pages, memory in KB, memory in MB
+        
+    .EXAMPLE
+        Get-DbaMemoryUsage -ComputerName ServerA\sql987 | Out-Gridview
+        
+        Returns a gridview displaying Server, counter instance, counter, number of pages, memory in KB, memory in MB
+        
+#>
     [CmdletBinding()]
     param (
         [parameter(ValueFromPipeline)]
