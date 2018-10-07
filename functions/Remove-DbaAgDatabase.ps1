@@ -16,10 +16,16 @@ function Remove-DbaAgDatabase {
         
     .PARAMETER AvailabilityGroup
         Only remove specific availability groups.
+
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
         
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+
     .PARAMETER InputObject
         Internal parameter to support piping from Get-DbaDatabase
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -49,8 +55,6 @@ function Remove-DbaAgDatabase {
         Get-AvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup availability group1 | Remove-DbaAgDatabase
         
         Removes the availability groups returned from the Get-AvailabilityGroup function. Prompts for confirmation.
-        
-        
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
