@@ -3,126 +3,128 @@ function Set-DbaAgentSchedule {
 <#
     .SYNOPSIS
         Set-DbaAgentSchedule updates a schedule in the msdb database.
-        
+
     .DESCRIPTION
         Set-DbaAgentSchedule will help update a schedule for a job. It does not attach the schedule to a job.
-        
+
     .PARAMETER SqlInstance
         SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Job
         The name of the job that has the schedule.
-        
+
     .PARAMETER ScheduleName
         The name of the schedule.
-        
+
     .PARAMETER NewName
         The new name for the schedule.
-        
+
     .PARAMETER Enabled
         Set the schedule to enabled.
-        
+
     .PARAMETER Disabled
         Set the schedule to disabled.
-        
+
     .PARAMETER FrequencyType
         A value indicating when a job is to be executed.
         Allowed values are 1, "Once", 4, "Daily", 8, "Weekly", 16, "Monthly", 32, "MonthlyRelative", 64, "AgentStart", 128 or "IdleComputer"
-        
+
     .PARAMETER FrequencyInterval
         The days that a job is executed
         Allowed values are 1, "Sunday", 2, "Monday", 4, "Tuesday", 8, "Wednesday", 16, "Thursday", 32, "Friday", 64, "Saturday", 62, "Weekdays", 65, "Weekend", 127, "EveryDay".
         If 62, "Weekdays", 65, "Weekend", 127, "EveryDay" is used it overwwrites any other value that has been passed before.
-        
+
     .PARAMETER FrequencySubdayType
         Specifies the units for the subday FrequencyInterval.
         Allowed values are 1, "Time", 2, "Seconds", 4, "Minutes", 8 or "Hours"
-        
+
     .PARAMETER FrequencySubdayInterval
         The number of subday type periods to occur between each execution of a job.
-        
+
     .PARAMETER FrequencySubdayInterval
         The number of subday type periods to occur between each execution of a job.
-        
+
     .PARAMETER FrequencyRelativeInterval
         A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
-        
+
     .PARAMETER FrequencyRecurrenceFactor
         The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
-        
+
     .PARAMETER StartDate
         The date on which execution of a job can begin.
-        
+
     .PARAMETER EndDate
         The date on which execution of a job can stop.
-        
+
     .PARAMETER StartTime
         The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
         Example: '010000' for 01:00:00 AM.
         Example: '140000' for 02:00:00 PM.
-        
+
     .PARAMETER EndTime
         The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
         Example: '010000' for 01:00:00 AM.
         Example: '140000' for 02:00:00 PM.
-        
+
     .PARAMETER Owner
         The name of the server principal that owns the schedule. If no value is given the schedule is owned by the creator.
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-        
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .PARAMETER Force
         The force parameter will ignore some errors in the parameters and assume defaults.
         It will also remove the any present schedules with the same name for the specific job.
-        
+
     .NOTES
-        Author: Sander Stad (@sqlstad, sqlstad.nl)
         Tags: Agent, Job, JobStep
-        
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Set-DbaAgentSchedule
-        
+
     .EXAMPLE
-        Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -Enabled
+        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -Enabled
+
         Changes the schedule for Job1 with the name 'daily' to enabled
-        
+
     .EXAMPLE
-        Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -NewName weekly -FrequencyType Weekly -FrequencyInterval Monday, Wednesday, Friday
+        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -NewName weekly -FrequencyType Weekly -FrequencyInterval Monday, Wednesday, Friday
+
         Changes the schedule for Job1 with the name daily to have a new name weekly
-        
+
     .EXAMPLE
-        Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName daily -StartTime '230000'
+        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName daily -StartTime '230000'
+
         Changes the start time of the schedule for Job1 to 11 PM for multiple jobs
-        
+
     .EXAMPLE
-        Set-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Job Job1 -ScheduleName daily -Enabled
+        PS C:\> Set-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Job Job1 -ScheduleName daily -Enabled
+
         Changes the schedule for Job1 with the name daily to enabled on multiple servers
-        
+
     .EXAMPLE
-        sql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -ScheduleName 'daily' -Enabled
+        PS C:\> sql1, sql2, sql3 | Set-DbaAgentSchedule -Job Job1 -ScheduleName 'daily' -Enabled
+
         Changes the schedule for Job1 with the name 'daily' to enabled on multiple servers using pipe line
-        
-        
+
 #>
-
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
