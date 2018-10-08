@@ -34,7 +34,7 @@
         Shows the detailed information for memory dump(s) located on sql2016 instance
 
     .EXAMPLE
-        PS C:\> Get-DbaDump -SqlInstance sql2016 -SqlCredential (Get-Credential sqladmin)
+        PS C:\> Get-DbaDump -SqlInstance sql2016 -SqlCredential sqladmin
 
         Shows the detailed information for memory dump(s) located on sql2016 instance. Logs into the SQL Server using the SQL login 'sqladmin'
 

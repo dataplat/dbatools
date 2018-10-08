@@ -54,7 +54,7 @@ function Remove-DbaPfDataCollectorSet {
         Attempts to remove all ready Collectors on localhost and does not prompt to confirm.
 
     .EXAMPLE
-        PS C:\> Remove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        PS C:\> Remove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential ad\sqldba -CollectorSet 'System Correlation'
 
         Prompts for confirmation then removes the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
 

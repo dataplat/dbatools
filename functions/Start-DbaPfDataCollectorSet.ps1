@@ -51,7 +51,7 @@ function Start-DbaPfDataCollectorSet {
         Attempts to start all ready Collectors on localhost.
 
     .EXAMPLE
-        PS C:\> Start-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        PS C:\> Start-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential ad\sqldba -CollectorSet 'System Correlation'
 
         Starts the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
 
