@@ -8,7 +8,7 @@ function Set-DbaAgentAlert {
         Set-DbaAgentAlert updates an alert in the SQL Server Agent with parameters supplied.
 
     .PARAMETER SqlInstance
-        SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
