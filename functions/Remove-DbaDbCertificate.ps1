@@ -72,14 +72,17 @@ function Remove-DbaDbCertificate {
         }
         
         foreach ($cert in $InputObject) {
+            $server = $cert.Parent.Parent
+            $db = $cert.Database
             if ($Pscmdlet.ShouldProcess($instance, "Dropping the certificate named $cert for database '$db' on $server")) {
                 try {
-                    $server.Query("DROP CERTIFICATE $cert")
+                    # Avoids modifying the collection
+                    $cert.Parent.Query("DROP CERTIFICATE $cert")
                     Write-Message -Level Verbose -Message "Successfully removed certificate named $cert from the $db database on $server"
                     [pscustomobject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
-                        SqlInstance  = $instance
+                        SqlInstance  = $server.DomainInstanceName
                         Database     = $db
                         Certificate  = $cert
                         Status       = "Success"

@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaDbCertificate {
 <#
     .SYNOPSIS
@@ -60,9 +61,7 @@ function Get-DbaDbCertificate {
         [PSCredential]$SqlCredential,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
-        # sometimes it's text, other times cert
-
-        [object[]]$Certificate,
+        [object[]]$Certificate, # sometimes it's text, other times cert
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -80,29 +79,22 @@ function Get-DbaDbCertificate {
 
             }
             $dbName = $db.Name
-            $currentdb = $server.Databases[$dbName]
+            $certs = $db.Certificates
             
-            if ($null -eq $currentdb) {
-                Write-Message -Message "Database '$db' does not exist on $instance" -Target $currentdb -Level Verbose
+            if ($null -eq $certs) {
+                Write-Message -Message "No certificate exists in the $db database on $instance" -Target $db -Level Verbose
                 continue
             }
             
-            if ($null -eq $currentdb.Certificates) {
-                Write-Message -Message "No certificate exists in the $db database on $instance" -Target $currentdb -Level Verbose
-                continue
-            }
-            
-            $certs = $currentdb.Certificates
             if ($Certificate) {
                 $certs = $certs | Where-Object Name -in $Certificate
             }
             
             foreach ($cert in $certs) {
-                
-                Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name Database -value $currentdb.Name
+                Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name ComputerName -value $db.ComputerName
+                Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name InstanceName -value $db.InstanceName
+                Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name SqlInstance -value $db.SqlInstance
+                Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name Database -value $db.Name
                 
                 Select-DefaultView -InputObject $cert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
             }
