@@ -3,66 +3,65 @@ function Import-DbaCmsRegServer {
 <#
     .SYNOPSIS
         Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)
-        
+
     .DESCRIPTION
         Imports registered servers and registered server groups to SQL Server Central Management Server (CMS)
-        
+
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Group
         Imports to specific group
-        
+
     .PARAMETER Path
         Optional path to exported reg server XML
-        
+
     .PARAMETER InputObject
         Enables piping from Get-DbaCmsRegServer, Get-DbaCmsRegServerGroup, CSVs and other objects.
-        
+
         If importing from CSV or other object, a column named ServerName is required. Optional columns include Name, Description and Group.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        
+
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        
+
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
-        Author: Chrissy LeMaire (@cl), netnerds.net
         Tags: RegisteredServer, CMS
-        
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Import-DbaCmsRegServer
-        
+
     .EXAMPLE
-        Import-DbaCmsRegServer -SqlInstance sql2012 -Path C:\temp\corp-regservers.xml
-        
+        PS C:\> Import-DbaCmsRegServer -SqlInstance sql2012 -Path C:\temp\corp-regservers.xml
+
         Imports C:\temp\corp-regservers.xml to the CMS on sql2012
-        
+
     .EXAMPLE
-        Import-DbaCmsRegServer -SqlInstance sql2008 -Group hr\Seattle -Path C:\temp\Seattle.xml
-        
+        PS C:\> Import-DbaCmsRegServer -SqlInstance sql2008 -Group hr\Seattle -Path C:\temp\Seattle.xml
+
         Imports C:\temp\Seattle.xml to Seattle subgroup within the hr group on sql2008
-        
+
     .EXAMPLE
-        Get-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Import-DbaCmsRegServer -SqlInstance sql2017
-        
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Import-DbaCmsRegServer -SqlInstance sql2017
+
         Imports all registered servers from sql2008 and sql2012 to sql2017
-        
+
     .EXAMPLE
-        Get-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\Seattle | Import-DbaCmsRegServer -SqlInstance sql2017 -Group Seattle
-        
+        PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sql2008 -Group hr\Seattle | Import-DbaCmsRegServer -SqlInstance sql2017 -Group Seattle
+
         Imports all registered servers from the hr\Seattle group on sql2008 to the Seattle group on sql2017
-        
-        
+
 #>
     [CmdletBinding()]
     param (

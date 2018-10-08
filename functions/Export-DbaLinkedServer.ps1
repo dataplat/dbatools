@@ -2,59 +2,59 @@
 <#
     .SYNOPSIS
         Exports linked servers INCLUDING PASSWORDS, unless specified otherwise, to sql file.
-        
+
     .DESCRIPTION
         Exports linked servers INCLUDING PASSWORDS, unless specified otherwise, to sql file.
-        
+
         Requires remote Windows access if exporting the password.
-        
+
     .PARAMETER SqlInstance
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2005 or higher.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative linked servers. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Credential
         Login to the target OS using alternative linked servers. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Path
         The path to the exported sql file.
-        
+
     .PARAMETER LinkedServer
         The linked server(s) to export. If unspecified, all linked servers will be processed.
-        
+
     .PARAMETER InputObject
         Allow credentials to be piped in from Get-DbaLinkedServer
-        
+
     .PARAMETER ExcludePassword
         Exports the linked server without any sensitive information.
-        
+
     .PARAMETER Append
         Append to Path
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: LinkedServer
         Author: Chrissy LeMaire (@cl), netnerds.net
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .EXAMPLE
         PS C:\> Export-DbaLinkedServer -SqlInstance sql2017 -Path C:\temp\ls.sql
-        
+
         Exports the linked servers, including passwords, from sql2017 to the file C:\temp\ls.sql
-        
+
     .EXAMPLE
         PS C:\> Export-DbaLinkedServer -SqlInstance sql2017 -Path C:\temp\ls.sql -ExcludePassword
-        
+
         Exports the linked servers, without passwords, from sql2017 to the file C:\temp\ls.sql
-        
+
 #>
     [CmdletBinding()]
     param (

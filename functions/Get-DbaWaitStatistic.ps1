@@ -2,10 +2,10 @@
 <#
     .SYNOPSIS
         Displays wait statistics
-        
+
     .DESCRIPTION
         This command is based off of Paul Randal's post "Wait statistics, or please tell me where it hurts"
-        
+
         Returns:
         WaitType
         Category
@@ -18,63 +18,63 @@
         AverageResourceSeconds
         AverageSignalSeconds
         URL
-        
+
         Reference: https://www.sqlskills.com/blogs/paul/wait-statistics-or-please-tell-me-where-it-hurts/
-        
+
     .PARAMETER SqlInstance
         The SQL Server instance. Server version must be SQL Server version 2005 or higher.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Threshold
         Threshold, in percentage of all waits on the system. Default per Paul's post is 95%.
-        
+
     .PARAMETER IncludeIgnorable
         Some waits are no big deal and can be safely ignored in most circumstances. If you've got weird issues with mirroring or AGs.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: WaitStatistic
         Author: Chrissy LeMaire (@cl), netnerds.net
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaWaitStatistic
-        
+
     .EXAMPLE
         PS C:\> Get-DbaWaitStatistic -SqlInstance sql2008, sqlserver2012
-        
+
         Check wait statistics for servers sql2008 and sqlserver2012
-        
+
     .EXAMPLE
         PS C:\> Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 98 -IncludeIgnorable
-        
+
         Check wait statistics on server sql2008 for thresholds above 98% and include wait stats that are most often, but not always, ignorable
-        
+
     .EXAMPLE
         PS C:\> Get-DbaWaitStatistic -SqlInstance sql2008 | Select *
-        
+
         Shows detailed notes, if available, from Paul's post
-        
+
     .EXAMPLE
         PS C:\> $output = Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 100 -IncludeIgnorable | Select-Object * | ConvertTo-DbaDataTable
-        
+
         Collects all Wait Statistics (including ignorable waits) on server sql2008 into a Data Table.
-        
+
     .EXAMPLE
         PS C:\> $output = Get-DbaWaitStatistic -SqlInstance sql2008
         PS C:\> foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }
-        
+
         Displays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.
-        
+
 #>
     [CmdletBinding()]
     param (

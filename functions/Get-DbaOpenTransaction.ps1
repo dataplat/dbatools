@@ -2,42 +2,43 @@
 <#
     .SYNOPSIS
         Displays all open transactions.
-        
+
     .DESCRIPTION
         This command is based on open transaction script published by Paul Randal.
         Reference: https://www.sqlskills.com/blogs/paul/script-open-transactions-with-text-and-plans/
-        
+
     .PARAMETER SqlInstance
         The SQL Server instance
-        
+
     .PARAMETER SqlCredential
         Connect using alternative credentials
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Database, Process, Session, ActivityMonitor
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaOpenTransaction
-        
+
     .EXAMPLE
-        Get-DbaOpenTransaction -SqlInstance sqlserver2014a
-        
+        PS C:\> Get-DbaOpenTransaction -SqlInstance sqlserver2014a
+
         Returns open transactions for sqlserver2014a
-        
+
     .EXAMPLE
-        Get-DbaOpenTransaction -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)
-        
+        PS C:\> Get-DbaOpenTransaction -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)
+
         Logs into sqlserver2014a using the login "sqladmin"
-        
+
 #>
     [CmdletBinding()]
     param (

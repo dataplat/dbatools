@@ -3,76 +3,77 @@ function Set-DbaDbMirror {
 <#
     .SYNOPSIS
         Sets properties of database mirrors.
-        
+
     .DESCRIPTION
         Sets properties of database mirrors.
-        
+
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
         to be executed against multiple SQL Server instances.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         The target database.
-        
+
     .PARAMETER Partner
         Sets the partner fqdn.
-        
+
     .PARAMETER Witness
         Sets the witness fqdn.
-        
+
     .PARAMETER SafetyLevel
         Sets the mirroring safety level.
-        
+
     .PARAMETER State
         Sets the mirror state.
-        
+
     .PARAMETER InputObject
         Allows piping from Get-DbaDatabase.
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-        
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Mirror, HA
         Author: Chrissy LeMaire (@cl), netnerds.net
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+
+        Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Set-DbaDbMirror
-        
+
     .EXAMPLE
         PS C:\> Set-DbaDbMirror -SqlInstance sql2005 -Database dbatools -Partner TCP://SQL2008.ad.local:5374
-        
+
         Prompts for confirmation then sets the partner to TCP://SQL2008.ad.local:5374 for the database "dbtools"
-        
+
     .EXAMPLE
         PS C:\> Set-DbaDbMirror -SqlInstance sql2005 -Database dbatools -Witness TCP://SQL2012.ad.local:5502 -Confirm:$false
-        
+
         Does not prompt for confirmation and sets the witness to TCP://SQL2012.ad.local:5502 for the database "dbtools"
-        
+
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sql2005 | Out-GridView -Passthru | Set-DbaDbMirror -SafetyLevel Full -Confirm:$false
-        
-        Sets the safety level to Full for databases selected from a gridview. Does not prompt for confirmation.
-        
+        PS C:\> Get-DbaDatabase -SqlInstance sql2005 | Out-GridView -PassThru | Set-DbaDbMirror -SafetyLevel Full -Confirm:$false
+
+        Sets the safety level to Full for databases selected from a grid view. Does not prompt for confirmation.
+
     .EXAMPLE
         PS C:\> Set-DbaDbMirror -SqlInstance sql2005 -Database dbatools -State Suspend -Confirm:$false
-        
+
         Does not prompt for confirmation and sets the state to suspend for the database "dbtools"
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -97,7 +98,7 @@ function Set-DbaDbMirror {
         foreach ($instance in $SqlInstance) {
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
         }
-        
+
         foreach ($db in $InputObject) {
             try {
                 if ($Partner) {
@@ -111,14 +112,14 @@ function Set-DbaDbMirror {
                         $db.Parent.Query("ALTER DATABASE $db SET WITNESS = N'$Witness'")
                     }
                 }
-                
+
                 if ($SafetyLevel) {
                     if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Changing safety level to $SafetyLevel on $db")) {
                         $db.Parent.Query("ALTER DATABASE $db SET PARTNER SAFETY $SafetyLevel")
                         # $db.MirroringSafetyLevel = $SafetyLevel
                     }
                 }
-                
+
                 if ($State) {
                     if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Changing mirror state to $State on $db")) {
                         $db.ChangeMirroringState($State)

@@ -4,15 +4,15 @@
         Exports SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,
         Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
         system triggers and backup devices from one SQL Server to another.
-        
+
         For more granular control, please use one of the -Exclude parameters and use the other functions available within the dbatools module.
-        
+
     .DESCRIPTION
         Export-DbaInstance consolidates most of the export scripts in dbatools into one command.
-        
+
         This is useful when you're looking to Export entire instances. It less flexible than using the underlying functions.
         Think of it as an easy button. Unless an -Exclude is specified, it exports:
-        
+
         All databases.
         All logins.
         All database mail objects.
@@ -33,34 +33,34 @@
         All Custom Errors (User Defined Messages).
         All Server Roles.
         All Availability Groups.
-        
+
     .PARAMETER SqlInstance
         The target SQL Server instances
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Credential
         Alternative Windows credentials for exporting Linked Servers and Credentials. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Path
         The path to the export file
-        
+
     .PARAMETER NetworkShare
         Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.
-        
+
     .PARAMETER WithReplace
         If this switch is used, databases are restored from backup using WITH REPLACE. This is useful if you want to stage some complex file paths.
-        
+
     .PARAMETER NoRecovery
         If this switch is used, databases will be left in the No Recovery state to enable further backups to be added.
-        
+
     .PARAMETER IncludeDbMasterKey
         Exports the db master key then logs into the server to copy it to the $Path
-        
+
     .PARAMETER Exclude
         Exclude one or more objects to export
-        
+
         Databases
         Logins
         AgentServer
@@ -83,40 +83,40 @@
         SupportDbs
         AvailabilityGroups
         ReplicationSettings
-        
+
     .PARAMETER BatchSeparator
         Batch separator for scripting output. "GO" by default.
-        
+
     .PARAMETER ScriptingOption
         Add scripting options to scripting output for all objects except Registered Servers and Extended Events.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Export
         Author: Chrissy LeMaire (@cl), netnerds.net
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Export-DbaInstance
-        
+
     .EXAMPLE
         PS C:\> Export-DbaInstance -SqlInstance sqlserver\instance
-        
+
         All databases, logins, job objects and sp_configure options will be exported from
         sqlserver\instance to an automatically generated folder name in Documents.
-        
+
     .EXAMPLE
         PS C:\> Export-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Path C:\dr\sqlcluster
-        
+
         Exports everything but logins and database restore scripts to C:\dr\sqlcluster
-        
+
 #>
     [CmdletBinding()]
     param (

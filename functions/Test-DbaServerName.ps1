@@ -2,65 +2,65 @@
 <#
     .SYNOPSIS
         Tests to see if it's possible to easily rename the server at the SQL Server instance level, or if it even needs to be changed.
-        
+
     .DESCRIPTION
         When a SQL Server's host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.
-        
+
         This command helps determine if your OS and SQL Server names match, and whether a rename is required.
-        
+
         It then checks conditions that would prevent a rename, such as database mirroring and replication.
-        
+
         https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
-        
+
     .PARAMETER SqlInstance
         The SQL Server that you're connecting to.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Detailed
         Output all properties, will be deprecated in 1.0.0 release.
-        
+
     .PARAMETER ExcludeSsrs
         If this switch is enabled, checking for SQL Server Reporting Services will be skipped.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: SPN, ServerName
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Test-DbaServerName
-        
+
     .EXAMPLE
-        Test-DbaServerName -SqlInstance sqlserver2014a
-        
+        PS C:\> Test-DbaServerName -SqlInstance sqlserver2014a
+
         Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a.
-        
+
     .EXAMPLE
-        Test-DbaServerName -SqlInstance sqlserver2014a, sql2016
-        
+        PS C:\> Test-DbaServerName -SqlInstance sqlserver2014a, sql2016
+
         Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
-        
+
     .EXAMPLE
-        Test-DbaServerName -SqlInstance sqlserver2014a, sql2016 -ExcludeSsrs
-        
+        PS C:\> Test-DbaServerName -SqlInstance sqlserver2014a, sql2016 -ExcludeSsrs
+
         Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016, but skips validating if SSRS is installed on both instances.
-        
+
     .EXAMPLE
-        Test-DbaServerName -SqlInstance sqlserver2014a, sql2016 | Select-Object *
-        
+        PS C:\> Test-DbaServerName -SqlInstance sqlserver2014a, sql2016 | Select-Object *
+
         Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
-        
-        If a Rename is required, it will also show Updatable, and Reasons if the servername is not updatable.
-        
+        If a Rename is required, it will also show Updatable, and Reasons if the server name is not updatable.
+
 #>
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
