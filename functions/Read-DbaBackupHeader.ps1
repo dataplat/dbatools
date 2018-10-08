@@ -9,7 +9,7 @@ function Read-DbaBackupHeader {
         Reads full, differential and transaction log backups. An online SQL Server is required to parse the backup files and the path specified must be relative to that SQL Server.
 
     .PARAMETER SqlInstance
-        The SQL Server instance to use for parsing the backup files.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

@@ -2,10 +2,10 @@
 function Remove-DbaXESmartTarget {
 <#
     .SYNOPSIS
-        Removes an XESmartTarget PowerShell job.
+        Removes XESmartTarget PowerShell jobs.
 
     .DESCRIPTION
-        Removes an XESmartTarget PowerShell job.
+        Removes XESmartTarget PowerShell jobs.
 
     .PARAMETER InputObject
         Specifies one or more XESmartTarget job objects as output by Get-DbaXESmartTarget.
