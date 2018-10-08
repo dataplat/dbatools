@@ -52,7 +52,6 @@ function Get-DbaEndpoint {
         [string[]]$Endpoint,
         [switch]$EnableException
     )
-
     process {
         foreach ($instance in $SqlInstance) {
             try {

@@ -1,4 +1,5 @@
-﻿function Remove-DbaDbCertificate {
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Remove-DbaDbCertificate {
 <#
     .SYNOPSIS
         Deletes specified database certificate
@@ -7,7 +8,7 @@
         Deletes specified database certificate
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances.
+        The SQL Server to create the certificates on.
 
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials.
@@ -53,87 +54,41 @@
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
-        [parameter(Mandatory, ParameterSetName = "instance")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory, ParameterSetName = "instance")]
         [object[]]$Database,
-        [parameter(Mandatory, ParameterSetName = "instance")]
         [object[]]$Certificate,
-        [parameter(ValueFromPipeline, ParameterSetName = "collection")]
+        [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Certificate[]]$InputObject,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     begin {
-
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaDatabaseCertificate
-
-        function drop-cert ($smocert) {
-            $server = $smocert.Parent.Parent
-            $instance = $server.DomainInstanceName
-            $cert = $smocert.Name
-            $db = $smocert.Parent.Name
-
-            $output = [pscustomobject]@{
-                ComputerName = $server.ComputerName
-                InstanceName = $server.ServiceName
-                SqlInstance  = $instance
-                Database     = $db
-                Certificate  = $cert
-                Status       = $null
-            }
-
-            if ($Pscmdlet.ShouldProcess($instance, "Dropping the certificate named $cert for database '$db' on $server")) {
-                try {
-                    $smocert.Drop()
-                    Write-Message -Level Verbose -Message "Successfully removed certificate named $cert from the $db database on $server"
-                    $output.status = "Success"
-                }
-                catch {
-                    $output.Status = "Failure"
-                    Stop-Function -Message "Failed to drop certificate named $cert from $db on $server." -Target $smocert -InnerErrorRecord $_ -Continue
-                }
-                $output
-            }
-        }
     }
     process {
-
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            foreach ($db in $Database) {
-                $currentdb = $server.Databases[$db]
-
-                if ($null -eq $currentdb) {
-                    Stop-Function -Message "Database '$db' does not exist on $server" -Target $currentdb -Continue
-                }
-
-                if (-not $currentdb.IsAccessible) {
-                    Stop-Function -Message "Database '$db' is not accessible" -Target $currentdb -Continue
-                }
-
-                foreach ($cert in $certificate) {
-                    $smocert = $currentdb.Certificates[$cert]
-
-                    if ($null -eq $smocert) {
-                        Stop-Function -Message "No certificate named $cert exists in the $db database on $server" -Target $currentdb.Certificates -Continue
-                    }
-
-                    Drop-Cert -smocert $smocert
-                }
-            }
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Certificate $Certificate -Database $Database
         }
-
-        foreach ($smocert in $InputObject) {
-            Drop-Cert -smocert $smocert
+        
+        foreach ($cert in $InputObject) {
+            if ($Pscmdlet.ShouldProcess($instance, "Dropping the certificate named $cert for database '$db' on $server")) {
+                try {
+                    $server.Query("DROP CERTIFICATE $cert")
+                    Write-Message -Level Verbose -Message "Successfully removed certificate named $cert from the $db database on $server"
+                    [pscustomobject]@{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $instance
+                        Database     = $db
+                        Certificate  = $cert
+                        Status       = "Success"
+                    }
+                }
+                catch {
+                    Stop-Function -Message "Failed to drop certificate named $cert from $db on $server." -Target $smocert -ErrorRecord $_ -Continue
+                }
+            }
         }
     }
 }

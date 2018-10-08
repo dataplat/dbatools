@@ -17,4 +17,4 @@ else {
     $ssisserver = "localhost\sql2016"
 }
 
-# $PSDefaultParameterValues['*:Confirm' ] = $false
+#$PSDefaultParameterValues['*:Confirm' ] = $false
