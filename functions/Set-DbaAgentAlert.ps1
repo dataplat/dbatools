@@ -3,73 +3,76 @@ function Set-DbaAgentAlert {
 <#
     .SYNOPSIS
         Set-DbaAgentAlert updates a the status of a SQL Agent Alert.
-        
+
     .DESCRIPTION
         Set-DbaAgentAlert updates an alert in the SQL Server Agent with parameters supplied.
-        
+
     .PARAMETER SqlInstance
         SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Alert
         The name of the alert.
-        
+
     .PARAMETER NewName
         The new name for the alert.
-        
+
     .PARAMETER Enabled
         Enabled the alert.
-        
+
     .PARAMETER Disabled
         Disabled the alert.
-        
+
     .PARAMETER Force
         The force parameter will ignore some errors in the parameters and assume defaults.
-        
+
     .PARAMETER InputObject
         Enables piping alert objects
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-        
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
-        Author: Garry Bargsley (@gbargsley, garrybargsley.com)
         Tags: Agent, Alert
-        
+        Author: Garry Bargsley (@gbargsley), garrybargsley.com
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Set-DbaAgentAlert
-        
+
     .EXAMPLE
-        Set-DbaAgentAlert -SqlInstance sql1 -Alert 'Severity 025: Fatal Error' -Disabled
+        PS C:\> Set-DbaAgentAlert -SqlInstance sql1 -Alert 'Severity 025: Fatal Error' -Disabled
+
         Changes the alert to disabled.
-        
+
     .EXAMPLE
-        Set-DbaAgentAlert -SqlInstance sql1 -Alert 'Severity 025: Fatal Error', 'Error Number 825', 'Error Number 824' -Enabled
+        PS C:\> Set-DbaAgentAlert -SqlInstance sql1 -Alert 'Severity 025: Fatal Error', 'Error Number 825', 'Error Number 824' -Enabled
+
         Changes multiple alerts to enabled.
-        
+
     .EXAMPLE
-        Set-DbaAgentAlert -SqlInstance sql1, sql2, sql3 -Alert 'Severity 025: Fatal Error', 'Error Number 825', 'Error Number 824' -Enabled
+        PS C:\> Set-DbaAgentAlert -SqlInstance sql1, sql2, sql3 -Alert 'Severity 025: Fatal Error', 'Error Number 825', 'Error Number 824' -Enabled
+
         Changes multiple alerts to enabled on multiple servers.
-        
+
     .EXAMPLE
-        Set-DbaAgentAlert -SqlInstance sql1 -Alert 'Severity 025: Fatal Error' -Disabled -Whatif
+        PS C:\> Set-DbaAgentAlert -SqlInstance sql1 -Alert 'Severity 025: Fatal Error' -Disabled -WhatIf
+
         Doesn't Change the alert but shows what would happen.
-        
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (

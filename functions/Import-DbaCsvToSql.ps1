@@ -2,179 +2,180 @@
 <#
     .SYNOPSIS
         Efficiently imports very large (and small) CSV files into SQL Server using only the .NET Framework and PowerShell.
-        
+
     .DESCRIPTION
         Import-DbaCsvToSql takes advantage of .NET's super fast SqlBulkCopy class to import CSV files into SQL Server at up to 90,000 rows a second.
-        
+
         The entire import is contained within a transaction, so if a failure occurs or the script is aborted, no changes will persist.
-        
+
         If the table specified does not exist, it will be automatically created using best guessed data types. In addition, the destination table can be truncated prior to import.
-        
+
         The Query parameter will be used to import only the data returned from a SQL Query executed against the CSV file(s). This function supports a number of bulk copy options. Please see parameter list for details.
-        
+
     .PARAMETER CSV
         Specifies path to the CSV file(s) to be imported. Multiple files may be imported if they are formatted similarly.
-        
+
         If no file is specified, a dialog box will appear to select your file(s).
-        
+
     .PARAMETER FirstRowColumns
         If this switch is enabled, the first row in the file will be used as column names for the data being imported.
-        
+
         If the first row does not contain column names and -Query is specified, use field names "column1, column2, column3" and so on.
-        
+
     .PARAMETER Delimiter
         Specifies the delimiter used in the imported file(s). If no delimiter is specified, comma is assumed.
-        
+
         Valid delimiters are '`t`, '|', ';',' ' and ',' (tab, pipe, semicolon, space, and comma).
-        
+
     .PARAMETER SingleColumn
         Specifies that the file contains a single column of data
-        
+
     .PARAMETER SqlInstance
         The SQL Server Instance to import data into.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         Specifies the name of the database the CSV will be imported into. Options for this this parameter are  auto-populated from the server.
-        
+
     .PARAMETER Schema
         Specifies the schema in which the SQL table or view where CSV will be imported into resides. Default is dbo
-        
+
         If a schema name is not specified, and a CSV name with multiple dots is specified (ie; something.data.csv) then this will be interpreted as a request to import into a table [data] in the schema [something].
-        
+
         If a schema does not currently exist, it will be created, after a prompt to confirm this. Authorization will be set to dbo by default
-        
+
     .PARAMETER Table
         Specifies the SQL table or view where CSV will be imported into.
-        
+
         If a table name is not specified, the table name will be automatically determined from the filename, and a prompt will appear to confirm the table name.
-        
+
         If a table does not currently exist, it will created.  SQL datatypes are determined from the first row of the CSV that contains data (skips first row if -FirstRowColumns is specified). Datatypes used are: bigint, numeric, datetime and varchar(MAX).
-        
+
         If the automatically generated table datatypes do not work for you, please create the table prior to import.
-        
+
     .PARAMETER Truncate
         If this switch is enabled, the destination table will be truncated prior to import.
-        
+
     .PARAMETER Safe
         If this switch is enabled, OleDb is used to import the records. By default, Import-DbaCsvToSql uses StreamReader for imports. StreamReader is super fast, but may not properly parse some files.
-        
+
         When using OleDb the import will be slower but more predictable when it comes to parsing CSV files. A schema.ini is automatically generated for best results. If schema.ini currently exists in the directory, it will be moved to a temporary location, then moved back.
-        
+
         OleDB also enables the script to use the -Query parameter, which enables you to import specific subsets of data within a CSV file. OleDB imports at up to 21,000 rows/sec.
-        
+
     .PARAMETER Turbo
         If this switch is enabled, a Table Lock will be created for the import to make the import run as fast as possible. Depending upon the number of columns and datatypes, this may be over 90,000 records per second.
-        
+
         This switch cannot be used in conjunction with -Query.
-        
+
         Remember the Turbo button? This one actually works. Turbo is mega fast, but may not handle some datatypes as well as other methods.
-        
+
         If your CSV file is rather vanilla and doesn't have a ton of NULLs, Turbo may work well for you.
-        
+
     .PARAMETER First
         Specifies the number of rows to import. If this parameter is omitted, the entire file is imported. Row counts start at the top of the file, but skip the first row if -FirstRowColumns is specified.
-        
+
         Use -Query if you need advanced First (TOP) functionality.
-        
+
     .PARAMETER Query
         Specifies a query to execute against the CSV data to select/modify the data being imported.
-        
+
         To make command line queries easy, this module will convert the word "csv" to the actual CSV formatted table name. If the FirstRowColumns switch is not used, the query should use column1, column2, column3, etc.
-        
+
         Cannot be used in conjunction with -Turbo or -First. When -Query is specified, the slower import method, OleDb, will be used.
-        
+
     .PARAMETER NotifyAfter
         Specifies the import row count interval for reporting progress. A notification will be shown after each group of this many rows has been imported.
-        
+
     .PARAMETER BatchSize
         Specifies the batch size for the import. Defaults to 50000.
-        
+
     .PARAMETER TableLock
         If this switch is enabled, the SqlBulkCopy option to acquire a table lock will be used. This is automatically used if -Turbo is enabled.
-        
+
         Per Microsoft "Obtain a bulk update lock for the duration of the bulk copy operation. When not
         specified, row locks are used."
-        
+
     .PARAMETER CheckConstraints
         If this switch is enabled, the SqlBulkCopy option to check constraints will be used.
-        
+
         Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
-        
+
     .PARAMETER FireTriggers
         If this switch is enabled, the SqlBulkCopy option to allow insert triggers to be executed will be used.
-        
+
         Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the database."
-        
+
     .PARAMETER KeepIdentity
         If this switch is enabled, the SqlBulkCopy option to keep identity values from the source will be used.
-        
+
         Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
-        
+
     .PARAMETER KeepNulls
         If this switch is enabled, the SqlBulkCopy option to keep NULL values in the table will be used.
-        
+
         Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
-        
+
     .NOTES
         Tags: Migration
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://blog.netnerds.net/2015/09/Import-DbaCsvtosql-super-fast-csv-to-sql-server-import-powershell-module/
-        
+
     .EXAMPLE
-        Import-DbaCsvToSql -Csv C:\temp\housing.csv -SqlInstance sql001 -Database markets
-        
+        PS C:\> Import-DbaCsvToSql -Csv C:\temp\housing.csv -SqlInstance sql001 -Database markets
+
         Imports the entire comma-delimited housing.csv to the SQL "markets" database on a SQL Server named sql001.
-        
+
         Since a table name was not specified, the table name is automatically determined from filename as "housing" and a prompt will appear to confirm table name.
-        
+
         The first row is not skipped, as it does not contain column names.
-        
+
     .EXAMPLE
-        Import-DbaCsvToSql -Csv .\housing.csv -SqlInstance sql001 -Database markets -Table housing -First 100000 -Safe -Delimiter "`t" -FirstRowColumns
-        
+        PS C:\> Import-DbaCsvToSql -Csv .\housing.csv -SqlInstance sql001 -Database markets -Table housing -First 100000 -Safe -Delimiter "`t" -FirstRowColumns
+
         Imports the first 100,000 rows of the tab delimited housing.csv file to the "housing" table in the "markets" database on a SQL Server named sql001. Since -Safe was specified, the OleDB method will be used for the bulk import. The first row is skipped, as it contains column names.
-        
+
     .EXAMPLE
-        Import-DbaCsvToSql -csv C:\temp\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter "|" -Turbo
-        
+        PS C:\> Import-DbaCsvToSql -csv C:\temp\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter "|" -Turbo
+
         Imports all records from the pipe delimited huge.txt file using the fastest method possible into the latitudes table within the locations database. Obtains a table lock for the duration of the bulk copy operation. This specific command has been used
         to import over 10.5 million rows in 2 minutes.
-        
+
     .EXAMPLE
-        Import-DbaCsvToSql -Csv C:\temp\housing.csv, .\housing2.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -query "select top 100000 column1, column3 from csv" -Truncate
-        
+        PS C:\> Import-DbaCsvToSql -Csv C:\temp\housing.csv, .\housing2.csv -SqlInstance sql001 -Database markets -Table housing -Delimiter "`t" -query "select top 100000 column1, column3 from csv" -Truncate
+
         Truncates the "housing" table, then imports columns 1 and 3 of the first 100000 rows of the tab-delimited housing.csv in the C:\temp directory, and housing2.csv in the current directory. Since the query is executed against both files, a total of 200,000 rows will be imported.
-        
+
     .EXAMPLE
-        Import-DbaCsvToSql -Csv C:\temp\housing.csv -SqlInstance sql001 -Database markets -Table housing -query "select address, zip from csv where state = 'Louisiana'" -FirstRowColumns -Truncate -FireTriggers
-        
+        PS C:\> Import-DbaCsvToSql -Csv C:\temp\housing.csv -SqlInstance sql001 -Database markets -Table housing -query "select address, zip from csv where state = 'Louisiana'" -FirstRowColumns -Truncate -FireTriggers
+
         Uses the first line to determine CSV column names. Truncates the "housing" table on the SQL Server, then imports the address and zip columns from all records in the housing.csv where the state equals Louisiana.
-        
+
         Triggers are fired for all rows. Note that this does slightly slow down the import.
-        
+
     .EXAMPLE
-        Import-DbaCsvToSql -Csv c:\temp\SingleColumn.csv -SqlInstance sql001 -Database markets -Table TempTable -SingleColumn
-        
+        PS C:\> Import-DbaCsvToSql -Csv c:\temp\SingleColumn.csv -SqlInstance sql001 -Database markets -Table TempTable -SingleColumn
+
         Upload the single column Csv SingleColumn.csv to Temptable which has just one column
-        
+
     .EXAMPLE
-        Import-DbaCsvToSql -Csv "\\FileServer\To Import\housing.csv" -SqlInstance sql001 -Database markets
-        
+        PS C:\> Import-DbaCsvToSql -Csv "\\FileServer\To Import\housing.csv" -SqlInstance sql001 -Database markets
+
         Imports the entire comma-delimited housing.csv located in the share named "To Import" on FileServer to the SQL "markets" database on a SQL Server named sql001.
-        
+
     .EXAMPLE
-        Import-DbaCsvToSql -Csv '\\FileServer\R$\To Import\housing.csv' -SqlInstance sql001 -Database markets
-        
+        PS C:\> Import-DbaCsvToSql -Csv '\\FileServer\R$\To Import\housing.csv' -SqlInstance sql001 -Database markets
+
         Imports the entire comma-delimited housing.csv located in the directory R:\To Import on FileServer using the administrative share to the SQL "markets" database on a SQL Server named sql001.
-        
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (

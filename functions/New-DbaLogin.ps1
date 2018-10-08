@@ -2,106 +2,107 @@
 <#
     .SYNOPSIS
         Creates a new SQL Server login
-        
+
     .DESCRIPTION
         Creates a new SQL Server login with provided specifications
-        
+
     .PARAMETER SqlInstance
         The target SQL Server(s)
-        
+
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials
-        
+
     .PARAMETER Login
         The Login name(s)
-        
+
     .PARAMETER Password
         Secure string used to authenticate the Login
-        
+
     .PARAMETER HashedPassword
         Hashed password string used to authenticate the Login
-        
+
     .PARAMETER InputObject
         Takes the parameters required from a Login object that has been piped into the command
-        
+
     .PARAMETER LoginRenameHashtable
         Pass a hash table into this parameter to change login names when piping objects into the procedure
-        
+
     .PARAMETER MapToCertificate
         Map the login to a certificate
-        
+
     .PARAMETER MapToAsymmetricKey
         Map the login to an asymmetric key
-        
+
     .PARAMETER MapToCredential
         Map the login to a credential
-        
+
     .PARAMETER Sid
         Provide an explicit Sid that should be used when creating the account. Can be [byte[]] or hex [string] ('0xFFFF...')
-        
+
     .PARAMETER DefaultDatabase
         Default database for the login
-        
+
     .PARAMETER Language
         Login's default language
-        
+
     .PARAMETER PasswordExpiration
         Enforces password expiration policy. Requires PasswordPolicy to be enabled. Can be $true or $false(default)
-        
+
     .PARAMETER PasswordPolicy
         Enforces password complexity policy. Can be $true or $false(default)
-        
+
     .PARAMETER Disabled
         Create the login in a disabled state
-        
+
     .PARAMETER NewSid
         Ignore sids from the piped login object to generate new sids on the server. Useful when copying login onto the same server
-        
+
     .PARAMETER Force
         If login exists, drop and recreate
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed
-        
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
-        Tags: Login
+        Tags: Login, Security
         Author: Kirill Kravtsov (@nvarscar)
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+
+        Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/New-DbaLogin
-        
+
     .EXAMPLE
-        New-DbaLogin -SqlInstance Server1,Server2 -Login Newlogin
-        
+        PS C:\> New-DbaLogin -SqlInstance Server1,Server2 -Login Newlogin
+
         You will be prompted to securely enter the password for a login [Newlogin]. The login would be created on servers Server1 and Server2 with default parameters.
-        
+
     .EXAMPLE
-        $securePassword = Read-Host "Input password" -AsSecureString
-        New-DbaLogin -SqlInstance Server1\sql1 -Login Newlogin -Password $securePassword -PasswordPolicy -PasswordExpiration
-        
+        PS C:\> $securePassword = Read-Host "Input password" -AsSecureString
+        PS C:\> New-DbaLogin -SqlInstance Server1\sql1 -Login Newlogin -Password $securePassword -PasswordPolicy -PasswordExpiration
+
         Creates a login on Server1\sql1 with a predefined password. The login will have password and expiration policies enforced onto it.
-        
+
     .EXAMPLE
-        Get-DbaLogin -SqlInstance sql1 -Login Oldlogin | New-DbaLogin -SqlInstance sql1 -LoginRenameHashtable @{Oldlogin = 'Newlogin'} -Force -NewSid -Disabled:$false
-        
+        PS C:\> Get-DbaLogin -SqlInstance sql1 -Login Oldlogin | New-DbaLogin -SqlInstance sql1 -LoginRenameHashtable @{Oldlogin = 'Newlogin'} -Force -NewSid -Disabled:$false
+
         Copies a login [Oldlogin] to the same instance sql1 with the same parameters (including password). New login will have a new sid, a new name [Newlogin] and will not be disabled. Existing login [Newlogin] will be removed prior to creation.
-        
+
     .EXAMPLE
-        Get-DbaLogin -SqlInstance sql1 -Login Login1,Login2 | New-DbaLogin -SqlInstance sql2 -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled
-        
+        PS C:\> Get-DbaLogin -SqlInstance sql1 -Login Login1,Login2 | New-DbaLogin -SqlInstance sql2 -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled
+
         Copies logins [Login1] and [Login2] from instance sql1 to instance sql2, but enforces password and expiration policies for the new logins. New logins will also have a default database set to [tempdb] and will be created in a disabled state.
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Password")]
     param (

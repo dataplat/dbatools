@@ -3,65 +3,65 @@ function Get-DbaQueryExecutionTime {
 <#
     .SYNOPSIS
         Displays Stored Procedures and Ad hoc queries with the highest execution times.  Works on SQL Server 2008 and above.
-        
+
     .DESCRIPTION
         Quickly find slow query executions within a database.  Results will include stored procedures and individual SQL statements.
-        
+
     .PARAMETER SqlInstance
         Allows you to specify a comma separated list of servers to query.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-        
+
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
-        
+
     .PARAMETER MaxResultsPerDb
         Allows you to limit the number of results returned, as many systems can have very large amounts of query plans.  Default value is 100 results.
-        
+
     .PARAMETER MinExecs
         Allows you to limit the scope to queries that have been executed a minimum number of time. Default value is 100 executions.
-        
+
     .PARAMETER MinExecMs
         Allows you to limit the scope to queries with a specified average execution time.  Default value is 500 (ms).
-        
+
     .PARAMETER NoSystemDb
         Allows you to suppress output on system databases
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Query, Performance
         Author: Brandon Abshire, netnerds.net
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaQueryExecutionTime
-        
+
     .EXAMPLE
         PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008, sqlserver2012
-        
+
         Return the top 100 slowest stored procedures or statements for servers sql2008 and sqlserver2012.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008 -Database TestDB
-        
+
         Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaQueryExecutionTime -SqlInstance sql2008 -Database TestDB -MaxResultsPerDb 100 -MinExecs 200 -MinExecMs 1000
-        
+
         Return the top 100 slowest stored procedures or statements on server sql2008 for only the TestDB database, limiting results to queries with more than 200 total executions and an execution time over 1000ms or higher.
-        
+
 #>
     [CmdletBinding()]
     param (

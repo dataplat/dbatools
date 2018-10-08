@@ -3,45 +3,45 @@ function Get-DbaTrace {
 <#
     .SYNOPSIS
         Gets a list of trace(s) from specified SQL Server Instance
-        
+
     .DESCRIPTION
         This function returns a list of traces on a SQL Server instance and identifies the default trace file
-        
+
     .PARAMETER SqlInstance
         A SQL Server instance to connect to
-        
+
     .PARAMETER SqlCredential
         A credential to use to connect to the SQL Instance rather than using Windows Authentication
-        
+
     .PARAMETER Id
         The id(s) of the Trace
-        
+
     .PARAMETER Default
         Switch that will only return the information for the default system trace
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Security, Trace
         Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .EXAMPLE
         PS C:\> Get-DbaTrace -SqlInstance sql2016
-        
+
         Lists all the trace files on the sql2016 SQL Server.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaTrace -SqlInstance sql2016 -Default
-        
+
         Lists the default trace information on the sql2016 SQL Server.
-        
+
 #>
     [CmdletBinding()]
     param (

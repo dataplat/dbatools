@@ -2,64 +2,63 @@
 <#
     .SYNOPSIS
         Gets database users
-        
+
     .DESCRIPTION
         Gets database users
-        
+
     .PARAMETER SqlInstance
         The target SQL Server instance(s)
-        
+
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials
-        
+
     .PARAMETER Database
         To get users from specific database(s)
-        
+
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto populated from the server
-        
+
     .PARAMETER ExcludeSystemUser
         This switch removes all system objects from the user collection
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Security, Database
-        Author: Klaas Vandenberghe ( @PowerDbaKlaas )
-        
+        Author: Klaas Vandenberghe (@PowerDbaKlaas)
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .EXAMPLE
-        Get-DbaDbUser -SqlInstance sql2016
-        
+        PS C:\> Get-DbaDbUser -SqlInstance sql2016
+
         Gets all database users
-        
+
     .EXAMPLE
-        Get-DbaDbUser -SqlInstance Server1 -Database db1
-        
+        PS C:\> Get-DbaDbUser -SqlInstance Server1 -Database db1
+
         Gets the users for the db1 database
-        
+
     .EXAMPLE
-        Get-DbaDbUser -SqlInstance Server1 -ExcludeDatabase db1
-        
+        PS C:\> Get-DbaDbUser -SqlInstance Server1 -ExcludeDatabase db1
+
         Gets the users for all databases except db1
-        
+
     .EXAMPLE
-        Get-DbaDbUser -SqlInstance Server1 -ExcludeSystemUser
-        
+        PS C:\> Get-DbaDbUser -SqlInstance Server1 -ExcludeSystemUser
+
         Gets the users for all databases that are not system objects, like 'dbo', 'guest' or 'INFORMATION_SCHEMA'
-        
+
     .EXAMPLE
-        'Sql1','Sql2/sqlexpress' | Get-DbaDbUser
-        
+        PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaDbUser
+
         Gets the users for the databases on Sql1 and Sql2/sqlexpress
-        
-        
+
 #>
     [CmdletBinding()]
     param (
@@ -117,7 +116,7 @@
             }
         }
     }
-    
+
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaDatabaseUser
     }
