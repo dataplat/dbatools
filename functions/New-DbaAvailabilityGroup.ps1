@@ -21,7 +21,6 @@ function New-DbaAvailabilityGroup {
         
         Thanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/
 
-    
     .PARAMETER Primary
         SQL Server name or SMO object representing the primary SQL Server.
         
@@ -35,7 +34,7 @@ function New-DbaAvailabilityGroup {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
       
     .PARAMETER Name
-        The Name of the Availability Group  
+        The Name of the Availability Group
     
     .PARAMETER Database
         The database or databases to add.
@@ -158,7 +157,6 @@ function New-DbaAvailabilityGroup {
     param (
         [DbaInstanceParameter]$Primary,
         [PSCredential]$PrimarySqlCredential,
-        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$Secondary,
         [PSCredential]$SecondarySqlCredential,
         [string]$Name,
