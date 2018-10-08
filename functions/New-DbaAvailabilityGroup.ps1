@@ -167,6 +167,7 @@ function New-DbaAvailabilityGroup {
         [int]$Port,
         [switch]$Dhcp,
         [switch]$DtcSupport,
+        [string]$Certificate,
         [ValidateSet('External', 'Wsfc', 'None')]
         [string]$ClusterType = 'External',
         [parameter(ValueFromPipeline)]
@@ -176,7 +177,11 @@ function New-DbaAvailabilityGroup {
         [switch]$Passthru,
         [switch]$EnableException
     )
+    begin {
+        $stepCounter = 0
+    }
     process {
+        # do checks
         if ((Test-Bound -ParameterName Primary) -and (Test-Bound -Not -ParameterName Database)) {
             Stop-Function -Message "Database is required when SqlInstance is specified"
             return
@@ -188,30 +193,41 @@ function New-DbaAvailabilityGroup {
         }
         
         try {
-            $source = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
+            $server = Connect-SqlInstance -SqlInstance $Primary -SqlCredential $PrimarySqlCredential
         }
         catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary -Continue
         }
         
         if ($Certificate) {
-            $cert = Get-DbaDbCertificate -SqlInstance $source -Certificate $Certificate
+            $cert = Get-DbaDbCertificate -SqlInstance $server -Certificate $Certificate
             if (-not $cert) {
                 Stop-Function -Message "Certificate $Certificate does not exist on $Primary" -ErrorRecord $_ -Target $Certificate -Continue
             }
         }
         
-        if ((Test-Bound -ParameterName NetworkShare)) {
-            if (-not (Test-DbaPath -SqlInstance $source -Path $NetworkShare)) {
-                Stop-Function -Continue -Message "Cannot access $NetworkShare from $($dest.Name)"
+        if (($NetworkShare)) {
+            if (-not (Test-DbaPath -SqlInstance $server -Path $NetworkShare)) {
+                Stop-Function -Continue -Message "Cannot access $NetworkShare from $Primary"
             }
         }
         
-        if ($Database) {
-            $InputObject += Get-DbaDatabase -SqlInstance $source -Database $Database
+        if ($Secondary) {
+            $secondaries = @()
+            foreach ($computer in $Secondary) {
+                try {
+                    $secondaries += Connect-SqlInstance -SqlInstance $computer -SqlCredential $SecondarySqlCredential
+                }
+                catch {
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary -Continue
+                }
+            }
         }
         
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Validating secondary setup"
+        # database stuff
+        if ($Database) {
+            $InputObject += Get-DbaDatabase -SqlInstance $server -Database $Database
+        }
         
         foreach ($primarydb in $InputObject) {
             if ($primarydb.MirroringStatus -ne "None") {
@@ -221,67 +237,65 @@ function New-DbaAvailabilityGroup {
             if ($primarydb.Status -ne "Normal") {
                 Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbname) due to its current state: $($primarydb.Status)"
             }
+            
+            if ($primarydb.RecoveryModel -ne "Full") {
+                if ((Test-Bound -ParameterName UseLastBackups)) {
+                    Stop-Function -Continue -Message "$dbName not set to full recovery. UseLastBackups cannot be used."
+                }
+                else {
+                    Set-DbaDbRecoveryModel -SqlInstance $server -Database $primarydb.Name -RecoveryModel Full
+                }
+            }
         }
         
-        $ag = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroup -ArgumentList $source, $Name
+        # Start work
+        $ag = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroup -ArgumentList $server, $Name
         
         if ($PassThru) {
             return $ag
         }
         
-        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting recovery model for $dbName on $($source.Name) to Full"
-        
-        if ($primarydb.RecoveryModel -ne "Full") {
-            if ((Test-Bound -ParameterName UseLastBackups)) {
-                Stop-Function -Continue -Message "$dbName not set to full recovery. UseLastBackups cannot be used."
-            }
-            else {
-                Set-DbaDbRecoveryModel -SqlInstance $source -Database $primarydb.Name -RecoveryModel Full
-            }
+        # Create endpoint if needed
+        $primaryendpoint = Get-DbaEndpoint -SqlInstance $server | Where-Object EndpointType -eq DatabaseMirroring
+        if (-not $primaryendpoint) {
+            Write-Message -Level Verbose -Message "Adding endpoint named AvailabilityGroup to $Primary"
+            $primaryendpoint = New-DbaEndpoint -SqlInstance $server -Name AvailabilityGroup -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
+            $null = $primaryendpoint | Stop-DbaEndpoint
+            $null = $primaryendpoint | Start-DbaEndpoint
         }
         
-        foreach ($second in $Secondary) {
-            $stepCounter = 0
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Connecting to SQL Servers"
-            
+        # Create endpoints
+        $allendpoints = @($primaryendpoint)
+        foreach ($second in $secondaries) {
             try {
-                $dest = Connect-SqlInstance -SqlInstance $second -SqlCredential $SecondarySqlCredential
+                $second = Connect-SqlInstance -SqlInstance $second -SqlCredential $SecondarySqlCredential
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $second -Continue
             }
             
-            $primaryendpoint = Get-DbaEndpoint -SqlInstance $source | Where-Object EndpointType -eq DatabaseMirroring
-            $mirrorendpoint = Get-DbaEndpoint -SqlInstance $dest | Where-Object EndpointType -eq DatabaseMirroring
-            
-            if (-not $primaryendpoint) {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up endpoint for primary"
-                $primaryendpoint = New-DbaEndpoint -SqlInstance $source -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm Aes
-                $null = $primaryendpoint | Stop-DbaEndpoint
-                $null = $primaryendpoint | Start-DbaEndpoint
-            }
+            $mirrorendpoint = Get-DbaEndpoint -SqlInstance $second | Where-Object EndpointType -eq DatabaseMirroring
             
             if (-not $mirrorendpoint) {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up endpoint for secondary"
-                $mirrorendpoint = New-DbaEndpoint -SqlInstance $dest -Type DatabaseMirroring -Role Partner -Name Mirroring -EncryptionAlgorithm RC4
+                Write-Message -Level Verbose -Message "Adding endpoint named AvailabilityGroup to $($second.Name)"
+                $mirrorendpoint = New-DbaEndpoint -SqlInstance $second -Name AvailabilityGroup -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
                 $null = $mirrorendpoint | Stop-DbaEndpoint
                 $null = $mirrorendpoint | Start-DbaEndpoint
             }
-            
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Granting permissions to service account"
-            
-            $serviceaccounts = $source.ServiceAccount, $dest.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
+        }
+        
+        # Add permissions
+        foreach ($second in $secondaries) {
+            $serviceaccounts = $server.ServiceAccount, $second.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
             
             foreach ($account in $serviceaccounts) {
-                if ($Pscmdlet.ShouldProcess("primary, secondary and witness (if specified)", "Creating login $account and granting CONNECT ON ENDPOINT")) {
-                    $null = New-DbaLogin -SqlInstance $source -Login $account -WarningAction SilentlyContinue
-                    $null = New-DbaLogin -SqlInstance $dest -Login $account -WarningAction SilentlyContinue
+                if ($Pscmdlet.ShouldProcess("All involved servers", "Creating login $account and granting CONNECT ON ENDPOINT")) {
+                    $null = New-DbaLogin -SqlInstance $server -Login $account -WarningAction SilentlyContinue
                     try {
-                        $null = $source.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
-                        $null = $dest.Query("GRANT CONNECT ON ENDPOINT::$mirrorendpoint TO [$account]")
-                        if ($witserver) {
-                            $null = New-DbaLogin -SqlInstance $witserver -Login $account -WarningAction SilentlyContinue
-                            $witserver.Query("GRANT CONNECT ON ENDPOINT::$witnessendpoint TO [$account]")
+                        $null = $server.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
+                        foreach ($second in $secondaries) {
+                            $null = New-DbaLogin -SqlInstance $second -Login $account -WarningAction SilentlyContinue
+                            $null = $second.Query("GRANT CONNECT ON ENDPOINT::$mirrorendpoint TO [$account]")
                         }
                     }
                     catch {
@@ -291,9 +305,8 @@ function New-DbaAvailabilityGroup {
             }
         }
         
-        foreach ($second in $Secondary) {
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Copying $dbName from primary to secondary"
-            
+        # Add databases
+        foreach ($second in $secondaries) {
             if (-not $validation.DatabaseExistsOnMirror -or $Force) {
                 if ($UseLastBackups) {
                     $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
@@ -305,19 +318,8 @@ function New-DbaAvailabilityGroup {
                 }
                 Write-Message -Level Verbose -Message "Backups still exist on $NetworkShare"
                 if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
-                    try {
-                        $null = $allbackups | Restore-DbaDatabase -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
-                    }
-                    catch {
-                        $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
-                        if (-not $msg) {
-                            $msg = $_.Exception.InnerException.InnerException.InnerException.Message
-                        }
-                        if (-not $msg) {
-                            $msg = $_
-                        }
-                        Stop-Function -Message $msg -ErrorRecord $_ -Target $dest -Continue
-                    }
+                    # keep going to ensure output is shown even if dbs aren't added well.
+                    $null = $allbackups | Restore-DbaDatabase -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory
                 }
             }
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting endpoints if necessary"
@@ -329,36 +331,9 @@ function New-DbaAvailabilityGroup {
             }
         }
         
-        foreach ($second in $Secondary) {
-            try {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for secondary"
-                $null = $mirrordb | Set-DbaDbMirror -Partner $primaryendpoint.Fqdn -EnableException
-            }
-            catch {
-                Stop-Function -Continue -Message "Failure on secondary" -ErrorRecord $_
-            }
-            
-            try {
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Setting up partner for primary"
-                $null = $primarydb | Set-DbaDbMirror -Partner $mirrorendpoint.Fqdn -EnableException
-            }
-            catch {
-                Stop-Function -Continue -Message "Failure on primary" -ErrorRecord $_
-            }
-            
-        }
+        # Add replica
+        # Add databases
         
-        # add replica
-        # add databases
-        
-        if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
-            [pscustomobject]@{
-                Primary   = $Primary
-                Secondary = $Secondary
-                Witness   = $Witness
-                Database  = $primarydb.Name
-                Status    = "Success"
-            } | Select-DefaultView -Property Primary, Secondary, Database, Status
-        }
+        Get-DbaAvailabilityGroup -SqlInstance $Primary, $Secondary -AvailabilityGroup $Name
     }
 }
