@@ -61,8 +61,8 @@
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(ValueFromPipeline)]
-        [object[]]$AvailabilityGroup,
-        [object[]]$Database,
+        [string[]]$AvailabilityGroup,
+        [string[]]$Database,
         [Alias('Silent')]
         [switch]$EnableException
     )

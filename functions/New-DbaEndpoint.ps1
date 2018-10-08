@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaEndpoint {
 <#
     .SYNOPSIS
@@ -32,6 +32,9 @@ function New-DbaEndpoint {
     .PARAMETER SslPort
         Port for SSL
 
+    .PARAMETER Certificate
+        Database certificate used to authentication.
+    
     .PARAMETER EndpointEncryption
         Used to specify the state of encryption on the endpoint. Defaults to required.
         Disabled
@@ -66,8 +69,7 @@ function New-DbaEndpoint {
     .NOTES
         Tags: Endpoint
         Author: Chrissy LeMaire (@cl), netnerds.net
-
-        Website: https://dbatools.io
+        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
@@ -101,6 +103,7 @@ function New-DbaEndpoint {
         [string]$EndpointEncryption = 'Required',
         [ValidateSet('Aes', 'AesRC4', 'None', 'RC4', 'RC4Aes')]
         [string]$EncryptionAlgorithm = 'RC4',
+        [string]$Certificate,
         [int]$Port,
         [int]$SslPort,
         [switch]$EnableException
@@ -118,6 +121,13 @@ function New-DbaEndpoint {
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            if ($Certificate) {
+                $cert = Get-DbaDbCertificate -SqlInstance $server -Certificate $Certificate
+                if (-not $cert) {
+                    Stop-Function -Message "Certificate $Certificate does not exist on $instance" -ErrorRecord $_ -Target $Certificate -Continue
+                }
             }
 
             # Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1
@@ -159,7 +169,15 @@ function New-DbaEndpoint {
                         $endpoint.Payload.DatabaseMirroring.EndpointEncryptionAlgorithm = [Microsoft.SqlServer.Management.Smo.EndpointEncryptionAlgorithm]::$EncryptionAlgorithm
 
                     }
-                    $null = $endpoint.Create()
+                    if ($Certificate) {
+                        $outscript = $endpoint.Script()
+                        $outscript = $outscript.Replace("ROLE = ALL,", "ROLE = ALL, AUTHENTICATION = CERTIFICATE $cert,")
+                        $server.Query($outscript)
+                    }
+                    else {
+                        $null = $endpoint.Create()
+                    }
+
                     $server.Endpoints.Refresh()
                     Get-DbaEndpoint -SqlInstance $server -Endpoint $name
                 }
