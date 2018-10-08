@@ -100,7 +100,6 @@
     )
     process {
         foreach ($instance in $sqlinstance) {
-            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }

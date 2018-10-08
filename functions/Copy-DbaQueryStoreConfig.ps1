@@ -81,7 +81,6 @@
     )
 
     begin {
-        Write-Message -Message "Connecting to source: $Source." -Level Verbose
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         }

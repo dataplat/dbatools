@@ -114,7 +114,6 @@ function Connect-SqlInstance {
     if ($ConvertedSqlInstance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
         $server = $ConvertedSqlInstance.InputObject
         if ($server.ConnectionContext.IsOpen -eq $false) {
-            Write-Message -Level Verbose -Message "Connecting to $SqlInstance" -EnableException:$false
             if ($NonPooled) {
                 $server.ConnectionContext.Connect()
             }
@@ -186,16 +185,13 @@ function Connect-SqlInstance {
 
     try {
         if ($NonPooled) {
-            Write-Message -Level Verbose -Message "Connecting to $SqlInstance" -EnableException:$false
             $server.ConnectionContext.Connect()
         }
         elseif ($authtype -eq "Windows Authentication with Credential") {
-            Write-Message -Level Verbose -Message "Connecting to $SqlInstance" -EnableException:$false
             # Make it connect in a natural way, hard to explain.
             $null = $server.IsMemberOfWsfcCluster
         }
         else {
-            Write-Message -Level Verbose -Message "Connecting to $SqlInstance" -EnableException:$false
             $server.ConnectionContext.SqlConnectionObject.Open()
         }
     }

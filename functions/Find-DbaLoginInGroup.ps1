@@ -148,7 +148,6 @@ function Find-DbaLoginInGroup {
             else {
                 $res = $ADGroupOut | Where-Object { $Login -contains $_.Login }
                 if ($res.Length -eq 0) {
-                    Write-Message -Level Warning -Message "No logins matching $($Login -join ',') found connecting to $server"
                     continue
                 }
             }
