@@ -5,6 +5,8 @@ function Remove-DbaBackup {
         Removes SQL Server backups from disk.
 
     .DESCRIPTION
+        Removes SQL Server backups from disk.
+    
         Provides all of the same functionality for removing SQL backups from disk as a standard maintenance plan would.
 
         As an addition you have the ability to check the Archive bit on files before deletion. This will allow you to ensure backups have been archived to your archive location before removal.
