@@ -3,128 +3,135 @@ function New-DbaAgentJob {
 <#
     .SYNOPSIS
         New-DbaAgentJob creates a new job
-        
+
     .DESCRIPTION
         New-DbaAgentJob makes is possible to create a job in the SQL Server Agent.
         It returns an array of the job(s) created
-        
+
     .PARAMETER SqlInstance
         SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Job
         The name of the job. The name must be unique and cannot contain the percent (%) character.
-        
+
     .PARAMETER Schedule
         Schedule to attach to job. This can be more than one schedule.
-        
+
     .PARAMETER ScheduleId
         Schedule ID to attach to job. This can be more than one schedule ID.
-        
+
     .PARAMETER Disabled
         Sets the status of the job to disabled. By default a job is enabled.
-        
+
     .PARAMETER Description
         The description of the job.
-        
+
     .PARAMETER StartStepId
         The identification number of the first step to execute for the job.
-        
+
     .PARAMETER Category
         The category of the job.
-        
+
     .PARAMETER OwnerLogin
         The name of the login that owns the job.
-        
+
     .PARAMETER EventLogLevel
         Specifies when to place an entry in the Microsoft Windows application log for this job.
         Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
         The text value van either be lowercase, uppercase or something in between as long as the text is correct.
-        
+
     .PARAMETER EmailLevel
         Specifies when to send an e-mail upon the completion of this job.
         Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
         The text value van either be lowercase, uppercase or something in between as long as the text is correct.
-        
+
     .PARAMETER NetsendLevel
         Specifies when to send a network message upon the completion of this job.
         Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
         The text value van either be lowercase, uppercase or something in between as long as the text is correct.
-        
+
     .PARAMETER PageLevel
         Specifies when to send a page upon the completion of this job.
         Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
         The text value van either be lowercase, uppercase or something in between as long as the text is correct.
-        
+
     .PARAMETER EmailOperator
         The e-mail name of the operator to whom the e-mail is sent when EmailLevel is reached.
-        
+
     .PARAMETER NetsendOperator
         The name of the operator to whom the network message is sent.
-        
+
     .PARAMETER PageOperator
         The name of the operator to whom a page is sent.
-        
+
     .PARAMETER DeleteLevel
         Specifies when to delete the job.
         Allowed values 0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always"
         The text value van either be lowercase, uppercase or something in between as long as the text is correct.
-        
+
     .PARAMETER Force
         The force parameter will ignore some errors in the parameters and assume defaults.
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-        
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
-        Author: Sander Stad (@sqlstad, sqlstad.nl)
         Tags: Agent, Job, JobStep
-        
+        Author: Sander Stad (@sqlstad), sqlstad.nl
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/New-DbaAgentJob
-        
+
     .EXAMPLE
-        New-DbaAgentJob -SqlInstance sql1 -Job 'Job One' -Description 'Just another job'
+        PS C:\> New-DbaAgentJob -SqlInstance sql1 -Job 'Job One' -Description 'Just another job'
+
         Creates a job with the name "Job1" and a small description
-        
+
     .EXAMPLE
-        New-DbaAgentJob -SqlInstance sql1 -Job 'Job One' -Disabled
+        PS C:\> New-DbaAgentJob -SqlInstance sql1 -Job 'Job One' -Disabled
+
         Creates the job but sets it to disabled
-        
+
     .EXAMPLE
-        New-DbaAgentJob -SqlInstance sql1 -Job 'Job One' -EventLogLevel OnSuccess
+        PS C:\> New-DbaAgentJob -SqlInstance sql1 -Job 'Job One' -EventLogLevel OnSuccess
+
         Creates the job and sets the notification to write to the Windows Application event log on success
-        
+
     .EXAMPLE
-        New-DbaAgentJob -SqlInstance SSTAD-PC -Job 'Job One' -EmailLevel OnFailure -EmailOperator dba
+        PS C:\> New-DbaAgentJob -SqlInstance SSTAD-PC -Job 'Job One' -EmailLevel OnFailure -EmailOperator dba
+
         Creates the job and sets the notification to send an e-mail to the e-mail operator
-        
+
     .EXAMPLE
-        New-DbaAgentJob -SqlInstance sql1 -Job 'Job One' -Description 'Just another job' -Whatif
+        PS C:\> New-DbaAgentJob -SqlInstance sql1 -Job 'Job One' -Description 'Just another job' -Whatif
+
         Doesn't create the job but shows what would happen.
-        
+
     .EXAMPLE
-        New-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job 'Job One'
+        PS C:\> New-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job 'Job One'
+
         Creates a job with the name "Job One" on multiple servers
-        
+
     .EXAMPLE
-        "sql1", "sql2", "sql3" | New-DbaAgentJob -Job 'Job One'
+        PS C:\> "sql1", "sql2", "sql3" | New-DbaAgentJob -Job 'Job One'
+
         Creates a job with the name "Job One" on multiple servers using the pipe line
-        
+
 #>
 
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
