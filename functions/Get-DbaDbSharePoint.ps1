@@ -49,7 +49,7 @@ function Get-DbaDbSharePoint {
 
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$ConfigDatabase = "SharePoint_Config",
