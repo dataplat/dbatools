@@ -1,68 +1,71 @@
 ﻿function Get-DbaLastGoodCheckDb {
-<#
+    <#
     .SYNOPSIS
         Get date/time for last known good DBCC CHECKDB
-        
+
     .DESCRIPTION
         Retrieves and compares the date/time for the last known good DBCC CHECKDB, as well as the creation date/time for the database.
-        
+
         This function supports SQL Server 2005 and higher.
-        
+
         Please note that this script uses the DBCC DBINFO() WITH TABLERESULTS. DBCC DBINFO has several known weak points, such as:
         - DBCC DBINFO is an undocumented feature/command.
         - The LastKnowGood timestamp is updated when a DBCC CHECKFILEGROUP is performed.
         - The LastKnowGood timestamp is updated when a DBCC CHECKDB WITH PHYSICAL_ONLY is performed.
         - The LastKnowGood timestamp does not get updated when a database in READ_ONLY.
-        
+
         An empty ($null) LastGoodCheckDb result indicates that a good DBCC CHECKDB has never been performed.
-        
+
         SQL Server 2008R2 has a "bug" that causes each databases to possess two dbi_dbccLastKnownGood fields, instead of the normal one.
-        
+
         This script will only display this function to only display the newest timestamp. If -Verbose is specified, the function will announce every time more than one dbi_dbccLastKnownGood fields is encountered.
-        
+
     .PARAMETER SqlInstance
         The SQL Server instance to connect to.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         Specifies one or more database(s) to process. If unspecified, all databases will be processed.
-        
+
     .PARAMETER ExcludeDatabase
         Specifies one or more database(s) to exclude from processing.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: CHECKDB, Database
         Author: Jakob Bindslet (jakob@bindslet.dk)
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
-    .LINK
+
+        Ref:
         DBCC CHECKDB:
         https://msdn.microsoft.com/en-us/library/ms176064.aspx
         http://www.sqlcopilot.com/dbcc-checkdb.html
         Data Purity:
         http://www.sqlskills.com/blogs/paul/checkdb-from-every-angle-how-to-tell-if-data-purity-checks-will-be-run/
         https://www.mssqltips.com/sqlservertip/1988/ensure-sql-server-data-purity-checks-are-performed/
-        
+
+    .LINK
+        https://dbatools.io/Get-DbaLastGoodCheckDb
+
     .EXAMPLE
-        Get-DbaLastGoodCheckDb -SqlInstance ServerA\sql987
-        
+        PS C:\> Get-DbaLastGoodCheckDb -SqlInstance ServerA\sql987
+
         Returns a custom object displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled
-        
+
     .EXAMPLE
-        Get-DbaLastGoodCheckDb -SqlInstance ServerA\sql987 -SqlCredential (Get-Credential sqladmin) | Format-Table -AutoSize
-        
+        PS C:\> Get-DbaLastGoodCheckDb -SqlInstance ServerA\sql987 -SqlCredential (Get-Credential sqladmin) | Format-Table -AutoSize
+
         Returns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled. Authenticates using SQL Server authentication.
-        
+
 #>
     [CmdletBinding()]
     param (
