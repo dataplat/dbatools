@@ -37,19 +37,19 @@ function Test-DbaSpn {
         https://dbatools.io/Test-DbaSpn
 
     .EXAMPLE
-        Test-DbaSpn -ComputerName SQLSERVERA -Credential (Get-Credential)
+        Test-DbaSpn -ComputerName SQLSERVERA -Credential ad\sqldba
 
         Connects to a computer (SQLSERVERA) and queries WMI for all SQL instances and return "required" SPNs. It will then take each SPN it generates
         and query Active Directory to make sure the SPNs are set.
 
     .EXAMPLE
-        Test-DbaSpn -ComputerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
+        Test-DbaSpn -ComputerName SQLSERVERA,SQLSERVERB -Credential ad\sqldba
 
         Connects to multiple computers (SQLSERVERA, SQLSERVERB) and queries WMI for all SQL instances and return "required" SPNs.
         It will then take each SPN it generates and query Active Directory to make sure the SPNs are set.
 
     .EXAMPLE
-        Test-DbaSpn -ComputerName SQLSERVERC -Credential (Get-Credential)
+        Test-DbaSpn -ComputerName SQLSERVERC -Credential ad\sqldba
 
         Connects to a computer (SQLSERVERC) on a specified and queries WMI for all SQL instances and return "required" SPNs.
         It will then take each SPN it generates and query Active Directory to make sure the SPNs are set. Note that the credential you pass must have be a valid login with appropriate rights on the domain

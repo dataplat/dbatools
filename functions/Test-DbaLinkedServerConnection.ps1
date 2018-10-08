@@ -46,7 +46,7 @@
 
     .EXAMPLE
         PS C:\> $servers = "sql2016","sql2014","sql2012"
-        PS C:\> $servers | Test-DbaLinkedServerConnection -SqlCredential (Get-Credential sqladmin)
+        PS C:\> $servers | Test-DbaLinkedServerConnection -SqlCredential sqladmin
 
         Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012 using SQL login credentials
 
