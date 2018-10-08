@@ -3,70 +3,70 @@ function Export-DbaAvailabilityGroup {
 <#
     .SYNOPSIS
         Exports SQL Server Availability Groups to a T-SQL file.
-        
+
     .DESCRIPTION
         Exports SQL Server Availability Groups creation scripts to a T-SQL file. This is a function that is not available in SSMS.
-        
+
     .PARAMETER SqlInstance
         The SQL Server instance name. SQL Server 2012 and above supported.
-        
+
     .PARAMETER Path
         The directory name where the output files will be written. A sub directory with the format 'ServerName$InstanceName' will be created. A T-SQL scripts named 'AGName.sql' will be created under this subdirectory for each scripted Availability Group.
-        
+
     .PARAMETER AvailabilityGroup
         The Availability Group(s) to export - this list is auto-populated from the server. If unspecified, all logins will be processed.
-        
+
     .PARAMETER ExcludeAvailabilityGroup
         The Availability Group(s) to exclude - this list is auto-populated from the server.
-        
+
     .PARAMETER NoClobber
         Do not overwrite existing export files.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER WhatIf
         Shows you what it'd output if you were to run the command
-        
+
     .PARAMETER Confirm
         Confirms each step/line of output
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
-        Tags: Hadr, AG, AvailabilityGroup
+        Tags: Hadr, HA, AG, AvailabilityGroup
         Author: Chris Sommer (@cjsommer), cjsommer.com
-        
+
         dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Export-DbaAvailabilityGroup
-        
+
     .EXAMPLE
         PS C:\> Export-DbaAvailabilityGroup -SqlInstance sql2012
-        
+
         Exports all Availability Groups from SQL server "sql2012". Output scripts are written to the Documents\SqlAgExports directory by default.
-        
+
     .EXAMPLE
         PS C:\> Export-DbaAvailabilityGroup -SqlInstance sql2012 -Path C:\temp\availability_group_exports
-        
+
         Exports all Availability Groups from SQL server "sql2012". Output scripts are written to the C:\temp\availability_group_exports directory.
-        
+
     .EXAMPLE
         PS C:\> Export-DbaAvailabilityGroup -SqlInstance sql2012 -Path 'C:\dir with spaces\availability_group_exports' -AvailabilityGroups AG1,AG2
-        
+
         Exports Availability Groups AG1 and AG2 from SQL server "sql2012". Output scripts are written to the C:\dir with spaces\availability_group_exports directory.
-        
+
     .EXAMPLE
         PS C:\> Export-DbaAvailabilityGroup -SqlInstance sql2014 -Path C:\temp\availability_group_exports -NoClobber
-        
+
         Exports all Availability Groups from SQL server "sql2014". Output scripts are written to the C:\temp\availability_group_exports directory. If the export file already exists it will not be overwritten.
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
