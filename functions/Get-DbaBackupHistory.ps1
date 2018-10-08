@@ -3,133 +3,133 @@ function Get-DbaBackupHistory {
 <#
     .SYNOPSIS
         Returns backup history details for databases on a SQL Server.
-        
+
     .DESCRIPTION
         Returns backup history details for some or all databases on a SQL Server.
-        
+
         You can even get detailed information (including file path) for latest full, differential and log files.
-        
+
         Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present
-        
+
         Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
-        
+
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
-        
+
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
-        
+
     .PARAMETER Database
         Specifies one or more database(s) to process. If unspecified, all databases will be processed.
-        
+
     .PARAMETER ExcludeDatabase
         Specifies one or more database(s) to exclude from processing.
-        
+
     .PARAMETER IncludeCopyOnly
         By default Get-DbaBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them
-        
+
     .PARAMETER Force
         If this switch is enabled, a large amount of information is returned, similar to what SQL Server itself returns.
-        
+
     .PARAMETER Since
         Specifies a DateTime object to use as the starting point for the search for backups.
-        
+
     .PARAMETER Last
         If this switch is enabled, the most recent full chain of full, diff and log backup sets is returned.
-        
+
     .PARAMETER LastFull
         If this switch is enabled, the most recent full backup set is returned.
-        
+
     .PARAMETER LastDiff
         If this switch is enabled, the most recent differential backup set is returned.
-        
+
     .PARAMETER LastLog
         If this switch is enabled, the most recent log backup is returned.
-        
+
     .PARAMETER DeviceType
         Specifies a filter for backup sets based on DeviceTypes. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device', in addition to custom integers for your own DeviceTypes.
-        
+
     .PARAMETER Raw
         If this switch is enabled, one object per backup file is returned. Otherwise, media sets (striped backups across multiple files) will be grouped into a single return object.
-        
+
     .PARAMETER Type
         Specifies one or more types of backups to return. Valid options are 'Full', 'Log', 'Differential', 'File', 'Differential File', 'Partial Full', and 'Partial Differential'. Otherwise, all types of backups will be returned unless one of the -Last* switches is enabled.
-        
+
     .PARAMETER LastLsn
         Specifies a minimum LSN to use in filtering backup history. Only backups with an LSN greater than this value will be returned, which helps speed the retrieval process.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: DisasterRecovery, Backup
         Author: Chrissy LeMaire (@ctrlb) | Stuart Moore (@napalmgram)
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaBackupHistory
-        
+
     .EXAMPLE
         PS C:\> Get-DbaBackupHistory -SqlInstance SqlInstance2014a
-        
+
         Returns server name, database, username, backup type, date for all database backups still in msdb history on SqlInstance2014a. This may return many rows; consider using filters that are included in other examples.
-        
+
     .EXAMPLE
         PS C:\> $cred = Get-Credential sqladmin
         Get-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred
-        
+
         Does the same as above but connect to SqlInstance2014a as SQL user "sqladmin"
-        
+
     .EXAMPLE
         PS C:\> Get-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '2016-07-01 10:47:00'
-        
+
         Returns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table
-        
+
         Returns information only for AdventureWorks2014 and pubs and formats the results as a table.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last
-        
+
         Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk
-        
+
         Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107
-        
+
         Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull
-        
+
         Returns information about the most recent full backup for AdventureWorks2014 on sql2014.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full
-        
+
         Returns information about all Full backups for AdventureWorks2014 on sql2014.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaCmsRegServer -SqlInstance sql2016 | Get-DbaBackupHistory
-        
+
         Returns database backup information for every database on every server listed in the Central Management Server on sql2016.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force
-        
+
         Returns detailed backup history for all databases on SqlInstance2014a and sql2016.
-        
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
