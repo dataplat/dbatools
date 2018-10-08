@@ -4,27 +4,38 @@ function Test-DbaConnection {
 <#
     .SYNOPSIS
         Tests the connection to a single instance.
-        
+
     .DESCRIPTION
         Tests the ability to connect to an SQL Server instance outputting information about the server and instance.
-        
+
     .PARAMETER SqlInstance
         The SQL Server Instance to test connection
-        
+
     .PARAMETER Credential
         Credential object used to connect to the Computer as a different user
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
+    .NOTES
+        Tags: CIM, Test, Connection
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Test-DbaConnection
+
     .EXAMPLE
-        Test-DbaConnection SQL2016
-        
+        PS C:\> Test-DbaConnection SQL2016
+
         ComputerName         : SQL2016
         InstanceName         : MSSQLSERVER
         SqlInstance          : sql2016
@@ -45,14 +56,8 @@ function Test-DbaConnection {
         LocalSMOVersion      : 13.0.0.0
         LocalDomainUser      : True
         LocalRunAsAdmin      : False
-        
-    .NOTES
-        Tags: CIM, Test, Connection
-        Author: Chrissy LeMaire (@cl), netnerds.net
-        Website: https://dbatools.io
-        Copyright: (c) 2018 by dbatools, licensed under MIT
-        License: MIT https://opensource.org/licenses/MIT
-        
+
+        Test connection to SQL2016 and outputs information collected
 #>
     [CmdletBinding()]
     param (

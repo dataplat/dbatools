@@ -2,38 +2,39 @@
 <#
     .SYNOPSIS
         Simplifies finding computer certificates that are candidates for using with SQL Server's network encryption
-        
+
     .DESCRIPTION
         Gets computer certificates on localhost that are candidates for using with SQL Server's network encryption
-        
+
     .PARAMETER ComputerName
         The target SQL Server - defaults to localhost. If target is a cluster, you must specify the distinct nodes.
-        
+
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Certificate
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .EXAMPLE
-        Get-DbaNetworkCertificate
+        PS C:\> Get-DbaNetworkCertificate
+
         Gets computer certificates on localhost that are candidates for using with SQL Server's network encryption
-        
+
     .EXAMPLE
-        Get-DbaNetworkCertificate -ComputerName sql2016
-        
+        PS C:\> Get-DbaNetworkCertificate -ComputerName sql2016
+
         Gets computer certificates on sql2016 that are being used for SQL Server network encryption
-        
-        
+
 #>
     [CmdletBinding()]
     param (

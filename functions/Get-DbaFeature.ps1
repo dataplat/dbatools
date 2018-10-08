@@ -3,13 +3,13 @@ function Get-DbaFeature {
 <#
     .SYNOPSIS
         Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)
-        
+
     .DESCRIPTION
         Runs the SQL Server feature discovery report (setup.exe /Action=RunDiscovery)
-        
+
         Inspired by Dave Mason's (@BeginTry) post at
         https://itsalljustelectrons.blogspot.be/2018/04/SQL-Server-Discovery-Report.html
-        
+
         Assumptions:
         1. The sub-folder "Microsoft SQL Server" exists in $env:ProgramFiles,
         even if SQL was installed to a non-default path. This has been
@@ -17,47 +17,48 @@ function Get-DbaFeature {
         2. The discovery report displays installed components for the version of SQL
         Server associated with setup.exe, along with installed components of all
         lesser versions of SQL Server that are installed.
-        
+
     .PARAMETER ComputerName
         The target computer. If the target is not localhost, it must have PowerShell remoting enabled.
-        
+
         Note that this is not the SqlInstance, but rather the ComputerName
-        
+
     .PARAMETER Credential
         Allows you to login to servers using alternative credentials. To use:
-        
+
         $cred = Get-Credential, then pass $cred object to the -Credential parameter.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Feature, Component
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaFeature
-        
+
     .EXAMPLE
-        Get-DbaFeature -ComputerName sql2017, sql2016, sql2005
-        
+        PS C:\> Get-DbaFeature -ComputerName sql2017, sql2016, sql2005
+
         Gets all SQL Server features for all instances on sql2017, sql2016 and sql2005.
-        
+
     .EXAMPLE
-        Get-DbaFeature -Verbose
-        
+        PS C:\> Get-DbaFeature -Verbose
+
         Gets all SQL Server features for all instances on localhost. Outputs to screen if no instances are found.
-        
+
     .EXAMPLE
-        Get-DbaFeature -ComputerName sql2017 -Credential (Get-Credential ad\sqladmin)
-        
+        PS C:\> Get-DbaFeature -ComputerName sql2017 -Credential (Get-Credential ad\sqladmin)
+
         Gets all SQL Server features for all instances on sql2017 using the ad\sqladmin credential (which has access to the Windows Server).
-        
+
 #>
     [CmdletBinding()]
     param (

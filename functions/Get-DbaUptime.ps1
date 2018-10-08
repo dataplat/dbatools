@@ -2,58 +2,58 @@
 <#
     .SYNOPSIS
         Returns the uptime of the SQL Server instance, and if required the hosting windows server
-        
+
     .DESCRIPTION
         By default, this command returns for each SQL Server instance passed in:
         SQL Instance last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string
         Hosting Windows server last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string
-        
+
     .PARAMETER SqlInstance
         The SQL Server instance that you're connecting to.
-        
+
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-        
+
         $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-        
+
         Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-        
+
         To connect to SQL Server as a different Windows user, run PowerShell as that user.
-        
+
     .PARAMETER Credential
         Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: CIM
         Author: Stuart Moore (@napalmgram), stuart-moore.com
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaUptime
-        
+
     .EXAMPLE
         PS C:\> Get-DbaUptime -SqlInstance SqlBox1\Instance2
-        
+
         Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on winserver
-        
+
     .EXAMPLE
         PS C:\> Get-DbaUptime -SqlInstance winserver\sqlexpress, sql2016
-        
+
         Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on host winserver  and the default instance on host sql2016
-        
+
     .EXAMPLE
         PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaUptime
-        
+
         Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for every server listed in the Central Management Server on sql2014
-        
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (

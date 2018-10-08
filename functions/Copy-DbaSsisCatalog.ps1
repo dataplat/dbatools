@@ -3,85 +3,85 @@ function Copy-DbaSsisCatalog {
 <#
     .SYNOPSIS
         Copy-DbaSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another.
-        
+
     .DESCRIPTION
         By default, all folders, projects, and environments are copied. The -Project parameter can be specified to copy only one project, if desired.
-        
+
         The parameters get more granular from the Folder level. For example, specifying -Folder will only deploy projects/environments from within that folder.
-        
+
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2012 or higher.
-        
+
     .PARAMETER SourceSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Destination
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2012 or higher.
-        
+
     .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Force
         If this switch is enabled, the SSIS Catalog will be dropped and recreated on Destination if it already exists.
-        
+
     .PARAMETER Project
         Specifies a source Project name.
-        
+
     .PARAMETER Folder
         Specifies a source folder name.
-        
+
     .PARAMETER Environment
         Specifies an environment to copy.
-        
+
     .PARAMETER EnableSqlClr
         If this switch is enabled and Destination does not have the SQL CLR configuration option enabled, user prompts for enabling it on Destination will be skipped. SQL CLR is required for SSISDB.
-        
+
     .PARAMETER CreateCatalogPassword
         Specifies a secure string to use in creating an SSISDB catalog on Destination. If this is specified, prompts for the password will be skipped.
-        
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-        
+
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Migration, SSIS
         Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
-        
+
         dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Copy-DbaSsisCatalog
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster
-        
+
         Copies all folders, environments and SSIS Projects from sqlserver2014a to sqlcluster, using Windows credentials to authenticate to both instances. If folders with the same name exist on the destination they will be skipped, but projects will be redeployed.
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -Project Archive_Tables -SourceSqlCredential $cred -Force
-        
+
         Copies a single Project, the Archive_Tables Project, from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials to authenticate to sqlcluster. If a Project with the same name exists on sqlcluster, it will be deleted and recreated because -Force was used.
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
-        
+
         Shows what would happen if the command were executed using force.
-        
+
     .EXAMPLE
         PS C:\> $SecurePW = Read-Host "Enter password" -AsSecureString
         PS C:\> Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -CreateCatalogPassword $SecurePW
-        
+
         Deploy entire SSIS catalog to an instance without a destination catalog. User prompts for creating the catalog on Destination will be bypassed.
-        
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
