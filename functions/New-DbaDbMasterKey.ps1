@@ -12,6 +12,9 @@
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials.
 
+    .PARAMETER Credential
+        Enables easy creation of a secure password.
+    
     .PARAMETER Database
         The database where the master key will be created. Defaults to master.
 
@@ -42,10 +45,16 @@
 
         You will be prompted to securely enter your password, then a master key will be created in the master database on server1 if it does not exist.
 
+    
+    .EXAMPLE
+        PS C:\> New-DbaDbMasterKey -SqlInstance Server1 -Credential usernamedoesntmatter
+
+        You will be prompted by a credential interface to securely enter your password, then a master key will be created in the master database on server1 if it does not exist.
+    
     .EXAMPLE
         PS C:\> New-DbaDbMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
 
-        Suppresses all prompts to install but prompts to securely enter your password and creates a master key in the 'db1' database
+        Suppresses all prompts to install but prompts in th console to securely enter your password and creates a master key in the 'db1' database
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
@@ -54,17 +63,22 @@
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
         [object[]]$Database = "master",
-        [parameter(Mandatory)]
-        [Security.SecureString]$Password = (Read-Host "Password" -AsSecureString),
-        [Alias('Silent')]
+        [Security.SecureString]$Password,
         [switch]$EnableException
     )
-
+    begin {
+        if ($Credential) {
+            $Password = $Credential.Password
+        }
+        else {
+            $Password = Read-Host "Password" -AsSecureString
+        }
+    }
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {
