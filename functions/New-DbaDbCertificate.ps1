@@ -7,7 +7,7 @@
         Creates a new database certificate. If no database is specified, the certificate will be created in master.
 
     .PARAMETER SqlInstance
-        The SQL Server to create the certificates on.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials.
