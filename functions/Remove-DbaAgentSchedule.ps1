@@ -1,6 +1,6 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Remove-DbaAgentSchedule {
-    <#
+<#
     .SYNOPSIS
         Remove-DbaAgentJobSchedule removes a job schedule.
 
@@ -74,7 +74,6 @@ function Remove-DbaAgentSchedule {
         Remove the schedules using a pipeline
 
 #>
-
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = "instance")]
@@ -191,7 +190,5 @@ function Remove-DbaAgentSchedule {
     }
     end {
         Write-Message -Message "Finished removing jobs schedule(s)." -Level Verbose
-    }
-}       Write-Message -Message "Finished removing jobs schedule(s)." -Level Verbose
     }
 }
