@@ -9,7 +9,7 @@
         Given a wait resource in the form of 'KEY: 7:35457594073541168 (de21f92a1572)', returns the database, object and index that is being waited on, With the -row switch the row data will also be returned.
 
     .PARAMETER SqlInstance
-        The SQL Server instance to restore to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.

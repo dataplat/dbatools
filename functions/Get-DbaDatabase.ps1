@@ -9,7 +9,7 @@ function Get-DbaDatabase {
         SQL Server. If the name of the database is provided, the command will return only the specific database information.
 
     .PARAMETER SqlInstance
-        The SQL Server instance to connect to.
+        The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

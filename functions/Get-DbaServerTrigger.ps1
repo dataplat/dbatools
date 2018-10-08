@@ -7,7 +7,7 @@
         Get all existing server triggers on one or more SQL instances.
 
     .PARAMETER SqlInstance
-        The SQL Instance that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         SqlCredential object used to connect to the SQL Server as a different user.

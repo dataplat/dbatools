@@ -7,7 +7,7 @@
         Ola wrote a .sql script to get the content from the commandLog table. However, if LogToTable='N', there will be no logging in that table. This function reads the text files that are written in the SQL Instance's Log directory.
 
     .PARAMETER SqlInstance
-        The SQL Server instance.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

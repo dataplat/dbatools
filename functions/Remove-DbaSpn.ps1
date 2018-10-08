@@ -9,8 +9,6 @@ function Remove-DbaSpn {
 
         In order to run this function, the credential you provide must have write access to Active Directory.
 
-        Note: This function supports -WhatIf
-
     .PARAMETER SPN
         The SPN you want to remove
 

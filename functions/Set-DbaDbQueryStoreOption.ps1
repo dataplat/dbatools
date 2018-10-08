@@ -8,7 +8,7 @@ function Set-DbaDbQueryStoreOption {
         Configure Query Store settings for a specific or multiple databases.
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         SqlCredential object used to connect to the SQL Server as a different user.

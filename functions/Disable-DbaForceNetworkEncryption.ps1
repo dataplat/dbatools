@@ -11,7 +11,7 @@ function Disable-DbaForceNetworkEncryption {
         This setting is found in Configuration Manager.
 
     .PARAMETER SqlInstance
-        The target SQL Server. Defaults to localhost.
+        The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials.

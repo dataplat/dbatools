@@ -15,7 +15,7 @@ function Set-DbaDbState {
         Notes gets filled when something went wrong setting the state
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to
+        The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user

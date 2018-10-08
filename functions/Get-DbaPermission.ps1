@@ -15,7 +15,7 @@
         See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
 
     .PARAMETER SqlInstance
-        The SQL Server instance to connect to.
+        The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

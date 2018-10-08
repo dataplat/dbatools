@@ -9,7 +9,7 @@
         While it is possible to set below the min, or above the max this can cause serious problems with SQL Server (including startup failures), and so is not permitted.
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a
+        The target SQL Server instance or instances. This can be a
         collection and receive pipeline input
 
     .PARAMETER SqlCredential

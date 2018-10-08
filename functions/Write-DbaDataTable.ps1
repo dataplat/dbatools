@@ -8,7 +8,7 @@ function Write-DbaDataTable {
         Writes a .NET DataTable to a SQL Server table using SQL Bulk Copy.
 
     .PARAMETER SqlInstance
-        The SQL Server instance.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

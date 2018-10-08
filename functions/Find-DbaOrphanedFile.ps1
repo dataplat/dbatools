@@ -12,7 +12,7 @@ function Find-DbaOrphanedFile {
         You can specify additional filetypes using the -FileType parameter, and additional paths to search using the -Path parameter.
 
     .PARAMETER SqlInstance
-        The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

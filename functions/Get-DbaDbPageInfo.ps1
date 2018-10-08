@@ -9,7 +9,7 @@ function Get-DbaDbPageInfo {
         It's possible to return the information for multiple databases and filter on specific databases, schemas and tables.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance(s)
+        The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

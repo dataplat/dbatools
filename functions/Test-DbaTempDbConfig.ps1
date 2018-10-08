@@ -15,7 +15,7 @@
         Other rules can be added at a future date.
 
     .PARAMETER SqlInstance
-        The SQL Server Instance to connect to. SQL Server 2005 and higher are supported.
+        The target SQL Server instance or instances. SQL Server 2005 and higher are supported.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

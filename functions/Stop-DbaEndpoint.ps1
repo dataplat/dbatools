@@ -8,7 +8,7 @@ function Stop-DbaEndpoint {
         Stops endpoints on a SQL Server instance.
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
         to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential

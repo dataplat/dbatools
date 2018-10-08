@@ -44,7 +44,7 @@ function Remove-DbaDbMirrorMonitor {
 
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

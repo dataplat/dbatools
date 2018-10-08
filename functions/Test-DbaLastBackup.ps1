@@ -14,7 +14,7 @@
         6. And the test database is finally dropped
 
     .PARAMETER SqlInstance
-        The SQL Server to connect to. Unlike many of the other commands, you cannot specify more than one server.
+        The target SQL Server instance or instances. Unlike many of the other commands, you cannot specify more than one server.
 
     .PARAMETER Destination
         The destination server to use to test the restore. By default, the Destination will be set to the source server

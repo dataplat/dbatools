@@ -7,7 +7,7 @@
         Gets the Resource Governor custom classifier Function which is used for customize the workload groups usage
 
     .PARAMETER SqlInstance
-        The target SQL Server instance(s)
+        The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials

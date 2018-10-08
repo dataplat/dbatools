@@ -2,13 +2,13 @@
 function New-DbaXESmartQueryExec {
 <#
     .SYNOPSIS
-        This Response type executes a T-SQL command against a target database whenever an event is recorded.
+        This response type executes a T-SQL command against a target database whenever an event is recorded.
 
     .DESCRIPTION
-        This Response type executes a T-SQL command against a target database whenever an event is recorded.
+        This response type executes a T-SQL command against a target database whenever an event is recorded.
 
     .PARAMETER SqlInstance
-        Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

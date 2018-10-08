@@ -8,8 +8,7 @@ function Find-DbaLoginInGroup {
         Outputs all the active directory groups members for a server, or limits it to find a specific AD user in the groups
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a
-        collection and receive pipeline input.
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input.
 
     .PARAMETER SqlCredential
         PSCredential object to connect under. If not specified, current Windows login will be used.
