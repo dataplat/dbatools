@@ -3,12 +3,12 @@ function Get-DbaHelpIndex {
 <#
     .SYNOPSIS
         Returns size, row and configuration information for indexes in databases.
-        
+
     .DESCRIPTION
         This function will return detailed information on indexes (and optionally statistics) for all indexes in a database, or a given index should one be passed along.
         As this uses SQL Server DMVs to access the data it will only work in 2005 and up (sorry folks still running SQL Server 2000).
         For performance reasons certain statistics information will not be returned from SQL Server 2005 if an ObjectName is not provided.
-        
+
         The data includes:
         - ObjectName: the table containing the index
         - IndexType: clustered/non-clustered/columnstore and whether the index is unique/primary key
@@ -26,98 +26,98 @@ function Get-DbaHelpIndex {
         - StatsRowMods: the number of changes to the statistics since the last rebuild
         - HistogramSteps: the number of steps in the statistics histogram (not included in SQL Server 2005 unless ObjectName is specified)
         - StatsLastUpdated: when the statistics were last rebuilt (not included in SQL Server 2005 unless ObjectName is specified)
-        
+
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to.
-        
+        The target SQL Server instance or instances.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
-        
+
     .PARAMETER ExcludeDatabase
         The database(s) to exclude. This list is auto-populated from the server.
-        
+
     .PARAMETER ObjectName
         The name of a table for which you want to obtain the index information. If the two part naming convention for an object is not used it will use the default schema for the executing user. If not passed it will return data on all indexes in a given database.
-        
+
     .PARAMETER IncludeStats
         If this switch is enabled, statistics as well as indexes will be returned in the output (statistics information such as the StatsRowMods will always be returned for indexes).
-        
+
     .PARAMETER IncludeDataTypes
         If this switch is enabled, the output will include the data type of each column that makes up a part of the index definition (key and include columns).
-        
+
     .PARAMETER IncludeFragmentation
         If this switch is enabled, the output will include fragmentation information.
-        
+
     .PARAMETER InputObject
         Allows piping from Get-DbaDatabase
-        
+
     .PARAMETER Raw
         If this switch is enabled, results may be less user-readable but more suitable for processing by other code.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Index
         Author: Nic Cain, https://sirsql.net/
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaHelpIndex
-        
+
     .EXAMPLE
-        Get-DbaHelpIndex -SqlInstance localhost -Database MyDB
-        
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB
+
         Returns information on all indexes on the MyDB database on the localhost.
-        
+
     .EXAMPLE
-        Get-DbaHelpIndex -SqlInstance localhost -Database MyDB,MyDB2
-        
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB,MyDB2
+
         Returns information on all indexes on the MyDB & MyDB2 databases.
-        
+
     .EXAMPLE
-        Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1
-        
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1
+
         Returns index information on the object dbo.Table1 in the database MyDB.
-        
+
     .EXAMPLE
-        Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -IncludeStats
-        
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -IncludeStats
+
         Returns information on the indexes and statistics for the table dbo.Table1 in the MyDB database.
-        
+
     .EXAMPLE
-        Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -IncludeDataTypes
-        
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -IncludeDataTypes
+
         Returns the index information for the table dbo.Table1 in the MyDB database, and includes the data types for the key and include columns.
-        
+
     .EXAMPLE
-        Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -Raw
-        
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -Raw
+
         Returns the index information for the table dbo.Table1 in the MyDB database, and returns the numerical data without localized separators.
-        
+
     .EXAMPLE
-        Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -IncludeStats -Raw
-        
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -IncludeStats -Raw
+
         Returns the index information for all indexes in the MyDB database as well as their statistics, and formats the numerical data without localized separators.
-        
+
     .EXAMPLE
-        Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -IncludeFragmentation
-        
+        PS C:\> Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -IncludeFragmentation
+
         Returns the index information for all indexes in the MyDB database as well as their fragmentation
-        
+
     .EXAMPLE
-        Get-DbaDatabase -SqlInstance sql2017 -Database MyDB | Get-DbaHelpIndex
-        
+        PS C:\> Get-DbaDatabase -SqlInstance sql2017 -Database MyDB | Get-DbaHelpIndex
+
         Returns the index information for all indexes in the MyDB database
-        
+
 #>
     [CmdletBinding()]
     param (
@@ -138,9 +138,9 @@ function Get-DbaHelpIndex {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    
+
     begin {
-        
+
         #Add the table predicate to the query
         if (!$ObjectName) {
             $TablePredicate = "DECLARE @TableName NVARCHAR(256);";
@@ -148,7 +148,7 @@ function Get-DbaHelpIndex {
         else {
             $TablePredicate = "DECLARE @TableName NVARCHAR(256); SET @TableName = '$ObjectName';";
         }
-        
+
         #Add Fragmentation info if requested
         $FragSelectColumn = ", NULL as avg_fragmentation_in_percent"
         $FragJoin = ''
@@ -169,7 +169,7 @@ function Get-DbaHelpIndex {
         else {
             $IncludeStatsPredicate = "WHERE IndexType != 'STATISTICS'";
         }
-        
+
         #Data types being returns with the results?
         if ($IncludeDataTypes) {
             $IncludeDataTypesPredicate = 'DECLARE @IncludeDataTypes BIT; SET @IncludeDataTypes = 1';
@@ -177,7 +177,7 @@ function Get-DbaHelpIndex {
         else {
             $IncludeDataTypesPredicate = 'DECLARE @IncludeDataTypes BIT; SET @IncludeDataTypes = 0';
         }
-        
+
         #region SizesQuery
         $SizesQuery = "
             SET NOCOUNT ON;
@@ -544,8 +544,8 @@ function Get-DbaHelpIndex {
         OPTION  ( RECOMPILE );
         "
         #endRegion SizesQuery
-        
-        
+
+
         #region sizesQuery2005
         $SizesQuery2005 = "
         SET NOCOUNT ON;
@@ -993,29 +993,28 @@ function Get-DbaHelpIndex {
                 StatsLastUpdated ,
                 IndexFragInPercent
         FROM @AllResults;"
-        
+
         #endregion sizesQuery2005
     }
     process {
         Write-Message -Level Debug -Message $SizesQuery
         Write-Message -Level Debug -Message $SizesQuery2005
-        
+
         foreach ($instance in $SqlInstance) {
-            
-            Write-Message -Level Verbose -Message "Connecting to $instance"
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $InputObject += Get-DbaDatabase -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
-        
+
         foreach ($db in $InputObject) {
             $server = $db.Parent
-            
+
             #Need to check the version of SQL
             if ($server.versionMajor -ge 10) {
                 $indexesQuery = $SizesQuery
@@ -1023,23 +1022,23 @@ function Get-DbaHelpIndex {
             else {
                 $indexesQuery = $SizesQuery2005
             }
-            
+
             if (!$db.IsAccessible) {
                 Stop-Function -Message "$db is not accessible. Skipping." -Continue
             }
-            
+
             Write-Message -Level Debug -Message "$indexesQuery"
             try {
                 $IndexDetails = $db.Query($indexesQuery)
-                
+
                 if (!$Raw) {
                     foreach ($detail in $IndexDetails) {
                         $recentlyused = [datetime]$detail.MostRecentlyUsed
-                        
+
                         if ($recentlyused.year -eq 1900) {
                             $recentlyused = $null
                         }
-                        
+
                         [pscustomobject]@{
                             ComputerName  = $server.ComputerName
                             InstanceName  = $server.ServiceName
@@ -1066,15 +1065,15 @@ function Get-DbaHelpIndex {
                         } | Select-DefaultView -Property $OutputProperties
                     }
                 }
-                
+
                 else {
                     foreach ($detail in $IndexDetails) {
                         $recentlyused = [datetime]$detail.MostRecentlyUsed
-                        
+
                         if ($recentlyused.year -eq 1900) {
                             $recentlyused = $null
                         }
-                        
+
                         [pscustomobject]@{
                             ComputerName   = $server.ComputerName
                             InstanceName   = $server.ServiceName

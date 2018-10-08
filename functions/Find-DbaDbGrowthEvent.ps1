@@ -3,88 +3,89 @@ function Find-DbaDbGrowthEvent {
 <#
     .SYNOPSIS
         Finds any database AutoGrow events in the Default Trace.
-        
+
     .DESCRIPTION
         Finds any database AutoGrow events in the Default Trace.
-        
+
         The following events are included:
         92 - Data File Auto Grow
         93 - Log File Auto Grow
         94 - Data File Auto Shrink
         95 - Log File Auto Shrink
-        
+
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
-        
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-        
+
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
-        
+
     .PARAMETER EventType
         Provide a filter on growth event type to filter the results.
-        
+
         Allowed values: Growth, Shrink
-        
+
     .PARAMETER FileType
         Provide a filter on file type to filter the results.
-        
+
         Allowed values: Data, Log
-        
+
     .PARAMETER UseLocalTime
         Return the local time of the instance instead of converting to UTC.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: AutoGrow,Growth,Database
         Author: Aaron Nelson
-        Query Extracted from SQL Server Management Studio (SSMS) 2016.
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
+        Query Extracted from SQL Server Management Studio (SSMS) 2016.
+
     .LINK
         https://dbatools.io/Find-DbaDatabaseGrowthEvent
-        
+
     .EXAMPLE
         PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance localhost
-        
+
         Returns any database AutoGrow events in the Default Trace with UTC time for the instance for every database on the localhost instance.
-        
+
     .EXAMPLE
         PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance localhost -UseLocalTime
-        
+
         Returns any database AutoGrow events in the Default Trace with the local time of the instance for every database on the localhost instance.
-        
+
     .EXAMPLE
         PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016, ServerA\SQL2014
-        
+
         Returns any database AutoGrow events in the Default Traces for every database on ServerA\sql2016 & ServerA\SQL2014.
-        
+
     .EXAMPLE
         PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 | Format-Table -AutoSize -Wrap
-        
+
         Returns any database AutoGrow events in the Default Trace for every database on the ServerA\SQL2016 instance in a table format.
-        
+
     .EXAMPLE
         PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Shrink
-        
+
         Returns any database Auto Shrink events in the Default Trace for every database on the ServerA\SQL2016 instance.
-        
+
     .EXAMPLE
         PS C:\> Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016 -EventType Growth -FileType Data
-        
+
         Returns any database Auto Growth events on data files in the Default Trace for every database on the ServerA\SQL2016 instance.
-        
+
 #>
     [CmdletBinding()]
     param (
@@ -226,7 +227,6 @@ function Find-DbaDbGrowthEvent {
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

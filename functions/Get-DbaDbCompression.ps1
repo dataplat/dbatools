@@ -2,50 +2,50 @@
 <#
     .SYNOPSIS
         Gets tables and indexes size and current compression settings.
-        
+
     .DESCRIPTION
         This function gets the current size and compression for all objects in the specified database(s), if no database is specified it will return all objects in all user databases.
-        
+
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
-        
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         The database(s) to process - this list is auto populated from the server. If unspecified, all databases will be processed.
-        
+
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto populated from the server.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Compression, Table, Database
         Author: Jess Pomfret (@jpomfret), jesspomfret.com
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .EXAMPLE
         PS C:\> Get-DbaDbCompression -SqlInstance localhost
-        
+
         Returns objects size and current compression level for all user databases.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaDbCompression -SqlInstance localhost -Database TestDatabase
-        
+
         Returns objects size and current compression level for objects within the TestDatabase database.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaDbCompression -SqlInstance localhost -ExcludeDatabase TestDatabases
-        
+
         Returns objects size and current compression level for objects in all databases except the TestDatabase database.
-        
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
@@ -61,7 +61,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             }
             catch {

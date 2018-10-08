@@ -3,125 +3,124 @@ function New-DbaAgentSchedule {
 <#
     .SYNOPSIS
         New-DbaAgentSchedule creates a new schedule in the msdb database.
-        
+
     .DESCRIPTION
         New-DbaAgentSchedule will help create a new schedule for a job.
         If the job parameter is not supplied the schedule will not be attached to a job.
-        
+
     .PARAMETER SqlInstance
-        SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-        
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Job
         The name of the job that has the schedule.
-        
+
     .PARAMETER Schedule
         The name of the schedule.
-        
+
     .PARAMETER Disabled
         Set the schedule to disabled. Default is enabled
-        
+
     .PARAMETER FrequencyType
         A value indicating when a job is to be executed.
-        
+
         Allowed values: Once, Daily, Weekly, Monthly, MonthlyRelative, AgentStart or IdleComputer
-        
+
         If force is used the default will be "Once".
-        
+
     .PARAMETER FrequencyInterval
         The days that a job is executed
-        
+
         Allowed values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Weekdays, Weekend or EveryDay.
         The other allowed values are the numbers 1 to 31 for each day of the month.
-        
+
         If "Weekdays", "Weekend" or "EveryDay" is used it over writes any other value that has been passed before.
-        
+
         If force is used the default will be 1.
-        
+
     .PARAMETER FrequencySubdayType
         Specifies the units for the subday FrequencyInterval.
-        
+
         Allowed values: Time, Seconds, Minutes, or Hours
-        
+
     .PARAMETER FrequencySubdayInterval
         The number of subday type periods to occur between each execution of a job.
-        
+
     .PARAMETER FrequencyRelativeInterval
         A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
-        
+
         Allowed values: First, Second, Third, Fourth or Last
-        
+
     .PARAMETER FrequencyRecurrenceFactor
         The number of weeks or months between the scheduled execution of a job.
-        
+
         FrequencyRecurrenceFactor is used only if FrequencyType is "Weekly", "Monthly" or "MonthlyRelative".
-        
+
     .PARAMETER StartDate
         The date on which execution of a job can begin.
-        
+
         If force is used the start date will be the current day
-        
+
     .PARAMETER EndDate
         The date on which execution of a job can stop.
-        
+
         If force is used the end date will be '9999-12-31'
-        
+
     .PARAMETER StartTime
         The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
         Example: '010000' for 01:00:00 AM.
         Example: '140000' for 02:00:00 PM.
-        
+
         If force is used the start time will be '00:00:00'
-        
+
     .PARAMETER EndTime
         The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
         Example: '010000' for 01:00:00 AM.
         Example: '140000' for 02:00:00 PM.
-        
+
         If force is used the start time will be '23:59:59'
-        
+
     .PARAMETER Owner
         The name of the server principal that owns the schedule. If no value is given the schedule is owned by the creator.
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-        
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-        
+
     .PARAMETER Force
         The force parameter will ignore some errors in the parameters and assume defaults.
         It will also remove the any present schedules with the same name for the specific job.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Agent, Job, JobStep
-        Author: Sander Stad (@sqlstad, sqlstad.nl)
-        
+        Author: Sander Stad (@sqlstad), sqlstad.nl
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/New-DbaAgentSchedule
-        
+
     .EXAMPLE
-        New-DbaAgentSchedule -SqlInstance localhost\SQL2016 -Schedule daily -FrequencyType Daily -FrequencyInterval Everyday -Force
-        
+        PS C:\> New-DbaAgentSchedule -SqlInstance localhost\SQL2016 -Schedule daily -FrequencyType Daily -FrequencyInterval Everyday -Force
+
         Creates a schedule with a daily frequency every day. It assumes default values for the start date, start time, end date and end time due to -Force.
-        
+
     .EXAMPLE
-        New-DbaAgentSchedule -SqlInstance sstad-pc -Schedule MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
-        
+        PS C:\> New-DbaAgentSchedule -SqlInstance sstad-pc -Schedule MonthlyTest -FrequencyType Monthly -FrequencyInterval 10 -FrequencyRecurrenceFactor 1 -Force
+
         Create a schedule with a monhtly frequency occuring every 10th of the month. It assumes default values for the start date, start time, end date and end time due to -Force.
-        
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
@@ -418,7 +417,6 @@ function New-DbaAgentSchedule {
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

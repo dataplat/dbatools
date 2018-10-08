@@ -2,83 +2,78 @@
 <#
     .SYNOPSIS
         Verifies that your non-dynamic disks are aligned according to physical constraints.
-        
+
     .DESCRIPTION
         Returns $true or $false by default for one server. Returns Server name and IsBestPractice for more than one server.
-        
+
         Please refer to your storage vendor best practices before following any advice below.
-        
+
         By default issues with disk alignment should be resolved by a new installation of Windows Server 2008, Windows Vista, or later operating systems, but verifying disk alignment continues to be recommended as a best practice.
         While some versions of Windows use different starting alignments, if you are starting anew 1MB is generally the best practice offset for current operating systems (because it ensures that the partition offset % common stripe unit sizes == 0 )
-        
+
         Caveats:
         * Dynamic drives (or those provisioned via third party software) may or may not have accurate results when polled by any of the built in tools, see your vendor for details.
         * Windows does not have a reliable way to determine stripe unit Sizes. These values are obtained from vendor disk management software or from your SAN administrator.
         * System drives in versions previous to Windows Server 2008 cannot be aligned, but it is generally not recommended to place SQL Server databases on system drives.
-        
+
     .PARAMETER ComputerName
         The server(s) to check disk configuration on.
-        
+
     .PARAMETER Detailed
         Output all properties, will be deprecated in 1.0.0 release.
-        
+
     .PARAMETER Credential
         Specifies an alternate Windows account to use when enumerating drives on the server. May require Administrator privileges. To use:
-        
+
         $cred = Get-Credential, then pass $cred object to the -Credential parameter.
-        
+
     .PARAMETER SQLCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER NoSqlCheck
         If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
-    .EXAMPLE
-        Test-DbaDiskAlignment -ComputerName sqlserver2014a
-        
-        Tests the disk alignment of a single server named sqlserver2014a
-        
-    .EXAMPLE
-        Test-DbaDiskAlignment -ComputerName sqlserver2014a, sqlserver2014b, sqlserver2014c
-        
-        Tests the disk alignment of multiple servers
-        
+
     .NOTES
         Tags: Storage
+        Author: Constantine Kokkinos (@mobileck), https://constantinekokkinos.com
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
         The preferred way to determine if your disks are aligned (or not) is to calculate:
         1. Partition offset - stripe unit size
         2. Stripe unit size - File allocation unit size
-        
+
         References:
-        Disk Partition Alignment Best Practices for SQL Server - https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx
-        A great article and behind most of this code.
-        
-        Getting Partition Offset information with Powershell - http://sqlblog.com/blogs/jonathan_kehayias/archive/2010/03/01/getting-partition-Offset-information-with-powershell.aspx
+        - Disk Partition Alignment Best Practices for SQL Server - https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx
+        - Getting Partition Offset information with Powershell - http://sqlblog.com/blogs/jonathan_kehayias/archive/2010/03/01/getting-partition-Offset-information-with-powershell.aspx
         Thanks to Jonathan Kehayias!
-        
-        Decree: Set your partition Offset and block Size and make SQL Server faster - http://www.midnightdba.com/Jen/2014/04/decree-set-your-partition-Offset-and-block-Size-make-sql-server-faster/
+        - Decree: Set your partition Offset and block Size and make SQL Server faster - http://www.midnightdba.com/Jen/2014/04/decree-set-your-partition-Offset-and-block-Size-make-sql-server-faster/
         Thanks to Jen McCown!
-        
-        Disk Performance Hands On - http://www.kendalvandyke.com/2009/02/disk-performance-hands-on-series-recap.html
+        - Disk Performance Hands On - http://www.kendalvandyke.com/2009/02/disk-performance-hands-on-series-recap.html
         Thanks to Kendal Van Dyke!
-        
-        Get WMI Disk Information - http://powershell.com/cs/media/p/7937.aspx
+        - Get WMI Disk Information - http://powershell.com/cs/media/p/7937.aspx
         Thanks to jbruns2010!
-        
-        Author: Constantine Kokkinos (https://constantinekokkinos.com, @mobileck)
-        
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com,)
-        Copyright: (c) 2018 by dbatools, licensed under MIT
-        License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Test-DbaDiskAlignment
-        
+
+    .EXAMPLE
+        PS C:\> Test-DbaDiskAlignment -ComputerName sqlserver2014a
+
+        Tests the disk alignment of a single server named sqlserver2014a
+
+    .EXAMPLE
+        PS C:\> Test-DbaDiskAlignment -ComputerName sqlserver2014a, sqlserver2014b, sqlserver2014c
+
+        Tests the disk alignment of multiple servers
+
 #>
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -180,7 +175,6 @@
                         $sqldisk = $false
 
                         foreach ($SqlInstance in $SqlInstances) {
-                            Write-Message -Level Verbose -Message "Connecting to SQL instance ($SqlInstance)." -FunctionName $FunctionName
                             try {
                                 if ($null -ne $SqlCredential) {
                                     $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential

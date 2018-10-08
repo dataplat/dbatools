@@ -3,65 +3,65 @@ function Get-DbaPfAvailableCounter {
 <#
     .SYNOPSIS
         Gathers list of all available counters on local or remote machines.
-        
+
     .DESCRIPTION
         Gathers list of all available counters on local or remote machines. Note, if you pass a credential object, it will be included in the output for easy reuse in your next piped command.
-        
+
         Thanks to Daniel Streefkerk for this super fast way of counters
         https://daniel.streefkerkonline.com/2016/02/18/use-powershell-to-list-all-windows-performance-counters-and-their-numeric-ids
-        
+
     .PARAMETER ComputerName
         The target computer. Defaults to localhost.
-        
+
     .PARAMETER Credential
         Allows you to login to servers using alternative credentials. To use:
-        
+
         $scred = Get-Credential, then pass $scred object to the -Credential parameter.
-        
+
     .PARAMETER Pattern
         Specify a pattern for filtering.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Performance, DataCollector, PerfCounter
         Author: Chrissy LeMaire (@cl), netnerds.net
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaPfAvailableCounter
-        
+
     .EXAMPLE
         PS C:\> Get-DbaPfAvailableCounter
-        
+
         Gets all available counters on the local machine.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaPfAvailableCounter -Pattern *sql*
-        
+
         Gets all counters matching sql on the local machine.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaPfAvailableCounter -ComputerName sql2017 -Pattern *sql*
-        
+
         Gets all counters matching sql on the remote server sql2017.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaPfAvailableCounter -Pattern *sql*
-        
+
         Gets all counters matching sql on the local machine.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaPfAvailableCounter -Pattern *sql* | Add-DbaPfDataCollectorCounter -CollectorSet 'Test Collector Set' -Collector DataCollector01
-        
+
         Adds all counters matching "sql" to the DataCollector01 within the 'Test Collector Set' CollectorSet.
-        
+
 #>
     [CmdletBinding()]
     param (
@@ -89,7 +89,6 @@ function Get-DbaPfAvailableCounter {
     }
     process {
         foreach ($computer in $ComputerName) {
-            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
 
             try {
                 if ($pattern) {

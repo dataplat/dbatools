@@ -3,62 +3,61 @@ function New-DbaConnectionStringBuilder {
 <#
     .SYNOPSIS
         Returns a System.Data.SqlClient.SqlConnectionStringBuilder with the string specified
-        
+
     .DESCRIPTION
         Creates a System.Data.SqlClient.SqlConnectionStringBuilder from a connection string.
-        
+
     .PARAMETER ConnectionString
         A Connection String
-        
+
     .PARAMETER ApplicationName
         The application name to tell SQL Server the connection is associated with.
-        
+
     .PARAMETER DataSource
         The Sql Server to connect to.
-        
+
     .PARAMETER InitialCatalog
         The initial database on the server to connect to.
-        
+
     .PARAMETER IntegratedSecurity
         Set to true to use windows authentication.
-        
+
     .PARAMETER UserName
         Sql User Name to connect with.
-        
+
     .PARAMETER Password
         Password to use to connect with.
-        
+
     .PARAMETER MultipleActiveResultSets
         Enable Multiple Active Result Sets.
-        
+
     .PARAMETER ColumnEncryptionSetting
         Enable Always Encrypted.
-        
+
     .PARAMETER WorkstationID
         Set the Workstation Id that is associated with the connection.
-        
+
     .NOTES
-        Author: zippy1981
         Tags: SqlBuild, ConnectionString, Connection
-        Tags: RegisteredServer, CMS
-        Author: Chrissy LeMaire (@cl), netnerds.net
+        Author: zippy1981 | Chrissy LeMaire (@cl)
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/New-DbaConnectionStringBuilder
-        
+
     .EXAMPLE
-        New-DbaConnectionStringBuilder
-        
+        PS C:\> New-DbaConnectionStringBuilder
+
         Returns an empty ConnectionStringBuilder
-        
+
     .EXAMPLE
-        "Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Application Name=Always Encrypted Sample MVC App;Column Encryption Setting=enabled" | New-DbaConnectionStringBuilder
-        
+        PS C:\> "Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Application Name=Always Encrypted Sample MVC App;Column Encryption Setting=enabled" | New-DbaConnectionStringBuilder
+
         Returns a connection string builder that can be used to connect to the local sql server instance on the default port.
-        
+
 #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]

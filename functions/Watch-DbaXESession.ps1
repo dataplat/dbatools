@@ -3,57 +3,58 @@ function Watch-DbaXESession {
 <#
     .SYNOPSIS
         Watch live XEvent Data as it happens
-        
+
     .DESCRIPTION
         Watch live XEvent Data as it happens. This command runs until you stop the session, kill the PowerShell session, or Ctrl-C.
-        
+
         Thanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html
-        
+
     .PARAMETER SqlInstance
-        Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
-        
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Session
         Only return a specific session. Options for this parameter are auto-populated from the server.
-        
+
     .PARAMETER Raw
         If this switch is enabled, the Microsoft.SqlServer.XEvent.Linq.QueryableXEventData enumeration object is returned.
-        
+
     .PARAMETER InputObject
         Accepts an XESession object returned by Get-DbaXESession.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: ExtendedEvent, XE, XEvent
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Watch-DbaXESession
-        
+
     .EXAMPLE
-        Watch-DbaXESession -SqlInstance sql2017 -Session system_health
-        
+        PS C:\> Watch-DbaXESession -SqlInstance sql2017 -Session system_health
+
         Shows events for the system_health session as it happens.
-        
+
     .EXAMPLE
-        Watch-DbaXESession -SqlInstance sql2017 -Session system_health | Export-Csv -NoTypeInformation -Path C:\temp\system_health.csv
-        
+        PS C:\> Watch-DbaXESession -SqlInstance sql2017 -Session system_health | Export-Csv -NoTypeInformation -Path C:\temp\system_health.csv
+
         Exports live events to CSV. Ctrl-C may not not cancel out of it - fastest way is to stop the session.
-        
+
     .EXAMPLE
-        Get-DbaXESession -SqlInstance sql2017 -Session system_health | Start-DbaXESession | Watch-DbaXESession | Export-Csv -NoTypeInformation -Path C:\temp\system_health.csv
-        
+        PS C:\> Get-DbaXESession -SqlInstance sql2017 -Session system_health | Start-DbaXESession | Watch-DbaXESession | Export-Csv -NoTypeInformation -Path C:\temp\system_health.csv
+
         Exports live events to CSV. Ctrl-C may not not cancel out of this. The fastest way to do so is to stop the session.
-        
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
@@ -74,7 +75,6 @@ function Watch-DbaXESession {
         }
         else {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $SqlInstance."
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {
@@ -138,7 +138,7 @@ function Watch-DbaXESession {
                         $hash[$field.Name] = $field.Value
                     }
 
-                    [pscustomobject]($hash)
+                    [PSCustomObject]($hash)
                 }
             }
             catch {

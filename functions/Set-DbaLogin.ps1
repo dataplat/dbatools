@@ -2,141 +2,139 @@
 <#
     .SYNOPSIS
         Set-DbaLogin makes it possible to make changes to one or more logins.
-        
+
     .DESCRIPTION
-        Set-DbaLogin will enable you to change the password, unlock, rename, disable or enable, deny or grant login privileges to the login.
-        It's also possible to add or remove server roles from the login.
-        
+        Set-DbaLogin will enable you to change the password, unlock, rename, disable or enable, deny or grant login privileges to the login. It's also possible to add or remove server roles from the login.
+
     .PARAMETER SqlInstance
-        SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-        
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Login
         The login that needs to be changed
-        
+
     .PARAMETER Password
         The new password for the login This can be either a credential or a secure string.
-        
+
     .PARAMETER Unlock
         Switch to unlock an account. This will only be used in conjunction with the -Password parameter.
         The default is false.
-        
+
     .PARAMETER MustChange
         Does the user need to change his/her password. This will only be used in conjunction with the -Password parameter.
         The default is false.
-        
+
     .PARAMETER NewName
         The new name for the login.
-        
+
     .PARAMETER Disable
         Disable the login
-        
+
     .PARAMETER Enable
         Enable the login
-        
+
     .PARAMETER DenyLogin
         Deny access to SQL Server
-        
+
     .PARAMETER GrantLogin
         Grant access to SQL Server
-        
+
     .PARAMETER PasswordPolicyEnforced
         Should the password policy be enforced.
-        
+
     .PARAMETER AddRole
         Add one or more server roles to the login
         The following roles can be used "bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin".
-        
+
     .PARAMETER RemoveRole
         Remove one or more server roles to the login
         The following roles can be used "bulkadmin", "dbcreator", "diskadmin", "processadmin", "public", "securityadmin", "serveradmin", "setupadmin", "sysadmin".
-        
+
     .PARAMETER InputObject
         Allows logins to be piped in from Get-DbaLogin
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
-        Original Author: Sander Stad (@sqlstad, sqlstad.nl)
         Tags: Login
-        
+        Author: Sander Stad (@sqlstad), sqlstad.nl
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Set-DbaLogin
-        
+
     .EXAMPLE
-        $password = ConvertTo-SecureString "PlainTextPassword" -AsPlainText -Force
-        $cred = New-Object System.Management.Automation.PSCredential ("username", $password)
-        Set-DbaLogin -SqlInstance sql1 -Login login1 -Password $cred -Unlock -MustChange
-        
+        PS C:\> $password = ConvertTo-SecureString "PlainTextPassword" -AsPlainText -Force
+        PS C:\> $cred = New-Object System.Management.Automation.PSCredential ("username", $password)
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -Password $cred -Unlock -MustChange
+
         Set the new password for login1 using a credential, unlock the account and set the option
-        that the usermust change password at next logon.
-        
+        that the user must change password at next logon.
+
     .EXAMPLE
-        Set-DbaLogin -SqlInstance sql1 -Login login1 -Enable
-        
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -Enable
+
         Enable the login
-        
+
     .EXAMPLE
-        Set-DbaLogin -SqlInstance sql1 -Login login1, login2, login3, login4 -Enable
-        
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1, login2, login3, login4 -Enable
+
         Enable multiple logins
-        
+
     .EXAMPLE
-        Set-DbaLogin -SqlInstance sql1, sql2, sql3 -Login login1, login2, login3, login4 -Enable
-        
+        PS C:\> Set-DbaLogin -SqlInstance sql1, sql2, sql3 -Login login1, login2, login3, login4 -Enable
+
         Enable multiple logins on multiple instances
-        
+
     .EXAMPLE
-        Set-DbaLogin -SqlInstance sql1 -Login login1 -Disable
-        
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -Disable
+
         Disable the login
-        
+
     .EXAMPLE
-        Set-DbaLogin -SqlInstance sql1 -Login login1 -DenyLogin
-        
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -DenyLogin
+
         Deny the login to connect to the instance
-        
+
     .EXAMPLE
-        Set-DbaLogin -SqlInstance sql1 -Login login1 -GrantLogin
-        
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -GrantLogin
+
         Grant the login to connect to the instance
-        
+
     .EXAMPLE
-        Set-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced
-        
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced
+
         Enforces the password policy on a login
-        
+
     .EXAMPLE
-        Set-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced:$false
-        
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login login1 -PasswordPolicyEnforced:$false
+
         Disables enforcement of the password policy on a login
-        
+
     .EXAMPLE
-        Set-DbaLogin -SqlInstance sql1 -Login test -AddRole serveradmin
-        
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login test -AddRole serveradmin
+
         Add the server role "serveradmin" to the login
-        
+
     .EXAMPLE
-        Set-DbaLogin -SqlInstance sql1 -Login test -RemoveRole bulkadmin
-        
+        PS C:\> Set-DbaLogin -SqlInstance sql1 -Login test -RemoveRole bulkadmin
+
         Remove the server role "bulkadmin" to the login
-        
+
     .EXAMPLE
-        $login = Get-DbaLogin -SqlInstance sql1 -Login test
-        $login | Set-DbaLogin -Disable
-        
+        PS C:\> $login = Get-DbaLogin -SqlInstance sql1 -Login test
+        PS C:\> $login | Set-DbaLogin -Disable
+
         Disable the login from the pipeline
-        
-        
+
 #>
 
     [CmdletBinding()]
@@ -199,7 +197,6 @@
         $allLogins = @{}
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message 'Connecting to $instance' -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
@@ -353,7 +350,7 @@
                 $notes = $null
             }
             $rolenames = $roles.Role | Select-Object -Unique
-            
+
             Add-Member -Force -InputObject $l -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
             Add-Member -Force -InputObject $l -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
             Add-Member -Force -InputObject $l -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName

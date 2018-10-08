@@ -2,55 +2,58 @@
 <#
     .SYNOPSIS
         Registers an existing configuration object in registry.
-        
+
     .DESCRIPTION
         Registers an existing configuration object in registry.
         This allows simple persisting of settings across powershell consoles.
         It also can be used to generate a registry template, which can then be used to create policies.
-        
+
     .PARAMETER Config
-        The configuration object to write to registry.
-        Can be retrieved using Get-DbatoolsConfig.
-        
+        The configuration object to write to registry. Can be retrieved using Get-DbatoolsConfig.
+
     .PARAMETER FullName
         The full name of the setting to be written to registry.
-        
+
     .PARAMETER Module
         The name of the module, whose settings should be written to registry.
-        
+
     .PARAMETER Name
         Default: "*"
         Used in conjunction with the -Module parameter to restrict the number of configuration items written to registry.
-        
+
     .PARAMETER Scope
         Default: UserDefault
         Who will be affected by this export how? Current user or all? Default setting or enforced?
         Legal values: UserDefault, UserMandatory, SystemDefault, SystemMandatory
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Config, Module
-        Author: Friedrich Weinmann
-        
+        Author: Friedrich Weinmann (@FredWeinmann‏)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
     .EXAMPLE
         PS C:\> Get-DbatoolsConfig message.* | Register-DbatoolsConfig
-        
+
         Retrieves all configuration items that that start with message. and registers them in registry for the current user.
-        
+
     .EXAMPLE
         PS C:\> Register-DbatoolsConfig -FullName "developer.mode.enable" -Scope SystemDefault
-        
+
         Retrieves the configuration item "developer.mode.enable" and registers it in registry as the default setting for all users on this machine.
-        
+
     .EXAMPLE
         PS C:\> Register-DbatoolsConfig -Module message -Scope SystemMandatory
-        
+
         Retrieves all configuration items of the module MyModule, then registers them in registry to enforce them for all users on the current system.
-        
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (

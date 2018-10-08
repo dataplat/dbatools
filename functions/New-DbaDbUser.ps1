@@ -2,81 +2,82 @@
 <#
     .SYNOPSIS
         Creates a new user for the specified database.
-        
+
     .DESCRIPTION
         Creates a new user for a specified database with provided specifications.
-        
+
     .PARAMETER SqlInstance
-        The target SQL Server instance. Defaults to the default instance on localhost.
-        
+        The target SQL Server instance or instances. Defaults to the default instance on localhost.
+
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-        
+
         $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-        
+
         Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-        
+
         To connect to SQL Server as a different Windows user, run PowerShell as that user.
-        
+
     .PARAMETER Database
         Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
-        
+
     .PARAMETER ExcludeDatabase
         Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server. By default, system databases are excluded.
-        
+
     .PARAMETER IncludeSystem
         If this switch is enabled, the user will be added to system databases.
-        
+
     .PARAMETER Login
         When specified, the user will be associated to this SQL login and have the same name as the Login.
-        
+
     .PARAMETER Username
         When specified, the user will have this name.
-        
+
     .PARAMETER Force
         If user exists, drop and recreate.
-        
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-        
+
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Database, User
         Author: Frank Henninger (@osiris687)
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/New-DbaDbUser
-        
+
     .EXAMPLE
-        New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login user1
-        
+        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login user1
+
         Creates a new sql user with login named user1 in the specified database.
-        
+
     .EXAMPLE
-        New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Username user1
-        
+        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Username user1
+
         Creates a new sql user without login named user1 in the specified database.
-        
+
     .EXAMPLE
-        New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login Login1 -Username user1
-        
+        PS C:\> New-DbaDbUser -SqlInstance sqlserver2014 -Database DB1 -Login Login1 -Username user1
+
         Creates a new sql user named user1 mapped to Login1 in the specified database.
-        
+
     .EXAMPLE
-        Get-DbaDbUser -SqlInstance sqlserver1 -Database DB1 | New-DbaDbUser -SqlInstance sqlserver2 -Database DB1
-        
+        PS C:\> Get-DbaDbUser -SqlInstance sqlserver1 -Database DB1 | New-DbaDbUser -SqlInstance sqlserver2 -Database DB1
+
         Copies users from sqlserver1.DB1 to sqlserver2.DB1. Does not copy permissions!
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "NoLogin")]
     param(
@@ -151,7 +152,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

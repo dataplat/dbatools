@@ -1,65 +1,67 @@
 ﻿function Remove-DbaDbMasterKey {
-<#
+    <#
     .SYNOPSIS
         Deletes specified database master key
-        
+
     .DESCRIPTION
         Deletes specified database master key.
-        
+
     .PARAMETER SqlInstance
-        The target SQL Server instance.
-        
+        The target SQL Server instance or instances.
+
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials.
-        
+
     .PARAMETER Database
         The database where the master key will be removed.
-        
+
     .PARAMETER ExcludeDatabase
         List of databases to exclude from clearing all master keys
-        
+
     .PARAMETER All
         Purge the master keys from all databases on an instance.
-        
+
     .PARAMETER MasterKeyCollection
         Internal parameter to support pipeline input
-        
+
     .PARAMETER Mode
         Controls how the function handles cases where it can't do anything due to missing database or key:
         Strict: Write a warning (default)
         Lazy:   Write a verbose message
         Report: Create a report object as part of the output
         The default action can be adjusted by using Set-DbatoolsConfig to change the 'message.mode.default' configuration
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-        
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-        
-    .EXAMPLE
-        Remove-DbaDbMasterKey -SqlInstance Server1
-        
-        The master key in the master database on server1 will be removed if it exists.
-        
-    .EXAMPLE
-        Remove-DbaDbMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
-        
-        Suppresses all prompts to remove the master key in the 'db1' database and drops the key.
-        
-        
+
     .NOTES
         Tags: Certificate
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
+    .LINK
+        https://dbatools.io/Remove-DbaMasterKey
+
+    .EXAMPLE
+        PS C:\> Remove-DbaDbMasterKey -SqlInstance Server1
+
+        The master key in the master database on server1 will be removed if it exists.
+
+    .EXAMPLE
+        PS C:\> Remove-DbaDbMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
+
+        Suppresses all prompts to remove the master key in the 'db1' database and drops the key.
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
@@ -125,7 +127,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

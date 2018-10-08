@@ -2,135 +2,132 @@
 <#
     .SYNOPSIS
         Function to get an SMO login object of the logins for a given SQL Instance. Takes a server object from the pipe
-        
+
     .DESCRIPTION
         The Get-DbaLogin function returns an SMO Login object for the logins passed, if there are no users passed it will return all logins.
-        
+
     .PARAMETER SqlInstance
-        The SQL Server instance, or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-        
+        TThe target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
-        
+
     .PARAMETER Login
         The login(s) to process - this list is auto-populated from the server. If unspecified, all logins will be processed.
-        
+
     .PARAMETER ExcludeLogin
         The login(s) to exclude - this list is auto-populated from the server
-        
+
     .PARAMETER IncludeFilter
         A list of logins to include - accepts wildcard patterns
-        
+
     .PARAMETER ExcludeFilter
         A list of logins to exclude - accepts wildcard patterns
-        
+
     .PARAMETER NoSystem
         A Switch to remove System Logins from the output.
-        
+
     .PARAMETER SQLLogins
         A Switch to return Logins of type SQLLogin only.
-        
+
     .PARAMETER WindowsLogins
         A Switch to return Logins of type Windows only.
-        
+
     .PARAMETER Locked
         A Switch to return locked Logins.
-        
+
     .PARAMETER Disabled
         A Switch to return disabled Logins.
-        
+
     .PARAMETER HasAccess
         A Switch to return Logins that have access to the instance of SQL Server.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Login, Security
-        Author: Mitchell Hamann (@SirCaptainMitch)
-        Author: Klaas Vandenberghe (@powerdbaklaas)
-        Author: Robert Corrigan (@rjcorrig)
-        Author: Rob Sewell (@SQLDBaWithBeard)
-        
+        Author: Mitchell Hamann (@SirCaptainMitch) | Rob Sewell (@SQLDBaWithBeard)
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaLogin
-        
+
     .EXAMPLE
-        Get-DbaLogin -SqlInstance sql2016
-        
+        PS C:\> Get-DbaLogin -SqlInstance sql2016
+
         Gets all the logins from server sql2016 using NT authentication and returns the SMO login objects
-        
+
     .EXAMPLE
-        Get-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred
-        
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred
+
         Gets all the logins for a given SQL Server using a passed credential object and returns the SMO login objects
-        
+
     .EXAMPLE
-        Get-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred -Login dbatoolsuser,TheCaptain
-        
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred -Login dbatoolsuser,TheCaptain
+
         Get specific logins from server sql2016 returned as SMO login objects.
-        
+
     .EXAMPLE
-        Get-DbaLogin -SqlInstance sql2016 -IncludeFilter '##*','NT *'
-        
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -IncludeFilter '##*','NT *'
+
         Get all user objects from server sql2016 beginning with '##' or 'NT ', returned as SMO login objects.
-        
+
     .EXAMPLE
-        Get-DbaLogin -SqlInstance sql2016 -ExcludeLogin dbatoolsuser
-        
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -ExcludeLogin dbatoolsuser
+
         Get all user objects from server sql2016 except the login dbatoolsuser, returned as SMO login objects.
-        
+
     .EXAMPLE
-        Get-DbaLogin -SqlInstance sql2016 -WindowsLogins
-        
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -WindowsLogins
+
         Get all user objects from server sql2016 that are Windows Logins
-        
+
     .EXAMPLE
-        Get-DbaLogin -SqlInstance sql2016 -WindowsLogins -IncludeFilter *Rob*
-        
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -WindowsLogins -IncludeFilter *Rob*
+
         Get all user objects from server sql2016 that are Windows Logins and have Rob in the name
-        
+
     .EXAMPLE
-        Get-DbaLogin -SqlInstance sql2016 -SQLLogins
-        
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -SQLLogins
+
         Get all user objects from server sql2016 that are SQLLogins
-        
+
     .EXAMPLE
-        Get-DbaLogin -SqlInstance sql2016 -SQLLogins -IncludeFilter *Rob*
-        
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -SQLLogins -IncludeFilter *Rob*
+
         Get all user objects from server sql2016 that are SQLLogins  and have Rob in the name
-        
+
     .EXAMPLE
-        Get-DbaLogin -SqlInstance sql2016 -NoSystem
-        
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -NoSystem
+
         Get all user objects from server sql2016 that are not system objects
-        
+
     .EXAMPLE
-        Get-DbaLogin -SqlInstance sql2016 -ExcludeFilter '##*','NT *'
-        
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 -ExcludeFilter '##*','NT *'
+
         Get all user objects from server sql2016 except any beginning with '##' or 'NT ', returned as SMO login objects.
-        
+
     .EXAMPLE
-        'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred
-        
+        PS C:\> 'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred
+
         Using Get-DbaLogin on the pipeline, you can also specify which names you would like with -Login.
-        
+
     .EXAMPLE
-        'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -Locked
-        
+        PS C:\> 'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -Locked
+
         Using Get-DbaLogin on the pipeline to get all locked logins on servers sql2016 and sql2014.
-        
+
     .EXAMPLE
-        'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -HasAccess -Disabled
-        
+        PS C:\> 'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred -HasAccess -Disabled
+
         Using Get-DbaLogin on the pipeline to get all Disabled logins that have access on servers sql2016 or sql2014.
-        
+
 #>
     [CmdletBinding()]
     param (
@@ -154,7 +151,6 @@
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential

@@ -2,87 +2,87 @@
 <#
     .SYNOPSIS
         Returns all tables/views that are similar in structure by comparing the column names of matching and matched tables/views
-        
+
     .DESCRIPTION
         This function can either run against specific databases or all databases searching all/specific tables and views including in system databases.
         Typically one would use this to find for example archive version(s) of a table whose structures are similar.
         This can also be used to find tables/views that are very similar to a given table/view structure to see where a table/view might be used.
-        
+
         More information can be found here: https://sqljana.wordpress.com/2017/03/31/sql-server-find-tables-with-similar-table-structure/
-        
+
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
-        
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-        
+
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
-        
+
     .PARAMETER SchemaName
         If you are looking in a specific schema whose table structures is to be used as reference structure, provide the name of the schema.
         If no schema is provided, looks at all schemas
-        
+
     .PARAMETER TableName
         If you are looking in a specific table whose structure is to be used as reference structure, provide the name of the table.
         If no table is provided, looks at all tables
         If the table name exists in multiple schemas, all of them would qualify
-        
+
     .PARAMETER ExcludeViews
         By default, views are included. You can exclude them by setting this switch to $false
         This excludes views in both matching and matched list
-        
+
     .PARAMETER IncludeSystemDatabases
         By default system databases are ignored but you can include them within the search using this parameter
-        
+
     .PARAMETER MatchPercentThreshold
         The minimum percentage of column names that should match between the matching and matched objects.
         Entries with no matches are eliminated
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Table
         Author: Jana Sattainathan (@SQLJana), http://sqljana.wordpress.com
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Find-DbaSimilarTable
-        
+
     .EXAMPLE
         PS C:\> Find-DbaSimilarTable -SqlInstance DEV01
-        
+
         Searches all user database tables and views for each, returns all tables or views with their matching tables/views and match percent
-        
+
     .EXAMPLE
         PS C:\> Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks
-        
+
         Searches AdventureWorks database and lists tables/views and their corresponding matching tables/views with match percent
-        
+
     .EXAMPLE
         PS C:\> Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -SchemaName HumanResource
-        
+
         Searches AdventureWorks database and lists tables/views in the HumanResource schema with their corresponding matching tables/views with match percent
-        
+
     .EXAMPLE
         PS C:\> Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -SchemaName HumanResource -Table Employee
-        
+
         Searches AdventureWorks database and lists tables/views in the HumanResource schema and table Employee with its corresponding matching tables/views with match percent
-        
+
     .EXAMPLE
         PS C:\> Find-DbaSimilarTable -SqlInstance DEV01 -Database AdventureWorks -MatchPercentThreshold 60
-        
+
         Searches AdventureWorks database and lists all tables/views with its corresponding matching tables/views with match percent greater than or equal to 60
-        
+
 #>
     [CmdletBinding()]
     param (

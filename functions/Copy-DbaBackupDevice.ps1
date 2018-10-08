@@ -2,68 +2,69 @@
 <#
     .SYNOPSIS
         Copies backup devices one by one. Copies both SQL code and the backup file itself.
-        
+
     .DESCRIPTION
         Backups are migrated using Admin shares. If the destination directory does not exist, SQL Server's default backup directory will be used.
-        
+
         If a backup device with same name exists on destination, it will not be dropped and recreated unless -Force is used.
-        
+
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-        
+
     .PARAMETER SourceSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Destination
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
-        
+
     .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER BackupDevice
         BackupDevice to be copied. Auto-populated list of devices. If not provided all BackupDevice(s) will be copied.
-        
+
     .PARAMETER Force
         If this switch is enabled, backup device(s) will be dropped and recreated if they already exists on destination.
-        
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-        
+
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Migration, Backup
         Author: Chrissy LeMaire (@cl), netnerds.net
-        Requires: sysadmin access on SQL Servers
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
+        Requires: sysadmin access on SQL Servers
+
     .LINK
         https://dbatools.io/Copy-DbaBackupDevice
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster
-        
+
         Copies all server backup devices from sqlserver2014a to sqlcluster using Windows credentials. If backup devices with the same name exist on sqlcluster, they will be skipped.
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -BackupDevice backup01 -SourceSqlCredential $cred -Force
-        
+
         Copies only the backup device named backup01 from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a    and Windows credentials for sqlcluster. If a backup device with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
-        
+
         Shows what would happen if the command were executed using force.
-        
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
@@ -80,7 +81,6 @@
     )
     begin {
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         }
         catch {
@@ -94,7 +94,6 @@
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             }
             catch {

@@ -2,54 +2,54 @@
 <#
     .SYNOPSIS
         Returns the resource being waited upon
-        
+
     .DESCRIPTION
         Given a wait resource in the form of 'PAGE: 10:1:9180084' returns the database, data file and the system object which is being waited up.
-        
+
         Given a wait resource in the form of 'KEY: 7:35457594073541168 (de21f92a1572)', returns the database, object and index that is being waited on, With the -row switch the row data will also be returned.
-        
+
     .PARAMETER SqlInstance
-        The SQL Server instance to restore to.
-        
+        The target SQL Server instance or instances.
+
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
-        
+
     .PARAMETER WaitResource
         The wait resource value as supplied in sys.dm_exec_requests
-        
+
     .PARAMETER Row
         If this switch provided also returns the value of the row being waited on with KEY wait resources
-        
+
     .PARAMETER EnableException
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
-        
+
     .NOTES
         Tags: Pages, DBCC
         Author: Stuart Moore (@napalmgram), stuart-moore.com
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaWaitResource
-        
+
     .EXAMPLE
         PS C:\> Get-DbaWaitResource -SqlInstance server1 -WaitResource 'PAGE: 10:1:9180084'
-        
+
         Will return an object containing; database name, data file name, schema name and the object which owns the resource
-        
+
     .EXAMPLE
         PS C:\> Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)'
-        
+
         Will return an object containing; database name, schema name and index name which is being waited on.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaWaitResource -Sql Instance server2 -WaitResource 'KEY: 7:35457594073541168 (de21f92a1572)' -row
-        
+
         Will return an object containing; database name, schema name and index name which is being waited on, and in addition the contents of the locked row at the time the command is run.
-        
+
 #>
     [CmdletBinding()]
     param (

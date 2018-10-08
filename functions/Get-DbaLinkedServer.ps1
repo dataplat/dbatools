@@ -2,44 +2,44 @@
 <#
     .SYNOPSIS
         Gets all linked servers and summary of information from the sql servers listed
-        
+
     .DESCRIPTION
         Retrieves information about each linked server on the instance
-        
+
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
         to be executed against multiple SQL Server instances.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER LinkedServer
         The linked server(s) to process - this list is auto-populated from the server. If unspecified, all linked servers will be processed.
-        
+
     .PARAMETER ExcludeLinkedServer
         The linked server(s) to exclude - this list is auto-populated from the server
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: LinkedServer, Linked
-        Author: Stephen Bennett ( https://sqlnotesfromtheunderground.wordpress.com/ )
-        
+        Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaLinkedServer
-        
+
     .EXAMPLE
-        Get-DbaLinkedServer -SqlInstance DEV01
-        
+        PS C:\> Get-DbaLinkedServer -SqlInstance DEV01
+
         Returns all Linked Servers for the SQL Server instance DEV01
-        
+
 #>
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param (
@@ -54,7 +54,6 @@
     )
     foreach ($Instance in $SqlInstance) {
         try {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
         }
         catch {

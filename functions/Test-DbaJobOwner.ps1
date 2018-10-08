@@ -2,66 +2,63 @@
 <#
     .SYNOPSIS
         Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.
-        
+
     .DESCRIPTION
-        This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not.
-        
-        By default, the function checks against 'sa' for ownership, but the user can pass a specific login if they use something else.
-        
+        This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not. By default, the function checks against 'sa' for ownership, but the user can pass a specific login if they use something else.
+
         Only SQL Agent Jobs that do not match this ownership will be displayed.
-        
         Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
-        
+
     .PARAMETER SqlInstance
-        Specifies the SQL Server instance(s) to scan.
-        
+        The target SQL Server instance or instances.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Job
         Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.
-        
+
     .PARAMETER ExcludeJob
         Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.
-        
+
     .PARAMETER Login
         Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
-        
+
     .PARAMETER Detailed
         Output all properties, will be deprecated in 1.0.0 release.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Agent, Job, Owner
         Author: Michael Fal (@Mike_Fal), http://mikefal.net
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Test-DbaJobOwner
-        
+
     .EXAMPLE
-        Test-DbaJobOwner -SqlInstance localhost
-        
+        PS C:\> Test-DbaJobOwner -SqlInstance localhost
+
         Returns all SQL Agent Jobs where the owner does not match 'sa'.
-        
+
     .EXAMPLE
-        Test-DbaJobOwner -SqlInstance localhost -ExcludeJob 'syspolicy_purge_history'
-        
+        PS C:\> Test-DbaJobOwner -SqlInstance localhost -ExcludeJob 'syspolicy_purge_history'
+
         Returns SQL Agent Jobs except for the syspolicy_purge_history job
-        
+
     .EXAMPLE
-        Test-DbaJobOwner -SqlInstance localhost -Login DOMAIN\account
-        
+        PS C:\> Test-DbaJobOwner -SqlInstance localhost -Login DOMAIN\account
+
         Returns all SQL Agent Jobs where the owner does not match DOMAIN\account. Note
         that Login must be a valid security principal that exists on the target server.
-        
+
 #>
     [CmdletBinding()]
     [OutputType('System.Object[]')]
@@ -88,7 +85,6 @@
     process {
         foreach ($servername in $SqlInstance) {
             #connect to the instance
-            Write-Message -Level Verbose -Message "Connecting to $servername."
             $server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 
             #Validate login

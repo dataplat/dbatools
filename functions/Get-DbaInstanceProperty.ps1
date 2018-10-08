@@ -3,69 +3,69 @@ function Get-DbaInstanceProperty {
 <#
     .SYNOPSIS
         Gets SQL Server instance properties of one or more instance(s) of SQL Server.
-        
+
     .DESCRIPTION
         The Get-DbaInstanceProperty command gets SQL Server instance properties from the SMO object sqlserver.
-        
+
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
-        
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER InstanceProperty
         SQL Server instance property(ies) to include.
-        
+
     .PARAMETER ExcludeInstanceProperty
         SQL Server instance property(ies) to exclude.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Instance, Configure, Configuration
         Author: Klaas Vandenberghe (@powerdbaklaas)
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaInstanceProperty
-        
+
     .EXAMPLE
-        Get-DbaInstanceProperty -SqlInstance localhost
-        
+        PS C:\> Get-DbaInstanceProperty -SqlInstance localhost
+
         Returns SQL Server instance properties on the local default SQL Server instance
-        
+
     .EXAMPLE
-        Get-DbaInstanceProperty -SqlInstance sql2, sql4\sqlexpress
-        
+        PS C:\> Get-DbaInstanceProperty -SqlInstance sql2, sql4\sqlexpress
+
         Returns SQL Server instance properties on default instance on sql2 and sqlexpress instance on sql4
-        
+
     .EXAMPLE
-        'sql2','sql4' | Get-DbaInstanceProperty
-        
+        PS C:\> 'sql2','sql4' | Get-DbaInstanceProperty
+
         Returns SQL Server instance properties on sql2 and sql4
-        
+
     .EXAMPLE
-        Get-DbaInstanceProperty -SqlInstance sql2,sql4 -InstanceProperty DefaultFile
-        
+        PS C:\> Get-DbaInstanceProperty -SqlInstance sql2,sql4 -InstanceProperty DefaultFile
+
         Returns SQL Server instance property DefaultFile on instance sql2 and sql4
-        
+
     .EXAMPLE
-        Get-DbaInstanceProperty -SqlInstance sql2,sql4 -ExcludeInstanceProperty DefaultFile
-        
+        PS C:\> Get-DbaInstanceProperty -SqlInstance sql2,sql4 -ExcludeInstanceProperty DefaultFile
+
         Returns all SQL Server instance properties except DefaultFile on instance sql2 and sql4
-        
+
     .EXAMPLE
-        $cred = Get-Credential sqladmin
-        Get-DbaInstanceProperty -SqlInstance sql2 -SqlCredential $cred
-        
+        PS C:\> $cred = Get-Credential sqladmin
+        PS C:\> Get-DbaInstanceProperty -SqlInstance sql2 -SqlCredential $cred
+
         Connects using sqladmin credential and returns SQL Server instance properties from sql2
-        
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
@@ -80,7 +80,6 @@ function Get-DbaInstanceProperty {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential

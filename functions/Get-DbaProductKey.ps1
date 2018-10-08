@@ -2,45 +2,45 @@
 <#
     .SYNOPSIS
         Gets SQL Server Product Keys from local or destination SQL Servers. Works with SQL Server 2005-2016
-        
+
     .DESCRIPTION
         Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and accessible by the account running the script.
-        
+
         Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
-        
+
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
-        
+        The target SQL Server instance or instances.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER SqlCms
         Deprecated, pipe in from Get-DbaCmsRegServer
-        
+
     .PARAMETER ServersFromFile
         Deprecated, pipe in from Get-Content
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: ProductKey
         Author: Chrissy LeMaire (@cl), netnerds.net
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaProductKey
-        
+
     .EXAMPLE
         PS C:\> Get-DbaProductKey -SqlInstance winxp, sqlservera, sqlserver2014a, win2k8
-        
+
         Gets SQL Server versions, editions and product keys for all instances within each server or workstation.
-        
+
 #>
     [CmdletBinding()]
     param (
@@ -131,9 +131,7 @@
             # Get Product Keys for all instances on the server.
             foreach ($instanceReg in $regRoots) {
 
-                Write-Message -Level Verbose -Message "Connecting to $($instanceReg.SqlInstance)"
                 try {
-                    Write-Message -Level Verbose -Message "Connecting to $instance"
                     $server = Connect-SqlInstance -SqlInstance $instanceReg.SqlInstance -SqlCredential $SqlCredential -MinimumVersion 10
                 }
                 catch {
