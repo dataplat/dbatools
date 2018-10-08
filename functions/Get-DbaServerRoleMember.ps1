@@ -2,80 +2,80 @@
 <#
     .SYNOPSIS
         Get members of server roles for each instance(s) of SQL Server.
-        
+
     .DESCRIPTION
         The Get-DbaServerRoleMember returns connected SMO object for server roles for each instance(s) of SQL Server.
-        
+
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternate Windows or SQL Login Authentication. Accepts credential objects (Get-Credential).
-        
+
     .PARAMETER ServerRole
         The role(s) to process. If unspecified, all roles will be processed.
-        
+
     .PARAMETER ExcludeServerRole
         The role(s) to exclude.
-        
+
     .PARAMETER Login
         The login(s) to process. If unspecified, all logins will be processed.
-        
+
     .PARAMETER ExcludeFixedRole
         Filter the fixed server-level roles. Only applies to SQL Server 2017 that supports creation of server-level roles.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: ServerRole, Security, Login
         Author: Klaas Vandenberghe (@PowerDBAKlaas)
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
-        -           License: MIT https://opensource.org/licenses/MIT
-        
+        License: MIT https://opensource.org/licenses/MIT
+
     .LINK
         https://dbatools.io/Get-DbaServerRoleMember
-        
+
     .EXAMPLE
         PS C:\> Get-DbaServerRoleMember -SqlInstance localhost
-        
+
         Returns all members of all server roles on the local default SQL Server instance
-        
+
     .EXAMPLE
         PS C:\> Get-DbaServerRoleMember -SqlInstance localhost, sql2016
-        
+
         Returns all members of all server roles on the local and sql2016 SQL Server instances
-        
+
     .EXAMPLE
         PS C:\> $servers = Get-Content C:\servers.txt
         PS C:\> $servers | Get-DbaServerRoleMember
-        
+
         Returns all members of all server roles for every server in C:\servers.txt
-        
+
     .EXAMPLE
         PS C:\> Get-DbaServerRoleMember -SqlInstance localhost -ServerRole 'sysadmin', 'dbcreator'
-        
+
         Returns all members of the sysadmin or dbcreator roles on localhost.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaServerRoleMember -SqlInstance localhost -ExcludeServerRole 'sysadmin'
-        
+
         Returns all members of server-level roles other than sysadmin.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaServerRoleMember -SqlInstance sql2017a -ExcludeFixedRole
-        
+
         Returns all members of server-level role(s) that are not fixed roles on sql2017a instance.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaServerRoleMember -SqlInstance localhost -Login 'MyFriendlyDeveloper'
-        
+
         Returns all server-level role(s) for the MyFriendlyDeveloper login on localhost.
-        
+
 #>
     [CmdletBinding()]
     param (
