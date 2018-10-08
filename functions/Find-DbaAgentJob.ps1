@@ -147,7 +147,6 @@
             Write-Message -Level Verbose -Message "Running Scan on: $instance"
 
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

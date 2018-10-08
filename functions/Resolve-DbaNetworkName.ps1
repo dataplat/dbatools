@@ -157,7 +157,6 @@
             }
             else {
 
-                Write-Message -Level Verbose -Message "Connecting to $Computer"
 
                 try {
                     $ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction Stop).Ipv4Address).IPAddressToString

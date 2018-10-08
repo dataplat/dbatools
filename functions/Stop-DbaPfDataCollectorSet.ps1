@@ -107,7 +107,6 @@ function Stop-DbaPfDataCollectorSet {
             if ($status -ne "Running") {
                 Stop-Function -Message "$setname on $computer is already stopped." -Continue
             }
-            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
             }

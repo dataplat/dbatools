@@ -81,7 +81,6 @@ function Move-DbaCmsRegServerGroup {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance to search for $group"
             $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
         }
 
@@ -114,7 +113,6 @@ function Move-DbaCmsRegServerGroup {
                     $newname = "$newname\$($regservergroup.Name)"
                     Write-Message -Level Verbose -Message "Executing $($regservergroup.ScriptMove($groupobject).GetScript())"
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptMove($groupobject).GetScript())
-                    Write-Message -Level Verbose -Message "Connecting to $instance to search for $newname"
                     Get-DbaCmsRegServerGroup -SqlInstance $server -Group $newname
                     $parentserver.ServerConnection.Disconnect()
                 }

@@ -79,7 +79,6 @@ function Test-DbaEndpoint {
                 Write-Message -Level Verbose -Message "$end on $($end.Parent) does not have a tcp listener port"
             }
             else {
-                Write-Message "Connecting to port $($end.Protocol.Tcp.ListenerPort) on $($end.ComputerName) for endpoint $($end.Name)"
 
                 try {
                     $tcp = New-Object System.Net.Sockets.TcpClient

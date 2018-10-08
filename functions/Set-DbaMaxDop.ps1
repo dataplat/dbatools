@@ -130,7 +130,6 @@
         foreach ($server in $servers) {
             $servername = $server.SqlInstance
 
-            Write-Message -Level Verbose -Message "Connecting to $servername"
             try {
                 $server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
             }

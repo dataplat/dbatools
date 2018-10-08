@@ -55,7 +55,6 @@ function Get-DbaPageFileSetting {
     )
     process {
         foreach ($computer in $ComputerName) {
-            Write-Message -Level VeryVerbose -Message "Connecting to $($computer.ComputerName)" -Target $computer
             $splatDbaCmObject = @{
                 ComputerName   = $computer
                 EnableException = $true

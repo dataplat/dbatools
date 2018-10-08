@@ -78,7 +78,6 @@
 
         foreach ($instance in $SqlInstance) {
 
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             # Connect to the publisher
             try {
@@ -128,7 +127,6 @@
             $distributionDatabase = $repServer.DistributionDatabase
 
             # Step 1: Connect to the distributor
-            Write-Message -Level Verbose -Message "Connecting to Distributor"
 
             try {
                 $distServer = Connect-SqlInstance -SqlInstance $DistributionServer -SqlCredential $SqlCredential -MinimumVersion 9

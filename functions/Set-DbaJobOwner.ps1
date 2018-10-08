@@ -85,7 +85,6 @@
     process {
         foreach ($servername in $SqlInstance) {
             #connect to the instance
-            Write-Message -Level Verbose -Message "Connecting to $servername."
             $server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 
             # dynamic sa name for orgs who have changed their sa name

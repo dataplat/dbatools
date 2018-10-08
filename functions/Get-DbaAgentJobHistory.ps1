@@ -296,7 +296,6 @@ function Get-DbaAgentJobHistory {
         }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

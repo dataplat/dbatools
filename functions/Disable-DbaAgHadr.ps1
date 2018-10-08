@@ -77,7 +77,6 @@ function Disable-DbaAgHadr {
                     try {
                         $computer = $computerName = $instance.ComputerName
                         $instanceName = $instance.InstanceName
-                        Write-Message -Level Verbose -Message "Connecting to $computer"
                         $currentState = Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock { $wmi.Services[$args[0]] | Select-Object IsHadrEnabled } -ArgumentList $instanceName -Credential $Credential
                     }
                     catch {

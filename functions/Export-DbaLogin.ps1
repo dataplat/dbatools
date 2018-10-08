@@ -143,7 +143,6 @@
             return
         }
 
-        Write-Message -Level Verbose -Message "Connecting to $sqlinstance."
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
 
         if ($NoDatabases -eq $false -or $Database) {

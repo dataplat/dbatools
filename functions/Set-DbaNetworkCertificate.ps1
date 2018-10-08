@@ -110,7 +110,6 @@ function Set-DbaNetworkCertificate {
 
             $computername = $instance.ComputerName
             $instancename = $instance.instancename
-            Write-Message -Level Output -Message "Connecting to SQL WMI on $computername"
 
             try {
                 $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"
