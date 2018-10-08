@@ -10,7 +10,7 @@ function Watch-DbaXESession {
         Thanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html
 
     .PARAMETER SqlInstance
-        Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

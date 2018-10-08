@@ -10,7 +10,7 @@ function Test-DbaMaxMemory {
         Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment.
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Windows or Sql Login Credential with permission to log into the SQL instance

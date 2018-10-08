@@ -7,7 +7,7 @@
         This command will help you to find disabled indexes on a database or a list of databases.
 
     .PARAMETER SqlInstance
-        The SQL Server you want to check for disabled indexes.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

@@ -7,7 +7,7 @@
         Imports certificates from.cer files using SMO.
 
     .PARAMETER SqlInstance
-        The SQL Server to create the certificates on.
+        The target SQL Server instance or instances.
 
     .PARAMETER Path
         The Path the contains the certificate and private key files. The path can be a directory or a specific certificate.

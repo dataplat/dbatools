@@ -8,7 +8,7 @@ function Get-DbaOrphanUser {
         An orphan user is defined by a user that does not have their matching login. (Login property = "").
 
     .PARAMETER SqlInstance
-        The SQL Server Instance to connect to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

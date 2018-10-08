@@ -11,7 +11,7 @@ function Get-DbaPageFileSetting {
         Note that this may require local administrator privileges for the relevant computers.
 
     .PARAMETER ComputerName
-        The Server that you're connecting to.
+        The target SQL Server instance or instances.
         This can be the name of a computer, a SMO object, an IP address, an AD Computer object, a connection string or a SQL Instance.
 
     .PARAMETER Credential

@@ -2,10 +2,10 @@
 function Stop-DbaXESmartTarget {
     <#
     .SYNOPSIS
-        Stops an XESmartTarget PowerShell Job. Useful if you want to run a target, but not right now.
+        Stops an XESmartTarget PowerShell job. Useful if you want to run a target, but not right now.
 
     .DESCRIPTION
-        Stops an XESmartTarget PowerShell Job. Useful if you want to run a target, but not right now.
+        Stops an XESmartTarget PowerShell job. Useful if you want to run a target, but not right now.
 
     .PARAMETER InputObject
         The XESmartTarget job object.

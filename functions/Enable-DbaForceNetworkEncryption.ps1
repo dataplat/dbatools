@@ -10,7 +10,7 @@ function Enable-DbaForceNetworkEncryption {
         This setting is found in Configuration Manager.
 
     .PARAMETER SqlInstance
-        The target SQL Server.
+        The target SQL Server instance or instances.
 
     .PARAMETER Credential
         Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials

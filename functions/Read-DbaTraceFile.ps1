@@ -10,7 +10,7 @@ function Read-DbaTraceFile {
         This function returns the whole of the trace file. The information is presented in the format that the trace subsystem uses.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

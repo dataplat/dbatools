@@ -1,13 +1,13 @@
 ﻿function Read-DbaAuditFile {
 <#
     .SYNOPSIS
-        Read Audit details from a sqlaudit file.
+        Read Audit details from *.sqlaudit files.
 
     .DESCRIPTION
-        Read Audit details from a sqlaudit file.
+        Read Audit details from *.sqlaudit files.
 
     .PARAMETER Path
-        The path to the sqlaudit file. This is relative to the computer executing the command. UNC paths are supported.
+        The path to the *.sqlaudit file. This is relative to the computer executing the command. UNC paths are supported.
 
     .PARAMETER Exact
         If this switch is enabled, only an exact search will be used for the Path. By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters.

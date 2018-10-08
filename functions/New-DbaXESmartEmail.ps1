@@ -2,10 +2,10 @@
 function New-DbaXESmartEmail {
 <#
     .SYNOPSIS
-        This Response type can be used to send an email each time an event is captured.
+        This response type can be used to send an email each time an event is captured.
 
     .DESCRIPTION
-        This Response type can be used to send an email each time an event is captured.
+        This response type can be used to send an email each time an event is captured.
 
     .PARAMETER SmtpServer
         Address of the SMTP server for outgoing mail.

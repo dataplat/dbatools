@@ -7,7 +7,7 @@
         The Get-DbaInstanceUserOption command gets SQL Instance user options from the SMO object sqlserver.
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to.
+        The target SQL Server instance or instances.
         This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential

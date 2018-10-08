@@ -27,7 +27,7 @@
         Tested on SQL Server 2005 SP4 through 2016 CTP2.
 
     .PARAMETER SqlInstance
-        The SQL Server instance. SQL Server must be 2005 and above, and can be a clustered or stand-alone instance.
+        The target SQL Server instance or instances. SQL Server must be 2005 and above, and can be a clustered or stand-alone instance.
 
     .PARAMETER Login
         By default, the Login parameter is "sa" but any other SQL or Windows account can be specified. If a login does not currently exist, it will be added.

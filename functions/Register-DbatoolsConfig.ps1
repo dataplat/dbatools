@@ -9,8 +9,7 @@
         It also can be used to generate a registry template, which can then be used to create policies.
 
     .PARAMETER Config
-        The configuration object to write to registry.
-        Can be retrieved using Get-DbatoolsConfig.
+        The configuration object to write to registry. Can be retrieved using Get-DbatoolsConfig.
 
     .PARAMETER FullName
         The full name of the setting to be written to registry.

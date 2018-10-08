@@ -9,7 +9,7 @@
         Hosting Windows server last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string
 
     .PARAMETER SqlInstance
-        The SQL Server instance that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:

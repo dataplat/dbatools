@@ -8,7 +8,7 @@
         Only the connect permission is required to get this information.
 
     .PARAMETER SqlInstance
-        The SQL Server instance, or instances. Only connect permission is required.
+        TThe target SQL Server instance or instances. Only connect permission is required.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

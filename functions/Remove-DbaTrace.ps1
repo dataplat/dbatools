@@ -8,16 +8,16 @@ function Remove-DbaTrace {
         Stops and closes the specified trace and deletes its definition from the server.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Id
-        A list of trace ids
+        A list of trace ids.
 
     .PARAMETER InputObject
-        Internal parameter for piping
+        Internal parameter for piping.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

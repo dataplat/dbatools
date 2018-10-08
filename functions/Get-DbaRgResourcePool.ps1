@@ -7,7 +7,7 @@
         Gets Resource Governor Pool objects, including internal or external
 
     .PARAMETER SqlInstance
-        The target SQL Server instance(s)
+        The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials

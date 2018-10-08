@@ -7,7 +7,7 @@
         Cycles the current error log for the instance (SQL Server) and/or SQL Server Agent.
 
     .PARAMETER SqlInstance
-        The SQL Server instance holding the databases to be removed.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        The target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

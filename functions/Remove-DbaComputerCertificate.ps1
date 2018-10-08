@@ -7,7 +7,7 @@
         Removes a computer certificate from a local or remote compuer
 
     .PARAMETER ComputerName
-        The target computer - defaults to localhost
+        The target computer. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials

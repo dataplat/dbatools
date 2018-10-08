@@ -12,7 +12,7 @@ function Repair-DbaDbMirror {
         http://www.sqlservercentral.com/blogs/vivekssqlnotes/2016/09/03/how-to-resume-suspended-database-mirroring-in-sql-server-/
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
         to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential

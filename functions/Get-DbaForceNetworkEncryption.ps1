@@ -1,5 +1,4 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-
 function Get-DbaForceNetworkEncryption {
     <#
     .SYNOPSIS
@@ -11,7 +10,7 @@ function Get-DbaForceNetworkEncryption {
         This setting is found in Configuration Manager.
 
     .PARAMETER SqlInstance
-        The target SQL Server - defaults to localhost.
+       The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative Windows credentials
