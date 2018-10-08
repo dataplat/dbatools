@@ -114,7 +114,6 @@
     )
     begin {
         $sql = @()
-        Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
         $server = Connect-SqlInstance $sqlinstance -SqlCredential $SqlCredential
 
         if ($server.VersionMajor -lt 9) {

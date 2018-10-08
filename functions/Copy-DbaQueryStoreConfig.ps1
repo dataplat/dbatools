@@ -81,7 +81,6 @@
     )
 
     begin {
-        Write-Message -Message "Connecting to source: $Source." -Level Verbose
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         }
@@ -104,7 +103,6 @@
             foreach ($destinationServer in $destinstance) {
 
                 try {
-                    Write-Message -Level Verbose -Message "Connecting to $destinstance"
                     $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
                 }
                 catch {

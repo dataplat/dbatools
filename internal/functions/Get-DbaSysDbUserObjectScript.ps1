@@ -28,7 +28,6 @@
     }
     process {
         try {
-            Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {

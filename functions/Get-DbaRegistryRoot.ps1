@@ -47,7 +47,6 @@
 
     process {
         foreach ($computer in $computername) {
-            Write-Message -Level Verbose -Message "Connecting to SQL WMI on $($computer.ComputerName)"
             try {
                 $sqlwmis = Invoke-ManagedComputerCommand -ComputerName $computer.ComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -match "SQL Server \("
             }

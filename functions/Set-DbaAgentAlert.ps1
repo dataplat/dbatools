@@ -103,7 +103,6 @@ function Set-DbaAgentAlert {
 
             foreach ($instance in $sqlinstance) {
                 # Try connecting to the instance
-                Write-Message -Message "Connecting to $instance" -Level Verbose
                 try {
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 }

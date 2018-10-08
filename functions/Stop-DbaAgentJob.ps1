@@ -79,7 +79,6 @@
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Verbose "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

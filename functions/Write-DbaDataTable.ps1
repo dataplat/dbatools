@@ -403,7 +403,6 @@ function Write-DbaDataTable {
         #endregion Resolve Full Qualified Table Name
 
         #region Connect to server and get database
-        Write-Message -Message "Connecting to $SqlInstance." -Level Verbose -Target $SqlInstance
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }

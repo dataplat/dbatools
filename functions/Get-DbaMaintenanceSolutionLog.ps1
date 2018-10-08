@@ -157,7 +157,6 @@
         foreach ($instance in $sqlinstance) {
             $logdir = $logfiles = $null
             $computername = $instance.ComputerName
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential

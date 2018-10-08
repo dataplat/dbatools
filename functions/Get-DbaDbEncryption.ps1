@@ -75,10 +75,8 @@
     process {
         foreach ($instance in $SqlInstance) {
             #For each SQL Server in collection, connect and get SMO object
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {

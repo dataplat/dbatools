@@ -131,9 +131,7 @@
             # Get Product Keys for all instances on the server.
             foreach ($instanceReg in $regRoots) {
 
-                Write-Message -Level Verbose -Message "Connecting to $($instanceReg.SqlInstance)"
                 try {
-                    Write-Message -Level Verbose -Message "Connecting to $instance"
                     $server = Connect-SqlInstance -SqlInstance $instanceReg.SqlInstance -SqlCredential $SqlCredential -MinimumVersion 10
                 }
                 catch {

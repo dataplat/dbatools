@@ -71,7 +71,6 @@ function Convert-UserNameToSID ([string] `$Acc ) {
     process {
         foreach ($computer in $ComputerName) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $computer"
                 $null = Test-ElevationRequirement -ComputerName $Computer -Continue
                 if (Test-PSRemoting -ComputerName $Computer) {
                     Write-Message -Level Verbose -Message "Exporting Privileges on $Computer"

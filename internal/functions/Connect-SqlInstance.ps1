@@ -82,7 +82,7 @@ function Connect-SqlInstance {
     #>
     if ($SqlCredential) {
         if ($SqlCredential.GetType() -ne [System.Management.Automation.PSCredential]) {
-            throw "The credential parameter was of a non-supported type! Only specify PSCredentials such as generated from Get-Credential. Input was of type $($SqlCredential.GetType().FullName)"
+            throw "The credential parameter was of a non-supported type. Only specify PSCredentials such as generated from Get-Credential. Input was of type $($SqlCredential.GetType().FullName)"
         }
     }
     #endregion Ensure Credential integrity

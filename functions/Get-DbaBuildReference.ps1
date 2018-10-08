@@ -257,7 +257,6 @@ function Get-DbaBuildReference {
         foreach ($instance in $SqlInstance) {
             #region Ensure the connection is established
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {

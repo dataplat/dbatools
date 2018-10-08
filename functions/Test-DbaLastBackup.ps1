@@ -165,7 +165,6 @@
             }
 
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $sourceserver = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlCredential
             }
             catch {
@@ -173,7 +172,6 @@
             }
 
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destination."
                 $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
             }
             catch {

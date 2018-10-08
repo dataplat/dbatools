@@ -124,7 +124,6 @@
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to <c='green'>$instance</c>" -Target $instance
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 $server.ConnectionContext.StatementTimeout = [Int32]::MaxValue
             }

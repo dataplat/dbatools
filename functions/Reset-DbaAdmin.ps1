@@ -359,7 +359,6 @@
                 return
             }
 
-            Write-Message -Level Verbose -Message "Reconnecting to SQL instance."
             try {
                 $null = Invoke-ResetSqlCmd -SqlInstance $sqlinstance -Sql "SELECT 1" -ErrorAction Stop
             }

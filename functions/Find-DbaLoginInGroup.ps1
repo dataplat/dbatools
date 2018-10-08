@@ -128,7 +128,6 @@ function Find-DbaLoginInGroup {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -149,7 +148,6 @@ function Find-DbaLoginInGroup {
             else {
                 $res = $ADGroupOut | Where-Object { $Login -contains $_.Login }
                 if ($res.Length -eq 0) {
-                    Write-Message -Level Warning -Message "No logins matching $($Login -join ',') found connecting to $server"
                     continue
                 }
             }

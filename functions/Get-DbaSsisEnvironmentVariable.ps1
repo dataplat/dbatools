@@ -127,7 +127,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Message "Connecting to $instance" -Level Verbose
                 $server = Connect-SqlInstance -SqlInstance $instance -MinimumVersion 11
             }
             catch {
@@ -137,7 +136,6 @@
             try {
                 $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 
-                Write-Message -Message "Connecting to SSIS Catalog on $instance" -Level Verbose
                 $SSIS = New-Object "$ISNamespace.IntegrationServices" $server
             }
             catch {
