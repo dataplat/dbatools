@@ -11,7 +11,7 @@
         and https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER Credential
         Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.

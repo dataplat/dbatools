@@ -9,7 +9,7 @@
         Uses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -131,9 +131,7 @@
             # Get Product Keys for all instances on the server.
             foreach ($instanceReg in $regRoots) {
 
-                Write-Message -Level Verbose -Message "Connecting to $($instanceReg.SqlInstance)"
                 try {
-                    Write-Message -Level Verbose -Message "Connecting to $instance"
                     $server = Connect-SqlInstance -SqlInstance $instanceReg.SqlInstance -SqlCredential $SqlCredential -MinimumVersion 10
                 }
                 catch {

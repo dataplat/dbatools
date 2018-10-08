@@ -9,7 +9,7 @@ function Disable-DbaAgHadr {
         service. This function disables that feature for the SQL Server service.
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER Credential
         Credential object used to connect to the Windows server itself as a different user
@@ -77,7 +77,6 @@ function Disable-DbaAgHadr {
                     try {
                         $computer = $computerName = $instance.ComputerName
                         $instanceName = $instance.InstanceName
-                        Write-Message -Level Verbose -Message "Connecting to $computer"
                         $currentState = Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock { $wmi.Services[$args[0]] | Select-Object IsHadrEnabled } -ArgumentList $instanceName -Credential $Credential
                     }
                     catch {

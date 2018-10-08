@@ -8,7 +8,7 @@
         If you specify one or more databases, search on Server level will not be preformed.
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -100,7 +100,6 @@
     process {
         foreach ($Instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $Instance"
                 $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
             }
             catch {

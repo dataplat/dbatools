@@ -9,7 +9,7 @@ function Get-DbaConnection {
         "Returns information about the connections established to this instance of SQL Server and the details of each connection. Returns server wide connection information for SQL Server. Returns current database connection information for SQL Database."
 
     .PARAMETER SqlInstance
-        The target SQL Server instance. Server(s) must be SQL Server 2005 or higher.
+        The target SQL Server instance or instances. Server(s) must be SQL Server 2005 or higher.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

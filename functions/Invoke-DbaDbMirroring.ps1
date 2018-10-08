@@ -175,7 +175,6 @@ function Invoke-DbaDbMirroring {
 
         foreach ($primarydb in $InputObject) {
             $stepCounter = 0
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Connecting to SQL Servers"
             $source = $primarydb.Parent
 
             try {

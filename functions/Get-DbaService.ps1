@@ -9,7 +9,7 @@
         Requires Local Admin rights on destination computer(s).
 
     .PARAMETER ComputerName
-        The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+        The target SQL Server instance or instances.
 
     .PARAMETER InstanceName
         Only returns services that belong to the specific instances.

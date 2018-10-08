@@ -2,13 +2,13 @@
 function Read-DbaXEFile {
 <#
     .SYNOPSIS
-        Read XEvents from a xel or xem file.
+        Read XEvents from a *.xel or *.xem file.
 
     .DESCRIPTION
-        Read XEvents from a xel or xem file.
+        Read XEvents from a *.xel or *.xem file.
 
     .PARAMETER Path
-        The path to the xel or xem file. This is relative to the computer executing the command. UNC paths are supported.
+        The path to the *.xem or *.xem file. This is relative to the computer executing the command. UNC paths are supported.
 
     .PARAMETER Exact
         If this switch is enabled, only an exact search will be used for the Path. By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters.

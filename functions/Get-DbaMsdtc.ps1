@@ -10,7 +10,7 @@ function Get-DbaMsdtc {
         Requires: Windows administrator access on Servers
 
     .PARAMETER ComputerName
-        The SQL Server (or server in general) that you're connecting to.
+        The target computer.
 
     .NOTES
         Tags: Msdtc, dtc

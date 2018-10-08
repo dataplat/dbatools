@@ -77,6 +77,7 @@ function Get-DbaDbCertificate {
             if (!$db.IsAccessible) {
                 Write-Message -Level Warning -Message "$db is not accessible, skipping"
                 continue
+
             }
             $dbName = $db.Name
             $currentdb = $server.Databases[$dbName]

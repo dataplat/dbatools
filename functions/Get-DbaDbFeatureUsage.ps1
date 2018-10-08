@@ -49,7 +49,7 @@
 
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,

@@ -7,7 +7,7 @@
         This function queries DMVs for running sessions using tempdb and returns results if those sessions have user or internal space allocated or deallocated against them.
 
     .PARAMETER SqlInstance
-        The SQL Instance you are querying against.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         If you want to use alternative credentials to connect to the server.

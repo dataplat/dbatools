@@ -181,7 +181,6 @@ function Get-DbaPfDataCollectorSet {
     }
     process {
         foreach ($computer in $ComputerName.ComputerName) {
-            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $CollectorSet, $Credential -ErrorAction Stop | Select-DefaultView -Property $columns
             }

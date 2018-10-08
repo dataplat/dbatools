@@ -11,8 +11,8 @@ function Get-DbaAgListener {
         This command will return an SMO object, but it is the AvailabilityDatabases object  and not the Server.Databases object.
         
     .PARAMETER SqlInstance
-        The SQL Server instance. Server version must be SQL Server version 2012 or higher.
-        
+        The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
+
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted).
         

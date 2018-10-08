@@ -7,7 +7,7 @@
         Reconfigure the service account or update the password of the specified SQL Server service. The service will be restarted in the event of changing the account.
 
     .PARAMETER ComputerName
-        The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+        The target SQL Server instance or instances.
 
     .PARAMETER Credential
         Windows Credential with permission to log on to the server running the SQL instance

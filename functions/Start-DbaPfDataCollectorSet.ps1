@@ -108,7 +108,6 @@ function Start-DbaPfDataCollectorSet {
             if ($status -eq "Disabled") {
                 Stop-Function -Message "$setname on $computer is disabled." -Continue
             }
-            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
             }

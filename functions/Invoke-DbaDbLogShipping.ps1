@@ -656,7 +656,6 @@
         Write-Message -Message "Started log shipping for $SourceSqlInstance to $DestinationSqlInstance" -Level Verbose
 
         # Try connecting to the instance
-        Write-Message -Message "Connecting to source Sql Server $SourceSqlInstance.." -Level Verbose
         try {
             $SourceServer = Connect-SqlInstance -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
         }
@@ -1032,7 +1031,6 @@
             $comment = ""
 
             # Try connecting to the instance
-            Write-Message -Message "Connecting to destination Sql Server $destInstance.." -Level Verbose
             try {
                 $DestinationServer = Connect-SqlInstance -SqlInstance $destInstance -SqlCredential $DestinationSqlCredential
             }

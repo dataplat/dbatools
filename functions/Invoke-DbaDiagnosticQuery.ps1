@@ -13,7 +13,7 @@
         It will run all or a selection of those scripts on one or multiple servers and return the result as a PowerShell Object
 
     .PARAMETER SqlInstance
-        The target SQL Server. Can be either a string or SMO server
+        The target SQL Server instance or instances. Can be either a string or SMO server
 
     .PARAMETER SqlCredential
         Allows alternative Windows or SQL login credentials to be used
@@ -226,7 +226,6 @@
         foreach ($instance in $SqlInstance) {
             $counter = 0
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

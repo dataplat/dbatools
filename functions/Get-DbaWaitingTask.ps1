@@ -8,7 +8,7 @@
         Reference: https://www.sqlskills.com/blogs/paul/updated-sys-dm_os_waiting_tasks-script-2/
 
     .PARAMETER SqlInstance
-        The SQL Server instance. Server version must be SQL Server version XXXX or higher.
+        The target SQL Server instance or instances. Server version must be SQL Server version XXXX or higher.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -100,7 +100,6 @@
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }

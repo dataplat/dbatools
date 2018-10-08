@@ -131,7 +131,6 @@
                         $sqldisk = $false
 
                         foreach ($SqlInstance in $SqlInstances) {
-                            Write-Message -Level Verbose -Message "Connecting to SQL instance ($SqlInstance)."
                             try {
                                 $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
                                 $sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"

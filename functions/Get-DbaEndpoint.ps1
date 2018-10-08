@@ -8,7 +8,7 @@ function Get-DbaEndpoint {
         The Get-DbaEndpoint command gets SQL Endpoint(s) information for each instance(s) of SQL Server.
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
         to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
@@ -54,7 +54,6 @@ function Get-DbaEndpoint {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }

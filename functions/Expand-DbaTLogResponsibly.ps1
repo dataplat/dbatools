@@ -43,7 +43,7 @@
         Example: If you have a log file with 8192MB and you say that the target size is 81920MB (80GB) it will grow in chunks of 8192MB until it reaches 81920MB. 8192 -> 16384 -> 24576 ... 73728 -> 81920
 
     .PARAMETER SqlInstance
-        The target SQL Server instance.
+        The target SQL Server instance or instances.
 
     .PARAMETER Database
         The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.

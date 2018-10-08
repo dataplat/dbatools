@@ -2,10 +2,10 @@
 function New-DbaXESmartCsvWriter {
 <#
     .SYNOPSIS
-        This Response type is used to write Extended Events to a CSV file.
+        This response type is used to write Extended Events to a CSV file.
 
     .DESCRIPTION
-        This Response type is used to write Extended Events to a CSV file.
+        This response type is used to write Extended Events to a CSV file.
 
     .PARAMETER OutputFile
         Specifies the path to the output CSV file.

@@ -7,7 +7,7 @@
         Tries a bunch of different ways to remove a Login or two or more.
 
     .PARAMETER SqlInstance
-        The SQL Server instance holding the Logins to be removed.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using alternative credentials.
@@ -84,7 +84,6 @@
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

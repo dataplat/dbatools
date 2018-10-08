@@ -8,7 +8,7 @@ function Get-DbaCmsRegServer {
         Returns an array of servers found in the CMS.
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -109,14 +109,12 @@ function Get-DbaCmsRegServer {
         $servers = @()
         foreach ($instance in $SqlInstance) {
             if ($Group) {
-                Write-Message -Level Verbose -Message "Connecting to $instance to search for $group"
                 $groupservers = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
                 if ($groupservers) {
                     $servers += $groupservers.GetDescendantRegisteredServers()
                 }
             }
             else {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 try {
                     $serverstore = Get-DbaCmsRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
                 }

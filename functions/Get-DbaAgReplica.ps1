@@ -8,8 +8,8 @@ function Get-DbaAgReplica {
         Default view provides most common set of properties for information on the Availability Group(s)' Replica.
         
     .PARAMETER SqlInstance
-        The SQL Server instance. Server version must be SQL Server version 2012 or higher.
-        
+        The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         

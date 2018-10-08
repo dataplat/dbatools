@@ -9,7 +9,7 @@ function Remove-DbaNetworkCertificate {
         Removes the network certificate for SQL Server instance. This setting is found in Configuration Manager.
 
     .PARAMETER SqlInstance
-        The target SQL Server - defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
+       The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
 
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative credentials.
@@ -78,7 +78,6 @@ function Remove-DbaNetworkCertificate {
                 Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
             }
 
-            Write-Message -Level Output -Message "Connecting to SQL WMI on $($instance.ComputerName)"
             try {
                 $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
             }

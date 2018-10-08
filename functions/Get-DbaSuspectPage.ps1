@@ -7,7 +7,7 @@
         This function returns any records that were stored due to suspect pages in databases on a SQL Server Instance.
 
     .PARAMETER SqlInstance
-        A SQL Server instance to connect to
+        The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
         A credential to use to connect to the SQL Instance rather than using Windows Authentication

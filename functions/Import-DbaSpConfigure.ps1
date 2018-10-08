@@ -107,7 +107,6 @@
 
         if ($Path.length -eq 0) {
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $Source" -Target $Source
                 $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             }
             catch {
@@ -120,7 +119,6 @@
             }
 
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
                 $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
             }
             catch {
@@ -137,7 +135,6 @@
         }
         else {
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance" -Target $SqlInstance
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             }
             catch {

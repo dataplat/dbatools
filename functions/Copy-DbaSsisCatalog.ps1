@@ -245,7 +245,6 @@ function Copy-DbaSsisCatalog {
         $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
         }
         catch {
@@ -254,7 +253,6 @@ function Copy-DbaSsisCatalog {
         }
 
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source integration services."
             $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceConnection
         }
         catch {
@@ -273,7 +271,6 @@ function Copy-DbaSsisCatalog {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destinationConnection = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 1
             }
             catch {
@@ -288,7 +285,6 @@ function Copy-DbaSsisCatalog {
             }
 
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance integration services."
                 $destinationSSIS = New-Object "$ISNamespace.IntegrationServices" $destinationConnection
             }
             catch {

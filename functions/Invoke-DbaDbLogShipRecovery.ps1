@@ -19,7 +19,7 @@
         The last part is to set the database online by restoring the databases with recovery
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to
+        The target SQL Server instance or instances.
 
     .PARAMETER Database
         Database to perform the restore for. This value can also be piped enabling multiple databases to be recovered.

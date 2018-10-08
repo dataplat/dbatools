@@ -7,7 +7,7 @@
         Quickly find all transactional, merge, and snapshot publications on a specific server or database.
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER Database
         The database(s) to process. If unspecified, all databases will be processed.
@@ -65,7 +65,6 @@
 
             # Connect to Publisher
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
             catch {

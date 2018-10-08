@@ -8,7 +8,7 @@ function Set-DbaAgentSchedule {
         Set-DbaAgentSchedule will help update a schedule for a job. It does not attach the schedule to a job.
 
     .PARAMETER SqlInstance
-        SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -329,7 +329,6 @@ function Set-DbaAgentSchedule {
             foreach ($j in $Job) {
 
                 # Try connecting to the instance
-                Write-Message -Message "Connecting to $instance" -Level Verbose
                 try {
                     $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 }

@@ -83,7 +83,6 @@
             return
         }
 
-        Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
         try {
             $serverDest = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
@@ -120,7 +119,6 @@
             Process each server
         #>
         foreach ($instance in $servers) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
