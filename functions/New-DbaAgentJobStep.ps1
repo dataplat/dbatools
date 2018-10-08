@@ -1,72 +1,72 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentJobStep {
-<#
+    <#
     .SYNOPSIS
         New-DbaAgentJobStep creates a new job step for a job
-        
+
     .DESCRIPTION
         New-DbaAgentJobStep creates a new job in the SQL Server Agent for a specific job
-        
+
     .PARAMETER SqlInstance
-        SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-        
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Job
         The name of the job to which to add the step.
-        
+
     .PARAMETER StepId
         The sequence identification number for the job step. Step identification numbers start at 1 and increment without gaps.
-        
+
     .PARAMETER StepName
         The name of the step.
-        
+
     .PARAMETER SubSystem
         The subsystem used by the SQL Server Agent service to execute command.
         Allowed values 'ActiveScripting','AnalysisCommand','AnalysisQuery','CmdExec','Distribution','LogReader','Merge','PowerShell','QueueReader','Snapshot','Ssis','TransactSql'
         The default is 'TransactSql'
-        
+
     .PARAMETER Command
         The commands to be executed by SQLServerAgent service through subsystem.
-        
+
     .PARAMETER CmdExecSuccessCode
         The value returned by a CmdExec subsystem command to indicate that command executed successfully.
-        
+
     .PARAMETER OnSuccessAction
         The action to perform if the step succeeds.
         Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
         The text value van either be lowercase, uppercase or something in between as long as the text is correct.
-        
+
     .PARAMETER OnSuccessStepId
         The ID of the step in this job to execute if the step succeeds and OnSuccessAction is "GoToStep".
-        
+
     .PARAMETER OnFailAction
         The action to perform if the step fails.
         Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
         The text value van either be lowercase, uppercase or something in between as long as the text is correct.
-        
+
     .PARAMETER OnFailStepId
         The ID of the step in this job to execute if the step fails and OnFailAction is "GoToNextStep".
-        
+
     .PARAMETER Database
         The name of the database in which to execute a Transact-SQL step. The default is 'master'.
-        
+
     .PARAMETER DatabaseUser
         The name of the user account to use when executing a Transact-SQL step.
-        
+
     .PARAMETER RetryAttempts
         The number of retry attempts to use if this step fails. The default is 0.
-        
+
     .PARAMETER RetryInterval
         The amount of time in minutes between retry attempts. The default is 0.
-        
+
     .PARAMETER OutputFileName
         The name of the file in which the output of this step is saved.
-        
+
     .PARAMETER Flag
         Sets the flag(s) for the job step.
-        
+
         Flag                                    Description
         ----------------------------------------------------------------------------
         AppendAllCmdExecOutputToJobHistory      Job history, including command output, is appended to the job history file.
@@ -76,55 +76,60 @@ function New-DbaAgentJobStep {
         LogToTableWithOverwrite                 Job history is written to a log table, overwriting previous contents.
         None                                    Job history is not appended to a file.
         ProvideStopProcessEvent                 Job processing is stopped.
-        
+
     .PARAMETER ProxyName
         The name of the proxy that the job step runs as.
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-        
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-        
+
     .PARAMETER Force
         The force parameter will ignore some errors in the parameters and assume defaults.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Agent, Job, JobStep
-        Author: Sander Stad (@sqlstad, sqlstad.nl)
-        
+        Author: Sander Stad (@sqlstad), sqlstad.nl
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/New-DbaAgentJobStep
-        
+
     .EXAMPLE
-        New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1
+        PS C:\> New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1
+
         Create a step in "Job1" with the name Step1 with the default subsystem TransactSql.
-        
+
     .EXAMPLE
-        New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb
+        PS C:\> New-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb
+
         Create a step in "Job1" with the name Step1 where the database will the msdb
-        
+
     .EXAMPLE
-        New-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb
+        PS C:\> New-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb
+
         Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers
-        
+
     .EXAMPLE
-        New-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, 'Job Three' -StepName Step1 -Database msdb
+        PS C:\> New-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, 'Job Three' -StepName Step1 -Database msdb
+
         Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers for multiple jobs
-        
+
     .EXAMPLE
-        sql1, sql2, sql3 | New-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb
+        PS C:\> sql1, sql2, sql3 | New-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb
+
         Create a step in "Job1" with the name Step1 where the database will the "msdb" for multiple servers using pipeline
-        
+
 #>
 
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
@@ -183,7 +188,6 @@ function New-DbaAgentJobStep {
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

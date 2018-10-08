@@ -2,81 +2,81 @@
 <#
     .SYNOPSIS
         Gets the SQL Server related services on a computer.
-        
+
     .DESCRIPTION
         Gets the SQL Server related services on one or more computers.
-        
+
         Requires Local Admin rights on destination computer(s).
-        
+
     .PARAMETER ComputerName
-        The SQL Server (or server in general) that you're connecting to. This command handles named instances.
-        
+        The target SQL Server instance or instances.
+
     .PARAMETER InstanceName
         Only returns services that belong to the specific instances.
-        
+
     .PARAMETER Credential
         Credential object used to connect to the computer as a different user.
-        
+
     .PARAMETER Type
         Use -Type to collect only services of the desired SqlServiceType.
         Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
-        
+
     .PARAMETER ServiceName
         Can be used to specify service names explicitly, without looking for service types/instances.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Service, SqlServer, Instance, Connect
         Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaService
-        
+
     .EXAMPLE
         PS C:\> Get-DbaService -ComputerName sqlserver2014a
-        
+
         Gets the SQL Server related services on computer sqlserver2014a.
-        
+
     .EXAMPLE
         PS C:\> 'sql1','sql2','sql3' | Get-DbaService
-        
+
         Gets the SQL Server related services on computers sql1, sql2 and sql3.
-        
+
     .EXAMPLE
         PS C:\> $cred = Get-Credential WindowsUser
         PS C:\> Get-DbaService -ComputerName sql1,sql2 -Credential $cred  | Out-GridView
-        
+
         Gets the SQL Server related services on computers sql1 and sql2 via the user WindowsUser, and shows them in a grid view.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaService -ComputerName sql1,sql2 -InstanceName MSSQLSERVER
-        
+
         Gets the SQL Server related services related to the default instance MSSQLSERVER on computers sql1 and sql2.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaService -ComputerName $MyServers -Type SSRS
-        
+
         Gets the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
-        
+
     .EXAMPLE
         PS C:\> $services = Get-DbaService -ComputerName sql1 -Type Agent,Engine
         PS C:\> $services.ChangeStartMode('Manual')
-        
+
         Gets the SQL Server related services of types Sql Agent and DB Engine on computer sql1 and changes their startup mode to 'Manual'.
-        
+
     .EXAMPLE
         PS C:\> (Get-DbaService -ComputerName sql1 -Type Engine).Restart($true)
-        
+
         Calls a Restart method for each Engine service on computer sql1.
-        
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Search")]
     param (

@@ -2,70 +2,70 @@
 <#
     .SYNOPSIS
         Find Disabled indexes
-        
+
     .DESCRIPTION
         This command will help you to find disabled indexes on a database or a list of databases.
-        
+
     .PARAMETER SqlInstance
-        The SQL Server you want to check for disabled indexes.
-        
+        The target SQL Server instance or instances.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
-        
+
     .PARAMETER ExcludeDatabase
         Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
-        
+
     .PARAMETER NoClobber
         If this switch is enabled, the output file will not be overwritten.
-        
+
     .PARAMETER Append
         If this switch is enabled, content will be appended to the output file.
-        
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-        
+
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Index
         Author: Jason Squires, sqlnotnull.com
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Find-DbadisabledIndex
-        
+
     .EXAMPLE
         PS C:\> Find-DbaDisabledIndex -SqlInstance sql2005
-        
+
         Generates the SQL statements to drop the selected disabled indexes on server "sql2005".
-        
+
     .EXAMPLE
         PS C:\> Find-DbaDisabledIndex -SqlInstance sqlserver2016 -SqlCredential $cred
-        
+
         Generates the SQL statements to drop the selected disabled indexes on server "sqlserver2016", using SQL Authentication to connect to the database.
-        
+
     .EXAMPLE
         PS C:\> Find-DbaDisabledIndex -SqlInstance sqlserver2016 -Database db1, db2
-        
+
         Generates the SQL Statement to drop selected indexes in databases db1 & db2 on server "sqlserver2016".
-        
+
     .EXAMPLE
         PS C:\> Find-DbaDisabledIndex -SqlInstance sqlserver2016
-        
+
         Generates the SQL statements to drop selected indexes on all user databases.
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
@@ -101,7 +101,6 @@
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential  -MinimumVersion 9
             }

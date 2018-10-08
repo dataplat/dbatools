@@ -59,7 +59,8 @@ function Invoke-ManagedComputerCommand {
     $postscriptblock = $ScriptBlock.ToString()
     
     $scriptblock = [ScriptBlock]::Create("$prescriptblock  $postscriptblock")
-    
+    Write-Message -Level Output -Message "Connecting to SQL WMI on $computer."
+
     try {
         Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
     }

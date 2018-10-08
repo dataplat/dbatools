@@ -4,45 +4,45 @@ function Get-DbaPageFileSetting {
 <#
     .SYNOPSIS
         Returns information on the page file configuration of the target computer.
-        
+
     .DESCRIPTION
         This command uses CIM (or other, related computer management tools) to detect the page file configuration of the target computer(s).
-        
+
         Note that this may require local administrator privileges for the relevant computers.
-        
+
     .PARAMETER ComputerName
-        The Server that you're connecting to.
+        The target SQL Server instance or instances.
         This can be the name of a computer, a SMO object, an IP address, an AD Computer object, a connection string or a SQL Instance.
-        
+
     .PARAMETER Credential
         Credential object used to connect to the Computer as a different user
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: CIM
-        Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-        
+        Author: Klaas Vandenberghe (@PowerDBAKlaas)
+
         dbatools PowerShell module (https://dbatools.io)
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaPageFileSetting
-        
+
     .EXAMPLE
         PS C:\> Get-DbaPageFileSetting -ComputerName ServerA,ServerB
-        
+
         Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status, LastModified, LastAccessed, AllocatedBaseSize, InitialSize, MaximumSize, PeakUsage, CurrentUsage  for ServerA and ServerB
-        
+
     .EXAMPLE
         PS C:\> 'ServerA' | Get-DbaPageFileSetting
-        
+
         Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status, LastModified, LastAccessed, AllocatedBaseSize, InitialSize, MaximumSize, PeakUsage, CurrentUsage  for ServerA
-        
+
 #>
     [CmdletBinding()]
     param (
@@ -55,7 +55,6 @@ function Get-DbaPageFileSetting {
     )
     process {
         foreach ($computer in $ComputerName) {
-            Write-Message -Level VeryVerbose -Message "Connecting to $($computer.ComputerName)" -Target $computer
             $splatDbaCmObject = @{
                 ComputerName   = $computer
                 EnableException = $true

@@ -2,45 +2,46 @@
 <#
     .SYNOPSIS
         Shows a list of databases in a GUI.
-        
+
     .DESCRIPTION
         Shows a list of databases in a GUI. Returns a string holding the name of the selected database. Hitting cancel returns null.
-        
+
     .PARAMETER SqlInstance
-        The SQL Server Instance to connect to..
-        
+        The target SQL Server instance or instances..
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Title
         Title of the window being displayed. Default is "Select Database".
-        
+
     .PARAMETER Header
         Header text displayed above the database listing. Default is "Select the database:".
-        
+
     .PARAMETER DefaultDb
         Specify a database to have selected when the window appears.
-        
+
     .NOTES
         Tags: Database, FileSystem
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Show-DbaDbList
-        
+
     .EXAMPLE
-        Show-DbaDbList -SqlInstance sqlserver2014a
-        
+        PS C:\> Show-DbaDbList -SqlInstance sqlserver2014a
+
         Shows a GUI list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected database.
-        
+
     .EXAMPLE
-        Show-DbaDbList -Source sqlserver2014a -SqlCredential $cred
-        
+        PS C:\> Show-DbaDbList -Source sqlserver2014a -SqlCredential $cred
+
         Shows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected database.
-        
+
 #>
     [CmdletBinding()]
     param (

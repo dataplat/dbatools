@@ -3,86 +3,87 @@ function Install-DbaFirstResponderKit {
 <#
     .SYNOPSIS
         Installs or updates the First Responder Kit stored procedures.
-        
+
     .DESCRIPTION
         Downloads, extracts and installs the First Responder Kit stored procedures:
         sp_Blitz, sp_BlitzWho, sp_BlitzFirst, sp_BlitzIndex, sp_BlitzCache and sp_BlitzTrace, etc.
-        
+
         First Responder Kit links:
         http://FirstResponderKit.org
         https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
-        
+
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to.
-        
+        The target SQL Server instance or instances.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         Specifies the database to instal the First Responder Kit stored procedures into
-        
+
     .PARAMETER Branch
         Specifies an alternate branch of the First Responder Kit to install. (master or dev)
-        
+
     .PARAMETER LocalFile
         Specifies the path to a local file to install FRK from. This *should* be the zipfile as distributed by the maintainers.
         If this parameter is not specified, the latest version will be downloaded and installed from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
-        
+
     .PARAMETER Force
         If this switch is enabled, the FRK will be downloaded from the internet even if previously cached.
-        
+
     .PARAMETER Confirm
         Prompts to confirm actions
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: BrentOzar, FRK, FirstResponderKit
         Author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Install-DbaFirstResponderKit
-        
+
     .EXAMPLE
-        Install-DbaFirstResponderKit -SqlInstance server1 -Database master
-        
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance server1 -Database master
+
         Logs into server1 with Windows authentication and then installs the FRK in the master database.
-        
+
     .EXAMPLE
-        Install-DbaFirstResponderKit -SqlInstance server1\instance1 -Database DBA
-        
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance server1\instance1 -Database DBA
+
         Logs into server1\instance1 with Windows authentication and then installs the FRK in the DBA database.
-        
+
     .EXAMPLE
-        Install-DbaFirstResponderKit -SqlInstance server1\instance1 -Database master -SqlCredential $cred
-        
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance server1\instance1 -Database master -SqlCredential $cred
+
         Logs into server1\instance1 with SQL authentication and then installs the FRK in the master database.
-        
+
     .EXAMPLE
-        Install-DbaFirstResponderKit -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
-        
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
+
         Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
-        
+
     .EXAMPLE
-        $servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
-        $servers | Install-DbaFirstResponderKit
-        
+        PS C:\> $servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
+        PS C:\> $servers | Install-DbaFirstResponderKit
+
         Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
-        
+
     .EXAMPLE
-        Install-DbaFirstResponderKit -SqlInstance sql2016 -Branch dev
-        
+        PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -Branch dev
+
         Installs the dev branch version of the FRK in the master database on sql2016 instance.
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
@@ -101,11 +102,11 @@ function Install-DbaFirstResponderKit {
 
     begin {
         $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-        
+
         if (-not $DbatoolsData) {
             $DbatoolsData = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         }
-        
+
         $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
 
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
@@ -188,7 +189,6 @@ function Install-DbaFirstResponderKit {
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

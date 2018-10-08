@@ -2,66 +2,66 @@
 <#
     .SYNOPSIS
         Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.
-        
+
     .DESCRIPTION
         Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.
-        
+
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2016 or higher.
-        
+
     .PARAMETER SourceSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER SourceDatabase
         Specifies the database to copy the Query Store configuration from.
-        
+
     .PARAMETER Destination
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2016 or higher.
-        
+
     .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER DestinationDatabase
         Specifies a list of databases that will receive a copy of the Query Store configuration of the SourceDatabase.
-        
+
     .PARAMETER Exclude
         Specifies a list of databases which will NOT receive a copy of the Query Store configuration.
-        
+
     .PARAMETER AllDatabases
         If this switch is enabled, the Query Store configuration will be copied to all databases on the destination instance.
-        
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-        
+
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
-        Author: Enrico van de Laar ( @evdlaar )
         Tags: QueryStore
-        
+        Author: Enrico van de Laar (@evdlaar)
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Copy-QueryStoreConfig
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaQueryStoreConfig -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -AllDatabases
-        
+
         Copy the Query Store configuration of the AdventureWorks database in the ServerA\SQL instance and apply it on all user databases in the ServerB\SQL Instance.
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaQueryStoreConfig -Source ServerA\SQL -SourceDatabase AdventureWorks -Destination ServerB\SQL -DestinationDatabase WorldWideTraders
-        
+
         Copy the Query Store configuration of the AdventureWorks database in the ServerA\SQL instance and apply it to the WorldWideTraders database in the ServerB\SQL Instance.
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
@@ -81,7 +81,6 @@
     )
 
     begin {
-        Write-Message -Message "Connecting to source: $Source." -Level Verbose
         try {
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         }
@@ -104,7 +103,6 @@
             foreach ($destinationServer in $destinstance) {
 
                 try {
-                    Write-Message -Level Verbose -Message "Connecting to $destinstance"
                     $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
                 }
                 catch {

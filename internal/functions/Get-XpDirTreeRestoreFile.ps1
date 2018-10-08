@@ -39,7 +39,6 @@ function Get-XpDirTreeRestoreFile {
 
     Write-Message -Level InternalComment -Message "Starting"
 
-    Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
     $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 
     if (($path -like '*.bak') -or ($path -like '*.trn')) {

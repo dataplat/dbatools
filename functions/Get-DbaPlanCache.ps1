@@ -2,51 +2,51 @@
 <#
     .SYNOPSIS
         Provides information about adhoc and prepared plan cache usage
-        
+
     .DESCRIPTION
         Checks ahoc and prepared plan cache for each database, if over 100 MBS you should consider you using Remove-DbaQueryPlan to clear the plan caches or turning on optimize for adhoc workloads configuration is running 2008 or later.
-        
+
         References: https://www.sqlskills.com/blogs/kimberly/plan-cache-adhoc-workloads-and-clearing-the-single-use-plan-cache-bloat/
-        
+
         Note: This command returns results from all SQL server instances on the destination server but the process column is specific to -SqlInstance passed.
-        
+
     .PARAMETER SqlInstance
-        The target SQL Server instance.
-        
+        The target SQL Server instance or instances.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Memory
         Author: Tracy Boggiano, databasesuperhero.com
-        
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+
+        Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-        
+        License: MIT https://opensource.org/licenses/MIT
+
     .LINK
         https://dbatools.io/Get-DbaPlanCache
-        
+
     .EXAMPLE
         PS C:\> Get-DbaPlanCache -SqlInstance sql2017
-        
+
         Returns the single use plan cache usage information for SQL Server instance 2017
-        
+
     .EXAMPLE
         PS C:\> Get-DbaPlanCache -SqlInstance sql2017
-        
+
         Returns the single use plan cache usage information for SQL Server instance 2017
-        
+
     .EXAMPLE
         PS C:\> Get-DbaPlanCache -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin)
-        
+
         Returns the single use plan cache usage information for SQL Server instance 2017 using login 'sqladmin'
-        
+
 #>
     [CmdletBinding()]
     param (
@@ -67,7 +67,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

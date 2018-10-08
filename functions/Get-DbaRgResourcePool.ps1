@@ -2,54 +2,54 @@
 <#
     .SYNOPSIS
         Gets Resource Governor Pool objects, including internal or external
-        
+
     .DESCRIPTION
         Gets Resource Governor Pool objects, including internal or external
-        
+
     .PARAMETER SqlInstance
-        The target SQL Server instance(s)
-        
+        The target SQL Server instance or instances
+
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials
-        
+
     .PARAMETER InputObject
         Allows input to be piped from Get-DbaResourceGovernor
-        
+
     .PARAMETER Type
         Internal or External
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: ResourceGovernor
         Author: Chrissy LeMaire (@cl), netnerds.net
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaRgResourcePool
-        
+
     .EXAMPLE
         PS C:\> Get-DbaRgResourcePool -SqlInstance sql2016
-        
+
         Gets the internal resource pools on sql2016
-        
+
     .EXAMPLE
         PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaResourceGovernor | Get-DbaRgResourcePool
-        
+
         Gets the internal resource pools on Sql1 and Sql2/sqlexpress instances
-        
+
     .EXAMPLE
         PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaResourceGovernor | Get-DbaRgResourcePool -Type External
-        
+
         Gets the external resource pools on Sql1 and Sql2/sqlexpress instances
-        
-        
+
+
 #>
     [CmdletBinding()]
     param (
@@ -65,7 +65,6 @@
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             $InputObject += Get-DbaResourceGovernor -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
 

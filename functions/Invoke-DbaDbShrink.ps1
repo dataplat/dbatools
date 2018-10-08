@@ -2,43 +2,43 @@
 <#
     .SYNOPSIS
         Shrinks all files in a database. This is a command that should rarely be used.
-        
+
         - Shrinks can cause severe index fragmentation (to the tune of 99%)
         - Shrinks can cause massive growth in the database's transaction log
         - Shrinks can require a lot of time and system resources to perform data movement
-        
+
     .DESCRIPTION
         Shrinks all files in a database. Databases should be shrunk only when completely necessary.
-        
+
         Many awesome SQL people have written about why you should not shrink your data files. Paul Randal and Kalen Delaney wrote great posts about this topic:
-        
+
         http://www.sqlskills.com/blogs/paul/why-you-should-not-shrink-your-data-files
         http://sqlmag.com/sql-server/shrinking-data-files
-        
+
         However, there are some cases where a database will need to be shrunk. In the event that you must shrink your database:
-        
+
         1. Ensure you have plenty of space for your T-Log to grow
         2. Understand that shrinks require a lot of CPU and disk resources
         3. Consider running DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE after the shrink is complete.
-        
+
     .PARAMETER SqlInstance
-        The target SQL Server instance. Defaults to the default instance on localhost.
-        
+        The target SQL Server instance or instances. Defaults to the default instance on localhost.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential).
-        
+
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-        
+
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server.
-        
+
     .PARAMETER AllUserDatabases
         Run command against all user databases.
-        
+
     .PARAMETER PercentFreeSpace
         Specifies how much free space to leave, defaults to 0.
-        
+
     .PARAMETER ShrinkMethod
         Specifies the method that is used to shrink the database
         Default
@@ -49,78 +49,75 @@
         Data in pages located at the end of a file is moved to pages earlier in the file.
         TruncateOnly
         Data distribution is not affected. Files are truncated to reflect allocated space, recovering free space at the end of any file.
-        
+
     .PARAMETER StatementTimeout
         Timeout in minutes. Defaults to infinity (shrinks can take a while).
-        
+
     .PARAMETER LogsOnly
         Deprecated. Use FileType instead.
-        
+
     .PARAMETER FileType
         Specifies the files types that will be shrunk
-        All
-        All Data and Log files are shrunk, using database shrink (Default)
-        Data
-        Just the Data files are shrunk using file shrink
-        Log
-        Just the Log files are shrunk using file shrink
-        
+        All - All Data and Log files are shrunk, using database shrink (Default)
+        Data - Just the Data files are shrunk using file shrink
+        Log - Just the Log files are shrunk using file shrink
+
     .PARAMETER StepSizeMB
         If specified, this will chunk a larger shrink operation into multiple smaller shrinks.
         If shrinking a file by a large amount there are benefits of doing multiple smaller chunks.
-        
+
     .PARAMETER ExcludeIndexStats
         Exclude statistics about fragmentation.
-        
+
     .PARAMETER ExcludeUpdateUsage
         Exclude DBCC UPDATE USAGE for database.
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run.
-        
+
     .PARAMETER Confirm
         Prompts for confirmation of every step. For example:
-        
+
         Are you sure you want to perform this action?
         Performing the operation "Shrink database" on target "pubs on SQL2016\VNEXT".
         [Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Shrink, Database
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Invoke-DbaDbShrink
-        
+
     .EXAMPLE
-        Invoke-DbaDbShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014
-        
+        PS C:\> Invoke-DbaDbShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014
+
         Shrinks Northwind, pubs and Adventureworks2014 to have as little free space as possible.
-        
+
     .EXAMPLE
-        Invoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50
-        
+        PS C:\> Invoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50
+
         Shrinks AdventureWorks2014 to have 50% free space. So let's say AdventureWorks2014 was 1GB and it's using 100MB space. The database free space would be reduced to 50MB.
-        
+
     .EXAMPLE
-        Invoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSizeMB 25
-        
+        PS C:\> Invoke-DbaDbShrink -SqlInstance sql2014 -Database AdventureWorks2014 -PercentFreeSpace 50 -FileType Data -StepSizeMB 25
+
         Shrinks AdventureWorks2014 to have 50% free space, runs shrinks in 25MB chunks for improved performance.
-        
+
     .EXAMPLE
-        Invoke-DbaDbShrink -SqlInstance sql2012 -AllUserDatabases
-        
+        PS C:\> Invoke-DbaDbShrink -SqlInstance sql2012 -AllUserDatabases
+
         Shrinks all databases on SQL2012 (not ideal for production)
-        
-        
+
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     param (
@@ -174,7 +171,6 @@
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

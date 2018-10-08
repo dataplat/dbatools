@@ -3,65 +3,65 @@ function Export-DbaSpConfigure {
 <#
     .SYNOPSIS
         Exports advanced sp_configure global configuration options to sql file.
-        
+
     .DESCRIPTION
         Exports advanced sp_configure global configuration options to sql file.
-        
+
     .PARAMETER SqlInstance
-        SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input.
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input.
         You must have sysadmin access if needs to set 'show advanced options' to 1 and server version must be SQL Server version 2005 or higher.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Path
         Specifies the path to a file which will contain the sp_configure queries necessary to replicate the configuration settings on another instance. This file is suitable for input into Import-DbaSPConfigure.
         If not specified will output to My Documents folder with default name of ServerName-MMDDYYYYhhmmss-sp_configure.sql
         If a directory is passed then uses default name of ServerName-MMDDYYYYhhmmss-sp_configure.sql
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: SpConfig, Configure, Configuration
         Author: Chrissy LeMaire (@cl), netnerds.net
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Export-DbaSpConfigure
-        
+
     .INPUTS
         A DbaInstanceParameter representing an array of SQL Server instances.
-        
+
     .OUTPUTS
         Creates a new file for each SQL Server Instance
-        
+
     .EXAMPLE
         PS C:\> Export-DbaSpConfigure -SqlInstance sourceserver
-        
+
         Exports the SPConfigure settings on sourceserver. As no Path was defined outputs to My Documents folder with default name format of Servername-MMDDYYYYhhmmss-sp_configure.sql
-        
+
     .EXAMPLE
         PS C:\> Export-DbaSpConfigure -SqlInstance sourceserver -Path C:\temp
-        
+
         Exports the SPConfigure settings on sourceserver to the directory C:\temp using the default name format
-        
+
     .EXAMPLE
         PS C:\> $cred = Get-Credential sqladmin
         PS C:\> Export-DbaSpConfigure -SqlInstance sourceserver -SqlCredential $cred -Path C:\temp\sp_configure.sql
-        
+
         Exports the SPConfigure settings on sourceserver to the file C:\temp\sp_configure.sql. Uses SQL Authentication to connect. Will require SysAdmin rights if needs to set 'show advanced options'
-        
+
     .EXAMPLE
         PS C:\> 'Server1', 'Server2' | Export-DbaSpConfigure -Path C:\temp\configure.sql
-        
+
         Exports the SPConfigure settings for Server1 and Server2 using pipeline. As more than 1 Server adds prefix of Servername and date to the file name and saves to file like  C:\temp\Servername-MMDDYYYYhhmmss-configure.sql
-        
+
 #>
     [CmdletBinding()]
     param (
@@ -75,7 +75,6 @@ function Export-DbaSpConfigure {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
             }
             catch {

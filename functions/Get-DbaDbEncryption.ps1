@@ -2,61 +2,61 @@
 <#
     .SYNOPSIS
         Returns a summary of encryption used on databases passed to it.
-        
+
     .DESCRIPTION
         Shows if a database has Transparent Data Encryption (TDE), any certificates, asymmetric keys or symmetric keys with details for each.
-        
+
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input.
-        
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-        
+
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server.
-        
+
     .PARAMETER IncludeSystemDBs
         Switch parameter that when used will display system database information.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Encryption, Database
         Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaDbEncryption
-        
+
     .EXAMPLE
         PS C:\> Get-DbaDbEncryption -SqlInstance DEV01
-        
+
         List all encryption found on the instance by database
-        
+
     .EXAMPLE
         PS C:\> Get-DbaDbEncryption -SqlInstance DEV01 -Database MyDB
-        
+
         List all encryption found for the MyDB database.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaDbEncryption -SqlInstance DEV01 -ExcludeDatabase MyDB
-        
+
         List all encryption found for all databases except MyDB.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaDbEncryption -SqlInstance DEV01 -IncludeSystemDBs
-        
+
         List all encryption found for all databases including the system databases.
-        
+
 #>
     [CmdletBinding()]
     param (
@@ -75,10 +75,8 @@
     process {
         foreach ($instance in $SqlInstance) {
             #For each SQL Server in collection, connect and get SMO object
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {

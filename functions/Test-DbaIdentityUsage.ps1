@@ -2,59 +2,59 @@
 <#
     .SYNOPSIS
         Displays information relating to IDENTITY seed usage.  Works on SQL Server 2008 and above.
-        
+
     .DESCRIPTION
         IDENTITY seeds have max values based off of their data type.  This module will locate identity columns and report the seed usage.
-        
+
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
-        
+        The target SQL Server instance or instances.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-        
+
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
-        
+
     .PARAMETER Threshold
         Allows you to specify a minimum % of the seed range being utilized.  This can be used to ignore seeds that have only utilized a small fraction of the range.
-        
+
     .PARAMETER ExcludeSystemDb
         Allows you to suppress output on system databases
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
-        Author: Brandon Abshire, netnerds.net
         Tags: Identity, Table, Column
-        
+        Author: Brandon Abshire, netnerds.net
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Test-DbaIdentityUsage
-        
+
     .EXAMPLE
-        Test-DbaIdentityUsage -SqlInstance sql2008, sqlserver2012
-        
+        PS C:\> Test-DbaIdentityUsage -SqlInstance sql2008, sqlserver2012
+
         Check identity seeds for servers sql2008 and sqlserver2012.
-        
+
     .EXAMPLE
-        Test-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB
-        
+        PS C:\> Test-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB
+
         Check identity seeds on server sql2008 for only the TestDB database
-        
+
     .EXAMPLE
-        Test-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB -Threshold 20
-        
+        PS C:\> Test-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB -Threshold 20
+
         Check identity seeds on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range or higher
-        
+
 #>
     [CmdletBinding()]
     param (
@@ -147,7 +147,6 @@
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             }

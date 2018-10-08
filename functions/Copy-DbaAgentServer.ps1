@@ -2,71 +2,72 @@
 <#
     .SYNOPSIS
         Copy SQL Server Agent from one server to another.
-        
+
     .DESCRIPTION
         A wrapper function that calls the associated Copy command for each of the object types seen in SSMS under SQL Server Agent. This also copies all of the the SQL Agent properties (job history max rows, DBMail profile name, etc.).
-        
+
         You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-        
+
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-        
+
     .PARAMETER SourceSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Destination
         Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
-        
+
     .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER DisableJobsOnDestination
         If this switch is enabled, the jobs will be disabled on Destination after copying.
-        
+
     .PARAMETER DisableJobsOnSource
         If this switch is enabled, the jobs will be disabled on Source after copying.
-        
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-        
+
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .PARAMETER Force
         If this switch is enabled, existing objects on Destination with matching names from Source will be dropped, then copied.
-        
+
     .NOTES
         Tags: Migration, SqlServerAgent, SqlAgent
         Author: Chrissy LeMaire (@cl), netnerds.net
-        Requires: sysadmin access on SQL Servers
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
+        Requires: sysadmin access on SQL Servers
+
     .LINK
         https://dbatools.io/Copy-DbaAgentServer
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster
-        
+
         Copies all job server objects from sqlserver2014a to sqlcluster using Windows credentials for authentication. If job objects with the same name exist on sqlcluster, they will be skipped.
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
-        
+
         Copies all job objects from sqlserver2014a to sqlcluster using SQL credentials to authentication to sqlserver2014a and Windows credentials to authenticate to sqlcluster.
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaAgentServer -Source sqlserver2014a -Destination sqlcluster -WhatIf
-        
+
         Shows what would happen if the command were executed.
-        
+
 #>
     [cmdletbinding(SupportsShouldProcess = $true)]
     param (
@@ -85,7 +86,6 @@
 
     begin {
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         }
         catch {
@@ -99,7 +99,6 @@
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             }
             catch {
