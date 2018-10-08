@@ -3,83 +3,83 @@ function Get-DbaCmsRegServer {
 <#
     .SYNOPSIS
         Gets list of SQL Server objects stored in SQL Server Central Management Server (CMS).
-        
+
     .DESCRIPTION
         Returns an array of servers found in the CMS.
-        
+
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Name
         Specifies one or more names to include. Name is the visible name in SSMS CMS interface (labeled Registered Server Name)
-        
+
     .PARAMETER ServerName
         Specifies one or more server names to include. Server Name is the actual instance name (labeled Server Name)
-        
+
     .PARAMETER Group
         Specifies one or more groups to include from SQL Server Central Management Server.
-        
+
     .PARAMETER ExcludeGroup
         Specifies one or more Central Management Server groups to exclude.
-        
+
     .PARAMETER ExcludeCmsServer
         Deprecated, now follows the Microsoft convention of not including it by default. If you'd like to include the CMS Server, use -IncludeSelf
-        
+
     .PARAMETER Id
         Get server by Id(s)
-        
+
     .PARAMETER IncludeSelf
         If this switch is enabled, the CMS server itself will be included in the results, along with all other Registered Servers.
-        
+
     .PARAMETER ResolveNetworkName
         If this switch is enabled, the NetBIOS name and IP address(es) of each server will be returned.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        
+
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        
+
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: RegisteredServer, CMS
         Author: Bryan Hamby (@galador)
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaCmsRegServer
-        
+
     .EXAMPLE
         PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a
-        
+
         Gets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -IncludeSelf
-        
+
         Gets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
-        
+
         Returns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR, Accounting
-        
+
         Gets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaCmsRegServer -SqlInstance sqlserver2014a -Group HR\Development
-        
+
         Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.
-        
+
 #>
     [CmdletBinding()]
     param (
