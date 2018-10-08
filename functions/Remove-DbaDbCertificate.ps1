@@ -1,4 +1,5 @@
-﻿function Remove-DbaDbCertificate {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Remove-DbaDbCertificate {
 <#
     .SYNOPSIS
         Deletes specified database certificate
