@@ -51,9 +51,9 @@ function Start-DbaEndpoint {
         Starts all endpoints on the sqlserver2014 instance.
 
     .EXAMPLE
-        PS C:\> Start-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1,endpoint2
+        PS C:\> Start-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1,endpoint2 -SqlCredential sqladmin
 
-        Starts the endpoint1 and endpoint2 endpoints.
+        Logs into sqlserver2012 using alternative credentials and starts the endpoint1 and endpoint2 endpoints.
 
     .EXAMPLE
         PS C:\> Get-Endpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Start-DbaEndpoint
