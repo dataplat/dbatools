@@ -89,7 +89,6 @@ function Get-DbaPfAvailableCounter {
     }
     process {
         foreach ($computer in $ComputerName) {
-            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
 
             try {
                 if ($pattern) {

@@ -100,7 +100,6 @@
     process {
         foreach ($Instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $Instance"
                 $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
             }
             catch {

@@ -109,14 +109,12 @@ function Get-DbaCmsRegServer {
         $servers = @()
         foreach ($instance in $SqlInstance) {
             if ($Group) {
-                Write-Message -Level Verbose -Message "Connecting to $instance to search for $group"
                 $groupservers = Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group -ExcludeGroup $ExcludeGroup
                 if ($groupservers) {
                     $servers += $groupservers.GetDescendantRegisteredServers()
                 }
             }
             else {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 try {
                     $serverstore = Get-DbaCmsRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
                 }

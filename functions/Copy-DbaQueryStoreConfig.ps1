@@ -104,7 +104,6 @@
             foreach ($destinationServer in $destinstance) {
 
                 try {
-                    Write-Message -Level Verbose -Message "Connecting to $destinstance"
                     $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
                 }
                 catch {

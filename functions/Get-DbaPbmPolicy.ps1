@@ -71,7 +71,6 @@
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             $InputObject += Get-DbaPbmStore -SqlInstance $instance -SqlCredential $SqlCredential
         }
         foreach ($store in $InputObject) {

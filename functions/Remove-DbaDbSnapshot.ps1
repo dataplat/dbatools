@@ -122,7 +122,6 @@ function Remove-DbaDbSnapshot {
 
         # if piped value either doesn't exist or is not the proper type
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
