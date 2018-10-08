@@ -2,82 +2,83 @@
 <#
     .SYNOPSIS
         Migrates SQL Policy Based Management Objects, including both policies and conditions.
-        
+
     .DESCRIPTION
         By default, all policies and conditions are copied. If an object already exist on the destination, it will be skipped unless -Force is used.
-        
+
         The -Policy and -Condition parameters are auto-populated for command-line completion and can be used to copy only specific objects.
-        
+
     .PARAMETER Source
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2008 or higher.
-        
+
     .PARAMETER SourceSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Destination
         Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
-        
+
     .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Policy
         The policy(ies) to process - this list is auto-populated from the server. If unspecified, all policies will be processed.
-        
+
     .PARAMETER ExcludePolicy
         The policy(ies) to exclude - this list is auto-populated from the server
-        
+
     .PARAMETER Condition
         The condition(s) to process - this list is auto-populated from the server. If unspecified, all conditions will be processed.
-        
+
     .PARAMETER ExcludeCondition
         The condition(s) to exclude - this list is auto-populated from the server
-        
+
     .PARAMETER Force
         If policies exists on destination server, it will be dropped and recreated.
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
-        
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Migration
         Author: Chrissy LeMaire (@cl), netnerds.net
-        Requires: sysadmin access on SQL Servers
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
+        Requires: sysadmin access on SQL Servers
+
     .LINK
         https://dbatools.io/Copy-DbaPolicyManagement
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster
-        
+
         Copies all policies and conditions from sqlserver2014a to sqlcluster, using Windows credentials.
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
-        
+
         Copies all policies and conditions from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster -WhatIf
-        
+
         Shows what would happen if the command were executed.
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaPolicyManagement -Source sqlserver2014a -Destination sqlcluster -Policy 'xp_cmdshell must be disabled'
-        
+
         Copies only one policy, 'xp_cmdshell must be disabled' from sqlserver2014a to sqlcluster. No conditions are migrated.
-        
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (

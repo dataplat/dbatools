@@ -2,54 +2,55 @@
 <#
     .SYNOPSIS
         Evaluates tempdb against several rules to match best practices.
-        
+
     .DESCRIPTION
         Evaluates tempdb against a set of rules to match best practices. The rules are:
-        
+
         * TF 1118 enabled - Is Trace Flag 1118 enabled (See KB328551).
         * File Count - Does the count of data files in tempdb match the number of logical cores, up to 8?
         * File Growth - Are any files set to have percentage growth? Best practice is all files have an explicit growth value.
         * File Location - Is tempdb located on the C:\? Best practice says to locate it elsewhere.
         * File MaxSize Set (optional) - Do any files have a max size value? Max size could cause tempdb problems if it isn't allowed to grow.
-        
+
         Other rules can be added at a future date.
-        
+
     .PARAMETER SqlInstance
         The SQL Server Instance to connect to. SQL Server 2005 and higher are supported.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Detailed
         Output all properties, will be depreciated in 1.0.0 release.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: tempdb, configuration
         Author: Michael Fal (@Mike_Fal), http://mikefal.net
-        Based off of Amit Bannerjee's (@banerjeeamit) Get-TempDB function (https://github.com/amitmsft/SqlOnAzureVM/blob/master/Get-TempdbFiles.ps1)
-        
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+
+        Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
+        Based on Amit Bannerjee's (@banerjeeamit) Get-TempDB function (https://github.com/amitmsft/SqlOnAzureVM/blob/master/Get-TempdbFiles.ps1)
+
     .LINK
         https://dbatools.io/Test-DbaTempdbConfig
-        
+
     .EXAMPLE
-        Test-DbaTempdbConfig -SqlInstance localhost
-        
+        PS C:\> Test-DbaTempdbConfig -SqlInstance localhost
+
         Checks tempdb on the localhost machine.
-        
+
     .EXAMPLE
-        Test-DbaTempdbConfig -SqlInstance localhost | Select-Object *
-        
+        PS C:\> Test-DbaTempdbConfig -SqlInstance localhost | Select-Object *
+
         Checks tempdb on the localhost machine. All rest results are shown.
-        
+
 #>
     [CmdletBinding()]
     param (

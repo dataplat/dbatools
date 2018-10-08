@@ -1,4 +1,4 @@
-﻿function Get-DbaDbCertificate {
+function Get-DbaDbCertificate {
 <#
     .SYNOPSIS
         Gets database certificates
@@ -61,6 +61,7 @@
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         # sometimes it's text, other times cert
+
         [object[]]$Certificate,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,

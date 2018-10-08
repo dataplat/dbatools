@@ -2,42 +2,42 @@
 <#
     .SYNOPSIS
         Returns all SQL Agent alerts on a SQL Server Agent.
-        
+
     .DESCRIPTION
         This function returns SQL Agent alerts.
-        
+
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
-    .NOTES
-        Tags: Agent, SMO
-        Author: Klaas Vandenberghe (@PowerDBAKlaas)
-        
-        Website: https://dbatools.io
-        Copyright: (c) 2018 by dbatools, licensed under MIT
-        License: MIT https://opensource.org/licenses/MIT
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
+    .NOTES
+        Tags: Agent, SMO
+        Author: Klaas Vandenberghe (@PowerDBAKlaas)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
     .LINK
         https://dbatools.io/Get-DbaAgentAlert
-        
+
     .EXAMPLE
         PS C:\> Get-DbaAgentAlert -SqlInstance ServerA,ServerB\instanceB
-        
+
         Returns all SQL Agent alerts on serverA and serverB\instanceB
-        
+
     .EXAMPLE
         PS C:\> 'serverA','serverB\instanceB' | Get-DbaAgentAlert
-        
+
         Returns all SQL Agent alerts  on serverA and serverB\instanceB
-        
+
 #>
     [CmdletBinding()]
     param (
