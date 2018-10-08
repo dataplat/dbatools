@@ -2,10 +2,10 @@
 function New-DbaXESmartReplay {
 <#
     .SYNOPSIS
-        This Response type can be used to replay execution related events to a target SQL Server instance.
+        This response type can be used to replay execution related events to a target SQL Server instance.
 
     .DESCRIPTION
-        This Response type can be used to replay execution related events to a target SQL Server instance. The events that you can replay are of the type sql_batch_completed and rpc_completed: all other events are ignored.
+        This response type can be used to replay execution related events to a target SQL Server instance. The events that you can replay are of the type sql_batch_completed and rpc_completed: all other events are ignored.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.

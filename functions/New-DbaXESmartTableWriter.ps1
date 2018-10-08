@@ -2,10 +2,10 @@
 function New-DbaXESmartTableWriter {
 <#
     .SYNOPSIS
-        This Response type is used to write Extended Events to a database table.
+        This response type is used to write Extended Events to a database table.
 
     .DESCRIPTION
-        This Response type is used to write Extended Events to a database table. The events are temporarily stored in memory before being written to the database at regular intervals.
+        This response type is used to write Extended Events to a database table. The events are temporarily stored in memory before being written to the database at regular intervals.
 
         The target table can be created manually upfront or you can let the TableAppenderResponse create a target table based on the fields and actions available in the events captured.
 
