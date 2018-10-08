@@ -59,7 +59,7 @@ function Get-DbaPfDataCollectorCounter {
         Gets the '\Processor(_Total)\% Processor Time' counter on sql2017.
 
     .EXAMPLE
-        PS C:\> Get-DbaPfDataCollectorCounter -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        PS C:\> Get-DbaPfDataCollectorCounter -ComputerName sql2017, sql2016 -Credential ad\sqldba -CollectorSet 'System Correlation'
 
         Gets all counters for the 'System Correlation' CollectorSet on sql2017 and sql2016 using alternative credentials.
 

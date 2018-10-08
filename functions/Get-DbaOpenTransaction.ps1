@@ -35,7 +35,7 @@
         Returns open transactions for sqlserver2014a
 
     .EXAMPLE
-        PS C:\> Get-DbaOpenTransaction -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)
+        PS C:\> Get-DbaOpenTransaction -SqlInstance sqlserver2014a -SqlCredential sqladmin
 
         Logs into sqlserver2014a using the login "sqladmin"
 

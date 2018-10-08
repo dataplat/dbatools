@@ -51,7 +51,7 @@ function Stop-DbaPfDataCollectorSet {
         Attempts to stop all ready Collectors on localhost.
 
     .EXAMPLE
-        PS C:\> Stop-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        PS C:\> Stop-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential ad\sqldba -CollectorSet 'System Correlation'
 
         Stops the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
 
