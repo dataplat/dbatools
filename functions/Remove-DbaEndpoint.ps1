@@ -55,7 +55,7 @@ function Remove-DbaEndpoint {
         Removes the endpoints returned from the Get-Endpoint function.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
