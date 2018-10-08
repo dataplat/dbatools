@@ -3,7 +3,7 @@ function Copy-DbaDbTableData {
 <#
     .SYNOPSIS
         Copies data between SQL Server tables.
-        
+
     .DESCRIPTION
         Copies data between SQL Server tables using SQL Bulk Copy.
         The same can be achieved also doing
@@ -11,134 +11,134 @@ function Copy-DbaDbTableData {
         Write-DbaDataTable -SqlInstance ... -InputObject $sourcetable
         but it will force buffering the contents on the table in memory (high RAM usage for large tables).
         With this function, a streaming copy will be done in the most speedy and least resource-intensive way.
-        
+
     .PARAMETER SqlInstance
         Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Destination
         Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-        
+
     .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         The database to copy the table from.
-        
+
     .PARAMETER DestinationDatabase
         The database to copy the table to. If not specified, it is assumed to be the same of Database
-        
+
     .PARAMETER Table
         Define a specific table you would like to use as source. You can specify up to three-part name like db.sch.tbl.
         If the object has special characters please wrap them in square brackets [ ].
         This dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
         The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo.[First.Table]
-        
+
     .PARAMETER DestinationTable
         The table you want to use as destination. If not specified, it is assumed to be the same of Table
-        
+
     .PARAMETER Query
         If you want to copy only a portion, specify the query (but please, select all the columns, or nasty things will happen)
-        
+
     .PARAMETER BatchSize
         The BatchSize for the import defaults to 5000.
-        
+
     .PARAMETER NotifyAfter
         Sets the option to show the notification after so many rows of import
-        
+
     .PARAMETER NoTableLock
         If this switch is enabled, a table lock (TABLOCK) will not be placed on the destination table. By default, this operation will lock the destination table while running.
-        
+
     .PARAMETER CheckConstraints
         If this switch is enabled, the SqlBulkCopy option to process check constraints will be enabled.
-        
+
         Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
-        
+
     .PARAMETER FireTriggers
         If this switch is enabled, the SqlBulkCopy option to fire insert triggers will be enabled.
-        
+
         Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the Database."
-        
+
     .PARAMETER KeepIdentity
         If this switch is enabled, the SqlBulkCopy option to preserve source identity values will be enabled.
-        
+
         Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
-        
+
     .PARAMETER KeepNulls
         If this switch is enabled, the SqlBulkCopy option to preserve NULL values will be enabled.
-        
+
         Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
-        
+
     .PARAMETER Truncate
         If this switch is enabled, the destination table will be truncated after prompting for confirmation.
-        
+
     .PARAMETER BulkCopyTimeOut
         Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
-        
+
     .PARAMETER InputObject
         Enables piping of Table objects from Get-DbaDbTable
-        
+
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-        
+
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Migration
         Author: Simone Bizzotto (@niphlod)
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Copy-DbaDbTableData
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table
-        
+
         Copies all the data from sql1 to sql2, using the database dbatools_from.
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DestinationDatabase dbatools_dest -Table test_table
-        
+
         Copies all the data from sql1 to sql2, using the database dbatools_from as source and dbatools_dest as destination
-        
+
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -DestinationTable tb3
-        
+
         Copies all data from tables tb1 and tb2 in tempdb on sql1 to tb3 in tempdb on sql1
-        
+
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaDbTableData -Destination sql2
-        
+
         Copies data from tbl1 in tempdb on sql1 to tbl1 in tempdb on sql2
         then
         Copies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table
-        
+
         Copies all the data from sql1 to sql2, using the database dbatools_from.
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
-        
+
         Copies all the data from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination
-        
+
     .EXAMPLE
         PS C:\> Copy-DbaDbTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
-        
+
         Copies all the data from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination
-        
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (

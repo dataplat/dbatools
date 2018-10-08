@@ -3,60 +3,60 @@ function Get-DbaDbPageInfo {
 <#
     .SYNOPSIS
         Get-DbaDbPageInfo will return page information for a database
-        
+
     .DESCRIPTION
         Get-DbaDbPageInfo is able to return information about the pages in a database.
         It's possible to return the information for multiple databases and filter on specific databases, schemas and tables.
-        
+
     .PARAMETER SqlInstance
         The target SQL Server instance(s)
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         Filter to only get specific databases
-        
+
     .PARAMETER Schema
         Filter to only get specific schemas
-        
+
     .PARAMETER Table
         Filter to only get specific tables
-        
+
     .PARAMETER InputObject
         Enables piping from Get-DbaDatabase
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Database, Page
         Author: Chrissy LeMaire (@cl), netnerds.net
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaDbPageInfo
-        
+
     .EXAMPLE
         PS C:\> et-DbaDbPageInfo -SqlInstance sql2017
-        
+
         Returns page information for all databases on sql2017
-        
+
     .EXAMPLE
         PS C:\> Get-DbaDbPageInfo -SqlInstance sql2017, sql2016 -Database testdb
-        
+
         Returns page information for the testdb on sql2017 and sql2016
-        
+
     .EXAMPLE
         PS C:\> $servers | Get-DbaDatabase -Database testdb | Get-DbaDbPageInfo
-        
+
         Returns page information for the testdb on all $servers
-        
+
 #>
     [CmdLetBinding()]
     param (

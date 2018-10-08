@@ -16,3 +16,5 @@ else {
     $instances = @($script:instance1, $script:instance2)
     $ssisserver = "localhost\sql2016"
 }
+
+# $PSDefaultParameterValues['*:Confirm' ] = $false

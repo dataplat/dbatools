@@ -3,64 +3,64 @@ function Get-DbaSsisExecutionHistory {
 <#
     .SYNOPSIS
         Get-DbaSsisHistory Retreives SSIS project and package execution History, and environments from one SQL Server to another.
-        
+
     .DESCRIPTION
         This command gets execution history for SSIS executison given one or more instances and can be filtered by Project, Environment,Folder or Status.
-        
+
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to.
         This can be a collection and receive pipeline input to allow the function
         to be executed against multiple SQL Server instances.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Project
         Specifies a filter by project
-        
+
     .PARAMETER Folder
         Specifies a filter by folder
-        
+
     .PARAMETER Environment
         Specifies a filter by environment
-        
+
     .PARAMETER Status
         Specifies a filter by status (created,running,cancelled,failed,pending,halted,succeeded,stopping,completed)
-        
+
     .PARAMETER Since
         Datetime object used to narrow the results to a date
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Migration, SSIS
-        Author: Chris Tucker (ChrisTucker, @ChrisTuc47368095)
-        
+        Author: Chris Tucker (@ChrisTuc47368095)
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Get-DbaSsisExecutionHistory
-        
+
     .EXAMPLE
         PS C:\> Get-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Folder SMTQ_PRC
-        
+
         Get all history items for SMTQ01 in folder SMTQ_PRC.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Status Failed,Cancelled
-        
+
         Gets all failed or canceled executions for SMTQ01.
-        
+
     .EXAMPLE
         PS C:\> Get-DbaSsisExecutionHistory -SqlInstance SMTQ01,SMTQ02 -Status Failed,Cancelled -Whatif
-        
+
         Shows what would happen if the command were executed and would return the SQL statement that would be executed per instance.
-        
+
 #>
     [CmdletBinding()]
     param (

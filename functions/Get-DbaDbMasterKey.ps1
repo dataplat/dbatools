@@ -2,51 +2,51 @@
 <#
     .SYNOPSIS
         Gets specified database master key
-        
+
     .DESCRIPTION
         Gets specified database master key
-        
+
     .PARAMETER SqlInstance
         The target SQL Server instance
-        
+
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials
-        
+
     .PARAMETER Database
         Get master key from specific database
-        
+
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto-populated from the server
-        
+
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed
-        
+
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Certificate, Database
         Author: Chrissy LeMaire (@cl), netnerds.net
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .EXAMPLE
         PS C:\> Get-DbaDbMasterKey -SqlInstance sql2016
-        
+
         Gets all master database keys
-        
+
     .EXAMPLE
         PS C:\> Get-DbaDbMasterKey -SqlInstance Server1 -Database db1
-        
+
         Gets the master key for the db1 database
-        
+
 #>
     [CmdletBinding()]
     param (

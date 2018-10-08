@@ -2,64 +2,63 @@
 <#
     .SYNOPSIS
         Gets database views for each SqlInstance.
-        
+
     .DESCRIPTION
         Gets database views for each SqlInstance.
-        
+
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         To get views from specific database(s) - this list is auto populated from the server.
-        
+
     .PARAMETER ExcludeDatabase
         The database(s) to exclude - this list is auto populated from the server.
-        
+
     .PARAMETER ExcludeSystemView
         This switch removes all system objects from the view collection.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Security, Database
-        Author: Klaas Vandenberghe ( @PowerDbaKlaas )
-        
+        Author: Klaas Vandenberghe (@PowerDbaKlaas)
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .EXAMPLE
-        Get-DbaDbView -SqlInstance sql2016
-        
+        PS C:\> Get-DbaDbView -SqlInstance sql2016
+
         Gets all database views
-        
+
     .EXAMPLE
-        Get-DbaDbView -SqlInstance Server1 -Database db1
-        
+        PS C:\> Get-DbaDbView -SqlInstance Server1 -Database db1
+
         Gets the views for the db1 database
-        
+
     .EXAMPLE
-        Get-DbaDbView -SqlInstance Server1 -ExcludeDatabase db1
-        
+        PS C:\> Get-DbaDbView -SqlInstance Server1 -ExcludeDatabase db1
+
         Gets the views for all databases except db1
-        
+
     .EXAMPLE
-        Get-DbaDbView -SqlInstance Server1 -ExcludeSystemView
-        
+        PS C:\> Get-DbaDbView -SqlInstance Server1 -ExcludeSystemView
+
         Gets the views for all databases that are not system objects (there can be 400+ system views in each DB)
-        
+
     .EXAMPLE
-        'Sql1','Sql2/sqlexpress' | Get-DbaDbView
-        
+        PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaDbView
+
         Gets the views for the databases on Sql1 and Sql2/sqlexpress
-        
-        
+
 #>
     [CmdletBinding()]
     param (

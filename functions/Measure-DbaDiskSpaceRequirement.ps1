@@ -1,73 +1,74 @@
 ﻿function Measure-DbaDiskSpaceRequirement {
-<#
+    <#
     .SYNOPSIS
         Calculate the space needed to copy and possibly replace a database from one SQL server to another.
-        
+
     .DESCRIPTION
         Returns a file list from source and destination where source file may overwrite destination. Complex scenarios where a new file may exist is taken into account.
         This command will accept a hash object in pipeline with the following keys: Source, SourceDatabase, Destination. Using this command will provide a way to prepare before a complex migration with multiple databases from different sources and destinations.
-        
+
     .PARAMETER Source
         Source SQL Server.
-        
+
     .PARAMETER SourceSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Database
         The database to copy. It MUST exist.
-        
+
     .PARAMETER Destination
         Destination SQL Server instance.
-        
+
     .PARAMETER DestinationSqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER DestinationDatabase
         The database name at destination.
         May or may not be present, if unspecified it will default to the database name provided in SourceDatabase.
-        
+
     .PARAMETER Credential
         The credentials to use to connect via CIM/WMI/PowerShell remoting.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Tags: Database, DiskSpace, Migration
         Author: Pollus Brodeur (@pollusb)
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Measure-DbaDiskSpaceRequirement
-        
+
     .EXAMPLE
-        Measure-DbaDiskSpaceRequirement -Source INSTANCE1 -Database DB1 -Destination INSTANCE2
-        
+        PS C:\> Measure-DbaDiskSpaceRequirement -Source INSTANCE1 -Database DB1 -Destination INSTANCE2
+
         Calculate space needed for a simple migration with one database with the same name at destination.
-        
+
     .EXAMPLE
-        @([PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB1'},
-        [PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB2'}
-        ) | Measure-DbaDiskSpaceRequirement
-        
+        PS C:\> @(
+        >> [PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB1'},
+        >> [PSCustomObject]@{Source='SQL1';Destination='SQL2';Database='DB2'}
+        >> ) | Measure-DbaDiskSpaceRequirement
+
         Using a PSCustomObject with 2 databases to migrate on SQL2.
-        
+
     .EXAMPLE
-        Import-Csv -Path .\migration.csv -Delimiter "`t" | Measure-DbaDiskSpaceRequirement | Format-Table -AutoSize
-        
+        PS C:\> Import-Csv -Path .\migration.csv -Delimiter "`t" | Measure-DbaDiskSpaceRequirement | Format-Table -AutoSize
+
         Using a CSV file. You will need to use this header line "Source<tab>Destination<tab>Database<tab>DestinationDatabase".
-        
+
     .EXAMPLE
-        Invoke-DbaCmd -SqlInstance DBA -Database Migrations -Query 'select Source, Destination, Database from dbo.Migrations' `
-        | Measure-DbaDiskSpaceRequirement
-        
+        PS C:\> $qry = "SELECT Source, Destination, Database FROM dbo.Migrations"
+        PS C:\> Invoke-DbaCmd -SqlInstance DBA -Database Migrations -Query $qry | Measure-DbaDiskSpaceRequirement
+
         Using a SQL table. We are DBA after all!
-        
+
 #>
     [CmdletBinding()]
     param(
@@ -99,7 +100,7 @@
                 [PSCredential]$credential
             )
             Get-DbaCmObject -Class Win32_MountPoint -ComputerName $computerName -Credential $credential |
-                Select-Object @{n='Mountpoint';e={$_.Directory.split('=')[1].Replace('"','').Replace('\\','\')}}
+                Select-Object @{n='Mountpoint'; e= {$_.Directory.split('=')[1].Replace('"', '').Replace('\\', '\')}}
         }
         function Get-MountPointFromPath {
             [CmdletBinding()]
@@ -229,30 +230,6 @@
                 if ($found = ($sourceFile.Name -eq $destFile.Name)) {
                     # Files found on both sides
                     [PSCustomObject]@{
-                            SourceComputerName      = $sourceServer.ComputerName
-                            SourceInstance          = $sourceServer.ServiceName
-                            SourceSqlInstance       = $sourceServer.DomainInstanceName
-                            DestinationComputerName = $destServer.ComputerName
-                            DestinationInstance     = $destServer.ServiceName
-                            DestinationSqlInstance  = $destServer.DomainInstanceName
-                            SourceDatabase          = $sourceDb.Name
-                            SourceLogicalName       = $sourceFile.Name
-                            SourceFileName          = $sourceFile.FileName
-                            SourceFileSize          = [DbaSize]($sourceFile.Size * 1000)
-                            DestinationDatabase     = $destDb.Name
-                            DestinationLogicalName  = $destFile.Name
-                            DestinationFileName     = $destFile.FileName
-                            DestinationFileSize     = [DbaSize]($destFile.Size * 1000) * -1
-                            DifferenceSize          = [DbaSize]( ($sourceFile.Size * 1000) - ($destFile.Size * 1000) )
-                            MountPoint              = Get-MountPointFromPath -Path $destFile.Filename -ComputerName $computerName -Credential $Credential
-                            FileLocation            = 'Source and Destination'
-                        } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
-                    break
-                }
-            }
-            if (!$found) {
-                # Files on source but not on destination
-                [PSCustomObject]@{
                         SourceComputerName      = $sourceServer.ComputerName
                         SourceInstance          = $sourceServer.ServiceName
                         SourceSqlInstance       = $sourceServer.DomainInstanceName
@@ -263,15 +240,39 @@
                         SourceLogicalName       = $sourceFile.Name
                         SourceFileName          = $sourceFile.FileName
                         SourceFileSize          = [DbaSize]($sourceFile.Size * 1000)
-                        DestinationDatabase     = $DestinationDatabase
-                        DestinationLogicalName  = $null
-                        DestinationFileName     = $null
-                        DestinationFileSize     = [DbaSize]0
-                        DifferenceSize          = [DbaSize]($sourceFile.Size * 1000)
-                        MountPoint              = Get-MountPointFromDefaultPath -DefaultPathType $sourceFile.Type -SqlInstance $Destination `
-                                                  -SqlCredential $DestinationSqlCredential -computerName $computerName -credential $Credential
-                        FileLocation            = 'Only on Source'
+                        DestinationDatabase     = $destDb.Name
+                        DestinationLogicalName  = $destFile.Name
+                        DestinationFileName     = $destFile.FileName
+                        DestinationFileSize     = [DbaSize]($destFile.Size * 1000) * -1
+                        DifferenceSize          = [DbaSize]( ($sourceFile.Size * 1000) - ($destFile.Size * 1000) )
+                        MountPoint              = Get-MountPointFromPath -Path $destFile.Filename -ComputerName $computerName -Credential $Credential
+                        FileLocation            = 'Source and Destination'
                     } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
+                    break
+                }
+            }
+            if (!$found) {
+                # Files on source but not on destination
+                [PSCustomObject]@{
+                    SourceComputerName      = $sourceServer.ComputerName
+                    SourceInstance          = $sourceServer.ServiceName
+                    SourceSqlInstance       = $sourceServer.DomainInstanceName
+                    DestinationComputerName = $destServer.ComputerName
+                    DestinationInstance     = $destServer.ServiceName
+                    DestinationSqlInstance  = $destServer.DomainInstanceName
+                    SourceDatabase          = $sourceDb.Name
+                    SourceLogicalName       = $sourceFile.Name
+                    SourceFileName          = $sourceFile.FileName
+                    SourceFileSize          = [DbaSize]($sourceFile.Size * 1000)
+                    DestinationDatabase     = $DestinationDatabase
+                    DestinationLogicalName  = $null
+                    DestinationFileName     = $null
+                    DestinationFileSize     = [DbaSize]0
+                    DifferenceSize          = [DbaSize]($sourceFile.Size * 1000)
+                    MountPoint              = Get-MountPointFromDefaultPath -DefaultPathType $sourceFile.Type -SqlInstance $Destination `
+                        -SqlCredential $DestinationSqlCredential -computerName $computerName -credential $Credential
+                    FileLocation            = 'Only on Source'
+                } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
             }
         }
         if ($destDb) {
@@ -279,24 +280,24 @@
             $destFilesNotSource = Compare-Object -ReferenceObject $destFiles -DifferenceObject $sourceFiles -Property Name -PassThru
             foreach ($destFileNotSource in $destFilesNotSource) {
                 [PSCustomObject]@{
-                        SourceComputerName      = $sourceServer.ComputerName
-                        SourceInstance          = $sourceServer.ServiceName
-                        SourceSqlInstance       = $sourceServer.DomainInstanceName
-                        DestinationComputerName = $destServer.ComputerName
-                        DestinationInstance     = $destServer.ServiceName
-                        DestinationSqlInstance  = $destServer.DomainInstanceName
-                        SourceDatabaseName      = $Database
-                        SourceLogicalName       = $null
-                        SourceFileName          = $null
-                        SourceFileSize          = [DbaSize]0
-                        DestinationDatabaseName = $destDb.Name
-                        DestinationLogicalName  = $destFileNotSource.Name
-                        DestinationFileName     = $destFile.FileName
-                        DestinationFileSize     = [DbaSize]($destFileNotSource.Size * 1000) * -1
-                        DifferenceSize          = [DbaSize]($destFileNotSource.Size * 1000) * -1
-                        MountPoint              = Get-MountPointFromPath -Path $destFileNotSource.Filename -ComputerName $computerName -Credential $Credential
-                        FileLocation            = 'Only on Destination'
-                    } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
+                    SourceComputerName      = $sourceServer.ComputerName
+                    SourceInstance          = $sourceServer.ServiceName
+                    SourceSqlInstance       = $sourceServer.DomainInstanceName
+                    DestinationComputerName = $destServer.ComputerName
+                    DestinationInstance     = $destServer.ServiceName
+                    DestinationSqlInstance  = $destServer.DomainInstanceName
+                    SourceDatabaseName      = $Database
+                    SourceLogicalName       = $null
+                    SourceFileName          = $null
+                    SourceFileSize          = [DbaSize]0
+                    DestinationDatabaseName = $destDb.Name
+                    DestinationLogicalName  = $destFileNotSource.Name
+                    DestinationFileName     = $destFile.FileName
+                    DestinationFileSize     = [DbaSize]($destFileNotSource.Size * 1000) * -1
+                    DifferenceSize          = [DbaSize]($destFileNotSource.Size * 1000) * -1
+                    MountPoint              = Get-MountPointFromPath -Path $destFileNotSource.Filename -ComputerName $computerName -Credential $Credential
+                    FileLocation            = 'Only on Destination'
+                } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
             }
         }
         $DestinationDatabase = $null
