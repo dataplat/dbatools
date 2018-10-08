@@ -2,78 +2,78 @@
 <#
     .SYNOPSIS
         The Publish-Database command takes a dacpac which is the output from an SSDT project and publishes it to a database. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts).
-        
+
     .DESCRIPTION
         Deploying a dacpac uses the DacFx which historically needed to be installed on a machine prior to use. In 2016 the DacFx was supplied by Microsoft as a nuget package and this uses that nuget package.
-        
+
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to.
-        
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER Path
         Specifies the filesystem path to the DACPAC
-        
+
     .PARAMETER PublishXml
         Specifies the publish profile which will include options and sqlCmdVariables.
-        
+
     .PARAMETER Database
         Specifies the name of the database being published.
-        
+
     .PARAMETER ConnectionString
         Specifies the connection string to the database you are upgrading. This is not required if SqlInstance is specified.
-        
+
     .PARAMETER GenerateDeploymentScript
         If this switch is enabled, the publish script will be generated.
-        
+
     .PARAMETER GenerateDeploymentReport
         If this switch is enabled, the publish XML report  will be generated.
-        
+
     .PARAMETER OutputPath
         Specifies the filesystem path (directory) where output files will be generated.
-        
+
     .PARAMETER ScriptOnly
         If this switch is enabled, only the change scripts will be generated.
-        
+
     .PARAMETER IncludeSqlCmdVars
         If this switch is enabled, SqlCmdVars in publish.xml will have their values overwritten.
-        
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .PARAMETER DacFxPath
         Path to the dac dll. If this is ommited, then the version of dac dll which is packaged with dbatools is used.
-        
+
     .NOTES
         Tags: Migration, Database, Dacpac
         Author: Richie lee (@bzzzt_io)
-        
+
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
-        
+
     .LINK
         https://dbatools.io/Publish-DbaDacPackage
-        
+
     .EXAMPLE
-        Publish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml
-        
+        PS C:\> Publish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml
+
         Updates WideWorldImporters on sql2017 from the sql2016-WideWorldImporters.dacpac using the sql2016-WideWorldImporters-publish.xml publish profile
-        
+
     .EXAMPLE
-        New-DbaDacProfile -SqlInstance sql2016 -Database db2 -Path C:\temp
-        Export-DbaDacPackage -SqlInstance sql2016 -Database db2 | Publish-DbaDacPackage -PublishXml C:\temp\sql2016-db2-publish.xml -Database db1, db2 -SqlInstance sql2017
-        
+        PS C:\> New-DbaDacProfile -SqlInstance sql2016 -Database db2 -Path C:\temp
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database db2 | Publish-DbaDacPackage -PublishXml C:\temp\sql2016-db2-publish.xml -Database db1, db2 -SqlInstance sql2017
+
         Creates a publish profile at C:\temp\sql2016-db2-publish.xml, exports the .dacpac to $home\Documents\sql2016-db2.dacpac
         then publishes it to the sql2017 server database db2
-        
+
     .EXAMPLE
-        $loc = "C:\Users\bob\source\repos\Microsoft.Data.Tools.Msbuild\lib\net46\Microsoft.SqlServer.Dac.dll"
-        Publish-DbaDacPackage -SqlInstance "local" -Database WideWorldImporters -Path C:\temp\WideWorldImporters.dacpac -PublishXml C:\temp\WideWorldImporters.publish.xml -DacFxPath $loc
-        
+        PS C:\> $loc = "C:\Users\bob\source\repos\Microsoft.Data.Tools.Msbuild\lib\net46\Microsoft.SqlServer.Dac.dll"
+        PS C:\> Publish-DbaDacPackage -SqlInstance "local" -Database WideWorldImporters -Path C:\temp\WideWorldImporters.dacpac -PublishXml C:\temp\WideWorldImporters.publish.xml -DacFxPath $loc
+
 #>
     [CmdletBinding()]
     param (
