@@ -11,7 +11,7 @@
         You can set MaxDop database scoped configurations if the server is version 2016 or higher
 
     .PARAMETER SqlInstance
-        The SQL Server instance to connect to.
+        The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

@@ -7,7 +7,7 @@
         Reset the aggregated statistics - basically just executes DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR)
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

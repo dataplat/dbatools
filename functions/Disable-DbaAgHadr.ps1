@@ -9,7 +9,7 @@ function Disable-DbaAgHadr {
         service. This function disables that feature for the SQL Server service.
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER Credential
         Credential object used to connect to the Windows server itself as a different user

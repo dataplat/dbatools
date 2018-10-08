@@ -8,7 +8,7 @@
         for all transactional publications for a server, database, or publication.
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER Database
         The database(s) to process. If unspecified, all databases will be processed.

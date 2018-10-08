@@ -16,7 +16,7 @@ function Set-DbaNetworkCertificate {
         https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
 
     .PARAMETER SqlInstance
-        The target SQL Server - defaults to localhost.
+       The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative credentials.

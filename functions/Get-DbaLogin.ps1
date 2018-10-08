@@ -7,7 +7,7 @@
         The Get-DbaLogin function returns an SMO Login object for the logins passed, if there are no users passed it will return all logins.
 
     .PARAMETER SqlInstance
-        The SQL Server instance, or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        TThe target SQL Server instance or instances.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.

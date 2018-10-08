@@ -9,7 +9,7 @@
         changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
 
     .PARAMETER SqlInstance
-        The SQL Instances that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user.

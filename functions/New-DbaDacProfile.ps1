@@ -12,7 +12,7 @@
         For a full list of options that you can add to the profile, google "sqlpackage.exe command line switches" or (https://msdn.microsoft.com/en-us/library/hh550080(v=vs.103).aspx)
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to and publish to. Alternatively, you can provide a ConnectionString.
+        The target SQL Server instance or instances. Alternatively, you can provide a ConnectionString.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using alternative logins instead Integrated, accepts Credential object created by Get-Credential

@@ -8,7 +8,7 @@ function Get-DbaComputerCertificate {
         Gets computer certificates on localhost that are candidates for using with SQL Server's network encryption
 
     .PARAMETER ComputerName
-        The target SQL Server - defaults to localhost. If target is a cluster, you must specify the distinct nodes.
+       The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must specify the distinct nodes.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.

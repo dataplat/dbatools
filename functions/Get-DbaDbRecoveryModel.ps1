@@ -7,7 +7,7 @@
         Get-DbaDbRecoveryModel displays the Recovery Model for all databases. This is the default, you can filter using -Database, -ExcludeDatabase, -RecoveryModel
 
     .PARAMETER SqlInstance
-        The SQL Server instance.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

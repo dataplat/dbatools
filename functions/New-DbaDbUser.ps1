@@ -7,7 +7,7 @@
         Creates a new user for a specified database with provided specifications.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance. Defaults to the default instance on localhost.
+        The target SQL Server instance or instances. Defaults to the default instance on localhost.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:

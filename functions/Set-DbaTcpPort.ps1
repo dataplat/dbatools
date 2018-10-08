@@ -8,7 +8,7 @@ function Set-DbaTcpPort {
         This function changes the TCP port used by the specified SQL Server.
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server instance as a different user

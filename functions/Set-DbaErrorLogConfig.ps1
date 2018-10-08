@@ -10,7 +10,7 @@
         remote, administrative access to the Windows/WMI server, similar to SQL Configuration Manager.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance(s)
+        The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

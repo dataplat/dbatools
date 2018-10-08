@@ -11,7 +11,7 @@
         If -Kerberos or -Ntlm is specified, the $true/$false results of the test will be returned. Returns $true or $false by default for one server. Returns Server name and Results for more than one server.
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to. Server(s) must be SQL Server 2005 or higher.
+        The target SQL Server instance or instances. Server(s) must be SQL Server 2005 or higher.
 
     .PARAMETER Kerberos
         If this switch is enabled, checks will be made for Kerberos authentication.
