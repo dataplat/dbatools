@@ -17,14 +17,17 @@ function Get-DbaDbCertificate {
         Get certificate from specific database
         
     .PARAMETER ExcludeDatabase
-        Database(s) to ignore when retrieving certificates.
+        Database(s) to ignore when retrieving certificates
     
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase.
+        Allows piping from Get-DbaDatabase
     
     .PARAMETER Certificate
-        Get specific certificate
-        
+        Get specific certificate by name
+  
+    .PARAMETER Certificate
+        Get specific certificate by subject
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -52,7 +55,12 @@ function Get-DbaDbCertificate {
         PS C:\> Get-DbaDbCertificate -SqlInstance Server1 -Database db1 -Certificate cert1
         
         Gets the cert1 certificate within the db1 database
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbCertificate -SqlInstance Server1 -Database db1 -Subject 'Availability Group Cert'
         
+        Gets the cert1 certificate within the db1 database
+    
 #>
     [CmdletBinding()]
     param (
@@ -62,6 +70,7 @@ function Get-DbaDbCertificate {
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [object[]]$Certificate, # sometimes it's text, other times cert
+        [string[]]$Subject,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
@@ -88,6 +97,10 @@ function Get-DbaDbCertificate {
             
             if ($Certificate) {
                 $certs = $certs | Where-Object Name -in $Certificate
+            }
+            
+            if ($Subject) {
+                $certs = $certs | Where-Object Subject -in $Subject
             }
             
             foreach ($cert in $certs) {

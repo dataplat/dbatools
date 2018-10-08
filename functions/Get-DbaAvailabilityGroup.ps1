@@ -63,7 +63,6 @@
         [PSCredential]$SqlCredential,
         [object[]]$AvailabilityGroup,
         [switch]$IsPrimary,
-        [Alias('Silent')]
         [switch]$EnableException
     )
 

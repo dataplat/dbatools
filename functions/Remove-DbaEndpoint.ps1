@@ -21,7 +21,7 @@ function Remove-DbaEndpoint {
         Remove all endpoints on an instance, ignoring the packaged endpoints: AlwaysOn_health, system_health, telemetry_xevents.
         
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-Endpoint
+        Internal parameter to support piping from Get-DbaEndpoint
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -50,14 +50,14 @@ function Remove-DbaEndpoint {
         Removes all endpoints on the sqlserver2014 instance. Prompts for confirmation.
         
     .EXAMPLE
-        PS C:\> Remove-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1,endpoint2 -Confirm:$false
+        PS C:\> Remove-DbaEndpoint -SqlInstance sqlserver2012 -DbaEndpoint endpoint1,endpoint2 -Confirm:$false
         
         Removes the endpoint1 and endpoint2 endpoints. Does not prompt for confirmation.
         
     .EXAMPLE
-        PS C:\> Get-Endpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Remove-DbaEndpoint
+        PS C:\> Get-DbaEndpoint -SqlInstance sqlserver2012 -DbaEndpoint endpoint1 | Remove-DbaEndpoint
         
-        Removes the endpoints returned from the Get-Endpoint function. Prompts for confirmation.
+        Removes the endpoints returned from the Get-DbaEndpoint function. Prompts for confirmation.
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -79,9 +79,9 @@ function Remove-DbaEndpoint {
         }
         
         foreach ($ep in $InputObject) {
-            if ($Pscmdlet.ShouldProcess("$instance", "Removing endpoint $ep from $($ep.Parent)")) {
+            if ($Pscmdlet.ShouldProcess($ep.Parent.name, "Removing endpoint $ep")) {
                 # avoid enumeration issues
-                $ep.Parent.Query("DROP ENDPOINT [$($ep.Name)]")
+                $ep.Parent.Query("DROP ENDPOINT $ep")
                 try {
                     [pscustomobject]@{
                         ComputerName = $ep.ComputerName

@@ -21,15 +21,8 @@
     .PARAMETER All
         Purge the master keys from all databases on an instance.
 
-    .PARAMETER MasterKeyCollection
+    .PARAMETER InputObject
         Internal parameter to support pipeline input
-
-    .PARAMETER Mode
-        Controls how the function handles cases where it can't do anything due to missing database or key:
-        Strict: Write a warning (default)
-        Lazy:   Write a verbose message
-        Report: Create a report object as part of the output
-        The default action can be adjusted by using Set-DbatoolsConfig to change the 'message.mode.default' configuration
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -43,7 +36,7 @@
         Prompts you for confirmation before executing any changing operations within the command.
 
     .NOTES
-        Tags: Certificate
+        Tags: Certificate, Masterkey
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -62,8 +55,13 @@
 
         Suppresses all prompts to remove the master key in the 'db1' database and drops the key.
 
+    .EXAMPLE
+        PS C:\> Get-DbaDbMasterKey -SqlInstance Server1 -Database db1 | Remove-DbaDbMasterKey -Confirm:$false
+
+        Suppresses all prompts to remove the master key in the 'db1' database and drops the key.
+    
 #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [parameter(Mandatory, ParameterSetName = "instanceExplicit")]
         [parameter(Mandatory, ParameterSetName = "instanceAll")]
@@ -77,125 +75,39 @@
         [parameter(Mandatory, ParameterSetName = "instanceAll")]
         [switch]$All,
         [parameter(ValueFromPipeline, ParameterSetName = "collection")]
-        [Microsoft.SqlServer.Management.Smo.MasterKey[]]$MasterKeyCollection,
-        [DbaMode]$Mode = (Get-DbatoolsConfigValue -FullName 'message.mode.default' -Fallback "Strict"),
-        [switch][Alias('Silent')]
-        $EnableException
+        [Microsoft.SqlServer.Management.Smo.MasterKey[]]$InputObject,
+        [switch]$EnableException
     )
-
-    begin {
-        function Drop-Masterkey {
-            [CmdletBinding()]
-            param (
-                $masterkey,
-
-                $mode = $Mode,
-
-                $EnableException = $EnableException
-            )
+    
+    process {
+        if ($SqlInstance) {
+            # all does not need to be addressed in the code because it gets all the dbs if $databases is empty
+            $databases = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+            if ($databases) {
+                foreach ($key in $databases.MasterKey) {
+                    $InputObject += $key
+                }
+            }
+        }
+        foreach ($masterkey in $InputObject) {
             $server = $masterkey.Parent.Parent
-            $instance = $server.DomainInstanceName
-            $cert = $masterkey.Name
             $db = $masterkey.Parent
-
-            if ($Pscmdlet.ShouldProcess($instance, "Dropping the master key for database '$db'")) {
+            if ($Pscmdlet.ShouldProcess($server.Name, "Removing master key on $($db.Name)")) {
+                # avoid enumeration issues
                 try {
-                    $masterkey.Drop()
-                    Write-Message -Level Verbose -Message "Successfully removed master key from the $db database on $instance"
-
+                    $masterkey.Parent.Query("DROP MASTER KEY")
                     [pscustomobject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $db.Name
-                        Status       = "Success"
+                        Status       = "Master key removed"
                     }
                 }
                 catch {
-                    [pscustomobject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        Database     = $db.Name
-                        Status       = "Failure"
-                    }
-                    Stop-Function -Message "Failed to drop master key from $db on $instance." -Target $db -InnerErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
-    }
-    process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            if ($All) {
-                $Database = ($server.Databases | Where-Object Name -NotIn $ExcludeDatabase).Name
-            }
-
-            :Database foreach ($db in $Database) {
-                $smodb = $server.Databases[$db]
-                $masterkey = $smodb.MasterKey
-
-                #region Case: Database Unknown
-                if ($null -eq $smodb) {
-                    switch ($Mode) {
-                        [DbaMode]::Strict { Stop-Function -Message "Database '$db' does not exist on $instance" -Target $smodb -Continue -ContinueLabel database }
-                        [DbaMode]::Lazy {
-                            Write-Message -Level (Get-DbatoolsConfigValue -Name 'message.mode.lazymessagelevel' -Fallback 4) -Message "Database '$db' does not exist on $instance" -Target $smodb
-                            continue database
-                        }
-                        [DbaMode]::Report {
-                            [pscustomobject]@{
-                                ComputerName = $server.ComputerName
-                                InstanceName = $server.ServiceName
-                                SqlInstance  = $server.DomainInstanceName
-                                Database     = $db
-                                Status       = "Unknown Database"
-                            }
-                            continue Database
-                        }
-                    }
-                }
-                #endregion Case: Database Unknown
-
-                #region Case: No Master Key
-                if ($null -eq $masterkey) {
-                    switch ($Mode.ToString()) {
-                        "Strict" { Stop-Function -Message "No master key exists in the $db database on $instance" -Target $smodb -Continue -ContinueLabel database }
-                        "Lazy" {
-                            Write-Message -Level (Get-DbatoolsConfigValue -Name 'message.mode.lazymessagelevel' -Fallback 4) -Message "No master key exists in the $db database on $instance" -Target $smodb
-                            continue database
-                        }
-                        "Report" {
-                            [pscustomobject]@{
-                                ComputerName = $server.ComputerName
-                                InstanceName = $server.ServiceName
-                                SqlInstance  = $server.DomainInstanceName
-                                Database     = $smodb.Name
-                                Status       = "No Masterkey"
-                            }
-                            continue Database
-                        }
-                    }
-                }
-                #endregion Case: No Master Key
-
-                Write-Message -Level Verbose -Message "Removing master key from $db"
-                Drop-Masterkey -masterkey $masterkey
-            }
-        }
-
-        foreach ($key in $MasterKeyCollection) {
-            Write-Message -Level Verbose -Message "Removing master key: $key"
-            Drop-Masterkey -masterkey $key
-        }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Remove-DbaDatabaseMasterKey
     }
 }

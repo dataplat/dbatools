@@ -137,7 +137,7 @@ function New-DbaEndpoint {
                 $thisport = (Get-DbaEndPoint -SqlInstance $server).Protocol.Tcp
                 $measure = $thisport | Measure-Object ListenerPort -Maximum
 
-                if ($null -eq $thisport) {
+                if (-not $thisport) {
                     $tcpPort = 5022
                 }
                 elseif ($measure.Maximum) {
