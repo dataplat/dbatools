@@ -1,4 +1,55 @@
-﻿$startScript = @'
+﻿function Install-SqlServer ([string]$AppVolume, [string]$DataVolume, [string]$LogVolume, [string]$TempVolume, [string]$BackupVolume, [int]$Ctp)
+{
+    <#
+    .SYNOPSIS
+
+    This function will help you to quickly install a SQL Server instance. 
+
+    .DESCRIPTION
+
+    This function will help you to quickly install a SQL Server instance. By scanning your system it will apply a number of best practices to your installation
+    The max DOP and max server memory will be set, the sa account will be disabled while the account used to install SQL Server will be added as sysadmin.
+    The number of TempDB files will be set to the number of cores with a maximum of eight.
+    The perform volume maintenance right will be granted to the SQL Server account. If you run this script in an environment where you are not allowed to do this,
+    please revert that operation by removing the right from the local security policy (secpol.msc).
+
+    The autogrowth of file will be set to 64MB, the Cost Threshold for Parallelism will be set to 40. 
+
+    Note that the dowloaded installation file must be unzipped, an ISO has to be mounted. This will not be executed from this script.
+    
+    .PARAMETER Name
+
+    $AppVolume will hold the volume letter of the application disc. If left empty, it will default to C, unless there is a drive named like App
+
+    $DataVolume will hold the volume letter of the Data disc. If left empty, it will default to C, unless there is a drive named like Data
+
+    $LogVolume will hold the volume letter of the Log disc. If left empty, it will default to C, unless there is a drive named like Log
+
+    $TempVolume will hold the volume letter of the Temp disc. If left empty, it will default to C, unless there is a drive named like Temp
+
+    $BackupVolume will hold the volume letter of the Backup disc. If left empty, it will default to C, unless there is a drive named like Backup
+
+    $Ctp will hold the value of your Cost Threshold for Parallelism. If left empty, it will default to 40 (the mean between OLTP(30) and Datawarehousing(50))
+
+    .Inputs
+    None
+
+    .Outputs
+    None
+
+    .Example
+    C:\PS> Install-SqlServer
+
+    This will run the installation with the default settings
+
+    C:\PS> Install-SqlServer -AppVolume "G"
+
+    This will run the installation with default setting apart from the application volume, this will be redirected to the G drive.
+
+
+    #>
+
+    $startScript = @'
 
 ;SQL Server 2014 Configuration File
 [OPTIONS]
@@ -86,322 +137,304 @@ NPENABLED="0"
 BROWSERSVCSTARTUPTYPE="Automatic"
 '@
 
-# Check if there are designated drives for Data, Log, TempDB, Back-up and Application.
-$DataVolume = Get-Volume | 
-    Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*Data*'} | 
-    Select-Object -ExpandProperty DriveLetter
+    # Check if there are designated drives for Data, Log, TempDB, Back-up and Application.
+    If ($DataVolume -eq $null -or $DataVolume -eq '') {
+        $DataVolume = Get-Volume | 
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*Data*'} | 
+            Select-Object -ExpandProperty DriveLetter
+    }
+    if ($LogVolume -eq $null -or $LogVolume -eq '') {
+        $LogVolume = Get-Volume | 
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*Log*'} |  
+            Select-Object -ExpandProperty DriveLetter
+    }
+    if ($TempVolume -eq $null -or $TempVolume -eq '') {
+        $TempVolume = Get-Volume | 
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*TempDB*'} |  
+            Select-Object -ExpandProperty DriveLetter
+    }
+    if ($AppVolume -eq $null -or $AppVolume -eq '') {
+        $AppVolume = Get-Volume | 
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*App*'} |  
+            Select-Object -ExpandProperty DriveLetter
+    }
+    if ($BackupVolume -eq $null -or $BackupVolume -eq '') {
+        $BackupVolume = Get-Volume | 
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*Backup*'} |  
+            Select-Object -ExpandProperty DriveLetter
+    }
+    #Check the number of cores available on the server. Summed because every processor can contain multiple cores
+    $NumberOfCores = Get-WmiObject -Class Win32_processor |  
+        Measure-Object NumberOfLogicalProcessors -Sum | 
+        Select-Object -ExpandProperty sum
 
-$LogVolume = Get-Volume | 
-    Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*Log*'} |  
-    Select-Object -ExpandProperty DriveLetter
-
-$TempVolume = Get-Volume | 
-    Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*TempDB*'} |  
-    Select-Object -ExpandProperty DriveLetter
-
-$AppVolume = Get-Volume | 
-    Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*App*'} |  
-    Select-Object -ExpandProperty DriveLetter
-
-$BackupVolume = Get-Volume | 
-    Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*Backup*'} |  
-    Select-Object -ExpandProperty DriveLetter
-
-#Check the number of cores available on the server. Summed because every processor can contain multiple cores
-$NumberOfCores = Get-WmiObject -Class Win32_processor |  
-    Measure-Object NumberOfLogicalProcessors -Sum | 
-    Select-Object -ExpandProperty sum
-
-IF ($NumberOfCores -gt 8)
+    IF ($NumberOfCores -gt 8)
     { $NumberOfCores = 8 }
 
-#Get the amount of available memory. If it's more than 40 GB, give the server 10% of the memory, else reserve 4 GB.
+    #Get the amount of available memory. If it's more than 40 GB, give the server 10% of the memory, else reserve 4 GB.
 
-$ServerMemory = Get-WmiObject -Class win32_physicalmemory | 
+    $ServerMemory = Get-WmiObject -Class win32_physicalmemory | 
         Measure-Object Capacity -sum | 
         Select-Object -ExpandProperty sum
-$ServerMemoryMB = ($ServerMemory / 1024) / 1024
+    $ServerMemoryMB = ($ServerMemory / 1024) / 1024
 
-If ($ServerMemoryMB -gt 40960)
-    {
+    If ($ServerMemoryMB -gt 40960) {
         $ServerWinMemory = $ServerMemoryMB * 0.1
         $ServerMemoryMB = $ServerMemoryMB - $ServerWinMemory
     }
-else 
-    {
+    else {
         $ServerMemoryMB = $ServerMemoryMB - 4096
     }
 
-IF ($null -eq $DataVolume -or $DataVolume -eq '') {
-    $DataVolume = 'C'
-}
-
-IF ($null -eq $LogVolume -or $LogVolume -eq '') {
-    $LogVolume = $DataVolume
-}
-
-IF ( $null -eq $TempVolume -or $TempVolume -eq '') {
-    $TempVolume = $DataVolume
-}
-
-IF ( $null -eq $AppVolume -or $AppVolume -eq '') {
-    $AppVolume = 'C'
-}
-
-IF ( $null -eq $BackupVolume -or $BackupVolume -eq '') {
-    $BackupVolume = $DataVolume
-}
-
-
-
-Clear-Host
-
-Write-Host 'Your datadrive:' $DataVolume
-Write-Host 'Your logdrive:' $LogVolume
-Write-Host 'Your TempDB drive:' $TempVolume
-Write-Host 'Your applicationdrive:' $AppVolume
-Write-Host 'Your Backup Drive:' $BackupVolume
-Write-Host 'Number of cores for your Database:' $NumberOfCores
-
-Write-Host  'Do you agree on the drives?'
-$AlterDir = Read-Host " ( Y / N )"
-
-$CheckLastTwoChar = ":\"
-$CheckLastChar = "\"
-
-Switch ($AlterDir)
-{
-    Y {Write-Host "Yes, drives agreed, continuing";}
-    N {
-        Write-Host "Datadrive: " $DataVolume
-        $NewDataVolume = Read-Host "Your datavolume: "
-        If($NewDataVolume.Substring($NewDataVolume.Length -2 -eq $CheckLastTwoChar) -and $NewDataVolume.Length -gt 2)
-        {
-            $NewDataVolume = $NewDataVolume.Substring(0,$NewDataVolume.Length-2)
-            $DataVolume = $NewDataVolume
-            Write-Host "DataVolume moved to " $DataVolume
-        }
-        elseif ($NewDataVolume.Substring($NewDataVolume.Length -1 -eq $CheckLastChar)-and $NewDataVolume.Length -gt 1)
-        {
-            $NewDataVolume = $NewDataVolume.Substring(0,$NewDataVolume.Length-1)
-            $DataVolume = $NewDataVolume
-            Write-Host "DataVolume moved to " $DataVolume
-        }
-        else {
-            $DataVolume = $NewDataVolume
-            Write-Host "DataVolume moved to " $DataVolume
-        }
-        If ([string]::IsNullOrEmpty($NewDataVolume))
-        {
-            Write-Host "Datavolume remains on " $DataVolume
-        }
-        Write-Host "logvolume: " $LogVolume
-        $NewLogVolume = Read-Host "Your logvolume: "
-        If($NewLogVolume.Substring($NewLogVolume.Length -2 -eq $CheckLastTwoChar) -and $NewLogVolume.Length -gt 2)
-        {
-            $NewLogVolume = $NewLogVolume.Substring(0,$NewLogVolume.Length-2)
-            $LogVolume = $NewLogVolume
-            Write-Host "LogVolume moved to " $LogVolume
-        }
-        elseif($NewLogVolume.Substring($NewLogVolume.Length -1 -eq $CheckLastChar)-and $NewLogVolume.Length -gt 1)
-        {
-            $NewLogVolume = $NewLogVolume.Substring(0,$NewLogVolume.Length-1)
-            $LogVolume = $NewLogVolume
-            Write-Host "LogVolume moved to " $LogVolume
-        }
-        else {
-            $LogVolume = $NewLogVolume
-            Write-Host "LogVolume moved to " $LogVolume
-        }
-        If ([string]::IsNullOrEmpty($NewLogVolume))
-        {
-            Write-Host "Logvolume remains on " $LogVolume
-        }
-
-        Write-Host "TempVolume: " $TempVolume
-        $NewTempVolume = Read-Host "Your TempVolume: "
-        If($NewTempVolume.Substring($NewTempVolume.Length -2 -eq $CheckLastTwoChar)-and $NewTempVolume.Length -gt 2)
-        {
-            $NewTempVolume = $NewTempVolume.Substring(0,$NewTempVolume.Length-2)
-            $TempVolume = $NewTempVolume
-            Write-Host "TempVolume moved to " $TempVolume
-        }
-        elseif($NewTempVolume.Substring($NewTempVolume.Length -1 -eq $CheckLastChar) -and $NewTempVolume.Length -gt 1)
-        {
-            $NewTempVolume = $NewTempVolume.Substring(0,$NewTempVolume.Length-1)
-            $TempVolume = $NewTempVolume
-            Write-Host "TempVolume moved to " $TempVolume
-        }
-        else {
-            $TempVolume = $NewTempVolume
-            Write-Host "TempVolume moved to " $TempVolume
-        }
-        If ([string]::IsNullOrEmpty($NewTempVolume))
-        {
-            Write-Host "TempVolume remains on " $TempVolume
-        }
-
-        Write-Host "AppVolume: " $AppVolume
-        $NewAppVolume = Read-Host "Your AppVolume: "
-        If($NewAppVolume.Substring($NewAppVolume.Length -2 -eq $CheckLastTwoChar) -and $NewAppVolume.Length -gt 2)
-        {
-            $NewAppVolume = $NewAppVolume.Substring(0,$NewAppVolume.Length-2)
-            $AppVolume = $NewAppVolume
-            Write-Host "AppVolume moved to " $AppVolume
-        }
-        elseif($NewAppVolume.Substring($NewAppVolume.Length -1 -eq $CheckLastChar) -and $NewAppVolume.Length -gt 1)
-        {
-            $NewAppVolume = $NewAppVolume.Substring(0,$NewAppVolume.Length-1)
-            $AppVolume = $NewAppVolume
-            Write-Host "AppVolume moved to " $AppVolume
-        }
-        else {
-            $AppVolume = $NewAppVolume
-            Write-Host "AppVolume moved to " $AppVolume
-        }
-        If ([string]::IsNullOrEmpty($NewAppVolume))
-        {
-            Write-Host "AppVolume remains on " $AppVolume
-        }
-
-        Write-Host "BackupVolume: " $BackupVolume
-        $NewBackupVolume = Read-Host "Your BackupVolume: "
-        If($NewBackupVolume.Substring($NewBackupVolume.Length -2 -eq $CheckLastTwoChar) -and $NewBackupVolume.Length -gt 2)
-        {
-            $NewBackupVolume = $NewBackupVolume.Substring(0,$NewBackupVolume.Length-2)
-            $BackupVolume = $NewBackupVolume
-            Write-Host "BackupVolume moved to " $BackupVolume
-        }
-        elseif($NewBackupVolume.Substring($NewBackupVolume.Length -1 -eq $CheckLastChar) -and $NewBackupVolume.Length -gt -1)
-        {
-            $NewBackupVolume = $NewBackupVolume.Substring(0,$NewBackupVolume.Length-1)
-            $BackupVolume = $NewBackupVolume
-            Write-Host "BackupVolume moved to " $BackupVolume
-        }
-        else {
-            $BackupVolume = $NewBackupVolume
-            Write-Host "BackupVolume moved to " $BackupVolume
-        }
-        If ([string]::IsNullOrEmpty($NewBackupVolume))
-        {
-            Write-Host "BackupVolume remains on " $BackupVolume
-        }
+    IF ($null -eq $DataVolume -or $DataVolume -eq '') {
+        $DataVolume = 'C'
     }
-    Default{Write-Host "Drives agreed, continuing";}
-}
 
-$CheckLastTwoChar = ":\"
-$CheckLastChar = "\"
+    IF ($null -eq $LogVolume -or $LogVolume -eq '') {
+        $LogVolume = $DataVolume
+    }
 
-$SetupFile = Read-Host -Prompt 'Please enter the root location for Setup.exe'
-IF($SetupFile.Length -gt 1)
-{
-    $C2 = $SetupFile.Substring($SetupFile.Length -2)
-    $C1 = $SetupFile.Substring($SetupFile.Length -1)
-    If($C2 -eq $CheckLastTwoChar) 
-        {
-            $debug = $SetupFile.Substring($SetupFile.Length -2)
+    IF ( $null -eq $TempVolume -or $TempVolume -eq '') {
+        $TempVolume = $DataVolume
+    }
+
+    IF ( $null -eq $AppVolume -or $AppVolume -eq '') {
+        $AppVolume = 'C'
+    }
+
+    IF ( $null -eq $BackupVolume -or $BackupVolume -eq '') {
+        $BackupVolume = $DataVolume
+    }
+
+
+
+    Clear-Host
+
+    Write-Host 'Your datadrive:' $DataVolume
+    Write-Host 'Your logdrive:' $LogVolume
+    Write-Host 'Your TempDB drive:' $TempVolume
+    Write-Host 'Your applicationdrive:' $AppVolume
+    Write-Host 'Your Backup Drive:' $BackupVolume
+    Write-Host 'Number of cores for your Database:' $NumberOfCores
+
+    Write-Host  'Do you agree on the drives?'
+    $AlterDir = Read-Host " ( Y / N )"
+
+    $CheckLastTwoChar = ":\"
+    $CheckLastChar = "\"
+
+    Switch ($AlterDir) {
+        Y {Write-Host "Yes, drives agreed, continuing"; }
+        N {
+            Write-Host "Datadrive: " $DataVolume
+            $NewDataVolume = Read-Host "Your datavolume: "
+            If ($NewDataVolume.Substring($NewDataVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewDataVolume.Length -gt 2) {
+                $NewDataVolume = $NewDataVolume.Substring(0, $NewDataVolume.Length - 2)
+                $DataVolume = $NewDataVolume
+                Write-Host "DataVolume moved to " $DataVolume
+            }
+            elseif ($NewDataVolume.Substring($NewDataVolume.Length - 1 -eq $CheckLastChar) -and $NewDataVolume.Length -gt 1) {
+                $NewDataVolume = $NewDataVolume.Substring(0, $NewDataVolume.Length - 1)
+                $DataVolume = $NewDataVolume
+                Write-Host "DataVolume moved to " $DataVolume
+            }
+            else {
+                $DataVolume = $NewDataVolume
+                Write-Host "DataVolume moved to " $DataVolume
+            }
+            If ([string]::IsNullOrEmpty($NewDataVolume)) {
+                Write-Host "Datavolume remains on " $DataVolume
+            }
+            Write-Host "logvolume: " $LogVolume
+            $NewLogVolume = Read-Host "Your logvolume: "
+            If ($NewLogVolume.Substring($NewLogVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewLogVolume.Length -gt 2) {
+                $NewLogVolume = $NewLogVolume.Substring(0, $NewLogVolume.Length - 2)
+                $LogVolume = $NewLogVolume
+                Write-Host "LogVolume moved to " $LogVolume
+            }
+            elseif ($NewLogVolume.Substring($NewLogVolume.Length - 1 -eq $CheckLastChar) -and $NewLogVolume.Length -gt 1) {
+                $NewLogVolume = $NewLogVolume.Substring(0, $NewLogVolume.Length - 1)
+                $LogVolume = $NewLogVolume
+                Write-Host "LogVolume moved to " $LogVolume
+            }
+            else {
+                $LogVolume = $NewLogVolume
+                Write-Host "LogVolume moved to " $LogVolume
+            }
+            If ([string]::IsNullOrEmpty($NewLogVolume)) {
+                Write-Host "Logvolume remains on " $LogVolume
+            }
+
+            Write-Host "TempVolume: " $TempVolume
+            $NewTempVolume = Read-Host "Your TempVolume: "
+            If ($NewTempVolume.Substring($NewTempVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewTempVolume.Length -gt 2) {
+                $NewTempVolume = $NewTempVolume.Substring(0, $NewTempVolume.Length - 2)
+                $TempVolume = $NewTempVolume
+                Write-Host "TempVolume moved to " $TempVolume
+            }
+            elseif ($NewTempVolume.Substring($NewTempVolume.Length - 1 -eq $CheckLastChar) -and $NewTempVolume.Length -gt 1) {
+                $NewTempVolume = $NewTempVolume.Substring(0, $NewTempVolume.Length - 1)
+                $TempVolume = $NewTempVolume
+                Write-Host "TempVolume moved to " $TempVolume
+            }
+            else {
+                $TempVolume = $NewTempVolume
+                Write-Host "TempVolume moved to " $TempVolume
+            }
+            If ([string]::IsNullOrEmpty($NewTempVolume)) {
+                Write-Host "TempVolume remains on " $TempVolume
+            }
+
+            Write-Host "AppVolume: " $AppVolume
+            $NewAppVolume = Read-Host "Your AppVolume: "
+            If ($NewAppVolume.Substring($NewAppVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewAppVolume.Length -gt 2) {
+                $NewAppVolume = $NewAppVolume.Substring(0, $NewAppVolume.Length - 2)
+                $AppVolume = $NewAppVolume
+                Write-Host "AppVolume moved to " $AppVolume
+            }
+            elseif ($NewAppVolume.Substring($NewAppVolume.Length - 1 -eq $CheckLastChar) -and $NewAppVolume.Length -gt 1) {
+                $NewAppVolume = $NewAppVolume.Substring(0, $NewAppVolume.Length - 1)
+                $AppVolume = $NewAppVolume
+                Write-Host "AppVolume moved to " $AppVolume
+            }
+            else {
+                $AppVolume = $NewAppVolume
+                Write-Host "AppVolume moved to " $AppVolume
+            }
+            If ([string]::IsNullOrEmpty($NewAppVolume)) {
+                Write-Host "AppVolume remains on " $AppVolume
+            }
+
+            Write-Host "BackupVolume: " $BackupVolume
+            $NewBackupVolume = Read-Host "Your BackupVolume: "
+            If ($NewBackupVolume.Substring($NewBackupVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewBackupVolume.Length -gt 2) {
+                $NewBackupVolume = $NewBackupVolume.Substring(0, $NewBackupVolume.Length - 2)
+                $BackupVolume = $NewBackupVolume
+                Write-Host "BackupVolume moved to " $BackupVolume
+            }
+            elseif ($NewBackupVolume.Substring($NewBackupVolume.Length - 1 -eq $CheckLastChar) -and $NewBackupVolume.Length -gt -1) {
+                $NewBackupVolume = $NewBackupVolume.Substring(0, $NewBackupVolume.Length - 1)
+                $BackupVolume = $NewBackupVolume
+                Write-Host "BackupVolume moved to " $BackupVolume
+            }
+            else {
+                $BackupVolume = $NewBackupVolume
+                Write-Host "BackupVolume moved to " $BackupVolume
+            }
+            If ([string]::IsNullOrEmpty($NewBackupVolume)) {
+                Write-Host "BackupVolume remains on " $BackupVolume
+            }
+        }
+        Default {Write-Host "Drives agreed, continuing"; }
+    }
+
+    $CheckLastTwoChar = ":\"
+    $CheckLastChar = "\"
+
+    $SetupFile = Read-Host -Prompt 'Please enter the root location for Setup.exe'
+    IF ($SetupFile.Length -gt 1) {
+        $C2 = $SetupFile.Substring($SetupFile.Length - 2)
+        $C1 = $SetupFile.Substring($SetupFile.Length - 1)
+        If ($C2 -eq $CheckLastTwoChar) {
+            $debug = $SetupFile.Substring($SetupFile.Length - 2)
             Write-Host $debug '/' $CheckLastTwoChar
-            $SetupFile = $SetupFile.Substring(0,$SetupFile.Length-2)
+            $SetupFile = $SetupFile.Substring(0, $SetupFile.Length - 2)
             Write-Host $SetupFile
         }
-    elseif($C1 -eq $CheckLastChar)
-        {
-            $SetupFile = $SetupFile.Substring(0,$SetupFile.Length-1)
+        elseif ($C1 -eq $CheckLastChar) {
+            $SetupFile = $SetupFile.Substring(0, $SetupFile.Length - 1)
             Write-Host $SetupFile
         }
     }
-IF($SetupFile.Length -eq 1)
-{
-    $SetupFile = $SetupFile + ':\SQLEXPR_x64_ENU\SETUP.EXE'
-    Write-Host 'Setup will start from ' + $SetupFile
-} 
-else {
-    $SetupFile = $SetupFile + '\SQLEXPR_x64_ENU\SETUP.EXE'
-    Write-Host 'Setup will start from ' + $SetupFile
-    }
-
-
-$ConfigFile = 'c:\temp\'
-
-if( -Not (Test-Path -Path $ConfigFile ) )
-{
-    New-Item -ItemType directory -Path $ConfigFile
-}
-
-Out-File -FilePath C:\Temp\ConfigurationFile2.ini -InputObject $startScript
-
-$FileLocation2 = $ConfigFile + 'ConfigurationFile2.ini'
-
-(Get-Content -Path $FileLocation2).Replace('SQLBACKUPDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"', 'SQLBACKUPDIR="' + $BackupVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"') | Out-File $FileLocation2
-
-(Get-Content -Path $FileLocation2).Replace('SQLUSERDBDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"', 'SQLUSERDBDIR="' + $DataVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"') | Out-File $FileLocation2
-
-(Get-Content -Path $FileLocation2).Replace('SQLTEMPDBDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"', 'SQLTEMPDBDIR="' + $TempVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"') | Out-File $FileLocation2
-
-(Get-Content -Path $FileLocation2).Replace('SQLUSERDBLOGDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"', 'SQLUSERDBLOGDIR="' + $LogVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"') | Out-File $FileLocation2
-
-(Get-Content -Path $FileLocation2).Replace('SQLSYSADMINACCOUNTS="WIN-NAJQHOBU8QD\Administrator"', 'SQLSYSADMINACCOUNTS="' + $env:COMPUTERNAME + '\Administrator"')| Out-File $FileLocation2
-
-#$SetupFile = 'C:\Users\Administrator\Downloads\SQLEXPR_x64_ENU\Setup.exe'
-#$ConfigFile = 'C:\temp\ConfigurationFile2.ini'
-
-$SAPassW = '[InsertPasswordHere]'
-
-& $SetupFile /ConfigurationFile=$FileLocation2 /Q /IACCEPTSQLSERVERLICENSETERMS /SAPWD=$SAPassW
-
-# Grant service account the right to perform volume maintenance
-# code found at https://social.technet.microsoft.com/Forums/windows/en-US/5f293595-772e-4d0c-88af-f54e55814223/adding-domain-account-to-the-local-policy-user-rights-assignment-perform-volume-maintenance?forum=winserverpowershell
-
-## <--- Configure here
-$accountToAdd = 'NT Service\MSSQL$AXIANSDB01'
-## ---> End of Config
-$sidstr = $null
-
-
-try {
-    $ntprincipal = new-object System.Security.Principal.NTAccount "$accountToAdd"
-    $sid = $ntprincipal.Translate([System.Security.Principal.SecurityIdentifier])
-    $sidstr = $sid.Value.ToString()
-}
-catch {
-    $sidstr = $null
-}
-Write-Host "Account: $($accountToAdd)" -ForegroundColor DarkCyan
-if ( [string]::IsNullOrEmpty($sidstr) ) {
-    Write-Host "Account not found!" -ForegroundColor Red
-    #exit -1
-}
-
-Write-Host "Account SID: $($sidstr)" -ForegroundColor DarkCyan
-$tmp = ""
-$tmp = [System.IO.Path]::GetTempFileName()
-Write-Host "Export current Local Security Policy" -ForegroundColor DarkCyan
-secedit.exe /export /cfg "$($tmp)" 
-$c = ""
-$c = Get-Content -Path $tmp
-$currentSetting = ""
-foreach ($s in $c) {
-    if ( $s -like "SeManageVolumePrivilege*") {
-        $x = $s.split("=", [System.StringSplitOptions]::RemoveEmptyEntries)
-        $currentSetting = $x[1].Trim()
-    }
-}
-
-
-if ( $currentSetting -notlike "*$($sidstr)*" ) {
-    Write-Host "Modify Setting ""Perform Volume Maintenance Task""" -ForegroundColor DarkCyan
-       
-    if ( [string]::IsNullOrEmpty($currentSetting) ) {
-        $currentSetting = "*$($sidstr)"
-    }
+    IF ($SetupFile.Length -eq 1) {
+        $SetupFile = $SetupFile + ':\SQLEXPR_x64_ENU\SETUP.EXE'
+        Write-Host 'Setup will start from ' + $SetupFile
+    } 
     else {
-        $currentSetting = "*$($sidstr),$($currentSetting)"
+        $SetupFile = $SetupFile + '\SQLEXPR_x64_ENU\SETUP.EXE'
+        Write-Host 'Setup will start from ' + $SetupFile
     }
+
+
+    $ConfigFile = 'c:\temp\'
+
+    if ( -Not (Test-Path -Path $ConfigFile ) ) {
+        New-Item -ItemType directory -Path $ConfigFile
+    }
+
+    Out-File -FilePath C:\Temp\ConfigurationFile2.ini -InputObject $startScript
+
+    $FileLocation2 = $ConfigFile + 'ConfigurationFile2.ini'
+
+    (Get-Content -Path $FileLocation2).Replace('SQLBACKUPDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"', 'SQLBACKUPDIR="' + $BackupVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"') | Out-File $FileLocation2
+
+    (Get-Content -Path $FileLocation2).Replace('SQLUSERDBDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"', 'SQLUSERDBDIR="' + $DataVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"') | Out-File $FileLocation2
+
+    (Get-Content -Path $FileLocation2).Replace('SQLTEMPDBDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"', 'SQLTEMPDBDIR="' + $TempVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"') | Out-File $FileLocation2
+
+    (Get-Content -Path $FileLocation2).Replace('SQLUSERDBLOGDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"', 'SQLUSERDBLOGDIR="' + $LogVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"') | Out-File $FileLocation2
+
+    (Get-Content -Path $FileLocation2).Replace('SQLSYSADMINACCOUNTS="WIN-NAJQHOBU8QD\Administrator"', 'SQLSYSADMINACCOUNTS="' + $env:COMPUTERNAME + '\Administrator"')| Out-File $FileLocation2
+
+    #$SetupFile = 'C:\Users\Administrator\Downloads\SQLEXPR_x64_ENU\Setup.exe'
+    #$ConfigFile = 'C:\temp\ConfigurationFile2.ini'
+
+    $SAPassW = '[InsertPasswordHere]'
+
+    & $SetupFile /ConfigurationFile=$FileLocation2 /Q /IACCEPTSQLSERVERLICENSETERMS /SAPWD=$SAPassW
+
+    # Grant service account the right to perform volume maintenance
+    # code found at https://social.technet.microsoft.com/Forums/windows/en-US/5f293595-772e-4d0c-88af-f54e55814223/adding-domain-account-to-the-local-policy-user-rights-assignment-perform-volume-maintenance?forum=winserverpowershell
+
+    ## <--- Configure here
+    $accountToAdd = 'NT Service\MSSQL$AXIANSDB01'
+    ## ---> End of Config
+    $sidstr = $null
+
+
+    try {
+        $ntprincipal = new-object System.Security.Principal.NTAccount "$accountToAdd"
+        $sid = $ntprincipal.Translate([System.Security.Principal.SecurityIdentifier])
+        $sidstr = $sid.Value.ToString()
+    }
+    catch {
+        $sidstr = $null
+    }
+    Write-Host "Account: $($accountToAdd)" -ForegroundColor DarkCyan
+    if ( [string]::IsNullOrEmpty($sidstr) ) {
+        Write-Host "Account not found!" -ForegroundColor Red
+        #exit -1
+    }
+
+    Write-Host "Account SID: $($sidstr)" -ForegroundColor DarkCyan
+    $tmp = ""
+    $tmp = [System.IO.Path]::GetTempFileName()
+    Write-Host "Export current Local Security Policy" -ForegroundColor DarkCyan
+    secedit.exe /export /cfg "$($tmp)" 
+    $c = ""
+    $c = Get-Content -Path $tmp
+    $currentSetting = ""
+    foreach ($s in $c) {
+        if ( $s -like "SeManageVolumePrivilege*") {
+            $x = $s.split("=", [System.StringSplitOptions]::RemoveEmptyEntries)
+            $currentSetting = $x[1].Trim()
+        }
+    }
+
+
+    if ( $currentSetting -notlike "*$($sidstr)*" ) {
+        Write-Host "Modify Setting ""Perform Volume Maintenance Task""" -ForegroundColor DarkCyan
        
-    Write-Host "$currentSetting"
+        if ( [string]::IsNullOrEmpty($currentSetting) ) {
+            $currentSetting = "*$($sidstr)"
+        }
+        else {
+            $currentSetting = "*$($sidstr),$($currentSetting)"
+        }
        
-    $outfile = @"
+        Write-Host "$currentSetting"
+       
+        $outfile = @"
 [Unicode]
 Unicode=yes
 [Version]
@@ -411,49 +444,53 @@ Revision=1
 SeManageVolumePrivilege = $($currentSetting)
 "@
        
-    $tmp2 = ""
-    $tmp2 = [System.IO.Path]::GetTempFileName()
+        $tmp2 = ""
+        $tmp2 = [System.IO.Path]::GetTempFileName()
        
        
-    Write-Host "Import new settings to Local Security Policy" -ForegroundColor DarkCyan
-    $outfile | Set-Content -Path $tmp2 -Encoding Unicode -Force
-    #notepad.exe $tmp2
-    Push-Location (Split-Path $tmp2)
+        Write-Host "Import new settings to Local Security Policy" -ForegroundColor DarkCyan
+        $outfile | Set-Content -Path $tmp2 -Encoding Unicode -Force
+        #notepad.exe $tmp2
+        Push-Location (Split-Path $tmp2)
        
-    try {
-        secedit.exe /configure /db "secedit.sdb" /cfg "$($tmp2)" /areas USER_RIGHTS 
-        #write-host "secedit.exe /configure /db ""secedit.sdb"" /cfg ""$($tmp2)"" /areas USER_RIGHTS "
+        try {
+            secedit.exe /configure /db "secedit.sdb" /cfg "$($tmp2)" /areas USER_RIGHTS 
+            #write-host "secedit.exe /configure /db ""secedit.sdb"" /cfg ""$($tmp2)"" /areas USER_RIGHTS "
+        }
+        finally {  
+            Pop-Location
+        }
     }
-    finally {  
-        Pop-Location
+    else {
+        Write-Host "NO ACTIONS REQUIRED! Account already in ""Perform Volume Maintenance Task""" -ForegroundColor DarkCyan
     }
-}
-else {
-    Write-Host "NO ACTIONS REQUIRED! Account already in ""Perform Volume Maintenance Task""" -ForegroundColor DarkCyan
-}
-Write-Host "Done." -ForegroundColor DarkCyan 
+    Write-Host "Done." -ForegroundColor DarkCyan 
 
 
 
-# Now for the fun part, alter the database settings
-# First we need to install (if necessary) the SQL commandlets
+    # Now for the fun part, alter the database settings
+    # First we need to install (if necessary) the SQL commandlets
 
-Install-PackageProvider -Name NuGet -Force
+    Install-PackageProvider -Name NuGet -Force
 
-Install-Module -name SqlServer -Force
+    Install-Module -name SqlServer -Force
 
-Import-Module SqlServer -Force
+    Import-Module SqlServer -Force
 
-#Go into the realms of SQL Server
+    #Go into the realms of SQL Server
 
-SQLSERVER:
+    SQLSERVER:
 
-#most queries work best when you're around databases. 
-Set-Location .\SQL\$env:COMPUTERNAME\AXIANSDB01\databases
+    #most queries work best when you're around databases. 
+    Set-Location .\SQL\$env:COMPUTERNAME\AXIANSDB01\databases
 
-#Let's setup the Max Dop, CTfP and max server memory.
+    #Let's setup the Max Dop, CTfP and max server memory.
+    if($null -eq $Ctp -or $Ctp -eq '')
+    {
+        $Ctp = 40
+    }
 
-$sql1 = @'
+    $sql1 = @'
       USE master;
       GO
       EXEC sp_configure 'show advanced options',1;
@@ -462,20 +499,21 @@ $sql1 = @'
       exec sp_configure 'max degree of parallelism', 
 '@
 
-$sql2 = @'
+    $sql2 = @'
       ;
       GO
       RECONFIGURE WITH OVERRIDE;
-      EXEC sp_configure 'Cost threshold for parallelism', 40;
-      GO
-      RECONFIGURE WITH OVERRIDE
+      EXEC sp_configure 'Cost threshold for parallelism', 
 '@
 
-$sql3 = @'
+    $sql3 = @'
+    ;
+    GO
+    RECONFIGURE WITH OVERRIDE
     EXEC sp_configure 'max server memory'
 '@
 
-$sql4 = @'
+    $sql4 = @'
  ;
  GO
  RECONFIGURE WITH OVERRIDE
@@ -484,23 +522,23 @@ $sql4 = @'
  RECONFIGURE WITH OVERRIDE
 '@
 
-$totalQuery = $sql1 + $NumberOfCores + $sql2 + $sql3 + $ServerMemoryMB + $sql4
+    $totalQuery = $sql1 + $NumberOfCores + $sql2 + $Ctp + $sql3 + $ServerMemoryMB + $sql4
 
-Invoke-Sqlcmd -Database master -Query $totalQuery
+    Invoke-Sqlcmd -Database master -Query $totalQuery
 
-#Now configure the right amount of TempDB files.
+    #Now configure the right amount of TempDB files.
 
-$val = 1
+    $val = 1
 
-WHILE ($val -ne $NumberOfCores) {
-    $sqlM = 'ALTER DATABASE tempdb ADD FILE ( NAME = N''tempdev' + $val + ''', FILENAME = N''' + $TempVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\DATA\tempdev' + $val + '.ndf'' , SIZE = 64MB , FILEGROWTH = 64MB)'
-    Invoke-Sqlcmd -Database master -Query $sqlM
+    WHILE ($val -ne $NumberOfCores) {
+        $sqlM = 'ALTER DATABASE tempdb ADD FILE ( NAME = N''tempdev' + $val + ''', FILENAME = N''' + $TempVolume + ':\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\DATA\tempdev' + $val + '.ndf'' , SIZE = 64MB , FILEGROWTH = 64MB)'
+        Invoke-Sqlcmd -Database master -Query $sqlM
 
-    $val++
-}
+        $val++
+    }
 
-#And make sure the standard one has the same configuration as the new ones to make sure the parallelism works
-$sql = @'
+    #And make sure the standard one has the same configuration as the new ones to make sure the parallelism works
+    $sql = @'
 ALTER DATABASE TempDB   
 MODIFY FILE  
 (NAME = tempdev,  
@@ -508,10 +546,11 @@ SIZE = 64MB, FILEGROWTH = 64MB);
 GO  
 '@
 
-Invoke-Sqlcmd -Database TempDB -Query $sql
+    Invoke-Sqlcmd -Database TempDB -Query $sql
 
-#Turn off SA, primary break-in point of the naughty users
+    #Turn off SA, primary break-in point of the naughty users
 
-$sql = 'ALTER LOGIN sa DISABLE'
+    $sql = 'ALTER LOGIN sa DISABLE'
 
-Invoke-Sqlcmd -Database master -Query $sql
+    Invoke-Sqlcmd -Database master -Query $sql
+}
