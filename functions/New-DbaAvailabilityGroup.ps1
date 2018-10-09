@@ -89,6 +89,11 @@ function New-DbaAvailabilityGroup {
     
         The far endpoint must have a certificate with the public key matching the private key of the specified certificate.
     
+    .PARAMETER BasicAvailabilityGroup
+        Indicates whether the availability group is basic. Basic availability groups like pumpkin spice and uggs.    
+    
+        https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/basic-availability-groups-always-on-availability-groups
+        
     .PARAMETER Force
         Drop and recreate the database on remote servers using fresh backup.
         
@@ -191,6 +196,7 @@ function New-DbaAvailabilityGroup {
         [switch]$Dhcp,
         [switch]$DtcSupport,
         [string]$Certificate,
+        [switch]$BasicAvailabilityGroup,
         [ValidateSet('External', 'Wsfc', 'None')]
         [string]$ClusterType = 'External',
         [ValidateSet('None', 'Primary', 'Secondary', 'SecondaryOnly')]
@@ -276,6 +282,8 @@ function New-DbaAvailabilityGroup {
             $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
             $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
             $ag.HealthCheckTimeout = $HealthCheckTimeout
+            $ag.BasicAvailabilityGroup = $BasicAvailabilityGroup
+            
             if ($PassThru) {
                 $defaults = 'LocalReplicaRole', 'Name as AvailabilityGroup', 'PrimaryReplicaServerName as PrimaryReplica', 'AutomatedBackupPreference', 'AvailabilityReplicas', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
                 return (Select-DefaultView -InputObject $ag -Property $defaults)
