@@ -11,7 +11,7 @@
         See https://msdn.microsoft.com/en-us/library/ms190737.aspx for more information.
 
     .PARAMETER SqlInstance
-        The SQL Server instance to connect to.
+        The target SQL Server instance or instances.
 
     .PARAMETER Credential
         Allows you to login to servers using alternate Windows credentials.
@@ -68,7 +68,6 @@
 
                 $computerName = (Resolve-DbaNetworkName -ComputerName $computerName).FullComputerName
 
-                Write-Message -Level Verbose -message "Connecting to $computerName"
 
                 if ($instanceName.Length -eq 0) { $instanceName = "MSSQLSERVER" }
 

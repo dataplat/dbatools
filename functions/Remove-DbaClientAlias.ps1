@@ -4,10 +4,10 @@
         Removes a sql alias for the specified server - mimics cliconfg.exe
 
     .DESCRIPTION
-        Removes a SQL Server alias by altering HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
+        Removes a sql alias for the specified server by altering HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client - mimics cliconfg.exe.
 
     .PARAMETER ComputerName
-        The target computer where the alias will be created
+        The target computer where the alias will be created.
 
     .PARAMETER Credential
         Allows you to login to remote computers using alternative credentials

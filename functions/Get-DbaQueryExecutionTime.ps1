@@ -8,7 +8,7 @@ function Get-DbaQueryExecutionTime {
         Quickly find slow query executions within a database.  Results will include stored procedures and individual SQL statements.
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -181,7 +181,6 @@ function Get-DbaQueryExecutionTime {
         }
 
         foreach ($instance in $SqlInstance) {
-            Write--Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             }

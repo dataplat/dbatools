@@ -51,7 +51,7 @@ function Stop-DbaPfDataCollectorSet {
         Attempts to stop all ready Collectors on localhost.
 
     .EXAMPLE
-        PS C:\> Stop-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        PS C:\> Stop-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential ad\sqldba -CollectorSet 'System Correlation'
 
         Stops the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
 
@@ -107,7 +107,6 @@ function Stop-DbaPfDataCollectorSet {
             if ($status -ne "Running") {
                 Stop-Function -Message "$setname on $computer is already stopped." -Continue
             }
-            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
             }

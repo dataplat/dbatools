@@ -8,8 +8,7 @@ function Find-DbaLoginInGroup {
         Outputs all the active directory groups members for a server, or limits it to find a specific AD user in the groups
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a
-        collection and receive pipeline input.
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input.
 
     .PARAMETER SqlCredential
         PSCredential object to connect under. If not specified, current Windows login will be used.
@@ -129,7 +128,6 @@ function Find-DbaLoginInGroup {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -150,7 +148,6 @@ function Find-DbaLoginInGroup {
             else {
                 $res = $ADGroupOut | Where-Object { $Login -contains $_.Login }
                 if ($res.Length -eq 0) {
-                    Write-Message -Level Warning -Message "No logins matching $($Login -join ',') found connecting to $server"
                     continue
                 }
             }

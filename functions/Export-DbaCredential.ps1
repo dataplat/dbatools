@@ -9,7 +9,7 @@
         Requires remote Windows access if exporting the password.
 
     .PARAMETER SqlInstance
-        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2005 or higher.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -71,7 +71,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
                 $InputObject += $server.Credentials
             }

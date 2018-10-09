@@ -14,7 +14,7 @@ function Export-DbaExecutionPlan {
         for the idea and query.
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user
@@ -162,7 +162,6 @@ function Export-DbaExecutionPlan {
         }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }

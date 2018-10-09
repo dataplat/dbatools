@@ -35,7 +35,7 @@
         So, if you need to use something, go with FullComputerName, always, as it is the most correct in every scenario.
 
     .PARAMETER ComputerName
-        The Server that you're connecting to.
+        The target SQL Server instance or instances.
         This can be the name of a computer, a SMO object, an IP address or a SQL Instance.
 
     .PARAMETER Credential
@@ -157,7 +157,6 @@
             }
             else {
 
-                Write-Message -Level Verbose -Message "Connecting to $Computer"
 
                 try {
                     $ipaddress = ((Test-Connection -ComputerName $Computer -Count 1 -ErrorAction Stop).Ipv4Address).IPAddressToString

@@ -176,7 +176,6 @@
     begin {
 
         if ($SqlInstance.length -ne 0) {
-            Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
             try {
                 $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
             }

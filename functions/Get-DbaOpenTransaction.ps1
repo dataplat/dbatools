@@ -35,7 +35,7 @@
         Returns open transactions for sqlserver2014a
 
     .EXAMPLE
-        PS C:\> Get-DbaOpenTransaction -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)
+        PS C:\> Get-DbaOpenTransaction -SqlInstance sqlserver2014a -SqlCredential sqladmin
 
         Logs into sqlserver2014a using the login "sqladmin"
 
@@ -89,7 +89,6 @@
     }
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }

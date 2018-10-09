@@ -7,7 +7,7 @@
         Gets computer certificates on localhost that are candidates for using with SQL Server's network encryption
 
     .PARAMETER ComputerName
-        The target SQL Server - defaults to localhost. If target is a cluster, you must specify the distinct nodes.
+       The target SQL Server instance or instances. Defaults to localhost. If target is a cluster, you must specify the distinct nodes.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.
@@ -49,7 +49,6 @@
     process {
         foreach ($computer in $computername) {
 
-            Write-Message -Level Verbose -Message "Connecting to SQL WMI on $($computer.ComputerName)"
             try {
                 $sqlwmis = Invoke-ManagedComputerCommand -ComputerName $computer.ComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -match "SQL Server \("
             }
@@ -120,7 +119,6 @@
                     }
                 }
 
-                Write-Message -Level Verbose -Message "Connecting to $computer to get a list of certs"
                 try {
                     Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop |
                         Select-DefaultView -ExcludeProperty Certificate

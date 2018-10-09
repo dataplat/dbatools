@@ -11,7 +11,7 @@ function Remove-DbaPfDataCollectorCounter {
         The target computer. Defaults to localhost.
 
     .PARAMETER Credential
-        Allows you to login to $ComputerName using alternative credentials. To use:
+        Allows you to login to the target computer using alternative credentials. To use:
 
         $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 

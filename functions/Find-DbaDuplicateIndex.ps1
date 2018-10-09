@@ -24,7 +24,7 @@
         IsFiltered (When 2008+)
 
     .PARAMETER SqlInstance
-        The SQL Server you want to check for duplicate indexes.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -464,7 +464,6 @@
 
         foreach ($instance in $sqlinstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
             }
             catch {

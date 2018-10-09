@@ -11,7 +11,7 @@
         Note: This command returns results from all SQL server instances on the destination server but the process column is specific to -SqlInstance passed.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -43,7 +43,7 @@
         Returns the single use plan cache usage information for SQL Server instance 2017
 
     .EXAMPLE
-        PS C:\> Get-DbaPlanCache -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin)
+        PS C:\> Get-DbaPlanCache -SqlInstance sql2017 -SqlCredential sqladmin
 
         Returns the single use plan cache usage information for SQL Server instance 2017 using login 'sqladmin'
 
@@ -67,7 +67,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

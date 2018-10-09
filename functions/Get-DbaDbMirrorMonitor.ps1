@@ -71,7 +71,7 @@ function Get-DbaDbMirrorMonitor {
 
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,

@@ -9,7 +9,7 @@
         Includes error log path, number of log files configured and size (SQL Server 2012+ only)
 
     .PARAMETER SqlInstance
-        The target SQL Server instance(s)
+        The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -45,7 +45,6 @@
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

@@ -129,7 +129,6 @@ function Get-DbaDiskSpace {
         foreach ($computer in $ComputerName) {
             if ($computer.ComputerName -notin $processed) {
                 $null = $processed.Add($computer.ComputerName)
-                Write-Message -Level VeryVerbose -Message "Connecting to $computer." -Target $computer.ComputerName
             }
             else {
                 continue

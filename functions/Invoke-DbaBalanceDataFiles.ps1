@@ -106,7 +106,6 @@
 
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

@@ -2,10 +2,10 @@
 function Get-DbaXESmartTarget {
 <#
     .SYNOPSIS
-        Gets an XESmartTarget PowerShell Job created by Start-DbaXESmartTarget.
+        Gets an XESmartTarget PowerShell job created by Start-DbaXESmartTarget.
 
     .DESCRIPTION
-        Gets an XESmartTarget PowerShell Job created by Start-DbaXESmartTarget.
+        Gets an XESmartTarget PowerShell job created by Start-DbaXESmartTarget.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

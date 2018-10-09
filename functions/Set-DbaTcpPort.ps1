@@ -8,7 +8,7 @@ function Set-DbaTcpPort {
         This function changes the TCP port used by the specified SQL Server.
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server instance as a different user
@@ -94,7 +94,6 @@ function Set-DbaTcpPort {
         foreach ($instance in $SqlInstance) {
 
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

@@ -15,7 +15,7 @@
         passed in.
 
     .PARAMETER SqlInstance
-        The SQL Server instance to restore to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.

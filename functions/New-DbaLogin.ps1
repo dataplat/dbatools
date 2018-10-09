@@ -103,6 +103,11 @@
 
         Copies logins [Login1] and [Login2] from instance sql1 to instance sql2, but enforces password and expiration policies for the new logins. New logins will also have a default database set to [tempdb] and will be created in a disabled state.
 
+    .EXAMPLE
+        PS C:\> New-DbaLogin -SqlInstance sql1 -Login domain\user
+
+        Creates a new Windows Authentication backed login on sql1. The login will be part of the public server role.
+        
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Password")]
     param (
@@ -195,15 +200,9 @@
         }
         else {
             $loginCollection += $Login
-            $Login | ForEach-Object {
-                if ($_.IndexOf('\') -eq -1 -and $PsCmdlet.ParameterSetName -like "Password*" -and !($Password -or $HashedPassword)) {
-                    $passwordNotSpecified = $true
-                }
-            }
         }
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

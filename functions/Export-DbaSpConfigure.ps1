@@ -8,7 +8,7 @@ function Export-DbaSpConfigure {
         Exports advanced sp_configure global configuration options to sql file.
 
     .PARAMETER SqlInstance
-        SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input.
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input.
         You must have sysadmin access if needs to set 'show advanced options' to 1 and server version must be SQL Server version 2005 or higher.
 
     .PARAMETER SqlCredential
@@ -75,7 +75,6 @@ function Export-DbaSpConfigure {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
             }
             catch {

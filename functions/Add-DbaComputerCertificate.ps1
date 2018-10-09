@@ -8,7 +8,7 @@ function Add-DbaComputerCertificate {
         Adds a computer certificate from a local or remote computer.
 
     .PARAMETER ComputerName
-        The target SQL Server. Defaults to localhost.
+        The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to $ComputerName using alternative credentials.

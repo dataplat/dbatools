@@ -9,7 +9,7 @@
         Each parameter (besides SqlInstance and SqlCredential) acts as the filter to only include or exclude particular element
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to.
+        The target SQL Server instance or instances.
         This can be a collection and receive pipeline input to allow the function
         to be executed against multiple SQL Server instances.
 
@@ -127,7 +127,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Message "Connecting to $instance" -Level Verbose
                 $server = Connect-SqlInstance -SqlInstance $instance -MinimumVersion 11
             }
             catch {
@@ -137,7 +136,6 @@
             try {
                 $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
 
-                Write-Message -Message "Connecting to SSIS Catalog on $instance" -Level Verbose
                 $SSIS = New-Object "$ISNamespace.IntegrationServices" $server
             }
             catch {

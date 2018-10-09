@@ -7,7 +7,7 @@
         Shows a list of databases in a GUI. Returns a string holding the name of the selected database. Hitting cancel returns null.
 
     .PARAMETER SqlInstance
-        The SQL Server Instance to connect to..
+        The target SQL Server instance or instances..
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

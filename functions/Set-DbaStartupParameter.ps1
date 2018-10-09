@@ -199,7 +199,6 @@ function Set-DbaStartupParameter {
 
         if (-not $Offline) {
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance" -Target $SqlInstance
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             }
             catch {
@@ -394,7 +393,6 @@ function Set-DbaStartupParameter {
 
         $instance = $SqlInstance.ComputerName
         $instancename = $SqlInstance.InstanceName
-        Write-Message -Level Verbose -Message "Connecting to $instancename on $instance"
 
         if ($instancename.Length -eq 0) { $instancename = "MSSQLSERVER" }
 

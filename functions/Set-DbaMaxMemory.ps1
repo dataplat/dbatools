@@ -14,7 +14,7 @@ function Set-DbaMaxMemory {
         be going on in your specific environment.
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER MaxMB
         Specifies the max megabytes
@@ -88,7 +88,6 @@ function Set-DbaMaxMemory {
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {

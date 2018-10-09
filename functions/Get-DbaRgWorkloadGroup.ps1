@@ -7,7 +7,7 @@
         Gets all Resource Governor Pool objects, including both internal and external
 
     .PARAMETER SqlInstance
-        The target SQL Server instance(s)
+        The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials
@@ -54,7 +54,6 @@
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             $InputObject += Get-DbaRgResourcePool -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
 

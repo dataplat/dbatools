@@ -19,7 +19,7 @@ function Import-ModuleFile {
         Imports the file stored at '$function.FullName'
 #>
     [CmdletBinding()]
-    Param (
+    param (
         $Path
     )
 
@@ -44,7 +44,7 @@ function Write-ImportTime {
         Adds the message "Starting SMO Import" to the debug list
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [string]$Text,
         $Timestamp = (Get-Date)
     )

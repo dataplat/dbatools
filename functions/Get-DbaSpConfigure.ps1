@@ -8,7 +8,7 @@
         The data includes the default value for each configuration, for quick identification of values that may have been changed.
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -170,7 +170,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

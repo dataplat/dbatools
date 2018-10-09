@@ -10,7 +10,7 @@
         The server protocols can be enabled and disabled when retrieved via WSMan.
 
     .PARAMETER ComputerName
-        The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+        The target SQL Server instance or instances.
 
     .PARAMETER Credential
         Credential object used to connect to the computer as a different user.

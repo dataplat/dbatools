@@ -8,7 +8,7 @@ function Get-DbaSsisExecutionHistory {
         This command gets execution history for SSIS executison given one or more instances and can be filtered by Project, Environment,Folder or Status.
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to.
+        The target SQL Server instance or instances.
         This can be a collection and receive pipeline input to allow the function
         to be executed against multiple SQL Server instances.
 

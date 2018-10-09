@@ -13,7 +13,7 @@
         If everything is OK with the database than you should only see the message "All OK".
 
     .PARAMETER SqlInstance
-        SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -162,7 +162,6 @@ EXEC master.sys.sp_help_log_shipping_monitor"
     process {
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }

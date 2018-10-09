@@ -78,7 +78,7 @@ function Get-DbaPfDataCollectorCounterSample {
         Gets a single sample for all counters for all Collector Sets on sql2017.
 
     .EXAMPLE
-        PS C:\> Get-DbaPfDataCollectorCounterSample -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        PS C:\> Get-DbaPfDataCollectorCounterSample -ComputerName sql2017, sql2016 -Credential ad\sqldba -CollectorSet 'System Correlation'
 
         Gets a single sample for all counters for the 'System Correlation' CollectorSet on sql2017 and sql2016 using alternative credentials.
 

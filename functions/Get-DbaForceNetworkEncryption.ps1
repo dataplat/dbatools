@@ -1,5 +1,4 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-
 function Get-DbaForceNetworkEncryption {
     <#
     .SYNOPSIS
@@ -11,7 +10,7 @@ function Get-DbaForceNetworkEncryption {
         This setting is found in Configuration Manager.
 
     .PARAMETER SqlInstance
-        The target SQL Server - defaults to localhost.
+       The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative Windows credentials
@@ -77,7 +76,6 @@ function Get-DbaForceNetworkEncryption {
                 Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
             }
 
-            Write-Message -Level Verbose -Message "Connecting to SQL WMI on $($instance.ComputerName)"
             try {
                 $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
             }

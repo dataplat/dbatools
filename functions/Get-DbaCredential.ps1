@@ -8,7 +8,7 @@ function Get-DbaCredential {
         The Get-DbaCredential command gets SQL Credential information for each instance(s) of SQL Server.
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
         to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
@@ -78,7 +78,6 @@ function Get-DbaCredential {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

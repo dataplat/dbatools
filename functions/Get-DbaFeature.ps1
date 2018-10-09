@@ -55,7 +55,7 @@ function Get-DbaFeature {
         Gets all SQL Server features for all instances on localhost. Outputs to screen if no instances are found.
 
     .EXAMPLE
-        PS C:\> Get-DbaFeature -ComputerName sql2017 -Credential (Get-Credential ad\sqladmin)
+        PS C:\> Get-DbaFeature -ComputerName sql2017 -Credential ad\sqldba
 
         Gets all SQL Server features for all instances on sql2017 using the ad\sqladmin credential (which has access to the Windows Server).
 

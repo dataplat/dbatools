@@ -25,7 +25,7 @@
         For additional information, check out https://blogs.sentryone.com/loriedwards/patience-dm-exec-requests/ and https://docs.microsoft.com/en-us/sql/relational-databases/system-dynamic-management-views/sys-dm-exec-requests-transact-sql
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         SqlCredential object used to connect to the SQL Server as a different user.
@@ -117,7 +117,6 @@
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 

@@ -51,7 +51,7 @@ function Start-DbaPfDataCollectorSet {
         Attempts to start all ready Collectors on localhost.
 
     .EXAMPLE
-        PS C:\> Start-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        PS C:\> Start-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential ad\sqldba -CollectorSet 'System Correlation'
 
         Starts the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
 
@@ -108,7 +108,6 @@ function Start-DbaPfDataCollectorSet {
             if ($status -eq "Disabled") {
                 Stop-Function -Message "$setname on $computer is disabled." -Continue
             }
-            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
             }

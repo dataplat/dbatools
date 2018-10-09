@@ -176,7 +176,6 @@
 
             # Try to connect to instance
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server "ADMIN:$instance"
             }
             catch {

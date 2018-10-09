@@ -126,7 +126,6 @@ function New-DbaLogShippingSecondaryDatabase {
     )
 
     # Try connecting to the instance
-    Write-Message -Message "Connecting to $SqlInstance" -Level Verbose
     try {
         $ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
@@ -135,7 +134,6 @@ function New-DbaLogShippingSecondaryDatabase {
     }
 
     # Try connecting to the instance
-    Write-Message -Message "Connecting to $PrimaryServer" -Level Verbose
     try {
         $ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
     }
