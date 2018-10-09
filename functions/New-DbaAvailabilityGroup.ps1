@@ -192,15 +192,7 @@ function New-DbaAvailabilityGroup {
         [PSCredential]$SecondarySqlCredential,
         [string]$Name,
         [string[]]$Database,
-        [string]$NetworkShare,
-        [ipaddress[]]$IPAddress,
-        [ipaddress]$SubnetMask,
-        [int]$Port,
-        [switch]$Dhcp,
         [switch]$DtcSupport,
-        [string]$Certificate,
-        [switch]$Basic,
-        [switch]$DatabaseHealthTrigger,
         [ValidateSet('External', 'Wsfc', 'None')]
         [string]$ClusterType = 'External',
         [ValidateSet('None', 'Primary', 'Secondary', 'SecondaryOnly')]
@@ -209,8 +201,16 @@ function New-DbaAvailabilityGroup {
         [string]$FailureConditionLevel = "OnServerDown",
         [ValidateSet('External', 'Wsfc', 'None')]
         [int]$HealthCheckTimeout = 30000,
+        [switch]$Basic,
+        [switch]$DatabaseHealthTrigger,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [string]$NetworkShare,
+        [ipaddress[]]$IPAddress,
+        [ipaddress]$SubnetMask = "255.255.255.0",
+        [int]$Port,
+        [switch]$Dhcp,
+        [string]$Certificate,
         [switch]$UseLastBackups,
         [switch]$Force,
         [switch]$Passthru,
@@ -233,7 +233,7 @@ function New-DbaAvailabilityGroup {
         if ($Certificate) {
             $cert = Get-DbaDbCertificate -SqlInstance $server -Certificate $Certificate
             if (-not $cert) {
-                Stop-Function -Message "Certificate $Certificate does not exist on $Primary" -ErrorRecord $_ -Target $Certificate -Continue
+                Stop-Function -Message "Certificate $Certificate does not exist on $Primary" -ErrorRecord $_ -Target $Primary -Continue
             }
         }
         
@@ -255,7 +255,7 @@ function New-DbaAvailabilityGroup {
             }
         }
         
-        # database stuff
+        # database checks
         if ($Database) {
             $InputObject += Get-DbaDatabase -SqlInstance $server -Database $Database
         }
@@ -306,54 +306,55 @@ function New-DbaAvailabilityGroup {
         
         # Add permissions
         foreach ($second in $secondaries) {
-            $serviceaccounts = $server.ServiceAccount, $second.ServiceAccount, $witserver.ServiceAccount | Select-Object -Unique
-            
-            foreach ($account in $serviceaccounts) {
-                if ($Pscmdlet.ShouldProcess("All involved servers", "Creating login $account and granting CONNECT ON ENDPOINT")) {
-                    $null = New-DbaLogin -SqlInstance $server -Login $account -WarningAction SilentlyContinue
+            $serviceaccounts = $server.ServiceAccount, $second.ServiceAccount | Select-Object -Unique
+            try {
+                Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint, AvailabilityGroup -EnableException
+            }
+            catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
+            }
+        }
+        
+        # Join secondaries
+        foreach ($second in $secondaries) {
+            try {
+                $ag | Join-DbaAvailabilityGroup -Secondary $second -EnableException
+            }
+            catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
+            }
+        }
+        
+        # Add databases
+        $allbackups = @{}
+        foreach ($second in $secondaries) {
+            foreach ($db in $Database) {
+                $primarydb = Get-DbaDatabase -SqlInstance $server -Database $db
+                $secondb = Get-DbaDatabase -SqlInstance $second -Database $db
+                if (-not $seconddb -or $Force) {
                     try {
-                        $null = $server.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
-                        foreach ($second in $secondaries) {
-                            $null = New-DbaLogin -SqlInstance $second -Login $account -WarningAction SilentlyContinue
-                            $null = $second.Query("GRANT CONNECT ON ENDPOINT::$secondaryendpoint TO [$account]")
+                        if (-not $allbackups[$db]) {
+                            if ($UseLastBackups) {
+                                $allbackups[$db] = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last -EnableException
+                            }
+                            else {
+                                $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full -EnableException
+                                $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log -EnableException
+                                $allbackups[$db] = $fullbackup, $logbackup
+                            }
+                            Write-Message -Level Verbose -Message "Backups still exist on $NetworkShare"
+                        }
+                        if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
+                            # keep going to ensure output is shown even if dbs aren't added well.
+                            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                         }
                     }
                     catch {
-                        Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }
                 }
             }
         }
-        
-        # Add databases
-        foreach ($second in $secondaries) {
-            if (-not $validation.DatabaseExistsOnMirror -or $Force) {
-                if ($UseLastBackups) {
-                    $allbackups = Get-DbaBackupHistory -SqlInstance $primarydb.Parent -Database $primarydb.Name -IncludeCopyOnly -Last
-                }
-                else {
-                    $fullbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Full
-                    $logbackup = $primarydb | Backup-DbaDatabase -BackupDirectory $NetworkShare -Type Log
-                    $allbackups = $fullbackup, $logbackup
-                }
-                Write-Message -Level Verbose -Message "Backups still exist on $NetworkShare"
-                
-                if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
-                    # keep going to ensure output is shown even if dbs aren't added well.
-                    $null = $allbackups | Restore-DbaDatabase -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory
-                }
-            }
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting endpoints if necessary"
-            try {
-                $null = $primaryendpoint, $secondaryendpoint | Start-DbaEndpoint -EnableException
-            }
-            catch {
-                Stop-Function -Continue -Message "Failure" -ErrorRecord $_
-            }
-        }
-        
-        # Add replica
-        # Add databases
         
         Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $Name
         
