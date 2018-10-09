@@ -73,10 +73,13 @@ function Get-DbaEndpoint {
 
             $endpoints = $server.Endpoints
 
-            if (Test-Bound -ParameterName EndPoint) {
+            if ($endpoint) {
                 $endpoints = $endpoints | Where-Object Name -in $endpoint
             }
-
+            if ($Type) {
+                $endpoints = $endpoints | Where-Object EndpointType -in $Type    
+            }
+            
             foreach ($end in $endpoints) {
                 if ($end.Protocol.Tcp.ListenerPort) {
                     if ($instance.ComputerName -match '\.') {

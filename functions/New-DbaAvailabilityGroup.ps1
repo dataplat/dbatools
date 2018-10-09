@@ -84,6 +84,11 @@ function New-DbaAvailabilityGroup {
     
         Defaults to 30000 (30 seconds).
     
+    .PARAMETER Certificate 
+        Specifies that the endpoint is to authenticate the connection using the certificate specified by certificate_name to establish identity for authorization. 
+    
+        The far endpoint must have a certificate with the public key matching the private key of the specified certificate.
+    
     .PARAMETER Force
         Drop and recreate the database on remote servers using fresh backup.
         
@@ -111,6 +116,11 @@ function New-DbaAvailabilityGroup {
     .LINK
         https://dbatools.io/New-DbaAvailabilityGroup
         
+    .EXAMPLE
+        PS C:\> New-DbaAvailabilityGroup -Primary sql2016c -Name SharePoint
+    
+        Creates a new availability group on sql2016c named SharePoint
+    
     .EXAMPLE
         PS C:\> $params = @{
         >>    Primary = 'sql2017a'
@@ -259,42 +269,17 @@ function New-DbaAvailabilityGroup {
             }
         }
         
-        # Create endpoint if needed
-        $primaryendpoint = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring
-        if (-not $primaryendpoint) {
-            Write-Message -Level Verbose -Message "Adding endpoint named AvailabilityGroup to $Primary"
-            $primaryendpoint = New-DbaEndpoint -SqlInstance $server -Name hadr_endpoint -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
-            $null = $primaryendpoint | Stop-DbaEndpoint
-            $null = $primaryendpoint | Start-DbaEndpoint
-        }
-        
-        # Create endpoints
-        $allendpoints = @($primaryendpoint)
-        foreach ($second in $secondaries) {
-            try {
-                $second = Connect-SqlInstance -SqlInstance $second -SqlCredential $SecondarySqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $second -Continue
-            }
-            
-            $secondaryendpoint = Get-DbaEndpoint -SqlInstance $second -Type DatabaseMirroring
-            
-            if (-not $secondaryendpoint) {
-                Write-Message -Level Verbose -Message "Adding endpoint named AvailabilityGroup to $($second.Name)"
-                $secondaryendpoint = New-DbaEndpoint -SqlInstance $second -Name hadr_endpoint -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
-                $null = $secondaryendpoint | Stop-DbaEndpoint
-                $null = $secondaryendpoint | Start-DbaEndpoint
-            }
-        }
-        
         # Start work
         try {
             $ag = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroup -ArgumentList $server, $Name
-            $replica = New-DbaAgReplica -SqlInstance $server -InputObject $ag -EnableException -Endpoint hadr_endpoint
+            $replica = Add-DbaAgReplica -SqlInstance $server -InputObject $ag -EnableException
             $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
             $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
             $ag.HealthCheckTimeout = $HealthCheckTimeout
+            if ($PassThru) {
+                $defaults = 'LocalReplicaRole', 'Name as AvailabilityGroup', 'PrimaryReplicaServerName as PrimaryReplica', 'AutomatedBackupPreference', 'AvailabilityReplicas', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
+                return (Select-DefaultView -InputObject $ag -Property $defaults)
+            }
             $ag.Create()
         }
         catch {
@@ -304,10 +289,6 @@ function New-DbaAvailabilityGroup {
             }
             Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
             return
-        }
-        
-        if ($PassThru) {
-            return $ag
         }
         
         # Add permissions
@@ -343,6 +324,7 @@ function New-DbaAvailabilityGroup {
                     $allbackups = $fullbackup, $logbackup
                 }
                 Write-Message -Level Verbose -Message "Backups still exist on $NetworkShare"
+                
                 if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
                     # keep going to ensure output is shown even if dbs aren't added well.
                     $null = $allbackups | Restore-DbaDatabase -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory

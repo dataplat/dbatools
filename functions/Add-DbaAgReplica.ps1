@@ -1,5 +1,5 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function New-DbaAgReplica {
+function Add-DbaAgReplica {
 <#
     .SYNOPSIS
         Adds a replica to an availability group on a SQL Server instance.
@@ -31,7 +31,28 @@ function New-DbaAgReplica {
     
     .PARAMETER InputObject
         Internal parameter to support piping from Get-DbaDatabase.
+
+    .PARAMETER ConnectionModeInPrimaryRole
+        Specifies the connection intent modes of an Availability Replica in primary role. AllowAllConnections by default.
+    
+    .PARAMETER ConnectionModeInSecondaryRole
+        Specifies the connection modes of an Availability Replica in secondary role. AllowAllConnections by default.
+    
+    .PARAMETER ReadonlyRoutingConnectionUrl
+        Sets the read only routing connection url for the availability replica.
+    
+    .PARAMETER SeedingMode
+        Specifies how the secondary replica will be initially seeded.
+    
+        Automatic. Enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.
         
+        Manual. Specifies manual seeding. This method requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.
+    
+    .PARAMETER Certificate 
+        Specifies that the endpoint is to authenticate the connection using the certificate specified by certificate_name to establish identity for authorization. 
+    
+        The far endpoint must have a certificate with the public key matching the private key of the specified certificate.
+    
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
         
@@ -51,15 +72,15 @@ function New-DbaAgReplica {
         License: MIT https://opensource.org/licenses/MIT
         
     .LINK
-        https://dbatools.io/New-DbaAgReplica
+        https://dbatools.io/Add-DbaAgReplica
         
     .EXAMPLE
-        PS C:\> New-DbaAgReplica -SqlInstance sql2017 -AvailabilityGroup SharePoint
+        PS C:\> Add-DbaAgReplica -SqlInstance sql2017 -AvailabilityGroup SharePoint
         
         Creates a listener with no IP address. Does not prompt for confirmation.
         
     .EXAMPLE
-        PS C:\> Get-AvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availability group1 | New-DbaAgReplica
+        PS C:\> Get-AvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availability group1 | Add-DbaAgReplica
         
         Adds the availability groups returned from the Get-AvailabilityGroup function. Prompts for confirmation.
 #>
@@ -69,13 +90,22 @@ function New-DbaAgReplica {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
+        [string]$Name,
         [ValidateSet('AsynchronousCommit', 'SynchronousCommit')]
         [string]$AvailabilityMode = "SynchronousCommit",
         [ValidateSet('Automatic', 'Manual')]
         [string]$FailoverMode = "Automatic",
-        [string]$Name,
+        [int]$BackupPriority = 50,
+        [ValidateSet('AllowAllConnections', 'AllowReadWriteConnections')]
+        [string]$ConnectionModeInPrimaryRole = 'AllowAllConnections',
+        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly')]
+        [string]$ConnectionModeInSecondaryRole = 'AllowAllConnections',
+        [ValidateSet('Automatic', 'Manual')]
+        [string]$SeedingMode,
         [string]$Endpoint,
         [switch]$Passthru,
+        [string]$ReadonlyRoutingConnectionUrl,
+        [string]$Certificate,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]$InputObject,
         [switch]$EnableException
@@ -94,26 +124,44 @@ function New-DbaAgReplica {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             
+            if ($Certificate) {
+                $cert = Get-DbaDbCertificate -SqlInstance $server -Certificate $Certificate
+                if (-not $cert) {
+                    Stop-Function -Message "Certificate $Certificate does not exist on $instance" -ErrorRecord $_ -Target $Certificate -Continue
+                }
+            }
+            
             if ($AvailabilityGroup) {
                 $InputObject = Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $AvailabilityGroup
             }
             
-            if ($Endpoint) {
-                $ep = Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -Endpoint $Endpoint
-                if (-not $ep) {
-                    Stop-Function -Message "Endpoint $Endpoint not found on $instance" -Continue
+            $ep = Get-DbaEndpoint -SqlInstance $server -Endpoint $Endpoint -Type DatabaseMirroring
+            
+            if (-not $ep) {
+                if ($Pscmdlet.ShouldProcess("$instance", "Creating an endpoint")) {
+                    Write-Message -Level Verbose -Message "Adding endpoint named AvailabilityGroup to $instance"
+                    $ep = New-DbaEndpoint -SqlInstance $server -Name hadr_endpoint -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
+                    $null = $ep | Start-DbaEndpoint
                 }
             }
             
             if ($Pscmdlet.ShouldProcess("$instance", "Creating a replica")) {
                 try {
                     $replica = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityReplica($InputObject, $server.Name)
-                    
-                    if ($Endpoint) {
-                        $replica.EndpointUrl = $ep.Fqdn
-                    }
+                    $replica.EndpointUrl = $ep.Fqdn
                     $replica.FailoverMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaFailoverMode]::$FailoverMode
                     $replica.AvailabilityMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaAvailabilityMode]::$AvailabilityMode
+                    $replica.ConnectionModeInPrimaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInPrimaryRole]::$ConnectionModeInPrimaryRole
+                    $replica.ConnectionModeInSecondaryRole = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaConnectionModeInSecondaryRole]::$ConnectionModeInSecondaryRole
+                    $replica.BackupPriority = $BackupPriority
+                    
+                    if ($ReadonlyRoutingConnectionUrl) {
+                        $replica.ReadonlyRoutingConnectionUrl = $ReadonlyRoutingConnectionUrl
+                    }
+                    
+                    if ($SeedingMode) {
+                        $replica.SeedingMode = $SeedingMode
+                    }
                     
                     if ($Passthru) {
                         return $replica
