@@ -195,11 +195,6 @@
         }
         else {
             $loginCollection += $Login
-            $Login | ForEach-Object {
-                if ($_.IndexOf('\') -eq -1 -and $PsCmdlet.ParameterSetName -like "Password*" -and !($Password -or $HashedPassword)) {
-                    $passwordNotSpecified = $true
-                }
-            }
         }
         foreach ($instance in $SqlInstance) {
             try {
