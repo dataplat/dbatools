@@ -42,11 +42,6 @@ function Add-DbaAgDatabase {
         https://dbatools.io/Add-DbaAgDatabase
         
     .EXAMPLE
-        PS C:\> Add-DbaAgDatabase -SqlInstance sqlserver2012 -AllAvailabilityGroup
-        
-        Adds all availability groups on the sqlserver2014 instance. Does not prompt for confirmation.
-        
-    .EXAMPLE
         PS C:\> Add-DbaAgDatabase -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm
         
         Adds the ag1 and ag2 availability groups on sqlserver2012. Prompts for confirmation.
