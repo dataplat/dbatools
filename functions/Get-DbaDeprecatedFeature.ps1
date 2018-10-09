@@ -61,7 +61,7 @@
     begin {
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
         ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-        SERVERPROPERTY('ServerName') AS SqlInstance, object_name, instance_name as deprecated_feature, cntr_value as UsageCount
+        SERVERPROPERTY('ServerName') AS SqlInstance, object_name, instance_name as DeprecatedFeature, object_name as ObjectName, instance_name as deprecated_feature, cntr_value as UsageCount
         FROM sys.dm_os_performance_counters WHERE object_name like '%Deprecated%'
         and cntr_value > 0 ORDER BY deprecated_feature"
     }
@@ -78,7 +78,7 @@
             }
 
             try {
-                $server.Query($sql)
+                $server.Query($sql) | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, ObjectName, DeprecatedFeature, UsageCount
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance -Continue
