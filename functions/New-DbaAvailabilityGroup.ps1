@@ -331,12 +331,16 @@ function New-DbaAvailabilityGroup {
         foreach ($second in $secondaries) {
             try {
                 $null = Add-DbaAgReplica -SqlInstance $second -InputObject $ag -EnableException
+                $ag | Join-DbaAvailabilityGroup -SqlInstance $second
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
             }
         }
         
+        foreach ($second in $secondaries) {
+            
+        }
         # Add databases
         $allbackups = @{ }
         foreach ($db in $Database) {
