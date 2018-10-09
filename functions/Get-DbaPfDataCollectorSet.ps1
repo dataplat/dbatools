@@ -45,7 +45,7 @@ function Get-DbaPfDataCollectorSet {
         Gets all Collector Sets on sql2017.
 
     .EXAMPLE
-        PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2017 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2017 -Credential ad\sqldba -CollectorSet 'System Correlation'
 
         Gets the 'System Correlation' CollectorSet on sql2017 using alternative credentials.
 

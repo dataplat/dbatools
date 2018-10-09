@@ -36,7 +36,7 @@ function Get-DbaCmsRegServerStore {
         Returns a SQL Server Registered Server Store Object from sqlserver2014a
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServerStore -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)
+        PS C:\> Get-DbaCmsRegServerStore -SqlInstance sqlserver2014a -SqlCredential sqladmin
 
         Returns a SQL Server Registered Server Store Object from sqlserver2014a  by logging in with the sqladmin login
 
