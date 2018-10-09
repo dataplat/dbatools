@@ -1,4 +1,4 @@
-﻿function Install-SqlServer ([string]$AppVolume, [string]$DataVolume, [string]$LogVolume, [string]$TempVolume, [string]$BackupVolume, [int]$Ctp)
+﻿function Install-DbaInstance
 {
     <#
     .SYNOPSIS
@@ -17,19 +17,15 @@
 
     Note that the dowloaded installation file must be unzipped, an ISO has to be mounted. This will not be executed from this script.
     
-    .PARAMETER Name
+    .PARAMETER Appvolume will hold the volume letter of the application disc. If left empty, it will default to C, unless there is a drive named like App
 
-    $AppVolume will hold the volume letter of the application disc. If left empty, it will default to C, unless there is a drive named like App
+    .PARAMETER DataVolume will hold the volume letter of the Data disc. If left empty, it will default to C, unless there is a drive named like Data
 
-    $DataVolume will hold the volume letter of the Data disc. If left empty, it will default to C, unless there is a drive named like Data
+    .PARAMETER LogVolume will hold the volume letter of the Log disc. If left empty, it will default to C, unless there is a drive named like Log
 
-    $LogVolume will hold the volume letter of the Log disc. If left empty, it will default to C, unless there is a drive named like Log
+    .PARAMETER TempVolume will hold the volume letter of the Temp disc. If left empty, it will default to C, unless there is a drive named like Temp
 
-    $TempVolume will hold the volume letter of the Temp disc. If left empty, it will default to C, unless there is a drive named like Temp
-
-    $BackupVolume will hold the volume letter of the Backup disc. If left empty, it will default to C, unless there is a drive named like Backup
-
-    $Ctp will hold the value of your Cost Threshold for Parallelism. If left empty, it will default to 40 (the mean between OLTP(30) and Datawarehousing(50))
+    .PARAMETER BackupVolume will hold the volume letter of the Backup disc. If left empty, it will default to C, unless there is a drive named like Backup
 
     .Inputs
     None
@@ -48,7 +44,7 @@
 
 
     #>
-
+PAram  ([string]$AppVolume, [string]$DataVolume, [string]$LogVolume, [string]$TempVolume, [string]$BackupVolume, [int]$Ctp)
     $startScript = @'
 
 ;SQL Server 2014 Configuration File
