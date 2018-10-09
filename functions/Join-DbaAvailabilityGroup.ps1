@@ -7,11 +7,11 @@ function Join-DbaAvailabilityGroup {
     .DESCRIPTION
         Joins a secondary replica to an availability group on a SQL Server instance.
     
-    .PARAMETER Primary
-        SQL Server name or SMO object representing the primary SQL Server.
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SqlInstance SQL Server.
         
-    .PARAMETER PrimarySqlCredential
-        Login to the primary instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         
     .PARAMETER Secondary
         SQL Server name or SMO object representing the secpondary SQL Server instance or instances.
@@ -73,38 +73,26 @@ function Join-DbaAvailabilityGroup {
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
-        [DbaInstanceParameter]$Primary,
-        [PSCredential]$PrimarySqlCredential,
         [parameter(Mandatory)]
-        [DbaInstanceParameter[]]$Secondary,
-        [PSCredential]$SecondarySqlCredential,
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [parameter(Mandatory)]
         [string[]]$AvailabilityGroup,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.AvailabilityReplica[]]$InputObject,
         [switch]$EnableException
     )
     process {
-        if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName AvailabilityGroup)) {
-            Stop-Function -Message "You must specify one or more Availability Groups when using the SqlInstance parameter."
-            return
-        }
+        $ags = Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         
-        foreach ($instance in $Primary) {
-            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $PrimarySqlCredential -AvailabilityGroup $AvailabilityGroup
-        }
-        
-        foreach ($db in $InputObject) {
+        foreach ($replica in $InputObject) {
             foreach ($ag in $ags) {
-                foreach ($second in $Secondary) {
-                    $secondaryag = Get-DbaAvailabilityGroup -SqlInstance $second -SqlCredential $SecondarySqlCredential -AvailabilityGroup $AvailabilityGroup
-                    if ($Pscmdlet.ShouldProcess("$instance", "Adding availability group $db to $($db.Parent)")) {
-                        try {
-                            $secondaryag.Parent.JoinAvailabilityGroup($secondaryag.Name)
-                            $secondaryag.AvailabilityGroups[$secondaryag.Name].AvailabilityDatabases.JoinAvailablityGroup()
-                        }
-                        catch {
-                            Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-                        }
+                if ($Pscmdlet.ShouldProcess("$instance", "Adding replica to $ag")) {
+                    try {
+                        $ag.AvailabilityReplicas.Add($replica)
+                    }
+                    catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }
                 }
             }
