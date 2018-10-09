@@ -186,6 +186,16 @@ function Find-DbaInstance {
         then scans each of them for instances using the browser service
         and finally attempts to connect to each instance found using the specified credentials.
 
+    .EXAMPLE
+        PS C:\> Find-DbaInstance -ComputerName localhost | Get-DbaDatabase | Format-Table -Wrap
+
+        Scans localhost for instances using the browser service, traverses all instances for all databases and displays all information in a formatted table.
+
+    .EXAMPLE
+        PS C:\> Find-DbaInstance -ComputerName localhost | Get-DbaDatabase | Select-Object SqlInstance, Name, Status, RecoveryModel, SizeMB, Compatibility, Owner, LastFullBackup, LastDiffBackup, LastLogBackup | Format-Table -Wrap
+
+        Scans localhost for instances using the browser service, traverses all instances for all databases and displays a subset of the important information in a formatted table.
+
 #>
     [CmdletBinding()]
     param (
