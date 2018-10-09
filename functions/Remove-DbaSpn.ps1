@@ -51,7 +51,7 @@ function Remove-DbaSpn {
         Connects to Active Directory and removes a provided SPN from the given account, suppressing all error messages and throw exceptions that can be caught instead
 
     .EXAMPLE
-        PS C:\> Remove-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account -Credential (Get-Credential)
+        PS C:\> Remove-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account -Credential ad\sqldba
 
         Connects to Active Directory and removes a provided SPN to the given account. Uses alternative account to connect to AD.
 
