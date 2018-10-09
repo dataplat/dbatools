@@ -20,7 +20,7 @@ function Get-DbaAgReplica {
         Specify the replica to pull information on, is dependent up name that you want to get information on.
         
     .PARAMETER Role
-        Filter results by role (Primary, Secondary, Resolving, Unknown).
+        Filter results by role (Primary, Secondary).
         
     .PARAMETER InputObject
         Enables piping from Get-DbaAvailabilityGroup.
@@ -68,7 +68,7 @@ function Get-DbaAgReplica {
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
         [string[]]$Replica,
-        [ValidateSet('Primary', 'Secondary', 'Resolving', 'Unknown')]
+        [ValidateSet('Primary', 'Secondary')]
         [string[]]$Role,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,

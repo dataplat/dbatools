@@ -70,41 +70,56 @@ function New-DbaAgReplica {
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
         [ValidateSet('AsynchronousCommit', 'SynchronousCommit')]
-        [string]$AvailabilityMode,
+        [string]$AvailabilityMode = "SynchronousCommit",
         [ValidateSet('Automatic', 'Manual')]
-        [string]$FailoverMode,
+        [string]$FailoverMode = "Automatic",
+        [string]$Name,
         [string]$Endpoint,
         [switch]$Passthru,
         [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.AvailabilityGroup]$InputObject,
         [switch]$EnableException
     )
     process {
-        if ((Test-Bound -ParameterName SqlInstance)) {
-            if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName AvailabilityGroup)) {
-                Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
-                return
-            }
+        if (-not $Passthru -and -not $AvailabilityGroup -and -not $InputObject) {
+            Stop-Function -Message "Gotta specify ag or passthru"
+            return
         }
         
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
-        }
-        
-        foreach ($ag in $InputObject) {
-            if ($Pscmdlet.ShouldProcess("$instance", "Adding availability group $ag to $($ag.Parent.Name)")) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+            
+            if ($AvailabilityGroup) {
+                $InputObject = Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $AvailabilityGroup
+            }
+            
+            if ($Endpoint) {
+                $ep = Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -Endpoint $Endpoint
+                if (-not $ep) {
+                    Stop-Function -Message "Endpoint $Endpoint not found on $instance" -Continue
+                }
+            }
+            
+            if ($Pscmdlet.ShouldProcess("$instance", "Creating a replica")) {
                 try {
-                    $replica = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityReplica($AvailabilityGroup, $SqlServerPrimName)
-                    $replica.EndpointUrl = "TCP://$($SqlServerPrim.NetName):$($EndpointPrim.Protocol.Tcp.ListenerPort)"
+                    $replica = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityReplica($InputObject, $server.Name)
+                    
+                    if ($Endpoint) {
+                        $replica.EndpointUrl = $ep.Fqdn
+                    }
                     $replica.FailoverMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaFailoverMode]::$FailoverMode
                     $replica.AvailabilityMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaAvailabilityMode]::$AvailabilityMode
-
+                    
                     if ($Passthru) {
-                        $replica
+                        return $replica
                     }
-                    else {
-                        $ag.AvailabilityReplicas.Add($replica)
-                    }
+                    
+                    $InputObject.AvailabilityReplicas.Add($replica)
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue

@@ -90,7 +90,7 @@ function New-DbaEndpoint {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Name,
         [ValidateSet('DatabaseMirroring', 'ServiceBroker', 'Soap', 'TSql')]
@@ -108,7 +108,6 @@ function New-DbaEndpoint {
         [int]$SslPort,
         [switch]$EnableException
     )
-
     process {
         if ((Test-Bound -ParameterName Name -Not)) {
             $name = "endpoint-" + [DateTime]::Now.ToString('s').Replace(":", "-")
@@ -130,14 +129,14 @@ function New-DbaEndpoint {
             }
 
             # Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1
-            if (Test-Bound -ParameterName Port) {
+            if ($Port) {
                 $tcpPort = $port
             }
             else {
                 $thisport = (Get-DbaEndPoint -SqlInstance $server).Protocol.Tcp
                 $measure = $thisport | Measure-Object ListenerPort -Maximum
 
-                if (-not $thisport) {
+                if ($thisport.ListenerPort -eq 0) {
                     $tcpPort = 5022
                 }
                 elseif ($measure.Maximum) {

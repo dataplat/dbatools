@@ -68,9 +68,9 @@
     )
 
     process {
-        foreach ($serverName in $SqlInstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $serverName -SqlCredential $SqlCredential -MinimumVersion 11
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue

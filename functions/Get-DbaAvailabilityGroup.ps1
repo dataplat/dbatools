@@ -67,16 +67,16 @@
     )
 
     process {
-        foreach ($serverName in $SqlInstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $serverName -SqlCredential $SqlCredential -MinimumVersion 11
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             if ($server.IsHadrEnabled -eq $false) {
-                Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $serverName." -Target $serverName -Continue
+                Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $instance." -Target $instance -Continue
             }
 
             $ags = $server.AvailabilityGroups

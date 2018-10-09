@@ -89,7 +89,7 @@ function Remove-DbaAvailabilityGroup {
         }
 
         foreach ($ag in $InputObject) {
-            if ($Pscmdlet.ShouldProcess("$instance", "Removing availability group $ag from $($ag.Parent)")) {
+            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Removing availability group $ag")) {
                 # avoid enumeration issues
                 $ag.Parent.Query("DROP AVAILABILITY GROUP [$($ag.Name)]")
                 try {

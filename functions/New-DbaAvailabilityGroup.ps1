@@ -38,7 +38,10 @@ function New-DbaAvailabilityGroup {
     
     .PARAMETER Database
         The database or databases to add.
-        
+
+    .PARAMETER AutomatedBackupPreference
+        Specifies how replicas in the primary role are treated in the evaluation to pick the desired replica to perform a backup.
+    
     .PARAMETER NetworkShare
         The network share where the backups will be backed up and restored from.
         
@@ -71,6 +74,16 @@ function New-DbaAvailabilityGroup {
         Cluster type of the Availability Group.
         Options include: External, Wsfc or None. External by default.
     
+    .PARAMETER FailureConditionLevel
+        Specifies the different conditions that can trigger an automatic failover in Availability Group.
+    
+    .PARAMETER HealthCheckTimeout
+        This setting used to specify the length of time, in milliseconds, that the SQL Server resource DLL should wait for information returned by the sp_server_diagnostics stored procedure before reporting the Always On Failover Cluster Instance (FCI) as unresponsive. 
+        
+        Changes that are made to the timeout settings are effective immediately and do not require a restart of the SQL Server resource.
+    
+        Defaults to 30000 (30 seconds).
+    
     .PARAMETER Force
         Drop and recreate the database on remote servers using fresh backup.
         
@@ -89,7 +102,7 @@ function New-DbaAvailabilityGroup {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
         
     .NOTES
-        Tags: Secondary, HA
+        Tags: HA
         Author: Chrissy LeMaire (@cl), netnerds.net
         dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -170,6 +183,12 @@ function New-DbaAvailabilityGroup {
         [string]$Certificate,
         [ValidateSet('External', 'Wsfc', 'None')]
         [string]$ClusterType = 'External',
+        [ValidateSet('None', 'Primary', 'Secondary', 'SecondaryOnly')]
+        [string]$AutomatedBackupPreference = 'Secondary',
+        [ValidateSet('OnAnyQualifiedFailureCondition', 'OnCriticalServerErrors', 'OnModerateServerErrors', 'OnServerDown', 'OnServerUnresponsive')]
+        [string]$FailureConditionLevel = "OnServerDown",
+        [ValidateSet('External', 'Wsfc', 'None')]
+        [int]$HealthCheckTimeout = 30000,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$UseLastBackups,
@@ -177,16 +196,8 @@ function New-DbaAvailabilityGroup {
         [switch]$Passthru,
         [switch]$EnableException
     )
-    begin {
-        $stepCounter = 0
-    }
     process {
-        # do checks
-        if ((Test-Bound -ParameterName Primary) -and (Test-Bound -Not -ParameterName Database)) {
-            Stop-Function -Message "Database is required when SqlInstance is specified"
-            return
-        }
-        
+        $stepCounter = 0
         if ($Force -and (-not $NetworkShare -and -not $UseLastBackups)) {
             Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
             return
@@ -248,18 +259,11 @@ function New-DbaAvailabilityGroup {
             }
         }
         
-        # Start work
-        $ag = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroup -ArgumentList $server, $Name
-        
-        if ($PassThru) {
-            return $ag
-        }
-        
         # Create endpoint if needed
-        $primaryendpoint = Get-DbaEndpoint -SqlInstance $server | Where-Object EndpointType -eq DatabaseMirroring
+        $primaryendpoint = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring
         if (-not $primaryendpoint) {
             Write-Message -Level Verbose -Message "Adding endpoint named AvailabilityGroup to $Primary"
-            $primaryendpoint = New-DbaEndpoint -SqlInstance $server -Name AvailabilityGroup -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
+            $primaryendpoint = New-DbaEndpoint -SqlInstance $server -Name hadr_endpoint -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
             $null = $primaryendpoint | Stop-DbaEndpoint
             $null = $primaryendpoint | Start-DbaEndpoint
         }
@@ -274,14 +278,36 @@ function New-DbaAvailabilityGroup {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $second -Continue
             }
             
-            $mirrorendpoint = Get-DbaEndpoint -SqlInstance $second | Where-Object EndpointType -eq DatabaseMirroring
+            $secondaryendpoint = Get-DbaEndpoint -SqlInstance $second -Type DatabaseMirroring
             
-            if (-not $mirrorendpoint) {
+            if (-not $secondaryendpoint) {
                 Write-Message -Level Verbose -Message "Adding endpoint named AvailabilityGroup to $($second.Name)"
-                $mirrorendpoint = New-DbaEndpoint -SqlInstance $second -Name AvailabilityGroup -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
-                $null = $mirrorendpoint | Stop-DbaEndpoint
-                $null = $mirrorendpoint | Start-DbaEndpoint
+                $secondaryendpoint = New-DbaEndpoint -SqlInstance $second -Name hadr_endpoint -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
+                $null = $secondaryendpoint | Stop-DbaEndpoint
+                $null = $secondaryendpoint | Start-DbaEndpoint
             }
+        }
+        
+        # Start work
+        try {
+            $ag = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroup -ArgumentList $server, $Name
+            $replica = New-DbaAgReplica -SqlInstance $server -InputObject $ag -EnableException -Endpoint hadr_endpoint
+            $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
+            $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
+            $ag.HealthCheckTimeout = $HealthCheckTimeout
+            $ag.Create()
+        }
+        catch {
+            $msg = $_.Exception.InnerException.InnerException.Message
+            if (-not $msg) {
+                $msg = $_
+            }
+            Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
+            return
+        }
+        
+        if ($PassThru) {
+            return $ag
         }
         
         # Add permissions
@@ -295,7 +321,7 @@ function New-DbaAvailabilityGroup {
                         $null = $server.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
                         foreach ($second in $secondaries) {
                             $null = New-DbaLogin -SqlInstance $second -Login $account -WarningAction SilentlyContinue
-                            $null = $second.Query("GRANT CONNECT ON ENDPOINT::$mirrorendpoint TO [$account]")
+                            $null = $second.Query("GRANT CONNECT ON ENDPOINT::$secondaryendpoint TO [$account]")
                         }
                     }
                     catch {
@@ -324,7 +350,7 @@ function New-DbaAvailabilityGroup {
             }
             Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Starting endpoints if necessary"
             try {
-                $null = $primaryendpoint, $mirrorendpoint | Start-DbaEndpoint -EnableException
+                $null = $primaryendpoint, $secondaryendpoint | Start-DbaEndpoint -EnableException
             }
             catch {
                 Stop-Function -Continue -Message "Failure" -ErrorRecord $_
@@ -334,6 +360,10 @@ function New-DbaAvailabilityGroup {
         # Add replica
         # Add databases
         
-        Get-DbaAvailabilityGroup -SqlInstance $Primary, $Secondary -AvailabilityGroup $Name
+        Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $Name
+        
+        foreach ($second in $secondaries) {
+            Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name
+        }
     }
 }
