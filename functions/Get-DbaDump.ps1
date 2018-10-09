@@ -7,7 +7,7 @@
         The type of dump included in the search include minidump, all-thread dump, or a full dump.  The files have an extendion of .mdmp.
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -34,7 +34,7 @@
         Shows the detailed information for memory dump(s) located on sql2016 instance
 
     .EXAMPLE
-        PS C:\> Get-DbaDump -SqlInstance sql2016 -SqlCredential (Get-Credential sqladmin)
+        PS C:\> Get-DbaDump -SqlInstance sql2016 -SqlCredential sqladmin
 
         Shows the detailed information for memory dump(s) located on sql2016 instance. Logs into the SQL Server using the SQL login 'sqladmin'
 

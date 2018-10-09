@@ -11,7 +11,7 @@ function Remove-DbaPfDataCollectorSet {
         The target computer. Defaults to localhost.
 
     .PARAMETER Credential
-        Allows you to login to $ComputerName using alternative credentials. To use:
+        Allows you to login to the target computer using alternative credentials. To use:
 
         $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
@@ -54,7 +54,7 @@ function Remove-DbaPfDataCollectorSet {
         Attempts to remove all ready Collectors on localhost and does not prompt to confirm.
 
     .EXAMPLE
-        PS C:\> Remove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        PS C:\> Remove-DbaPfDataCollectorSet -ComputerName sql2017, sql2016 -Credential ad\sqldba -CollectorSet 'System Correlation'
 
         Prompts for confirmation then removes the 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials.
 
@@ -121,7 +121,6 @@ function Remove-DbaPfDataCollectorSet {
             }
 
             if ($Pscmdlet.ShouldProcess("$computer", "Removing collector set $setname")) {
-                Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
                 try {
                     Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname -ErrorAction Stop
                     [pscustomobject]@{

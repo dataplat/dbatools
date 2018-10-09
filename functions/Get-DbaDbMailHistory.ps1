@@ -7,7 +7,7 @@
         Gets the history of mail sent from a SQL instance
 
     .PARAMETER SqlInstance
-        The SQL Server instance, or instances.
+        TThe target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
@@ -67,7 +67,6 @@
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential

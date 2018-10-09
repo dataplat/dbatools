@@ -9,7 +9,7 @@
         Thanks to Michael J Swart at https://sqlperformance.com/2017/07/sql-performance/find-database-connection-leaks for the query to get the last executed SQL statement, minutesasleep and host process ID.
 
     .PARAMETER SqlInstance
-        The SQL Server instance to connect to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -95,7 +95,6 @@
     process {
         foreach ($instance in $sqlinstance) {
 
-            Write-Message -Message "Connecting to $instance." -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

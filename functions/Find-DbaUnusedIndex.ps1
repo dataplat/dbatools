@@ -163,7 +163,6 @@
             }
         }
 
-        Write-Message -Level Output -Message "Connecting to SQL Server."
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 9
     }
     process {

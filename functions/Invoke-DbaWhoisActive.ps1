@@ -13,7 +13,7 @@
         Also, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate
 
     .PARAMETER SqlInstance
-        The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER Database
         The database where sp_WhoIsActive is installed. Defaults to master. If the sp_WhoIsActive is not installed, the command will warn and exit.
@@ -253,7 +253,6 @@
 
         foreach ($instance in $sqlinstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
             }
             catch {

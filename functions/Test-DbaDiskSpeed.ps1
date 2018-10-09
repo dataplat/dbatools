@@ -11,7 +11,7 @@
         https://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to the SQL Server using alternative credentials.
@@ -107,7 +107,6 @@
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9

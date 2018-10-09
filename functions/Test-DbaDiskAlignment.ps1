@@ -175,7 +175,6 @@
                         $sqldisk = $false
 
                         foreach ($SqlInstance in $SqlInstances) {
-                            Write-Message -Level Verbose -Message "Connecting to SQL instance ($SqlInstance)." -FunctionName $FunctionName
                             try {
                                 if ($null -ne $SqlCredential) {
                                     $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential

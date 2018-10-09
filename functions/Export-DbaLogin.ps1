@@ -7,7 +7,7 @@
         Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.
 
     .PARAMETER SqlInstance
-        The SQL Server instance name. SQL Server 2000 and above supported.
+        The target SQL Server instance or instances. SQL Server 2000 and above supported.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -143,7 +143,6 @@
             return
         }
 
-        Write-Message -Level Verbose -Message "Connecting to $sqlinstance."
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
 
         if ($NoDatabases -eq $false -or $Database) {

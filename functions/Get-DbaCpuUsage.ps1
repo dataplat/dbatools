@@ -17,7 +17,7 @@
         column is specific to -SqlInstance passed.
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to the SQL instance using alternative credentials.
@@ -56,7 +56,7 @@
         Explores the processes (from Get-DbaProcess) associated with the usage results
 
     .EXAMPLE
-        PS C:\> Get-DbaCpuUsage -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin) -Credential (Get-Credential ad\sqldba)
+        PS C:\> Get-DbaCpuUsage -SqlInstance sql2017 -SqlCredential sqladmin -Credential ad\sqldba
 
         Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
 
@@ -111,7 +111,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

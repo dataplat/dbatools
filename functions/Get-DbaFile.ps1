@@ -11,7 +11,7 @@
         Thanks to serg-52 for the query:  https://www.sqlservercentral.com/Forums/Topic1642213-391-1.aspx
 
     .PARAMETER SqlInstance
-        The SQL Server instance.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using alternative credentials
@@ -172,7 +172,6 @@
 
             $paths = @()
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

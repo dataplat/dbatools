@@ -22,7 +22,7 @@
         3. Consider running DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE after the shrink is complete.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance. Defaults to the default instance on localhost.
+        The target SQL Server instance or instances. Defaults to the default instance on localhost.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential).
@@ -171,7 +171,6 @@
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

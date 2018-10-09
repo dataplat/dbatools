@@ -7,7 +7,7 @@
         This command filters SQL Agent jobs giving the DBA a list of jobs that may need attention or could possibly be options for removal.
 
     .PARAMETER SqlInstance
-        The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
@@ -147,7 +147,6 @@
             Write-Message -Level Verbose -Message "Running Scan on: $instance"
 
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

@@ -9,7 +9,7 @@
         WindowsInstallDate (use -IncludeWindows)
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server using SQL Authentication as a different user
@@ -79,7 +79,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {

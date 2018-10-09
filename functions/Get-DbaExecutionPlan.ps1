@@ -12,7 +12,7 @@ function Get-DbaExecutionPlan {
         http://www.scarydba.com/2017/02/13/export-plans-cache-sqlplan-file/
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user
@@ -99,7 +99,6 @@ function Get-DbaExecutionPlan {
         foreach ($instance in $sqlinstance) {
             try {
                 try {
-                    Write-Message -Level Verbose -Message "Connecting to $instance."
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
                 }
                 catch {

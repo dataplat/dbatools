@@ -12,7 +12,7 @@
         For a full list of options that you can add to the profile, google "sqlpackage.exe command line switches" or (https://msdn.microsoft.com/en-us/library/hh550080(v=vs.103).aspx)
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to and publish to. Alternatively, you can provide a ConnectionString.
+        The target SQL Server instance or instances. Alternatively, you can provide a ConnectionString.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using alternative logins instead Integrated, accepts Credential object created by Get-Credential
@@ -45,7 +45,7 @@
         https://dbatools.io/New-DbaDacProfile
 
     .EXAMPLE
-        PS C:\> New-DbaDacProfile -SqlInstance sql2017 -SqlCredential (Get-Credential) -Database WorldWideImporters -Path C:\temp
+        PS C:\> New-DbaDacProfile -SqlInstance sql2017 -SqlCredential ad\sqldba -Database WorldWideImporters -Path C:\temp
 
         In this example, a prompt will appear for alternative credentials, then a connection will be made to sql2017. Using that connection,
         the ConnectionString will be extracted and used within the Publish Profile XML file which will be created at C:\temp\sql2017-WorldWideImporters-publish.xml
@@ -110,7 +110,6 @@
 
         foreach ($instance in $sqlinstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

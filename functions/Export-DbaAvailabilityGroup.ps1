@@ -8,7 +8,7 @@ function Export-DbaAvailabilityGroup {
         Exports SQL Server Availability Groups creation scripts to a T-SQL file. This is a function that is not available in SSMS.
 
     .PARAMETER SqlInstance
-        The SQL Server instance name. SQL Server 2012 and above supported.
+        The target SQL Server instance or instances. SQL Server 2012 and above supported.
 
     .PARAMETER Path
         The directory name where the output files will be written. A sub directory with the format 'ServerName$InstanceName' will be created. A T-SQL scripts named 'AGName.sql' will be created under this subdirectory for each scripted Availability Group.
@@ -85,7 +85,6 @@ function Export-DbaAvailabilityGroup {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

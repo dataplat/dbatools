@@ -7,7 +7,7 @@
         Exports users creation and its permissions to a T-SQL file or host. Export includes user, create and add to role(s), database level permissions, object level permissions.
 
     .PARAMETER SqlInstance
-        The SQL Server instance name. SQL Server 2000 and above supported.
+        The target SQL Server instance or instances. SQL Server 2000 and above supported.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using alternative credentials
@@ -172,7 +172,6 @@
         if (Test-FunctionInterrupt) { return }
 
         try {
-            Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {

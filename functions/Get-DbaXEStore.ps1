@@ -8,7 +8,7 @@ function Get-DbaXEStore {
         Get a Extended Events store
 
     .PARAMETER SqlInstance
-        Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -47,7 +47,6 @@ function Get-DbaXEStore {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {

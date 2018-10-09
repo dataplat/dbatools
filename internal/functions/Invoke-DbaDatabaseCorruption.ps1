@@ -119,7 +119,6 @@ function Invoke-DbaDbCorruption {
     }
 
     try {
-        Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
         $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 9
     }
     catch {

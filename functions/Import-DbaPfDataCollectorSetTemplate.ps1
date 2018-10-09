@@ -242,7 +242,6 @@ function Import-DbaPfDataCollectorSetTemplate {
 
                 try {
                     Write-Message -Level Verbose -Message "Importing $file as $name "
-                    Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
 
                     if ($instance) {
                         $instances = $instance

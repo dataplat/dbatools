@@ -8,7 +8,7 @@ function Remove-DbaCmsRegServer {
         Removes registered servers found in SQL Server Central Management Server (CMS).
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

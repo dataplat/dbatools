@@ -14,7 +14,7 @@ function Remove-DbaOrphanUser {
         If exists a login to map the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-DbaOrphanUser.
 
     .PARAMETER SqlInstance
-        The SQL Server Instance to connect to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -107,7 +107,6 @@ function Remove-DbaOrphanUser {
     process {
 
         foreach ($Instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $Instance."
             try {
                 $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
             }

@@ -7,7 +7,7 @@
         Creates a new database master key. If no database is specified, the master key will be created in master.
 
     .PARAMETER SqlInstance
-        The SQL Server to create the certificates on.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials.
@@ -64,7 +64,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

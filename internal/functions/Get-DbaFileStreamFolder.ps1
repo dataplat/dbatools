@@ -49,7 +49,6 @@ function Get-DbaFileStreamFolder {
 
     begin {
         try {
-            Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance." -Target $SqlInstance
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {

@@ -7,7 +7,7 @@
         Test each linked server on the instance
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user
@@ -46,7 +46,7 @@
 
     .EXAMPLE
         PS C:\> $servers = "sql2016","sql2014","sql2012"
-        PS C:\> $servers | Test-DbaLinkedServerConnection -SqlCredential (Get-Credential sqladmin)
+        PS C:\> $servers | Test-DbaLinkedServerConnection -SqlCredential sqladmin
 
         Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql2012 using SQL login credentials
 
@@ -73,7 +73,6 @@
             }
             else {
                 try {
-                    Write-Message -Level Verbose -Message "Connecting to $instance"
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 }
                 catch {

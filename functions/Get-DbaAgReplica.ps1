@@ -7,7 +7,7 @@
         Default view provides most common set of properties for information on the Availability Group(s)' Replica.
 
     .PARAMETER SqlInstance
-        The SQL Server instance. Server version must be SQL Server version 2012 or higher.
+        The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.

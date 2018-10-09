@@ -8,7 +8,7 @@ function Remove-DbaDbSnapshot {
         Removes (drops) database snapshots from the server
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to
+        The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user
@@ -122,7 +122,6 @@ function Remove-DbaDbSnapshot {
 
         # if piped value either doesn't exist or is not the proper type
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

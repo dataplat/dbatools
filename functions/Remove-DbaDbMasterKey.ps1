@@ -7,7 +7,7 @@
         Deletes specified database master key.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials.
@@ -127,7 +127,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

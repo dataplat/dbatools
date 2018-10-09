@@ -16,7 +16,7 @@ function Test-DbaDbVirtualLogFile {
         If you've got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.
 
     .PARAMETER SqlInstance
-        Specifies the SQL Server instance(s) to scan.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -84,7 +84,6 @@ function Test-DbaDbVirtualLogFile {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

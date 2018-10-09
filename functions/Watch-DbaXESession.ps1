@@ -10,7 +10,7 @@ function Watch-DbaXESession {
         Thanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html
 
     .PARAMETER SqlInstance
-        Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -71,11 +71,10 @@ function Watch-DbaXESession {
     )
     process {
         if (-not $SqlInstance) {
-            $server = $InputObject.Parent
+           
         }
         else {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $SqlInstance."
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {
@@ -85,25 +84,28 @@ function Watch-DbaXESession {
             $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
             $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
             Write-Message -Level Verbose -Message "Getting XEvents Sessions on $SqlInstance."
-            $InputObject = $XEStore.sessions | Where-Object Name -eq $Session | Select-Object -First 1
+            $InputObject += $XEStore.sessions | Where-Object Name -eq $Session
         }
-
-        if ($InputObject) {
-            if (-Not $InputObject.IsRunning) {
-                Stop-Function -Message "$($InputObject.Name) is in a $status state."
-                return
+        
+        foreach ($xesession in $InputObject) {
+            $server = $xesession.Parent
+            $sessionname = $xesession.Name
+            Write-Message -Level Verbose -Message "Watching $sessionname on $($server.Name)."
+            
+            if (-not $xesession.IsRunning -and -not $xesession.IsRunning) {
+                Stop-Function -Message "$($xesession.Name) is not running on $($server.Name)" -Continue
             }
 
             # Setup all columns for csv but do it in an order
             $columns = @("name", "timestamp")
             $newcolumns = @()
 
-            $fields = ($InputObject.Events.EventFields.Name | Select-Object -Unique)
+            $fields = ($xesession.Events.EventFields.Name | Select-Object -Unique)
             foreach ($column in $fields) {
                 $newcolumns += $column.TrimStart("collect_")
             }
 
-            $actions = ($InputObject.Events.Actions.Name | Select-Object -Unique)
+            $actions = ($xesession.Events.Actions.Name | Select-Object -Unique)
             foreach ($action in $actions) {
                 $newcolumns += ($action -Split '\.')[-1]
             }
@@ -114,7 +116,7 @@ function Watch-DbaXESession {
             try {
                 $xevent = New-Object -TypeName Microsoft.SqlServer.XEvent.Linq.QueryableXEventData(
                     ($server.ConnectionContext.ConnectionString),
-                    ($InputObject.Name),
+                    ($xesession.Name),
                     [Microsoft.SqlServer.XEvent.Linq.EventStreamSourceOptions]::EventStream,
                     [Microsoft.SqlServer.XEvent.Linq.EventStreamCacheOptions]::DoNotCache
                 )
@@ -144,12 +146,12 @@ function Watch-DbaXESession {
             }
             catch {
                 Start-Sleep 1
-                $status = Get-DbaXESession -SqlInstance $server -Session $Session
+                $status = Get-DbaXESession -SqlInstance $server -Session $sessionname
                 if ($status.Status -ne "Running") {
-                    Stop-Function -Message "$($InputObject.Name) was stopped."
+                    Stop-Function -Message "$($xesession.Name) was stopped."
                 }
                 else {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $session
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $sessionname
                 }
             }
             finally {
@@ -157,9 +159,6 @@ function Watch-DbaXESession {
                     $xevent.Dispose()
                 }
             }
-        }
-        else {
-            Stop-Function -Message "Session not found." -Target $session
         }
     }
 }

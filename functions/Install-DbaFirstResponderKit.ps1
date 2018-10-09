@@ -13,7 +13,7 @@ function Install-DbaFirstResponderKit {
         https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
 
     .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -189,7 +189,6 @@ function Install-DbaFirstResponderKit {
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

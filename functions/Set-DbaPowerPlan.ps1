@@ -153,7 +153,6 @@
 
             if ($server -notin $processed) {
                 $null = $processed.Add($server)
-                Write-Message -Level Verbose -Message "Connecting to $server."
             }
             else {
                 continue

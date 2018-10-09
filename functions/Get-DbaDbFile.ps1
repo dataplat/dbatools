@@ -8,7 +8,7 @@ function Get-DbaDbFile {
         Returns detailed information about database files. Does not use SMO - SMO causes enumeration and this command avoids that.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance(s)
+        The target SQL Server instance or instances
 
     .PARAMETER SqlCredential
         Credentials to connect to the SQL Server instance if the calling user doesn't have permission
@@ -68,7 +68,6 @@ function Get-DbaDbFile {
 
         foreach ($instance in $sqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

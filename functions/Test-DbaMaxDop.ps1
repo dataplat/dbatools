@@ -18,7 +18,7 @@
         These are just general recommendations for SQL Server and are a good starting point for setting the "max degree of parallelism" option.
 
     .PARAMETER SqlInstance
-        The SQL Server instance(s) to connect to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -87,7 +87,6 @@
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
             catch {

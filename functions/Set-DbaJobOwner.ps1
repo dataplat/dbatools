@@ -9,7 +9,7 @@
         Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
 
     .PARAMETER SqlInstance
-        Specifies the SQL Server instance(s) to scan.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -85,7 +85,6 @@
     process {
         foreach ($servername in $SqlInstance) {
             #connect to the instance
-            Write-Message -Level Verbose -Message "Connecting to $servername."
             $server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 
             # dynamic sa name for orgs who have changed their sa name

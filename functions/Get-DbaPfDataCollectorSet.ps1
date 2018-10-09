@@ -45,7 +45,7 @@ function Get-DbaPfDataCollectorSet {
         Gets all Collector Sets on sql2017.
 
     .EXAMPLE
-        PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2017 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+        PS C:\> Get-DbaPfDataCollectorSet -ComputerName sql2017 -Credential ad\sqldba -CollectorSet 'System Correlation'
 
         Gets the 'System Correlation' CollectorSet on sql2017 using alternative credentials.
 
@@ -181,7 +181,6 @@ function Get-DbaPfDataCollectorSet {
     }
     process {
         foreach ($computer in $ComputerName.ComputerName) {
-            Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command."
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $CollectorSet, $Credential -ErrorAction Stop | Select-DefaultView -Property $columns
             }

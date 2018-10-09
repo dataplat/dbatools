@@ -31,7 +31,6 @@ function Get-DbaDbPhysicalFile {
         $SqlCredential
     )
     try {
-        Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
         $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
     catch {
