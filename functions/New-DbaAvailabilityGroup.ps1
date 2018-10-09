@@ -125,9 +125,14 @@ function New-DbaAvailabilityGroup {
         https://dbatools.io/New-DbaAvailabilityGroup
         
     .EXAMPLE
-        PS C:\> New-DbaAvailabilityGroup -Primary sql2016c -Name SharePoint
+        PS C:\> New-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint
     
-        Creates a new availability group on sql2016c named SharePoint
+        Creates a new availability group on sql2016a named SharePoint
+    
+    .EXAMPLE
+        PS C:\> New-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b
+    
+        Creates a new availability group on sql2016b named SharePoint
     
     .EXAMPLE
         PS C:\> $params = @{
@@ -240,7 +245,13 @@ function New-DbaAvailabilityGroup {
         if (($NetworkShare)) {
             if (-not (Test-DbaPath -SqlInstance $server -Path $NetworkShare)) {
                 Stop-Function -Continue -Message "Cannot access $NetworkShare from $Primary"
+                return
             }
+        }
+        
+        if ($Database -and -not $UseLastBackups -and -not $NetworkShare) {
+            Stop-Function -Continue -Message "You must specify a NetworkShare when adding databases to the availability group"
+            return
         }
         
         if ($Secondary) {
@@ -327,9 +338,10 @@ function New-DbaAvailabilityGroup {
         }
         
         # Add databases
-        $allbackups = @{}
-        foreach ($second in $secondaries) {
-            foreach ($db in $Database) {
+        $allbackups = @{ }
+        foreach ($db in $Database) {
+            $null = Add-DbaAgDatabase -SqlInstance $server -AvailabilityGroup $Name -Database $db
+            foreach ($second in $secondaries) {
                 $primarydb = Get-DbaDatabase -SqlInstance $server -Database $db
                 $secondb = Get-DbaDatabase -SqlInstance $second -Database $db
                 if (-not $seconddb -or $Force) {
@@ -347,13 +359,14 @@ function New-DbaAvailabilityGroup {
                         }
                         if ($Pscmdlet.ShouldProcess("$Secondary", "restoring full and log backups of $primarydb from $Primary")) {
                             # keep going to ensure output is shown even if dbs aren't added well.
-                            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $Secondary -SqlCredential $SecondarySqlCredential -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
+                            $null = $allbackups[$db] | Restore-DbaDatabase -SqlInstance $second -WithReplace -NoRecovery -TrustDbBackupHistory -EnableException
                         }
                     }
                     catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }
                 }
+                $null = Add-DbaAgDatabase -SqlInstance $second -AvailabilityGroup $Name -Database $db
             }
         }
         

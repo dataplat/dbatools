@@ -10,6 +10,13 @@ function Grant-DbaAgPermission {
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
         to be executed against multiple SQL Server instances.
+    
+    
+        notes:
+        (1) the NT AUTHORITY account has to be given rights to each replica, with rights to alter/connect to the endpoint
+        (2) the service account for each instance has to be explicitly created (the link to the NT SERVICE account won't be sufficient), connect access to the endpoint on the instance
+
+        So if there is no domain account, on step 2 you would have to add the computer account for everything.
         
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -37,7 +44,9 @@ function Grant-DbaAgPermission {
             TakeOwnership	
             Update	
             ViewChangeTracking	
-            ViewDefinition	
+            ViewDefinition
+    
+            CreateAnyDatabase
         
         Connect is default.
     
@@ -141,8 +150,16 @@ function Grant-DbaAgPermission {
                 
                 foreach ($perm in $Permission) {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Granting $perm on $endpoint")) {
-                        $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
-                        $endpoint.Grant($bigperms, $account.Name)
+                        if ($perm -in 'CreateAnyDatabase') {
+                            Stop-Function -Message "$perm not supported by availability groups" -Continue
+                        }
+                        try {
+                            $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
+                            $endpoint.Grant($bigperms, $account.Name)
+                        }
+                        catch {
+                            Stop-Function -Message "Failure" -ErrorRecord $_ -Target $ag -Continue
+                        }
                     }
                 }
             }
@@ -151,12 +168,22 @@ function Grant-DbaAgPermission {
                 $ags = Get-DbaAvailabilityGroup -SqlInstance $account.Parent -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {
                     foreach ($perm in $Permission) {
-                        if ($perm -notin 'Alter', 'Control', 'TakeOwnership', 'ViewDefinition') {
+                        if ($perm -notin 'Alter', 'Control', 'TakeOwnership', 'ViewDefinition','CreateAnyDatabase') {
                             Stop-Function -Message "$perm not supported by availability groups" -Continue
                         }
                         if ($Pscmdlet.ShouldProcess($server.Name, "Granting $perm on $ags")) {
-                            $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
-                            $ag.Grant($bigperms, $account.Name)
+                            try {
+                                if ($perm -eq "CreateAnyDatabase") {
+                                    $ag.Parent.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
+                                }
+                                else {
+                                    $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
+                                    $ag.Grant($bigperms, $account.Name)
+                                }
+                            }
+                            catch {
+                                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $ag -Continue
+                            }
                         }
                     }
                 }
