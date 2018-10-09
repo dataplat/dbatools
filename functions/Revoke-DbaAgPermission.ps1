@@ -151,9 +151,12 @@ function Revoke-DbaAgPermission {
                 $ags = Get-DbaAvailabilityGroup -SqlInstance $account.Parent -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {
                     foreach ($perm in $Permission) {
-                        if ($Pscmdlet.ShouldProcess($server.Name, "Revoking $perm on $ags")) {
+                        if ($perm -notin 'Alter', 'Control', 'TakeOwnership', 'ViewDefinition') {
+                            Stop-Function -Message "$perm not supported by availability groups" -Continue
+                        }
+                        if ($Pscmdlet.ShouldProcess($server.Name, "Granting $perm on $ags")) {
                             $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
-                            $ag.Revoke($bigperms, $account)
+                            $ag.Revoke($bigperms, $account.Name)
                         }
                     }
                 }

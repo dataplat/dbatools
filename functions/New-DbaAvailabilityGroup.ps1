@@ -308,17 +308,18 @@ function New-DbaAvailabilityGroup {
         foreach ($second in $secondaries) {
             $serviceaccounts = $server.ServiceAccount, $second.ServiceAccount | Select-Object -Unique
             try {
-                Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint, AvailabilityGroup -EnableException
+                Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint -Permission Connect -EnableException
             }
             catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second
+                return
             }
         }
         
         # Join secondaries
         foreach ($second in $secondaries) {
             try {
-                $ag | Join-DbaAvailabilityGroup -Secondary $second -EnableException
+                $null = Add-DbaAgReplica -SqlInstance $second -InputObject $ag -EnableException
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue

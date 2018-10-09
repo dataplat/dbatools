@@ -142,7 +142,7 @@ function Grant-DbaAgPermission {
                 foreach ($perm in $Permission) {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Granting $perm on $endpoint")) {
                         $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
-                        $endpoint.Grant($bigperms, $account)
+                        $endpoint.Grant($bigperms, $account.Name)
                     }
                 }
             }
@@ -151,9 +151,12 @@ function Grant-DbaAgPermission {
                 $ags = Get-DbaAvailabilityGroup -SqlInstance $account.Parent -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {
                     foreach ($perm in $Permission) {
+                        if ($perm -notin 'Alter', 'Control', 'TakeOwnership', 'ViewDefinition') {
+                            Stop-Function -Message "$perm not supported by availability groups" -Continue
+                        }
                         if ($Pscmdlet.ShouldProcess($server.Name, "Granting $perm on $ags")) {
                             $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
-                            $ag.Grant($bigperms, $account)
+                            $ag.Grant($bigperms, $account.Name)
                         }
                     }
                 }
