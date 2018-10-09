@@ -140,27 +140,27 @@ BROWSERSVCSTARTUPTYPE="Automatic"
     # Check if there are designated drives for Data, Log, TempDB, Back-up and Application.
     If ($DataVolume -eq $null -or $DataVolume -eq '') {
         $DataVolume = Get-Volume | 
-            Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*Data*'} | 
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne  $_.DriveLetter -and $_.FileSystemLabel -like '*Data*'} | 
             Select-Object -ExpandProperty DriveLetter
     }
     if ($LogVolume -eq $null -or $LogVolume -eq '') {
         $LogVolume = Get-Volume | 
-            Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*Log*'} |  
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*Log*'} |  
             Select-Object -ExpandProperty DriveLetter
     }
     if ($TempVolume -eq $null -or $TempVolume -eq '') {
         $TempVolume = Get-Volume | 
-            Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*TempDB*'} |  
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*TempDB*'} |  
             Select-Object -ExpandProperty DriveLetter
     }
     if ($AppVolume -eq $null -or $AppVolume -eq '') {
         $AppVolume = Get-Volume | 
-            Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*App*'} |  
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*App*'} |  
             Select-Object -ExpandProperty DriveLetter
     }
     if ($BackupVolume -eq $null -or $BackupVolume -eq '') {
         $BackupVolume = Get-Volume | 
-            Where-Object {$_.DriveType -EQ 'Fixed' -and $_.DriveLetter -ne $null -and $_.FileSystemLabel -like '*Backup*'} |  
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*Backup*'} |  
             Select-Object -ExpandProperty DriveLetter
     }
     #Check the number of cores available on the server. Summed because every processor can contain multiple cores
