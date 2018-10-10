@@ -1,5 +1,5 @@
 ﻿function Export-DbaDacPackage {
-<#
+	<#
     .SYNOPSIS
         Exports a dacpac from a server.
 
@@ -27,6 +27,15 @@
 
     .PARAMETER AllUserDatabases
         Run command against all user databases
+        
+    .PARAMETER Type
+        Selecting the type of the export: Dacpac (default) or Bacpac.
+
+    .PARAMETER Table
+        List of the tables to include into the export. Should be provided as an array of strings: dbo.Table1, Table2, Schema1.Table3.
+    
+    .PARAMETER Options
+        Export options for a corresponding export type. Can be created by New-DbaDacOption -Type Dacpac | Bacpac
 
     .PARAMETER ExtendedParameters
         Optional parameters used to extract the DACPAC. More information can be found at
@@ -74,113 +83,224 @@
 
         Using extended parameters to over-write the files and performs the extraction in quiet mode.
 #>
-    [CmdletBinding()]
-    param
-    (
-        [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstance[]]$SqlInstance,
-        [Alias("Credential")]
-        [PSCredential]$SqlCredential,
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
-        [switch]$AllUserDatabases,
-        [string]$Path = "$home\Documents",
-        [string]$ExtendedParameters,
-        [string]$ExtendedProperties,
-        [switch]$EnableException
-    )
+	[CmdletBinding(DefaultParameterSetName = 'SMO')]
+	param
+	(
+		[parameter(Mandatory, ValueFromPipeline)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstance[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential]$SqlCredential,
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
+		[switch]$AllUserDatabases,
+		[string]$Path = "$home\Documents",
+		[parameter(ParameterSetName = 'SMO')]
+		[Alias('ExtractOptions', 'ExportOptions', 'DacExtractOptions', 'DacExportOptions')]
+		[object]$Options,
+		[parameter(ParameterSetName = 'CMD')]
+		[string]$ExtendedParameters,
+		[parameter(ParameterSetName = 'CMD')]
+		[string]$ExtendedProperties,
+        [parameter(ParameterSetName = 'SMO')]
+		[ValidateSet('Dacpac', 'Bacpac')]
+		[string]$Type = 'Dacpac',
+		[parameter(ParameterSetName = 'SMO')]
+		[string[]]$Table,
+		[switch]$EnableException
+	)
 
-    process {
-        if ((Test-Bound -Not -ParameterName Database) -and (Test-Bound -Not -ParameterName ExcludeDatabase) -and (Test-Bound -Not -ParameterName AllUserDatabases)) {
-            Stop-Function -Message "You must specify databases to execute against using either -Database, -ExcludeDatabase or -AllUserDatabases"
-        }
+	process {
+		if ((Test-Bound -Not -ParameterName Database) -and (Test-Bound -Not -ParameterName ExcludeDatabase) -and (Test-Bound -Not -ParameterName AllUserDatabases)) {
+			Stop-Function -Message "You must specify databases to execute against using either -Database, -ExcludeDatabase or -AllUserDatabases"
+			return
+		}
 
-        if (-not (Test-Path $Path)) {
-            Stop-Function -Message "$Path doesn't exist or access denied"
-        }
+		if (-not (Test-Path $Path)) {
+			Write-Message "Assuming that $Path is a file path"
+			$parentFolder = Split-Path $path -Parent
+			if (-not (Test-Path $parentFolder)) {
+				Stop-Function -Message "$parentFolder doesn't exist or access denied"
+				return
+			}
+			$leaf = Split-Path $path -Leaf
+			$fileName = Join-Path (Get-Item $parentFolder) $leaf
+		}
+		else {
+			$fileItem = Get-Item $Path
+			if ($fileItem -is [System.IO.DirectoryInfo]) {
+				$parentFolder = $fileItem.FullName
+			}
+			elseif ($fileItem -is [System.IO.FileInfo]) {
+				$fileName = $fileItem.FullName
+			}
+		}
 
-        # Convert $Path to absolute path because relative paths are problematic when you mix PowerShell commands
-        # and System.IO.
-        # This must happen after Test-Path because Resolve-Path will throw an exception if a path does not exist.
-        $Path = (Resolve-Path $Path).ProviderPath
+		if (Test-Bound -Not -ParameterName 'DacfxPath') {
+			$dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
+		}
+		if ((Test-Path $dacfxPath) -eq $false) {
+			Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
+			return
+		}
+		else {
+			try {
+				Add-Type -Path $dacfxPath
+				Write-Message -Level Verbose -Message "Dac Fx loaded."
+			}
+			catch {
+				Stop-Function -Message 'No usable version of Dac Fx found.' -ErrorRecord $_
+				return
+			}
+		}
+        
+		#check that at least one of the DB selection parameters was specified
+		if (!$AllUserDatabases -and !$Database) {
+			Stop-Function -Message "Either -Database or -AllUserDatabases should be specified" -Continue
+		}    
+		#Check Option object types - should have a specific type
+		if ($Type -eq 'Dacpac') {
+			if ($Options -and $Options -isnot [Microsoft.SqlServer.Dac.DacExtractOptions]) {
+				Stop-Function -Message "Microsoft.SqlServer.Dac.DacExtractOptions object type is expected - got $($Options.GetType())."
+				return
+			}
+		}
+		elseif ($Type -eq 'Bacpac') {
+			if ($Options -and $Options -isnot [Microsoft.SqlServer.Dac.DacExportOptions]) {
+				Stop-Function -Message "Microsoft.SqlServer.Dac.DacExportOptions object type is expected - got $($Options.GetType())."
+				return
+			}
+		}
+        
+		#Create a tuple to be used as a table filter
+		if ($Table) {
+			$tblList = New-Object 'System.Collections.Generic.List[Tuple[String, String]]'
+			foreach ($tableItem in $Table) {
+				$tableSplit = $tableItem.Split('.')
+				if ($tableSplit.Count -gt 1) {
+					$tblName = $tableSplit[-1]
+					$schemaName = $tableSplit[-2]
+				}
+				else {
+					$tblName = [string]$tableSplit
+					$schemaName = 'dbo'
+				}
+				$tblList.Add((New-Object "tuple[String, String]" -ArgumentList $schemaName, $tblName))
+			}
+		}
+		else {
+			$tblList = $null
+		}
 
-        if ((Get-Item $path) -isnot [System.IO.DirectoryInfo]) {
-            Stop-Function -Message "Path must be a directory"
-        }
+		foreach ($instance in $sqlinstance) {
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+			$cleaninstance = $instance.ToString().Replace('\', '-')
 
-        foreach ($instance in $sqlinstance) {
+			$dbs = Get-DbaDatabase -SqlInstance $server -OnlyAccessible -ExcludeAllSystemDb -Database $Database -ExcludeDatabase $ExcludeDatabase
+			if (-not $dbs) {
+				Stop-Function -Message "Databases not found on $instance" -Target $instance -Continue
+			}
 
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-            $cleaninstance = $instance.ToString().Replace('\', '-')
+			foreach ($db in $dbs) {
+				$dbname = $db.name
+				$connstring = $server.ConnectionContext.ConnectionString
+				if ($connstring -notmatch 'Database=') {
+					$connstring = "$connstring;Database=$dbname"
+				}
+				if ($fileName) {
+					$currentFileName = $fileName
+				}
+				else {
+					$currentFileName = Join-Path $parentFolder "$cleaninstance-$dbname.dacpac"
+				}
+				Write-Message -Level Verbose -Message "Using connection string $connstring"
+                
+				#using SMO by default
+				if ($PsCmdlet.ParameterSetName -eq 'SMO') {
+					try {
+						$dacSvc = New-Object -TypeName Microsoft.SqlServer.Dac.DacServices -ArgumentList $connstring -ErrorAction Stop
+					}
+					catch {
+						Stop-Function -Message "Could not connect to the connection string $connstring" -Target $instance -Continue
+					}
+					if ($Type -eq 'Dacpac') {
+						Write-Message -Level Verbose -Message "Initiating Dacpac extract to $currentFileName"
+						if (!$Options) {
+							$opts = New-Object -TypeName Microsoft.SqlServer.Dac.DacExtractOptions
+						}
+						else {
+							$opts = $Options
+						}
+						#not sure how to extract that info from the existing DAC application, leaving 1.0.0.0 for now
+						$version = New-Object System.Version -ArgumentList '1.0.0.0'
+						try {
+							$dacSvc.Extract($currentFileName, $dbname, $dbname, $version, $null, $tblList, $opts, $null)
+						}
+						catch {
+							Stop-Function -Message "DacServices extraction failure" -ErrorRecord $_ -Continue
+						}
+					}
+					elseif ($Type -eq 'Bacpac') {
+						Write-Message -Level Verbose -Message "Initiating Bacpac export to $currentFileName"
+						if (!$Options) {
+							$opts = New-Object -TypeName Microsoft.SqlServer.Dac.DacExportOptions
+						}
+						else {
+							$opts = $Options
+						}
+						try {
+							$dacSvc.ExportBacpac($currentFileName, $dbname, $opts, $tblList, $null)
+						}
+						catch {
+							Stop-Function -Message "DacServices export failure" -ErrorRecord $_ -Continue
+						}
+					}
+				}
+				elseif ($PsCmdlet.ParameterSetName -eq 'CMD') {
+					$sqlPackageArgs = "/action:Extract /tf:""$currentFileName"" /SourceConnectionString:""$connstring"" $ExtendedParameters $ExtendedProperties"
+					$resultstime = [diagnostics.stopwatch]::StartNew()
 
-            $dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible }
+					try {
+						$startprocess = New-Object System.Diagnostics.ProcessStartInfo
+						$startprocess.FileName = "$script:PSModuleRoot\bin\smo\sqlpackage.exe"
+						$startprocess.Arguments = $sqlPackageArgs
+						$startprocess.RedirectStandardError = $true
+						$startprocess.RedirectStandardOutput = $true
+						$startprocess.UseShellExecute = $false
+						$startprocess.CreateNoWindow = $true
+						$process = New-Object System.Diagnostics.Process
+						$process.StartInfo = $startprocess
+						$process.Start() | Out-Null
+						$stdout = $process.StandardOutput.ReadToEnd()
+						$stderr = $process.StandardError.ReadToEnd()
+						$process.WaitForExit()
+						Write-Message -level Verbose -Message "StandardOutput: $stdout"
+					}
+					catch {
+						Stop-Function -Message "SQLPackage Failure" -ErrorRecord $_ -Continue
+					}
 
-            if ($Database) {
-                $dbs = $dbs | Where-Object Name -in $Database
-                if (-not $dbs.name) {
-                    Stop-Function -Message "Database $Database does not exist on $instance" -Target $instance -Continue
-                }
-            }
-
-            if ($ExcludeDatabase) {
-                $dbs = $dbs | Where-Object Name -notin $ExcludeDatabase
-            }
-
-            foreach ($db in $dbs) {
-                $dbname = $db.name
-                $connstring = $server.ConnectionContext.ConnectionString.Replace('"', "'")
-                if ($connstring -notmatch 'Database=') {
-                    $connstring = "$connstring;Database=$dbname"
-                }
-                $filename = "$Path\$cleaninstance-$dbname.dacpac"
-                Write-Message -Level Verbose -Message "Exporting $filename"
-                Write-Message -Level Verbose -Message "Using connection string $connstring"
-
-                $sqlPackageArgs = "/action:Extract /tf:""$filename"" /SourceConnectionString:""$connstring"" $ExtendedParameters $ExtendedProperties"
-                $resultstime = [diagnostics.stopwatch]::StartNew()
-
-                try {
-                    $startprocess = New-Object System.Diagnostics.ProcessStartInfo
-                    $startprocess.FileName = "$script:PSModuleRoot\bin\smo\sqlpackage.exe"
-                    $startprocess.Arguments = $sqlPackageArgs
-                    $startprocess.RedirectStandardError = $true
-                    $startprocess.RedirectStandardOutput = $true
-                    $startprocess.UseShellExecute = $false
-                    $startprocess.CreateNoWindow = $true
-                    $process = New-Object System.Diagnostics.Process
-                    $process.StartInfo = $startprocess
-                    $process.Start() | Out-Null
-                    $stdout = $process.StandardOutput.ReadToEnd()
-                    $stderr = $process.StandardError.ReadToEnd()
-                    $process.WaitForExit()
-                    Write-Message -level Verbose -Message "StandardOutput: $stdout"
-
-                    [pscustomobject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        Database     = $dbname
-                        Path         = $filename
-                        Elapsed      = [prettytimespan]($resultstime.Elapsed)
-                    } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
-                }
-                catch {
-                    Stop-Function -Message "SQLPackage Failure" -ErrorRecord $_ -Continue
-                }
-
-                if ($process.ExitCode -ne 0) {
-                    Stop-Function -Message "Standard output - $stderr" -Continue
-                }
-            }
-        }
-    }
-    end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-DbaDacpac
-    }
+					if ($process.ExitCode -ne 0) {
+						Stop-Function -Message "Standard output - $stderr" -Continue
+					}
+				}
+				[pscustomobject]@{
+					ComputerName = $server.ComputerName
+					InstanceName = $server.ServiceName
+					SqlInstance  = $server.DomainInstanceName
+					Database     = $dbname
+					Path         = $currentFileName
+					Elapsed      = [prettytimespan]($resultstime.Elapsed)
+				} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
+			}
+		}
+	}
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-DbaDacpac
+	}
 }
