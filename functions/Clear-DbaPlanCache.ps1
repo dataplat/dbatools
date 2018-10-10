@@ -55,7 +55,7 @@
         Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
         and removes if Threshold over 100 MB.
 
-    .EXAMPLE    
+    .EXAMPLE
         PS C:\> Find-DbaInstance -ComputerName localhost | Get-DbaPlanCache | Clear-DbaPlanCache -Threshold 200
 
         Scans localhost for instances using the browser service, traverses all instances and gets the plan cache for each, clears them out if they are above 200 MB.
