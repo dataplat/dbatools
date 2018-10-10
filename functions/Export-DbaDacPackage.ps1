@@ -102,7 +102,6 @@
 		[string]$ExtendedParameters,
 		[parameter(ParameterSetName = 'CMD')]
 		[string]$ExtendedProperties,
-        [parameter(ParameterSetName = 'SMO')]
 		[ValidateSet('Dacpac', 'Bacpac')]
 		[string]$Type = 'Dacpac',
 		[parameter(ParameterSetName = 'SMO')]
@@ -117,7 +116,7 @@
 		}
 
 		if (-not (Test-Path $Path)) {
-			Write-Message "Assuming that $Path is a file path"
+			Write-Message -Level Verbose "Assuming that $Path is a file path"
 			$parentFolder = Split-Path $path -Parent
 			if (-not (Test-Path $parentFolder)) {
 				Stop-Function -Message "$parentFolder doesn't exist or access denied"
@@ -216,7 +215,9 @@
 					$currentFileName = $fileName
 				}
 				else {
-					$currentFileName = Join-Path $parentFolder "$cleaninstance-$dbname.dacpac"
+					if ($Type -eq 'Dacpac') { $ext = 'dacpac' }
+					elseif ($Type -eq 'Bacpac') { $ext = 'bacpac' }
+					$currentFileName = Join-Path $parentFolder "$cleaninstance-$dbname.$ext"
 				}
 				Write-Message -Level Verbose -Message "Using connection string $connstring"
                 
@@ -262,7 +263,11 @@
 					}
 				}
 				elseif ($PsCmdlet.ParameterSetName -eq 'CMD') {
-					$sqlPackageArgs = "/action:Extract /tf:""$currentFileName"" /SourceConnectionString:""$connstring"" $ExtendedParameters $ExtendedProperties"
+					if ($Type -eq 'Dacpac') { $action = 'Extract' }
+					elseif ($Type -eq 'Bacpac') { $action = 'Export' }
+					$cmdConnString = $connstring.Replace('"', "'")
+
+					$sqlPackageArgs = "/action:$action /tf:""$currentFileName"" /SourceConnectionString:""$cmdConnString"" $ExtendedParameters $ExtendedProperties"
 					$resultstime = [diagnostics.stopwatch]::StartNew()
 
 					try {

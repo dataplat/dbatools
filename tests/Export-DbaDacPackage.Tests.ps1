@@ -57,6 +57,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                     Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
                 }
             }
+            It "uses EXE to extract dacpac" {
+                $exportProperties = "/p:ExtractAllTableData=True"
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -ExtendedProperties $exportProperties
+                $results.Path | Should -Not -BeNullOrEmpty
+                Test-Path $results.Path | Should -Be $true
+                if (($results).Path) {
+                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                }
+            }
         }
     }
     Context "Extract bacpac" {
@@ -70,7 +79,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         if ((Get-DbaDbTable -SqlInstance $script:instance1 -Database $dbname -Table example)) {
             # Sometimes appveyor bombs
-            It "exports a dacpac" {
+            It "exports a bacpac" {
                 $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Type Bacpac
                 $results.Path | Should -Not -BeNullOrEmpty
                 Test-Path $results.Path | Should -Be $true
@@ -78,11 +87,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                     Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
                 }
             }
-            It "exports dacpac with a table list" {
-                $relativePath = '.\extract.dacpac'
-                $expectedPath = Join-Path (Get-Item .) 'extract.dacpac'
-                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Path $relativePath -Table example  -Type Bacpac
+            It "exports bacpac with a table list" {
+                $relativePath = '.\extract.bacpac'
+                $expectedPath = Join-Path (Get-Item .) 'extract.bacpac'
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Path $relativePath -Table example -Type Bacpac
                 $results.Path | Should -Be $expectedPath
+                Test-Path $results.Path | Should -Be $true
+                if (($results).Path) {
+                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
+                }
+            }
+            It "uses EXE to extract bacpac" {
+                $exportProperties = "/p:TargetEngineVersion=Default"
+                $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -ExtendedProperties $exportProperties -Type Bacpac
+                $results.Path | Should -Not -BeNullOrEmpty
                 Test-Path $results.Path | Should -Be $true
                 if (($results).Path) {
                     Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
