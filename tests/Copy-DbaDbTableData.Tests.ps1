@@ -10,6 +10,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
         $paramCount = $knownParameters.Count
         if ($params.Contains('WhatIf')) {
             $defaultParamCount = 13
+
         }
         else {
             $defaultParamCount = 11
