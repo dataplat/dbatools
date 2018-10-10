@@ -1,10 +1,10 @@
 ﻿function Get-DbaDbCompatLevel {
-	<#
+<#
     .SYNOPSIS
         Displays the compatibility level for database(s).
 
     .DESCRIPTION
-        Get the current Database Compatability Level for all databases on a server or list of databases passed in to function.
+        Get the current Database Compatability Level for all databases on a server or list of databases passed in to the function.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
