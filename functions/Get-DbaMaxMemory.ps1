@@ -39,6 +39,10 @@ function Get-DbaMaxMemory {
 
         Find all servers in Server Central Management Server that have 'Max Server Memory' set to higher than the total memory of the server (think 2147483647)
 
+    .EXAMPLE
+        PS C:\> Find-DbaInstance -ComputerName localhost | Get-DbaMaxMemory | Format-Table -AutoSize
+
+        Scans localhost for instances using the browser service, traverses all instances and displays memory settings in a formatted table.
 #>
     [CmdletBinding()]
     param (
