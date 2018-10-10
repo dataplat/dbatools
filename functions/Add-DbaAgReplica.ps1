@@ -170,7 +170,11 @@ function Add-DbaAgReplica {
                     $InputObject.AvailabilityReplicas.Add($replica)
                 }
                 catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    $msg = $_.Exception.InnerException.InnerException.Message
+                    if (-not $msg) {
+                        $msg = $_
+                    }
+                    Stop-Function -Message $msg -ErrorRecord $_ -Continue
                 }
             }
         }

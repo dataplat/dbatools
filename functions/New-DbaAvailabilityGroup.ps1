@@ -213,7 +213,7 @@ function New-DbaAvailabilityGroup {
         [string]$NetworkShare,
         [ipaddress[]]$IPAddress,
         [ipaddress]$SubnetMask = "255.255.255.0",
-        [int]$Port,
+        [int]$Port = 1433,
         [switch]$Dhcp,
         [string]$Certificate,
         [switch]$UseLastBackups,
@@ -331,7 +331,7 @@ function New-DbaAvailabilityGroup {
         foreach ($second in $secondaries) {
             try {
                 $null = Add-DbaAgReplica -SqlInstance $second -InputObject $ag -EnableException
-                $ag | Join-DbaAvailabilityGroup -SqlInstance $second
+                Join-DbaAvailabilityGroup -SqlInstance $second -InputObject $ag -EnableException
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
@@ -372,6 +372,10 @@ function New-DbaAvailabilityGroup {
                 }
                 $null = Add-DbaAgDatabase -SqlInstance $second -AvailabilityGroup $Name -Database $db
             }
+        }
+        
+        if ($IPAddress) {
+            New-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
         }
         
         Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $Name

@@ -74,8 +74,8 @@ function New-DbaAgListener {
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
         [ipaddress[]]$IPAddress,
-        [ipaddress]$SubnetMask,
-        [int]$Port,
+        [ipaddress]$SubnetMask = "255.255.255.0",
+        [int]$Port = 1433,
         [switch]$Dhcp,
         [switch]$Passthru,
         [parameter(ValueFromPipeline)]
@@ -90,40 +90,42 @@ function New-DbaAgListener {
             }
         }
         
-        foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
+        if ($SqlInstance) {
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
         
-        foreach ($db in $InputObject) {
-            $ags = Get-DbaAvailabilityGroup -SqlInstance $db.Parent -AvailabilityGroup $AvailabilityGroup
-            
-            foreach ($ag in $ags) {
-                
-                if ($Pscmdlet.ShouldProcess("$instance", "Adding availability group $db to $($db.Parent)")) {
-                    try {
-                        $aglistener = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener -ArgumentList $ag, $Name
-                        $aglistener.PortNumber = $aglistenerPort
-                        
-                        foreach ($listenerip in $IPAddress) {
-                            if ($IPAddress) {
-                                $listenerip = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroupListenerIPAddress -ArgumentList $aglistener
-                                $listenerip.IPAddress = $listenerip
-                                $listenerip.SubnetMask = $SubnetMask
-                                $listenerip.IsDHCP = $Dhcp
-                                $aglistener.AvailabilityGroupListenerIPAddresses.Add($listenerip)
-                            }
-                        }
-                        
-                        if ($Passthru) {
-                            $aglistener
-                        }
-                        else {
-                            $aglistener.Create()
-                        }
+        foreach ($ag in $InputObject) {
+            if ((Test-Bound -Not -ParameterName Name)) {
+                $Name = $ag.Name
+            }
+            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding $IPAddress to $ag")) {
+                try {
+                    $aglistener = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener -ArgumentList $ag, $Name
+                    $aglistener.PortNumber = $Port
+                    
+                    foreach ($ip in $IPAddress.IPAddressToString) {
+                        $listenerip = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroupListenerIPAddress -ArgumentList $aglistener
+                        $listenerip.IPAddress = $ip
+                        $listenerip.SubnetMask = $SubnetMask.IPAddressToString
+                        $listenerip.IsDHCP = $Dhcp
+                        $aglistener.AvailabilityGroupListenerIPAddresses.Add($listenerip)
                     }
-                    catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    
+                    if ($Passthru) {
+                        return $aglistener
                     }
+                    else {
+                        $aglistener.Create()
+                    }
+                    
+                    Get-DbaAgListener -SqlInstance $ag.Parent -AvailabilityGroup $ag.Name -Listener $Name
+                }
+                catch {
+                    $msg = $_.Exception.InnerException.InnerException.Message
+                    if (-not $msg) {
+                        $msg = $_
+                    }
+                    Stop-Function -Message $msg -ErrorRecord $_ -Continue
                 }
             }
         }
