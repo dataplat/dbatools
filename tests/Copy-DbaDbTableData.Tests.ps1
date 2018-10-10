@@ -81,10 +81,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results.Count | Should -Be 2
     }
 
-    It "does not copy the table data onto itself" {
-        Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example Should -Be $null
-    }
-
     It "opens and closes connections properly" {
         #regression test, see #3468
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table 'dbo.dbatoolsci_example', 'dbo.dbatoolsci_example4' | Copy-DbaDbTableData -Destination $script:instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
