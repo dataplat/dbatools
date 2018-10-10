@@ -135,7 +135,7 @@
         "Synopsis":  "Removes ad-hoc and prepared plan caches is single use plans are over defined threshold.",
         "Name":  "Clear-DbaPlanCache",
         "Links":  "https://dbatools.io/Clear-DbaPlanCache",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eClear-DbaPlanCache -SqlInstance sql2017 -Threshold 200\nLogs into the SQL Server instance \"sql2017\" and removes plan caches if over 200 MB.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eClear-DbaPlanCache -SqlInstance sql2017 -SqlCredential sqladmin\nLogs into the SQL instance using the SQL Login \u0027sqladmin\u0027 and then Windows instance as \u0027ad\\sqldba\u0027\r\nand removes if Threshold over 100 MB.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eClear-DbaPlanCache -SqlInstance sql2017 -Threshold 200\nLogs into the SQL Server instance \"sql2017\" and removes plan caches if over 200 MB.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eClear-DbaPlanCache -SqlInstance sql2017 -SqlCredential sqladmin\nLogs into the SQL instance using the SQL Login \u0027sqladmin\u0027 and then Windows instance as \u0027ad\\sqldba\u0027\r\nand removes if Threshold over 100 MB.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaInstance -ComputerName localhost | Get-DbaPlanCache | Clear-DbaPlanCache -Threshold 200\nScans localhost for instances using the browser service, traverses all instances and gets the plan cache for each, clears them out if they are above 200 MB.",
         "Syntax":  "Clear-DbaPlanCache [[-SqlInstance] \u003cDbaInstanceParameter[]\u003e] [[-SqlCredential] \u003cPSCredential\u003e] [[-Threshold] \u003cInt32\u003e] [[-InputObject] \u003cObject[]\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
@@ -821,7 +821,7 @@
         "Synopsis":  "Exports a dacpac from a server.",
         "Name":  "Export-DbaDacPackage",
         "Links":  "https://dbatools.io/Export-DbaDacPackage",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config\nExports the dacpac for SharePoint_Config on sql2016 to $home\\Documents\\SharePoint_Config.dacpac\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$moreprops = \"/p:VerifyExtraction=$true /p:CommandTimeOut=10\"\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\\temp -ExtendedProperties $moreprops\nSets the CommandTimeout to 10 then extracts the dacpac for SharePoint_Config on sql2016 to C:\\temp\\SharePoint_Config.dacpac then verifies extraction.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config\nExports the dacpac for SharePoint_Config on sql2016 to $home\\Documents\\SharePoint_Config.dacpac\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$moreprops = \"/p:VerifyExtraction=$true /p:CommandTimeOut=10\"\nPS C:\\\u003e Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\\temp -ExtendedProperties $moreprops\nSets the CommandTimeout to 10 then extracts the dacpac for SharePoint_Config on sql2016 to C:\\temp\\SharePoint_Config.dacpac then verifies extraction.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eExport-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase \"DBMaintenance\",\"DBMonitoring\" C:\\temp\nExports dacpac packages for all USER databases, excluding \"DBMaintenance\" \u0026 \"DBMonitoring\", on sql2016 and saves them to C:\\temp",
         "Syntax":  "Export-DbaDacPackage [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-AllUserDatabases] [[-Path] \u003cString\u003e] [[-ExtendedParameters] \u003cString\u003e] [[-ExtendedProperties] \u003cString\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -1985,6 +1985,21 @@
         "Syntax":  "Get-DbaDbMasterKey [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Get-DbaDbMemoryUsage",
+        "Description":  "This command can be utilized to determine which databases on a given instance are consuming buffer pool memory.\n\nThis command is based on query provided by Aaron Bertrand.\nReference: https://www.mssqltips.com/sqlservertip/2393/determine-sql-server-memory-use-by-database-and-object/",
+        "Tags":  [
+                     "Memory",
+                     "Database"
+                 ],
+        "Alias":  "",
+        "Author":  "Shawn Melton (@wsmelton), https://wsmelton.github.io",
+        "Synopsis":  "Determine buffer pool usage by database.",
+        "Name":  "Get-DbaDbMemoryUsage",
+        "Links":  "https://dbatools.io/Get-DbaDbMemoryUsage",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaDbMemoryUsage -SqlInstance sqlserver2014a\nReturns the buffer pool consumption for all user databases\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaDbMemoryUsage -SqlInstance sqlserver2014a -IncludeSystemDb\nReturns the buffer pool consumption for all user databases and system databases\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaDbMemoryUsage -SqlInstance sql1 -IncludeSystemDb -Database tempdb\nReturns the buffer pool consumption for tempdb database only\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003eGet-DbaMemoryUsage -SqlInstance sql2 -IncludeSystemDb -Exclude \u0027master\u0027,\u0027model\u0027,\u0027msdb\u0027,\u0027ResourceDb\u0027\nReturns the buffer pool consumption for all user databases and tempdb database",
+        "Syntax":  "Get-DbaDbMemoryUsage [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Database \u003cObject[]\u003e] [-ExcludeDatabase \u003cObject[]\u003e] [-IncludeSystemDb] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Get-DbaDbMirror",
         "Description":  "Gets properties of database mirrors and mirror witnesses.",
         "Tags":  [
@@ -2606,7 +2621,7 @@
         "Synopsis":  "Gets the \u0027Max Server Memory\u0027 configuration setting and the memory of the server.  Works on SQL Server 2000-2014.",
         "Name":  "Get-DbaMaxMemory",
         "Links":  "https://dbatools.io/Get-DbaMaxMemory",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012\nGet memory settings for all servers within the SQL Server Central Management Server \"sqlcluster\".\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB }\nFind all servers in Server Central Management Server that have \u0027Max Server Memory\u0027 set to higher than the total memory of the server (think 2147483647)",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012\nGet memory settings for all servers within the SQL Server Central Management Server \"sqlcluster\".\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB }\nFind all servers in Server Central Management Server that have \u0027Max Server Memory\u0027 set to higher than the total memory of the server (think 2147483647)\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eFind-DbaInstance -ComputerName localhost | Get-DbaMaxMemory | Format-Table -AutoSize\nScans localhost for instances using the browser service, traverses all instances and displays memory settings in a formatted table.",
         "Syntax":  "Get-DbaMaxMemory [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
@@ -5868,7 +5883,7 @@
         "Synopsis":  "Shows a list of databases in a GUI.",
         "Name":  "Show-DbaDbList",
         "Links":  "https://dbatools.io/Show-DbaDbList",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eShow-DbaDbList -SqlInstance sqlserver2014a\nShows a GUI list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected database.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eShow-DbaDbList -Source sqlserver2014a -SqlCredential $cred\nShows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected database.",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eShow-DbaDbList -SqlInstance sqlserver2014a\nShows a GUI list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected database.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eShow-DbaDbList -Source sqlserver2014a -SqlCredential $cred\nShows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected database.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eShow-DbaDbList -SqlInstance sqlserver2014a -DefaultDb master\nShows a GUI list of databases using Windows Authentication to connect to the SQL Server. The \"master\" database will be selected when the lists shows. Returns a string of the selected database.",
         "Syntax":  "Show-DbaDbList [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Title] \u003cString\u003e] [[-Header] \u003cString\u003e] [[-DefaultDb] \u003cString\u003e] [\u003cCommonParameters\u003e]"
     },
     {
