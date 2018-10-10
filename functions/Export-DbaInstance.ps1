@@ -80,7 +80,6 @@
         ServerAuditSpecifications
         CustomErrors
         ServerRoles
-        SupportDbs
         AvailabilityGroups
         ReplicationSettings
 
