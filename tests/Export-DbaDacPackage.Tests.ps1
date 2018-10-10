@@ -9,9 +9,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server = Connect-DbaInstance -SqlInstance $script:instance1
             $null = $server.Query("Create Database [$dbname]")
             $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
-            $null = $db.Query("CREATE TABLE dbo.example (id int);
+            $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
             INSERT dbo.example
-            SELECT top 100 1
+            SELECT top 100 object_id
             FROM sys.objects")
         }
         catch { } # No idea why appveyor can't handle this
@@ -40,7 +40,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                     Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
                 }
             }
-            It "exports to the correct directory" { 
+            It "exports to the correct directory" {
                 $relativePath = '.\'
                 $expectedPath = (Resolve-Path $relativePath).Path
                 $results = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -Path $relativePath
