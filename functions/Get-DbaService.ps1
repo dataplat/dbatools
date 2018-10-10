@@ -24,6 +24,11 @@
     .PARAMETER ServiceName
         Can be used to specify service names explicitly, without looking for service types/instances.
 
+    .PARAMETER AdvancedProperties
+        Collect additional properties from SqlServiceAdvancedProperty
+        This collects information about Version, Service Pack Level", SkuName, Clustered status and the Cluster Service Name
+        This adds additional overhead to the command.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -52,9 +57,9 @@
 
     .EXAMPLE
         PS C:\> $cred = Get-Credential WindowsUser
-        PS C:\> Get-DbaService -ComputerName sql1,sql2 -Credential $cred  | Out-GridView
+        PS C:\> Get-DbaService -ComputerName sql1,sql2 -Credential $cred -AdvancedProperties | Out-GridView
 
-        Gets the SQL Server related services on computers sql1 and sql2 via the user WindowsUser, and shows them in a grid view.
+        Gets the SQL Server related services on computers sql1 and sql2 via the user WindowsUser, and shows them in a grid view. As the AdvancedProperties flag is set will also retreive information from the SqlServiceAdvancedProperty class.
 
     .EXAMPLE
         PS C:\> Get-DbaService -ComputerName sql1,sql2 -InstanceName MSSQLSERVER
@@ -92,6 +97,7 @@
         [string[]]$Type,
         [Parameter(ParameterSetName = "ServiceName")]
         [string[]]$ServiceName,
+        [switch]$AdvancedProperties,
         [Alias('Silent')]
         [switch]$EnableException
     )
@@ -134,6 +140,9 @@
                 $searchClause = "SQLServiceType > 0"
             }
         }
+        if ((Test-Bound -ParameterName AdvancedProperties)) {
+            Write-Message -Message "AdvancedProperties requested" -Level Verbose
+        }
     }
     process {
         foreach ($Computer in $ComputerName.ComputerName) {
@@ -154,6 +163,7 @@
                                     Name      = $service.ServiceName
                                     Namespace = $namespace.Name
                                     Service   = $service
+                                    ServiceAP = $serviceAdvancedProperties
                                 }
                             }
                         }
@@ -192,6 +202,7 @@
                                 "Engine" { 200 }
                                 default { 100 }
                             }
+
                             #If only specific instances are selected
                             if (!$InstanceName -or $instance -in $InstanceName) {
                                 #Add other properties and methods
@@ -219,8 +230,40 @@
                                     Set-ServiceStartMode -InputObject $this -Mode $Mode -ErrorAction Stop
                                     $this.StartMode = $Mode
                                 }
-                                Select-DefaultView -InputObject $service -Property ComputerName, ServiceName, ServiceType, InstanceName, DisplayName, StartName, State, StartMode -TypeName DbaSqlService
+
                             }
+
+                            if ($AdvancedProperties) {
+                                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name AdvancedRequested -Value 1
+                                if($namespaces.count -eq 1) {
+                                    $namespaceValue = $namespaces[0].Name
+                                }
+                                else {
+                                    $namespaceValue = $service.CimClass.ToString().ToUpper().Replace(":SQLSERVICE", "").Replace("ROOT/MICROSOFT/SQLSERVER/","")
+                                }
+                                Write-Message -Level Verbose -Message "Namespace= $($namespacevalue)" -Target $Computer
+
+                                $serviceAdvancedProperties = Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespaceValue)" -Query "SELECT * FROM SqlServiceAdvancedProperty WHERE ServiceName = '$($service.ServiceName)'"
+
+                                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Version -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VERSION' ).PropertyStrValue
+                                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SPLevel -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SPLEVEL' ).PropertyNumValue
+                                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SkuName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SKUNAME' ).PropertyStrValue
+
+                                $ClusterServiceTypeList = @(1,2,5,7)
+                                if ($ClusterServiceTypeList -contains $service.SQLServiceType) {
+                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'CLUSTERED' ).PropertyNumValue
+                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VSNAME' ).PropertyStrValue
+                                }
+                                else {
+                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ''
+                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ''
+                                }
+                                $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode", "Version", "SPLevel", "SkuName", "Clustered", "VSName"
+                            }
+                            else {
+                                $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
+                            }
+                            Select-DefaultView -InputObject $service -Property $defaults -TypeName DbaSqlService
                         }
                     }
                     else {
