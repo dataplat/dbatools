@@ -110,16 +110,16 @@
             [CmdletBinding()]
             param ([Microsoft.SqlServer.Management.Smo.User[]]$users)
 
-            foreach ($user in $users) {
-                $db = $user.Parent
+            for ($i = 0; $i -lt $users.Count; $i++) {
+                $db = $users[$i].Parent
                 $server = $db.Parent
                 $ownedObjects = $false
-                Write-Message -Level Verbose -Message "Removing User $user from Database $db on target $server"
+                Write-Message -Level Verbose -Message "Removing User $($users[$i]) from Database $db on target $server"
 
                 # Drop Schemas owned by the user before droping the user
-                $schemaUrns = $user.EnumOwnedObjects() | Where-Object Type -EQ Schema
+                $schemaUrns = $users[$i].EnumOwnedObjects() | Where-Object Type -EQ Schema
                 if ($schemaUrns) {
-                    Write-Message -Level Verbose -Message "User $user owns $($schemaUrns.Count) schema(s)."
+                    Write-Message -Level Verbose -Message "User $($users[$i]) owns $($schemaUrns.Count) schema(s)."
 
                     # Need to gather up the schema changes so they can be done in a non-desctructive order
                     $alterSchemas = @()
@@ -129,7 +129,7 @@
                         $schema = $server.GetSmoObject($schemaUrn)
 
                         # Drop any schema that is the same name as the user
-                        if ($schema.Name -EQ $user.Name) {
+                        if ($schema.Name -EQ $users[$i].Name) {
                             # Check for owned objects early so we can exit before any changes are made
                             $ownedUrns = $schema.EnumOwnedObjects()
                             if (-Not $ownedUrns) {
@@ -139,21 +139,21 @@
                                 Write-Message -Level Warning -Message "User owns objects in the database and will not be removed."
                                 foreach ($ownedUrn in $ownedUrns) {
                                     $obj = $server.GetSmoObject($ownedUrn)
-                                    Write-Message -Level Warning -Message "User $user owns $($obj.GetType().Name) $obj"
+                                    Write-Message -Level Warning -Message "User $($users[$i]) owns $($obj.GetType().Name) $obj"
                                 }
                                 $ownedObjects = $true
                             }
                         }
 
                         # Change the owner of any schema not the same name as the user
-                        if ($schema.Name -NE $user.Name) {
+                        if ($schema.Name -NE $users[$i].Name) {
                             # Check for owned objects early so we can exit before any changes are made
                             $ownedUrns = $schema.EnumOwnedObjects()
                             if (($ownedUrns -And $Force) -Or (-Not $ownedUrns)) {
                                 $alterSchemas += $schema
                             }
                             else {
-                                Write-Message -Level Warning -Message "User $user owns the Schema $schema, which owns $($ownedUrns.Count) Object(s).  If you want to change the schemas' owner to [dbo] and drop the user anyway, use -Force parameter.  User $user will not be removed."
+                                Write-Message -Level Warning -Message "User $($users[$i]) owns the Schema $schema, which owns $($ownedUrns.Count) Object(s).  If you want to change the schemas' owner to [dbo] and drop the user anyway, use -Force parameter.  User $($users[$i]) will not be removed."
                                 $ownedObjects = $true
                             }
                         }
@@ -179,15 +179,15 @@
                         }
 
                         # Finally, Drop user
-                        if ($PSCmdlet.ShouldProcess($server, "Drop User $user from Database $db.")) {
-                            $user.Drop()
+                        if ($PSCmdlet.ShouldProcess($server, "Drop User $($users[$i]) from Database $db.")) {
+                            $users[$i].Drop()
                         }
 
                         $status = "Dropped"
 
                     }
                     catch {
-                        Write-Error -Message "Could not drop $user from Database $db on target $server"
+                        Write-Error -Message "Could not drop $($users[$i]) from Database $db on target $server"
                         $status = "Not Dropped"
                     }
 
@@ -196,7 +196,7 @@
                         InstanceName = $server.ServiceName
                         SqlInstance  = $server.DomainInstanceName
                         Database     = $db.name
-                        User         = $user
+                        User         = $users[$i]
                         Status       = $status
                     }
                 }
