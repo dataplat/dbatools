@@ -13,7 +13,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         else {
             $defaultParamCount = 11
         }
-        [object[]]$params = (Get-ChildItem function:\Get-DbaOperatingSystem).Parameters.Keys
+        $command = Get-Command -Name $CommandName
+        [object[]]$params = $command.Parameters.Keys
 
         it "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
