@@ -39,6 +39,11 @@ function Get-DbaOperatingSystem {
 
         Returns information about the sql2016's operating system
 
+    .EXAMPLE
+        PS C:\> $wincred = Get-Credential ad\sqladmin
+        PS C:\> 'sql2016', 'sql2017' | Get-DbaOperatingSystem -Credential $wincred
+
+        Returns information about the sql2016 and sql2017 operating systems using alternative Windows credentials
 #>
     [CmdletBinding()]
     param (
@@ -51,9 +56,12 @@ function Get-DbaOperatingSystem {
     )
     process {
         foreach ($computer in $ComputerName) {
+            Write-Message -Level Verbose -Message "Connecting to $computer"
+
             $server = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential
 
             $computerResolved = $server.FullComputerName
+            Write-Message -Level Verbose -Message "Resolved $computerResolved"
 
             if (!$computerResolved) {
                 Write-Message -Level Warning -Message "Unable to resolve hostname of $computer. Skipping."
@@ -61,20 +69,36 @@ function Get-DbaOperatingSystem {
             }
 
             try {
-                $psVersion = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { $PSVersionTable.PSVersion }
+                $TestWS = Test-WSMan -ComputerName $computerResolved -ErrorAction SilentlyContinue
             }
             catch {
-                Stop-Function -Message "Failure collecting PowerShell version on $computer" -Target $computer -ErrorRecord $_
-                return
+                Write-Message -Level Warning -Message "Remoting not availablle on $computer. Skipping checks"
+                $TestWS = $null
+            }
+
+            $splatDbaCmObject = @{
+                ComputerName   = $computerResolved
+                EnableException = $true
+            }
+            if (Test-Bound "Credential") {
+                $splatDbaCmObject["Credential"] = $Credential
+            }
+            if ($TestWS) {
+                try {
+                    $psVersion = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { $PSVersionTable.PSVersion }
+                    $PowerShellVersion = "$($psVersion.Major).$($psVersion.Minor)"
+                }
+                catch {
+                    Write-Message -Level Warning -Message "PowerShell Version information not available on $computer."
+                    $PowerShellVersion = 'Unavailable'
+                }
+            }
+            else {
+                $PowerShellVersion = 'Unknown'
             }
 
             try {
-                if (Test-Bound "Credential") {
-                    $os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -Credential $Credential -EnableException
-                }
-                else {
-                    $os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -EnableException
-                }
+                $os = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_OperatingSystem
             }
             catch {
                 Stop-Function -Message "Failure collecting OS information on $computer" -Target $computer -ErrorRecord $_
@@ -82,12 +106,7 @@ function Get-DbaOperatingSystem {
             }
 
             try {
-                if (Test-Bound "Credential") {
-                    $tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -Credential $Credential -EnableException
-                }
-                else {
-                    $tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -EnableException
-                }
+                $tz = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_TimeZone
             }
             catch {
                 Stop-Function -Message "Failure collecting TimeZone information on $computer" -Target $computer -ErrorRecord $_
@@ -95,20 +114,35 @@ function Get-DbaOperatingSystem {
             }
 
             try {
-                if (Test-Bound "Credential") {
-                    $powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -Credential $Credential -EnableException | Select-Object ElementName, InstanceId, IsActive
+                $powerPlan = Get-DbaCmObject @splatDbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power"  | Select-Object ElementName, InstanceId, IsActive
+            }
+            catch {
+                Write-Message -Level Warning -Message "Power plan information not available on $computer."
+                $powerPlan = $null
+            }
+
+            if ($powerPlan) {
+                $activePowerPlan = ($powerPlan | Where-Object IsActive).ElementName -join ','
+            }
+            else {
+                $activePowerPlan = 'Not Avaliable'
+            }
+
+            $language = Get-Language $os.OSLanguage
+
+            try {
+                $ss = Get-DbaCmObject @splatDbaCmObject -Class Win32_SystemServices
+                if ($ss | Select-Object PartComponent | Where-Object {$_ -like "*ClusSvc*"}) {
+                    $IsWsfc = $true
                 }
                 else {
-                    $powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -EnableException | Select-Object ElementName, InstanceId, IsActive
+                    $IsWsfc = $false
                 }
             }
             catch {
-                Stop-Function -Message "Failure collecting PowerPlan information on $computer" -Target $computer -ErrorRecord $_
-                return
+                Write-Message -Level Warning -Message "Unable to determine Cluster State of $computer."
+                $IsWsfc = $null
             }
-
-            $activePowerPlan = ($powerPlan | Where-Object IsActive).ElementName -join ','
-            $language = Get-Language $os.OSLanguage
 
             [PSCustomObject]@{
                 ComputerName             = $computerResolved
@@ -117,20 +151,26 @@ function Get-DbaOperatingSystem {
                 Architecture             = $os.OSArchitecture
                 Version                  = $os.Version
                 Build                    = $os.BuildNumber
-                Caption                  = $os.Caption
+                OSVersion                = $os.caption;
+                SPVersion                = $os.servicepackmajorversion;
                 InstallDate              = [DbaDateTime]$os.InstallDate
                 LastBootTime             = [DbaDateTime]$os.LastBootUpTime
                 LocalDateTime            = [DbaDateTime]$os.LocalDateTime
-                PowerShellVersion        = "$($psVersion.Major).$($psVersion.Minor)"
+                PowerShellVersion        = $PowerShellVersion
                 TimeZone                 = $tz.Caption
                 TimeZoneStandard         = $tz.StandardName
                 TimeZoneDaylight         = $tz.DaylightName
                 BootDevice               = $os.BootDevice
+                SystemDevice             = $os.SystemDevice
+                SystemDrive              = $os.SystemDrive
+                WindowsDirectory         = $os.WindowsDirectory
+                PagingFileSize           = $os.SizeStoredInPagingFiles
                 TotalVisibleMemory       = [DbaSize]($os.TotalVisibleMemorySize * 1024)
                 FreePhysicalMemory       = [DbaSize]($os.FreePhysicalMemory * 1024)
                 TotalVirtualMemory       = [DbaSize]($os.TotalVirtualMemorySize * 1024)
                 FreeVirtualMemory        = [DbaSize]($os.FreeVirtualMemory * 1024)
                 ActivePowerPlan          = $activePowerPlan
+                Status                   = $os.Status
                 Language                 = $language.Name
                 LanguageId               = $language.LCID
                 LanguageKeyboardLayoutId = $language.KeyboardLayoutId
@@ -141,6 +181,7 @@ function Get-DbaOperatingSystem {
                 CodeSet                  = $os.CodeSet
                 CountryCode              = $os.CountryCode
                 Locale                   = $os.Locale
+                IsWsfc                  = $IsWsfc
             } | Select-DefaultView -Property ComputerName, Manufacturer, Organization, Architecture, Version, Caption, LastBootTime, LocalDateTime, PowerShellVersion, TimeZone, TotalVisibleMemory, ActivePowerPlan, LanguageNative
         }
     }
