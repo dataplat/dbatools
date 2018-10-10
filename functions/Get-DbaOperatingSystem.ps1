@@ -20,22 +20,33 @@ function Get-DbaOperatingSystem {
 
     .NOTES
         Tags: ServerInfo, OperatingSystem
-        Author: Shawn Melton (@wsmelton | http://wsmelton.github.io)
+        Author: Shawn Melton (@wsmelton), https://wsmelton.github.io
 
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaOperatingSystem
 
     .EXAMPLE
-        Get-DbaOperatingSystem
+        PS C:\> Get-DbaOperatingSystem
 
         Returns information about the local computer's operating system
 
     .EXAMPLE
-        Get-DbaOperatingSystem -ComputerName sql2016
+        PS C:\> Get-DbaOperatingSystem -ComputerName sql2016
+
+        Returns information about the sql2016's operating system
+
+    .EXAMPLE
+        PS C:\> $wincred = Get-Credential ad\sqladmin
+        PS C:\> 'sql2016', 'sql2017' | Get-DbaOperatingSystem -Credential $wincred
+
+        Returns information about the sql2016 and sql2017 operating systems using alternative Windows credentials
+
+    .EXAMPLE
+        PS C:\> Get-DbaOperatingSystem -ComputerName sql2016
 
         Returns information about the sql2016's operating system
 #>
