@@ -79,8 +79,7 @@
         ResourceGovernor
         ServerAuditSpecifications
         CustomErrors
-        ServerRoles
-        SupportDbs
+        ServerRoles        
         AvailabilityGroups
         ReplicationSettings
 
