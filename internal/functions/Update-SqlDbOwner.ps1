@@ -8,22 +8,22 @@ function Update-SqlDbOwner {
     param (
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [object]$source,
+        [object]$Source,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [object]$destination,
-        [string]$dbname,
+        [object]$Destination,
+        [string]$DbName,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$DestinationSqlCredential
     )
 
-    $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+    $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
     try {
-        if ($Destination -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject]) {
-            $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $SqlCredential
+        if ($Destination -IsNot [Microsoft.SqlServer.Management.Smo.SqlSmoObject]) {
+            $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $SqlCredential
         }
         else {
-            $destserver = $Destination
+            $destServer = $Destination
         }
     }
     catch {
@@ -31,24 +31,27 @@ function Update-SqlDbOwner {
         break
     }
 
-    $source = $sourceserver.DomainInstanceName
-    $destination = $destserver.DomainInstanceName
+    $source = $sourceServer.DomainInstanceName
+    $destination = $destServer.DomainInstanceName
 
-    if ($dbname.length -eq 0) {
-        $databases = ($sourceserver.Databases | Where-Object { $destserver.databases.name -contains $_.name -and $_.IsSystemObject -eq $false }).Name
+    if ($DbName.length -eq 0) {
+        $databases = ($sourceServer.Databases | Where-Object { $destServer.databases.name -contains $_.name -and $_.IsSystemObject -eq $false }).Name
     }
-    else { $databases = $dbname }
+    else { $databases = $DbName }
 
-    foreach ($dbname in $databases) {
-        $destdb = $destserver.databases[$dbname]
-        $dbowner = $sourceserver.databases[$dbname].owner
+    foreach ($DbName in $databases) {
+        $destdb = $destServer.databases[$DbName]
+        $dbowner = $sourceServer.databases[$DbName].owner
 
         if ($destdb.owner -ne $dbowner) {
-            if ($destdb.Status -ne 'Normal') { Write-Output "Database status not normal. Skipping dbowner update."; continue }
+            if ($destdb.Status -ne 'Normal') {
+                Write-Message -Level Output -Message "Database status not normal. Skipping dbowner update."
+                continue
+            }
 
-            if ($null -eq $dbowner -or $null -eq $destserver.logins[$dbowner]) {
+            if ($null -eq $dbowner -or $null -eq $destServer.logins[$dbowner]) {
                 try {
-                    $dbowner = ($destserver.logins | Where-Object { $_.id -eq 1 }).Name
+                    $dbowner = ($destServer.logins | Where-Object { $_.id -eq 1 }).Name
                 }
                 catch {
                     $dbowner = "sa"
@@ -58,21 +61,23 @@ function Update-SqlDbOwner {
             try {
                 if ($destdb.ReadOnly -eq $true) {
                     $changeroback = $true
-                    Update-SqlDbReadOnly $destserver $dbname $false
+                    Update-SqlDbReadOnly $destServer $DbName $false
                 }
 
                 $destdb.SetOwner($dbowner)
-                Write-Output "Changed $dbname owner to $dbowner"
+                Write-Output "Changed $DbName owner to $dbowner"
 
                 if ($changeroback) {
-                    Update-SqlDbReadOnly $destserver $dbname $true
+                    Update-SqlDbReadOnly $destServer $DbName $true
                     $changeroback = $null
                 }
             }
             catch {
-                Write-Error "Failed to update $dbname owner to $dbowner."
+                throw "Failed to update $DbName owner to $dbowner."
             }
         }
-        else { Write-Output "Proper owner already set on $dbname" }
+        else {
+            Write-Message -Level Output -Message "Proper owner already set on $DbName"
+        }
     }
 }

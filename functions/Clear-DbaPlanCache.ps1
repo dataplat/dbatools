@@ -55,6 +55,10 @@
         Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
         and removes if Threshold over 100 MB.
 
+    .EXAMPLE
+        PS C:\> Find-DbaInstance -ComputerName localhost | Get-DbaPlanCache | Clear-DbaPlanCache -Threshold 200
+
+        Scans localhost for instances using the browser service, traverses all instances and gets the plan cache for each, clears them out if they are above 200 MB.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
@@ -74,6 +78,13 @@
         foreach ($result in $InputObject) {
             if ($result.MB -ge $Threshold) {
                 if ($Pscmdlet.ShouldProcess($($result.SqlInstance), "Cleared SQL Plans plan cache")) {
+                    try {
+                        $server = Connect-SqlInstance -SqlInstance $result.SqlInstance -SqlCredential $SqlCredential
+                    }
+                    catch {
+                        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    }
+
                     $server.Query("DBCC FREESYSTEMCACHE('SQL Plans')")
                     [PSCustomObject]@{
                         ComputerName = $result.ComputerName

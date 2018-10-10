@@ -62,7 +62,12 @@
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\temp -ExtendedProperties $moreprops
 
         Sets the CommandTimeout to 10 then extracts the dacpac for SharePoint_Config on sql2016 to C:\temp\SharePoint_Config.dacpac then verifies extraction.
+    
+    .EXAMPLE
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase "DBMaintenance","DBMonitoring" C:\temp
 
+        Exports dacpac packages for all USER databases, excluding "DBMaintenance" & "DBMonitoring", on sql2016 and saves them to C:\temp
+        
 #>
     [CmdletBinding()]
     param
