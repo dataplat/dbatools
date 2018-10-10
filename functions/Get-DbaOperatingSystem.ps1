@@ -68,10 +68,10 @@ function Get-DbaOperatingSystem {
                 continue
             }
 
-            Try {
+            try {
                 $TestWS = Test-WSMan -ComputerName $computerResolved -ErrorAction SilentlyContinue
             }
-            Catch {
+            catch {
                 Write-Message -Level Warning -Message "Remoting not availablle on $computer. Skipping checks"
                 $TestWS = $null
             }
