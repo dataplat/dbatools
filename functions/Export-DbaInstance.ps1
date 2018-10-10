@@ -79,7 +79,7 @@
         ResourceGovernor
         ServerAuditSpecifications
         CustomErrors
-        ServerRoles        
+        ServerRoles
         AvailabilityGroups
         ReplicationSettings
 
