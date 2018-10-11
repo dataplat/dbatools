@@ -114,6 +114,8 @@
                 $db = $user.Parent
                 $server = $db.Parent
                 $ownedObjects = $false
+				$alterSchemas = @()
+                $dropSchemas = @()
                 Write-Message -Level Verbose -Message "Removing User $user from Database $db on target $server"
 
                 # Drop Schemas owned by the user before droping the user
@@ -122,9 +124,6 @@
                     Write-Message -Level Verbose -Message "User $user owns $($schemaUrns.Count) schema(s)."
 
                     # Need to gather up the schema changes so they can be done in a non-desctructive order
-                    $alterSchemas = @()
-                    $dropSchemas = @()
-
                     foreach ($schemaUrn in $schemaUrns) {
                         $schema = $server.GetSmoObject($schemaUrn)
 
