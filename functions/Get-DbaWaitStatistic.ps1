@@ -128,7 +128,7 @@
             SQLTRACE_LOCK                    = "Part of SQL Trace. I would add this to the list of waits to filter out and re-run the wait stats query."
         }
 
-        # Thanks Brentg Ozar via https://gist.github.com/BrentOzar/42e82ee0603a1917c17d74c3fca26d34
+        # Thanks Brent Ozar via https://gist.github.com/BrentOzar/42e82ee0603a1917c17d74c3fca26d34
         # Thanks Marcin Gminski‏ via https://www.dropbox.com/s/x3zr7u18tc1ojey/WaitStats.sql?dl=0
 
         $category = [pscustomobject]@{
