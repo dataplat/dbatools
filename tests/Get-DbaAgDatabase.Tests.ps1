@@ -29,15 +29,15 @@ InModuleScope dbatools {
             Import-Clixml $script:appveyorlabrepo\agserver.xml
         }
         Context "gets ag databases" {
-            $results = Get-DbaAgDatabase -SqlInstance sql2016c
-            foreach ($result in $results) {
-                It "returns results with proper data" {
+            It -Skip "returns results with proper data" {
+                $results = Get-DbaAgDatabase -SqlInstance sql2016c
+                foreach ($result in $results) {
                     $result.Replica | Should -Be 'SQL2016C'
                     $result.SynchronizationState | Should -Be 'NotSynchronizing'
                 }
             }
-            $results = Get-DbaAgDatabase -SqlInstance sql2016c -Database WSS_Content
-            It "returns results with proper data for one database" {
+            It -Skip "returns results with proper data for one database" {
+                $results = Get-DbaAgDatabase -SqlInstance sql2016c -Database WSS_Content
                 $results.Replica | Should -Be 'SQL2016C'
                 $results.SynchronizationState | Should -Be 'NotSynchronizing'
                 $results.DatabaseName | Should -Be 'WSS_Content'

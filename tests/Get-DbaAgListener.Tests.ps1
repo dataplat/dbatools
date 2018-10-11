@@ -29,23 +29,24 @@ InModuleScope dbatools {
             Import-CliXml $script:appveyorlabrepo\agserver.xml
         }
         Context "gets ag databases" {
-            $results = Get-DbaAgListener -SqlInstance sql2016c
-            foreach ($result in $results) {
-                It "returns results with the right listener information" {
+            It -Skip "returns results with the right listener information" {
+                $results = Get-DbaAgListener -SqlInstance sql2016c
+                foreach ($result in $results) {
                     $result.Name | Should -Be 'splistener'
                     $result.PortNumber | Should -Be '20200'
                 }
-            }
-            $results = Get-DbaAgListener -SqlInstance sql2016c -Listener splistener
-            foreach ($result in $results) {
-                It "returns results with the right listener information for a single listener" {
-                    $result.Name | Should -Be 'splistener'
-                    $result.PortNumber | Should -Be '20200'
+                
+                $results = Get-DbaAgListener -SqlInstance sql2016c -Listener splistener
+                foreach ($result in $results) {
+                    It "returns results with the right listener information for a single listener" {
+                        $result.Name | Should -Be 'splistener'
+                        $result.PortNumber | Should -Be '20200'
+                    }
                 }
             }
-            $results = Get-DbaAgListener -SqlInstance sql2016c -Listener doesntexist
-            It "does not return a non existent listener" {
-            $results | Should -Be $null
+            It -Skip "does not return a non existent listener" {
+                $results = Get-DbaAgListener -SqlInstance sql2016c -Listener doesntexist
+                $results | Should -Be $null
             }
         }
     }
