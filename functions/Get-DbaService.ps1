@@ -163,7 +163,6 @@
                                     Name      = $service.ServiceName
                                     Namespace = $namespace.Name
                                     Service   = $service
-                                    ServiceAP = $serviceAdvancedProperties
                                 }
                             }
                         }
@@ -231,37 +230,28 @@
                                     $this.StartMode = $Mode
                                 }
 
-                            }
-
-                            if ($AdvancedProperties) {
-                                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name AdvancedRequested -Value 1
-                                if($namespaces.count -eq 1) {
-                                    $namespaceValue = $namespaces[0].Name
-                                }
-                                else {
+                                if ($AdvancedProperties) {
                                     $namespaceValue = $service.CimClass.ToString().ToUpper().Replace(":SQLSERVICE", "").Replace("ROOT/MICROSOFT/SQLSERVER/","")
-                                }
-                                Write-Message -Level Verbose -Message "Namespace= $($namespacevalue)" -Target $Computer
+                                    $serviceAdvancedProperties = Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespaceValue)" -Query "SELECT * FROM SqlServiceAdvancedProperty WHERE ServiceName = '$($service.ServiceName)'"
 
-                                $serviceAdvancedProperties = Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespaceValue)" -Query "SELECT * FROM SqlServiceAdvancedProperty WHERE ServiceName = '$($service.ServiceName)'"
+                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Version -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VERSION' ).PropertyStrValue
+                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SPLevel -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SPLEVEL' ).PropertyNumValue
+                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SkuName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SKUNAME' ).PropertyStrValue
 
-                                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Version -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VERSION' ).PropertyStrValue
-                                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SPLevel -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SPLEVEL' ).PropertyNumValue
-                                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name SkuName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'SKUNAME' ).PropertyStrValue
-
-                                $ClusterServiceTypeList = @(1,2,5,7)
-                                if ($ClusterServiceTypeList -contains $service.SQLServiceType) {
-                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'CLUSTERED' ).PropertyNumValue
-                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VSNAME' ).PropertyStrValue
+                                    $ClusterServiceTypeList = @(1,2,5,7)
+                                    if ($ClusterServiceTypeList -contains $service.SQLServiceType) {
+                                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'CLUSTERED' ).PropertyNumValue
+                                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ($serviceAdvancedProperties | Where-Object PropertyName -eq 'VSNAME' ).PropertyStrValue
+                                    }
+                                    else {
+                                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ''
+                                        Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ''
+                                    }
+                                    $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode", "Version", "SPLevel", "SkuName", "Clustered", "VSName"
                                 }
                                 else {
-                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Clustered -Value ''
-                                    Add-Member -Force -InputObject $service -MemberType NoteProperty -Name VSName -Value ''
+                                    $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
                                 }
-                                $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode", "Version", "SPLevel", "SkuName", "Clustered", "VSName"
-                            }
-                            else {
-                                $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
                             }
                             Select-DefaultView -InputObject $service -Property $defaults -TypeName DbaSqlService
                         }
