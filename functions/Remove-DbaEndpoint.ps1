@@ -2,10 +2,10 @@
 function Remove-DbaEndpoint {
 <#
     .SYNOPSIS
-        Removes endpoints on a SQL Server instance.
+        Removes endpoints from a SQL Server instance.
         
     .DESCRIPTION
-        Removes endpoints on a SQL Server instance.
+        Removes endpoints from a SQL Server instance.
         
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -15,12 +15,12 @@ function Remove-DbaEndpoint {
         
     .PARAMETER Endpoint
         Only remove specific endpoints.
-        
+    
     .PARAMETER AllEndpoints
-        Remove all endpoints on an instance, ignoring the packaged endpoints: AlwaysOn_health, system_health, telemetry_xevents.
-        
+        Remove all endpoints on an instance.
+
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-DbaEndpoint
+        Enables piping from Get-Endpoint.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

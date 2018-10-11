@@ -29,7 +29,7 @@ function Get-DbaAgReplica {
 
     .NOTES
         Tags: AG, HA, AvailabilityGroup, Replica
-        Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
+        Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@cl)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -56,7 +56,6 @@ function Get-DbaAgReplica {
 #>
     [CmdletBinding()]
     param (
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,

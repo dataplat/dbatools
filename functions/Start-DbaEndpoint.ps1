@@ -17,10 +17,10 @@ function Start-DbaEndpoint {
         Only start specific endpoints.
 
     .PARAMETER AllEndpoints
-        Start all endpoints on an instance, ignoring the packaged endpoints: AlwaysOn_health, system_health, telemetry_xevents.
+        Start all endpoints on an instance.
 
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-Endpoint
+        Enables piping from Get-Endpoint.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

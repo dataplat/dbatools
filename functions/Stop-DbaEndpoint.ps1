@@ -17,10 +17,10 @@ function Stop-DbaEndpoint {
         Only stop specific endpoints.
 
     .PARAMETER AllEndpoints
-        Stop all endpoints on an instance, ignoring the packaged endpoints: AlwaysOn_health, system_health, telemetry_xevents.
+        Stops all endpoints on an instance.
 
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-Endpoint
+        Enables piping from Get-Endpoint.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -45,19 +45,19 @@ function Stop-DbaEndpoint {
         https://dbatools.io/Stop-DbaEndpoint
 
     .EXAMPLE
-        PS C:\> Stop-DbaEndpoint -SqlInstance sqlserver2012 -AllEndpoints
+        PS C:\> Stop-DbaEndpoint -SqlInstance sql2017a -AllEndpoints
 
         Stops all endpoints on the sqlserver2014 instance.
 
     .EXAMPLE
-        PS C:\> Stop-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1,endpoint2
+        PS C:\> Stop-DbaEndpoint -SqlInstance sql2017a -Endpoint endpoint1,endpoint2
 
         Stops the endpoint1 and endpoint2 endpoints.
 
     .EXAMPLE
-        PS C:\> Get-Endpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Stop-DbaEndpoint
+        PS C:\> Get-Endpoint -SqlInstance sql2017a -Endpoint endpoint1 | Stop-DbaEndpoint
 
-        Stops the endpoints returned from the Get-Endpoint function.
+        Stops the endpoints returned from the Get-Endpoint command.
 
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]

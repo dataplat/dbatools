@@ -13,7 +13,7 @@ function Get-DbaEndpoint {
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER EndPoint
+    .PARAMETER Endpoint
         Return only specific endpoint or endpoints
 
     .PARAMETER Type

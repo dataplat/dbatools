@@ -53,11 +53,9 @@ function Disable-DbaAgHadr {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$Credential,
         [switch]$Force,
-        [Alias('Silent')]
         [switch]$EnableException
     )
     process {

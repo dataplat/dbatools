@@ -14,10 +14,10 @@ function Add-DbaAgDatabase {
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER AvailabilityGroup
-        Only add specific availability groups.
+        The availability group where the databases will be added.
         
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-DbaDatabase, Get-DbaDbSharePoint and more.
+        Enables piping from Get-DbaDatabase, Get-DbaDbSharePoint and more.
         
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -41,14 +41,14 @@ function Add-DbaAgDatabase {
         https://dbatools.io/Add-DbaAgDatabase
         
     .EXAMPLE
-        PS C:\> Add-DbaAgDatabase -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm
+        PS C:\> Add-DbaAgDatabase -SqlInstance sql2017a -AvailabilityGroup ag1 -Database db1, db2 -Confirm
         
-        Adds the ag1 and ag2 availability groups on sqlserver2012. Prompts for confirmation.
+        Adds db1 and db2 to ag1 on sql2017a. Prompts for confirmation.
         
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sqlserver2012 | Out-GridView -Passthru | Add-DbaAgDatabase -AvailabilityGroup ag1
+        PS C:\> Get-DbaDatabase -SqlInstance sql2017a | Out-GridView -Passthru | Add-DbaAgDatabase -AvailabilityGroup ag1
         
-        Adds selected databases from sqlserver2012 to ag1
+        Adds selected databases from sql2017a to ag1
   
     .EXAMPLE
         PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster | Add-DbaAgDatabase -AvailabilityGroup SharePoint
@@ -64,7 +64,8 @@ function Add-DbaAgDatabase {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$AvailabilityGroup,
+        [parameter(Mandatory)]
+        [string]$AvailabilityGroup,
         [string[]]$Database,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
@@ -73,7 +74,7 @@ function Add-DbaAgDatabase {
     process {
         if ((Test-Bound -ParameterName SqlInstance)) {
                 if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName AvailabilityGroup)) {
-                Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
+                Stop-Function -Message "You must specify one or more databases and one Availability Groups when using the SqlInstance parameter."
                 return
             }
         }
@@ -86,7 +87,7 @@ function Add-DbaAgDatabase {
             $ags = Get-DbaAvailabilityGroup -SqlInstance $db.Parent -AvailabilityGroup $AvailabilityGroup
             
             foreach ($ag in $ags) {
-                if ($Pscmdlet.ShouldProcess("$instance", "Adding availability group $db to $($db.Parent)")) {
+                if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($db.Parent.Name)")) {
                     try {
                         $agdb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
                         $ag.AvailabilityDatabases.Add($agdb)

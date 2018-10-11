@@ -26,7 +26,7 @@ function Get-DbaAvailabilityGroup {
 
     .NOTES
         Tags: Hadr, HA, AG, AvailabilityGroup
-        Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
+        Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@cl)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
