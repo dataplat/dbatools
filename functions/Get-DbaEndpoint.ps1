@@ -18,7 +18,7 @@ function Get-DbaEndpoint {
 
     .PARAMETER Type
         Return only specific types of endpoints. Options include: DatabaseMirroring, ServiceBroker, Soap, and TSql.
-    
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -76,9 +76,9 @@ function Get-DbaEndpoint {
                 $endpoints = $endpoints | Where-Object Name -in $endpoint
             }
             if ($Type) {
-                $endpoints = $endpoints | Where-Object EndpointType -in $Type    
+                $endpoints = $endpoints | Where-Object EndpointType -in $Type
             }
-            
+
             foreach ($end in $endpoints) {
                 Write-Message -Level Verbose -Message "Processing $($end.Name) on $($server.Name)"
                 if ($end.Protocol.Tcp.ListenerPort) {
