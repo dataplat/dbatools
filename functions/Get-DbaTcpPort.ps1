@@ -85,7 +85,7 @@
     }
     process {
         foreach ($instance in $SqlInstance) {
-            if ($All -eq $true) {
+            if ($All) {
                 try {
                     $scriptblock = {
                         $instance = $args[0]
@@ -118,8 +118,9 @@
                                 }
                             }
                             catch {
-                                #Shouldn't have an empty catch block
-                                Write-Message -Level Verbose -Message "it's just not our day"
+                                # Shouldn't have an empty catch block
+                                # Use write-verbose becaues it's remote and write-message may note exist
+                                Write-Verbose -Message "it's just not our day"
                             }
 
                             $tcp = $servername.ServerProtocols | Where-Object Name -eq Tcp
@@ -139,10 +140,8 @@
                                         else {
                                             $static = $false
                                         }
-                                        break
                                     }
                                 }
-
                                 [PsCustomObject]@{
                                     ComputerName = $instance
                                     InstanceName = $instanceName
@@ -157,16 +156,17 @@
                     }
 
                     $computer = $instance.ComputerName
-                    $resolved = Resolve-DbaNetworkName -ComputerName $instance -Verbose:$false
+                    $resolved = Resolve-DbaNetworkName -ComputerName $instance
                     $computername = $resolved.FullComputerName
+                    $fqdn = $resolved.Fqdn
 
                     try {
                         Write-Message -Level Verbose -Message "Trying with ComputerName ($computer)."
-                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computer -ArgumentList $computer -ScriptBlock $scriptblock
+                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computer -Credential $Credential -ArgumentList $computer -ScriptBlock $scriptblock
                     }
                     catch {
                         Write-Message -Level Verbose -Message "Trying with FullComputerName because ComputerName failed."
-                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computername -ArgumentList $fqdn -ScriptBlock $scriptblock
+                        $someIps = Invoke-ManagedComputerCommand -ComputerName $computername -Credential $Credential -ArgumentList $fqdn -ScriptBlock $scriptblock
                     }
                 }
                 catch {
@@ -180,34 +180,32 @@
                     [regex]$ipv4 = "^(?:$octet\.){3}$octet$"
                     $results = $results | Where-Object { $_.IPAddress -match $ipv4 }
                 }
+
+                $results
             }
             #Default Execution of Get-DbaTcpPort
-            if ($All -eq $false -or ($All -eq $true -and $null -eq $someIps)) {
+            if (-not $All -or ($All -and ($null -eq $someIps))) {
                 try {
                     $server = Connect-SqlInstance -SqlInstance "TCP:$instance" -SqlCredential $SqlCredential -MinimumVersion 9
                 }
                 catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $servername -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target "TCP:$instance" -Continue
                 }
 
                 # WmiComputer can be unreliable :( Use T-SQL
                 $sql = "SELECT local_net_address,local_tcp_port FROM sys.dm_exec_connections WHERE session_id = @@SPID"
                 $port = $server.Query($sql)
 
-                $results = [PsCustomObject]@{
-                            ComputerName = $server.ComputerName
-                            InstanceName = $server.ServiceName
-                            SqlInstance  = $server.DomainInstanceName
-                            IPAddress    = $port.local_net_address
-                            Port         = $port.local_tcp_port
-                            Static       = $true
-                            Type         = "Normal"
-                            }
+                [PsCustomObject]@{
+                    ComputerName = $server.ComputerName
+                    InstanceName = $server.ServiceName
+                    SqlInstance  = $server.DomainInstanceName
+                    IPAddress    = $port.local_net_address
+                    Port         = $port.local_tcp_port
+                    Static       = $true
+                    Type         = "Normal"
+                } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, IPAddress, Port
             }
         }
-    }
-    end {
-        #return results
-        Select-DefaultView -InputObject $results -Property ComputerName, InstanceName, SqlInstance, IPAddress, Port
     }
 }
