@@ -13,6 +13,9 @@ function Add-DbaAgDatabase {
     .PARAMETER SqlCredential
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+    .PARAMETER Database
+        The database or databases to add.
+    
     .PARAMETER AvailabilityGroup
         The availability group where the databases will be added.
         

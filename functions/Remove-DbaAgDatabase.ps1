@@ -13,8 +13,11 @@ function Remove-DbaAgDatabase {
     .PARAMETER SqlCredential
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+    .PARAMETER Database
+        The database or databases to remove.
+    
     .PARAMETER AvailabilityGroup
-        Only remove specific availability groups.
+        Only remove databases from specific availability groups.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -59,6 +62,7 @@ function Remove-DbaAgDatabase {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [string[]]$Database,
         [string[]]$AvailabilityGroup,
         # needs to accept db or agdb so generic object
         [parameter(ValueFromPipeline)]
@@ -73,15 +77,15 @@ function Remove-DbaAgDatabase {
             }
         }
         
-        foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaAgDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
+        if ($SqlInstance) {
+            $InputObject += Get-DbaAgDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
         }
         
         foreach ($db in $InputObject) {
             $ags = Get-DbaAvailabilityGroup -SqlInstance $db.Parent -AvailabilityGroup $AvailabilityGroup
             
             foreach ($ag in $ags) {
-                if ($Pscmdlet.ShouldProcess("$instance", "Removeing availability group $db to $($db.Parent)")) {
+                if ($Pscmdlet.ShouldProcess("$instance", "Removing availability group $db to $($db.Parent)")) {
                     try {
                         $agdb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
                         $ag.AvailabilityDatabases.Drop($agdb)

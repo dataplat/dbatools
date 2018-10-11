@@ -40,20 +40,66 @@ function New-DbaAvailabilityGroup {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
       
     .PARAMETER Name
-        The Name of the Availability Group
+        The name of the Availability Group.
+    
+    .PARAMETER DtcSupport
+        Indicates whether the DtcSupport is enabled
+
+    .PARAMETER ClusterType
+        Cluster type of the Availability Group.
+        Options include: External, Wsfc or None. External by default.
+    
+    .PARAMETER AutomatedBackupPreference
+        Specifies how replicas in the primary role are treated in the evaluation to pick the desired replica to perform a backup.
+    
+    .PARAMETER FailureConditionLevel
+        Specifies the different conditions that can trigger an automatic failover in Availability Group.
+    
+    .PARAMETER HealthCheckTimeout
+        This setting used to specify the length of time, in milliseconds, that the SQL Server resource DLL should wait for information returned by the sp_server_diagnostics stored procedure before reporting the Always On Failover Cluster Instance (FCI) as unresponsive. 
+        
+        Changes that are made to the timeout settings are effective immediately and do not require a restart of the SQL Server resource.
+    
+        Defaults to 30000 (30 seconds).
+    
+    .PARAMETER Basic
+        Indicates whether the availability group is basic. Basic availability groups like pumpkin spice and uggs.    
+    
+        https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/basic-availability-groups-always-on-availability-groups
+        
+    .PARAMETER DatabaseHealthTrigger
+        Indicates whether the availability group triggers the database health.
+            
+    .PARAMETER Passthru
+        Don't create the availability group, just pass thru an object that can be further customized before creation.
     
     .PARAMETER Database
         The database or databases to add.
     
+    .PARAMETER NetworkShare
+        The network share where the backups will be backed up and restored from.
+        
+        Each SQL Server service account must have access to this share.
+        
+        NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
+    
+    .PARAMETER UseLastBackups
+        Use the last full backup of database.
+    
+    .PARAMETER Force
+        Drop and recreate the database on remote servers using fresh backup.
+        
     .PARAMETER AvailabilityMode
-        Sets the IP address of the availability group listener.
+        Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.
     
     .PARAMETER FailoverMode
-        Sets the subnet IP mask of the availability group listener.
+        Sets the failover mode of the availability group replica. Options are Automatic and Manual. Automatic is default.
     
     .PARAMETER Endpoint
-        Sets the number of the port used to communicate with the availability group.
+        By default, this command will attempt to find a DatabaseMirror endpoint. If one does not exist, it will create it.
     
+        If an endpoint must be created, the name "hadr_endpoint" will be used. If an alternative is preferred, use Endpoint.
+
     .PARAMETER ConnectionModeInPrimaryRole
         Specifies the connection intent modes of an Availability Replica in primary role. AllowAllConnections by default.
     
@@ -66,25 +112,15 @@ function New-DbaAvailabilityGroup {
     .PARAMETER SeedingMode
         Specifies how the secondary replica will be initially seeded.
     
-        Automatic. Enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.
+        Automatic enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.
         
-        Manual. Specifies manual seeding. This method requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.
+        Manual requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.
     
     .PARAMETER Certificate 
         Specifies that the endpoint is to authenticate the connection using the certificate specified by certificate_name to establish identity for authorization. 
     
         The far endpoint must have a certificate with the public key matching the private key of the specified certificate.
-    
-    .PARAMETER AutomatedBackupPreference
-        Specifies how replicas in the primary role are treated in the evaluation to pick the desired replica to perform a backup.
-    
-    .PARAMETER NetworkShare
-        The network share where the backups will be backed up and restored from.
-        
-        Each SQL Server service account must have access to this share.
-        
-        NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
-    
+
     .PARAMETER IPAddress
         Sets the IP address of the availability group listener.
     
@@ -96,51 +132,12 @@ function New-DbaAvailabilityGroup {
     
     .PARAMETER Dhcp
         Indicates whether the object is DHCP.
-        
-    .PARAMETER UseLastBackups
-        Use the last full backup of database.
-    
-    .PARAMETER DtcSupport
-        Indicates whether the DtcSupport is enabled
 
-    .PARAMETER ClusterType
-        Cluster type of the Availability Group.
-        Options include: External, Wsfc or None. External by default.
-    
-    .PARAMETER FailureConditionLevel
-        Specifies the different conditions that can trigger an automatic failover in Availability Group.
-    
-    .PARAMETER HealthCheckTimeout
-        This setting used to specify the length of time, in milliseconds, that the SQL Server resource DLL should wait for information returned by the sp_server_diagnostics stored procedure before reporting the Always On Failover Cluster Instance (FCI) as unresponsive. 
-        
-        Changes that are made to the timeout settings are effective immediately and do not require a restart of the SQL Server resource.
-    
-        Defaults to 30000 (30 seconds).
-    
-    .PARAMETER Certificate 
-        Specifies that the endpoint is to authenticate the connection using the certificate specified by certificate_name to establish identity for authorization. 
-    
-        The far endpoint must have a certificate with the public key matching the private key of the specified certificate.
-    
-    .PARAMETER Basic
-        Indicates whether the availability group is basic. Basic availability groups like pumpkin spice and uggs.    
-    
-        https://docs.microsoft.com/en-us/sql/database-engine/availability-groups/windows/basic-availability-groups-always-on-availability-groups
-        
-    .PARAMETER DatabaseHealthTrigger
-        Indicates whether the availability group triggers the database health.
-    
-    .PARAMETER Force
-        Drop and recreate the database on remote servers using fresh backup.
-        
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
         
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
-        
-    .PARAMETER Passthru
-        Don't create the availability group, just pass thru an object that can be further customized before creation.
     
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -165,25 +162,23 @@ function New-DbaAvailabilityGroup {
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b
     
-        Creates a new availability group on sql2016b named SharePoint
-    
+        Creates a new availability group on sql2016b named SharePoint with a secondary on sql2016b
     
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual
     
         Creates a new availability group on sql2017 named SharePoint
-    
+        
     .EXAMPLE
         PS C:\> $params = @{
-        >>    Primary = 'sql2017a'
-        >>    Secondary = 'sql2017b'
-        >>    SecondarySqlCredential = 'sqladmin'
-        >>    Witness = 'sql2019'
-        >>    Database = 'pubs'
-        >>    NetworkShare = '\\nas\sql\share'
+        >>    Primary = 'sql2017'
+        >>    Name    = 'SharePoint'
+        >>    IPAddress = '10.0.1.25'
+        >>    ClusterType = 'None'
+        >>    AutomatedBackupPreference = 'None'
         >>}
         
-        PS C:\> Invoke-DbaDbMirror @params
+        PS C:\> New-DbaAvailabilityGroup @params
         
         Performs a bunch of checks to ensure the pubs database on sql2017a
         can be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a
@@ -214,19 +209,7 @@ function New-DbaAvailabilityGroup {
         a fresh backup.
         
         Does all the things in the decription, does not prompt for confirmation.
-        
-    .EXAMPLE
-        PS C:\> $map = @{ 'database_data' = 'M:\Data\database_data.mdf' 'database_log' = 'L:\Log\database_log.ldf' }
-        PS C:\> Get-ChildItem \\nas\seed | Restore-DbaDatabase -SqlInstance sql2017b -FileMapping $map -NoRecovery
-        PS C:\> Get-DbaDatabase -SqlInstance sql2017a -Database pubs | New-DbaAvailabilityGroup -Secondary sql2017b -Confirm:$false
-        
-        Restores backups from sql2017a to a specific file struture on sql2017b then creates secondary with no prompts for confirmation.
-        
-    .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sql2017a -Database pubs |
-        >> New-DbaAvailabilityGroup -Secondary sql2017b -UseLastBackups -Confirm:$false
-        
-        Mirrors pubs on sql2017a to sql2017b and uses the last full and logs from sql2017a to seed.
+ 
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
@@ -252,6 +235,7 @@ function New-DbaAvailabilityGroup {
         # database
 
         [string[]]$Database,
+        [string]$NetworkShare,
         [switch]$UseLastBackups,
         [switch]$Force,
         # replica
@@ -271,8 +255,7 @@ function New-DbaAvailabilityGroup {
         [string]$ReadonlyRoutingConnectionUrl,
         [string]$Certificate,
         # network
-
-        [string]$NetworkShare,
+        
         [ipaddress[]]$IPAddress,
         [ipaddress]$SubnetMask = "255.255.255.0",
         [int]$Port = 1433,

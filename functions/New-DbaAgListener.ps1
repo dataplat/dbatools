@@ -20,19 +20,19 @@ function New-DbaAgListener {
         Sets the IP address of the availability group listener.
     
     .PARAMETER SubnetMask
-        Sets the subnet IP mask of the availability group listener.
+        Sets the subnet IP mask of the availability group listener. Defaults to 255.255.255.0.
     
     .PARAMETER Port
-        Sets the number of the port used to communicate with the availability group.
+        Sets the port number used to communicate with the availability group. Defaults to 1433.
     
     .PARAMETER Dhcp
-        Indicates whether the object is DHCP.
+        Indicates whether the listener uses DHCP.
     
     .PARAMETER Passthru
         Don't create the listener, just pass thru an object that can be further customized before creation.
     
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-DbaDatabase.
+        Enables piping from Get-DbaAvailabilityGroup
         
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -56,14 +56,14 @@ function New-DbaAgListener {
         https://dbatools.io/New-DbaAgListener
         
     .EXAMPLE
-        PS C:\> New-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint
-        
-        Creates a listener with no IP address. Does not prompt for confirmation.
+        PS C:\> New-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -IPAddress 10.0.20.20
+    
+        Creates a listener on 10.0.20.20 port 1433 for the SharePoint availability group on sql2017.
         
     .EXAMPLE
-        PS C:\> Get-AvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availability group1 | New-DbaAgListener
+        PS C:\> Get-AvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availability group1 | New-DbaAgListener -Dhcp
         
-        Adds the availability groups returned from the Get-AvailabilityGroup function. Prompts for confirmation.
+        Creates a listener on port 1433 with a dynamic IP for the group1 availability group on sql2017.
 
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
@@ -71,7 +71,7 @@ function New-DbaAgListener {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
-        [ipaddress[]]$IPAddress,
+        [ipaddress]$IPAddress,
         [ipaddress]$SubnetMask = "255.255.255.0",
         [int]$Port = 1433,
         [switch]$Dhcp,
@@ -81,11 +81,9 @@ function New-DbaAgListener {
         [switch]$EnableException
     )
     process {
-        if ((Test-Bound -ParameterName SqlInstance)) {
-            if ((Test-Bound -Not -ParameterName Database) -or (Test-Bound -Not -ParameterName AvailabilityGroup)) {
-                Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
-                return
-            }
+        if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName AvailabilityGroup)) {
+            Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
+            return
         }
         
         if ($SqlInstance) {
@@ -101,13 +99,13 @@ function New-DbaAgListener {
                     $aglistener = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener -ArgumentList $ag, $Name
                     $aglistener.PortNumber = $Port
                     
-                    foreach ($ip in $IPAddress.IPAddressToString) {
-                        $listenerip = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroupListenerIPAddress -ArgumentList $aglistener
-                        $listenerip.IPAddress = $ip
+                    $listenerip = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroupListenerIPAddress -ArgumentList $aglistener
+                    if (Test-Bound -ParameterName IPAddress) {
+                        $listenerip.IPAddress = $IPAddress.IPAddressToString
                         $listenerip.SubnetMask = $SubnetMask.IPAddressToString
-                        $listenerip.IsDHCP = $Dhcp
-                        $aglistener.AvailabilityGroupListenerIPAddresses.Add($listenerip)
                     }
+                    $listenerip.IsDHCP = $Dhcp
+                    $aglistener.AvailabilityGroupListenerIPAddresses.Add($listenerip)
                     
                     if ($Passthru) {
                         return $aglistener
