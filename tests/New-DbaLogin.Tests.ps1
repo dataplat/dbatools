@@ -67,7 +67,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     catch {<#nbd#> }
-    $null = New-DbaDbCertificate $server1 -Name $certificateName -Password $null
+    $null = New-DbaDbCertificate $server1 -Name $certificateName -Password $null -Confirm:$false
 
     Context "Create new logins" {
         It "Should be created successfully - Hashed password" {

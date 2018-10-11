@@ -4,18 +4,18 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 7
         <#
             Get commands, Default count = 11
             Commands with SupportShouldProcess = 13
         #>
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaAgReplica).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Replica', 'EnableException', 'Role', 'InputObject'
-        it "Should contain our specific parameters" {
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Replica', 'EnableException', 'InputObject'
+        $paramCount = $knownParameters.Count
+        It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
-        it "Should only contain $paramCount parameters" {
+        It "Should only contain $paramCount parameters" {
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
     }
