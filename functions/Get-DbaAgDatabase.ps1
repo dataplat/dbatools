@@ -88,7 +88,7 @@
             foreach ($ag in $ags) {
                 $agDatabases = $ag.AvailabilityDatabases
                 foreach ($agDb in $agDatabases) {
-                    if ($Database -and $agDb.Name -notmatch $Database) {
+                    if ($Database -and $agDb.Name -notin $Database) {
                         continue
                     }
 
