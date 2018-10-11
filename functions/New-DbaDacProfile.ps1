@@ -4,7 +4,7 @@
         Creates a new Publish Profile.
 
     .DESCRIPTION
-        The New-PublishProfile command generates a standard publish profile xml file that can be used by the DacFx (this and everything else) to control the deployment of your dacpac
+        The New-DbaDacProfile command generates a standard publish profile xml file that can be used by the DacFx (this and everything else) to control the deployment of your dacpac
         This generates a standard template XML which is enough to dpeloy a dacpac but it is highly recommended that you add additional options to the publish profile.
         If you use Visual Studio you can open a publish.xml file and use the ui to edit the file -
         To create a new file, right click on an SSDT project, choose "Publish" then "Load Profile" and load your profile or create a new one.
@@ -35,7 +35,7 @@
 
     .NOTES
         Tags: Dacpac
-        Author: Richie lee (@bzzzt_io)
+        Author: Richie lee (@richiebzzzt)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
