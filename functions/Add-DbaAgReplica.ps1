@@ -6,29 +6,37 @@ function Add-DbaAgReplica {
         
     .DESCRIPTION
         Adds a replica to an availability group on a SQL Server instance.
+    
+        Automatically creates a database mirroring endpoint if required.
+
    .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-
+    
+    .PARAMETER Name
+        The name of the replica. Defaults to the SQL Server instance name.
+    
     .PARAMETER AvailabilityGroup
-        The Availability Group to which a listener will be bestowed upon.
+        The Availability Group to which a replica will be bestowed upon.
     
     .PARAMETER AvailabilityMode
-        Sets the IP address of the availability group listener.
+        Sets the availability mode of the availability group replica. Options are: AsynchronousCommit and SynchronousCommit. SynchronousCommit is default.
     
     .PARAMETER FailoverMode
-        Sets the subnet IP mask of the availability group listener.
+        Sets the failover mode of the availability group replica. Options are Automatic and Manual. Automatic is default.
     
     .PARAMETER Endpoint
-        Sets the number of the port used to communicate with the availability group.
+        By default, this command will attempt to find a DatabaseMirror endpoint. If one does not exist, it will create it.
+    
+        If an endpoint must be created, the name "hadr_endpoint" will be used. If an alternative is preferred, use Endpoint.
     
     .PARAMETER Passthru
-        Don't create the listener, just pass thru an object that can be further customized before creation.
+        Don't create the replica, just pass thru an object that can be further customized before creation.
     
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-DbaDatabase.
+        Enables piping from Get-DbaAvailabilityGroup.
 
     .PARAMETER ConnectionModeInPrimaryRole
         Specifies the connection intent modes of an Availability Replica in primary role. AllowAllConnections by default.
@@ -42,9 +50,9 @@ function Add-DbaAgReplica {
     .PARAMETER SeedingMode
         Specifies how the secondary replica will be initially seeded.
     
-        Automatic. Enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.
+        Automatic enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.
         
-        Manual. Specifies manual seeding. This method requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.
+        Manual requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.
     
     .PARAMETER Certificate 
         Specifies that the endpoint is to authenticate the connection using the certificate specified by certificate_name to establish identity for authorization. 
@@ -71,22 +79,22 @@ function Add-DbaAgReplica {
         
     .LINK
         https://dbatools.io/Add-DbaAgReplica
-        
+
     .EXAMPLE
-        PS C:\> Add-DbaAgReplica -SqlInstance sql2017 -AvailabilityGroup SharePoint
+        PS C:\> Get-AvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b
         
-        Creates a listener with no IP address. Does not prompt for confirmation.
-        
+        Adds sql2017b to the SharePoint availability group on sql2017a
+    
     .EXAMPLE
-        PS C:\> Get-AvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availability group1 | Add-DbaAgReplica
+        PS C:\> Get-AvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b -FailoverMode Manual
         
-        Adds the availability groups returned from the Get-AvailabilityGroup function. Prompts for confirmation.
+        Adds sql2017b to the SharePoint availability group on sql2017a with a manual failover mode.
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$AvailabilityGroup,
+        [string]$AvailabilityGroup,
         [string]$Name,
         [ValidateSet('AsynchronousCommit', 'SynchronousCommit')]
         [string]$AvailabilityMode = "SynchronousCommit",
@@ -132,19 +140,25 @@ function Add-DbaAgReplica {
                 $InputObject = Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $AvailabilityGroup
             }
             
-            $ep = Get-DbaEndpoint -SqlInstance $server -Endpoint $Endpoint -Type DatabaseMirroring
+            $ep = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring
             
             if (-not $ep) {
-                if ($Pscmdlet.ShouldProcess("$instance", "Creating an endpoint")) {
-                    Write-Message -Level Verbose -Message "Adding endpoint named AvailabilityGroup to $instance"
+                if ($Pscmdlet.ShouldProcess($server.Name, "Adding endpoint named $Endpoint to $instance")) {
+                    if (-not $Endpoint) {
+                        $Endpoint = "hadr_endpoint"
+                    }
                     $ep = New-DbaEndpoint -SqlInstance $server -Name hadr_endpoint -Type DatabaseMirroring -EndpointEncryption Supported -EncryptionAlgorithm Aes -Certificate $Certificate
                     $null = $ep | Start-DbaEndpoint
                 }
             }
             
-            if ($Pscmdlet.ShouldProcess("$instance", "Creating a replica")) {
+            if ((Test-Bound -Not -ParameterName Name)) {
+                $Name = $server.Name
+            }
+            
+            if ($Pscmdlet.ShouldProcess($server.Name, "Creating a replica named $Name")) {
                 try {
-                    $replica = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityReplica -ArgumentList $InputObject, $server.Name
+                    $replica = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityReplica -ArgumentList $InputObject, $Name
                     $replica.EndpointUrl = $ep.Fqdn
                     $replica.FailoverMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaFailoverMode]::$FailoverMode
                     $replica.AvailabilityMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaAvailabilityMode]::$AvailabilityMode
