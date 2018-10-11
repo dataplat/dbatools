@@ -13,17 +13,8 @@ function Join-DbaAvailabilityGroup {
     .PARAMETER SqlCredential
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         
-    .PARAMETER Secondary
-        SQL Server name or SMO object representing the secpondary SQL Server instance or instances.
-        
-    .PARAMETER SecondarySqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
-    .PARAMETER AvailabilityGroup
-        Only add specific availability groups.
-        
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-DbaDatabase, Get-DbaDbSharePoint and more.
+        Enables piped input from Get-DbaAvailabilityGroup
         
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -47,12 +38,7 @@ function Join-DbaAvailabilityGroup {
         https://dbatools.io/Join-DbaAvailabilityGroup
         
     .EXAMPLE
-        PS C:\> Join-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AllAvailabilityGroup
-        
-        Adds all availability groups on the sqlserver2014 instance. Does not prompt for confirmation.
-        
-    .EXAMPLE
-        PS C:\> Join-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm
+        PS C:\> Join-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup SharePoint -Confirm
         
         Adds the ag1 and ag2 availability groups on sqlserver2012. Prompts for confirmation.
         

@@ -13,7 +13,7 @@
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER AvailabilityGroup
-        Specifies the Availability Group name that you want to get information on.
+        Specifies the Availability Group name that you want to get information about.
 
     .PARAMETER IsPrimary
         If this switch is enabled, a boolean indicating whether SqlInstance is the Primary replica in the AG is returned.
@@ -91,11 +91,7 @@
 
                 if ($IsPrimary) {
                     $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name as AvailabilityGroup', 'IsPrimary'
-                    $value = $false
-                    if ($ag.PrimaryReplicaServerName -eq $server.Name) {
-                        $value = $true
-                    }
-                    Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name IsPrimary -Value $value
+                    Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name IsPrimary -Value ($ag.PrimaryReplicaServerName -eq $server.Name)
                     Select-DefaultView -InputObject $ag -Property $defaults
                 }
                 else {
