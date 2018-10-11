@@ -27,10 +27,10 @@ function Remove-DbaAvailabilityGroup {
         Only remove specific availability groups.
 
     .PARAMETER AllAvailabilityGroups
-        Remove all availability groups on an instance, ignoring the packaged availability groups: AlwaysOn_health, system_health, telemetry_xevents.
+        Remove all availability groups on an instance.
 
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-DbaAvailabilityGroup
+        Enables piping from Get-DbaAvailabilityGroup.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

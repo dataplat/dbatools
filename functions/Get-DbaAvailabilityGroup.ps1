@@ -2,9 +2,11 @@
 function Get-DbaAvailabilityGroup {
 <#
     .SYNOPSIS
-        Outputs the Availability Group(s) object found on the server.
+        Returns availability group objects from a SQL Server instance.
 
     .DESCRIPTION
+        Returns availability group objects from a SQL Server instance.
+    
         Default view provides most common set of properties for information on the Availability Group(s).
 
     .PARAMETER SqlInstance
@@ -14,7 +16,7 @@ function Get-DbaAvailabilityGroup {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER AvailabilityGroup
-        Specifies the Availability Group name that you want to get information about.
+        Return only specific availability groups.
 
     .PARAMETER IsPrimary
         If this switch is enabled, a boolean indicating whether SqlInstance is the Primary replica in the AG is returned.

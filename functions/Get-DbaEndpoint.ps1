@@ -14,7 +14,7 @@ function Get-DbaEndpoint {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER Endpoint
-        Return only specific endpoint or endpoints
+        Return only specific endpoints.
 
     .PARAMETER Type
         Return only specific types of endpoints. Options include: DatabaseMirroring, ServiceBroker, Soap, TSql
@@ -80,6 +80,7 @@ function Get-DbaEndpoint {
             }
             
             foreach ($end in $endpoints) {
+                Write-Message -Level Verbose -Message "Processing $($end.Name) on $($server.Name)"
                 if ($end.Protocol.Tcp.ListenerPort) {
                     if ($instance.ComputerName -match '\.') {
                         $dns = $instance.ComputerName

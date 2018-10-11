@@ -14,7 +14,7 @@ function Join-DbaAvailabilityGroup {
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaAvailabilityGroup
+        Enables piped input from Get-DbaAvailabilityGroup.
         
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -56,7 +56,7 @@ function Join-DbaAvailabilityGroup {
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02 -Confirm
         
-        Prompts for confirmation then joins sql02 to the SharePoint availability group on sql01
+        Prompts for confirmation then joins sql02 to the SharePoint availability group on sql01.
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
