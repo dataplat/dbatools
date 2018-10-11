@@ -25,7 +25,7 @@
         Can be used to specify service names explicitly, without looking for service types/instances.
 
     .PARAMETER AdvancedProperties
-        Collect additional properties from SqlServiceAdvancedProperty
+        Collect additional properties from the SqlServiceAdvancedProperty Namespace
         This collects information about Version, Service Pack Level", SkuName, Clustered status and the Cluster Service Name
         This adds additional overhead to the command.
 
@@ -51,15 +51,15 @@
         Gets the SQL Server related services on computer sqlserver2014a.
 
     .EXAMPLE
-        PS C:\> 'sql1','sql2','sql3' | Get-DbaService
+        PS C:\> 'sql1','sql2','sql3' | Get-DbaService -AdvancedProperties
 
-        Gets the SQL Server related services on computers sql1, sql2 and sql3.
+        Gets the SQL Server related services on computers sql1, sql2 and sql3. Includes Advanced Properties from the SqlServiceAdvancedProperty Namespace
 
     .EXAMPLE
         PS C:\> $cred = Get-Credential WindowsUser
-        PS C:\> Get-DbaService -ComputerName sql1,sql2 -Credential $cred -AdvancedProperties | Out-GridView
+        PS C:\> Get-DbaService -ComputerName sql1,sql2 -Credential $cred  | Out-GridView
 
-        Gets the SQL Server related services on computers sql1 and sql2 via the user WindowsUser, and shows them in a grid view. As the AdvancedProperties flag is set will also retreive information from the SqlServiceAdvancedProperty class.
+        Gets the SQL Server related services on computers sql1 and sql2 via the user WindowsUser, and shows them in a grid view.
 
     .EXAMPLE
         PS C:\> Get-DbaService -ComputerName sql1,sql2 -InstanceName MSSQLSERVER
@@ -70,6 +70,12 @@
         PS C:\> Get-DbaService -ComputerName $MyServers -Type SSRS
 
         Gets the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
+
+    .EXAMPLE
+        PS C:\> $MyServers =  Get-Content .\servers.txt
+        PS C:\> Get-DbaService -ComputerName $MyServers -ServiceName MSSQLSERVER,SQLSERVERAGENT
+
+        Gets the SQL Server related services with ServiceName MSSQLSERVER or SQLSERVERAGENT  for all the servers that are stored in the file. Every line in the file can only contain one hostname for a server.
 
     .EXAMPLE
         PS C:\> $services = Get-DbaService -ComputerName sql1 -Type Agent,Engine
@@ -140,9 +146,6 @@
                 $searchClause = "SQLServiceType > 0"
             }
         }
-        if ((Test-Bound -ParameterName AdvancedProperties)) {
-            Write-Message -Message "AdvancedProperties requested" -Level Verbose
-        }
     }
     process {
         foreach ($Computer in $ComputerName.ComputerName) {
@@ -201,7 +204,6 @@
                                 "Engine" { 200 }
                                 default { 100 }
                             }
-
                             #If only specific instances are selected
                             if (!$InstanceName -or $instance -in $InstanceName) {
                                 #Add other properties and methods
@@ -252,8 +254,8 @@
                                 else {
                                     $defaults = "ComputerName", "ServiceName", "ServiceType", "InstanceName", "DisplayName", "StartName", "State", "StartMode"
                                 }
+                                Select-DefaultView -InputObject $service -Property $defaults -TypeName DbaSqlService
                             }
-                            Select-DefaultView -InputObject $service -Property $defaults -TypeName DbaSqlService
                         }
                     }
                     else {
