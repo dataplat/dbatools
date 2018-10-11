@@ -1292,15 +1292,15 @@
                             }
                         }
                     }
-                    $destServer.Databases.Refresh()
+                    $NewDatabase = Get-DbaDatabase -SqlInstance $destServer -database $DestinationdbName
 
                     # restore potentially lost settings
                     if ($destServer.VersionMajor -ge 9 -and $NoRecovery -eq $false) {
-                        if ($sourceDbOwnerChaining -ne $destServer.Databases[$DestinationdbName].DatabaseOwnershipChaining) {
+                        if ($sourceDbOwnerChaining -ne $$NewDatabase.DatabaseOwnershipChaining) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Updating DatabaseOwnershipChaining on $DestinationdbName")) {
                                 try {
-                                    $destServer.Databases[$DestinationdbName].DatabaseOwnershipChaining = $sourceDbOwnerChaining
-                                    $destServer.Databases[$DestinationdbName].Alter()
+                                    $NewDatabase.DatabaseOwnershipChaining = $sourceDbOwnerChaining
+                                    $NewDatabase.Alter()
                                     Write-Message -Level Verbose -Message "Successfully updated DatabaseOwnershipChaining for $sourceDbOwnerChaining on $DestinationdbName on $destinstance."
                                 }
                                 catch {
@@ -1311,11 +1311,11 @@
                             }
                         }
 
-                        if ($sourceDbTrustworthy -ne $destServer.Databases[$DestinationdbName].Trustworthy) {
+                        if ($sourceDbTrustworthy -ne $NewDatabase.Trustworthy) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Updating Trustworthy on $DestinationdbName")) {
                                 try {
-                                    $destServer.Databases[$DestinationdbName].Trustworthy = $sourceDbTrustworthy
-                                    $destServer.Databases[$DestinationdbName].Alter()
+                                    $NewDatabase.Trustworthy = $sourceDbTrustworthy
+                                    $NewDatabase.Alter()
                                     Write-Message -Level Verbose -Message "Successfully updated Trustworthy to $sourceDbTrustworthy for $DestinationdbName on $destinstance"
                                 }
                                 catch {
@@ -1326,11 +1326,11 @@
                             }
                         }
 
-                        if ($sourceDbBrokerEnabled -ne $destServer.Databases[$DestinationdbName].BrokerEnabled) {
+                        if ($sourceDbBrokerEnabled -ne $NewDatabase.BrokerEnabled) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Updating BrokerEnabled on $dbName")) {
                                 try {
-                                    $destServer.Databases[$DestinationdbName].BrokerEnabled = $sourceDbBrokerEnabled
-                                    $destServer.Databases[$DestinationdbName].Alter()
+                                    $NewDatabase.BrokerEnabled = $sourceDbBrokerEnabled
+                                    $NewDatabase.Alter()
                                     Write-Message -Level Verbose -Message "Successfully updated BrokerEnabled to $sourceDbBrokerEnabled for $DestinationdbName on $destinstance."
                                 }
                                 catch {
@@ -1342,7 +1342,7 @@
                         }
                     }
 
-                    if ($sourceDbReadOnly -ne $destServer.Databases[$DestinationdbName].ReadOnly -and $NoRecovery -eq $false) {
+                    if ($sourceDbReadOnly -ne $NewDatabase.ReadOnly -and $NoRecovery -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Updating ReadOnly status on $DestinationdbName")) {
                             $update = Update-SqldbReadOnly -SqlInstance $destServer -dbname $DestinationdbName -readonly $sourceDbReadOnly
                             if ($update -eq $true) {
