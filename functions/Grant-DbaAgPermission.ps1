@@ -5,14 +5,8 @@ function Grant-DbaAgPermission {
         Grants endpoint and availability group permissions to a login.
         
     .DESCRIPTION
-        Grants endpoint and availability group permissions to a login.
+        Grants endpoint and availability group permissions to a login. If the account is a Windows login and does not exist, it will be automatically added.
     
-        notes:
-        (1) the NT AUTHORITY account has to be given rights to each replica, with rights to alter/connect to the endpoint
-        (2) the service account for each instance has to be explicitly created (the link to the NT SERVICE account won't be sufficient), connect access to the endpoint on the instance
-
-        So if there is no domain account, on step 2 you would have to add the computer account for everything.
-
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -73,29 +67,19 @@ function Grant-DbaAgPermission {
         https://dbatools.io/Grant-DbaAgPermission
         
     .EXAMPLE
-        PS C:\> Grant-DbaAgPermission -SqlInstance sqlserver2012 -AllAvailabilityGroup
+        PS C:\> Grant-DbaAgPermission -SqlInstance sql2017a -Type AvailabilityGroup -AvailabilityGroup SharePoint -Login ad\spservice -Permission CreateAnyDatabase
         
-        Adds all availability groups on the sqlserver2014 instance. Does not prompt for confirmation.
-        
-    .EXAMPLE
-        PS C:\> Grant-DbaAgPermission -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm
-        
-        Adds the ag1 and ag2 availability groups on sqlserver2012. Prompts for confirmation.
+        Adds CreateAnyDatabase permissions to ad\spservice on the SharePoint availability group on sql2017a. Does not prompt for confirmation.
         
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sqlserver2012 | Out-GridView -Passthru | Grant-DbaAgPermission -AvailabilityGroup ag1
+        PS C:\> Grant-DbaAgPermission -SqlInstance sql2017a -Type AvailabilityGroup -AvailabilityGroup ag1, ag2 -Login ad\spservice -Permission CreateAnyDatabase -Confirm
         
-        Adds selected databases from sqlserver2012 to ag1
-  
+        Adds CreateAnyDatabase permissions to ad\spservice on the ag1 and ag2 availability groups on sql2017a. Prompts for confirmation.
+        
     .EXAMPLE
-        PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster | Grant-DbaAgPermission -AvailabilityGroup SharePoint
+        PS C:\> Get-DbaLogin -SqlInstance sql2017a | Out-GridView -Passthru | Grant-DbaAgPermission -Type EndPoint
         
-        Adds SharePoint databases as found in SharePoint_Config on sqlcluster to ag1 on sqlcluster
-    
-    .EXAMPLE
-        PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster -ConfigDatabase SharePoint_Config_2019 | Grant-DbaAgPermission -AvailabilityGroup SharePoint
-        
-        Adds SharePoint databases as found in SharePoint_Config_2019 on sqlcluster to ag1 on sqlcluster
+        Grants the selected logins Connect permissions on the DatabaseMirroring endpoint for sql2017a
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -149,7 +133,7 @@ function Grant-DbaAgPermission {
                 foreach ($perm in $Permission) {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Granting $perm on $endpoint")) {
                         if ($perm -in 'CreateAnyDatabase') {
-                            Stop-Function -Message "$perm not supported by availability groups" -Continue
+                            Stop-Function -Message "$perm not supported by endpoints" -Continue
                         }
                         try {
                             $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)

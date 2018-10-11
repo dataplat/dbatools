@@ -2,10 +2,10 @@
 function Get-DbaAgListener {
 <#
     .SYNOPSIS
-        Returns an availability group listeners.
+        Returns availability group listeners.
 
     .DESCRIPTION
-        Returns an availability group listeners.
+        Returns availability group listeners.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
@@ -14,13 +14,13 @@ function Get-DbaAgListener {
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         
     .PARAMETER AvailabilityGroup
-        Specify the availability group name that you want to get information about.
+        Specify the availability groups to query.
 
     .PARAMETER Listener
-        Specify the Listener name that you want to get information about.
+        Return only specific listeners.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaAvailabilityGroup
+        Enables piped input from Get-DbaAvailabilityGroup.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -66,9 +66,10 @@ function Get-DbaAgListener {
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+        if ($SqlInstance) {
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
+        
         if (Test-Bound -ParameterName Listener) {
             $InputObject = $InputObject | Where-Object { $_.AvailabilityGroupListeners.Name -contains $Listener }
         }

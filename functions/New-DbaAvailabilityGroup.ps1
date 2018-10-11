@@ -21,6 +21,12 @@ function New-DbaAvailabilityGroup {
         
         Thanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/
 
+        Notes from shawn to add in:
+        (1) the NT AUTHORITY account has to be given rights to each replica, with rights to alter/connect to the endpoint
+        (2) the service account for each instance has to be explicitly created (the link to the NT SERVICE account won't be sufficient), connect access to the endpoint on the instance
+
+        So if there is no domain account, on step 2 you would have to add the computer account for everything.
+    
     .PARAMETER Primary
         The primary SQL Server instance. Server version must be SQL Server version 2012 or higher.
         

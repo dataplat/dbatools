@@ -156,7 +156,7 @@ function Add-DbaAgReplica {
                 $Name = $server.Name
             }
             
-            if ($Pscmdlet.ShouldProcess($server.Name, "Creating a replica named $Name")) {
+            if ($Pscmdlet.ShouldProcess($server.Name, "Creating a replica for $($InputObject.Name) named $Name")) {
                 try {
                     $replica = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityReplica -ArgumentList $InputObject, $Name
                     $replica.EndpointUrl = $ep.Fqdn

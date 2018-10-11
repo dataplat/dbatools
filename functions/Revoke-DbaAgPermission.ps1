@@ -65,29 +65,19 @@ function Revoke-DbaAgPermission {
         https://dbatools.io/Revoke-DbaAgPermission
         
     .EXAMPLE
-        PS C:\> Revoke-DbaAgPermission -SqlInstance sqlserver2012 -AllAvailabilityGroup
+        PS C:\> Revoke-DbaAgPermission -SqlInstance sql2017a -Type AvailabilityGroup -AvailabilityGroup SharePoint -Login ad\spservice -Permission CreateAnyDatabase
         
-        Adds all availability groups on the sqlserver2014 instance. Does not prompt for confirmation.
-        
-    .EXAMPLE
-        PS C:\> Revoke-DbaAgPermission -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm
-        
-        Adds the ag1 and ag2 availability groups on sqlserver2012. Prompts for confirmation.
+        Removes CreateAnyDatabase permissions from ad\spservice on the SharePoint availability group on sql2017a. Does not prompt for confirmation.
         
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sqlserver2012 | Out-GridView -Passthru | Revoke-DbaAgPermission -AvailabilityGroup ag1
+        PS C:\> Revoke-DbaAgPermission -SqlInstance sql2017a -Type AvailabilityGroup -AvailabilityGroup ag1, ag2 -Login ad\spservice -Permission CreateAnyDatabase -Confirm
         
-        Adds selected databases from sqlserver2012 to ag1
-  
+        Removes CreateAnyDatabase permissions from ad\spservice on the ag1 and ag2 availability groups on sql2017a. Prompts for confirmation.
+        
     .EXAMPLE
-        PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster | Revoke-DbaAgPermission -AvailabilityGroup SharePoint
+        PS C:\> Get-DbaLogin -SqlInstance sql2017a | Out-GridView -Passthru | Revoke-DbaAgPermission -Type EndPoint
         
-        Adds SharePoint databases as found in SharePoint_Config on sqlcluster to ag1 on sqlcluster
-    
-    .EXAMPLE
-        PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster -ConfigDatabase SharePoint_Config_2019 | Revoke-DbaAgPermission -AvailabilityGroup SharePoint
-        
-        Adds SharePoint databases as found in SharePoint_Config_2019 on sqlcluster to ag1 on sqlcluster
+        Revokes the selected logins Connect permissions on the DatabaseMirroring endpoint for sql2017a.
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -119,13 +109,7 @@ function Revoke-DbaAgPermission {
             $InputObject += Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
             foreach ($account in $Login) {
                 if ($account -notin $InputObject.Name) {
-                    if ($account -match '\\') {
-                        $InputObject += New-DbaLogin -SqlInstance $server -Login $account
-                    }
-                    else {
-                        Stop-Function -Message "$account does not exist and cannot be created automatically" -Target $instance
-                        return
-                    }
+                    Stop-Function -Message "$account does not exist on $instance" -Target $instance -Continue
                 }
             }
         }
@@ -153,7 +137,7 @@ function Revoke-DbaAgPermission {
                         if ($perm -notin 'Alter', 'Control', 'TakeOwnership', 'ViewDefinition') {
                             Stop-Function -Message "$perm not supported by availability groups" -Continue
                         }
-                        if ($Pscmdlet.ShouldProcess($server.Name, "Granting $perm on $ags")) {
+                        if ($Pscmdlet.ShouldProcess($server.Name, "Revoking $perm on $ags")) {
                             $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
                             $ag.Revoke($bigperms, $account.Name)
                         }

@@ -14,7 +14,7 @@ function Invoke-DbaAgFailover {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential).
         
     .PARAMETER AvailabilityGroup
-        Specify the Availability Group name that you want to get information on.
+        Only failover specific availability groups.
     
     .PARAMETER InputObject
         Enables piping from Get-DbaAvailabilityGroup
@@ -40,19 +40,19 @@ function Invoke-DbaAgFailover {
     .EXAMPLE
         PS C:\> Invoke-DbaAgFailover -SqlInstance sql2017 -AvailabilityGroup SharePoint
         
-        Safely (no potential data loss) fails over the SharePoint AG on sql2017
+        Safely (no potential data loss) fails over the SharePoint AG on sql2017. Prompts for confirmation.
         
     .EXAMPLE
-        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017 | Out-GridView -Passthru | Invoke-DbaAgFailover
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017 | Out-GridView -Passthru | Invoke-DbaAgFailover -Confirm:$false
         
-        Safely (no potential data loss) fails over the selected availability groups on sql2017
+        Safely (no potential data loss) fails over the selected availability groups on sql2017. Does not prompt for confirmation.
     
     .EXAMPLE
         PS C:\> Invoke-DbaAgFailover -SqlInstance sql2017 -AvailabilityGroup SharePoint -Force
         
-        Forcefully (with potential data loss) fails over the SharePoint AG on sql2017
+        Forcefully (with potential data loss) fails over the SharePoint AG on sql2017. Prompts for confirmation.
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -64,35 +64,31 @@ function Invoke-DbaAgFailover {
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-            
-            if ($server.IsHadrEnabled -eq $false) {
-                Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $instance" -Target $instance -Continue
-            }
-            
-            $ags = $server.AvailabilityGroups
-            if ($AvailabilityGroup) {
-                $ags = $ags | Where-Object Name -in $AvailabilityGroup
-                
-            }
-            $InputObject += $ags
+        if ($SqlInstance -and -not $AvailabilityGroup) {
+            Stop-Function -Message "You must specify at least one availability group when using SqlInstance."
+            return
+        }
+        
+        if ($SqlInstance) {
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
         
         foreach ($ag in $InputObject) {
+            $server = $ag.Parent
             if ($Force) {
-                $ag.FailoverWithPotentialDataLoss()
+                if ($Pscmdlet.ShouldProcess($server.Name, "Forcefully failing over $($ag.Name), allowing potential data loss")) {
+                    $ag.FailoverWithPotentialDataLoss()
+                    $ag.Refresh()
+                    $ag
+                }
             }
             else {
-                $ag.Failover()
+                if ($Pscmdlet.ShouldProcess($server.Name, "Gracefully failing over $($ag.Name)")) {
+                    $ag.Failover()
+                    $ag.Refresh()
+                    $ag
+                }
             }
-            $ag.Refresh()
-            $ag
         }
     }
 }

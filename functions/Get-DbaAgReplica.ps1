@@ -17,7 +17,7 @@ function Get-DbaAgReplica {
         Specify the availability groups to query.
 
     .PARAMETER Replica
-        Specify the replica or replicas to return.
+        Return only specific replicas.
     
     .PARAMETER InputObject
         Enables piped input from Get-DbaAvailabilityGroup.
@@ -65,8 +65,8 @@ function Get-DbaAgReplica {
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+        if ($SqlInstance) {
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
         
         if ($Replica) {
