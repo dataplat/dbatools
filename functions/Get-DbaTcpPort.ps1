@@ -6,7 +6,7 @@
     .DESCRIPTION
         By default, this function returns just the TCP port used by the specified SQL Server.
 
-        If -AllTcpPort is specified, the server name, IPAddress (ipv4 and ipv6), port number and an indicator of whether or not the port assignment is static are returned.
+        If -All is specified, the server name, IPAddress (ipv4 and ipv6), port number and an indicator of whether or not the port assignment is static are returned.
 
         Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
 
@@ -18,14 +18,14 @@
 
         $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    .PARAMETER AllTcpPort
+    .PARAMETER All
         If this switch is enabled, an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for one or more SQL Servers is returned.
 
     .PARAMETER Detailed
-        Output all properties, will be deprecated in 1.0.0 release. Use AllTcpPort instead.
+        Output all properties, will be deprecated in 1.0.0 release. Use All instead.
 
     .PARAMETER ExcludeIpv6
-        If this switch is enabled, IPv6 information is excluded from AllTcpPort output.
+        If this switch is enabled, IPv6 information is excluded from All output.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -54,14 +54,14 @@
         Returns an object with server name and port number for the sqlexpress on winserver and the default instance on sql2016.
 
     .EXAMPLE
-        PS C:\> Get-DbaTcpPort -SqlInstance sqlserver2014a, sql2016 -AllTcpPort
+        PS C:\> Get-DbaTcpPort -SqlInstance sqlserver2014a, sql2016 -All
 
         Returns an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for sqlserver2014a and sql2016.
 
         Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
 
     .EXAMPLE
-        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -AllTcpPort
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -All
 
         Returns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in the Central Management Server on sql2014.
 
@@ -74,7 +74,7 @@
         [Alias("Credential")]
         [PSCredential]$SqlCredential,
         [switch]$Detailed,
-        [switch]$AllTcpPort,
+        [switch]$All,
         [Alias("Ipv4")]
         [switch]$ExcludeIpv6,
         [Alias('Silent')]
@@ -85,7 +85,7 @@
     }
     process {
         foreach ($instance in $SqlInstance) {
-            if ($AllTcpPort -eq $true) {
+            if ($All -eq $true) {
                 try {
                     $scriptblock = {
                         $instance = $args[0]
@@ -182,7 +182,7 @@
                 }
             }
             #Default Execution of Get-DbaTcpPort
-            if ($AllTcpPort -eq $false -or ($AllTcpPort -eq $true -and $null -eq $someIps)) {
+            if ($All -eq $false -or ($All -eq $true -and $null -eq $someIps)) {
                 try {
                     $server = Connect-SqlInstance -SqlInstance "TCP:$instance" -SqlCredential $SqlCredential -MinimumVersion 9
                 }

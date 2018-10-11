@@ -14,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 6
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaTcpPort).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'AllTcpPort', 'ExcludeIpv6', 'EnableException', 'Detailed'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'All', 'ExcludeIpv6', 'EnableException', 'Detailed'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -33,12 +33,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Should Return Multiple Results" {
-            $server = Get-DbaTcpPort -SqlInstance $script:instance2 -AllTcpPort
+            $server = Get-DbaTcpPort -SqlInstance $script:instance2 -All
             $server.Count | Should BeGreaterThan 1
         }
 
         It "Should Throw an Error if SqlInstance doesn't exist" {
-            { Get-DbaTcpPort -SqlInstance "ThisIsNotAnInstance" -AllTcpPort | Should Throw }
+            { Get-DbaTcpPort -SqlInstance "ThisIsNotAnInstance" -All | Should Throw }
         }
     }
 }
