@@ -1,4 +1,5 @@
-﻿function Get-DbaAvailabilityGroup {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaAvailabilityGroup {
 <#
     .SYNOPSIS
         Outputs the Availability Group(s) object found on the server.

@@ -16,10 +16,10 @@ function Test-DbaEndpoint {
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         
     .PARAMETER Endpoint
-        Return only specific endpoint or endpoints
+        Test only specific endpoint or endpoints
         
     .PARAMETER InputObject
-        Allows piping from Get-DbaEndpoint
+        Enables piping from Get-DbaEndpoint
         
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.

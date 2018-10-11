@@ -1,4 +1,5 @@
-﻿function Get-DbaAgListener {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaAgListener {
 <#
     .SYNOPSIS
         Returns an availability group listeners.

@@ -2,10 +2,10 @@
 function Get-DbaEndpoint {
 <#
     .SYNOPSIS
-        Gets SQL Endpoint(s) information for each instance(s) of SQL Server.
+        Returns endpoint objects from a SQL Server instance.
 
     .DESCRIPTION
-        The Get-DbaEndpoint command gets SQL Endpoint(s) information for each instance(s) of SQL Server.
+        Returns endpoint objects from a SQL Server instance.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.

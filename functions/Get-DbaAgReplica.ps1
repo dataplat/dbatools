@@ -1,4 +1,5 @@
-﻿function Get-DbaAgReplica {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaAgReplica {
 <#
     .SYNOPSIS
         Returns the availability group replica object found on the server.
@@ -48,9 +49,9 @@
         Shows basic information on the replicas found on availability group SharePoint on sql2017a
 
     .EXAMPLE
-        Get-DbaAgReplica -SqlInstance sql2017a | Select-Object *
+        PS C:\> Get-DbaAgReplica -SqlInstance sql2017a | Select-Object *
 
-        PS C:\> Returns full object properties on all availability group replicas found on sql2017a
+        Returns full object properties on all availability group replicas found on sql2017a
 
 #>
     [CmdletBinding()]

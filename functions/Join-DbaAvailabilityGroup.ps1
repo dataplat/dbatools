@@ -74,13 +74,13 @@ function Join-DbaAvailabilityGroup {
             if ($Pscmdlet.ShouldProcess($server.Name, "Joining $($ag.Name)")) {
                 try {
                     $server.JoinAvailabilityGroup($ag.Name)
+                    $ag.Refresh()
+                    $ag
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
-            $ag.Refresh()
-            $ag
         }
     }
 }

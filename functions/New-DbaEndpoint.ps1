@@ -2,10 +2,10 @@
 function New-DbaEndpoint {
 <#
     .SYNOPSIS
-        Creates SQL Server endpoints.
+        Creates endpoints on a SQL Server instance.
 
     .DESCRIPTION
-        Creates SQL Server endpoints.
+        Creates endpoints on a SQL Server instance.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -32,7 +32,7 @@ function New-DbaEndpoint {
         Port for SSL
 
     .PARAMETER Certificate
-        Database certificate used to authentication.
+        Database certificate used for authentication.
     
     .PARAMETER EndpointEncryption
         Used to specify the state of encryption on the endpoint. Defaults to required.
@@ -40,10 +40,8 @@ function New-DbaEndpoint {
         Required
         Supported
 
-        Required by default.
-
     .PARAMETER EncryptionAlgorithm
-        Specifies an encryption algorithm used on an endpoint.
+        Specifies an encryption algorithm used on an endpoint. Defaults to Aes.
 
         Options are:
         AesRC4
@@ -51,8 +49,6 @@ function New-DbaEndpoint {
         None
         RC4
         RC4Aes
-
-        RC4 by default.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -101,7 +97,7 @@ function New-DbaEndpoint {
         [ValidateSet('Disabled', 'Required', 'Supported')]
         [string]$EndpointEncryption = 'Required',
         [ValidateSet('Aes', 'AesRC4', 'None', 'RC4', 'RC4Aes')]
-        [string]$EncryptionAlgorithm = 'RC4',
+        [string]$EncryptionAlgorithm = 'Aes',
         [string]$Certificate,
         [int]$Port,
         [int]$SslPort,

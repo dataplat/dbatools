@@ -23,10 +23,10 @@ function Grant-DbaAgPermission {
         Only modify specific availability groups.
    
     .PARAMETER Type
-        Endpoint or availability group.
+        Specify type: Endpoint or AvailabilityGroup. Endpoint will modify the DatabaseMirror endpoint type.
     
     .PARAMETER Permission
-        Sets one or more permissions:
+        Grants one or more permissions:
             Alter
             Connect
             Control
@@ -49,7 +49,7 @@ function Grant-DbaAgPermission {
         Connect is default.
     
     .PARAMETER InputObject
-        Internal parameter to support piping from Get-DbaLogin.
+        Enables piping from Get-DbaLogin.
         
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
