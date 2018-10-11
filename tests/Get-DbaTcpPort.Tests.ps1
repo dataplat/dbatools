@@ -30,7 +30,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results | Should Not Be $null
         }
 
-        It "Should Return Multiple Results" {
+        It -Skip "Should Return Multiple Results" {
             $results = Get-DbaTcpPort -SqlInstance $script:instance2 -All
             $results.Count | Should BeGreaterThan 1
         }
