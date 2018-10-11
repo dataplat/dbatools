@@ -78,8 +78,9 @@
             if ($server.IsHadrEnabled -eq $false) {
                 Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $instance." -Target $instance -Continue
             }
-
+            
             $ags = $server.AvailabilityGroups
+            
             if ($AvailabilityGroup) {
                 $ags = $ags | Where-Object Name -in $AvailabilityGroup
             }

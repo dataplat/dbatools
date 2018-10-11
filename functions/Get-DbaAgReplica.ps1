@@ -6,11 +6,11 @@
     .DESCRIPTION
         Returns the availability group replica object found on the server.
 
-    .PARAMETER SqlInstance
+   .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER AvailabilityGroup
         Specify the availability groups to query.

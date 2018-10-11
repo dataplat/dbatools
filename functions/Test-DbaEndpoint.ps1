@@ -10,9 +10,8 @@ function Test-DbaEndpoint {
         Note that if an endpoint does not have a tcp listener port, it will be skipped.
         
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
-        to be executed against multiple SQL Server instances.
-        
+        The target SQL Server instance or instances.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         
@@ -77,7 +76,7 @@ function Test-DbaEndpoint {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential #-Endpoint $Endpoint
+            $InputObject += Get-DbaEndpoint -SqlInstance $instance -SqlCredential $SqlCredential -Endpoint $Endpoint
         }
         
         foreach ($end in $InputObject) {

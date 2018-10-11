@@ -7,13 +7,12 @@ function Add-DbaAgDatabase {
     .DESCRIPTION
         Adds a database to an availability group on a SQL Server instance.
     
-    .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
-        to be executed against multiple SQL Server instances.
-        
+   .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
+
     .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+
     .PARAMETER AvailabilityGroup
         Only add specific availability groups.
         

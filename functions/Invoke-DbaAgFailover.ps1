@@ -92,6 +92,8 @@ function Invoke-DbaAgFailover {
             else {
                 $ag.Failover()
             }
+            $ag.Refresh()
+            $ag
         }
     }
 }

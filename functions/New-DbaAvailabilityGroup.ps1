@@ -22,13 +22,13 @@ function New-DbaAvailabilityGroup {
         Thanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/
 
     .PARAMETER Primary
-        SQL Server name or SMO object representing the primary SQL Server.
+        The primary SQL Server instance. Server version must be SQL Server version 2012 or higher.
         
     .PARAMETER PrimarySqlCredential
         Login to the primary instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         
     .PARAMETER Secondary
-        SQL Server name or SMO object representing secondary SQL Servers.
+        The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
         
     .PARAMETER SecondarySqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)

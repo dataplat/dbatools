@@ -7,17 +7,15 @@ function Grant-DbaAgPermission {
     .DESCRIPTION
         Grants endpoint and availability group permissions to a login.
     
-    .PARAMETER SqlInstance
-        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
-        to be executed against multiple SQL Server instances.
-    
-    
         notes:
         (1) the NT AUTHORITY account has to be given rights to each replica, with rights to alter/connect to the endpoint
         (2) the service account for each instance has to be explicitly created (the link to the NT SERVICE account won't be sufficient), connect access to the endpoint on the instance
 
         So if there is no domain account, on step 2 you would have to add the computer account for everything.
-        
+
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
+
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
         

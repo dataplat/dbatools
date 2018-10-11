@@ -12,7 +12,7 @@ function Disable-DbaAgHadr {
         The target SQL Server instance or instances.
 
     .PARAMETER Credential
-        Credential object used to connect to the Windows server itself as a different user
+        Credential object used to connect to the Windows server as a different user
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.

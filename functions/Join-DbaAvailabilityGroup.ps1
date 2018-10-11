@@ -7,12 +7,12 @@ function Join-DbaAvailabilityGroup {
     .DESCRIPTION
         Joins a secondary replica to an availability group on a SQL Server instance.
     
-    .PARAMETER SqlInstance
-        SQL Server name or SMO object representing the SqlInstance SQL Server.
-        
+   .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
+
     .PARAMETER SqlCredential
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
-        
+
     .PARAMETER InputObject
         Enables piped input from Get-DbaAvailabilityGroup
         
