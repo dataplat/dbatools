@@ -220,6 +220,7 @@ function New-DbaAvailabilityGroup {
         [PSCredential]$SecondarySqlCredential,
         # AG
 
+        [parameter(Mandatory)]
         [string]$Name,
         [switch]$DtcSupport,
         [ValidateSet('External', 'Wsfc', 'None')]
@@ -264,9 +265,11 @@ function New-DbaAvailabilityGroup {
     )
     process {
         $stepCounter = 0
-        if ($Force -or (-not $NetworkShare -and -not $UseLastBackups -and $Secondary)) {
-            #Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
-            #return
+        $totalSteps = 7
+        $activity = "Adding new availability group $name"
+        if ($Force -and $Secondary -and (-not $NetworkShare -and -not $UseLastBackups)) {
+            Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
+            return
         }
         
         try {
@@ -274,6 +277,13 @@ function New-DbaAvailabilityGroup {
         }
         catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Primary -Continue
+        }
+        
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Checking perquisites"
+        
+        if (Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $Name) {
+            Stop-Function -Message "Availability group named $Name already exists on $Primary"
+            return
         }
         
         if ($Certificate) {
@@ -331,52 +341,59 @@ function New-DbaAvailabilityGroup {
             }
         }
         
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Creating availability group named $Name on $Primary"
+        
         # Start work
-        try {
-            $ag = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroup -ArgumentList $server, $Name
-            $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
-            $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
-            $ag.HealthCheckTimeout = $HealthCheckTimeout
-            $ag.BasicAvailabilityGroup = $Basic
-            $ag.DatabaseHealthTrigger = $DatabaseHealthTrigger
-            
-            if ($server.VersionMajor -ge 14) {
-                $ag.ClusterType = $ClusterType
+        if ($Pscmdlet.ShouldProcess($Primary, "Creating availability group named $Name")) {
+            try {
+                $ag = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroup -ArgumentList $server, $Name
+                $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
+                $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
+                $ag.HealthCheckTimeout = $HealthCheckTimeout
+                $ag.BasicAvailabilityGroup = $Basic
+                $ag.DatabaseHealthTrigger = $DatabaseHealthTrigger
+                
+                if ($server.VersionMajor -ge 14) {
+                    $ag.ClusterType = $ClusterType
+                }
+                
+                if ($PassThru) {
+                    $defaults = 'LocalReplicaRole', 'Name as AvailabilityGroup', 'PrimaryReplicaServerName as PrimaryReplica', 'AutomatedBackupPreference', 'AvailabilityReplicas', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
+                    return (Select-DefaultView -InputObject $ag -Property $defaults)
+                }
+                
+                $replicaparams = @{
+                    InputObject                   = $ag
+                    AvailabilityMode              = $AvailabilityMode
+                    FailoverMode                  = $FailoverMode
+                    BackupPriority                = $BackupPriority
+                    ConnectionModeInPrimaryRole   = $ConnectionModeInPrimaryRole
+                    ConnectionModeInSecondaryRole = $ConnectionModeInSecondaryRole
+                    SeedingMode                   = $SeedingMode
+                    Endpoint                      = $Endpoint
+                    ReadonlyRoutingConnectionUrl  = $ReadonlyRoutingConnectionUrl
+                    Certificate                   = $Certificate
+                }
+                
+                $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $server
+                $ag.Create()
             }
-            
-            if ($PassThru) {
-                $defaults = 'LocalReplicaRole', 'Name as AvailabilityGroup', 'PrimaryReplicaServerName as PrimaryReplica', 'AutomatedBackupPreference', 'AvailabilityReplicas', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
-                return (Select-DefaultView -InputObject $ag -Property $defaults)
+            catch {
+                $msg = $_.Exception.InnerException.InnerException.Message
+                if (-not $msg) {
+                    $msg = $_
+                }
+                Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
+                return
             }
-            
-            $replicaparams = @{
-                InputObject                   = $ag
-                AvailabilityMode              = $AvailabilityMode
-                FailoverMode                  = $FailoverMode
-                BackupPriority                = $BackupPriority
-                ConnectionModeInPrimaryRole   = $ConnectionModeInPrimaryRole
-                ConnectionModeInSecondaryRole = $ConnectionModeInSecondaryRole
-                SeedingMode                   = $SeedingMode
-                Endpoint                      = $Endpoint
-                ReadonlyRoutingConnectionUrl  = $ReadonlyRoutingConnectionUrl
-                Certificate                   = $Certificate
-            }
-            
-            $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $server
-            $ag.Create()
-        }
-        catch {
-            $msg = $_.Exception.InnerException.InnerException.Message
-            if (-not $msg) {
-                $msg = $_
-            }
-            Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
-            return
         }
         
         # Add permissions
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
+        
         foreach ($second in $secondaries) {
             $serviceaccounts = $server.ServiceAccount, $second.ServiceAccount | Select-Object -Unique
+            
             try {
                 Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint -Permission Connect -EnableException
             }
@@ -386,7 +403,10 @@ function New-DbaAvailabilityGroup {
             }
         }
         
+        
         # Join secondaries
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding secondary replicas"
+        
         foreach ($second in $secondaries) {
             try {
                 $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $second
@@ -400,7 +420,10 @@ function New-DbaAvailabilityGroup {
         foreach ($second in $secondaries) {
             
         }
+        
         # Add databases
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding databases"
+        
         $allbackups = @{ }
         foreach ($db in $Database) {
             $null = Add-DbaAgDatabase -SqlInstance $server -AvailabilityGroup $Name -Database $db
@@ -433,9 +456,22 @@ function New-DbaAvailabilityGroup {
             }
         }
         
+        # Add listener
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
+        
         if ($IPAddress) {
             $null = New-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
         }
+        elseif ($Dhcp) {
+            $null = New-DbaAgListener -InputObject $ag -Port $Port -Dhcp:$Dhcp
+            foreach ($second in $secondaries) {
+                $secag = Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name
+                $null = New-DbaAgListener -InputObject $secag -Port $Port -Dhcp:$Dhcp
+            }
+        }
+        
+        # Get results
+        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Getting new availability groups"
         
         Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $Name
         
