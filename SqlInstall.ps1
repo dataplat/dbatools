@@ -1,5 +1,4 @@
-﻿function Install-DbaInstance
-{
+﻿function Install-DbaInstance {
     <#
     .SYNOPSIS
 
@@ -7,15 +6,16 @@
 
     .DESCRIPTION
 
-    This function will help you to quickly install a SQL Server instance. By scanning your system it will apply a number of best practices to your installation
-    The max DOP and max server memory will be set, the sa account will be disabled while the account used to install SQL Server will be added as sysadmin.
+    This function will help you to quickly install a SQL Server instance. 
+
     The number of TempDB files will be set to the number of cores with a maximum of eight.
-    The perform volume maintenance right will be granted to the SQL Server account. If you run this script in an environment where you are not allowed to do this,
+    
+    The perform volume maintenance right can be granted to the SQL Server account. If you happen to activate this in an environment where you are not allowed to do this,
     please revert that operation by removing the right from the local security policy (secpol.msc).
 
-    The autogrowth of file will be set to 64MB, the Cost Threshold for Parallelism will be set to 40. 
-
     Note that the dowloaded installation file must be unzipped, an ISO has to be mounted. This will not be executed from this script.
+
+    .PARAMETER Version will hold the SQL Server version you wish to install. 
     
     .PARAMETER Appvolume will hold the volume letter of the application disc. If left empty, it will default to C, unless there is a drive named like App
 
@@ -27,6 +27,10 @@
 
     .PARAMETER BackupVolume will hold the volume letter of the Backup disc. If left empty, it will default to C, unless there is a drive named like Backup
 
+    .PARAMETER PerformVolumeMaintenance will set the boolean for grant or deny this right to the SQL Server service account.
+
+    .PARAMETER SqlServiceAccount will hold the name of the service account
+
     .Inputs
     None
 
@@ -34,17 +38,27 @@
     None
 
     .Example
-    C:\PS> Install-SqlServer
+    C:\PS> Install-DbaInstance
 
     This will run the installation with the default settings
 
-    C:\PS> Install-SqlServer -AppVolume "G"
+    C:\PS> Install-DbaInstance -AppVolume "G"
 
     This will run the installation with default setting apart from the application volume, this will be redirected to the G drive.
 
 
     #>
-PAram  ([string]$AppVolume, [string]$DataVolume, [string]$LogVolume, [string]$TempVolume, [string]$BackupVolume, [int]$Ctp)
+    Param  (
+        [string]$AppVolume, 
+        [string]$DataVolume, 
+        [string]$LogVolume, 
+        [string]$TempVolume, 
+        [string]$BackupVolume,
+        [switch]$PerformVolumeMaintenance,
+        [string]$SqlServerAccount,
+        [int]$Version
+    )
+
     $startScript = @'
 
 ;SQL Server 2014 Configuration File
@@ -136,7 +150,7 @@ BROWSERSVCSTARTUPTYPE="Automatic"
     # Check if there are designated drives for Data, Log, TempDB, Back-up and Application.
     If ($DataVolume -eq $null -or $DataVolume -eq '') {
         $DataVolume = Get-Volume | 
-            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne  $_.DriveLetter -and $_.FileSystemLabel -like '*Data*'} | 
+            Where-Object {$_.DriveType -EQ 'Fixed' -and $null -ne $_.DriveLetter -and $_.FileSystemLabel -like '*Data*'} | 
             Select-Object -ExpandProperty DriveLetter
     }
     if ($LogVolume -eq $null -or $LogVolume -eq '') {
@@ -203,125 +217,122 @@ BROWSERSVCSTARTUPTYPE="Automatic"
     }
 
 
+    Write-Message -Level Verbose -Message 'Your datadrive:' $DataVolume
+    Write-Message -Level Verbose -Message 'Your logdrive:' $LogVolume
+    Write-Message -Level Verbose -Message 'Your TempDB drive:' $TempVolume
+    Write-Message -Level Verbose -Message 'Your applicationdrive:' $AppVolume
+    Write-Message -Level Verbose -Message 'Your Backup Drive:' $BackupVolume
+    Write-Message -Level Verbose -Message 'Number of cores for your Database:' $NumberOfCores
 
-    Clear-Host
-
-    Write-Host 'Your datadrive:' $DataVolume
-    Write-Host 'Your logdrive:' $LogVolume
-    Write-Host 'Your TempDB drive:' $TempVolume
-    Write-Host 'Your applicationdrive:' $AppVolume
-    Write-Host 'Your Backup Drive:' $BackupVolume
-    Write-Host 'Number of cores for your Database:' $NumberOfCores
-
-    Write-Host  'Do you agree on the drives?'
+    Write-Message -Level Verbose -Message  'Do you agree on the drives?'
     $AlterDir = Read-Host " ( Y / N )"
 
     $CheckLastTwoChar = ":\"
     $CheckLastChar = "\"
 
     Switch ($AlterDir) {
-        Y {Write-Host "Yes, drives agreed, continuing"; }
+        Y {Write-Message -Level Verbose -Message "Yes, drives agreed, continuing"; }
         N {
-            Write-Host "Datadrive: " $DataVolume
+            Write-Message -Level Verbose -Message "Datadrive: " $DataVolume
             $NewDataVolume = Read-Host "Your datavolume: "
             If ($NewDataVolume.Substring($NewDataVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewDataVolume.Length -gt 2) {
                 $NewDataVolume = $NewDataVolume.Substring(0, $NewDataVolume.Length - 2)
                 $DataVolume = $NewDataVolume
-                Write-Host "DataVolume moved to " $DataVolume
+                Write-Message -Level Verbose -Message "DataVolume moved to " $DataVolume
             }
             elseif ($NewDataVolume.Substring($NewDataVolume.Length - 1 -eq $CheckLastChar) -and $NewDataVolume.Length -gt 1) {
                 $NewDataVolume = $NewDataVolume.Substring(0, $NewDataVolume.Length - 1)
                 $DataVolume = $NewDataVolume
-                Write-Host "DataVolume moved to " $DataVolume
+                Write-Message -Level Verbose -Message "DataVolume moved to " $DataVolume
             }
             else {
                 $DataVolume = $NewDataVolume
-                Write-Host "DataVolume moved to " $DataVolume
+                Write-Message -Level Verbose -Message "DataVolume moved to " $DataVolume
             }
             If ([string]::IsNullOrEmpty($NewDataVolume)) {
-                Write-Host "Datavolume remains on " $DataVolume
+                Write-Message -Level Verbose -Message "Datavolume remains on " $DataVolume
             }
-            Write-Host "logvolume: " $LogVolume
+            Write-Message -Level Verbose -Message "logvolume: " $LogVolume
             $NewLogVolume = Read-Host "Your logvolume: "
             If ($NewLogVolume.Substring($NewLogVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewLogVolume.Length -gt 2) {
                 $NewLogVolume = $NewLogVolume.Substring(0, $NewLogVolume.Length - 2)
                 $LogVolume = $NewLogVolume
-                Write-Host "LogVolume moved to " $LogVolume
+                Write-Message -Level Verbose -Message "LogVolume moved to " $LogVolume
             }
             elseif ($NewLogVolume.Substring($NewLogVolume.Length - 1 -eq $CheckLastChar) -and $NewLogVolume.Length -gt 1) {
                 $NewLogVolume = $NewLogVolume.Substring(0, $NewLogVolume.Length - 1)
                 $LogVolume = $NewLogVolume
-                Write-Host "LogVolume moved to " $LogVolume
+                Write-Message -Level Verbose -Message "LogVolume moved to " $LogVolume
             }
             else {
                 $LogVolume = $NewLogVolume
-                Write-Host "LogVolume moved to " $LogVolume
+                Write-Message -Level Verbose -Message "LogVolume moved to " $LogVolume
             }
             If ([string]::IsNullOrEmpty($NewLogVolume)) {
-                Write-Host "Logvolume remains on " $LogVolume
+                Write-Message -Level Verbose -Message "Logvolume remains on " $LogVolume
             }
 
-            Write-Host "TempVolume: " $TempVolume
+            Write-Message -Level Verbose -Message "TempVolume: " $TempVolume
             $NewTempVolume = Read-Host "Your TempVolume: "
             If ($NewTempVolume.Substring($NewTempVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewTempVolume.Length -gt 2) {
                 $NewTempVolume = $NewTempVolume.Substring(0, $NewTempVolume.Length - 2)
                 $TempVolume = $NewTempVolume
-                Write-Host "TempVolume moved to " $TempVolume
+                Write-Message -Level Verbose -Message "TempVolume moved to " $TempVolume
             }
             elseif ($NewTempVolume.Substring($NewTempVolume.Length - 1 -eq $CheckLastChar) -and $NewTempVolume.Length -gt 1) {
                 $NewTempVolume = $NewTempVolume.Substring(0, $NewTempVolume.Length - 1)
                 $TempVolume = $NewTempVolume
-                Write-Host "TempVolume moved to " $TempVolume
+                Write-Message -Level Verbose -Message "TempVolume moved to " $TempVolume
             }
             else {
                 $TempVolume = $NewTempVolume
-                Write-Host "TempVolume moved to " $TempVolume
+                Write-Message -Level Verbose -Message "TempVolume moved to " $TempVolume
             }
             If ([string]::IsNullOrEmpty($NewTempVolume)) {
-                Write-Host "TempVolume remains on " $TempVolume
+                Write-Message -Level Verbose -Message "TempVolume remains on " $TempVolume
             }
 
-            Write-Host "AppVolume: " $AppVolume
+            Write-Message -Level Verbose -Message "AppVolume: " $AppVolume
             $NewAppVolume = Read-Host "Your AppVolume: "
             If ($NewAppVolume.Substring($NewAppVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewAppVolume.Length -gt 2) {
                 $NewAppVolume = $NewAppVolume.Substring(0, $NewAppVolume.Length - 2)
                 $AppVolume = $NewAppVolume
-                Write-Host "AppVolume moved to " $AppVolume
+                Write-Message -Level Verbose -Message "AppVolume moved to " $AppVolume
             }
             elseif ($NewAppVolume.Substring($NewAppVolume.Length - 1 -eq $CheckLastChar) -and $NewAppVolume.Length -gt 1) {
                 $NewAppVolume = $NewAppVolume.Substring(0, $NewAppVolume.Length - 1)
                 $AppVolume = $NewAppVolume
-                Write-Host "AppVolume moved to " $AppVolume
+                Write-Message -Level Verbose -Message "AppVolume moved to " $AppVolume
             }
             else {
                 $AppVolume = $NewAppVolume
-                Write-Host "AppVolume moved to " $AppVolume
+                Write-Message -Level Verbose -Message "AppVolume moved to " $AppVolume
             }
             If ([string]::IsNullOrEmpty($NewAppVolume)) {
-                Write-Host "AppVolume remains on " $AppVolume
+                Write-Message -Level Verbose -Message "AppVolume remains on " $AppVolume
             }
 
-            Write-Host "BackupVolume: " $BackupVolume
+            Write-Message -Level Verbose -Message "BackupVolume: " $BackupVolume
             $NewBackupVolume = Read-Host "Your BackupVolume: "
             If ($NewBackupVolume.Substring($NewBackupVolume.Length - 2 -eq $CheckLastTwoChar) -and $NewBackupVolume.Length -gt 2) {
                 $NewBackupVolume = $NewBackupVolume.Substring(0, $NewBackupVolume.Length - 2)
                 $BackupVolume = $NewBackupVolume
-                Write-Host "BackupVolume moved to " $BackupVolume
+                Write-Message -Level Verbose -Message "BackupVolume moved to " $BackupVolume
             }
             elseif ($NewBackupVolume.Substring($NewBackupVolume.Length - 1 -eq $CheckLastChar) -and $NewBackupVolume.Length -gt -1) {
                 $NewBackupVolume = $NewBackupVolume.Substring(0, $NewBackupVolume.Length - 1)
                 $BackupVolume = $NewBackupVolume
-                Write-Host "BackupVolume moved to " $BackupVolume
+                Write-Message -Level Verbose -Message "BackupVolume moved to " $BackupVolume
             }
             else {
                 $BackupVolume = $NewBackupVolume
-                Write-Host "BackupVolume moved to " $BackupVolume
+                Write-Message -Level Verbose -Message "BackupVolume moved to " $BackupVolume
             }
             If ([string]::IsNullOrEmpty($NewBackupVolume)) {
-                Write-Host "BackupVolume remains on " $BackupVolume
+                Write-Message -Level Verbose -Message "BackupVolume remains on " $BackupVolume
             }
         }
-        Default {Write-Host "Drives agreed, continuing"; }
+        Default {Write-Message -Level Verbose -Message "Drives agreed, continuing"; }
     }
 
     $CheckLastTwoChar = ":\"
@@ -333,22 +344,22 @@ BROWSERSVCSTARTUPTYPE="Automatic"
         $C1 = $SetupFile.Substring($SetupFile.Length - 1)
         If ($C2 -eq $CheckLastTwoChar) {
             $debug = $SetupFile.Substring($SetupFile.Length - 2)
-            Write-Host $debug '/' $CheckLastTwoChar
+            Write-Message -Level Verbose -Message $debug '/' $CheckLastTwoChar
             $SetupFile = $SetupFile.Substring(0, $SetupFile.Length - 2)
-            Write-Host $SetupFile
+            Write-Message -Level Verbose -Message $SetupFile
         }
         elseif ($C1 -eq $CheckLastChar) {
             $SetupFile = $SetupFile.Substring(0, $SetupFile.Length - 1)
-            Write-Host $SetupFile
+            Write-Message -Level Verbose -Message $SetupFile
         }
     }
     IF ($SetupFile.Length -eq 1) {
         $SetupFile = $SetupFile + ':\SQLEXPR_x64_ENU\SETUP.EXE'
-        Write-Host 'Setup will start from ' + $SetupFile
+        Write-Message -Level Verbose -Message 'Setup will start from ' + $SetupFile
     } 
     else {
         $SetupFile = $SetupFile + '\SQLEXPR_x64_ENU\SETUP.EXE'
-        Write-Host 'Setup will start from ' + $SetupFile
+        Write-Message -Level Verbose -Message 'Setup will start from ' + $SetupFile
     }
 
 
@@ -382,55 +393,56 @@ BROWSERSVCSTARTUPTYPE="Automatic"
     # Grant service account the right to perform volume maintenance
     # code found at https://social.technet.microsoft.com/Forums/windows/en-US/5f293595-772e-4d0c-88af-f54e55814223/adding-domain-account-to-the-local-policy-user-rights-assignment-perform-volume-maintenance?forum=winserverpowershell
 
-    ## <--- Configure here
-    $accountToAdd = 'NT Service\MSSQL$AXIANSDB01'
-    ## ---> End of Config
-    $sidstr = $null
-
-
-    try {
-        $ntprincipal = new-object System.Security.Principal.NTAccount "$accountToAdd"
-        $sid = $ntprincipal.Translate([System.Security.Principal.SecurityIdentifier])
-        $sidstr = $sid.Value.ToString()
-    }
-    catch {
+    if ($PerformVolumeMaintenance) {
+        ## <--- Configure here
+        $accountToAdd = 'NT Service\MSSQL$AXIANSDB01'
+        ## ---> End of Config
         $sidstr = $null
-    }
-    Write-Host "Account: $($accountToAdd)" -ForegroundColor DarkCyan
-    if ( [string]::IsNullOrEmpty($sidstr) ) {
-        Write-Host "Account not found!" -ForegroundColor Red
-        #exit -1
-    }
-
-    Write-Host "Account SID: $($sidstr)" -ForegroundColor DarkCyan
-    $tmp = ""
-    $tmp = [System.IO.Path]::GetTempFileName()
-    Write-Host "Export current Local Security Policy" -ForegroundColor DarkCyan
-    secedit.exe /export /cfg "$($tmp)" 
-    $c = ""
-    $c = Get-Content -Path $tmp
-    $currentSetting = ""
-    foreach ($s in $c) {
-        if ( $s -like "SeManageVolumePrivilege*") {
-            $x = $s.split("=", [System.StringSplitOptions]::RemoveEmptyEntries)
-            $currentSetting = $x[1].Trim()
-        }
-    }
 
 
-    if ( $currentSetting -notlike "*$($sidstr)*" ) {
-        Write-Host "Modify Setting ""Perform Volume Maintenance Task""" -ForegroundColor DarkCyan
-       
-        if ( [string]::IsNullOrEmpty($currentSetting) ) {
-            $currentSetting = "*$($sidstr)"
+        try {
+            $ntprincipal = new-object System.Security.Principal.NTAccount "$accountToAdd"
+            $sid = $ntprincipal.Translate([System.Security.Principal.SecurityIdentifier])
+            $sidstr = $sid.Value.ToString()
         }
-        else {
-            $currentSetting = "*$($sidstr),$($currentSetting)"
+        catch {
+            $sidstr = $null
         }
+        Write-Message -Level Verbose -Message "Account: $($accountToAdd)" -ForegroundColor DarkCyan
+        if ( [string]::IsNullOrEmpty($sidstr) ) {
+            Write-Message -Level Verbose -Message "Account not found!" -ForegroundColor Red
+            #exit -1
+        }
+
+        Write-Message -Level Verbose -Message "Account SID: $($sidstr)" -ForegroundColor DarkCyan
+        $tmp = ""
+        $tmp = [System.IO.Path]::GetTempFileName()
+        Write-Message -Level Verbose -Message "Export current Local Security Policy" -ForegroundColor DarkCyan
+        secedit.exe /export /cfg "$($tmp)" 
+        $c = ""
+        $c = Get-Content -Path $tmp
+        $currentSetting = ""
+        foreach ($s in $c) {
+            if ( $s -like "SeManageVolumePrivilege*") {
+                $x = $s.split("=", [System.StringSplitOptions]::RemoveEmptyEntries)
+                $currentSetting = $x[1].Trim()
+            }
+        }
+
+
+        if ( $currentSetting -notlike "*$($sidstr)*" ) {
+            Write-Message -Level Verbose -Message "Modify Setting ""Perform Volume Maintenance Task""" -ForegroundColor DarkCyan
        
-        Write-Host "$currentSetting"
+            if ( [string]::IsNullOrEmpty($currentSetting) ) {
+                $currentSetting = "*$($sidstr)"
+            }
+            else {
+                $currentSetting = "*$($sidstr),$($currentSetting)"
+            }
        
-        $outfile = @"
+            Write-Message -Level Verbose -Message "$currentSetting"
+       
+            $outfile = @"
 [Unicode]
 Unicode=yes
 [Version]
@@ -440,27 +452,28 @@ Revision=1
 SeManageVolumePrivilege = $($currentSetting)
 "@
        
-        $tmp2 = ""
-        $tmp2 = [System.IO.Path]::GetTempFileName()
+            $tmp2 = ""
+            $tmp2 = [System.IO.Path]::GetTempFileName()
        
        
-        Write-Host "Import new settings to Local Security Policy" -ForegroundColor DarkCyan
-        $outfile | Set-Content -Path $tmp2 -Encoding Unicode -Force
-        #notepad.exe $tmp2
-        Push-Location (Split-Path $tmp2)
+            Write-Message -Level Verbose -Message "Import new settings to Local Security Policy" -ForegroundColor DarkCyan
+            $outfile | Set-Content -Path $tmp2 -Encoding Unicode -Force
+            #notepad.exe $tmp2
+            Push-Location (Split-Path $tmp2)
        
-        try {
-            secedit.exe /configure /db "secedit.sdb" /cfg "$($tmp2)" /areas USER_RIGHTS 
-            #write-host "secedit.exe /configure /db ""secedit.sdb"" /cfg ""$($tmp2)"" /areas USER_RIGHTS "
+            try {
+                secedit.exe /configure /db "secedit.sdb" /cfg "$($tmp2)" /areas USER_RIGHTS 
+                #Write-Message -Level Verbose -Message "secedit.exe /configure /db ""secedit.sdb"" /cfg ""$($tmp2)"" /areas USER_RIGHTS "
+            }
+            finally {  
+                Pop-Location
+            }
         }
-        finally {  
-            Pop-Location
+        else {
+            Write-Message -Level Verbose -Message "NO ACTIONS REQUIRED! Account already in ""Perform Volume Maintenance Task""" -ForegroundColor DarkCyan
         }
+        Write-Message -Level Verbose -Message "Done." -ForegroundColor DarkCyan 
     }
-    else {
-        Write-Host "NO ACTIONS REQUIRED! Account already in ""Perform Volume Maintenance Task""" -ForegroundColor DarkCyan
-    }
-    Write-Host "Done." -ForegroundColor DarkCyan 
 
 
 
@@ -481,8 +494,7 @@ SeManageVolumePrivilege = $($currentSetting)
     Set-Location .\SQL\$env:COMPUTERNAME\AXIANSDB01\databases
 
     #Let's setup the Max Dop, CTfP and max server memory.
-    if($null -eq $Ctp -or $Ctp -eq '')
-    {
+    if ($null -eq $Ctp -or $Ctp -eq '') {
         $Ctp = 40
     }
 
