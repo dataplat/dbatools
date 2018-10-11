@@ -38,7 +38,37 @@ function New-DbaAvailabilityGroup {
     
     .PARAMETER Database
         The database or databases to add.
-
+    
+    .PARAMETER AvailabilityMode
+        Sets the IP address of the availability group listener.
+    
+    .PARAMETER FailoverMode
+        Sets the subnet IP mask of the availability group listener.
+    
+    .PARAMETER Endpoint
+        Sets the number of the port used to communicate with the availability group.
+    
+    .PARAMETER ConnectionModeInPrimaryRole
+        Specifies the connection intent modes of an Availability Replica in primary role. AllowAllConnections by default.
+    
+    .PARAMETER ConnectionModeInSecondaryRole
+        Specifies the connection modes of an Availability Replica in secondary role. AllowAllConnections by default.
+    
+    .PARAMETER ReadonlyRoutingConnectionUrl
+        Sets the read only routing connection url for the availability replica.
+    
+    .PARAMETER SeedingMode
+        Specifies how the secondary replica will be initially seeded.
+    
+        Automatic. Enables direct seeding. This method will seed the secondary replica over the network. This method does not require you to backup and restore a copy of the primary database on the replica.
+        
+        Manual. Specifies manual seeding. This method requires you to create a backup of the database on the primary replica and manually restore that backup on the secondary replica.
+    
+    .PARAMETER Certificate 
+        Specifies that the endpoint is to authenticate the connection using the certificate specified by certificate_name to establish identity for authorization. 
+    
+        The far endpoint must have a certificate with the public key matching the private key of the specified certificate.
+    
     .PARAMETER AutomatedBackupPreference
         Specifies how replicas in the primary role are treated in the evaluation to pick the desired replica to perform a backup.
     
@@ -60,9 +90,6 @@ function New-DbaAvailabilityGroup {
     
     .PARAMETER Dhcp
         Indicates whether the object is DHCP.
-    
-    .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase.
         
     .PARAMETER UseLastBackups
         Use the last full backup of database.
@@ -134,6 +161,12 @@ function New-DbaAvailabilityGroup {
     
         Creates a new availability group on sql2016b named SharePoint
     
+    
+    .EXAMPLE
+        PS C:\> New-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual
+    
+        Creates a new availability group on sql2017 named SharePoint
+    
     .EXAMPLE
         PS C:\> $params = @{
         >>    Primary = 'sql2017a'
@@ -191,12 +224,14 @@ function New-DbaAvailabilityGroup {
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
+        [parameter(ValueFromPipeline)]
         [DbaInstanceParameter]$Primary,
         [PSCredential]$PrimarySqlCredential,
         [DbaInstanceParameter[]]$Secondary,
         [PSCredential]$SecondarySqlCredential,
+        # AG
+
         [string]$Name,
-        [string[]]$Database,
         [switch]$DtcSupport,
         [ValidateSet('External', 'Wsfc', 'None')]
         [string]$ClusterType = 'External',
@@ -204,28 +239,45 @@ function New-DbaAvailabilityGroup {
         [string]$AutomatedBackupPreference = 'Secondary',
         [ValidateSet('OnAnyQualifiedFailureCondition', 'OnCriticalServerErrors', 'OnModerateServerErrors', 'OnServerDown', 'OnServerUnresponsive')]
         [string]$FailureConditionLevel = "OnServerDown",
-        [ValidateSet('External', 'Wsfc', 'None')]
         [int]$HealthCheckTimeout = 30000,
         [switch]$Basic,
         [switch]$DatabaseHealthTrigger,
-        [parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [switch]$Passthru,
+        # database
+
+        [string[]]$Database,
+        [switch]$UseLastBackups,
+        [switch]$Force,
+        # replica
+
+        [ValidateSet('AsynchronousCommit', 'SynchronousCommit')]
+        [string]$AvailabilityMode = "SynchronousCommit",
+        [ValidateSet('Automatic', 'Manual')]
+        [string]$FailoverMode = "Automatic",
+        [int]$BackupPriority = 50,
+        [ValidateSet('AllowAllConnections', 'AllowReadWriteConnections')]
+        [string]$ConnectionModeInPrimaryRole = 'AllowAllConnections',
+        [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly')]
+        [string]$ConnectionModeInSecondaryRole = 'AllowAllConnections',
+        [ValidateSet('Automatic', 'Manual')]
+        [string]$SeedingMode = 'Automatic',
+        [string]$Endpoint,
+        [string]$ReadonlyRoutingConnectionUrl,
+        [string]$Certificate,
+        # network
+
         [string]$NetworkShare,
         [ipaddress[]]$IPAddress,
         [ipaddress]$SubnetMask = "255.255.255.0",
         [int]$Port = 1433,
         [switch]$Dhcp,
-        [string]$Certificate,
-        [switch]$UseLastBackups,
-        [switch]$Force,
-        [switch]$Passthru,
         [switch]$EnableException
     )
     process {
         $stepCounter = 0
-        if ($Force -and (-not $NetworkShare -and -not $UseLastBackups)) {
-            Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
-            return
+        if ($Force -or (-not $NetworkShare -and -not $UseLastBackups -and $Secondary)) {
+            #Stop-Function -Message "NetworkShare or UseLastBackups is required when Force is used"
+            #return
         }
         
         try {
@@ -249,7 +301,7 @@ function New-DbaAvailabilityGroup {
             }
         }
         
-        if ($Database -and -not $UseLastBackups -and -not $NetworkShare) {
+        if ($Database -and -not $UseLastBackups -and -not $NetworkShare -and $Secondary) {
             Stop-Function -Continue -Message "You must specify a NetworkShare when adding databases to the availability group"
             return
         }
@@ -268,10 +320,10 @@ function New-DbaAvailabilityGroup {
         
         # database checks
         if ($Database) {
-            $InputObject += Get-DbaDatabase -SqlInstance $server -Database $Database
+            $dbs += Get-DbaDatabase -SqlInstance $server -Database $Database
         }
         
-        foreach ($primarydb in $InputObject) {
+        foreach ($primarydb in $dbs) {
             if ($primarydb.MirroringStatus -ne "None") {
                 Stop-Function -Continue -Message "Cannot setup mirroring on database ($dbname) due to its current mirroring state: $($primarydb.MirroringStatus)"
             }
@@ -293,17 +345,35 @@ function New-DbaAvailabilityGroup {
         # Start work
         try {
             $ag = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroup -ArgumentList $server, $Name
-            $replica = Add-DbaAgReplica -SqlInstance $server -InputObject $ag -EnableException
             $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
             $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
             $ag.HealthCheckTimeout = $HealthCheckTimeout
             $ag.BasicAvailabilityGroup = $Basic
             $ag.DatabaseHealthTrigger = $DatabaseHealthTrigger
             
+            if ($server.VersionMajor -ge 14) {
+                $ag.ClusterType = $ClusterType
+            }
+            
             if ($PassThru) {
                 $defaults = 'LocalReplicaRole', 'Name as AvailabilityGroup', 'PrimaryReplicaServerName as PrimaryReplica', 'AutomatedBackupPreference', 'AvailabilityReplicas', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
                 return (Select-DefaultView -InputObject $ag -Property $defaults)
             }
+            
+            $replicaparams = @{
+                InputObject                   = $ag
+                AvailabilityMode              = $AvailabilityMode
+                FailoverMode                  = $FailoverMode
+                BackupPriority                = $BackupPriority
+                ConnectionModeInPrimaryRole   = $ConnectionModeInPrimaryRole
+                ConnectionModeInSecondaryRole = $ConnectionModeInSecondaryRole
+                SeedingMode                   = $SeedingMode
+                Endpoint                      = $Endpoint
+                ReadonlyRoutingConnectionUrl  = $ReadonlyRoutingConnectionUrl
+                Certificate                   = $Certificate
+            }
+            
+            $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $server
             $ag.Create()
         }
         catch {
@@ -330,7 +400,7 @@ function New-DbaAvailabilityGroup {
         # Join secondaries
         foreach ($second in $secondaries) {
             try {
-                $null = Add-DbaAgReplica -SqlInstance $second -InputObject $ag -EnableException
+                $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $second
                 Join-DbaAvailabilityGroup -SqlInstance $second -InputObject $ag -EnableException
             }
             catch {
@@ -375,7 +445,7 @@ function New-DbaAvailabilityGroup {
         }
         
         if ($IPAddress) {
-            New-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
+            $null = New-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
         }
         
         Get-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $Name

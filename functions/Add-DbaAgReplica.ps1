@@ -101,7 +101,7 @@ function Add-DbaAgReplica {
         [ValidateSet('AllowAllConnections', 'AllowNoConnections', 'AllowReadIntentConnectionsOnly')]
         [string]$ConnectionModeInSecondaryRole = 'AllowAllConnections',
         [ValidateSet('Automatic', 'Manual')]
-        [string]$SeedingMode,
+        [string]$SeedingMode = 'Automatic',
         [string]$Endpoint,
         [switch]$Passthru,
         [string]$ReadonlyRoutingConnectionUrl,
@@ -111,8 +111,8 @@ function Add-DbaAgReplica {
         [switch]$EnableException
     )
     process {
-        if (-not $Passthru -and -not $AvailabilityGroup -and -not $InputObject) {
-            Stop-Function -Message "Gotta specify ag or passthru"
+        if (-not $AvailabilityGroup -and -not $InputObject) {
+            Stop-Function -Message "You must specify either AvailabilityGroup or pipe in an availabilty group to continue."
             return
         }
         
@@ -147,7 +147,7 @@ function Add-DbaAgReplica {
             
             if ($Pscmdlet.ShouldProcess("$instance", "Creating a replica")) {
                 try {
-                    $replica = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityReplica($InputObject, $server.Name)
+                    $replica = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityReplica -ArgumentList $InputObject, $server.Name
                     $replica.EndpointUrl = $ep.Fqdn
                     $replica.FailoverMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaFailoverMode]::$FailoverMode
                     $replica.AvailabilityMode = [Microsoft.SqlServer.Management.Smo.AvailabilityReplicaAvailabilityMode]::$AvailabilityMode
