@@ -44,6 +44,11 @@ function Get-DbaOperatingSystem {
         PS C:\> 'sql2016', 'sql2017' | Get-DbaOperatingSystem -Credential $wincred
 
         Returns information about the sql2016 and sql2017 operating systems using alternative Windows credentials
+
+    .EXAMPLE
+        PS C:\> Get-Content .\servers.txt | Get-DbaOperatingSystem
+
+        Returns information about all the servers operating system that are stored in the file. Every line in the file can only contain one hostname for a server.
 #>
     [CmdletBinding()]
     param (
