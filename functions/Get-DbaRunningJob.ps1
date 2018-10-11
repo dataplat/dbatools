@@ -4,7 +4,7 @@
         Returns all non-idle Agent jobs running on the server.
 
     .DESCRIPTION
-        This function returns agent jobs that active on the SQL Server instance when calling the command. The information is gathered the SMO JobServer.jobs and be returned either in detailed or standard format.
+        This function returns agent jobs that active on the SQL Server instance when calling the command. The information is gathered the SMO JobServer.jobs.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -34,9 +34,9 @@
         Returns any active jobs on localhost.
 
     .EXAMPLE
-        PS C:\> Get-DbaRunningJob -SqlInstance localhost -Detailed
+        PS C:\> Get-DbaRunningJob -SqlInstance localhost
 
-        Returns a detailed output of any active jobs on localhost.
+        Returns output of any active jobs on localhost.
 
     .EXAMPLE
         PS C:\> 'localhost','localhost\namedinstance' | Get-DbaRunningJob
