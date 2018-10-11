@@ -1,10 +1,10 @@
 ﻿function Publish-DbaDacPackage {
 <#
     .SYNOPSIS
-        The Publish-Database command takes a dacpac which is the output from an SSDT project and publishes it to a database. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts).
+        The Publish-DbaDacPackage command takes a dacpac which is the output from an SSDT project and publishes it to a database. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts).
 
     .DESCRIPTION
-        Deploying a dacpac uses the DacFx which historically needed to be installed on a machine prior to use. In 2016 the DacFx was supplied by Microsoft as a nuget package and this uses that nuget package.
+        Deploying a dacpac uses the DacFx which historically needed to be installed on a machine prior to use. In 2016 the DacFx was supplied by Microsoft as a nuget package (Microsoft.Data.Tools.MSBuild) and this uses that nuget package.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -49,7 +49,7 @@
 
     .NOTES
         Tags: Migration, Database, Dacpac
-        Author: Richie lee (@bzzzt_io)
+        Author: Richie lee (@richiebzzzt)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -74,6 +74,15 @@
         PS C:\> $loc = "C:\Users\bob\source\repos\Microsoft.Data.Tools.Msbuild\lib\net46\Microsoft.SqlServer.Dac.dll"
         PS C:\> Publish-DbaDacPackage -SqlInstance "local" -Database WideWorldImporters -Path C:\temp\WideWorldImporters.dacpac -PublishXml C:\temp\WideWorldImporters.publish.xml -DacFxPath $loc
 
+    .EXAMPLE
+        PS C:\> Publish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml -GenerateDeploymentScript -ScriptOnly
+
+        Does not deploy the changes, but will generate the deployment script that would be executed against WideWorldImporters.
+
+    .EXAMPLE
+        PS C:\> Publish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml -GenerateDeploymentReport -ScriptOnly
+
+        Does not deploy the changes, but will generate the deployment report that would be executed against WideWorldImporters.
 #>
     [CmdletBinding()]
     param (

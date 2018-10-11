@@ -43,7 +43,7 @@
 
     .NOTES
         Tags: Migration, Database, Dacpac
-        Author: Richie lee (@bzzzt_io)
+        Author: Richie lee (@richiebzzzt)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -67,7 +67,12 @@
         PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase "DBMaintenance","DBMonitoring" C:\temp
 
         Exports dacpac packages for all USER databases, excluding "DBMaintenance" & "DBMonitoring", on sql2016 and saves them to C:\temp
-        
+
+    .EXAMPLE
+        PS C:\> $moreparams = "/OverwriteFiles:$true /Quiet:$true"
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\temp -ExtendedParameters $moreparams
+
+        Using extended parameters to over-write the files and performs the extraction in quiet mode.
 #>
     [CmdletBinding()]
     param
