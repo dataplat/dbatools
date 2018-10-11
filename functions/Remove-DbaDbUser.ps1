@@ -114,7 +114,7 @@
                 $db = $user.Parent
                 $server = $db.Parent
                 $ownedObjects = $false
-				$alterSchemas = @()
+                $alterSchemas = @()
                 $dropSchemas = @()
                 Write-Message -Level Verbose -Message "Removing User $user from Database $db on target $server"
 
