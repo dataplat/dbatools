@@ -15,7 +15,7 @@
 
     Note that the dowloaded installation file must be unzipped, an ISO has to be mounted. This will not be executed from this script.
 
-    .PARAMETER Version will hold the SQL Server version you wish to install. 
+    .PARAMETER Version will hold the SQL Server version you wish to install. The variable will support autocomplete
     
     .PARAMETER Appvolume will hold the volume letter of the application disc. If left empty, it will default to C, unless there is a drive named like App
 
@@ -27,9 +27,9 @@
 
     .PARAMETER BackupVolume will hold the volume letter of the Backup disc. If left empty, it will default to C, unless there is a drive named like Backup
 
-    .PARAMETER PerformVolumeMaintenance will set the boolean for grant or deny this right to the SQL Server service account.
+    .PARAMETER PerformVolumeMaintenance will set the policy for grant or deny this right to the SQL Server service account.
 
-    .PARAMETER SqlServiceAccount will hold the name of the service account
+    .PARAMETER SqlServiceAccount will hold the name of the SQL Server service account
 
     .Inputs
     None
@@ -42,110 +42,34 @@
 
     This will run the installation with the default settings
 
+    .Example
+
     C:\PS> Install-DbaInstance -AppVolume "G"
 
     This will run the installation with default setting apart from the application volume, this will be redirected to the G drive.
 
+    .Example 
+
+    C:\PS> Install-DbaInstance -Version 2016 -AppVolume "D" -DataVolume "E" -LogVolume "L" -PerformVolumeMaintenance "Yes" -SqlServerAccount "MyDomain\SvcSqlServer"
+
+    This will install SQL Server 2016 on the D drive, the data on E, the logs on L and the other files on the autodetected drives. The perform volume maintenance
+    right is granted and the domain account SvcSqlServer will be used as the service account for SqlServer.
+
 
     #>
     Param  (
+        [ValidateSet("2012", "2014", "2016","2017","2019")][int]$Version,    
         [string]$AppVolume, 
         [string]$DataVolume, 
         [string]$LogVolume, 
         [string]$TempVolume, 
         [string]$BackupVolume,
-        [switch]$PerformVolumeMaintenance,
-        [string]$SqlServerAccount,
-        [int]$Version
+        [ValidateSet("Yes", "No")][string]$PerformVolumeMaintenance,
+        [string]$SqlServerAccount
     )
 
-    $startScript = @'
-
-;SQL Server 2014 Configuration File
-[OPTIONS]
-; Specifies a Setup work flow, like INSTALL, UNINSTALL, or UPGRADE. This is a required parameter. 
-ACTION="Install"
-; Detailed help for command line argument ROLE has not been defined yet. 
-ROLE="AllFeatures_WithDefaults"
-; Use the /ENU parameter to install the English version of SQL Server on your localized Windows operating system. 
-ENU="True"
-; Parameter that controls the user interface behavior. Valid values are Normal for the full UI,AutoAdvance for a simplied UI, and EnableUIOnServerCore for bypassing Server Core setup GUI block. 
-; UIMODE="Normal"
-; Setup will not display any user interface. 
-QUIET="False"
-; Setup will display progress only, without any user interaction. 
-QUIETSIMPLE="False"
-; Specify whether SQL Server Setup should discover and include product updates. The valid values are True and False or 1 and 0. By default SQL Server Setup will include updates that are found. 
-UpdateEnabled="True"
-; Specify if errors can be reported to Microsoft to improve future SQL Server releases. Specify 1 or True to enable and 0 or False to disable this feature. 
-ERRORREPORTING="False"
-; If this parameter is provided, then this computer will use Microsoft Update to check for updates. 
-USEMICROSOFTUPDATE="False"
-; Specifies features to install, uninstall, or upgrade. The list of top-level features include SQL, AS, RS, IS, MDS, and Tools. The SQL feature will install the Database Engine, Replication, Full-Text, and Data Quality Services (DQS) server. The Tools feature will install Management Tools, Books online components, SQL Server Data Tools, and other shared components. 
-FEATURES=SQLENGINE
-; Specify the location where SQL Server Setup will obtain product updates. The valid values are "MU" to search Microsoft Update, a valid folder path, a relative path such as .\MyUpdates or a UNC share. By default SQL Server Setup will search Microsoft Update or a Windows Update service through the Window Server Update Services. 
-UpdateSource="MU"
-; Displays the command line parameters usage 
-HELP="False"
-; Specifies that the detailed Setup log should be piped to the console. 
-INDICATEPROGRESS="False"
-; Specifies that Setup should install into WOW64. This command line argument is not supported on an IA64 or a 32-bit system. 
-X86="False"
-; Specify the root installation directory for shared components.  This directory remains unchanged after shared components are already installed. 
-INSTALLSHAREDDIR="C:\Program Files\Microsoft SQL Server"
-; Specify the root installation directory for the WOW64 shared components.  This directory remains unchanged after WOW64 shared components are already installed. 
-INSTALLSHAREDWOWDIR="C:\Program Files (x86)\Microsoft SQL Server"
-; Specify a default or named instance. MSSQLSERVER is the default instance for non-Express editions and SQLExpress for Express editions. This parameter is required when installing the SQL Server Database Engine (SQL), Analysis Services (AS), or Reporting Services (RS). 
-INSTANCENAME="AXIANSDB01"
-; Specify that SQL Server feature usage data can be collected and sent to Microsoft. Specify 1 or True to enable and 0 or False to disable this feature. 
-SQMREPORTING="False"
-; Specify the Instance ID for the SQL Server features you have specified. SQL Server directory structure, registry structure, and service names will incorporate the instance ID of the SQL Server instance. 
-INSTANCEID="AXIANSDB01"
-; Specify the installation directory. 
-INSTANCEDIR="C:\Program Files\Microsoft SQL Server"
-; Agent account name 
-AGTSVCACCOUNT="NT AUTHORITY\NETWORK SERVICE"
-; Auto-start service after installation.  
-AGTSVCSTARTUPTYPE="Disabled"
-; CM brick TCP communication port 
-COMMFABRICPORT="0"
-; How matrix will use private networks 
-COMMFABRICNETWORKLEVEL="0"
-; How inter brick communication will be protected 
-COMMFABRICENCRYPTION="0"
-; TCP port used by the CM brick 
-MATRIXCMBRICKCOMMPORT="0"
-; Startup type for the SQL Server service. 
-SQLSVCSTARTUPTYPE="Automatic"
-; Level to enable FILESTREAM feature at (0, 1, 2 or 3). 
-FILESTREAMLEVEL="0"
-; Set to "1" to enable RANU for SQL Server Express. 
-ENABLERANU="True"
-; Specifies a Windows collation or an SQL collation to use for the Database Engine. 
-SQLCOLLATION="SQL_Latin1_General_CP1_CI_AS"
-; Account for SQL Server service: Domain\User or system account. 
-SQLSVCACCOUNT="NT Service\MSSQL$AXIANSDB01"
-; Windows account(s) to provision as SQL Server system administrators. 
-SQLSYSADMINACCOUNTS="WIN-NAJQHOBU8QD\Administrator"
-; The default is Windows Authentication. Use "SQL" for Mixed Mode Authentication. 
-SECURITYMODE="SQL"
-; Default directory for the Database Engine log files. 
-SQLUSERDBLOGDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Log"
-; Default directory for the Database Engine backup files. 
-SQLBACKUPDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Backup"
-; Default directory for the Database Engine user databases. 
-SQLUSERDBDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"
-; Directory for Database Engine TempDB files. 
-SQLTEMPDBDIR="E:\Program Files\Microsoft SQL Server\MSSQL12.AXIANSDB01\MSSQL\Data"
-; Provision current user as a Database Engine system administrator for %SQL_PRODUCT_SHORT_NAME% Express. 
-ADDCURRENTUSERASSQLADMIN="True"
-; Specify 0 to disable or 1 to enable the TCP/IP protocol. 
-TCPENABLED="0"
-; Specify 0 to disable or 1 to enable the Named Pipes protocol. 
-NPENABLED="0"
-; Startup type for Browser Service. 
-BROWSERSVCSTARTUPTYPE="Automatic"
-'@
+    $configini = Get-Content "$script:PSModuleRoot\bin\installtemplate\$version.ini"
+    
 
     # Check if there are designated drives for Data, Log, TempDB, Back-up and Application.
     If ($DataVolume -eq $null -or $DataVolume -eq '') {
@@ -475,64 +399,7 @@ SeManageVolumePrivilege = $($currentSetting)
         Write-Message -Level Verbose -Message "Done." -ForegroundColor DarkCyan 
     }
 
-
-
-    # Now for the fun part, alter the database settings
-    # First we need to install (if necessary) the SQL commandlets
-
-    Install-PackageProvider -Name NuGet -Force
-
-    Install-Module -name SqlServer -Force
-
-    Import-Module SqlServer -Force
-
-    #Go into the realms of SQL Server
-
-    SQLSERVER:
-
-    #most queries work best when you're around databases. 
-    Set-Location .\SQL\$env:COMPUTERNAME\AXIANSDB01\databases
-
-    #Let's setup the Max Dop, CTfP and max server memory.
-    if ($null -eq $Ctp -or $Ctp -eq '') {
-        $Ctp = 40
-    }
-
-    $sql1 = @'
-      USE master;
-      GO
-      EXEC sp_configure 'show advanced options',1;
-      go
-      reconfigure with override;
-      exec sp_configure 'max degree of parallelism', 
-'@
-
-    $sql2 = @'
-      ;
-      GO
-      RECONFIGURE WITH OVERRIDE;
-      EXEC sp_configure 'Cost threshold for parallelism', 
-'@
-
-    $sql3 = @'
-    ;
-    GO
-    RECONFIGURE WITH OVERRIDE
-    EXEC sp_configure 'max server memory'
-'@
-
-    $sql4 = @'
- ;
- GO
- RECONFIGURE WITH OVERRIDE
- EXEC sp_configure 'show advanced options', 0;
- GO
- RECONFIGURE WITH OVERRIDE
-'@
-
-    $totalQuery = $sql1 + $NumberOfCores + $sql2 + $Ctp + $sql3 + $ServerMemoryMB + $sql4
-
-    Invoke-Sqlcmd -Database master -Query $totalQuery
+    
 
     #Now configure the right amount of TempDB files.
 
