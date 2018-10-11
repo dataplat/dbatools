@@ -60,47 +60,6 @@ function Disable-DbaAgHadr {
         [Alias('Silent')]
         [switch]$EnableException
     )
-    begin {
-        function GetDbaAgHadr {
-            [CmdletBinding()]
-            param (
-                [parameter(Mandatory, ValueFromPipeline)]
-                [Alias("ServerInstance", "SqlServer")]
-                [DbaInstanceParameter[]]$SqlInstance,
-                [PSCredential]$Credential,
-                [Alias('Silent')]
-                [switch]$EnableException
-            )
-            process {
-                foreach ($instance in $SqlInstance) {
-
-                    try {
-                        $computer = $computerName = $instance.ComputerName
-                        $instanceName = $instance.InstanceName
-                        $currentState = Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock { $wmi.Services[$args[0]] | Select-Object IsHadrEnabled } -ArgumentList $instanceName -Credential $Credential
-                    }
-                    catch {
-                        Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance
-                        return
-                    }
-
-                    if ($null -eq $currentState.IsHadrEnabled) {
-                        $isenabled = $false
-                    }
-                    else {
-                        $isenabled = $currentState.IsHadrEnabled
-                    }
-                    [PSCustomObject]@{
-                        ComputerName     = $computer
-                        InstanceName     = $instanceName
-                        SqlInstance      = $instance.FullName
-                        IsHadrEnabled    = $isenabled
-                    }
-                }
-            }
-        }
-    }
-
     process {
         foreach ($instance in $SqlInstance) {
             $computer = $computerFullName = $instance.ComputerName
@@ -117,7 +76,7 @@ function Disable-DbaAgHadr {
 
             try {
                 Write-Message -Level Verbose -Message "Checking current Hadr setting for $computer"
-                $currentState = GetDbaAgHadr -SqlInstance $instance -Credential $Credential
+                $currentState = Get-WmiHadr -SqlInstance $instance -Credential $Credential
             }
             catch {
                 Stop-Function -Message "Failure to pull current state of Hadr setting on $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -161,7 +120,7 @@ function Disable-DbaAgHadr {
                         }
                     }
                 }
-                $newState = GetDbaAgHadr -SqlInstance $instance -Credential $Credential
+                $newState = Get-WmiHadr -SqlInstance $instance -Credential $Credential
 
                 if (Test-Bound -Not -ParameterName Force) {
                     Write-Message -Level Warning -Message "You must restart the SQL Server for it to take effect."
