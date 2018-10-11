@@ -63,7 +63,7 @@
         Suppresses all prompts to install but prompts to securely enter your password and creates a certificate in the 'db1' database
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -113,7 +113,7 @@
                         Stop-Function -Message "Certificate '$cert' already exists in the $db database on $instance" -Target $currentdb -Continue
                     }
 
-                    if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating certificate for database '$db' on $instance")) {
+                    if ($Pscmdlet.ShouldProcess($instance, "Creating certificate for database '$db' on $instance")) {
                         try {
                             $smocert = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Certificate $currentdb, $cert
 

@@ -109,7 +109,7 @@
         Exports all certificates found on sql2016 to the default data directory.
 
 #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ParameterSetName = "instance")]
         [Alias("ServerInstance", "SqlServer")]

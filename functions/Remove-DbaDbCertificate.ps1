@@ -52,7 +52,7 @@ function Remove-DbaDbCertificate {
         Suppresses all prompts to remove the certificate in the 'db1' database and drops the key.
 
 #>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "High")]
     param (
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
