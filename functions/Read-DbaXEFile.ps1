@@ -142,8 +142,8 @@ function Read-DbaXEFile {
                 }
 
                 [pscustomobject]$hash
+                $enum.dispose()
             }
-			$enum.dispose()   
         }
     }
 }
