@@ -38,24 +38,25 @@ function Join-DbaAvailabilityGroup {
         https://dbatools.io/Join-DbaAvailabilityGroup
         
     .EXAMPLE
-        PS C:\> Join-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup SharePoint -Confirm
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02
         
-        Adds the ag1 and ag2 availability groups on sqlserver2012. Prompts for confirmation.
-        
+        Joins sql02 to the SharePoint availability group on sql01
+
     .EXAMPLE
-        PS C:\> Get-DbaDatabase -SqlInstance sqlserver2012 | Out-GridView -Passthru | Join-DbaAvailabilityGroup -AvailabilityGroup ag1
+        PS C:\> $ag = Get-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint
+        PS C:\> Join-DbaAvailabilityGroup -SqlInstance sql02 -InputObject $ag
         
-        Adds selected databases from sqlserver2012 to ag1
-  
-    .EXAMPLE
-        PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster | Join-DbaAvailabilityGroup -AvailabilityGroup SharePoint
-        
-        Adds SharePoint databases as found in SharePoint_Config on sqlcluster to ag1 on sqlcluster
+        Joins sql02 to the SharePoint availability group on sql01
     
     .EXAMPLE
-        PS C:\> Get-DbaDbSharePoint -SqlInstance sqlcluster -ConfigDatabase SharePoint_Config_2019 | Join-DbaAvailabilityGroup -AvailabilityGroup SharePoint
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02 -WhatIf
         
-        Adds SharePoint databases as found in SharePoint_Config_2019 on sqlcluster to ag1 on sqlcluster
+        Shows what would happen if the command were to run. No actions are actually performed.
+    
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql01 -AvailabilityGroup SharePoint | Join-DbaAvailabilityGroup -SqlInstance sql02 -Confirm
+        
+        Prompts for confirmation then joins sql02 to the SharePoint availability group on sql01
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
@@ -63,23 +64,14 @@ function Join-DbaAvailabilityGroup {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
-        [parameter(ValueFromPipeline)]
+        [parameter(ValueFromPipeline, Mandatory)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$EnableException
     )
-    process {
-        if (-not $InputObject -and -not $AvailabilityGroup) {
-            Stop-Function -Message "You must specify availabilty group or pipe one in."
-            return
-        }
-        
-        foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
-        }
-        
+    process {        
         foreach ($ag in $InputObject) {
             $server = $ag.Parent
-            if ($Pscmdlet.ShouldProcess($server.Name, "Joining ag")) {
+            if ($Pscmdlet.ShouldProcess($server.Name, "Joining $($ag.Name)")) {
                 try {
                     $server.JoinAvailabilityGroup($ag.Name)
                 }
@@ -87,6 +79,8 @@ function Join-DbaAvailabilityGroup {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
+            $ag.Refresh()
+            $ag
         }
     }
 }

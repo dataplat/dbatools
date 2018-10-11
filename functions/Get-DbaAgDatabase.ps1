@@ -1,4 +1,5 @@
-﻿function Get-DbaAgDatabase {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaAgDatabase {
 <#
     .SYNOPSIS
         Outputs the databases involved in the Availability Group(s) found on the server.
@@ -14,14 +15,17 @@
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted).
-
+        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    
     .PARAMETER AvailabilityGroup
-        Specify the Availability Group name that you want to get information on.
+        Specify the availability groups to query.
 
     .PARAMETER Database
-        Specify the database(s) to pull information for. This list is auto-populated from the server for tab completion. Multiple databases can be specified. If none are specified all databases will be processed.
+        Specify the database or databases to return. This list is auto-populated from the server for tab completion. Multiple databases can be specified. If none are specified all databases will be processed.
 
+    .PARAMETER InputObject
+        Enables piped input from Get-DbaAvailabilityGroup
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -39,67 +43,51 @@
         https://dbatools.io/Get-DbaAgDatabase
 
     .EXAMPLE
-        PS C:\> Get-DbaAgDatabase -SqlInstance sqlserver2014a
+        PS C:\> Get-DbaAgDatabase -SqlInstance sql2017a
 
-        Returns basic information on all the databases in each Availability Group found on sqlserver2014a
-
-    .EXAMPLE
-        PS C:\> Get-DbaAgDatabase -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
-
-        Returns basic information on all the databases in the Availability Group AG-a on sqlserver2014a
+        Returns basic information on all the databases in each availability group found on sql2017a
 
     .EXAMPLE
-        PS C:\> Get-DbaAgDatabase -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -Database AG-Database
+        PS C:\> Get-DbaAgDatabase -SqlInstance sql2017a -AvailabilityGroup AG101
 
-        Returns basic information on the database AG-Database found in the Availability Group AG-a on server sqlserver2014a
+        Returns basic information on all the databases in the availability group AG101 on sql2017a
+
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlcluster -AvailabilityGroup SharePoint -Database Sharepoint_Config | Get-DbaAgDatabase
+
+        Returns basic information on the database Sharepoint_Config found in the availability group SharePoint on server sqlcluster
 
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(ValueFromPipeline)]
         [string[]]$AvailabilityGroup,
         [string[]]$Database,
-        [Alias('Silent')]
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
         foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            if ($server.IsHadrEnabled -eq $false) {
-                Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $serverName." -Target $serverName -Continue
-            }
-
-            $ags = $server.AvailabilityGroups
-            if ($AvailabilityGroup) {
-                $ags = $ags | Where-Object Name -in $AvailabilityGroup
-            }
-
-            foreach ($ag in $ags) {
-                $agDatabases = $ag.AvailabilityDatabases
-                foreach ($agDb in $agDatabases) {
-                    if ($Database -and $agDb.Name -notin $Database) {
-                        continue
-                    }
-
-                    Add-Member -Force -InputObject $agDb -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $agDb -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $agDb -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $agDb -MemberType NoteProperty -Name Replica -value $server.ComputerName
-
-                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Parent as AvailabilityGroup', 'Replica', 'Name as DatabaseName', 'SynchronizationState', 'IsFailoverReady', 'IsJoined', 'IsSuspended'
-                    Select-DefaultView -InputObject $agDb -Property $defaults
-                }
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+        }
+        
+        if (Test-Bound -ParameterName Database) {
+            $InputObject = $InputObject | Where-Object { $_.AvailabilityDatabases.Name -contains $Listener }
+        }
+        
+        foreach ($ag in $InputObject.AvailabilityDatabases) {
+            $server = $ag.Parent.Parent
+            foreach ($db in $dbs) {
+                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name Replica -value $server.ComputerName
+                
+                $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Parent as AvailabilityGroup', 'Replica', 'Name as DatabaseName', 'SynchronizationState', 'IsFailoverReady', 'IsJoined', 'IsSuspended'
+                Select-DefaultView -InputObject $db -Property $defaults
             }
         }
     }
