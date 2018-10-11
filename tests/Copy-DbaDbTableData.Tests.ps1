@@ -4,16 +4,17 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
-        $command = Get-Command -Name $CommandName
-        [object[]]$params = $command.Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'DestinationDatabase', 'Table', 'Query', 'BatchSize', 'NotifyAfter', 'DestinationTable','NoTableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'Truncate', 'bulkCopyTimeOut', 'InputObject', 'EnableException'
         $paramCount = $knownParameters.Count
-        if ($params.Contains('WhatIf')) {
+        $SupportShouldProcess = $true
+        if ($SupportShouldProcess) {
             $defaultParamCount = 13
         }
         else {
             $defaultParamCount = 11
         }
+        $command = Get-Command -Name $CommandName
+        [object[]]$params = $command.Parameters.Keys
 
         It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
@@ -96,3 +97,4 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $table4db2check.Count | Should -Be 13
     }
 }
+
