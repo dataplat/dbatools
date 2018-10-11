@@ -23,7 +23,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+<#Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command actually works" {
 
@@ -41,4 +41,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             { Get-DbaTcpPort -SqlInstance "ThisIsNotAnInstance" -All | Should Throw }
         }
     }
-}
+}#>
