@@ -23,22 +23,16 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-
         It "Should Return a Result" {
-            $server = Get-DbaTcpPort -SqlInstance $script:instance2
-            $server | Should Not Be $null
+            $results = Get-DbaTcpPort -SqlInstance $script:instance2
+            $results | Should Not Be $null
         }
 
         It "Should Return Multiple Results" {
-            $server = Get-DbaTcpPort -SqlInstance $script:instance2 -All
-            $server.Count | Should BeGreaterThan 1
-        }
-
-        It "Should Throw an Error if SqlInstance doesn't exist" {
-            { Get-DbaTcpPort -SqlInstance "ThisIsNotAnInstance" -All | Should Throw }
+            $results = Get-DbaTcpPort -SqlInstance $script:instance2 -All
+            $results.Count | Should BeGreaterThan 1
         }
     }
-}#>
+}
