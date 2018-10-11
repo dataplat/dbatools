@@ -2,14 +2,14 @@
 function Get-DbaAgDatabase {
 <#
     .SYNOPSIS
-        Outputs the databases involved in the Availability Group(s) found on the server.
+        Gets availability group databases from a SQL Server instance.
 
     .DESCRIPTION
-        Default view provides most common set of properties for information on the database in an Availability Group(s).
+        Gets availability group databases from a SQL Server instance.
+    
+        Default view provides most common set of properties for information on the database in an availability group.
 
         Information returned on the database will be specific to that replica, whether it is primary or a secondary.
-
-        This command will return an SMO object, but it is the AvailabilityDatabases object and not the Server.Databases object.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
@@ -24,7 +24,7 @@ function Get-DbaAgDatabase {
         Specify the database or databases to return. This list is auto-populated from the server for tab completion. Multiple databases can be specified. If none are specified all databases will be processed.
 
     .PARAMETER InputObject
-        Enables piped input from Get-DbaAvailabilityGroup
+        Enables piped input from Get-DbaAvailabilityGroup.
     
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -45,17 +45,17 @@ function Get-DbaAgDatabase {
     .EXAMPLE
         PS C:\> Get-DbaAgDatabase -SqlInstance sql2017a
 
-        Returns basic information on all the databases in each availability group found on sql2017a
+        Returns all the databases in each availability group found on sql2017a
 
     .EXAMPLE
         PS C:\> Get-DbaAgDatabase -SqlInstance sql2017a -AvailabilityGroup AG101
 
-        Returns basic information on all the databases in the availability group AG101 on sql2017a
+        Returns all the databases in the availability group AG101 on sql2017a
 
     .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlcluster -AvailabilityGroup SharePoint -Database Sharepoint_Config | Get-DbaAgDatabase
 
-        Returns basic information on the database Sharepoint_Config found in the availability group SharePoint on server sqlcluster
+        Returns the database Sharepoint_Config found in the availability group SharePoint on server sqlcluster
 
 #>
     [CmdletBinding()]

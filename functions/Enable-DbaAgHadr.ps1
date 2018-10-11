@@ -40,6 +40,11 @@ function Enable-DbaAgHadr {
         https://dbatools.io/Enable-DbaAgHadr
 
     .EXAMPLE
+        PS C:\> Enable-DbaAgHadr -SqlInstance sql2016
+
+        Sets Hadr service to enabled for the instance sql2016 but changes will not be applied until the next time the server restarts.
+    
+    .EXAMPLE
         PS C:\> Enable-DbaAgHadr -SqlInstance sql2016 -Force
 
         Sets Hadr service to enabled for the instance sql2016, and restart the service to apply the change.
