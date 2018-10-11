@@ -27,12 +27,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
         It "Should Return a Result" {
             $results = Get-DbaTcpPort -SqlInstance $script:instance2
-            $results | Should Not Be $null
+            $results | Should -Not -Be $null
         }
 
-        It -Skip "Should Return Multiple Results" {
+        It "Should Return Multiple Results" {
             $results = Get-DbaTcpPort -SqlInstance $script:instance2 -All
-            $results.Count | Should BeGreaterThan 1
+            $results.Count | Should -BeGreaterThan 1
         }
     }
 }
