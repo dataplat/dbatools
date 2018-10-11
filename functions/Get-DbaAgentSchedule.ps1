@@ -41,6 +41,10 @@
 
         Returns all SQL Agent Shared Schedules for the local and sql2016 SQL Server instances
 
+    .EXAMPLE
+        PS C:\> Get-DbaAgentSchedule -SqlInstance sql2016 -Schedule "Maintenance10min","Maintenance60min"
+
+        Returns the "Maintenance10min" & "Maintenance60min" schedules from the sql2016 SQL Server instance
 #>
     [CmdletBinding()]
     param (
