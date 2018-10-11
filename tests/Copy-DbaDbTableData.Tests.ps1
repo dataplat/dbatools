@@ -4,16 +4,17 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
-        $command = Get-Command -Name $CommandName
-        [object[]]$params = $command.Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'DestinationDatabase', 'Table', 'Query', 'BatchSize', 'NotifyAfter', 'DestinationTable','NoTableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'Truncate', 'bulkCopyTimeOut', 'InputObject', 'EnableException'
         $paramCount = $knownParameters.Count
-        if ($params.Contains('WhatIf')) {
+        $SupportShouldProcess = $true
+        if ($SupportShouldProcess) {
             $defaultParamCount = 13
         }
         else {
             $defaultParamCount = 11
         }
+        $command = Get-Command -Name $CommandName
+        [object[]]$params = $command.Parameters.Keys
 
         It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
@@ -80,10 +81,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results.Count | Should -Be 2
     }
 
-    It "does not copy the table data onto itself" {
-        Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example Should -Be $null
-    }
-
     It "opens and closes connections properly" {
         #regression test, see #3468
         $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table 'dbo.dbatoolsci_example', 'dbo.dbatoolsci_example4' | Copy-DbaDbTableData -Destination $script:instance2 -DestinationDatabase tempdb -KeepIdentity -KeepNulls -BatchSize 5000 -Truncate
@@ -100,3 +97,4 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $table4db2check.Count | Should -Be 13
     }
 }
+
