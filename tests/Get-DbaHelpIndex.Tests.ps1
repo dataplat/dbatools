@@ -29,7 +29,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
-    }    
+    }
     Context "Command works for indexes" {
         $results = Get-DbaHelpIndex -SqlInstance $script:instance2 -Database $dbname
         It 'Results should be returned' {
@@ -84,8 +84,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.IndexRows | Should BeOfType 'Long'
             $results.IndexLookups | Should BeOfType 'Long'
         }
-        It 'Formatted as Double' {   
+        It 'Formatted as Double' {
             $results.IndexFragInPercent | Should BeOfType 'Double'
         }
     }
-} 
+}
