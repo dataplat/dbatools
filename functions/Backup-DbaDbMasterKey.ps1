@@ -127,8 +127,8 @@
             $Path = $Path.TrimEnd("\")
             $fileinstance = $instance.ToString().Replace('\', '$')
             $filename = "$Path\$fileinstance-$dbname-$time.key"
-            
-            if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $filename")) {         
+
+            if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $filename")) {
                 try {
                     $masterkey.Export($filename, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
                     $status = "Success"
@@ -137,14 +137,14 @@
                     $status = "Failure"
                     Write-Message -Level Warning -Message "Backup failure: $($_.Exception.InnerException)"
                 }
-                
+
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $dbname
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $filename
                 Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Status -value $status
-                
+
                 Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, 'Filename as Path', Status
             }
         }
