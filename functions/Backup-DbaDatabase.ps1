@@ -26,6 +26,9 @@ function Backup-DbaDatabase {
 
                 SQL Server needs permissions to write to the specified location. Path names are based on the SQL Server (C:\ is the C drive on the SQL Server, not the machine running the script).
 
+            .PARAMETER TimeStampFormat
+                By default the command timestamps backups using the format yyyyMMddHHmm. Using this parameter this can be overridden. The timestamp format should be defined using the Get-Date formats, illegal formats will cause an error to be thrown
+
             .PARAMETER BackupDirectory
                 Path in which to place the backup files. If not specified, the backups will be placed in the default backup location for SqlInstance.
                 If multiple paths are specified, the backups will be striped across these locations. This will overwrite the FileCount option.
@@ -146,6 +149,7 @@ function Backup-DbaDatabase {
         [object[]]$ExcludeDatabase,
         [string[]]$BackupDirectory,
         [string]$BackupFileName,
+        [string]$TimesStampFormat,
         [switch]$CopyOnly,
         [ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
         [string]$Type = 'Database',
@@ -228,6 +232,15 @@ function Backup-DbaDatabase {
                 $AzureBaseUrl = $AzureBaseUrl.Trim("/")
                 $FileCount = 1
                 $BackupDirectory = $AzureBaseUrl
+            }
+
+            if ('' -ne $TimeStampFormat) {{
+                try {
+
+                }
+            }
+            else {
+                $TimeStampFormat = "yyyyMMddHHmm"
             }
 
             if ($OutputScriptOnly) {
@@ -357,7 +370,7 @@ function Backup-DbaDatabase {
                 }
             }
             else {
-                $timestamp = (Get-Date -Format yyyyMMddHHmm)
+                $timestamp = (Get-Date -Format $TimeStampFormat)
                 Write-Message -Level VeryVerbose -Message "Setting filename"
                 $BackupFinalName = "$($dbname)_$timestamp.$suffix"
             }
