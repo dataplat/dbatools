@@ -38,11 +38,6 @@
         Returns the single use plan cache usage information for SQL Server instance 2017
 
     .EXAMPLE
-        PS C:\> Get-DbaPlanCache -SqlInstance sql2017
-
-        Returns the single use plan cache usage information for SQL Server instance 2017
-
-    .EXAMPLE
         PS C:\> Get-DbaPlanCache -SqlInstance sql2017 -SqlCredential sqladmin
 
         Returns the single use plan cache usage information for SQL Server instance 2017 using login 'sqladmin'
