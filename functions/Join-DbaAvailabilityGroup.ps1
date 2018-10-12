@@ -13,6 +13,9 @@ function Join-DbaAvailabilityGroup {
     .PARAMETER SqlCredential
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+    .PARAMETER AvailabilityGroup
+        The availability group to join.
+    
     .PARAMETER InputObject
         Enables piped input from Get-DbaAvailabilityGroup.
 
