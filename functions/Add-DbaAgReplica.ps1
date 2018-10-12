@@ -26,6 +26,9 @@ function Add-DbaAgReplica {
 
     .PARAMETER FailoverMode
         Sets the failover mode of the availability group replica. Options are Automatic and Manual. Automatic is default.
+    
+    .PARAMETER BackupPriority
+        Sets the backup priority availability group replica. Default is 50.
 
     .PARAMETER Endpoint
         By default, this command will attempt to find a DatabaseMirror endpoint. If one does not exist, it will create it.

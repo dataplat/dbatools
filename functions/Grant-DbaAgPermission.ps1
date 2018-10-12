@@ -13,6 +13,9 @@ function Grant-DbaAgPermission {
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
+    .PARAMETER Login
+        The login or logins to modify.
+    
     .PARAMETER AvailabilityGroup
         Only modify specific availability groups.
 
