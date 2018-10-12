@@ -1,62 +1,62 @@
 ﻿function Get-DbaSpinLockStatistic {
-    <#
-        .SYNOPSIS
-            Displays information from sys.dm_os_spinlock_stats.  Works on SQL Server 2008 and above.
+<#
+    .SYNOPSIS
+        Displays information from sys.dm_os_spinlock_stats.  Works on SQL Server 2008 and above.
 
-        .DESCRIPTION
-                This command is based off of Paul Randal's post "Advanced SQL Server performance tuning"
+    .DESCRIPTION
+            This command is based off of Paul Randal's post "Advanced SQL Server performance tuning"
 
-                Returns:
-                        SpinLockName
-                        Collisions
-                        Spins
-                        SpinsPerCollision
-                        SleepTime
-                        Backoffs
+            Returns:
+                    SpinLockName
+                    Collisions
+                    Spins
+                    SpinsPerCollision
+                    SleepTime
+                    Backoffs
 
-                Reference:  https://www.sqlskills.com/blogs/paul/advanced-performance-troubleshooting-waits-latches-spinlocks/
+            Reference:  https://www.sqlskills.com/blogs/paul/advanced-performance-troubleshooting-waits-latches-spinlocks/
 
-        .PARAMETER SqlInstance
-            The SQL Server instance. Server version must be SQL Server version 2008 or higher.
+    .PARAMETER SqlInstance
+        The SQL Server instance. Server version must be SQL Server version 2008 or higher.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Author: Patrick Flynn, @sqllensman
-            Tags: SpinLockStatistics
+    .NOTES
+        Tags: SpinLockStatistics, Waits
+        Author: Patrick Flynn (@sqllensman)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaIdentityUsage
+    .LINK
+        https://dbatools.io/Get-DbaIdentityUsage
 
-        .EXAMPLE
-            Get-DbaSpinLockStatistic -SqlInstance sql2008, sqlserver2012
-            Get SpinLock Statistics for servers sql2008 and sqlserver2012.
+    .EXAMPLE
+        Get-DbaSpinLockStatistic -SqlInstance sql2008, sqlserver2012
+        Get SpinLock Statistics for servers sql2008 and sqlserver2012.
 
-        .EXAMPLE
-            $output = Get-DbaSpinLockStatistic -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable
+    .EXAMPLE
+        $output = Get-DbaSpinLockStatistic -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable
 
-            Collects all SpinLock Statistics on server sql2008 into a Data Table.
+        Collects all SpinLock Statistics on server sql2008 into a Data Table.
 
-        .EXAMPLE
-            'sql2008','sqlserver2012' | Get-DbaSpinLockStatistic
-            Get SpinLock Statistics for servers sql2008 and sqlserver2012 via pipline
+    .EXAMPLE
+        'sql2008','sqlserver2012' | Get-DbaSpinLockStatistic
+        Get SpinLock Statistics for servers sql2008 and sqlserver2012 via pipline
 
-        .EXAMPLE
-            $cred = Get-Credential sqladmin
-            Get-DbaSpinLockStatistic -SqlInstance sql2008 -SqlCredential $cred
+    .EXAMPLE
+        $cred = Get-Credential sqladmin
+        Get-DbaSpinLockStatistic -SqlInstance sql2008 -SqlCredential $cred
 
-            Connects using sqladmin credential and returns SpinLock Statistics from sql2008
-    #>
+        Connects using sqladmin credential and returns SpinLock Statistics from sql2008
+#>
     [CmdletBinding()]
     Param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]

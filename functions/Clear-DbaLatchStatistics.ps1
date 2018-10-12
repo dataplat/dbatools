@@ -1,5 +1,5 @@
 ﻿function Clear-DbaLatchStatistics {
-    <#
+<#
     .SYNOPSIS
         Clears Latch Statistics
 
@@ -24,32 +24,34 @@
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: LatchStatistic
+        Tags: LatchStatistic, Waits
+        Author: Patrick Flynn (@sqllensman)
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Clear-DbaLatchStatistics
 
     .EXAMPLE
-        Clear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012
+        PS C:\> Clear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012
         After confirmation, clears latch statistics on servers sql2008 and sqlserver2012
 
     .EXAMPLE
-        Clear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false
+        PS C:\> Clear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false
         Clears clears latch statistics on servers sql2008 and sqlserver2012, without prompting
 
     .EXAMPLE
-        'sql2008','sqlserver2012' | Clear-DbaLatchStatistics
+        PS C:\> 'sql2008','sqlserver2012' | Clear-DbaLatchStatistics
         After confirmation, clears latch statistics on servers sql2008 and sqlserver2012
 
     .EXAMPLE
-        $cred = Get-Credential sqladmin
+        PS C:\> $cred = Get-Credential sqladmin
         Clear-DbaLatchStatistics -SqlInstance sql2008 -SqlCredential $cred
 
         Connects using sqladmin credential and clears latch statistics on servers sql2008 and sqlserver2012
-    #>
+#>
     [CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
     param (
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
