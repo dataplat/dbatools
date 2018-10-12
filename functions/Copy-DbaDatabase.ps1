@@ -1296,7 +1296,7 @@
 
                     # restore potentially lost settings
                     if ($destServer.VersionMajor -ge 9 -and $NoRecovery -eq $false) {
-                        if ($sourceDbOwnerChaining -ne $$NewDatabase.DatabaseOwnershipChaining) {
+                        if ($sourceDbOwnerChaining -ne $NewDatabase.DatabaseOwnershipChaining) {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Updating DatabaseOwnershipChaining on $DestinationdbName")) {
                                 try {
                                     $NewDatabase.DatabaseOwnershipChaining = $sourceDbOwnerChaining
