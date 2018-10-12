@@ -12,7 +12,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
         $password = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
         $cert = New-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb -Confirm:$false
-        $backup = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb -EncryptionPassword $password
+        $backup = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb -EncryptionPassword $password -Confirm:$false
         $null = Remove-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert.Name -Database tempdb -Confirm:$false
 
         It "restores the db cert and encrypts with password" {
