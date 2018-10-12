@@ -4,12 +4,12 @@
         Displays IO subsystem latency statistics from sys.dm_io_virtual_file_stats.  Works on SQL Server 2005 and above.
 
     .DESCRIPTION
-            This command is based off of Paul Randal's post "Advanced SQL Server performance tuning"
+        This command is based off of Paul Randal's post "Advanced SQL Server performance tuning"
 
-            Returns both raw and aggregate information
+        Returns both raw and aggregate information
 
-            Reference:  https://www.sqlskills.com/blogs/paul/how-to-examine-io-subsystem-latencies-from-within-sql-server/
-                        https://www.sqlskills.com/blogs/paul/capturing-io-latencies-period-time/
+        Reference:  https://www.sqlskills.com/blogs/paul/how-to-examine-io-subsystem-latencies-from-within-sql-server/
+                    https://www.sqlskills.com/blogs/paul/capturing-io-latencies-period-time/
 
     .PARAMETER SqlInstance
         The SQL Server instance. Server version must be SQL Server version 2008 or higher.
@@ -34,32 +34,35 @@
         https://dbatools.io/Get-DbaIoLatency
 
     .EXAMPLE
-        Get-DbaIoLatency -SqlInstance sql2008, sqlserver2012
+        PS C:\> Get-DbaIoLatency -SqlInstance sql2008, sqlserver2012
+
         Get IO subsystem latency statistics for servers sql2008 and sqlserver2012.
 
     .EXAMPLE
-        $output = Get-DbaIoLatency -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable
+        PS C:\> $output = Get-DbaIoLatency -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable
 
         Collects all IO subsystem latency statistics on server sql2008 into a Data Table.
 
     .EXAMPLE
-        'sql2008','sqlserver2012' | Get-DbaIoLatency
+        PS C:\> 'sql2008','sqlserver2012' | Get-DbaIoLatency
+
         Get IO subsystem latency statistics for servers sql2008 and sqlserver2012 via pipline
 
     .EXAMPLE
-        $cred = Get-Credential sqladmin
-        Get-DbaIoLatency -SqlInstance sql2008 -SqlCredential $cred
+        PS C:\> $cred = Get-Credential sqladmin
+        PS C:\> Get-DbaIoLatency -SqlInstance sql2008 -SqlCredential $cred
 
         Connects using sqladmin credential and returns IO subsystem latency statistics from sql2008
 #>
     [CmdletBinding()]
     Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [int]$Threshold = 95,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     BEGIN {
@@ -120,8 +123,8 @@
 
         $excludeColumns = 'FileHandle', 'ReadLatency', 'WriteLatency', 'Latency', 'AvgBPerRead', 'AvgBPerWrite', 'AvgBPerTransfer'
     }
-
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
             if (Test-FunctionInterrupt) { return }
 

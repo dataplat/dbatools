@@ -39,31 +39,34 @@
         https://dbatools.io/Get-DbaIdentityUsage
 
     .EXAMPLE
-        Get-DbaSpinLockStatistic -SqlInstance sql2008, sqlserver2012
+        PS C:\> Get-DbaSpinLockStatistic -SqlInstance sql2008, sqlserver2012
+
         Get SpinLock Statistics for servers sql2008 and sqlserver2012.
 
     .EXAMPLE
-        $output = Get-DbaSpinLockStatistic -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable
+        PS C:\> $output = Get-DbaSpinLockStatistic -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable
 
         Collects all SpinLock Statistics on server sql2008 into a Data Table.
 
     .EXAMPLE
-        'sql2008','sqlserver2012' | Get-DbaSpinLockStatistic
+        PS C:\> 'sql2008','sqlserver2012' | Get-DbaSpinLockStatistic
+
         Get SpinLock Statistics for servers sql2008 and sqlserver2012 via pipline
 
     .EXAMPLE
-        $cred = Get-Credential sqladmin
-        Get-DbaSpinLockStatistic -SqlInstance sql2008 -SqlCredential $cred
+        PS C:\> $cred = Get-Credential sqladmin
+        PS C:\> Get-DbaSpinLockStatistic -SqlInstance sql2008 -SqlCredential $cred
 
         Connects using sqladmin credential and returns SpinLock Statistics from sql2008
 #>
     [CmdletBinding()]
     Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     BEGIN {
@@ -82,12 +85,8 @@
 
     process {
         if (Test-FunctionInterrupt) { return }
-
         foreach ($instance in $SqlInstance) {
-
-
             Write-Message -Level Verbose -Message "Connecting to $instance"
-
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             }
@@ -96,13 +95,7 @@
             }
             Write-Message -Level Verbose -Message "Connected to $instance"
 
-            if ($server.VersionMajor -lt 9) {
-                Stop-Function -Message "This function does not support versions lower than SQL Server 2008 (v10)."
-                return
-            }
-
             foreach ($row in $server.Query($sql)) {
-
                 [PSCustomObject]@{
                     ComputerName           = $server.NetName
                     InstanceName           = $server.ServiceName

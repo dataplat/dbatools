@@ -36,29 +36,33 @@
 
     .EXAMPLE
         PS C:\> Clear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012
+
         After confirmation, clears latch statistics on servers sql2008 and sqlserver2012
 
     .EXAMPLE
         PS C:\> Clear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false
+
         Clears clears latch statistics on servers sql2008 and sqlserver2012, without prompting
 
     .EXAMPLE
         PS C:\> 'sql2008','sqlserver2012' | Clear-DbaLatchStatistics
+
         After confirmation, clears latch statistics on servers sql2008 and sqlserver2012
 
     .EXAMPLE
         PS C:\> $cred = Get-Credential sqladmin
-        Clear-DbaLatchStatistics -SqlInstance sql2008 -SqlCredential $cred
+        PS C:\> Clear-DbaLatchStatistics -SqlInstance sql2008 -SqlCredential $cred
 
         Connects using sqladmin credential and clears latch statistics on servers sql2008 and sqlserver2012
 #>
     [CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
     param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
@@ -71,11 +75,6 @@
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            if ($server.VersionMajor -lt 9) {
-                Stop-Function -Message "This function does not support versions lower than SQL Server 2005 (v9)."
-                return
             }
 
             if ($Pscmdlet.ShouldProcess($instance, "Performing CLEAR of sys.dm_os_latch_stats")) {
