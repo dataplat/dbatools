@@ -93,7 +93,7 @@
                        [latch_class],
                        [wait_time_ms] / 1000.0 AS [WaitS],
                        [waiting_requests_count] AS [WaitCount],
-                       100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() AS [Percentage],
+                       Case WHEN SUM ([wait_time_ms]) OVER() = 0 THEN NULL ELSE 100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() END AS [Percentage],
                        ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
                    FROM sys.dm_os_latch_stats
                    WHERE [latch_class] NOT IN (N'BUFFER')

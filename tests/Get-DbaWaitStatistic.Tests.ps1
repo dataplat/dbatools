@@ -43,7 +43,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Command returns proper info when using parameter IncludeIgnorable" {
         $results = Get-DbaWaitStatistic -SqlInstance $script:instance2 -Threshold 100 -IncludeIgnorable | Where-Object {
-                $_.WaitType -eq 'SLEEP_MASTERDBREADY'
+                $_.WaitType -eq 'LAZYWRITER_SLEEP'
             }
 
         It "returns results" {

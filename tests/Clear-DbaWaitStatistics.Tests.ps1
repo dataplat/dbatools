@@ -6,7 +6,7 @@ Describe "$CommandName Unit Tests" -Tags "UnitTests" {
     Context "Validate parameters" {
         $knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
         $paramCount = $knownParameters.Count
-        $SupportShouldProcess = $false
+        $SupportShouldProcess = $true
         if ($SupportShouldProcess) {
             $defaultParamCount = 13
         }
