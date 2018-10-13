@@ -150,7 +150,7 @@
         [object[]]$ExcludeDatabase,
         [string[]]$BackupDirectory,
         [string]$BackupFileName,
-        [string]$TimesStampFormat,
+        [string]$TimeStampFormat,
         [switch]$CopyOnly,
         [ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
         [string]$Type = 'Database',
@@ -235,12 +235,7 @@
                 $BackupDirectory = $AzureBaseUrl
             }
 
-            if ('' -ne $TimeStampFormat) {{
-                try {
-
-                }
-            }
-            else {
+            if ('' -eq $TimeStampFormat){
                 $TimeStampFormat = "yyyyMMddHHmm"
             }
 
@@ -371,8 +366,8 @@
                 }
             }
             else {
-                $timestamp = (Get-Date -Format $TimeStampFormat)
-                Write-Message -Level VeryVerbose -Message "Setting filename"
+                $timestamp = Get-Date -Format $TimeStampFormat
+                Write-Message -Level VeryVerbose -Message "Setting filename - $timestamp - $timestampformat"
                 $BackupFinalName = "$($dbname)_$timestamp.$suffix"
             }
 
