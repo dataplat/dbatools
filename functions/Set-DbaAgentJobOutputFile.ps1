@@ -1,52 +1,51 @@
-function Set-DbaAgentJobOutputFile {
-    <#
-        .Synopsis
-            Set the output file for a step within an Agent job.
+﻿function Set-DbaAgentJobOutputFile {
+<#
+    .Synopsis
+        Set the output file for a step within an Agent job.
 
-        .DESCRIPTION
-            Sets the Output File for a step of an agent job with the Job Names and steps provided dynamically if required
+    .DESCRIPTION
+        Sets the Output File for a step of an agent job with the Job Names and steps provided dynamically if required
 
-        .PARAMETER SqlInstance
-            The SQL Server that you're connecting to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SQLCredential
-            Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+    .PARAMETER SQLCredential
+        Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
-        .PARAMETER Job
-            The job to process - this list is auto-populated from the server.
+    .PARAMETER Job
+        The job to process - this list is auto-populated from the server.
 
-        .PARAMETER Step
-            The Agent Job Step to provide Output File Path for. Also available dynamically
+    .PARAMETER Step
+        The Agent Job Step to provide Output File Path for. Also available dynamically
 
-        .PARAMETER OutputFile
-            The Full Path to the New Output file
+    .PARAMETER OutputFile
+        The Full Path to the New Output file
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Agent, Job, SqlAgent
-            Author: Rob Sewell (https://sqldbawithabeard.com)
+    .NOTES
+        Tags: Agent, Job, SqlAgent
+        Author: Rob Sewell, https://sqldbawithabeard.com
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            # todo - allow piping and add -All
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJobOutputFile -SqlInstance SERVERNAME -JobName 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
 
-        .EXAMPLE
-            Set-DbaAgentJobOutputFile -SqlInstance SERVERNAME -JobName 'The Agent Job' -OutPutFile E:\Logs\AgentJobStepOutput.txt
+        Sets the Job step for The Agent job on SERVERNAME to E:\Logs\AgentJobStepOutput.txt
 
-            Sets the Job step for The Agent job on SERVERNAME to E:\Logs\AgentJobStepOutput.txt
-    #>
+#>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [Parameter(Mandatory, HelpMessage = 'The SQL Server Instance',

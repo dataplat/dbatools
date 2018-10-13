@@ -1,61 +1,63 @@
-function Copy-DbaAgentSharedSchedule {
-    <#
-        .SYNOPSIS
-            Copy-DbaAgentSharedSchedule migrates shared job schedules from one SQL Server to another.
+﻿function Copy-DbaAgentSharedSchedule {
+<#
+    .SYNOPSIS
+        Copy-DbaAgentSharedSchedule migrates shared job schedules from one SQL Server to another.
 
-        .DESCRIPTION
-            All shared job schedules are copied.
+    .DESCRIPTION
+        All shared job schedules are copied.
 
-            If the associated credential for the account does not exist on the destination, it will be skipped. If the shared job schedule already exists on the destination, it will be skipped unless -Force is used.
+        If the associated credential for the account does not exist on the destination, it will be skipped. If the shared job schedule already exists on the destination, it will be skipped unless -Force is used.
 
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER Force
-            If this switch is enabled, the Operator will be dropped and recreated on Destination.
+    .PARAMETER Force
+        If this switch is enabled, the Operator will be dropped and recreated on Destination.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Migration, Agent
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: sysadmin access on SQL Servers
+    .NOTES
+        Tags: Migration, Agent
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Copy-DbaAgentSharedSchedule
+        Requires: sysadmin access on SQL Servers
 
-        .EXAMPLE
-            Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster
+    .LINK
+        https://dbatools.io/Copy-DbaAgentSharedSchedule
 
-            Copies all shared job schedules from sqlserver2014a to sqlcluster using Windows credentials. If shared job schedules with the same name exist on sqlcluster, they will be skipped.
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster
 
-        .EXAMPLE
-            Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+        Copies all shared job schedules from sqlserver2014a to sqlcluster using Windows credentials. If shared job schedules with the same name exist on sqlcluster, they will be skipped.
 
-            Shows what would happen if the command were executed using force.
-    #>
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+
+        Shows what would happen if the command were executed using force.
+
+#>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -72,7 +74,6 @@ function Copy-DbaAgentSharedSchedule {
     )
     begin {
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
         }
         catch {
@@ -85,13 +86,12 @@ function Copy-DbaAgentSharedSchedule {
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             $destSchedules = $destServer.JobServer.SharedSchedules
             foreach ($schedule in $serverSchedules) {
                 $scheduleName = $schedule.Name
@@ -104,11 +104,11 @@ function Copy-DbaAgentSharedSchedule {
                     Notes        = $null
                     DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
-                
+
                 if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
                     continue
                 }
-                
+
                 if ($destSchedules.Name -contains $scheduleName) {
                     if ($force -eq $false) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate.")) {
@@ -143,15 +143,15 @@ function Copy-DbaAgentSharedSchedule {
                         }
                     }
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($destinstance, "Creating schedule $scheduleName")) {
                     try {
                         Write-Message -Level Verbose -Message "Copying schedule $scheduleName"
                         $sql = $schedule.Script() | Out-String
-                        
+
                         Write-Message -Level Debug -Message $sql
                         $destServer.Query($sql)
-                        
+
                         $copySharedScheduleStatus.Status = "Successful"
                         $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }

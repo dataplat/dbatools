@@ -1,74 +1,77 @@
-﻿function Import-DbaXESessionTemplate {
-    <#
-        .SYNOPSIS
-            Imports a new XESession XML Template
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Import-DbaXESessionTemplate {
+<#
+    .SYNOPSIS
+        Imports a new XESession XML Template
 
-        .DESCRIPTION
-            Imports a new XESession XML Template either from the dbatools repository or a file you specify.
+    .DESCRIPTION
+        Imports a new XESession XML Template either from the dbatools repository or a file you specify.
 
-        .PARAMETER SqlInstance
-            Target SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Name
-            The Name of the session to create.
+    .PARAMETER Name
+        The Name of the session to create.
 
-        .PARAMETER Path
-            The path to the xml file or files for the session(s).
+    .PARAMETER Path
+        The path to the xml file or files for the session(s).
 
-        .PARAMETER Template
-            Specifies the name of one of the templates from the dbatools repository. Press tab to cycle through the provided templates.
+    .PARAMETER Template
+        Specifies the name of one of the templates from the dbatools repository. Press tab to cycle through the provided templates.
 
-        .PARAMETER TargetFilePath
-            By default, files will be created in the default xel directory. Use TargetFilePath to change all instances of
-            filename = "file.xel" to filename = "$TargetFilePath\file.xel". Only specify the directory, not the file itself.
+    .PARAMETER TargetFilePath
+        By default, files will be created in the default xel directory. Use TargetFilePath to change all instances of
+        filename = "file.xel" to filename = "$TargetFilePath\file.xel". Only specify the directory, not the file itself.
 
-            This path is relative to the destination directory
+        This path is relative to the destination directory
 
-        .PARAMETER TargetFileMetadataPath
-            By default, files will be created in the default xem directory. Use TargetFileMetadataPath to change all instances of
-            filename = "file.xem" to filename = "$TargetFilePath\file.xem". Only specify the directory, not the file itself.
+    .PARAMETER TargetFileMetadataPath
+        By default, files will be created in the default xem directory. Use TargetFileMetadataPath to change all instances of
+        filename = "file.xem" to filename = "$TargetFilePath\file.xem". Only specify the directory, not the file itself.
 
-            This path is relative to the destination directory
+        This path is relative to the destination directory
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: ExtendedEvent, XE, XEvent
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: ExtendedEvent, XE, XEvent
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Import-DbaXESessionTemplate
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats
+    .LINK
+        https://dbatools.io/Import-DbaXESessionTemplate
 
-            Creates a new XESession named db_query_wait_stats from the dbatools repository to the SQL Server sql2017.
+    .EXAMPLE
+        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats
 
-        .EXAMPLE
-            Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -Name "Query Wait Stats"
+        Creates a new XESession named db_query_wait_stats from the dbatools repository to the SQL Server sql2017.
 
-            Creates a new XESession named "Query Wait Stats" using the db_query_wait_stats template.
+    .EXAMPLE
+        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -Name "Query Wait Stats"
 
-        .EXAMPLE
-            Get-DbaXESession -SqlInstance sql2017 -Session db_ola_health | Remove-DbaXESession
-            Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaXESession
+        Creates a new XESession named "Query Wait Stats" using the db_query_wait_stats template.
 
-            Imports a session if it exists, then recreates it using a template.
+    .EXAMPLE
+        PS C:\> Get-DbaXESession -SqlInstance sql2017 -Session db_ola_health | Remove-DbaXESession
+        PS C:\> Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaXESession
 
-        .EXAMPLE
-            Get-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017
+        Imports a session if it exists, then recreates it using a template.
 
-            Allows you to select a Session template then import to an instance named sql2017.
-    #>
+    .EXAMPLE
+        PS C:\> Get-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017
+
+        Allows you to select a Session template then import to an instance named sql2017.
+
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -98,7 +101,6 @@
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {

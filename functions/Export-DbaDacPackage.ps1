@@ -1,70 +1,79 @@
-function Export-DbaDacPackage {
-    <#
+﻿function Export-DbaDacPackage {
+<#
     .SYNOPSIS
-    Exports a dacpac from a server.
+        Exports a dacpac from a server.
 
     .DESCRIPTION
-    Using SQLPackage, export a dacpac from an instance of SQL Server.
+        Using SQLPackage, export a dacpac from an instance of SQL Server.
 
-    Note - Extract from SQL Server is notoriously flaky - for example if you have three part references to external databases it will not work.
+        Note - Extract from SQL Server is notoriously flaky - for example if you have three part references to external databases it will not work.
 
-    For help with the extract action parameters and properties, refer to https://msdn.microsoft.com/en-us/library/hh550080(v=vs.103).aspx
+        For help with the extract action parameters and properties, refer to https://msdn.microsoft.com/en-us/library/hh550080(v=vs.103).aspx
 
     .PARAMETER SqlInstance
-    SQL Server name or SMO object representing the SQL Server to connect to and publish to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-    Allows you to login to servers using alternative logins instead Integrated, accepts Credential object created by Get-Credential
+        Allows you to login to servers using alternative logins instead Integrated, accepts Credential object created by Get-Credential
 
     .PARAMETER Path
-    The directory where the .dacpac files will be exported to. Defaults to documents.
+        The directory where the .dacpac files will be exported to. Defaults to documents.
 
     .PARAMETER Database
-    The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
     .PARAMETER ExcludeDatabase
-    The database(s) to exclude - this list is auto-populated from the server
+        The database(s) to exclude - this list is auto-populated from the server
 
     .PARAMETER AllUserDatabases
-    Run command against all user databases
+        Run command against all user databases
 
     .PARAMETER ExtendedParameters
-    Optional parameters used to extract the DACPAC. More information can be found at
-    https://msdn.microsoft.com/en-us/library/hh550080.aspx
+        Optional parameters used to extract the DACPAC. More information can be found at
+        https://msdn.microsoft.com/en-us/library/hh550080.aspx
 
     .PARAMETER ExtendedProperties
-    Optional properties used to extract the DACPAC. More information can be found at
-    https://msdn.microsoft.com/en-us/library/hh550080.aspx
-
+        Optional properties used to extract the DACPAC. More information can be found at
+        https://msdn.microsoft.com/en-us/library/hh550080.aspx
 
     .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-    Tags: Migration, Database, Dacpac
-    Author: Richie lee (@bzzzt_io)
+        Tags: Migration, Database, Dacpac
+        Author: Richie lee (@richiebzzzt)
 
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-    https://dbatools.io/Export-DbaDacPackage
+        https://dbatools.io/Export-DbaDacPackage
 
     .EXAMPLE
-    Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config
-    Exports the dacpac for SharePoint_Config on sql2016 to $home\Documents\SharePoint_Config.dacpac
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config
+
+        Exports the dacpac for SharePoint_Config on sql2016 to $home\Documents\SharePoint_Config.dacpac
 
     .EXAMPLE
-    $moreprops = "/p:VerifyExtraction=$true /p:CommandTimeOut=10"
-    Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\temp -ExtendedProperties $moreprops
+        PS C:\> $moreprops = "/p:VerifyExtraction=$true /p:CommandTimeOut=10"
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\temp -ExtendedProperties $moreprops
 
-    Sets the CommandTimeout to 10 then extracts the dacpac for SharePoint_Config on sql2016 to C:\temp\SharePoint_Config.dacpac then verifies extraction.
+        Sets the CommandTimeout to 10 then extracts the dacpac for SharePoint_Config on sql2016 to C:\temp\SharePoint_Config.dacpac then verifies extraction.
+    
+    .EXAMPLE
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -AllUserDatabases -ExcludeDatabase "DBMaintenance","DBMonitoring" C:\temp
 
+        Exports dacpac packages for all USER databases, excluding "DBMaintenance" & "DBMonitoring", on sql2016 and saves them to C:\temp
 
-    #>
+    .EXAMPLE
+        PS C:\> $moreparams = "/OverwriteFiles:$true /Quiet:$true"
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database SharePoint_Config -Path C:\temp -ExtendedParameters $moreparams
+
+        Using extended parameters to over-write the files and performs the extraction in quiet mode.
+#>
     [CmdletBinding()]
     param
     (
@@ -94,8 +103,8 @@ function Export-DbaDacPackage {
         # Convert $Path to absolute path because relative paths are problematic when you mix PowerShell commands
         # and System.IO.
         # This must happen after Test-Path because Resolve-Path will throw an exception if a path does not exist.
-        $Path = (Resolve-Path $Path).Path
-        
+        $Path = (Resolve-Path $Path).ProviderPath
+
         if ((Get-Item $path) -isnot [System.IO.DirectoryInfo]) {
             Stop-Function -Message "Path must be a directory"
         }
@@ -103,7 +112,6 @@ function Export-DbaDacPackage {
         foreach ($instance in $sqlinstance) {
 
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

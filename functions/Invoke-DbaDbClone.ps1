@@ -1,5 +1,5 @@
-function Invoke-DbaDbClone {
-    <#
+﻿function Invoke-DbaDbClone {
+<#
     .SYNOPSIS
         Clones a database schema and statistics
 
@@ -13,7 +13,7 @@ function Invoke-DbaDbClone {
         Thanks to Microsoft Tiger Team for the code and idea https://github.com/Microsoft/tigertoolbox/
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -34,22 +34,26 @@ function Invoke-DbaDbClone {
 
     .NOTES
         Tags: Statistics, Performance
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Invoke-DbaDbClone
 
     .EXAMPLE
-        Invoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone
+        PS C:\> Invoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone
+
         Clones mydb to myclone on sql2016
 
     .EXAMPLE
-        Invoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone, myclone2 -UpdateStatistics
+        PS C:\> Invoke-DbaDbClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone, myclone2 -UpdateStatistics
+
         Updates the statistics of mydb then clones to myclone and myclone2
 
-    #>
+#>
     [CmdletBinding()]
     param (
         [parameter(Position = 0)]
@@ -116,7 +120,6 @@ function Invoke-DbaDbClone {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 12

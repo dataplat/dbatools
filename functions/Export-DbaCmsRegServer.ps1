@@ -1,70 +1,71 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Export-DbaCmsRegServer {
-    <#
-        .SYNOPSIS
-            Exports registered servers and registered server groups to file
+<#
+    .SYNOPSIS
+        Exports registered servers and registered server groups to file
 
-        .DESCRIPTION
-            Exports registered servers and registered server groups to file
+    .DESCRIPTION
+        Exports registered servers and registered server groups to file
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Group
-            Exports a specific group.
+    .PARAMETER Group
+        Exports a specific group.
 
-        .PARAMETER CredentialPersistenceType
-            Used to specify how the login and passwords are persisted. Valid values include None, PersistLoginName and PersistLoginNameAndPassword.
+    .PARAMETER CredentialPersistenceType
+        Used to specify how the login and passwords are persisted. Valid values include None, PersistLoginName and PersistLoginNameAndPassword.
 
-        .PARAMETER Path
-            The path to the exported file. If no path is specified, one will be created.
+    .PARAMETER Path
+        The path to the exported file. If no path is specified, one will be created.
 
-        .PARAMETER InputObject
-            Enables piping from Get-DbaCmsRegServer, Get-DbaCmsRegServerGroup, CSVs and other objects.
+    .PARAMETER InputObject
+        Enables piping from Get-DbaCmsRegServer, Get-DbaCmsRegServerGroup, CSVs and other objects.
 
-            If importing from CSV or other object, a column named ServerName is required. Optional columns include Name, Description and Group.
+        If importing from CSV or other object, a column named ServerName is required. Optional columns include Name, Description and Group.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Tags: RegisteredServer, CMS
+    .NOTES
+        Tags: RegisteredServer, CMS
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Export-DbaCmsRegServer
+    .LINK
+        https://dbatools.io/Export-DbaCmsRegServer
 
-        .EXAMPLE
-           Export-DbaCmsRegServer -SqlInstance sql2008
+    .EXAMPLE
+        PS C:\> Export-DbaCmsRegServer -SqlInstance sql2008
 
-           Exports all Registered Server and Registered Server Groups on sql2008 to an automatically generated file name in the current directory
+        Exports all Registered Server and Registered Server Groups on sql2008 to an automatically generated file name in the current directory
 
-        .EXAMPLE
-           Export-DbaCmsRegServer -SqlInstance sql2008 -Group hr\Seattle -Path C:\temp\Seattle.xml
+    .EXAMPLE
+        PS C:\> Export-DbaCmsRegServer -SqlInstance sql2008 -Group hr\Seattle -Path C:\temp\Seattle.xml
 
-           Exports all Registered Server and Registered Server Groups with the Seattle group within the HR group on sql2008 to C:\temp\Seattle.xml
+        Exports all Registered Server and Registered Server Groups with the Seattle group within the HR group on sql2008 to C:\temp\Seattle.xml
 
-        .EXAMPLE
-           Get-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer
 
-           Exports all registered servers on sql2008 and sql2012. Warning - each one will have its own individual file. Consider piping groups.
+        Exports all registered servers on sql2008 and sql2012. Warning - each one will have its own individual file. Consider piping groups.
 
-        .EXAMPLE
-           Get-DbaCmsRegServerGroup -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sql2008, sql2012 | Export-DbaCmsRegServer
 
-           Exports all registered servers on sql2008 and sql2012, organized by group.
-    #>
+        Exports all registered servers on sql2008 and sql2012, organized by group.
+
+#>
     [CmdletBinding()]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -129,7 +130,7 @@ function Export-DbaCmsRegServer {
             }
         }
     }
-    
+
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Export-DbaRegisteredServer
     }

@@ -1,67 +1,65 @@
-function Test-DbaJobOwner {
-    <#
-        .SYNOPSIS
-            Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.
+﻿function Test-DbaJobOwner {
+<#
+    .SYNOPSIS
+        Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.
 
-        .DESCRIPTION
-            This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not.
+    .DESCRIPTION
+        This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not. By default, the function checks against 'sa' for ownership, but the user can pass a specific login if they use something else.
 
-            By default, the function checks against 'sa' for ownership, but the user can pass a specific login if they use something else.
+        Only SQL Agent Jobs that do not match this ownership will be displayed.
+        Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
 
-            Only SQL Agent Jobs that do not match this ownership will be displayed.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-            Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER SqlInstance
-            Specifies the SQL Server instance(s) to scan.
+    .PARAMETER Job
+        Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER ExcludeJob
+        Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-        .PARAMETER Job
-            Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.
+    .PARAMETER Login
+        Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
-        .PARAMETER ExcludeJob
-            Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.
+    .PARAMETER Detailed
+        Output all properties, will be deprecated in 1.0.0 release.
 
-        .PARAMETER Login
-            Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER Detailed
-            Output all properties, will be deprecated in 1.0.0 release.
+    .NOTES
+        Tags: Agent, Job, Owner
+        Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .NOTES
-            Tags: Agent, Job, Owner
-            Author: Michael Fal (@Mike_Fal), http://mikefal.net
+    .LINK
+        https://dbatools.io/Test-DbaJobOwner
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .EXAMPLE
+        PS C:\> Test-DbaJobOwner -SqlInstance localhost
 
-        .LINK
-            https://dbatools.io/Test-DbaJobOwner
+        Returns all SQL Agent Jobs where the owner does not match 'sa'.
 
-        .EXAMPLE
-            Test-DbaJobOwner -SqlInstance localhost
+    .EXAMPLE
+        PS C:\> Test-DbaJobOwner -SqlInstance localhost -ExcludeJob 'syspolicy_purge_history'
 
-            Returns all SQL Agent Jobs where the owner does not match 'sa'.
+        Returns SQL Agent Jobs except for the syspolicy_purge_history job
 
-        .EXAMPLE
-            Test-DbaJobOwner -SqlInstance localhost -ExcludeJob 'syspolicy_purge_history'
+    .EXAMPLE
+        PS C:\> Test-DbaJobOwner -SqlInstance localhost -Login DOMAIN\account
 
-            Returns SQL Agent Jobs except for the syspolicy_purge_history job
+        Returns all SQL Agent Jobs where the owner does not match DOMAIN\account. Note
+        that Login must be a valid security principal that exists on the target server.
 
-        .EXAMPLE
-            Test-DbaJobOwner -SqlInstance localhost -Login DOMAIN\account
-
-            Returns all SQL Agent Jobs where the owner does not match DOMAIN\account. Note
-            that Login must be a valid security principal that exists on the target server.
-    #>
+#>
     [CmdletBinding()]
     [OutputType('System.Object[]')]
     param (
@@ -87,7 +85,6 @@ function Test-DbaJobOwner {
     process {
         foreach ($servername in $SqlInstance) {
             #connect to the instance
-            Write-Message -Level Verbose -Message "Connecting to $servername."
             $server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 
             #Validate login

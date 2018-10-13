@@ -1,129 +1,130 @@
-function Copy-DbaLogin {
-    <#
-        .SYNOPSIS
-            Migrates logins from source to destination SQL Servers. Supports SQL Server versions 2000 and newer.
+﻿function Copy-DbaLogin {
+<#
+    .SYNOPSIS
+        Migrates logins from source to destination SQL Servers. Supports SQL Server versions 2000 and newer.
 
-        .DESCRIPTION
-            SQL Server 2000: Migrates logins with SIDs, passwords, server roles and database roles.
+    .DESCRIPTION
+        SQL Server 2000: Migrates logins with SIDs, passwords, server roles and database roles.
 
-            SQL Server 2005 & newer: Migrates logins with SIDs, passwords, defaultdb, server roles & securables, database permissions & securables, login attributes (enforce password policy, expiration, etc.)
+        SQL Server 2005 & newer: Migrates logins with SIDs, passwords, defaultdb, server roles & securables, database permissions & securables, login attributes (enforce password policy, expiration, etc.)
 
-            The login hash algorithm changed in SQL Server 2012, and is not backwards compatible with previous SQL Server versions. This means that while SQL Server 2000 logins can be migrated to SQL Server 2012, logins created in SQL Server 2012 can only be migrated to SQL Server 2012 and above.
+        The login hash algorithm changed in SQL Server 2012, and is not backwards compatible with previous SQL Server versions. This means that while SQL Server 2000 logins can be migrated to SQL Server 2012, logins created in SQL Server 2012 can only be migrated to SQL Server 2012 and above.
 
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Login
-            The login(s) to process. Options for this list are auto-populated from the server. If unspecified, all logins will be processed.
+    .PARAMETER Login
+        The login(s) to process. Options for this list are auto-populated from the server. If unspecified, all logins will be processed.
 
-        .PARAMETER ExcludeLogin
-            The login(s) to exclude. Options for this list are auto-populated from the server.
+    .PARAMETER ExcludeLogin
+        The login(s) to exclude. Options for this list are auto-populated from the server.
 
-        .PARAMETER ExcludeSystemLogin
-            If this switch is enabled, NT SERVICE accounts will be skipped.
+    .PARAMETER ExcludeSystemLogin
+        If this switch is enabled, NT SERVICE accounts will be skipped.
 
-        .PARAMETER SyncOnly
-            If this switch is enabled, only SQL Server login permissions, roles, etc. will be synced. Logins and users will not be added or dropped.  If a matching Login does not exist on the destination, the Login will be skipped.
-            Credential removal is not currently supported for this parameter.
+    .PARAMETER SyncOnly
+        If this switch is enabled, only SQL Server login permissions, roles, etc. will be synced. Logins and users will not be added or dropped.  If a matching Login does not exist on the destination, the Login will be skipped.
+        Credential removal is not currently supported for this parameter.
 
-        .PARAMETER SyncSaName
-            If this switch is enabled, the name of the sa account will be synced between Source and Destination
+    .PARAMETER SyncSaName
+        If this switch is enabled, the name of the sa account will be synced between Source and Destination
 
-        .PARAMETER OutFile
-            Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This does not perform a copy, so no destination is required.
+    .PARAMETER OutFile
+        Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This does not perform a copy, so no destination is required.
 
-        .PARAMETER InputObject
-            Takes the parameters required from a Login object that has been piped into the command
+    .PARAMETER InputObject
+        Takes the parameters required from a Login object that has been piped into the command
 
-        .PARAMETER LoginRenameHashtable
-            Pass a hash table into this parameter to be passed into Rename-DbaLogin to update the Login and mappings after the Login is completed.
+    .PARAMETER LoginRenameHashtable
+        Pass a hash table into this parameter to be passed into Rename-DbaLogin to update the Login and mappings after the Login is completed.
 
-        .PARAMETER KillActiveConnection
-            If this switch and -Force are enabled, all active connections and sessions on Destination will be killed.
+    .PARAMETER KillActiveConnection
+        If this switch and -Force are enabled, all active connections and sessions on Destination will be killed.
 
-            A login cannot be dropped when it has active connections on the instance.
+        A login cannot be dropped when it has active connections on the instance.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER Force
-            If this switch is enabled, the Login(s) will be dropped and recreated on Destination. Logins that own Agent jobs cannot be dropped at this time.
+    .PARAMETER Force
+        If this switch is enabled, the Login(s) will be dropped and recreated on Destination. Logins that own Agent jobs cannot be dropped at this time.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Migration, Login
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: sysadmin access on SQL Servers
+    .NOTES
+        Tags: Migration, Login
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Copy-DbaLogin
+        Requires: sysadmin access on SQL Servers
 
-        .EXAMPLE
-            Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force
+    .LINK
+        https://dbatools.io/Copy-DbaLogin
 
-            Copies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.
+    .EXAMPLE
+        PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force
 
-            If active connections are found for a login, the copy of that Login will fail as it cannot be dropped.
+        Copies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.
 
-        .EXAMPLE
-            Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection
+        If active connections are found for a login, the copy of that Login will fail as it cannot be dropped.
 
-            Copies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.
+    .EXAMPLE
+        PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection
 
-            If any active connections are found they will be killed.
+        Copies all logins from Source Destination. If a SQL Login on Source exists on the Destination, the Login on Destination will be dropped and recreated.
 
-        .EXAMPLE
-            Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
+        If any active connections are found they will be killed.
 
-            Copies all Logins from Source to Destination except for realcajun using SQL Authentication to connect to both instances.
+    .EXAMPLE
+        PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
 
-            If a Login already exists on the destination, it will not be migrated.
+        Copies all Logins from Source to Destination except for realcajun using SQL Authentication to connect to both instances.
 
-        .EXAMPLE
-            Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force
+        If a Login already exists on the destination, it will not be migrated.
 
-            Copies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.
+    .EXAMPLE
+        PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force
 
-        .EXAMPLE
-            Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
+        Copies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.
 
-            Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users.
+    .EXAMPLE
+        PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly
 
-            If a matching Login does not exist on Destination, the Login will be skipped.
+        Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users.
 
-        .EXAMPLE
-            Copy-DbaLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
+        If a matching Login does not exist on Destination, the Login will be skipped.
 
-            Copies OldUser and then renames it to newlogin.
+    .EXAMPLE
+        PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred
 
-        .EXAMPLE
-            Get-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017
+        Copies OldUser and then renames it to newlogin.
 
-            Displays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.
-    #>
+    .EXAMPLE
+        PS C:\> Get-DbaLogin -SqlInstance sql2016 | Out-GridView -Passthru | Copy-DbaLogin -Destination sql2017
 
+        Displays all available logins on sql2016 in a grid view, then copies all selected logins to sql2017.
+
+#>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
-    Param (
+    param (
         [parameter(ParameterSetName = "SqlInstance", Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
@@ -152,7 +153,7 @@ function Copy-DbaLogin {
         function Copy-Login {
             foreach ($sourceLogin in $sourceServer.Logins) {
                 $userName = $sourceLogin.name
-                
+
                 $copyLoginStatus = [pscustomobject]@{
                     SourceServer = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -164,7 +165,7 @@ function Copy-DbaLogin {
                     Notes        = $null
                     DateTime     = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($Login -and $Login -notcontains $userName -or $ExcludeLogin -contains $userName) { continue }
 
                 if ($sourceLogin.id -eq 1) { continue }
@@ -187,7 +188,7 @@ function Copy-DbaLogin {
                     }
                     continue
                 }
-                
+
                 if (($destServer.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($sourceLogin.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin)) {
                     Write-Message -Level Verbose -Message "$Destination does not have Mixed Mode enabled. [$userName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login."
                 }
@@ -208,20 +209,20 @@ function Copy-DbaLogin {
                         if ($ExcludeSystemLogin) {
                             if ($Pscmdlet.ShouldProcess("console", "$userName was skipped because ExcludeSystemLogin was specified.")) {
                                 Write-Message -Level Verbose -Message "$userName was skipped because ExcludeSystemLogin was specified."
-                                
+
                                 $copyLoginStatus.Status = "Skipped"
                                 $copyLoginStatus.Notes = "System login"
                                 $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             }
                             continue
                         }
-                        
+
                         if ($Pscmdlet.ShouldProcess("console", "Stating local login $userName since the source and destination server reside on the same machine.")) {
                             Write-Message -Level Verbose -Message "Copying local login $userName since the source and destination server reside on the same machine."
                         }
                     }
                 }
-                
+
                 if ($null -ne $destServer.Logins.Item($userName) -and !$force) {
                     if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it exists at destination.")) {
                         Write-Message -Level Verbose -Message "$userName already exists in destination. Use -Force to drop and recreate."
@@ -231,19 +232,19 @@ function Copy-DbaLogin {
                     }
                     continue
                 }
-                
+
                 if ($null -ne $destServer.Logins.Item($userName) -and $force) {
                     if ($userName -eq $destServer.ServiceAccount) {
                         if ($Pscmdlet.ShouldProcess("console", "$userName is the destination service account. Skipping drop.")) {
                             Write-Message -Level Verbose -Message "$userName is the destination service account. Skipping drop."
-                            
+
                             $copyLoginStatus.Status = "Skipped"
                             $copyLoginStatus.Notes = "Destination service account"
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         continue
                     }
-                    
+
                     if ($Pscmdlet.ShouldProcess($destinstance, "Dropping $userName")) {
 
                         # Kill connections, delete user
@@ -499,7 +500,6 @@ function Copy-DbaLogin {
         }
         else {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $Source"
                 $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             }
             catch {
@@ -516,13 +516,12 @@ function Copy-DbaLogin {
 
         foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             $destVersionMajor = $destServer.VersionMajor
             if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
                 Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
@@ -531,14 +530,14 @@ function Copy-DbaLogin {
             if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
                 Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
             }
-            
+
             if ($SyncOnly) {
                 if ($Pscmdlet.ShouldProcess($destinstance, "Syncing $Login permissions")) {
                     Sync-DbaLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
                     continue
                 }
             }
-            
+
             Write-Message -Level Verbose -Message "Attempting Login Migration."
             Copy-Login -sourceserver $sourceServer -destserver $destServer -Login $Login -Exclude $ExcludeLogin
 

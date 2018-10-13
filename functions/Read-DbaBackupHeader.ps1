@@ -1,89 +1,90 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Read-DbaBackupHeader {
-    <#
-        .SYNOPSIS
-            Reads and displays detailed information about a SQL Server backup.
+<#
+    .SYNOPSIS
+        Reads and displays detailed information about a SQL Server backup.
 
-        .DESCRIPTION
-            Reads full, differential and transaction log backups. An online SQL Server is required to parse the backup files and the path specified must be relative to that SQL Server.
+    .DESCRIPTION
+        Reads full, differential and transaction log backups. An online SQL Server is required to parse the backup files and the path specified must be relative to that SQL Server.
 
-        .PARAMETER SqlInstance
-            The SQL Server instance to use for parsing the backup files.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Path
-            Path to SQL Server backup file. This can be a full, differential or log backup file. Accepts valid filesystem paths and URLs.
+    .PARAMETER Path
+        Path to SQL Server backup file. This can be a full, differential or log backup file. Accepts valid filesystem paths and URLs.
 
-        .PARAMETER Simple
-            If this switch is enabled, fewer columns are returned, giving an easy overview.
+    .PARAMETER Simple
+        If this switch is enabled, fewer columns are returned, giving an easy overview.
 
-        .PARAMETER FileList
-            If this switch is enabled, detailed information about the files within the backup is returned.
+    .PARAMETER FileList
+        If this switch is enabled, detailed information about the files within the backup is returned.
 
-        .PARAMETER AzureCredential
-            Name of the SQL Server credential that should be used for Azure storage access.
+    .PARAMETER AzureCredential
+        Name of the SQL Server credential that should be used for Azure storage access.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message. This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message. This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: DisasterRecovery, Backup, Restore
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: DisasterRecovery, Backup, Restore
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Read-DbaBackupHeader
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Read-DbaBackupHeader -SqlInstance sql2016 -Path S:\backups\mydb\mydb.bak
+    .LINK
+        https://dbatools.io/Read-DbaBackupHeader
 
-            Logs into sql2016 using Windows authentication and reads the local file on sql2016, S:\backups\mydb\mydb.bak.
+    .EXAMPLE
+        PS C:\> Read-DbaBackupHeader -SqlInstance sql2016 -Path S:\backups\mydb\mydb.bak
 
-            If you are running this command on a workstation and connecting remotely, remember that sql2016 cannot access files on your own workstation.
+        Logs into sql2016 using Windows authentication and reads the local file on sql2016, S:\backups\mydb\mydb.bak.
 
-        .EXAMPLE
-            Read-DbaBackupHeader -SqlInstance sql2016 -Path \\nas\sql\backups\mydb\mydb.bak, \\nas\sql\backups\otherdb\otherdb.bak
+        If you are running this command on a workstation and connecting remotely, remember that sql2016 cannot access files on your own workstation.
 
-            Logs into sql2016 and reads two backup files - mydb.bak and otherdb.bak. The SQL Server service account must have rights to read this file.
+    .EXAMPLE
+        PS C:\> Read-DbaBackupHeader -SqlInstance sql2016 -Path \\nas\sql\backups\mydb\mydb.bak, \\nas\sql\backups\otherdb\otherdb.bak
 
-        .EXAMPLE
-            Read-DbaBackupHeader -SqlInstance . -Path C:\temp\myfile.bak -Simple
+        Logs into sql2016 and reads two backup files - mydb.bak and otherdb.bak. The SQL Server service account must have rights to read this file.
 
-            Logs into the local workstation (or computer) and shows simplified output about C:\temp\myfile.bak. The SQL Server service account must have rights to read this file.
+    .EXAMPLE
+        PS C:\> Read-DbaBackupHeader -SqlInstance . -Path C:\temp\myfile.bak -Simple
 
-        .EXAMPLE
-            $backupinfo = Read-DbaBackupHeader -SqlInstance . -Path C:\temp\myfile.bak
-            $backupinfo.FileList
+        Logs into the local workstation (or computer) and shows simplified output about C:\temp\myfile.bak. The SQL Server service account must have rights to read this file.
 
-            Displays detailed information about each of the datafiles contained in the backupset.
+    .EXAMPLE
+        PS C:\> $backupinfo = Read-DbaBackupHeader -SqlInstance . -Path C:\temp\myfile.bak
+        PS C:\> $backupinfo.FileList
 
-        .EXAMPLE
-            Read-DbaBackupHeader -SqlInstance . -Path C:\temp\myfile.bak -FileList
+        Displays detailed information about each of the datafiles contained in the backupset.
 
-            Also returns detailed information about each of the datafiles contained in the backupset.
+    .EXAMPLE
+        PS C:\> Read-DbaBackupHeader -SqlInstance . -Path C:\temp\myfile.bak -FileList
 
-        .EXAMPLE
-            "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak" | Read-DbaBackupHeader -SqlInstance sql2016
+        Also returns detailed information about each of the datafiles contained in the backupset.
 
-            Similar to running Read-DbaBackupHeader -SqlInstance sql2016 -Path "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak"
+    .EXAMPLE
+        PS C:\> "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak" | Read-DbaBackupHeader -SqlInstance sql2016
 
-        .EXAMPLE
-            Get-ChildItem \\nas\sql\*.bak | Read-DbaBackupHeader -SqlInstance sql2016
+        Similar to running Read-DbaBackupHeader -SqlInstance sql2016 -Path "C:\temp\myfile.bak", "\backupserver\backups\myotherfile.bak"
 
-            Gets a list of all .bak files on the \\nas\sql share and reads the headers using the server named "sql2016". This means that the server, sql2016, must have read access to the \\nas\sql share.
+    .EXAMPLE
+        PS C:\> Get-ChildItem \\nas\sql\*.bak | Read-DbaBackupHeader -SqlInstance sql2016
 
-        .EXAMPLE
-            Read-DbaBackupHeader -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak
-            -AzureCredential AzureBackupUser
+        Gets a list of all .bak files on the \\nas\sql share and reads the headers using the server named "sql2016". This means that the server, sql2016, must have read access to the \\nas\sql share.
 
-            Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
-    #>
+    .EXAMPLE
+        PS C:\> Read-DbaBackupHeader -Path https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak -AzureCredential AzureBackupUser
+
+        Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
+
+#>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", '')]
     <# AzureCredential is utilized in this command is not a formal Credential object. #>
     [CmdletBinding()]
@@ -117,7 +118,7 @@ function Read-DbaBackupHeader {
             return
         }
         $getHeaderScript = {
-            Param (
+            param (
                 $SqlInstance,
                 $Path,
                 $DeviceType,

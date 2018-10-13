@@ -1,12 +1,13 @@
-function Enable-DbaTraceFlag {
-    <#
+﻿function Enable-DbaTraceFlag {
+<#
     .SYNOPSIS
         Enable Global Trace Flag(s)
+
     .DESCRIPTION
         The function will set one or multiple trace flags on the SQL Server instance(s) listed
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -24,19 +25,22 @@ function Enable-DbaTraceFlag {
         Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Enable-DbaTraceFlag
 
     .EXAMPLE
-        Enable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226
+        PS C:\> Enable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226
+
         Enable the trace flag 3226 on SQL Server instance sql2016
 
     .EXAMPLE
-        Enable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 1117, 1118
+        PS C:\> Enable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 1117, 1118
+
         Enable multiple trace flags on SQL Server instance sql2016
+
 #>
     [CmdletBinding()]
     param (
@@ -52,7 +56,6 @@ function Enable-DbaTraceFlag {
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

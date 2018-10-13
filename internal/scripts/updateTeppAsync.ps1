@@ -12,7 +12,7 @@
 
     function Update-TeppCache {
         [CmdletBinding()]
-        Param (
+        param (
             [Parameter(ValueFromPipeline)]
             $ServerAccess
         )

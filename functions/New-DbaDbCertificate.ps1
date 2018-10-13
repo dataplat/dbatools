@@ -1,65 +1,67 @@
-function New-DbaDbCertificate {
-    <#
-.SYNOPSIS
-Creates a new database certificate
+﻿function New-DbaDbCertificate {
+<#
+    .SYNOPSIS
+        Creates a new database certificate
 
-.DESCRIPTION
-Creates a new database certificate. If no database is specified, the certificate will be created in master.
+    .DESCRIPTION
+        Creates a new database certificate. If no database is specified, the certificate will be created in master.
 
-.PARAMETER SqlInstance
-The SQL Server to create the certificates on.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-.PARAMETER SqlCredential
-Allows you to login to SQL Server using alternative credentials.
+    .PARAMETER SqlCredential
+        Allows you to login to SQL Server using alternative credentials.
 
-.PARAMETER Database
-The database where the certificate will be created. Defaults to master.
+    .PARAMETER Database
+        The database where the certificate will be created. Defaults to master.
 
-.PARAMETER Name
-Optional name to create the certificate. Defaults to database name.
+    .PARAMETER Name
+        Optional name to create the certificate. Defaults to database name.
 
-.PARAMETER Subject
-Optional subject to create the certificate.
+    .PARAMETER Subject
+        Optional subject to create the certificate.
 
-.PARAMETER StartDate
-Optional secure string used to create the certificate.
+    .PARAMETER StartDate
+        Optional secure string used to create the certificate.
 
-.PARAMETER ExpirationDate
-Optional secure string used to create the certificate.
+    .PARAMETER ExpirationDate
+        Optional secure string used to create the certificate.
 
-.PARAMETER ActiveForServiceBrokerDialog
-Optional secure string used to create the certificate.
+    .PARAMETER ActiveForServiceBrokerDialog
+        Optional secure string used to create the certificate.
 
-.PARAMETER Password
-Optional password - if no password is supplied, the password will be protected by the master key
+    .PARAMETER Password
+        Optional password - if no password is supplied, the password will be protected by the master key
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Certificate
-Author: Chrissy LeMaire (@cl), netnerds.net
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Certificate
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-.EXAMPLE
-New-DbaDbCertificate -SqlInstance Server1
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-You will be prompted to securely enter your password, then a certificate will be created in the master database on server1 if it does not exist.
+    .EXAMPLE
+        PS C:\> New-DbaDbCertificate -SqlInstance Server1
 
-.EXAMPLE
-New-DbaDbCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
+        You will be prompted to securely enter your password, then a certificate will be created in the master database on server1 if it does not exist.
 
-Suppresses all prompts to install but prompts to securely enter your password and creates a certificate in the 'db1' database
+    .EXAMPLE
+        PS C:\> New-DbaDbCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
+
+        Suppresses all prompts to install but prompts to securely enter your password and creates a certificate in the 'db1' database
+
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
@@ -83,7 +85,6 @@ Suppresses all prompts to install but prompts to securely enter your password an
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

@@ -1,64 +1,66 @@
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaCmsRegServerGroup {
-    <#
-        .SYNOPSIS
-            Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
+<#
+    .SYNOPSIS
+        Gets list of Server Groups objects stored in SQL Server Central Management Server (CMS).
 
-        .DESCRIPTION
-            Returns an array of Server Groups found in the CMS.
+    .DESCRIPTION
+        Returns an array of Server Groups found in the CMS.
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Group
-            Specifies one or more groups to include from SQL Server Central Management Server.
+    .PARAMETER Group
+        Specifies one or more groups to include from SQL Server Central Management Server.
 
-        .PARAMETER ExcludeGroup
-            Specifies one or more Central Management Server groups to exclude.
+    .PARAMETER ExcludeGroup
+        Specifies one or more Central Management Server groups to exclude.
 
-        .PARAMETER Id
-            Get group by Id(s). This parameter only works if the group has a registered server in it.
+    .PARAMETER Id
+        Get group by Id(s). This parameter only works if the group has a registered server in it.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Author: Tony Wilhelm (@tonywsql)
-            Tags: RegisteredServer, CMS
+    .NOTES
+        Tags: RegisteredServer, CMS
+        Author: Tony Wilhelm (@tonywsql)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaCmsRegServerGroup
+    .LINK
+        https://dbatools.io/Get-DbaCmsRegServerGroup
 
-        .EXAMPLE
-            Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a
 
-            Gets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.
+        Gets the top level groups from the CMS on sqlserver2014a, using Windows Credentials.
 
-        .EXAMPLE
-            Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -SqlCredential $credential
 
-            Gets the top level groups from the CMS on sqlserver2014a, using alternative credentials to authenticate to the server.
+        Gets the top level groups from the CMS on sqlserver2014a, using alternative credentials to authenticate to the server.
 
-        .EXAMPLE
-            Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR, Accounting
 
-            Gets the HR and Accounting groups from the CMS on sqlserver2014a.
+        Gets the HR and Accounting groups from the CMS on sqlserver2014a.
 
-        .EXAMPLE
-            Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR\Development
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sqlserver2014a -Group HR\Development
 
-            Returns the sub-group Development of the HR group from the CMS on sqlserver2014a.
-    #>
+        Returns the sub-group Development of the HR group from the CMS on sqlserver2014a.
+
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -73,7 +75,6 @@ function Get-DbaCmsRegServerGroup {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Get-DbaCmsRegServerStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
             }
             catch {
@@ -88,11 +89,11 @@ function Get-DbaCmsRegServerGroup {
                     if ($currentgroup -is [Microsoft.SqlServer.Management.RegisteredServers.ServerGroup]) {
                         $currentgroup = Get-RegServerGroupReverseParse -object $currentgroup
                     }
-                    
+
                     if ($currentgroup -match 'DatabaseEngineServerGroup\\') {
                         $currentgroup = $currentgroup.Replace('DatabaseEngineServerGroup\', '')
                     }
-                    
+
                     if ($currentgroup -match '\\') {
                         $split = $currentgroup.Split('\\')
                         $i = 0

@@ -1,98 +1,99 @@
-function Set-DbaDbCompression {
-    <#
-        .SYNOPSIS
-            Sets tables and indexes with preferred compression setting.
+﻿function Set-DbaDbCompression {
+<#
+    .SYNOPSIS
+        Sets tables and indexes with preferred compression setting.
 
-        .DESCRIPTION
-            This function sets the appropriate compression recommendation, determined either by using the Tiger Team's query or set to the CompressionType parameter.
+    .DESCRIPTION
+        This function sets the appropriate compression recommendation, determined either by using the Tiger Team's query or set to the CompressionType parameter.
 
-            Remember Uptime is critical for the Tiger Team query, the longer uptime, the more accurate the analysis is.
-            You would probably be best if you utilized Get-DbaUptime first, before running this command.
+        Remember Uptime is critical for the Tiger Team query, the longer uptime, the more accurate the analysis is.
+        You would probably be best if you utilized Get-DbaUptime first, before running this command.
 
-            Set-DbaDbCompression script derived from GitHub and the tigertoolbox
-            (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
+        Set-DbaDbCompression script derived from GitHub and the tigertoolbox
+        (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            The database(s) to process - this list is auto populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        The database(s) to process - this list is auto populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            The database(s) to exclude - this list is auto populated from the server.
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto populated from the server.
 
-        .PARAMETER CompressionType
-            Control the compression type applied. Default is 'Recommended' which uses the Tiger Team query to use the most appropriate setting per object. Other option is to compress all objects to either Row or Page.
+    .PARAMETER CompressionType
+        Control the compression type applied. Default is 'Recommended' which uses the Tiger Team query to use the most appropriate setting per object. Other option is to compress all objects to either Row or Page.
 
-        .PARAMETER MaxRunTime
-            Will continue to alter tables and indexes for the given amount of minutes.
+    .PARAMETER MaxRunTime
+        Will continue to alter tables and indexes for the given amount of minutes.
 
-        .PARAMETER PercentCompression
-            Will only work on the tables/indexes that have the calculated savings at and higher for the given number provided.
+    .PARAMETER PercentCompression
+        Will only work on the tables/indexes that have the calculated savings at and higher for the given number provided.
 
-        .PARAMETER InputObject
-            Takes the output of Test-DbaDbCompression as an object and applied compression based on those recommendations.
+    .PARAMETER InputObject
+        Takes the output of Test-DbaDbCompression as an object and applied compression based on those recommendations.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Author: Jason Squires (@js_0505, jstexasdba@gmail.com)
-            Tags: Compression, Table, Database
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Compression, Table, Database
+        Author: Jason Squires (@js_0505), jstexasdba@gmail.com
 
-        .LINK
-            https://dbatools.io/Set-DbaDbCompression
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Set-DbaDbCompression -SqlInstance localhost -MaxRunTime 60 -PercentCompression 25
+    .LINK
+        https://dbatools.io/Set-DbaDbCompression
 
-            Set the compression run time to 60 minutes and will start the compression of tables/indexes that have a difference of 25% or higher between current and recommended.
+    .EXAMPLE
+        PS C:\> Set-DbaDbCompression -SqlInstance localhost -MaxRunTime 60 -PercentCompression 25
 
-        .EXAMPLE
-            Set-DbaDbCompression -SqlInstance ServerA -Database DBName -CompressionType Page
+        Set the compression run time to 60 minutes and will start the compression of tables/indexes that have a difference of 25% or higher between current and recommended.
 
-            Utilizes Page compression for all objects in DBName on ServerA with no time limit.
+    .EXAMPLE
+        PS C:\> Set-DbaDbCompression -SqlInstance ServerA -Database DBName -CompressionType Page
 
-        .EXAMPLE
-            Set-DbaDbCompression -SqlInstance ServerA -Database DBName -PercentCompression 25 | Out-GridView
+        Utilizes Page compression for all objects in DBName on ServerA with no time limit.
 
-            Will compress tables/indexes within the specified database that would show any % improvement with compression and with no time limit. The results will be piped into a nicely formatted GridView.
+    .EXAMPLE
+        PS C:\> Set-DbaDbCompression -SqlInstance ServerA -Database DBName -PercentCompression 25 | Out-GridView
 
-        .EXAMPLE
-            $testCompression = Test-DbaDbCompression -SqlInstance ServerA -Database DBName
-            Set-DbaDbCompression -SqlInstance ServerA -Database DBName -InputObject $testCompression
+        Will compress tables/indexes within the specified database that would show any % improvement with compression and with no time limit. The results will be piped into a nicely formatted GridView.
 
-            Gets the compression suggestions from Test-DbaDbCompression into a variable, this can then be reviewed and passed into Set-DbaDbCompression.
+    .EXAMPLE
+        PS C:\> $testCompression = Test-DbaDbCompression -SqlInstance ServerA -Database DBName
+        PS C:\> Set-DbaDbCompression -SqlInstance ServerA -Database DBName -InputObject $testCompression
 
-        .EXAMPLE
-            $cred = Get-Credential sqladmin
-            Set-DbaDbCompression -SqlInstance ServerA -ExcludeDatabase Database -SqlCredential $cred -MaxRunTime 60 -PercentCompression 25
+        Gets the compression suggestions from Test-DbaDbCompression into a variable, this can then be reviewed and passed into Set-DbaDbCompression.
 
-            Set the compression run time to 60 minutes and will start the compression of tables/indexes for all databases except the specified excluded database. Only objects that have a difference of 25% or higher between current and recommended will be compressed.
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential sqladmin
+        PS C:\> Set-DbaDbCompression -SqlInstance ServerA -ExcludeDatabase Database -SqlCredential $cred -MaxRunTime 60 -PercentCompression 25
 
-        .EXAMPLE
-            $servers = 'Server1','Server2'
-            foreach ($svr in $servers)
-            {
-                Set-DbaDbCompression -SqlInstance $svr -MaxRunTime 60 -PercentCompression 25 | Export-Csv -Path C:\temp\CompressionAnalysisPAC.csv -Append
-            }
+        Set the compression run time to 60 minutes and will start the compression of tables/indexes for all databases except the specified excluded database. Only objects that have a difference of 25% or higher between current and recommended will be compressed.
 
-            Set the compression run time to 60 minutes and will start the compression of tables/indexes across all listed servers that have a difference of 25% or higher between current and recommended. Output of command is exported to a csv.
-    #>
+    .EXAMPLE
+        PS C:\> $servers = 'Server1','Server2'
+        PS C:\> foreach ($svr in $servers) {
+        >> Set-DbaDbCompression -SqlInstance $svr -MaxRunTime 60 -PercentCompression 25 | Export-Csv -Path C:\temp\CompressionAnalysisPAC.csv -Append
+        >> }
+
+        Set the compression run time to 60 minutes and will start the compression of tables/indexes across all listed servers that have a difference of 25% or higher between current and recommended. Output of command is exported to a csv.
+
+#>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -113,7 +114,6 @@ function Set-DbaDbCompression {
         $starttime = Get-Date
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             }
             catch {
@@ -168,8 +168,8 @@ function Set-DbaDbCompression {
                     if ($CompressionType -eq "Recommended") {
                         if ($Pscmdlet.ShouldProcess($db, "Applying suggested compression using results from Test-DbaDbCompression")) {
                             Write-Message -Level Verbose -Message "Applying suggested compression settings using Test-DbaDbCompression"
-                            $results += $compressionSuggestion | Select-Object *, @{l = 'AlreadyProcesssed'; e = {"False"}}
-                            foreach ($obj in ($results | Where-Object {$_.CompressionTypeRecommendation -ne 'NO_GAIN' -and $_.PercentCompression -ge $PercentCompression} | Sort-Object PercentCompression -Descending)) {
+                            $results += $compressionSuggestion | Select-Object *, @{l = 'AlreadyProcessed'; e = {"False"}}
+                            foreach ($obj in ($results | Where-Object {$_.CompressionTypeRecommendation -notin @('NO_GAIN','?') -and $_.PercentCompression -ge $PercentCompression} | Sort-Object PercentCompression -Descending)) {
                                 if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                     break
@@ -179,14 +179,14 @@ function Set-DbaDbCompression {
                                     Write-Message -Level Verbose -Message "Applying $($obj.CompressionTypeRecommendation) compression to $($obj.Database).$($obj.Schema).$($obj.TableName)"
                                     $($server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $obj.Partition}).DataCompression = $($obj.CompressionTypeRecommendation)
                                     $server.Databases[$obj.Database].Tables[$obj.TableName, $($obj.Schema)].Rebuild()
-                                    $obj.AlreadyProcesssed = "True"
+                                    $obj.AlreadyProcessed = "True"
                                 }
                                 else {
                                     ##nonclustered indexes
                                     Write-Message -Level Verbose -Message "Applying $($obj.CompressionTypeRecommendation) compression to $($obj.Database).$($obj.Schema).$($obj.TableName).$($obj.IndexName)"
                                     $($server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].Indexes[$obj.IndexName].PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $obj.Partition}).DataCompression = $($obj.CompressionTypeRecommendation)
                                     $server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].Indexes[$obj.IndexName].Rebuild()
-                                    $obj.AlreadyProcesssed = "True"
+                                    $obj.AlreadyProcessed = "True"
                                 }
                                 $obj
                             }
@@ -223,7 +223,7 @@ function Set-DbaDbCompression {
                                         SizeCurrent                   = $null
                                         SizeRequested                 = $null
                                         PercentCompression            = $null
-                                        AlreadyProcesssed             = "True"
+                                        AlreadyProcessed             = "True"
                                     }
                                 }
 
@@ -266,7 +266,7 @@ function Set-DbaDbCompression {
                                             SizeCurrent                   = $null
                                             SizeRequested                 = $null
                                             PercentCompression            = $null
-                                            AlreadyProcesssed             = "True"
+                                            AlreadyProcessed             = "True"
                                         }
                                     }
                                 }
@@ -307,7 +307,7 @@ function Set-DbaDbCompression {
                                         SizeCurrent                   = $null
                                         SizeRequested                 = $null
                                         PercentCompression            = $null
-                                        AlreadyProcesssed             = "True"
+                                        AlreadyProcessed             = "True"
                                     }
                                 }
                             }

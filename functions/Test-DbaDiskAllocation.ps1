@@ -1,74 +1,72 @@
-function Test-DbaDiskAllocation {
-    <#
-        .SYNOPSIS
-            Checks all disks on a computer to see if they are formatted with allocation units of 64KB.
+﻿function Test-DbaDiskAllocation {
+<#
+    .SYNOPSIS
+        Checks all disks on a computer to see if they are formatted with allocation units of 64KB.
 
-        .DESCRIPTION
-            Checks all disks on a computer for disk allocation units that match best practice recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server's name and an IsBestPractice field are returned.
+    .DESCRIPTION
+        Checks all disks on a computer for disk allocation units that match best practice recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server's name and an IsBestPractice field are returned.
 
-            Specify -Detailed for details.
+        References:
+        https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The performance question here is usually not one of correlation per the formula, but whether the cluster size has been explicitly defined at 64 KB, which is a best practice for SQL Server."
 
-            References:
-            https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The performance question here is usually not one of correlation per the formula, but whether the cluster size has been explicitly defined at 64 KB, which is a best practice for SQL Server."
+    .PARAMETER ComputerName
+        The server(s) to check disk configuration on.
 
-            http://tk.azurewebsites.net/2012/08/
+    .PARAMETER NoSqlCheck
+        If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
 
-        .PARAMETER ComputerName
-            The server(s) to check disk configuration on.
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER NoSqlCheck
-            If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
+    .PARAMETER Credential
+        Specifies an alternate Windows account to use when enumerating drives on the server. May require Administrator privileges. To use:
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+        $cred = Get-Credential, then pass $cred object to the -Credential parameter.
 
-        .PARAMETER Credential
-            Specifies an alternate Windows account to use when enumerating drives on the server. May require Administrator privileges. To use:
+    .PARAMETER Detailed
+        Output all properties, will be deprecated in 1.0.0 release.
 
-            $cred = Get-Credential, then pass $cred object to the -Credential parameter.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Detailed
-            Output all properties, will be deprecated in 1.0.0 release.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .NOTES
+        Tags: CIM, Storage
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .NOTES
-            Tags: CIM, Storage
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .LINK
+        https://dbatools.io/Test-DbaDiskAllocation
 
-        .LINK
-            https://dbatools.io/Test-DbaDiskAllocation
+    .EXAMPLE
+        PS C:\> Test-DbaDiskAllocation -ComputerName sqlserver2014a
 
-        .EXAMPLE
-            Test-DbaDiskAllocation -ComputerName sqlserver2014a
+        Scans all disks on server sqlserver2014a for best practice allocation unit size.
 
-            Scans all disks on server sqlserver2014a for best practice allocation unit size.
+    .EXAMPLE
+        PS C:\> Test-DbaDiskAllocation -ComputerName sqlserver2014 | Select-Output *
 
-        .EXAMPLE
-            Test-DbaDiskAllocation -ComputerName sqlserver2014 | Select-Output *
+        Scans all disks on server sqlserver2014a for allocation unit size and returns detailed results for each.
 
-            Scans all disks on server sqlserver2014a for allocation unit size and returns detailed results for each.
+    .EXAMPLE
+        PS C:\> Test-DbaDiskAllocation -ComputerName sqlserver2014a -NoSqlCheck
 
-        .EXAMPLE
-            Test-DbaDiskAllocation -ComputerName sqlserver2014a -NoSqlCheck
+        Scans all disks not hosting SQL Server data or log files on server sqlserver2014a for best practice allocation unit size.
 
-            Scans all disks not hosting SQL Server data or log files on server sqlserver2014a for best practice allocation unit size.
-    #>
+#>
     [CmdletBinding(SupportsShouldProcess = $true)]
     [OutputType("System.Collections.ArrayList", "System.Boolean")]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [object[]]$ComputerName,
@@ -131,7 +129,6 @@ function Test-DbaDiskAllocation {
                         $sqldisk = $false
 
                         foreach ($SqlInstance in $SqlInstances) {
-                            Write-Message -Level Verbose -Message "Connecting to SQL instance ($SqlInstance)."
                             try {
                                 $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
                                 $sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"

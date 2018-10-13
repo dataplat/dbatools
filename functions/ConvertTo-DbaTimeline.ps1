@@ -1,61 +1,63 @@
-function ConvertTo-DbaTimeline {
+﻿function ConvertTo-DbaTimeline {
     <#
-        .SYNOPSIS
-            Converts InputObject to a html timeline using Google Chart
+    .SYNOPSIS
+        Converts InputObject to a html timeline using Google Chart
 
-        .DESCRIPTION
-            This function accepts input as pipeline from the following psdbatools functions:
-                Get-DbaAgentJobHistory
-                Get-DbaBackupHistory
-                (more to come...)
-            And generates Bootstrap based, HTML file with Google Chart Timeline
+    .DESCRIPTION
+        This function accepts input as pipeline from the following dbatools functions:
+        Get-DbaAgentJobHistory
+        Get-DbaBackupHistory
+        (more to come...)
+        And generates Bootstrap based, HTML file with Google Chart Timeline
 
-        .PARAMETER InputObject
+    .PARAMETER InputObject
 
-            Pipe input, must an output from the above functions.
+        Pipe input, must an output from the above functions.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Chart
-            Author: Marcin Gminski (@marcingminski)
-            Dependency: ConvertTo-JsDate, Convert-DbaTimelineStatusColor
+    .NOTES
+        Tags: Chart
+        Author: Marcin Gminski (@marcingminski)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
--           License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/ConvertTo-DbaTimeline
+        Dependency: ConvertTo-JsDate, Convert-DbaTimelineStatusColor
 
-        .EXAMPLE
-            Get-DbaAgentJobHistory -SqlInstance sql-1 -StartDate '2018-08-13 00:00' -EndDate '2018-08-13 23:59' -NoJobSteps | ConvertTo-DbaTimeline | Out-File C:\temp\DbaAgentJobHistory.html -Encoding ASCII
+    .LINK
+        https://dbatools.io/ConvertTo-DbaTimeline
 
-            Creates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJobHistory -SqlInstance sql-1 -StartDate '2018-08-13 00:00' -EndDate '2018-08-13 23:59' -NoJobSteps | ConvertTo-DbaTimeline | Out-File C:\temp\DbaAgentJobHistory.html -Encoding ASCII
 
-        .EXAMPLE
-            Get-DbaCmsRegServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-File C:\temp\DbaBackupHistory.html -Encoding ASCII
+        Creates an output file containing a pretty timeline for all of the agent job history results for sql-1 the whole day of 2018-08-13
 
-            Creates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServer -SqlInstance sqlcm | Get-DbaBackupHistory -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline | Out-File C:\temp\DbaBackupHistory.html -Encoding ASCII
 
-        .EXAMPLE
-            $messageParameters = @{
-                Subject = "Backup history for sql2017 and sql2016"
-                Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline
-                From = "dba@ad.local"
-                To = "dba@ad.local"
-                SmtpServer = "smtp.ad.local"
-            }
-            Send-MailMessage @messageParameters -BodyAsHtml
+        Creates an output file containing a pretty timeline for the agent job history since 2018-08-13 for all of the registered servers on sqlcm
 
-            Sends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.
-    #>
+    .EXAMPLE
+        PS C:\> $messageParameters = @{
+        >> Subject = "Backup history for sql2017 and sql2016"
+        >> Body = Get-DbaBackupHistory -SqlInstance sql2017, sql2016 -Since '2018-08-13 00:00' | ConvertTo-DbaTimeline
+        >> From = "dba@ad.local"
+        >> To = "dba@ad.local"
+        >> SmtpServer = "smtp.ad.local"
+        >> }
+        >>
+        PS C:\> Send-MailMessage @messageParameters -BodyAsHtml
 
+        Sends an email to dba@ad.local with the results of Get-DbaBackupHistory. Note that viewing these reports may not be supported in all email clients.
+
+#>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$EnableException
@@ -139,7 +141,7 @@ function ConvertTo-DbaTimeline {
         # AgentJobHistory is a forced type while backuphistory is a legit type
         if ($InputObject[0].TypeName -eq 'AgentJobHistory') {
             $CallerName = "Get-DbaAgentJobHistory"
-            $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { $_.Job -replace "\'",''} }, @{ Name = "hLabel"; Expression = { $_.Status } }, @{ Name = "Style"; Expression = { $(Convert-DbaTimelineStatusColor($_.Status)) } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.StartDate)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.EndDate)) } }
+            $data = $InputObject | Select-Object @{ Name = "SqlInstance"; Expression = { $_.SqlInstance } }, @{ Name = "InstanceName"; Expression = { $_.InstanceName } }, @{ Name = "vLabel"; Expression = { $_.Job -replace "\'", ''} }, @{ Name = "hLabel"; Expression = { $_.Status } }, @{ Name = "Style"; Expression = { $(Convert-DbaTimelineStatusColor($_.Status)) } }, @{ Name = "StartDate"; Expression = { $(ConvertTo-JsDate($_.StartDate)) } }, @{ Name = "EndDate"; Expression = { $(ConvertTo-JsDate($_.EndDate)) } }
 
         }
         elseif ($InputObject[0] -is [Sqlcollaborative.Dbatools.Database.BackupHistory]) {
@@ -155,7 +157,7 @@ function ConvertTo-DbaTimeline {
     }
     end {
         if (Test-FunctionInterrupt) { return }
-$end = @"
+        $end = @"
 ]);
         var paddingHeight = 20;
         var rowHeight = dataTable.getNumberOfRows() * 41;

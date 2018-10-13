@@ -1,28 +1,30 @@
-function Watch-DbaUpdate {
-    <#
-        .SYNOPSIS
-            Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once per release.
+﻿function Watch-DbaUpdate {
+<#
+    .SYNOPSIS
+        Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once per release.
 
-        .DESCRIPTION
-            Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
+    .DESCRIPTION
+        Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
 
-            Anyone know how to make it clickable so that it opens an URL?
+        Anyone know how to make it clickable so that it opens an URL?
 
-        .NOTES
-            Tags: JustForFun, Module
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: JustForFun, Module
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Watch-DbaUpdate
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Watch-DbaUpdate
+    .LINK
+        https://dbatools.io/Watch-DbaUpdate
 
-            Watches the gallery for updates to dbatools.
-    #>
+    .EXAMPLE
+        PS C:\> Watch-DbaUpdate
+
+        Watches the gallery for updates to dbatools.
+
+#>
     [cmdletbinding()]
     param()
     process {

@@ -1,80 +1,80 @@
-function Remove-DbaDbUser {
-    <#
+﻿function Remove-DbaDbUser {
+<#
     .SYNOPSIS
-    Drop database user
+        Drop database user
 
     .DESCRIPTION
-    If user is the owner of a schema with the same name and if if the schema does not have any underlying objects the schema will be
-    dropped.  If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be
-    changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
+        If user is the owner of a schema with the same name and if if the schema does not have any underlying objects the schema will be
+        dropped.  If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be
+        changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
 
     .PARAMETER SqlInstance
-    The SQL Instances that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-    Credential object used to connect to the SQL Server as a different user.
+        Credential object used to connect to the SQL Server as a different user.
 
     .PARAMETER Database
-    Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
     .PARAMETER ExcludeDatabase
-    Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
     .PARAMETER User
-    Specifies the list of users to remove.
+        Specifies the list of users to remove.
 
     .PARAMETER InputObject
-    Support piping from Get-DbaDbUser.
+        Support piping from Get-DbaDbUser.
 
     .PARAMETER Force
-    If enabled this will force the change of the owner to 'dbo' for any schema which owner is the User.
+        If enabled this will force the change of the owner to 'dbo' for any schema which owner is the User.
 
     .PARAMETER WhatIf
-    Shows what would happen if the command were to run. No actions are actually performed.
+        Shows what would happen if the command were to run. No actions are actually performed.
 
     .PARAMETER Confirm
-    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
     .PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-    Tags: Database, User, Login, Security
-    Author: Doug Meyers (@dgmyrs)
+        Tags: Database, User, Login, Security
+        Author: Doug Meyers (@dgmyrs)
 
-    Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-    License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-    https://dbatools.io/Remove-DbaDbUser
+        https://dbatools.io/Remove-DbaDbUser
 
     .EXAMPLE
-    Remove-DbaDbUser -SqlInstance sqlserver2014 -User user1
+        PS C:\> Remove-DbaDbUser -SqlInstance sqlserver2014 -User user1
 
-    Drops user1 from all databases it exists in on server 'sqlserver2014'.
-
-    .EXAMPLE
-    Remove-DbaDbUser -SqlInstance sqlserver2014 -Database database1 -User user1
-
-    Drops user1 from the database1 database on server 'sqlserver2014'.
+        Drops user1 from all databases it exists in on server 'sqlserver2014'.
 
     .EXAMPLE
-    Remove-DbaDbUser -SqlInstance sqlserver2014 -ExcludeDatabase model -User user1
+        PS C:\> Remove-DbaDbUser -SqlInstance sqlserver2014 -Database database1 -User user1
 
-    Drops user1 from all databases it exists in on server 'sqlserver2014' except for the model database.
+        Drops user1 from the database1 database on server 'sqlserver2014'.
 
     .EXAMPLE
-    Get-DbaDbUser sqlserver2014 | Where-Object Name -In "user1" | Remove-DbaDbUser
+        PS C:\> Remove-DbaDbUser -SqlInstance sqlserver2014 -ExcludeDatabase model -User user1
 
-    Drops user1 from all databases it exists in on server 'sqlserver2014'.
+        Drops user1 from all databases it exists in on server 'sqlserver2014' except for the model database.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDbUser sqlserver2014 | Where-Object Name -In "user1" | Remove-DbaDbUser
+
+        Drops user1 from all databases it exists in on server 'sqlserver2014'.
 
 #>
 
     [CmdletBinding(DefaultParameterSetName = 'User', SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Position = 1, Mandatory, ValueFromPipeline, ParameterSetName = 'User')]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -114,6 +114,8 @@ function Remove-DbaDbUser {
                 $db = $user.Parent
                 $server = $db.Parent
                 $ownedObjects = $false
+                $alterSchemas = @()
+                $dropSchemas = @()
                 Write-Message -Level Verbose -Message "Removing User $user from Database $db on target $server"
 
                 # Drop Schemas owned by the user before droping the user
@@ -122,9 +124,6 @@ function Remove-DbaDbUser {
                     Write-Message -Level Verbose -Message "User $user owns $($schemaUrns.Count) schema(s)."
 
                     # Need to gather up the schema changes so they can be done in a non-desctructive order
-                    $alterSchemas = @()
-                    $dropSchemas = @()
-
                     foreach ($schemaUrn in $schemaUrns) {
                         $schema = $server.GetSmoObject($schemaUrn)
 
@@ -211,7 +210,6 @@ function Remove-DbaDbUser {
         else {
             foreach ($instance in $SqlInstance) {
                 try {
-                    Write-Message -Level Verbose -Message "Connecting to $instance"
                     $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
                 }
                 catch {

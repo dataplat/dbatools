@@ -1,5 +1,5 @@
-function Get-DbaWindowsLog {
-    <#
+﻿function Get-DbaWindowsLog {
+<#
     .SYNOPSIS
         Gets Windows Application events associated with an instance
 
@@ -38,18 +38,18 @@ function Get-DbaWindowsLog {
 
     .NOTES
         Tags: Logging
-        Author: Drew Furgiuele
-        Editor: Friedrich "Fred" Weinmann
+        Author: Drew Furgiuele | Friedrich Weinmann (@FredWeinmann‏)
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaWindowsLog
 
     .EXAMPLE
-        $ErrorLogs = Get-DbaWindowsLog -SqlInstance sql01\sharepoint
-        $ErrorLogs | Where-Object ErrorNumber -eq 18456
+        PS C:\> $ErrorLogs = Get-DbaWindowsLog -SqlInstance sql01\sharepoint
+        PS C:\> $ErrorLogs | Where-Object ErrorNumber -eq 18456
 
         Returns all lines in the errorlogs that have event number 18456 in them
 
@@ -94,7 +94,7 @@ function Get-DbaWindowsLog {
 
         function Receive-Runspace {
             [Parameter()]
-            Param (
+            param (
                 [switch]
                 $Wait
             )
@@ -117,7 +117,7 @@ function Get-DbaWindowsLog {
 
         #region Scriptblocks
         $scriptBlock_RemoteExecution = {
-            Param (
+            param (
                 [System.DateTime]
                 $Start,
 
@@ -133,7 +133,7 @@ function Get-DbaWindowsLog {
 
             #region Helper function
             function Convert-ErrorRecord {
-                Param (
+                param (
                     $Line
                 )
 
@@ -162,7 +162,7 @@ function Get-DbaWindowsLog {
 
             #region Script that processes an individual file
             $scriptBlock = {
-                Param (
+                param (
                     [System.IO.FileInfo]
                     $File
                 )
@@ -242,7 +242,7 @@ function Get-DbaWindowsLog {
         }
 
         $scriptBlock_ParallelRemoting = {
-            Param (
+            param (
                 [DbaInstanceParameter]
                 $SqlInstance,
 

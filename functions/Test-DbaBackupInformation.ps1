@@ -1,73 +1,69 @@
-function Test-DbaBackupInformation {
-    <#
-        .SYNOPSIS
-            Tests a dbatools backup history object is correct for restoring
+﻿function Test-DbaBackupInformation {
+<#
+    .SYNOPSIS
+        Tests a dbatools backup history object is correct for restoring
 
-        .DESCRIPTION
-            Normally takes in a backup history object from Format-DbaBackupInformation
+    .DESCRIPTION
+        Input is normally from a backup history object generated from Format-DbaBackupInformation. This is then parse to check that it's valid for restore. Tests performed include:
+            - Checking unbroken LSN chain
+            - If the target database exists and WithReplace has been provided
+            - If any files already exist, but owned by other databases
+            - Creates any new folders required
+            - That the backup files exists at the location specified, and can be seen by the Sql Instance
+            - If no errors are found then the objects for that database will me marked as Verified
 
-            This is then parse to check that it's valid for restore. Tests performed include:
-                Checking unbroken LSN chain
-                if the target database exists and WithReplace has been provided
-                if any files already exist, but owned by other databases
-                Creates any new folders required
-                That the backup files exists at the location specified, and can be seen by the Sql Instance
+    .PARAMETER BackupHistory
+        dbatools BackupHistory object. Normally this will have been process with Select- and then Format-DbaBackupInformation
 
-            if no errors are found then the objects for that database will me marked as Verified.
+    .PARAMETER SqlInstance
+        The Sql Server instance that wil be performing the restore
 
-        .PARAMETER BackupHistory
-            dbatools BackupHistory object. Normally this will have been process with Select- and then Format-DbaBackupInformation
+    .PARAMETER SqlCredential
+        A Sql Credential to connect to $SqlInstance
 
-        .PARAMETER SqlInstance
-            The Sql Server instance that wil be performing the restore
+    .PARAMETER WithReplace
+        By default we won't overwrite an existing database, this switch tells us you want to
 
-        .PARAMETER SqlCredential
-            A Sql Credential to connect to $SqlInstance
+    .PARAMETER Continue
+        Switch to indicate a continuing restore
 
-        .PARAMETER WithReplace
-            By default we won't overwrite an existing database, this switch tells us you want to
+    .PARAMETER OutputScriptOnly
+        Switch to disable path creation. Will write a warning that a path does not exist
 
-        .PARAMETER Continue
-            Switch to indicate a continuing restore
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER OutputScriptOnly
-            Switch to disable path creation. Will write a warning that a path does not exist
+    .PARAMETER VerifyOnly
+        This switch indicates that you only wish to verify a restore, so runs a smaller number of tests as you won't be writing anything to the restore server
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER WhatIf
+        Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
-        .PARAMETER VerifyOnly
-            This switch indicates that you only wish to verify a restore, so runs a smaller number of tests as you won't be writing anything to the restore server
+    .PARAMETER Confirm
+        Prompts you for confirmation before running the cmdlet.
 
-        .PARAMETER WhatIf
-            Shows what would happen if the cmdlet runs. The cmdlet is not run.
+    .NOTES
+        Tags: Backup, Restore, DisasterRecovery
+        Author: Stuart Moore (@napalmgram), stuart-moore.com
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before running the cmdlet.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .NOTES
-            Tags: Backup, Restore, DisasterRecovery
-            Author: Stuart Moore (@napalmgram stuart-moore.com )
+    .LINK
+        https://dbatools.io/Test-DbaBackupInformation
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .EXAMPLE
+        PS C:\> $BackupHistory | Test-DbaBackupInformation -SqlInstance MyInstance
+        PS C:\> $PassedDbs = $BackupHistory | Where-Object {$_.IsVerified -eq $True}
+        PS C:\> $FailedDbs = $BackupHistory | Where-Object {$_.IsVerified -ne $True}
 
-        .LINK
-            https://dbatools.io/Test-DbaBackupInformation
+        Pass in a BackupHistory object to be tested against MyInstance.
+        Those records that pass are marked as verified. We can then use the IsVerified property to divide the failures and successes
 
-        .EXAMPLE
-            $BackupHistory | Test-DbaBackupInformation -SqlInstance MyInstance
-
-            $PassedDbs = $BackupHistory | Where-Object {$_.IsVerified -eq $True}
-            $FailedDbs = $BackupHistory | Where-Object {$_.IsVerified -ne $True}
-
-            Pass in a BackupHistory object to be tested against MyInstance.
-
-            Those records that pass are marked as verified. We can then use the IsVerified property to divide the failures and successes
-    #>
+#>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, ValueFromPipeline)]

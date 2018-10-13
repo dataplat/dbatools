@@ -1,5 +1,4 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaForceNetworkEncryption {
     <#
     .SYNOPSIS
@@ -11,7 +10,7 @@ function Get-DbaForceNetworkEncryption {
         This setting is found in Configuration Manager.
 
     .PARAMETER SqlInstance
-        The target SQL Server - defaults to localhost.
+       The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative Windows credentials
@@ -27,22 +26,27 @@ function Get-DbaForceNetworkEncryption {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command
 
+    .NOTES
+        Tags: Certificate
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Get-DbaForceNetworkEncryption
+
     .EXAMPLE
-        Get-DbaForceNetworkEncryption
+        PS C:\> Get-DbaForceNetworkEncryption
 
         Gets Force Encryption properties on the default (MSSQLSERVER) instance on localhost - requires (and checks for) RunAs admin.
 
     .EXAMPLE
-        Get-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
+        PS C:\> Get-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
 
         Gets Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and view the registry.
 
-    .NOTES
-        Tags: Certificate
-        Author: Chrissy LeMaire (@cl), netnerds.net
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MIT
 #>
     [CmdletBinding()]
     param (
@@ -72,7 +76,6 @@ function Get-DbaForceNetworkEncryption {
                 Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
             }
 
-            Write-Message -Level Verbose -Message "Connecting to SQL WMI on $($instance.ComputerName)"
             try {
                 $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
             }

@@ -1,145 +1,147 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Write-DbaDataTable {
-    <#
-        .SYNOPSIS
-            Writes data to a SQL Server Table.
+<#
+    .SYNOPSIS
+        Writes data to a SQL Server Table.
 
-        .DESCRIPTION
-            Writes a .NET DataTable to a SQL Server table using SQL Bulk Copy.
+    .DESCRIPTION
+        Writes a .NET DataTable to a SQL Server table using SQL Bulk Copy.
 
-        .PARAMETER SqlInstance
-            The SQL Server instance.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            The database to import the table into.
+    .PARAMETER Database
+        The database to import the table into.
 
-        .PARAMETER InputObject
-            This is the DataTable (or datarow) to import to SQL Server.
+    .PARAMETER InputObject
+        This is the DataTable (or data row) to import to SQL Server.
 
-        .PARAMETER Table
-            The table name to import data into. You can specify a one, two, or three part table name. If you specify a one or two part name, you must also use -Database.
+    .PARAMETER Table
+        The table name to import data into. You can specify a one, two, or three part table name. If you specify a one or two part name, you must also use -Database.
 
-            If the table does not exist, you can use -AutoCreateTable to automatically create the table with inefficient data types.
+        If the table does not exist, you can use -AutoCreateTable to automatically create the table with inefficient data types.
 
-        .PARAMETER Schema
-            Defaults to dbo if no schema is specified.
+    .PARAMETER Schema
+        Defaults to dbo if no schema is specified.
 
-        .PARAMETER BatchSize
-            The BatchSize for the import defaults to 5000.
+    .PARAMETER BatchSize
+        The BatchSize for the import defaults to 5000.
 
-        .PARAMETER NotifyAfter
-            Sets the option to show the notification after so many rows of import
+    .PARAMETER NotifyAfter
+        Sets the option to show the notification after so many rows of import
 
-        .PARAMETER AutoCreateTable
-            If this switch is enabled, the table will be created if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)
+    .PARAMETER AutoCreateTable
+        If this switch is enabled, the table will be created if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)
 
-        .PARAMETER NoTableLock
-            If this switch is enabled, a table lock (TABLOCK) will not be placed on the destination table. By default, this operation will lock the destination table while running.
+    .PARAMETER NoTableLock
+        If this switch is enabled, a table lock (TABLOCK) will not be placed on the destination table. By default, this operation will lock the destination table while running.
 
-        .PARAMETER CheckConstraints
-            If this switch is enabled, the SqlBulkCopy option to process check constraints will be enabled.
+    .PARAMETER CheckConstraints
+        If this switch is enabled, the SqlBulkCopy option to process check constraints will be enabled.
 
-            Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
+        Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
 
-        .PARAMETER FireTriggers
-            If this switch is enabled, the SqlBulkCopy option to fire insert triggers will be enabled.
+    .PARAMETER FireTriggers
+        If this switch is enabled, the SqlBulkCopy option to fire insert triggers will be enabled.
 
-            Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the Database."
+        Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the Database."
 
-        .PARAMETER KeepIdentity
-            If this switch is enabled, the SqlBulkCopy option to preserve source identity values will be enabled.
+    .PARAMETER KeepIdentity
+        If this switch is enabled, the SqlBulkCopy option to preserve source identity values will be enabled.
 
-            Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
+        Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
 
-        .PARAMETER KeepNulls
-            If this switch is enabled, the SqlBulkCopy option to preserve NULL values will be enabled.
+    .PARAMETER KeepNulls
+        If this switch is enabled, the SqlBulkCopy option to preserve NULL values will be enabled.
 
-            Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
+        Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
 
-        .PARAMETER Truncate
-            If this switch is enabled, the destination table will be truncated after prompting for confirmation.
+    .PARAMETER Truncate
+        If this switch is enabled, the destination table will be truncated after prompting for confirmation.
 
-        .PARAMETER BulkCopyTimeOut
-            Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
+    .PARAMETER BulkCopyTimeOut
+        Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
 
-        .PARAMETER RegularUser
-           Deprecated - now all connections are regular user (don't require admin)
+    .PARAMETER RegularUser
+        Deprecated - now all connections are regular user (don't require admin)
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER UseDynamicStringLength
-            By default, all string columns will be NVARCHAR(MAX).
-            If this switch is enabled, all columns will get the length specified by the column's MaxLength property (if specified)
+    .PARAMETER UseDynamicStringLength
+        By default, all string columns will be NVARCHAR(MAX).
+        If this switch is enabled, all columns will get the length specified by the column's MaxLength property (if specified)
 
-        .NOTES
-            Tags: DataTable, Insert
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: DataTable, Insert
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Write-DbaDataTable
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
-            Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers
+    .LINK
+        https://dbatools.io/Write-DbaDataTable
 
-            Performs a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar will be shown as rows are inserted. If the destination table does not exist, the import will be halted.
+    .EXAMPLE
+        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
+        PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers
 
-        .EXAMPLE
-            $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
-            $DataTable | Write-DbaDataTable -SqlInstance sql2014 -Table mydb.dbo.customers
+        Performs a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar will be shown as rows are inserted. If the destination table does not exist, the import will be halted.
 
-            Performs a row by row insert of the data in customers.csv. This is significantly slower than a bulk insert and will not show a progress bar.
+    .EXAMPLE
+        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
+        PS C:\> $DataTable | Write-DbaDataTable -SqlInstance sql2014 -Table mydb.dbo.customers
 
-            This method is not recommended. Use -InputObject instead.
+        Performs a row by row insert of the data in customers.csv. This is significantly slower than a bulk insert and will not show a progress bar.
+        This method is not recommended. Use -InputObject instead.
 
-        .EXAMPLE
-            $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
-            Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable
+    .EXAMPLE
+        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
+        PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable
 
-            Performs a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.
+        Performs a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.
 
-        .EXAMPLE
-            $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
-            Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate
+    .EXAMPLE
+        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
+        PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate
 
-            Performs a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is prompted again to perform the import.
+        Performs a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is prompted again to perform the import.
 
-        .EXAMPLE
-            $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
-            Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls
+    .EXAMPLE
+        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
+        PS C:\> Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls
 
-            Performs a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo was used. NULL values in the destination table will be preserved.
+        Performs a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo was used. NULL values in the destination table will be preserved.
 
-        .EXAMPLE
-            $passwd = ConvertTo-SecureString "P@ssw0rd" -AsPlainText -Force
-            $AzureCredential = New-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
-            $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
-            Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300
+    .EXAMPLE
+        PS C:\> $passwd = ConvertTo-SecureString "P@ssw0rd" -AsPlainText -Force
+        PS C:\> $AzureCredential = New-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
+        PS C:\> $DataTable = Import-Csv C:\temp\customers.csv | ConvertTo-DbaDataTable
+        PS C:\> Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -BulkCopyTimeOut 300
 
-            This performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials.
+        This performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials.
 
-        .EXAMPLE
-            $process = Get-Process | ConvertTo-DbaDataTable
-            Write-DbaDataTable -InputObject $process -SqlInstance sql2014 -Database mydb -Table myprocesses -AutoCreateTable
+    .EXAMPLE
+        PS C:\> $process = Get-Process | ConvertTo-DbaDataTable
+        PS C:\> Write-DbaDataTable -InputObject $process -SqlInstance sql2014 -Database mydb -Table myprocesses -AutoCreateTable
 
-            Creates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table.
+        Creates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table.
 
-            This is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to ConvertTo-DbaDataTable.
-    #>
+        This is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to ConvertTo-DbaDataTable.
+
+#>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
         [Parameter(Position = 0, Mandatory)]
@@ -401,7 +403,6 @@ function Write-DbaDataTable {
         #endregion Resolve Full Qualified Table Name
 
         #region Connect to server and get database
-        Write-Message -Message "Connecting to $SqlInstance." -Level Verbose -Target $SqlInstance
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
