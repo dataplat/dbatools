@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbMailConfig {
-    <#
+<#
     .SYNOPSIS
         Gets database mail configs from SQL Server
 
@@ -7,7 +7,7 @@
         Gets database mail configs from SQL Server
 
     .PARAMETER SqlInstance
-        The SQL Server instance, or instances.
+        TThe target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -24,35 +24,36 @@
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: databasemail, dbmail, mail
+        Tags: DatabaseMail, DBMail, Mail
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaDbMailConfig
 
     .EXAMPLE
-        Get-DbaDbMailConfig -SqlInstance sql01\sharepoint
+        PS C:\> Get-DbaDbMailConfig -SqlInstance sql01\sharepoint
 
-        Returns dbmail configs on sql01\sharepoint
+        Returns DBMail configs on sql01\sharepoint
 
     .EXAMPLE
-        Get-DbaDbMailConfig -SqlInstance sql01\sharepoint -Name ProhibitedExtensions
+        PS C:\> Get-DbaDbMailConfig -SqlInstance sql01\sharepoint -Name ProhibitedExtensions
 
         Returns the ProhibitedExtensions configuration on sql01\sharepoint
 
     .EXAMPLE
-        Get-DbaDbMailConfig -SqlInstance sql01\sharepoint | Select *
+        PS C:\> Get-DbaDbMailConfig -SqlInstance sql01\sharepoint | Select *
 
-        Returns the dbmail configs on sql01\sharepoint then return a bunch more columns
+        Returns the DBMail configs on sql01\sharepoint then return a bunch more columns
 
     .EXAMPLE
-        $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
-        $servers | Get-DbaDbMail | Get-DbaDbMailConfig
+        PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+        PS C:\> $servers | Get-DbaDbMail | Get-DbaDbMailConfig
 
-       Returns the dbmail configs for "sql2014","sql2016" and "sqlcluster\sharepoint"
+        Returns the DBMail configs for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
 #>
     [CmdletBinding()]
@@ -69,7 +70,6 @@
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             $InputObject += Get-DbaDbMail -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
 

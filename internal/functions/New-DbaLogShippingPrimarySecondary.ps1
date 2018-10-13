@@ -40,7 +40,7 @@ function New-DbaLogShippingPrimarySecondary {
         .NOTES
             Author: Sander Stad (@sqlstad, sqlstad.nl)
             Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            Copyright: (c) 2018 by dbatools, licensed under MIT
             License: MIT https://opensource.org/licenses/MIT
 
         .LINK
@@ -70,7 +70,6 @@ function New-DbaLogShippingPrimarySecondary {
     )
 
     # Try connecting to the instance
-    Write-Message -Message "Connecting to $SqlInstance" -Level Verbose
     try {
         $ServerPrimary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
@@ -79,7 +78,6 @@ function New-DbaLogShippingPrimarySecondary {
     }
 
     # Try connecting to the instance
-    Write-Message -Message "Connecting to $SecondaryServer" -Level Verbose
     try {
         $ServerSecondary = Connect-SqlInstance -SqlInstance $SecondaryServer -SqlCredential $SecondarySqlCredential
     }

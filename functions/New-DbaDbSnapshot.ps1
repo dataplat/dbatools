@@ -1,6 +1,6 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaDbSnapshot {
-    <#
+<#
     .SYNOPSIS
         Creates database snapshots
 
@@ -8,7 +8,7 @@ function New-DbaDbSnapshot {
         Creates database snapshots without hassles
 
     .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user
@@ -40,7 +40,7 @@ function New-DbaDbSnapshot {
         Snapshot files will be created here (by default the filestructure will be created in the same folder as the base db)
 
     .PARAMETER InputObject
-       Allows Piping from Get-DbaDatabase
+        Allows Piping from Get-DbaDatabase
 
     .PARAMETER Force
         Databases with Filestream FG can be snapshotted, but the Filestream FG is marked offline
@@ -50,45 +50,46 @@ function New-DbaDbSnapshot {
         For details, check https://msdn.microsoft.com/en-us/library/bb895334.aspx
 
     .PARAMETER EnableException
-                By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-                This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-                Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
         Tags: Snapshot, Restore, Database
-        Author: niphlod
+        Author: Simone Bizzotto (@niphold)
 
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-         https://dbatools.io/New-DbaDbSnapshot
+        https://dbatools.io/New-DbaDbSnapshot
 
     .EXAMPLE
-        New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
+        PS C:\> New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 
         Creates snapshot for HR and Accounting, returning a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes
 
     .EXAMPLE
-        New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -Name HR_snap
+        PS C:\> New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -Name HR_snap
 
         Creates snapshot named "HR_snap" for HR
 
     .EXAMPLE
-        New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -NameSuffix 'fool_{0}_snap'
+        PS C:\> New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR -NameSuffix 'fool_{0}_snap'
 
         Creates snapshot named "fool_HR_snap" for HR
 
     .EXAMPLE
-        New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting -Path F:\snapshotpath
+        PS C:\> New-DbaDbSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting -Path F:\snapshotpath
 
         Creates snapshots for HR and Accounting databases, storing files under the F:\snapshotpath\ dir
 
     .EXAMPLE
-        Get-DbaDatabase -SqlInstance sql2016 -Database df | New-DbaDbSnapshot
+        PS C:\> Get-DbaDatabase -SqlInstance sql2016 -Database df | New-DbaDbSnapshot
 
         Creates a snapshot for the database df on sql2016
+
 #>
 
     [CmdletBinding(SupportsShouldProcess)]
@@ -155,7 +156,6 @@ function New-DbaDbSnapshot {
         }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }

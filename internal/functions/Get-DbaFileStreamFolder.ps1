@@ -36,7 +36,7 @@ function Get-DbaFileStreamFolder {
 
 
     Website: https://dbatools.io
-    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+    Copyright: (c) 2018 by dbatools, licensed under MIT
     License: MIT https://opensource.org/licenses/MIT
     #>
     param (
@@ -49,7 +49,6 @@ function Get-DbaFileStreamFolder {
 
     begin {
         try {
-            Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance." -Target $SqlInstance
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {

@@ -1,62 +1,64 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Get-DbaOrphanUser {
-    <#
-        .SYNOPSIS
-            Get orphaned users.
+<#
+    .SYNOPSIS
+        Get orphaned users.
 
-        .DESCRIPTION
-            An orphan user is defined by a user that does not have their matching login. (Login property = "").
+    .DESCRIPTION
+        An orphan user is defined by a user that does not have their matching login. (Login property = "").
 
-        .PARAMETER SqlInstance
-            The SQL Server Instance to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server
+    .PARAMETER ExcludeDatabase
+        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Orphan, Database, User, Security, Login
-            Author: Claudio Silva (@ClaudioESSilva)
-            Author: Garry Bargsley (@gbargsley)
-            Editor: Simone Bizzotto (@niphlod)
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-        .LINK
+    .NOTES
+        Tags: Orphan, Database, User, Security, Login
+        Author: Claudio Silva (@ClaudioESSilva) | Garry Bargsley (@gbargsley) | Simone Bizzotto (@niphlod)
 
-            https://dbatools.io/Get-DbaOrphanUser
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaOrphanUser -SqlInstance localhost\sql2016
-            Finds all orphan users without matching Logins in all databases present on server 'localhost\sql2016'.
+    .LINK
+        https://dbatools.io/Get-DbaOrphanUser
 
-        .EXAMPLE
-            Get-DbaOrphanUser -SqlInstance localhost\sql2016 -SqlCredential $cred
-            Finds all orphan users without matching Logins in all databases present on server 'localhost\sql2016'. SQL Server authentication will be used in connecting to the server.
+    .EXAMPLE
+        PS C:\> Get-DbaOrphanUser -SqlInstance localhost\sql2016
 
-        .EXAMPLE
-            Get-DbaOrphanUser -SqlInstance localhost\sql2016 -Database db1
-            Finds orphan users without matching Logins in the db1 database present on server 'localhost\sql2016'.
+        Finds all orphan users without matching Logins in all databases present on server 'localhost\sql2016'.
 
-    #>
+    .EXAMPLE
+        PS C:\> Get-DbaOrphanUser -SqlInstance localhost\sql2016 -SqlCredential $cred
+
+        Finds all orphan users without matching Logins in all databases present on server 'localhost\sql2016'. SQL Server authentication will be used in connecting to the server.
+
+    .EXAMPLE
+        PS C:\> Get-DbaOrphanUser -SqlInstance localhost\sql2016 -Database db1
+
+        Finds orphan users without matching Logins in the db1 database present on server 'localhost\sql2016'.
+
+#>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -70,7 +72,6 @@ function Get-DbaOrphanUser {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {

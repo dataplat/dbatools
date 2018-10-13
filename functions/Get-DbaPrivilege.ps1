@@ -1,55 +1,56 @@
-function Get-DbaPrivilege {
-    <#
-      .SYNOPSIS
-      Gets the users with local privileges on one or more computers.
+﻿function Get-DbaPrivilege {
+<#
+    .SYNOPSIS
+        Gets the users with local privileges on one or more computers.
 
-      .DESCRIPTION
-      Gets the users with local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch' on one or more computers.
+    .DESCRIPTION
+        Gets the users with local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch' on one or more computers.
 
-      Requires Local Admin rights on destination computer(s).
+        Requires Local Admin rights on destination computer(s).
 
-      .PARAMETER ComputerName
-      The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+    .PARAMETER ComputerName
+        The target SQL Server instance or instances.
 
-      .PARAMETER Credential
-      Credential object used to connect to the computer as a different user.
+    .PARAMETER Credential
+        Credential object used to connect to the computer as a different user.
 
-      .PARAMETER EnableException
-      By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-      This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-      Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-      .NOTES
-      Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-      Tags: Privilege
-      Website: https://dbatools.io
-      Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-      License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Privilege
+        Author: Klaas Vandenberghe (@PowerDBAKlaas)
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-      https://dbatools.io/Get-DbaPrivilege
+        https://dbatools.io/Get-DbaPrivilege
 
-      .EXAMPLE
-      Get-DbaPrivilege -ComputerName sqlserver2014a
+    .EXAMPLE
+        PS C:\> Get-DbaPrivilege -ComputerName sqlserver2014a
 
-      Gets the local privileges on computer sqlserver2014a.
+        Gets the local privileges on computer sqlserver2014a.
 
-      .EXAMPLE
-      'sql1','sql2','sql3' | Get-DbaPrivilege
+    .EXAMPLE
+        PS C:\> 'sql1','sql2','sql3' | Get-DbaPrivilege
 
-      Gets the local privileges on computers sql1, sql2 and sql3.
+        Gets the local privileges on computers sql1, sql2 and sql3.
 
-      .EXAMPLE
-      Get-DbaPrivilege -ComputerName sql1,sql2 | Out-Gridview
+    .EXAMPLE
+        PS C:\> Get-DbaPrivilege -ComputerName sql1,sql2 | Out-GridView
 
-      Gets the local privileges on computers sql1 and sql2, and shows them in a grid view.
+        Gets the local privileges on computers sql1 and sql2, and shows them in a grid view.
 
-  #>
+#>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(ValueFromPipeline)]
         [Alias("cn", "host", "Server")]
-        [dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
+        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [switch][Alias('Silent')]
         $EnableException
@@ -68,7 +69,6 @@ function Get-DbaPrivilege {
     process {
         foreach ($computer in $ComputerName) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $computer"
                 if (Test-PSRemoting -ComputerName $Computer) {
                     Write-Message -Level Verbose -Message "Getting Privileges on $Computer"
                     $Priv = $null
@@ -79,7 +79,7 @@ function Get-DbaPrivilege {
 
                     Write-Message -Level Verbose -Message "Getting Batch Logon Privileges on $Computer"
                     $BL = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
-                        Param ($ResolveSID)
+                        param ($ResolveSID)
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -match "SeBatchLogonRight" }).substring(20).split(",").replace("`*", "") |
@@ -91,7 +91,7 @@ function Get-DbaPrivilege {
 
                     Write-Message -Level Verbose -Message "Getting Instant File Initialization Privileges on $Computer"
                     $ifi = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
-                        Param ($ResolveSID)
+                        param ($ResolveSID)
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeManageVolumePrivilege*' }).substring(26).split(",").replace("`*", "") |
@@ -103,7 +103,7 @@ function Get-DbaPrivilege {
 
                     Write-Message -Level Verbose -Message "Getting Lock Pages in Memory Privileges on $Computer"
                     $lpim = Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveSID -ScriptBlock {
-                        Param ($ResolveSID)
+                        param ($ResolveSID)
                         . ([ScriptBlock]::Create($ResolveSID))
                         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         (Get-Content $temp\secpolByDbatools.cfg | Where-Object { $_ -like 'SeLockMemoryPrivilege*' }).substring(24).split(",").replace("`*", "") |

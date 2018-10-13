@@ -1,7 +1,7 @@
-function Restore-DbaDatabase {
-    <#
+﻿function Restore-DbaDatabase {
+<#
     .SYNOPSIS
-        Restores a SQL Server Database from a set of backupfiles
+        Restores a SQL Server Database from a set of backup files
 
     .DESCRIPTION
         Upon being passed a list of potential backups files this command will scan the files, select those that contain SQL Server
@@ -15,7 +15,7 @@ function Restore-DbaDatabase {
         passed in.
 
     .PARAMETER SqlInstance
-        The SQL Server instance to restore to.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
@@ -27,7 +27,7 @@ function Restore-DbaDatabase {
         Accepts multiple paths separated by ','
 
         Or it can consist of FileInfo objects, such as the output of Get-ChildItem or Get-Item. This allows you to work with
-        your own filestructures as needed
+        your own file structures as needed
 
     .PARAMETER DatabaseName
         Name to restore the database under.
@@ -67,7 +67,7 @@ function Restore-DbaDatabase {
 
     .PARAMETER MaintenanceSolutionBackup
         Switch to indicate the backup files are in a folder structure as created by Ola Hallengreen's maintenance scripts.
-        This swith enables a faster check for suitable backups. Other options require all files to be read first to ensure we have an anchoring full backup. Because we can rely on specific locations for backups performed with OlaHallengren's backup solution, we can rely on file locations.
+        This switch enables a faster check for suitable backups. Other options require all files to be read first to ensure we have an anchoring full backup. Because we can rely on specific locations for backups performed with OlaHallengren's backup solution, we can rely on file locations.
 
     .PARAMETER FileMapping
         A hashtable that can be used to move specific files to a location.
@@ -133,7 +133,7 @@ function Restore-DbaDatabase {
         The name of the SQL Server credential to be used if restoring from an Azure hosted backup
 
     .PARAMETER ReplaceDbNameInFile
-        If switch set and occurence of the original database's name in a data or log file will be replace with the name specified in the Databasename parameter
+        If switch set and occurrence of the original database's name in a data or log file will be replace with the name specified in the DatabaseName parameter
 
     .PARAMETER Recover
         If set will perform recovery on the indicated database
@@ -161,10 +161,10 @@ function Restore-DbaDatabase {
         Switch which will cause the function to exit after returning SelectBackupInformation
 
     .PARAMETER StopAfterFormatBackupInformation
-         Switch which will cause the function to exit after returning FormatBackupInformation
+        Switch which will cause the function to exit after returning FormatBackupInformation
 
     .PARAMETER StopAfterTestBackupInformation
-         Switch which will cause the function to exit after returning TestBackupInformation
+        Switch which will cause the function to exit after returning TestBackupInformation
 
     .PARAMETER StatementTimeOut
         Timeout in minutes. Defaults to infinity (restores can take a while.)
@@ -191,51 +191,62 @@ function Restore-DbaDatabase {
     .PARAMETER WhatIf
         Shows what would happen if the command would execute, but does not actually perform the command
 
+    .NOTES
+        Tags: DisasterRecovery, Backup, Restore
+        Author: Stuart Moore (@napalmgram), stuart-moore.com
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Restore-DbaDatabase
+
     .EXAMPLE
-        Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups
+        PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups
 
         Scans all the backup files in \\server2\backups, filters them and restores the database to server1\instance1
 
     .EXAMPLE
-        Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores
+        PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores
 
         Scans all the backup files in \\server2\backups$ stored in an Ola Hallengren style folder structure,
         filters them and restores the database to the c:\restores folder on server1\instance1
 
     .EXAMPLE
-        Get-ChildItem c:\SQLbackups1\, \\server\sqlbackups2 | Restore-DbaDatabase -SqlInstance server1\instance1
+        PS C:\> Get-ChildItem c:\SQLbackups1\, \\server\sqlbackups2 | Restore-DbaDatabase -SqlInstance server1\instance1
 
         Takes the provided files from multiple directories and restores them on  server1\instance1
 
     .EXAMPLE
-        $RestoreTime = Get-Date('11:19 23/12/2016')
-        Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores -RestoreTime $RestoreTime
+        PS C:\> $RestoreTime = Get-Date('11:19 23/12/2016')
+        PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups -MaintenanceSolutionBackup -DestinationDataDirectory c:\restores -RestoreTime $RestoreTime
 
         Scans all the backup files in \\server2\backups stored in an Ola Hallengren style folder structure,
         filters them and restores the database to the c:\restores folder on server1\instance1 up to 11:19 23/12/2016
 
     .EXAMPLE
-        Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups -DestinationDataDirectory c:\restores -OutputScriptOnly | Select-Object -ExpandProperty Tsql | Out-File -Filepath c:\scripts\restore.sql
+        PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups -DestinationDataDirectory c:\restores -OutputScriptOnly | Select-Object -ExpandProperty Tsql | Out-File -Filepath c:\scripts\restore.sql
 
         Scans all the backup files in \\server2\backups stored in an Ola Hallengren style folder structure,
         filters them and generate the T-SQL Scripts to restore the database to the latest point in time,
         and then stores the output in a file for later retrieval
 
     .EXAMPLE
-        Restore-DbaDatabase -SqlInstance server1\instance1 -Path c:\backups -DestinationDataDirectory c:\DataFiles -DestinationLogDirectory c:\LogFile
+        PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path c:\backups -DestinationDataDirectory c:\DataFiles -DestinationLogDirectory c:\LogFile
 
         Scans all the files in c:\backups and then restores them onto the SQL Server Instance server1\instance1, placing data files
         c:\DataFiles and all the log files into c:\LogFiles
 
     .EXAMPLE
-        Restore-DbaDatabase -SqlInstance server1\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -AzureCredential MyAzureCredential
+        PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path http://demo.blob.core.windows.net/backups/dbbackup.bak -AzureCredential MyAzureCredential
 
         Will restore the backup held at  http://demo.blob.core.windows.net/backups/dbbackup.bak to server1\instance1. The connection to Azure will be made using the
         credential MyAzureCredential held on instance Server1\instance1
 
     .EXAMPLE
-        $File = Get-ChildItem c:\backups, \\server1\backups -recurse
-        $File | Restore-DbaDatabase -SqlInstance Server1\Instance -useDestinationDefaultDirectories
+        PS C:\> $File = Get-ChildItem c:\backups, \\server1\backups -recurse
+        PS C:\> $File | Restore-DbaDatabase -SqlInstance Server1\Instance -useDestinationDefaultDirectories
 
         This will take all of the files found under the folders c:\backups and \\server1\backups, and pipeline them into
         Restore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included
@@ -243,28 +254,22 @@ function Restore-DbaDatabase {
         folder for those file types as defined on the target instance.
 
     .EXAMPLE
-        $files = Get-ChildItem C:\dbatools\db1
-
-        #Restore database to a point in time
-        $files | Restore-DbaDatabase -SqlInstance server\instance1 `
-                    -DestinationFilePrefix prefix -DatabaseName Restored  `
-                    -RestoreTime (get-date "14:58:30 22/05/2017") `
-                    -NoRecovery -WithReplace -StandbyDirectory C:\dbatools\standby
-
-        #It's in standby so we can peek at it
-        Invoke-Sqlcmd2 -ServerInstance server\instance1 -Query "select top 1 * from Restored.dbo.steps order by dt desc"
-
-        #Not quite there so let's roll on a bit:
-        $files | Restore-DbaDatabase -SqlInstance server\instance1 `
-                    -DestinationFilePrefix prefix -DatabaseName Restored `
-                    -continue -WithReplace -RestoreTime (get-date "15:09:30 22/05/2017") `
-                    -StandbyDirectory C:\dbatools\standby
-
-        Invoke-Sqlcmd2 -ServerInstance server\instance1 -Query "select top 1 * from restored.dbo.steps order by dt desc"
-
-        Restore-DbaDatabase -SqlInstance server\instance1 `
-                    -DestinationFilePrefix prefix -DatabaseName Restored `
-                    -continue -WithReplace
+        PS C:\> $files = Get-ChildItem C:\dbatools\db1
+        PS C:\> $files | Restore-DbaDatabase -SqlInstance server\instance1 `
+        >> -DestinationFilePrefix prefix -DatabaseName Restored  `
+        >> -RestoreTime (get-date "14:58:30 22/05/2017") `
+        >> -NoRecovery -WithReplace -StandbyDirectory C:\dbatools\standby
+        >>
+        PS C:\> #It's in standby so we can peek at it
+        PS C:\> Invoke-Sqlcmd2 -ServerInstance server\instance1 -Query "select top 1 * from Restored.dbo.steps order by dt desc"
+        PS C:\> #Not quite there so let's roll on a bit:
+        PS C:\> $files | Restore-DbaDatabase -SqlInstance server\instance1 `
+        >> -DestinationFilePrefix prefix -DatabaseName Restored `
+        >> -continue -WithReplace -RestoreTime (get-date "15:09:30 22/05/2017") `
+        >> -StandbyDirectory C:\dbatools\standby
+        >>
+        PS C:\> Invoke-Sqlcmd2 -ServerInstance server\instance1 -Query "select top 1 * from restored.dbo.steps order by dt desc"
+        PS C:\> Restore-DbaDatabase -SqlInstance server\instance1 -DestinationFilePrefix prefix -DatabaseName Restored -Continue -WithReplace
 
         In this example we step through the backup files held in c:\dbatools\db1 folder.
         First we restore the database to a point in time in standby mode. This means we can check some details in the databases
@@ -273,47 +278,43 @@ function Restore-DbaDatabase {
         At each step, only the log files needed to roll the database forward are restored.
 
     .EXAMPLE
-        Restore-DbaDatabase -SqlInstance server\instance1 -Path c:\backups -DatabaseName example1 -WithNoRecovery
-        Restore-DbaDatabase -SqlInstance server\instance1 -Recover -DatabaseName example1
+        PS C:\> Restore-DbaDatabase -SqlInstance server\instance1 -Path c:\backups -DatabaseName example1 -WithNoRecovery
+        PS C:\> Restore-DbaDatabase -SqlInstance server\instance1 -Recover -DatabaseName example1
+
+        In this example we restore example1 database with no recovery, and then the second call is to set the database to recovery.
 
     .EXAMPLE
-        $SuspectPage = Get-DbaSuspectPage -SqlInstance server\instance1 -Database ProdFinance
-        Get-DbaBackupHistory - SqlInstance server\instance1 -Database -ProdFinance -Last | Restore-DbaDatabase -PageRestore $SuspectPage -PageRestoreTailFolder c:\temp -TrustDbBackupHistory -AllowContinues
+        PS C:\> $SuspectPage = Get-DbaSuspectPage -SqlInstance server\instance1 -Database ProdFinance
+        PS C:\> Get-DbaBackupHistory - SqlInstance server\instance1 -Database -ProdFinance -Last | Restore-DbaDatabase -PageRestore PS C:\> $SuspectPage -PageRestoreTailFolder c:\temp -TrustDbBackupHistory -AllowContinues
 
         Gets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date
         If server\instance1 is Enterprise edition this will be done online, if not it will be performed offline
         AllowContinue is required to make sure we cope with existing files
 
     .EXAMPLE
-        Due to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround
-        This will use a SQL Server instance > 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BacukupHistory object:
+        PS C:\> $BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\backups\sql2000\ProdDb
+        PS C:\> $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
 
-        $BackupHistory = Get-DbaBackupInformation -SqlInstance sql2005 -Path \\backups\sql2000\ProdDb
-        $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
-    
+        Due to SQL Server 2000 not returning all the backup headers we cannot restore directly. As this is an issues with the SQL engine all we can offer is the following workaround
+        This will use a SQL Server instance > 2000 to read the headers, and then pass them in to Restore-DbaDatabase as a BackupHistory object.
+
     .EXAMPLE
-        Restore-DbaDatabase -SqlInstance server1\instance1 -Path "C:\Temp\devops_prod_full.bak" -DatabaseName "DevOps_DEV" -ReplaceDbNameInFile
-        Rename-DbaDatabase -SqlInstance server1\instance1 -Database "DevOps_DEV" -LogicalName "<DBN>_<FT>"
+        PS C:\> Restore-DbaDatabase -SqlInstance server1\instance1 -Path "C:\Temp\devops_prod_full.bak" -DatabaseName "DevOps_DEV" -ReplaceDbNameInFile
+        PS C:\> Rename-DbaDatabase -SqlInstance server1\instance1 -Database "DevOps_DEV" -LogicalName "<DBN>_<FT>"
 
         This will restore the database from the "C:\Temp\devops_prod_full.bak" file, with the new name "DevOps_DEV" and store the different physical files with the new name. It will use the system default configured data and log locations.
         After the restore the logical names of the database files will be renamed with the "DevOps_DEV_ROWS" for MDF/NDF and "DevOps_DEV_LOG" for LDF
-    
+
     .EXAMPLE
-        $FileStructure = @{
-            'database_data' = 'C:\Data\database_data.mdf'
-            'database_log' = 'C:\Log\database_log.ldf'
-        }
-        Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -FileMapping $FileStructure
+        PS C:\> $FileStructure = @{
+        >> 'database_data' = 'C:\Data\database_data.mdf'
+        >> 'database_log' = 'C:\Log\database_log.ldf'
+        >> }
+        >>
+        PS C:\> Restore-DbaDatabase -SqlInstance server1 -Path \\ServerName\ShareName\File -DatabaseName database -FileMapping $FileStructure
 
         Restores 'database' to 'server1' and moves the files to new locations. The format for the $FileStructure HashTable is the file logical name as the Key, and the new location as the Value.
 
-    .NOTES
-        Tags: DisasterRecovery, Backup, Restore
-        Author: Stuart Moore (@napalmgram), stuart-moore.com
-
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MIT
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Restore")]
     param (

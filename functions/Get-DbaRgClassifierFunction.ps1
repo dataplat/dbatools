@@ -1,44 +1,45 @@
-function Get-DbaRgClassifierFunction {
+﻿function Get-DbaRgClassifierFunction {
 <#
-.SYNOPSIS
-Gets the Resource Governor custom classifier Function
+    .SYNOPSIS
+        Gets the Resource Governor custom classifier Function
 
-.DESCRIPTION
-Gets the Resource Governor custom classifier Function which is used for customize the workload groups usage
+    .DESCRIPTION
+        Gets the Resource Governor custom classifier Function which is used for customize the workload groups usage
 
-.PARAMETER SqlInstance
-The target SQL Server instance(s)
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances
 
-.PARAMETER SqlCredential
-Allows you to login to SQL Server using alternative credentials
+    .PARAMETER SqlCredential
+        Allows you to login to SQL Server using alternative credentials
 
-.PARAMETER InputObject
-Allows input to be piped from Get-DbaResourceGovernor
-    
-.PARAMETER EnableException
-By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER InputObject
+        Allows input to be piped from Get-DbaResourceGovernor
 
-.NOTES
-Tags: Migration, ResourceGovernor
-Author: Alessandro Alpi (@suxstellino), alessandroalpi.blog
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.LINK
-https://dbatools.io/Get-DbaRgClassifierFunction
+    .NOTES
+        Tags: Migration, ResourceGovernor
+        Author: Alessandro Alpi (@suxstellino), alessandroalpi.blog
 
-.EXAMPLE
-Get-DbaRgClassifierFunction -SqlInstance sql2016
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-Gets the classifier function from sql2016
+    .LINK
+        https://dbatools.io/Get-DbaRgClassifierFunction
 
-.EXAMPLE
-'Sql1','Sql2/sqlexpress' | Get-DbaResourceGovernor | Get-DbaRgClassifierFunction
+    .EXAMPLE
+        PS C:\> Get-DbaRgClassifierFunction -SqlInstance sql2016
 
-Gets the classifier function object on Sql1 and Sql2/sqlexpress instances
+        Gets the classifier function from sql2016
+
+    .EXAMPLE
+        PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaResourceGovernor | Get-DbaRgClassifierFunction
+
+        Gets the classifier function object on Sql1 and Sql2/sqlexpress instances
 
 #>
     [CmdletBinding()]
@@ -49,31 +50,30 @@ Gets the classifier function object on Sql1 and Sql2/sqlexpress instances
         [Microsoft.SqlServer.Management.Smo.ResourceGovernor[]]$InputObject,
         [switch]$EnableException
     )
-    
+
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             $InputObject += Get-DbaResourceGovernor -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
-        
+
         foreach ($resourcegov in $InputObject) {
             $server = $resourcegov.Parent
             $classifierFunction = $null
-            
+
             foreach ($currentFunction in $server.Databases["master"].UserDefinedFunctions) {
                 $fullyQualifiedFunctionName = [string]::Format("[{0}].[{1}]", $currentFunction.Schema, $currentFunction.Name)
                 if ($fullyQualifiedFunctionName -eq $InputObject.ClassifierFunction) {
                     $classifierFunction = $currentFunction
                 }
             }
-            
+
             if ($classifierFunction) {
                 Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name ComputerName -value $resourcegov.ComputerName
                 Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name InstanceName -value $resourcegov.InstanceName
                 Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name SqlInstance -value $resourcegov.SqlInstance
                 Add-Member -Force -InputObject $classifierFunction -MemberType NoteProperty -Name Database -value 'master'
             }
-            
+
             Select-DefaultView -InputObject $classifierFunction -Property ComputerName, InstanceName, SqlInstance, Database, Schema, CreateDate, DateLastModified, Name, DataType
         }
     }

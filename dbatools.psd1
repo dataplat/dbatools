@@ -11,7 +11,7 @@
     RootModule             = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.447'
+    ModuleVersion          = '0.9.477'
 
     # ID used to uniquely identify this module
     GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -23,7 +23,7 @@
     CompanyName            = 'dbatools.io'
 
     # Copyright statement for this module
-    Copyright              = '2018'
+    Copyright              = 'Copyright (c) 2018 by dbatools, licensed under MIT'
 
     # Description of the functionality provided by this module
     Description            = "The community module that enables SQL Server Pros to automate database development and server administration"
@@ -125,7 +125,6 @@
         'Set-DbaPowerPlan',
         'Test-DbaDiskAlignment',
         'Get-DbaDbSpace',
-        'Get-DbaClusterNode',
         'Test-DbaDbOwner',
         'Set-DbaDbOwner',
         'Test-DbaJobOwner',
@@ -161,7 +160,8 @@
         'Test-DbaMaxMemory',
         'Get-DbaDbSnapshot',
         'Remove-DbaDbSnapshot',
-        'Get-DbaRoleMember',
+        'Get-DbaDbRoleMember',
+        'Get-DbaServerRoleMember',
         'Resolve-DbaNetworkName',
         'Test-DbaWindowsLogin',
         'Get-DbaMemoryUsage',
@@ -288,7 +288,7 @@
         'Get-DbaInstanceUserOption',
         'New-DbaConnectionString',
         'Get-DbaAgentSchedule',
-        'Invoke-DbaLogShipping',
+        'Invoke-DbaDbLogShipping',
         'Read-DbaTraceFile',
         'New-DbaComputerCertificate',
         'Get-DbaComputerCertificate',
@@ -308,7 +308,7 @@
         'Get-DbaManagementObject',
         'Test-DbaManagementObject',
         'Get-DbaMaintenanceSolutionLog',
-        'Invoke-DbaLogShippingRecovery',
+        'Invoke-DbaDbLogShipRecovery',
         'Find-DbaTrigger',
         'Find-DbaView',
         'Invoke-DbaDbUpgrade',
@@ -372,7 +372,7 @@
         'Stop-DbaAgentJob',
         'Remove-DbaClientAlias',
         'New-DbaAgentProxy',
-        'Test-DbaLogShippingStatus',
+        'Test-DbaDbLogShipStatus',
         'Get-DbaXESessionTarget',
         'New-DbaXESmartTargetResponse',
         'New-DbaXESmartTarget',
@@ -421,7 +421,7 @@
         'Start-DbaXESmartTarget',
         'Get-DbaOrphanUser',
         'Get-DbaOpenTransaction',
-        'Get-DbaLogShippingError',
+        'Get-DbaDbLogShipError',
         'Test-DbaBuild',
         'Get-DbaXESessionTemplate',
         'ConvertTo-DbaXESession',
@@ -509,7 +509,34 @@
         'Get-DbaRepServer',
         'Measure-DbatoolsImport',
         'Get-DbaDeprecatedFeature',
-        'Test-DbaDeprecatedFeature'
+        'Test-DbaDeprecatedFeature',
+        'Get-DbaWsfcAvailableDisk',
+        'Get-DbaWsfcCluster',
+        'Get-DbaWsfcDisk',
+        'Get-DbaWsfcNetwork',
+        'Get-DbaWsfcNetworkInterface',
+        'Get-DbaWsfcNode',
+        'Get-DbaWsfcResource',
+        'Get-DbaWsfcResourceType',
+        'Get-DbaWsfcRole',
+        'Get-DbaWsfcSharedVolume',
+        'Get-DbaDbFeatureUsage',
+        'Stop-DbaEndpoint',
+        'Start-DbaEndpoint',
+        'Set-DbaDbMirror',
+        'Repair-DbaDbMirror',
+        'Remove-DbaEndpoint',
+        'Remove-DbaDbMirrorMonitor',
+        'Remove-DbaDbMirror',
+        'New-DbaEndpoint',
+        'Invoke-DbaDbMirroring',
+        'Invoke-DbaDbMirrorFailover',
+        'Get-DbaDbMirrorMonitor',
+        'Get-DbaDbMirror',
+        'Add-DbaDbMirrorMonitor',
+        'Test-DbaEndpoint',
+        'Get-DbaDbSharePoint',
+        'Get-DbaDbMemoryUsage'
     )
 
     # Cmdlets to export from this module
@@ -606,7 +633,6 @@
     'Get-DbaTraceFile',
     'Out-DbaDataTable',
     'Invoke-DbaCmd',
-    'Get-DbaClusterActiveNode',
     'Test-DbaVirtualLogFile',
     'Test-DbaFullRecoveryModel',
     'Get-DbaDatabaseSnapshot',
@@ -688,7 +714,12 @@
     'Move-DbaRegisteredServer',
     'Move-DbaRegisteredServerGroup',
     'Remove-DbaRegisteredServer',
-    'Remove-DbaRegisteredServerGroup'
+    'Remove-DbaRegisteredServerGroup',
+    'Get-DbaLogShippingError',
+    'Invoke-DbaLogShipping',
+    'Invoke-DbaLogShippingRecovery',
+    'Test-DbaLogShippingStatus',
+    'Get-DbaRoleMember'
 
     # List of all modules packaged with this module
     ModuleList             = @()

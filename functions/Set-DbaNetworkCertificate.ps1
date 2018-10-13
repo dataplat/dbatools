@@ -1,7 +1,7 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Set-DbaNetworkCertificate {
-    <#
+<#
     .SYNOPSIS
         Sets the network certificate for SQL Server instance
 
@@ -16,7 +16,7 @@ function Set-DbaNetworkCertificate {
         https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
 
     .PARAMETER SqlInstance
-        The target SQL Server - defaults to localhost.
+       The target SQL Server instance or instances. Defaults to localhost.
 
     .PARAMETER Credential
         Allows you to login to the computer (not sql instance) using alternative credentials.
@@ -38,22 +38,27 @@ function Set-DbaNetworkCertificate {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
+    .NOTES
+        Tags: Certificate
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Set-DbaNetworkCertificate
+
     .EXAMPLE
-        New-DbaComputerCertificate | Set-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2
+        PS C:\> New-DbaComputerCertificate | Set-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2
 
         Creates and imports a new certificate signed by an Active Directory CA on localhost then sets the network certificate for the SQL2008R2SP2 to that newly created certificate.
 
     .EXAMPLE
-        Set-DbaNetworkCertificate -SqlInstance sql1\SQL2008R2SP2 -Thumbprint 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2
+        PS C:\> Set-DbaNetworkCertificate -SqlInstance sql1\SQL2008R2SP2 -Thumbprint 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2
 
         Sets the network certificate for the SQL2008R2SP2 instance to the certificate with the thumbprint of 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2 in LocalMachine\My on sql1
 
-    .NOTES
-        Tags: Certificate
-        Author: Chrissy LeMaire (@cl), netnerds.net
-        Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: MIT https://opensource.org/licenses/MIT
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
     param (
@@ -105,7 +110,6 @@ function Set-DbaNetworkCertificate {
 
             $computername = $instance.ComputerName
             $instancename = $instance.instancename
-            Write-Message -Level Output -Message "Connecting to SQL WMI on $computername"
 
             try {
                 $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"

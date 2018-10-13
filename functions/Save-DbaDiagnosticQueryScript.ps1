@@ -1,38 +1,38 @@
-function Save-DbaDiagnosticQueryScript {
-    <#
-.SYNOPSIS
-Save-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Berry DMV scripts
+﻿function Save-DbaDiagnosticQueryScript {
+<#
+    .SYNOPSIS
+        Save-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Berry DMV scripts
 
-.DESCRIPTION
-The dbatools module will have the diagnostic queries pre-installed. Use this only to update to a more recent version or specific versions.
+    .DESCRIPTION
+        The dbatools module will have the diagnostic queries pre-installed. Use this only to update to a more recent version or specific versions.
 
-This function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.
+        This function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.
 
-Use this function to pre-download the scripts from a device with an Internet connection.
+        Use this function to pre-download the scripts from a device with an Internet connection.
 
-The function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.
+        The function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.
 
-.PARAMETER Path
-Specifies the path to the output
+    .PARAMETER Path
+        Specifies the path to the output
 
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Author: André Kamman (@AndreKamman), http://clouddba.io
-Tags: Diagnostic, DMV, Troubleshooting
+    .NOTES
+        Tags: Diagnostic, DMV, Troubleshooting
+        Author: Andre Kamman (@AndreKamman), http://clouddba.io
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE
-Save-DbaDiagnosticQueryScript -Path c:\temp
+    .EXAMPLE
+        PS C:\> Save-DbaDiagnosticQueryScript -Path c:\temp
 
-Downloads the most recent version of all Glenn Berry DMV scripts to the specified location.
-If Path is not specified, the "My Documents" location will be used.
+        Downloads the most recent version of all Glenn Berry DMV scripts to the specified location.
+        If Path is not specified, the "My Documents" location will be used.
 
 #>
     [CmdletBinding()]

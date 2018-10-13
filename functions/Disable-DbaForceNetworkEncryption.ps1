@@ -1,54 +1,56 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Disable-DbaForceNetworkEncryption {
-    <#
-        .SYNOPSIS
-            Disables Force Encryption for a SQL Server instance
+<#
+    .SYNOPSIS
+        Disables Force Encryption for a SQL Server instance
 
-        .DESCRIPTION
-            Disables Force Encryption for a SQL Server instance. Note that this requires access to the Windows Server, not the SQL instance itself.
+    .DESCRIPTION
+        Disables Force Encryption for a SQL Server instance. Note that this requires access to the Windows Server, not the SQL instance itself.
 
-            This setting is found in Configuration Manager.
+        This setting is found in Configuration Manager.
 
-        .PARAMETER SqlInstance
-            The target SQL Server. Defaults to localhost.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Defaults to localhost.
 
-        .PARAMETER Credential
-            Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials.
+    .PARAMETER Credential
+        Allows you to login to the computer (not SQL Server instance) using alternative Windows credentials.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .EXAMPLE
-            Disable-DbaForceNetworkEncryption
+    .NOTES
+        Tags: Certificate
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-            Disables Force Encryption on the default (MSSQLSERVER) instance on localhost - requires (and checks for) RunAs admin.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Disable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
+    .EXAMPLE
+        PS C:\> Disable-DbaForceNetworkEncryption
 
-            Disables Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and modify the registry.
+        Disables Force Encryption on the default (MSSQLSERVER) instance on localhost - requires (and checks for) RunAs admin.
 
-        .EXAMPLE
-            Disable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2 -WhatIf
+    .EXAMPLE
+        PS C:\> Disable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
 
-            Shows what would happen if the command were executed.
+        Disables Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and modify the registry.
 
-        .NOTES
-            Tags: Certificate
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
-    #>
+    .EXAMPLE
+        PS C:\> Disable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2 -WhatIf
+
+        Shows what would happen if the command were executed.
+
+#>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
         [Parameter(ValueFromPipeline)]
@@ -72,7 +74,6 @@ function Disable-DbaForceNetworkEncryption {
                 Stop-Function -Message "Can't resolve $instance." -Target $instance -Continue -Category InvalidArgument
             }
 
-            Write-Message -Level Output -Message "Connecting to SQL WMI on $($instance.ComputerName)."
             try {
                 $sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FullComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
             }

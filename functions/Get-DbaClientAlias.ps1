@@ -1,49 +1,56 @@
-function Get-DbaClientAlias {
-    <#
-        .SYNOPSIS
-            Gets any SQL Server alias for the specified server(s)
+﻿function Get-DbaClientAlias {
+<#
+    .SYNOPSIS
+        Gets any SQL Server alias for the specified server(s)
 
-        .DESCRIPTION
-            Gets SQL Server alias by reading HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
+    .DESCRIPTION
+        Gets SQL Server alias by reading HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
 
-        .PARAMETER ComputerName
-            The target computer where the alias has been created
+    .PARAMETER ComputerName
+        The target computer where the alias has been created
 
-        .PARAMETER Credential
-            Allows you to login to remote computers using alternative credentials
+    .PARAMETER Credential
+        Allows you to login to remote computers using alternative credentials
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Alias
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Alias
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Get-DbaClientAlias
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaClientAlias
+    .LINK
+        https://dbatools.io/Get-DbaClientAlias
 
-            Gets all SQL Server client aliases on the local computer
+    .EXAMPLE
+        PS C:\> Get-DbaClientAlias
 
-        .EXAMPLE
-            Get-DbaClientAlias -ComputerName workstationx
+        Gets all SQL Server client aliases on the local computer
 
-            Gets all SQL Server client aliases on Workstationx
+    .EXAMPLE
+        PS C:\> Get-DbaClientAlias -ComputerName workstationx
 
-        .EXAMPLE
-            'Server1', 'Server2' | Get-DbaClientAlias
+        Gets all SQL Server client aliases on Workstationx
 
-            Gets all SQL Server client aliases on Server1 and Server2
+    .EXAMPLE
+        PS C:\> Get-DbaClientAlias -ComputerName workstationx -Credential ad\sqldba
+
+        Logs into workstationx as ad\sqldba then retrieves all SQL Server client aliases on Workstationx
+        
+    .EXAMPLE
+        PS C:\> 'Server1', 'Server2' | Get-DbaClientAlias
+
+        Gets all SQL Server client aliases on Server1 and Server2
+
 #>
-        [CmdletBinding()]
-    Param (
+    [CmdletBinding()]
+    param (
         [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
@@ -56,7 +63,7 @@ function Get-DbaClientAlias {
             $scriptblock = {
 
                 function Get-ItemPropertyValue {
-                    Param (
+                    param (
                         [parameter()]
                         [String]$Path,
                         [parameter()]

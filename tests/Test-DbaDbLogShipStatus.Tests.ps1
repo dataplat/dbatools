@@ -4,12 +4,12 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     It "warns if SQL instance edition is not supported" {
-        $results = Test-DbaLogShippingStatus -SqlInstance $script:instance1 -WarningAction SilentlyContinue -WarningVariable editionwarn
+        $results = Test-DbaDbLogShipStatus -SqlInstance $script:instance1 -WarningAction SilentlyContinue -WarningVariable editionwarn
         $editionwarn -match "Express" | Should Be $true
     }
 
     It "warns if no log shipping found" {
-        $results = Test-DbaLogShippingStatus -SqlInstance $script:instance2 -Database 'master' -WarningAction SilentlyContinue -WarningVariable doesntexist
+        $results = Test-DbaDbLogShipStatus -SqlInstance $script:instance2 -Database 'master' -WarningAction SilentlyContinue -WarningVariable doesntexist
         $doesntexist -match "No information available" | Should Be $true
     }
 }

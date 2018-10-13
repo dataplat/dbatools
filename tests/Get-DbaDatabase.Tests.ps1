@@ -40,8 +40,8 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
         }
         Mock Connect-SQLInstance -MockWith {
             [object]@{
-                Name      = 'SQLServerName';
-                Databases = [object]@(
+                Name      = 'SQLServerName'
+                Databases = @(
                     @{
                         Name           = 'db1'
                         Status         = 'Normal'
@@ -50,7 +50,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                         RecoveryModel  = 'Full'
                         Owner          = 'sa'
                     }
-                ); #databases
+                ) #databases
             } #object
         } -ModuleName dbatools #mock connect-sqlserver
         function Invoke-QueryRawDatabases { }
@@ -90,8 +90,8 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
             Mock Connect-SQLInstance -MockWith {
                 [object]@{
                     Name      = 'SQLServerName'
-                    Databases = [object]@{
-                            'db1' = @{
+                    Databases = @(
+                            @{
                                 Name           = 'db1'
                                 Status         = 'Normal'
                                 ReadOnly       = 'false'
@@ -100,7 +100,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                                 Owner          = 'sa'
                                 IsAccessible   = $true
                             }
-                    }
+                    )
                 } #object
             } -ModuleName dbatools #mock connect-sqlserver
             function Invoke-QueryDBlastUsed { }

@@ -19,12 +19,12 @@ function Get-BackupAncientHistory {
         Author: Stuart Moore (@napalmgram), stuart-moore.com
 
         dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-        Copyright (C) 2016 Chrissy LeMaire
+       Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
+    param (
         [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
@@ -38,7 +38,6 @@ function Get-BackupAncientHistory {
     )
     begin {
         try {
-            Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance." -Target $SqlInstance
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {

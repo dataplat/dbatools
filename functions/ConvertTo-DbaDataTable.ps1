@@ -1,84 +1,87 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function ConvertTo-DbaDataTable {
-    <#
-        .SYNOPSIS
-            Creates a DataTable for an object.
+<#
+    .SYNOPSIS
+        Creates a DataTable for an object.
 
-        .DESCRIPTION
-            Creates a DataTable based on an object's properties. This allows you to easily write to SQL Server tables.
+    .DESCRIPTION
+        Creates a DataTable based on an object's properties. This allows you to easily write to SQL Server tables.
 
-            Thanks to Chad Miller, this is based on his script. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd
+        Thanks to Chad Miller, this is based on his script. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd
 
-            If the attempt to convert to datatable fails, try the -Raw parameter for less accurate datatype detection.
+        If the attempt to convert to data table fails, try the -Raw parameter for less accurate datatype detection.
 
-        .PARAMETER InputObject
-            The object to transform into a DataTable.
+    .PARAMETER InputObject
+        The object to transform into a DataTable.
 
-        .PARAMETER TimeSpanType
-            Specifies the type to convert TimeSpan objects into. Default is 'TotalMilliseconds'. Valid options are: 'Ticks', 'TotalDays', 'TotalHours', 'TotalMinutes', 'TotalSeconds', 'TotalMilliseconds', and 'String'.
+    .PARAMETER TimeSpanType
+        Specifies the type to convert TimeSpan objects into. Default is 'TotalMilliseconds'. Valid options are: 'Ticks', 'TotalDays', 'TotalHours', 'TotalMinutes', 'TotalSeconds', 'TotalMilliseconds', and 'String'.
 
-        .PARAMETER SizeType
-            Specifies the type to convert DbaSize objects to. Default is 'Int64'. Valid options are 'Int32', 'Int64', and 'String'.
+    .PARAMETER SizeType
+        Specifies the type to convert DbaSize objects to. Default is 'Int64'. Valid options are 'Int32', 'Int64', and 'String'.
 
-        .PARAMETER IgnoreNull
-            If this switch is enabled, objects with null values will be ignored (empty rows will be added by default).
+    .PARAMETER IgnoreNull
+        If this switch is enabled, objects with null values will be ignored (empty rows will be added by default).
 
-        .PARAMETER Raw
-            If this switch is enabled, the DataTable will be created with strings. No attempt will be made to parse/determine data types.
+    .PARAMETER Raw
+        If this switch is enabled, the DataTable will be created with strings. No attempt will be made to parse/determine data types.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: DataTable, Table, Data
-            Website: https://dbatools.io/
-            Copyright: (C) 2016 Chrissy LeMaire
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: DataTable, Table, Data
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/ConvertTo-DbaDataTable
+        Website: https://dbatools.io/
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .OUTPUTS
-            System.Object[]
+    .LINK
+        https://dbatools.io/ConvertTo-DbaDataTable
 
-        .EXAMPLE
-            Get-Service | ConvertTo-DbaDataTable
+    .OUTPUTS
+        System.Object[]
 
-            Creates a DataTable from the output of Get-Service.
+    .EXAMPLE
+        PS C:\> Get-Service | ConvertTo-DbaDataTable
 
-        .EXAMPLE
-            ConvertTo-DbaDataTable -InputObject $csv.cheesetypes
+        Creates a DataTable from the output of Get-Service.
 
-            Creates a DataTable from the CSV object $csv.cheesetypes.
+    .EXAMPLE
+        PS C:\> ConvertTo-DbaDataTable -InputObject $csv.cheesetypes
 
-        .EXAMPLE
-            $dblist | ConvertTo-DbaDataTable
+        Creates a DataTable from the CSV object $csv.cheesetypes.
 
-            Creates a DataTable from the $dblist object passed in via pipeline.
+    .EXAMPLE
+        PS C:\> $dblist | ConvertTo-DbaDataTable
 
-        .EXAMPLE
-            Get-Process | ConvertTo-DbaDataTable -TimeSpanType TotalSeconds
+        Creates a DataTable from the $dblist object passed in via pipeline.
 
-            Creates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.
-    #>
+    .EXAMPLE
+        PS C:\> Get-Process | ConvertTo-DbaDataTable -TimeSpanType TotalSeconds
+
+        Creates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.
+
+#>
     [CmdletBinding()]
     [OutputType([System.Object[]])]
     param (
         [Parameter(Position = 0,
-                   Mandatory,
-                   ValueFromPipeline)]
+            Mandatory,
+            ValueFromPipeline)]
         [AllowNull()]
         [PSObject[]]$InputObject,
         [Parameter(Position = 1)]
         [ValidateSet("Ticks",
-                     "TotalDays",
-                     "TotalHours",
-                     "TotalMinutes",
-                     "TotalSeconds",
-                     "TotalMilliseconds",
-                     "String")]
+            "TotalDays",
+            "TotalHours",
+            "TotalMinutes",
+            "TotalSeconds",
+            "TotalMilliseconds",
+            "String")]
         [ValidateNotNullOrEmpty()]
         [string]$TimeSpanType = "TotalMilliseconds",
         [ValidateSet("Int64", "Int32", "String")]
@@ -199,7 +202,7 @@ function ConvertTo-DbaDataTable {
                 The timespan type defined by the user
         #>
             [CmdletBinding()]
-            Param (
+            param (
                 $Value,
                 [ValidateSet('Timespan', 'Size')]
                 [string]$Type,
@@ -247,7 +250,7 @@ function ConvertTo-DbaDataTable {
                 Autofilled. Whether the column should be string, no matter the input.
         #>
             [CmdletBinding()]
-            Param (
+            param (
                 [System.Management.Automation.PSPropertyInfo]$Property,
                 [System.Data.DataTable]$DataTable = $datatable,
                 [string]$TimeSpanType = $TimeSpanType,
@@ -405,6 +408,6 @@ function ConvertTo-DbaDataTable {
     }
     end {
         Write-Message -Level InternalComment -Message "Finished."
-         , $datatable
+        , $datatable
     }
 }

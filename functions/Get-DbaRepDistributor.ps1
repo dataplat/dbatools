@@ -1,5 +1,5 @@
-function Get-DbaRepDistributor {
-    <#
+﻿function Get-DbaRepDistributor {
+<#
     .SYNOPSIS
         Gets the information about a replication distributor for a given SQL Server instance.
 
@@ -7,7 +7,7 @@ function Get-DbaRepDistributor {
         This function locates and enumerates distributor information for a given SQL Server instance.
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -18,21 +18,24 @@ function Get-DbaRepDistributor {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Author: William Durkin, @sql_williamd
         Tags: Replication
+        Author: William Durkin (@sql_williamd)
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaRepDistributor
 
     .EXAMPLE
-        Get-DbaRepDistributor -SqlInstance sql2008, sqlserver2012
+        PS C:\> Get-DbaRepDistributor -SqlInstance sql2008, sqlserver2012
+
         Retrieve distributor information for servers sql2008 and sqlserver2012.
-    #>
+
+#>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -51,7 +54,6 @@ function Get-DbaRepDistributor {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             # connect to the instance
             try {

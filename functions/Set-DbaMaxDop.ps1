@@ -1,84 +1,84 @@
-function Set-DbaMaxDop {
-    <#
-        .SYNOPSIS
-            Sets SQL Server maximum degree of parallelism (Max DOP), then displays information relating to SQL Server Max DOP configuration settings. Works on SQL Server 2005 and higher.
+﻿function Set-DbaMaxDop {
+<#
+    .SYNOPSIS
+        Sets SQL Server maximum degree of parallelism (Max DOP), then displays information relating to SQL Server Max DOP configuration settings. Works on SQL Server 2005 and higher.
 
-        .DESCRIPTION
-            Uses the Test-DbaMaxDop command to get the recommended value if -MaxDop parameter is not specified.
+    .DESCRIPTION
+        Uses the Test-DbaMaxDop command to get the recommended value if -MaxDop parameter is not specified.
 
-            These are just general recommendations for SQL Server and are a good starting point for setting the "max degree of parallelism" option.
+        These are just general recommendations for SQL Server and are a good starting point for setting the "max degree of parallelism" option.
 
-            You can set MaxDop database scoped configurations if the server is version 2016 or higher
+        You can set MaxDop database scoped configurations if the server is version 2016 or higher
 
-        .PARAMETER SqlInstance
-            The SQL Server instance to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. Defaults to localhost.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Specifies one or more databases to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        Specifies one or more databases to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            Specifies one or more databases to exclude from processing. Options for this list are auto-populated from the server
+    .PARAMETER ExcludeDatabase
+        Specifies one or more databases to exclude from processing. Options for this list are auto-populated from the server
 
-        .PARAMETER MaxDop
-            Specifies the Max DOP value to set.
+    .PARAMETER MaxDop
+        Specifies the Max DOP value to set.
 
-        .PARAMETER AllDatabases
-            If this switch is enabled, Max DOP will be set on all databases. This switch is only useful on SQL Server 2016 and higher.
+    .PARAMETER AllDatabases
+        If this switch is enabled, Max DOP will be set on all databases. This switch is only useful on SQL Server 2016 and higher.
 
-        .PARAMETER Collection
-            If Test-SQLMaxDop has been executed prior to this function, the results may be passed in via this parameter.
+    .PARAMETER Collection
+        If Test-SQLMaxDop has been executed prior to this function, the results may be passed in via this parameter.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER WhatIf
-            Shows what would happen if the cmdlet runs. The cmdlet is not run.
+    .PARAMETER WhatIf
+        Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before running the cmdlet.
+    .PARAMETER Confirm
+        Prompts you for confirmation before running the cmdlet.
 
-        .NOTES
-            Tags: MaxDop, SpConfigure
-            Author: Claudio Silva (@claudioessilva)
+    .NOTES
+        Tags: MaxDop, SpConfigure
+        Author: Claudio Silva (@claudioessilva)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Set-DbaMaxDop
+    .LINK
+        https://dbatools.io/Set-DbaMaxDop
 
-        .EXAMPLE
-            Set-DbaMaxDop -SqlInstance sql2008, sql2012
+    .EXAMPLE
+        PS C:\> Set-DbaMaxDop -SqlInstance sql2008, sql2012
 
-            Sets Max DOP to the recommended value for servers sql2008 and sql2012.
+        Sets Max DOP to the recommended value for servers sql2008 and sql2012.
 
-        .EXAMPLE
-            Set-DbaMaxDop -SqlInstance sql2014 -MaxDop 4
+    .EXAMPLE
+        PS C:\> Set-DbaMaxDop -SqlInstance sql2014 -MaxDop 4
 
-            Sets Max DOP to 4 for server sql2014.
+        Sets Max DOP to 4 for server sql2014.
 
-        .EXAMPLE
-            Test-DbaMaxDop -SqlInstance sql2008 | Set-DbaMaxDop
+    .EXAMPLE
+        PS C:\> Test-DbaMaxDop -SqlInstance sql2008 | Set-DbaMaxDop
 
-            Gets the recommended Max DOP from Test-DbaMaxDop and applies it to to sql2008.
+        Gets the recommended Max DOP from Test-DbaMaxDop and applies it to to sql2008.
 
-        .EXAMPLE
-            Set-DbaMaxDop -SqlInstance sql2016 -Database db1
+    .EXAMPLE
+        PS C:\> Set-DbaMaxDop -SqlInstance sql2016 -Database db1
 
-            Set recommended Max DOP for database db1 on server sql2016.
+        Set recommended Max DOP for database db1 on server sql2016.
 
-        .EXAMPLE
-            Set-DbaMaxDop -SqlInstance sql2016 -AllDatabases
+    .EXAMPLE
+        PS C:\> Set-DbaMaxDop -SqlInstance sql2016 -AllDatabases
 
-            Set recommended Max DOP for all databases on server sql2016.
+        Set recommended Max DOP for all databases on server sql2016.
 
-    #>
+#>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -130,7 +130,6 @@ function Set-DbaMaxDop {
         foreach ($server in $servers) {
             $servername = $server.SqlInstance
 
-            Write-Message -Level Verbose -Message "Connecting to $servername"
             try {
                 $server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
             }

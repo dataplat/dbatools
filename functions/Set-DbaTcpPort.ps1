@@ -1,66 +1,67 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaTcpPort {
-    <#
-        .SYNOPSIS
-            Changes the TCP port used by the specified SQL Server.
+<#
+    .SYNOPSIS
+        Changes the TCP port used by the specified SQL Server.
 
-        .DESCRIPTION
-            This function changes the TCP port used by the specified SQL Server.
+    .DESCRIPTION
+        This function changes the TCP port used by the specified SQL Server.
 
-        .PARAMETER SqlInstance
-            The SQL Server that you're connecting to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Credential object used to connect to the SQL Server instance as a different user
+    .PARAMETER SqlCredential
+        Credential object used to connect to the SQL Server instance as a different user
 
-        .PARAMETER Credential
-            Credential object used to connect to the Windows server itself as a different user
+    .PARAMETER Credential
+        Credential object used to connect to the Windows server itself as a different user
 
-        .PARAMETER Port
-            TCPPort that SQLService should listen on.
+    .PARAMETER Port
+        TCPPort that SQLService should listen on.
 
-        .PARAMETER IpAddress
-            Wich IpAddress should the portchange , if omitted allip (0.0.0.0) will be changed with the new portnumber.
+    .PARAMETER IpAddress
+        Which IpAddress should the portchange , if omitted allip (0.0.0.0) will be changed with the new port number.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-        .NOTES
-            Tags: Service, Port, TCP, Configure
-            Author: Hansson7707@gmail.com, @H0s0n77
+    .NOTES
+        Tags: Service, Port, TCP, Configure
+        Author: @H0s0n77
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Set-DbaTcpPort
+    .LINK
+        https://dbatools.io/Set-DbaTcpPort
 
-        .EXAMPLE
-            Set-DbaTcpPort -SqlInstance SqlInstance2014a -Port 1433
+    .EXAMPLE
+        PS C:\> Set-DbaTcpPort -SqlInstance SqlInstance2014a -Port 1433
 
-            Sets the port number 1433 for all IP Addresses on the default instance on SqlInstance2014a
+        Sets the port number 1433 for all IP Addresses on the default instance on SqlInstance2014a
 
-        .EXAMPLE
-            Set-DbaTcpPort -SqlInstance winserver\sqlexpress -IpAddress 192.168.1.22 -Port 1433
+    .EXAMPLE
+        PS C:\> Set-DbaTcpPort -SqlInstance winserver\sqlexpress -IpAddress 192.168.1.22 -Port 1433
 
-            Sets the port number 1433 for IP 192.168.1.22 on the sqlexpress instance on winserver
+        Sets the port number 1433 for IP 192.168.1.22 on the sqlexpress instance on winserver
 
-        .EXAMPLE
-            Set-DbaTcpPort -SqlInstance 'SQLDB2014A' ,'SQLDB2016B' -port 1337
+    .EXAMPLE
+        PS C:\> Set-DbaTcpPort -SqlInstance 'SQLDB2014A' ,'SQLDB2016B' -port 1337
 
-            Sets the port number 1337 for all IP Addresses on SqlInstance SQLDB2014A and SQLDB2016B
-    #>
+        Sets the port number 1337 for all IP Addresses on SqlInstance SQLDB2014A and SQLDB2016B
+
+#>
     [CmdletBinding(ConfirmImpact = "High")]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -93,7 +94,6 @@ function Set-DbaTcpPort {
         foreach ($instance in $SqlInstance) {
 
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

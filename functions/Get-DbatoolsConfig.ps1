@@ -1,44 +1,49 @@
 ﻿function Get-DbatoolsConfig {
-    <#
-        .SYNOPSIS
-            Retrieves configuration elements by name.
+<#
+    .SYNOPSIS
+        Retrieves configuration elements by name.
 
-        .DESCRIPTION
-            Retrieves configuration elements by name.
-            Can be used to search the existing configuration list.
+    .DESCRIPTION
+        Retrieves configuration elements by name.
+        Can be used to search the existing configuration list.
 
-        .PARAMETER FullName
-            Default: "*"
-            Search for configurations using the full name
+    .PARAMETER FullName
+        Default: "*"
+        Search for configurations using the full name
 
-        .PARAMETER Name
-            Default: "*"
-            The name of the configuration element(s) to retrieve.
-            May be any string, supports wildcards.
+    .PARAMETER Name
+        Default: "*"
+        The name of the configuration element(s) to retrieve.
+        May be any string, supports wildcards.
 
-        .PARAMETER Module
-            Default: "*"
-            Search configuration by module.
+    .PARAMETER Module
+        Default: "*"
+        Search configuration by module.
 
-        .PARAMETER Force
-            Overrides the default behavior and also displays hidden configuration values.
+    .PARAMETER Force
+        Overrides the default behavior and also displays hidden configuration values.
 
-        .NOTES
-            Tags: Config, Module
-            Author: Friedrich Weinmann
+    .NOTES
+        Tags: Config, Module
+        Author: Friedrich Weinmann (@FredWeinmann‏)
 
-        .EXAMPLE
-            PS C:\> Get-DbatoolsConfig 'Mail.To'
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Retrieves the configuration element for the key "Mail.To"
+    .EXAMPLE
+        PS C:\> Get-DbatoolsConfig 'Mail.To'
 
-        .EXAMPLE
-            PS C:\> Get-DbatoolsConfig -Force
+        Retrieves the configuration element for the key "Mail.To"
 
-            Retrieve all configuration elements from all modules, even hidden ones.
-    #>
+    .EXAMPLE
+        PS C:\> Get-DbatoolsConfig -Force
+
+        Retrieve all configuration elements from all modules, even hidden ones.
+
+#>
     [CmdletBinding(DefaultParameterSetName = "FullName")]
-    Param (
+    param (
         [Parameter(ParameterSetName = "FullName", Position = 0)]
         [string]$FullName = "*",
         [Parameter(ParameterSetName = "Module", Position = 1)]

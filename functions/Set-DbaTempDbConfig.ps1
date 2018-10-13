@@ -1,96 +1,97 @@
-function Set-DbaTempdbConfig {
-    <#
-        .SYNOPSIS
-            Sets tempdb data and log files according to best practices.
+﻿function Set-DbaTempdbConfig {
+<#
+    .SYNOPSIS
+        Sets tempdb data and log files according to best practices.
 
-        .DESCRIPTION
-            Calculates tempdb size and file configurations based on passed parameters, calculated values, and Microsoft best practices. User must declare SQL Server to be configured and total data file size as mandatory values. Function then calculates the number of data files based on logical cores on the target host and create evenly sized data files based on the total data size declared by the user, with a log file 25% of the total data file size.
+    .DESCRIPTION
+        Calculates tempdb size and file configurations based on passed parameters, calculated values, and Microsoft best practices. User must declare SQL Server to be configured and total data file size as mandatory values. Function then calculates the number of data files based on logical cores on the target host and create evenly sized data files based on the total data size declared by the user, with a log file 25% of the total data file size.
 
-            Other parameters can adjust the settings as the user desires (such as different file paths, number of data files, and log file size). No functions that shrink or delete data files are performed. If you wish to do this, you will need to resize tempdb so that it is "smaller" than what the function will size it to before running the function.
+        Other parameters can adjust the settings as the user desires (such as different file paths, number of data files, and log file size). No functions that shrink or delete data files are performed. If you wish to do this, you will need to resize tempdb so that it is "smaller" than what the function will size it to before running the function.
 
-        .PARAMETER SqlInstance
-            The SQL Server Instance to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER DataFileCount
-            Specifies the number of data files to create. If this number is not specified, the number of logical cores of the host will be used.
+    .PARAMETER DataFileCount
+        Specifies the number of data files to create. If this number is not specified, the number of logical cores of the host will be used.
 
-        .PARAMETER DataFileSizeMB
-            Specifies the total data file size in megabytes. This is distributed across the total number of data files.
+    .PARAMETER DataFileSizeMB
+        Specifies the total data file size in megabytes. This is distributed across the total number of data files.
 
-        .PARAMETER LogFileSizeMB
-            Specifies the log file size in megabytes. If not specified, this will be set to 25% of total data file size.
+    .PARAMETER LogFileSizeMB
+        Specifies the log file size in megabytes. If not specified, this will be set to 25% of total data file size.
 
-        .PARAMETER DataFileGrowthMB
-            Specifies the growth amount for the data file(s) in megabytes. The default is 512 MB.
+    .PARAMETER DataFileGrowthMB
+        Specifies the growth amount for the data file(s) in megabytes. The default is 512 MB.
 
-        .PARAMETER LogFileGrowthMB
-            Specifies the growth amount for the log file in megabytes. The default is 512 MB.
+    .PARAMETER LogFileGrowthMB
+        Specifies the growth amount for the log file in megabytes. The default is 512 MB.
 
-        .PARAMETER DataPath
-            Specifies the filesystem path in which to create the tempdb data files. If not specified, current tempdb location will be used.
+    .PARAMETER DataPath
+        Specifies the filesystem path in which to create the tempdb data files. If not specified, current tempdb location will be used.
 
-        .PARAMETER LogPath
-            Specifies the filesystem path in which to create the tempdb log file. If not specified, current tempdb location will be used.
+    .PARAMETER LogPath
+        Specifies the filesystem path in which to create the tempdb log file. If not specified, current tempdb location will be used.
 
-        .PARAMETER OutputScriptOnly
-            If this switch is enabled, only the T-SQL script to change the tempdb configuration is created and output.
+    .PARAMETER OutputScriptOnly
+        If this switch is enabled, only the T-SQL script to change the tempdb configuration is created and output.
 
-        .PARAMETER OutFile
-            Specifies the filesystem path into which the generated T-SQL script will be saved.
+    .PARAMETER OutFile
+        Specifies the filesystem path into which the generated T-SQL script will be saved.
 
-        .PARAMETER DisableGrowth
-            If this switch is enabled, the tempdb files will be configured to not grow. This overrides -DataFileGrowthMB and -LogFileGrowthMB.
+    .PARAMETER DisableGrowth
+        If this switch is enabled, the tempdb files will be configured to not grow. This overrides -DataFileGrowthMB and -LogFileGrowthMB.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Tempdb, Space, Configure, Configuration
-            Author: Michael Fal (@Mike_Fal), http://mikefal.net
+    .NOTES
+        Tags: Tempdb, Space, Configure, Configuration
+        Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Set-DbaTempdbConfig
+    .LINK
+        https://dbatools.io/Set-DbaTempdbConfig
 
-        .EXAMPLE
-            Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000
+    .EXAMPLE
+        PS C:\> Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000
 
-            Creates tempdb with a number of data files equal to the logical cores where each file is equal to 1000MB divided by the number of logical cores, with a log file of 250MB.
+        Creates tempdb with a number of data files equal to the logical cores where each file is equal to 1000MB divided by the number of logical cores, with a log file of 250MB.
 
-        .EXAMPLE
-            Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000 -DataFileCount 8
+    .EXAMPLE
+        PS C:\> Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000 -DataFileCount 8
 
-            Creates tempdb with 8 data files, each one sized at 125MB, with a log file of 250MB.
+        Creates tempdb with 8 data files, each one sized at 125MB, with a log file of 250MB.
 
-        .EXAMPLE
-            Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
+    .EXAMPLE
+        PS C:\> Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
 
-            Provides a SQL script output to configure tempdb according to the passed parameters.
+        Provides a SQL script output to configure tempdb according to the passed parameters.
 
-        .EXAMPLE
-            Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000 -DisableGrowth
+    .EXAMPLE
+        PS C:\> Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000 -DisableGrowth
 
-            Disables the growth for the data and log files.
+        Disables the growth for the data and log files.
 
-        .EXAMPLE
-            Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
+    .EXAMPLE
+        PS C:\> Set-DbaTempdbConfig -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
 
-            Returns the T-SQL script representing tempdb configuration.
-    #>
+        Returns the T-SQL script representing tempdb configuration.
+
+#>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
@@ -113,7 +114,6 @@ function Set-DbaTempdbConfig {
     )
     begin {
         $sql = @()
-        Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
         $server = Connect-SqlInstance $sqlinstance -SqlCredential $SqlCredential
 
         if ($server.VersionMajor -lt 9) {

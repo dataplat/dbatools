@@ -1,59 +1,60 @@
-function Get-DbaAvailabilityGroup {
-    <#
-        .SYNOPSIS
-            Outputs the Availability Group(s) object found on the server.
+﻿function Get-DbaAvailabilityGroup {
+<#
+    .SYNOPSIS
+        Outputs the Availability Group(s) object found on the server.
 
-        .DESCRIPTION
-            Default view provides most common set of properties for information on the Availability Group(s).
+    .DESCRIPTION
+        Default view provides most common set of properties for information on the Availability Group(s).
 
-        .PARAMETER SqlInstance
-            The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2012 or higher.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2012 or higher.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER AvailabilityGroup
-            Specifies the Availability Group name that you want to get information on.
+    .PARAMETER AvailabilityGroup
+        Specifies the Availability Group name that you want to get information on.
 
-        .PARAMETER IsPrimary
-            If this switch is enabled, a boolean indicating whether SqlInstance is the Primary replica in the AG is returned.
+    .PARAMETER IsPrimary
+        If this switch is enabled, a boolean indicating whether SqlInstance is the Primary replica in the AG is returned.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: Hadr, AG, AvailabilityGroup
-            Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
+    .NOTES
+        Tags: Hadr, HA, AG, AvailabilityGroup
+        Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Get-DbaAvailabilityGroup
+    .LINK
+        https://dbatools.io/Get-DbaAvailabilityGroup
 
-        .EXAMPLE
-            Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a
 
-            Returns basic information on all the Availability Group(s) found on sqlserver2014a.
+        Returns basic information on all the Availability Group(s) found on sqlserver2014a.
 
-        .EXAMPLE
-            Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
 
-            Shows basic information on the Availability Group AG-a on sqlserver2014a.
+        Shows basic information on the Availability Group AG-a on sqlserver2014a.
 
-        .EXAMPLE
-            Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select *
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select *
 
-            Returns full object properties on all Availability Group(s) on sqlserver2014a.
+        Returns full object properties on all Availability Group(s) on sqlserver2014a.
 
-        .EXAMPLE
-            Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
+    .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
 
-            Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group.
-    #>
+        Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group.
+
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
