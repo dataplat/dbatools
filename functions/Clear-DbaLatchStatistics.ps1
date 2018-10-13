@@ -66,8 +66,6 @@
     )
     process {
         foreach ($instance in $SqlInstance) {
-            if (Test-FunctionInterrupt) { return }
-
             Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 
             try {

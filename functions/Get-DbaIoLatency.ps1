@@ -138,13 +138,7 @@
             }
             Write-Message -Level Verbose -Message "Connected to $instance"
 
-            if ($server.VersionMajor -lt 9) {
-                Stop-Function -Message "This function does not support versions lower than SQL Server 2005 (v9)."
-                return
-            }
-
             foreach ($row in $server.Query($sql)) {
-
                 [PSCustomObject]@{
                     ComputerName           = $server.NetName
                     InstanceName           = $server.ServiceName

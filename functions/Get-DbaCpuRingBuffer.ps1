@@ -1,5 +1,5 @@
 ﻿function Get-DbaCpuRingBuffer {
-    <#
+<#
     .SYNOPSIS
         Collects CPU data from sys.dm_os_ring_buffers.  Works on SQL Server 2005 and above.
 
@@ -31,47 +31,48 @@
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Author: Patrick Flynn, @sqllensman
         Tags: CPU
+        Author: Patrick Flynn (@sqllensman)
 
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaCpuRingBuffer
 
     .EXAMPLE
-        Get-DbaCpuRingBuffer -SqlInstance sql2008, sqlserver2012
+        PS C:\> Get-DbaCpuRingBuffer -SqlInstance sql2008, sqlserver2012
+
         Gets CPU Statistics from sys.dm_os_ring_buffers for servers sql2008 and sqlserver2012 for last 60 minutes.
 
     .EXAMPLE
-        Get-DbaCpuRingBuffer -SqlInstance sql2008 -CollectionMinutes 240
+        PS C:\> Get-DbaCpuRingBuffer -SqlInstance sql2008 -CollectionMinutes 240
+
         Gets CPU Statistics from sys.dm_os_ring_buffers for server sql2008 for last 240 minutes
 
     .EXAMPLE
-        $output = Get-DbaCpuRingBuffer -SqlInstance sql2008 -CollectionMinutes 240 | Select * | ConvertTo-DbaDataTable
+        PS C:\> $output = Get-DbaCpuRingBuffer -SqlInstance sql2008 -CollectionMinutes 240 | Select * | ConvertTo-DbaDataTable
+
         Gets CPU Statistics from sys.dm_os_ring_buffers for server sql2008 for last 240 minutes into a Data Table.
 
     .EXAMPLE
-        'sql2008','sql2012' | Get-Get-DbaCpuRingBuffer
+        PS C:\> 'sql2008','sql2012' | Get-DbaCpuRingBuffer
 
         Gets CPU Statistics from sys.dm_os_ring_buffers for servers sql2008 and sqlserver2012
 
     .EXAMPLE
-        $cred = Get-Credential sqladmin
-        Get-DbaSqlInstanceInfo -SqlInstance sql2008 -SqlCredential $cred
+        PS C:\> $cred = Get-Credential sqladmin
+        PS C:\> Get-DbaCpuRingBuffer -SqlInstance sql2008 -SqlCredential $cred
 
         Connects using sqladmin credential and returns CPU Statistics from sys.dm_os_ring_buffers from sql2008
-
-    #>
+#>
     [CmdletBinding()]
     Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Position = 1, Mandatory = $false)]
         [int]$CollectionMinutes = 60,
         [Alias('Silent')]
         [switch]$EnableException
@@ -80,7 +81,6 @@
     process {
         if (Test-FunctionInterrupt) { return }
         foreach ($instance in $SqlInstance) {
-
             Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 
             try {
@@ -88,11 +88,6 @@
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            if ($server.VersionMajor -lt 9) {
-                Stop-Function -Message "This function does not support versions lower than SQL Server 2005 (v9)."
-                return
             }
 
             if ($server.VersionMajor -gt 9) {
@@ -133,7 +128,6 @@
 
             Write-Message -Level Verbose -Message "Executing Sql Staement: $sql"
             foreach ($row in $server.Query($sql)) {
-
                 [PSCustomObject]@{
                     ComputerName            = $server.NetName
                     InstanceName            = $server.ServiceName

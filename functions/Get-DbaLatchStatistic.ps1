@@ -26,12 +26,6 @@
     .PARAMETER Threshold
         Threshold, in percentage of all latch stats on the system. Default per Paul's post is 95%.
 
-    .PARAMETER WhatIf
-        Shows what would happen if the cmdlet runs. The cmdlet is not run.
-
-    .PARAMETER Confirm
-        Prompts you for confirmation before running the cmdlet.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -81,7 +75,7 @@
 
         Displays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
@@ -132,24 +126,17 @@
             }
             Write-Message -Level Verbose -Message "Connected to $instance"
 
-            if ($server.VersionMajor -lt 9) {
-                Stop-Function -Message "This function does not support versions lower than SQL Server 2005 (v9)."
-                return
-            }
-
-            if ($Pscmdlet.ShouldProcess($instance, "Collecting data from sys.dm_os_latch_stats")) {
-                foreach ($row in $server.Query($sql)) {
-                    [PSCustomObject]@{
-                        ComputerName           = $server.NetName
-                        InstanceName           = $server.ServiceName
-                        SqlInstance            = $server.DomainInstanceName
-                        WaitType               = $row.LatchClass
-                        WaitSeconds            = $row.WaitSeconds
-                        WaitCount              = $row.WaitCount
-                        Percentage             = $row.Percentage
-                        AverageWaitSeconds     = $row.AvgWaitSeconds
-                        URL                    = $row.URL
-                    }
+            foreach ($row in $server.Query($sql)) {
+                [PSCustomObject]@{
+                    ComputerName           = $server.NetName
+                    InstanceName           = $server.ServiceName
+                    SqlInstance            = $server.DomainInstanceName
+                    WaitType               = $row.LatchClass
+                    WaitSeconds            = $row.WaitSeconds
+                    WaitCount              = $row.WaitCount
+                    Percentage             = $row.Percentage
+                    AverageWaitSeconds     = $row.AvgWaitSeconds
+                    URL                    = $row.URL
                 }
             }
         }

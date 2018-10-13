@@ -36,7 +36,7 @@
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Get-DbaIdentityUsage
+        https://dbatools.io/Get-DbaSpinLockStatistic
 
     .EXAMPLE
         PS C:\> Get-DbaSpinLockStatistic -SqlInstance sql2008, sqlserver2012
