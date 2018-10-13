@@ -223,6 +223,16 @@ go
 "@
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $sqldrop -Database Master
     }
+
+    Context "Custom TimeStamp" {
+        # Test relies on DateFormat bobob returning bobob as the values aren't interpreted, check here in case .Net rules change
+        if ((Get-Date -Format bobob).ToString() -eq 'bobob'){
+            $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir -TimeStampFormat bobob
+            It "Should have timestamped accordingly" {
+                ($results | Where-Object {$_.BackupPath -like '*bobob*'}).count | Should -Be $results.count
+            }
+        }
+    }
     if ($env:azurepasswd1) {
         Context "Azure works" {
             BeforeAll {
