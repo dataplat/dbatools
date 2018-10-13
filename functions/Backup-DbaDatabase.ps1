@@ -37,6 +37,15 @@
 
         File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x ranges from 1 to y.
 
+    .PARAMETER ReplaceInName
+        If this switch is set, the following list of strings will be replaced in the BackupFileName and BackupDirectory strings:
+            instancename
+            servername
+            dbname
+            timestamp
+            extension
+            backuptype
+
     .PARAMETER CopyOnly
         If this switch is enabled, CopyOnly backups will be taken. By default function performs a normal backup, these backups interfere with the restore chain of the database. CopyOnly backups will not interfere with the restore chain of the database.
 
@@ -138,6 +147,16 @@
 
         Performs a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql credential "dbatoolscred" registered on the sql2016 instance.
 
+    .EXAMPLE
+        PS C:\> Backup-DbaDatabse -SqlInstance Server1\Prod -Database db1 -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -Type Full -ReplaceInName
+
+        Performs a full backup of db1 into the folder \\filestore\backups\server1\prod\db1
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDatabse -SqlInstance Server1\Prod -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -BackupFileName dbname-backuptype-timestamp.ext -Type Log -ReplaceInName
+
+        Performs a log backup for every database. For the database db1 this would results in backup files in \\filestore\backups\server1\prod\db1\Log\db1-log-31102018.trn
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
@@ -150,6 +169,7 @@
         [object[]]$ExcludeDatabase,
         [string[]]$BackupDirectory,
         [string]$BackupFileName,
+        [switch]$ReplaceInName,
         [string]$TimeStampFormat,
         [switch]$CopyOnly,
         [ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
@@ -210,7 +230,7 @@
                 $Filecount = $BackupDirectory.Count
             }
 
-            if ($InputObject.Count -gt 1 -and $BackupFileName -ne '') {
+            if ($InputObject.Count -gt 1 -and $BackupFileName -ne '' -and $True -ne $ReplaceInFile) {
                 Stop-Function -Message "1 BackupFile specified, but more than 1 database."
                 return
             }
