@@ -26,6 +26,12 @@
     .PARAMETER CloneDatabase
         The name(s) to clone to.
 
+    .PARAMETER ExcludeStatistics
+        Exclude the statistics in the cloned database
+
+    .PARAMETER ExcludeQueryStore
+        Exclude the QueryStore data in the cloned database
+
     .PARAMETER UpdateStatistics
         Update the statistics prior to cloning (per Microsoft Tiger Team formula)
 
@@ -65,6 +71,8 @@
         [parameter(Mandatory, ValueFromPipeline)]
         [object]$Database,
         [string[]]$CloneDatabase,
+        [switch]$ExcludeStatistics,
+        [switch]$ExcludeQueryStore,
         [switch]$UpdateStatistics,
         [Alias('Silent')]
         [switch]$EnableException
@@ -76,46 +84,47 @@
             Stop-Function -Message "You must specify a server name if you did not pipe a database"
         }
 
-        $sqlStats = "DECLARE @out TABLE(id INT IDENTITY(1,1), s SYSNAME, o SYSNAME, i SYSNAME, stats_stream VARBINARY(MAX), rows BIGINT, pages BIGINT)
-                    DECLARE @dbcc TABLE(stats_stream VARBINARY(MAX), rows BIGINT, pages BIGINT)
-                    DECLARE c CURSOR FOR
-                           SELECT OBJECT_SCHEMA_NAME(object_id) s, OBJECT_NAME(object_id) o, name i
-                           FROM sys.indexes
-                           WHERE type_desc IN ('CLUSTERED COLUMNSTORE', 'NONCLUSTERED COLUMNSTORE')
-                    DECLARE @s SYSNAME, @o SYSNAME, @i SYSNAME
-                    OPEN c
-                    FETCH NEXT FROM c INTO @s, @o, @i
-                    WHILE @@FETCH_STATUS = 0
-                    BEGIN
-                        DECLARE @showStats NVARCHAR(MAX) = N'DBCC SHOW_STATISTICS(""' + QUOTENAME(@s) + '.' + QUOTENAME(@o) + '"", ' + QUOTENAME(@i) + ') WITH stats_stream'
-                        INSERT @dbcc EXEC sp_executesql @showStats
-                        INSERT @out SELECT @s, @o, @i, stats_stream, rows, pages FROM @dbcc
-                        DELETE @dbcc
-                        FETCH NEXT FROM c INTO @s, @o, @i
-                    END
-                    CLOSE c
-                    DEALLOCATE c
+        $sqlStats = "
+            DECLARE @out TABLE(id INT IDENTITY(1,1), s SYSNAME, o SYSNAME, i SYSNAME, stats_stream VARBINARY(MAX), rows BIGINT, pages BIGINT)
+            DECLARE @dbcc TABLE(stats_stream VARBINARY(MAX), rows BIGINT, pages BIGINT)
+            DECLARE c CURSOR FOR
+                    SELECT OBJECT_SCHEMA_NAME(object_id) s, OBJECT_NAME(object_id) o, name i
+                    FROM sys.indexes
+                    WHERE type_desc IN ('CLUSTERED COLUMNSTORE', 'NONCLUSTERED COLUMNSTORE')
+            DECLARE @s SYSNAME, @o SYSNAME, @i SYSNAME
+            OPEN c
+            FETCH NEXT FROM c INTO @s, @o, @i
+            WHILE @@FETCH_STATUS = 0
+            BEGIN
+                DECLARE @showStats NVARCHAR(MAX) = N'DBCC SHOW_STATISTICS(""' + QUOTENAME(@s) + '.' + QUOTENAME(@o) + '"", ' + QUOTENAME(@i) + ') WITH stats_stream'
+                INSERT @dbcc EXEC sp_executesql @showStats
+                INSERT @out SELECT @s, @o, @i, stats_stream, rows, pages FROM @dbcc
+                DELETE @dbcc
+                FETCH NEXT FROM c INTO @s, @o, @i
+            END
+            CLOSE c
+            DEALLOCATE c
 
+            DECLARE @sql NVARCHAR(MAX);
+            DECLARE @id INT;
+            SELECT TOP 1 @id=id,@sql=
+            'UPDATE STATISTICS ' + QUOTENAME(s) + '.' + QUOTENAME(o)  + '(' + QUOTENAME(i)
+            + ') WITH stats_stream = ' + CONVERT(NVARCHAR(MAX), stats_stream, 1)
+            + ', rowcount = ' + CONVERT(NVARCHAR(MAX), rows) + ', pagecount = '  + CONVERT(NVARCHAR(MAX), pages)
+            FROM @out
 
-                    DECLARE @sql NVARCHAR(MAX);
-                    DECLARE @id INT;
+            WHILE (@@ROWCOUNT <> 0)
+            BEGIN
+                EXEC sp_executesql @sql
+                DELETE @out WHERE id = @id
+                SELECT TOP 1 @id=id,@sql=
+                'UPDATE STATISTICS ' + QUOTENAME(s) + '.' + QUOTENAME(o)  + '(' + QUOTENAME(i)
+                + ') WITH stats_stream = ' + CONVERT(NVARCHAR(MAX), stats_stream, 1)
+                + ', rowcount = ' + CONVERT(NVARCHAR(MAX), rows) + ', pagecount = '  + CONVERT(NVARCHAR(MAX), pages)
+                FROM @out
+            END"
 
-                    SELECT TOP 1 @id=id,@sql=
-                    'UPDATE STATISTICS ' + QUOTENAME(s) + '.' + QUOTENAME(o)  + '(' + QUOTENAME(i)
-                    + ') WITH stats_stream = ' + CONVERT(NVARCHAR(MAX), stats_stream, 1)
-                    + ', rowcount = ' + CONVERT(NVARCHAR(MAX), rows) + ', pagecount = '  + CONVERT(NVARCHAR(MAX), pages)
-                    FROM @out
-
-                    WHILE (@@ROWCOUNT <> 0)
-                    BEGIN
-                        EXEC sp_executesql @sql
-                        DELETE @out WHERE id = @id
-                        SELECT TOP 1 @id=id,@sql=
-                        'UPDATE STATISTICS ' + QUOTENAME(s) + '.' + QUOTENAME(o)  + '(' + QUOTENAME(i)
-                        + ') WITH stats_stream = ' + CONVERT(NVARCHAR(MAX), stats_stream, 1)
-                        + ', rowcount = ' + CONVERT(NVARCHAR(MAX), rows) + ', pagecount = '  + CONVERT(NVARCHAR(MAX), pages)
-                        FROM @out
-                    END"
+        $sqlClone = ""
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -131,6 +140,7 @@
 
             $sql2012min = [version]"11.0.7001.0" # SQL 2012 SP4
             $sql2014min = [version]"12.0.5000.0" # SQL 2014 SP2
+            $sql2014CuMin = [version]"12.0.5538" # SQL 2014 SP2 + CU3
             $sql2016min = [version]"13.0.4001.0" # SQL 2016 SP1
 
             if ($server.VersionMajor -eq 11 -and $server.Version -lt $sql2012min) {
@@ -145,6 +155,21 @@
                 Stop-Function -Message "Unsupported version for $instance. SQL Server 2016 SP1 and above required." -Target $server -Continue
             }
 
+            if (Test-Bound 'ExcludeStatistics') {
+                if ($server.VersionMajor -eq 12 -and $server.Version -lt $sql2014CuMin) {
+                    Stop-Function -Message "Unsupported version for $instance. SQL Server 2014 SP1 + CU3 and above required." -Target $server -Continue
+                }
+                if ($server.VersionMajor -eq 13 -and $server.Version -lt $sql2016min) {
+                    Stop-Function -Message "Unsupported version for $instance. SQL Server 2016 SP1 and above required." -Target $server -Continue
+                }
+            }
+
+            if (Test-Bound 'ExcludeQueryStore') {
+                if ($server.VersionMajor -lt 13 - ($server.VersionMajor -eq 13 -and $server.Version -lt $sql2016min)) {
+                    Stop-Function -Message "Unsupported version for $instance. SQL Server 2016 SP1 and above required." -Target $server -Continue
+                }
+            }
+
             if (-not $Database.Name) {
                 [Microsoft.SqlServer.Management.Smo.Database]$database = $server.Databases[$database]
             }
@@ -157,7 +182,7 @@
                 Stop-Function -Message "Database not found" -Target $instance -Continue
             }
 
-            if ($UpdateStatistics) {
+            if ( (Test-Bound 'UpdateStatistics') -and (Test-Bound 'ExcludeStatistics' -Not) ) {
                 try {
                     Write-Message -Level Verbose -Message "Updating statistics"
                     $null = $database.Query($sqlStats)
