@@ -1,26 +1,28 @@
-function Uninstall-DbaWatchUpdate {
-    <#
-        .SYNOPSIS
-            Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
+﻿function Uninstall-DbaWatchUpdate {
+<#
+    .SYNOPSIS
+        Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
 
-        .DESCRIPTION
-            Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
+    .DESCRIPTION
+        Removes the scheduled task created for Watch-DbaUpdate by Install-DbaWatchUpdate so that notifications no longer pop up.
 
-        .NOTES
-            Tags: JustForFun, Module
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: JustForFun, Module
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Uninstall-DbaWatchUpdate
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Uninstall-DbaWatchUpdate
+    .LINK
+        https://dbatools.io/Uninstall-DbaWatchUpdate
 
-            Removes the scheduled task created by Install-DbaWatchUpdate.
-    #>
+    .EXAMPLE
+        PS C:\> Uninstall-DbaWatchUpdate
+
+        Removes the scheduled task created by Install-DbaWatchUpdate.
+
+#>
     process {
         if (([Environment]::OSVersion).Version.Major -lt 10) {
             Write-Warning "This command only supports Windows 10 and higher."

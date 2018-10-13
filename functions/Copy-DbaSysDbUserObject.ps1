@@ -1,57 +1,59 @@
-function Copy-DbaSysDbUserObject {
-    <#
-        .SYNOPSIS
-            Imports all user objects found in source SQL Server's master, msdb and model databases to the destination.
+﻿function Copy-DbaSysDbUserObject {
+<#
+    .SYNOPSIS
+        Imports all user objects found in source SQL Server's master, msdb and model databases to the destination.
 
-        .DESCRIPTION
-            Imports all user objects found in source SQL Server's master, msdb and model databases to the destination. This is useful because many DBAs store backup/maintenance procs/tables/triggers/etc (among other things) in master or msdb.
+    .DESCRIPTION
+        Imports all user objects found in source SQL Server's master, msdb and model databases to the destination. This is useful because many DBAs store backup/maintenance procs/tables/triggers/etc (among other things) in master or msdb.
 
-            It is also useful for migrating objects within the model database.
+        It is also useful for migrating objects within the model database.
 
-        .PARAMETER Source
-            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+    .PARAMETER Source
+        Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Destination
-            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+    .PARAMETER Destination
+        Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Classic
-            Perform the migration the old way
-    
-        .PARAMETER Force
-            Drop destination objects first. Has no effect if you use Classic. This doesn't work really well, honestly.
+    .PARAMETER Classic
+        Perform the migration the old way
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER Force
+        Drop destination objects first. Has no effect if you use Classic. This doesn't work really well, honestly.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .NOTES
-            Tags: Migration, SystemDatabase, UserObject
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .LINK
-            https://dbatools.io/Copy-DbaSysDbUserObject
+    .NOTES
+        Tags: Migration, SystemDatabase, UserObject
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .EXAMPLE
-            Copy-DbaSysDbUserObject $sourceServer $destserver
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Copies user objects from source to destination
-    #>
+    .LINK
+        https://dbatools.io/Copy-DbaSysDbUserObject
+
+    .EXAMPLE
+        PS C:\> adCopy-DbaSysDbUserObject $sourceServer $destserver
+
+        Copies user objects from source to destination
+
+#>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [Parameter(Mandatory)]
@@ -84,43 +86,41 @@ function Copy-DbaSysDbUserObject {
     }
     process {
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         }
         catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
-        
+
         if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
             Stop-Function -Message "Not a sysadmin on $source. Quitting."
             return
         }
-        
+
         if (Test-FunctionInterrupt) { return }
         foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            
+
             if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
                 Stop-Function -Message "Not a sysadmin on $destinstance" -Continue
             }
-            
+
             $systemDbs = "master", "model", "msdb"
-            
+
             if (-not $Classic) {
                 foreach ($systemDb in $systemDbs) {
                     $smodb = $sourceServer.databases[$systemDb]
                     $destdb = $destserver.databases[$systemDb]
-                    
+
                     $tables = $smodb.Tables | Where-Object IsSystemObject -ne $true
                     $schemas = $smodb.Schemas | Where-Object IsSystemObject -ne $true
-                    
+
                     foreach ($schema in $schemas) {
                         $copyobject = [pscustomobject]@{
                             SourceServer = $sourceServer.Name
@@ -131,10 +131,10 @@ function Copy-DbaSysDbUserObject {
                             Notes        = $null
                             DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
-                        
+
                         $destschema = $destdb.Schemas | Where-Object Name -eq $schema.Name
                         $schmadoit = $true
-                        
+
                         if ($destschema) {
                             if (-not $force) {
                                 $copyobject.Status = "Skipped"
@@ -155,7 +155,7 @@ function Copy-DbaSysDbUserObject {
                                 }
                             }
                         }
-                        
+
                         if ($schmadoit) {
                             $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
                             $null = $transfer.CopyAllObjects = $false
@@ -175,10 +175,10 @@ function Copy-DbaSysDbUserObject {
                                 }
                             }
                         }
-                        
+
                         $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-                    
+
                     foreach ($table in $tables) {
                         $copyobject = [pscustomobject]@{
                             SourceServer = $sourceServer.Name
@@ -189,10 +189,10 @@ function Copy-DbaSysDbUserObject {
                             Notes        = $null
                             DateTime     = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                         }
-                        
+
                         $desttable = $destdb.Tables.Item($table.Name, $table.Schema)
                         $doit = $true
-                        
+
                         if ($desttable) {
                             if (-not $force) {
                                 $copyobject.Status = "Skipped"
@@ -213,7 +213,7 @@ function Copy-DbaSysDbUserObject {
                                 }
                             }
                         }
-                        
+
                         if ($doit) {
                             $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
                             $null = $transfer.CopyAllObjects = $false
@@ -235,17 +235,17 @@ function Copy-DbaSysDbUserObject {
                         }
                         $copyobject | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-                    
+
                     $userobjects = Get-DbaModule -SqlInstance $sourceserver -Database $systemDb -NoSystemObjects | Sort-Object Type
                     Write-Message -Level Verbose -Message "Copying from $systemDb"
                     foreach ($userobject in $userobjects) {
-                        
+
                         $name = "[$($userobject.SchemaName)].[$($userobject.Name)]"
                         $db = $userobject.Database
                         $type = get-sqltypename $userobject.Type
                         $sql = $userobject.Definition
                         $schema = $userobject.SchemaName
-                        
+
                         $copyobject = [pscustomobject]@{
                             SourceServer = $sourceServer.Name
                             DestinationServer = $destServer.Name
@@ -276,7 +276,7 @@ function Copy-DbaSysDbUserObject {
                                         "SQL_INLINE_TABLE_VALUED_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
                                         "SQL_SCALAR_FUNCTION" { $smodb.UserDefinedFunctions.Item($name) }
                                     }
-                                    
+
                                     if ($smobject) {
                                         Write-Message -Level Verbose -Message "Force specified. Dropping $smobject on $destdb on $destinstance using SMO"
                                         $transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $smodb
@@ -373,11 +373,11 @@ function Copy-DbaSysDbUserObject {
                     $transfer.Options.Indexes = $true
                     $transfer.Options.Permissions = $true
                     $transfer.Options.WithDependencies = $false
-                    
+
                     Write-Message -Level Output -Message "Copying from $systemDb."
                     try {
                         $sqlQueries = $transfer.ScriptTransfer()
-                        
+
                         foreach ($sql in $sqlQueries) {
                             Write-Message -Level Debug -Message "$sql"
                             if ($PSCmdlet.ShouldProcess($destServer, $sql)) {

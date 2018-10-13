@@ -1,44 +1,46 @@
-function Get-DbaDetachedDatabaseInfo {
-    <#
-        .SYNOPSIS
-            Get detailed information about detached SQL Server database files.
+﻿function Get-DbaDetachedDatabaseInfo {
+<#
+    .SYNOPSIS
+        Get detailed information about detached SQL Server database files.
 
-        .DESCRIPTION
-            Gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure.
+    .DESCRIPTION
+        Gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure.
 
-            "Data files" and "Log file" report the structure of the data and log files as they were when the database was detached. "Database version" is the compatibility level.
+        "Data files" and "Log file" report the structure of the data and log files as they were when the database was detached. "Database version" is the compatibility level.
 
-            MDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.
+        MDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.
 
-        .PARAMETER SqlInstance
-            Source SQL Server. This instance must be online and is required to parse the information contained with in the detached database file.
+    .PARAMETER SqlInstance
+        Source SQL Server. This instance must be online and is required to parse the information contained with in the detached database file.
 
-            This function will not attach the database file, it will only use SQL Server to read its contents.
+        This function will not attach the database file, it will only use SQL Server to read its contents.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Path
-            Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which the SQL Server service account has access.
+    .PARAMETER Path
+        Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which the SQL Server service account has access.
 
-        .NOTES
-            Tags: Database, Detach
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: Database, Detach
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Get-DbaDetachedDatabaseInfo
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Get-DbaDetachedDatabaseInfo -SqlInstance sql2016 -Path M:\Archive\mydb.mdf
+    .LINK
+        https://dbatools.io/Get-DbaDetachedDatabaseInfo
 
-            Returns information about the detached database file M:\Archive\mydb.mdf using the SQL Server instance sql2016. The M drive is relative to the SQL Server instance.
-     #>
+    .EXAMPLE
+        PS C:\> Get-DbaDetachedDatabaseInfo -SqlInstance sql2016 -Path M:\Archive\mydb.mdf
+
+        Returns information about the detached database file M:\Archive\mydb.mdf using the SQL Server instance sql2016. The M drive is relative to the SQL Server instance.
+
+#>
 
     [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
+    param (
         [parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,

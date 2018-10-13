@@ -1,5 +1,5 @@
 ﻿function Get-DbaDbMailProfile {
-    <#
+<#
     .SYNOPSIS
         Gets database mail profiles from SQL Server
 
@@ -7,7 +7,7 @@
         Gets database mail profiles from SQL Server
 
     .PARAMETER SqlInstance
-        The SQL Server instance, or instances.
+        TThe target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -27,35 +27,36 @@
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: databasemail, dbmail, mail
+        Tags: DatabaseMail, DBMail, Mail
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaDbMailProfile
 
     .EXAMPLE
-        Get-DbaDbMailProfile -SqlInstance sql01\sharepoint
+        PS C:\> Get-DbaDbMailProfile -SqlInstance sql01\sharepoint
 
-        Returns dbmail profiles on sql01\sharepoint
-
-    .EXAMPLE
-        Get-DbaDbMailProfile -SqlInstance sql01\sharepoint -Profile 'The DBA Team'
-
-        Returns The DBA Team dbmail profile from sql01\sharepoint
+        Returns DBMail profiles on sql01\sharepoint
 
     .EXAMPLE
-        Get-DbaDbMailProfile -SqlInstance sql01\sharepoint | Select *
+        PS C:\> Get-DbaDbMailProfile -SqlInstance sql01\sharepoint -Profile 'The DBA Team'
 
-        Returns the dbmail profiles on sql01\sharepoint then return a bunch more columns
+        Returns The DBA Team DBMail profile from sql01\sharepoint
 
     .EXAMPLE
-        $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
-        $servers | Get-DbaDbMail | Get-DbaDbMailProfile
+        PS C:\> Get-DbaDbMailProfile -SqlInstance sql01\sharepoint | Select *
 
-       Returns the dbmail profiles for "sql2014","sql2016" and "sqlcluster\sharepoint"
+        Returns the DBMail profiles on sql01\sharepoint then return a bunch more columns
+
+    .EXAMPLE
+        PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+        PS C:\> $servers | Get-DbaDbMail | Get-DbaDbMailProfile
+
+        Returns the DBMail profiles for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
 #>
     [CmdletBinding()]
@@ -72,7 +73,6 @@
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
             $InputObject += Get-DbaDbMail -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
 

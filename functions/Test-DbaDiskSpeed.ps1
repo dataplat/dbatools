@@ -1,5 +1,5 @@
 ﻿function Test-DbaDiskSpeed {
-    <#
+<#
     .SYNOPSIS
         Tests how disks are performing.
 
@@ -11,10 +11,10 @@
         https://github.com/RichBenner/PersonalCode/blob/master/Disk_Speed_Check.sql
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-       Allows you to login to the SQL Server using alternative credentials.
+        Allows you to login to the SQL Server using alternative credentials.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -30,23 +30,27 @@
     .NOTES
         Tags: Performance
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Test-DbaDiskSpeed
 
     .EXAMPLE
-        Test-DbaDiskSpeed -SqlInstance sql2008, sqlserver2012
+        PS C:\> Test-DbaDiskSpeed -SqlInstance sql2008, sqlserver2012
+
         Tests how disks are performing on sql2008 and sqlserver2012.
 
     .EXAMPLE
-        Test-DbaDiskSpeed -SqlInstance sql2008 -Database tempdb
+        PS C:\> Test-DbaDiskSpeed -SqlInstance sql2008 -Database tempdb
+
         Tests how disks storing tempdb files on sql2008 are performing.
-    #>
+
+#>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
@@ -103,7 +107,6 @@
 
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9

@@ -1,41 +1,41 @@
-function Remove-DbaCmConnection {
-    <#
-        .SYNOPSIS
-            Removes connection objects from the connection cache used for remote computer management.
+﻿function Remove-DbaCmConnection {
+<#
+    .SYNOPSIS
+        Removes connection objects from the connection cache used for remote computer management.
 
-        .DESCRIPTION
-            Removes connection objects from the connection cache used for remote computer management.
+    .DESCRIPTION
+        Removes connection objects from the connection cache used for remote computer management.
 
-        .PARAMETER ComputerName
-            The computer whose connection to remove.
-            Accepts both text as well as the output of Get-DbaCmConnection.
+    .PARAMETER ComputerName
+        The target computer. Accepts both text as well as the output of Get-DbaCmConnection.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: ComputerManagement, CIM
-            Author: Fred Winmann (@FredWeinmann)
+    .NOTES
+        Tags: ComputerManagement, CIM
+        Author: Friedrich Weinmann (@FredWeinmann‏)
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Remove-DbaCmConnection
+    .LINK
+        https://dbatools.io/Remove-DbaCmConnection
 
-        .EXAMPLE
-            Remove-DbaCmConnection -ComputerName sql2014
+    .EXAMPLE
+        PS C:\> Remove-DbaCmConnection -ComputerName sql2014
 
-            Removes the cached connection to the server sql2014 from the cache.
+        Removes the cached connection to the server sql2014 from the cache.
 
-        .EXAMPLE
-            Get-DbaCmConnection | Remove-DbaCmConnection
+    .EXAMPLE
+        PS C:\> Get-DbaCmConnection | Remove-DbaCmConnection
 
-            Clears the entire connection cache.
-    #>
+        Clears the entire connection cache.
+
+#>
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline, Mandatory)]

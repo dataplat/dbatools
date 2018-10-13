@@ -13,11 +13,11 @@
 
         References: https://www.mssqltips.com/sqlservertip/2454/how-to-find-out-how-much-cpu-a-sql-server-process-is-really-using/
 
-        Note: This command returns results from all SQL instances on the destionation server but the process
+        Note: This command returns results from all SQL instances on the destination server but the process
         column is specific to -SqlInstance passed.
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to the SQL instance using alternative credentials.
@@ -36,31 +36,33 @@
     .NOTES
         Tags: CPU
         Author: Chrissy LeMaire (@cl), netnerds.net
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-        Copyright (C) 2016 Chrissy LeMaire
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaCpuUsage
 
     .EXAMPLE
-        Get-DbaCpuUsage -SqlInstance sql2017
+        PS C:\> Get-DbaCpuUsage -SqlInstance sql2017
 
         Logs into the SQL Server instance "sql2017" and also the Computer itself (via WMI) to gather information
 
     .EXAMPLE
-        $usage = Get-DbaCpuUsage -SqlInstance sql2017
-        $usage.Process
+        PS C:\> $usage = Get-DbaCpuUsage -SqlInstance sql2017
+        PS C:\> $usage.Process
 
         Explores the processes (from Get-DbaProcess) associated with the usage results
 
     .EXAMPLE
-        Get-DbaCpuUsage -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin) -Credential (Get-Credential ad\sqldba)
+        PS C:\> Get-DbaCpuUsage -SqlInstance sql2017 -SqlCredential sqladmin -Credential ad\sqldba
 
         Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
+
 #>
     [CmdletBinding()]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -109,7 +111,6 @@
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

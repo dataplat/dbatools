@@ -1,5 +1,5 @@
-function Get-DbaDefaultPath {
-    <#
+﻿function Get-DbaDefaultPath {
+<#
     .SYNOPSIS
         Gets the default SQL Server paths for data, logs and backups
 
@@ -7,7 +7,7 @@ function Get-DbaDefaultPath {
         Gets the default SQL Server paths for data, logs and backups
 
     .PARAMETER SqlInstance
-        The SQL Server instance, or instances.
+        TThe target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
@@ -20,29 +20,30 @@ function Get-DbaDefaultPath {
     .NOTES
         Tags: Config
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaDefaultPath
 
     .EXAMPLE
-        Get-DbaDefaultPath -SqlInstance sql01\sharepoint
+        PS C:\> Get-DbaDefaultPath -SqlInstance sql01\sharepoint
 
         Returns the default file paths for sql01\sharepoint
 
     .EXAMPLE
-        $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
-        $servers | Get-DbaDefaultPath
+        PS C:\> $servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+        PS C:\> $servers | Get-DbaDefaultPath
 
         Returns the default file paths for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
 #>
     [CmdletBinding()]
     param (
-        [Parameter(ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
+        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [Alias("ServerInstance", "Instance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential]
@@ -52,7 +53,6 @@ function Get-DbaDefaultPath {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -AzureUnsupported

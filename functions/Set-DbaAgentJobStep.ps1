@@ -1,132 +1,138 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentJobStep {
-    <#
-.SYNOPSIS
-Set-DbaAgentJobStep updates a job step.
+<#
+    .SYNOPSIS
+        Set-DbaAgentJobStep updates a job step.
 
-.DESCRIPTION
-Set-DbaAgentJobStep updates a job step in the SQL Server Agent with parameters supplied.
+    .DESCRIPTION
+        Set-DbaAgentJobStep updates a job step in the SQL Server Agent with parameters supplied.
 
-.PARAMETER SqlInstance
-SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER SqlCredential
-Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-.PARAMETER Job
-The name of the job. Can be null if the the job id is being used.
+    .PARAMETER Job
+        The name of the job. Can be null if the the job id is being used.
 
-.PARAMETER StepName
-The name of the step.
+    .PARAMETER StepName
+        The name of the step.
 
-.PARAMETER NewName
-The new name for the step in case it needs to be renamed.
+    .PARAMETER NewName
+        The new name for the step in case it needs to be renamed.
 
-.PARAMETER SubSystem
-The subsystem used by the SQL Server Agent service to execute command.
-Allowed values 'ActiveScripting','AnalysisCommand','AnalysisQuery','CmdExec','Distribution','LogReader','Merge','PowerShell','QueueReader','Snapshot','Ssis','TransactSql'
+    .PARAMETER SubSystem
+        The subsystem used by the SQL Server Agent service to execute command.
+        Allowed values 'ActiveScripting','AnalysisCommand','AnalysisQuery','CmdExec','Distribution','LogReader','Merge','PowerShell','QueueReader','Snapshot','Ssis','TransactSql'
 
-.PARAMETER Command
-The commands to be executed by SQLServerAgent service through subsystem.
+    .PARAMETER Command
+        The commands to be executed by SQLServerAgent service through subsystem.
 
-.PARAMETER CmdExecSuccessCode
-The value returned by a CmdExec subsystem command to indicate that command executed successfully.
+    .PARAMETER CmdExecSuccessCode
+        The value returned by a CmdExec subsystem command to indicate that command executed successfully.
 
-.PARAMETER OnSuccessAction
-The action to perform if the step succeeds.
-Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+    .PARAMETER OnSuccessAction
+        The action to perform if the step succeeds.
+        Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
-.PARAMETER OnSuccessStepId
-The ID of the step in this job to execute if the step succeeds and OnSuccessAction is "GoToNextStep".
+    .PARAMETER OnSuccessStepId
+        The ID of the step in this job to execute if the step succeeds and OnSuccessAction is "GoToNextStep".
 
-.PARAMETER OnFailAction
-The action to perform if the step fails.
-Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
-The text value van either be lowercase, uppercase or something in between as long as the text is correct.
+    .PARAMETER OnFailAction
+        The action to perform if the step fails.
+        Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
+        The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
-.PARAMETER OnFailStepId
-The ID of the step in this job to execute if the step fails and OnFailAction is "GoToNextStep".
+    .PARAMETER OnFailStepId
+        The ID of the step in this job to execute if the step fails and OnFailAction is "GoToNextStep".
 
-.PARAMETER Database
-The name of the database in which to execute a Transact-SQL step. The default is 'master'.
+    .PARAMETER Database
+        The name of the database in which to execute a Transact-SQL step. The default is 'master'.
 
-.PARAMETER DatabaseUser
-The name of the user account to use when executing a Transact-SQL step. The default is 'sa'.
+    .PARAMETER DatabaseUser
+        The name of the user account to use when executing a Transact-SQL step. The default is 'sa'.
 
-.PARAMETER RetryAttempts
-The number of retry attempts to use if this step fails. The default is 0.
+    .PARAMETER RetryAttempts
+        The number of retry attempts to use if this step fails. The default is 0.
 
-.PARAMETER RetryInterval
-The amount of time in minutes between retry attempts. The default is 0.
+    .PARAMETER RetryInterval
+        The amount of time in minutes between retry attempts. The default is 0.
 
-.PARAMETER OutputFileName
-The name of the file in which the output of this step is saved.
+    .PARAMETER OutputFileName
+        The name of the file in which the output of this step is saved.
 
-.PARAMETER Flag
-Sets the flag(s) for the job step.
+    .PARAMETER Flag
+        Sets the flag(s) for the job step.
 
-Flag                                    Description
-----------------------------------------------------------------------------
-AppendAllCmdExecOutputToJobHistory      Job history, including command output, is appended to the job history file.
-AppendToJobHistory                      Job history is appended to the job history file.
-AppendToLogFile                         Job history is appended to the SQL Server log file.
-AppendToTableLog                        Job history is appended to a log table.
-LogToTableWithOverwrite                 Job history is written to a log table, overwriting previous contents.
-None                                    Job history is not appended to a file.
-ProvideStopProcessEvent                 Job processing is stopped.
+        Flag                                    Description
+        ----------------------------------------------------------------------------
+        AppendAllCmdExecOutputToJobHistory      Job history, including command output, is appended to the job history file.
+        AppendToJobHistory                      Job history is appended to the job history file.
+        AppendToLogFile                         Job history is appended to the SQL Server log file.
+        AppendToTableLog                        Job history is appended to a log table.
+        LogToTableWithOverwrite                 Job history is written to a log table, overwriting previous contents.
+        None                                    Job history is not appended to a file.
+        ProvideStopProcessEvent                 Job processing is stopped.
 
-.PARAMETER ProxyName
-The name of the proxy that the job step runs as.
+    .PARAMETER ProxyName
+        The name of the proxy that the job step runs as.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER Force
-The force parameter will ignore some errors in the parameters and assume defaults.
+    .PARAMETER Force
+        The force parameter will ignore some errors in the parameters and assume defaults.
 
-.NOTES
-Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job, JobStep
+    .NOTES
+        Tags: Agent, Job, JobStep
+        Author: Sander Stad (@sqlstad), sqlstad.nl
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-https://dbatools.io/Set-DbaAgentJobStep
+    .LINK
+        https://dbatools.io/Set-DbaAgentJobStep
 
-.EXAMPLE
-Set-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -NewName Step2
-Changes the name of the step in "Job1" with the name Step1 to Step2
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -NewName Step2
 
-.EXAMPLE
-Set-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb
-Changes the database of the step in "Job1" with the name Step1 to msdb
+        Changes the name of the step in "Job1" with the name Step1 to Step2
 
-.EXAMPLE
-Set-DbaAgentJobStep -SqlInstance sql1 -Job Job1, Job2 -StepName Step1 -Database msdb
-Changes job steps in multiple jobs with the name Step1 to msdb
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb
 
-.EXAMPLE
-Set-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2 -StepName Step1 -Database msdb
-Changes job steps in multiple jobs on multiple servers with the name Step1 to msdb
+        Changes the database of the step in "Job1" with the name Step1 to msdb
 
-.EXAMPLE
-Set-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb
-Changes the database of the step in "Job1" with the name Step1 to msdb for multiple servers
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJobStep -SqlInstance sql1 -Job Job1, Job2 -StepName Step1 -Database msdb
 
-.EXAMPLE
-sql1, sql2, sql3 | Set-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb
-Changes the database of the step in "Job1" with the name Step1 to msdb for multiple servers using pipeline
+        Changes job steps in multiple jobs with the name Step1 to msdb
+
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2 -StepName Step1 -Database msdb
+
+        Changes job steps in multiple jobs on multiple servers with the name Step1 to msdb
+
+    .EXAMPLE
+        PS C:\> Set-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb
+
+        Changes the database of the step in "Job1" with the name Step1 to msdb for multiple servers
+
+    .EXAMPLE
+        PS C:\> sql1, sql2, sql3 | Set-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb
+
+        Changes the database of the step in "Job1" with the name Step1 to msdb for multiple servers using pipeline
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
@@ -204,7 +210,6 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
         foreach ($instance in $sqlinstance) {
 
             # Try connecting to the instance
-            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }

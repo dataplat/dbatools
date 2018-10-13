@@ -1,4 +1,4 @@
-function Remove-DbaDbMasterKey {
+﻿function Remove-DbaDbMasterKey {
     <#
     .SYNOPSIS
         Deletes specified database master key
@@ -7,7 +7,7 @@ function Remove-DbaDbMasterKey {
         Deletes specified database master key.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Allows you to login to SQL Server using alternative credentials.
@@ -42,23 +42,26 @@ function Remove-DbaDbMasterKey {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
-    .EXAMPLE
-        Remove-DbaDbMasterKey -SqlInstance Server1
-
-        The master key in the master database on server1 will be removed if it exists.
-
-    .EXAMPLE
-        Remove-DbaDbMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
-
-        Suppresses all prompts to remove the master key in the 'db1' database and drops the key.
-
-
     .NOTES
         Tags: Certificate
         Author: Chrissy LeMaire (@cl), netnerds.net
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Remove-DbaMasterKey
+
+    .EXAMPLE
+        PS C:\> Remove-DbaDbMasterKey -SqlInstance Server1
+
+        The master key in the master database on server1 will be removed if it exists.
+
+    .EXAMPLE
+        PS C:\> Remove-DbaDbMasterKey -SqlInstance Server1 -Database db1 -Confirm:$false
+
+        Suppresses all prompts to remove the master key in the 'db1' database and drops the key.
+
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param (
@@ -83,7 +86,7 @@ function Remove-DbaDbMasterKey {
     begin {
         function Drop-Masterkey {
             [CmdletBinding()]
-            Param (
+            param (
                 $masterkey,
 
                 $mode = $Mode,
@@ -124,7 +127,6 @@ function Remove-DbaDbMasterKey {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

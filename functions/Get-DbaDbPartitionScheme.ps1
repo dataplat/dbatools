@@ -1,55 +1,55 @@
-function Get-DbaDbPartitionScheme {
-    <#
-.SYNOPSIS
-Gets database Partition Schemes
+﻿function Get-DbaDbPartitionScheme {
+<#
+    .SYNOPSIS
+        Gets database Partition Schemes
 
-.DESCRIPTION
-Gets database Partition Schemes
+    .DESCRIPTION
+        Gets database Partition Schemes
 
-.PARAMETER SqlInstance
-The target SQL Server instance(s)
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances
 
-.PARAMETER SqlCredential
-Allows you to login to SQL Server using alternative credentials
+    .PARAMETER SqlCredential
+        Allows you to login to SQL Server using alternative credentials
 
-.PARAMETER Database
-To get users from specific database(s)
+    .PARAMETER Database
+        To get users from specific database(s)
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto populated from the server
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is auto populated from the server
 
-.PARAMETER EnableException
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Database
-Author: Klaas Vandenberghe ( @PowerDbaKlaas )
+    .NOTES
+        Tags: Database
+        Author: Klaas Vandenberghe (@PowerDbaKlaas)
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE
-Get-DbaDbPartitionScheme -SqlInstance sql2016
+    .EXAMPLE
+        PS C:\> Get-DbaDbPartitionScheme -SqlInstance sql2016
 
-Gets all database Partition Schemes
+        Gets all database Partition Schemes
 
-.EXAMPLE
-Get-DbaDbPartitionScheme -SqlInstance Server1 -Database db1
+    .EXAMPLE
+        PS C:\> Get-DbaDbPartitionScheme -SqlInstance Server1 -Database db1
 
-Gets the Partition Schemes for the db1 database
+        Gets the Partition Schemes for the db1 database
 
-.EXAMPLE
-Get-DbaDbPartitionScheme -SqlInstance Server1 -ExcludeDatabase db1
+    .EXAMPLE
+        PS C:\> Get-DbaDbPartitionScheme -SqlInstance Server1 -ExcludeDatabase db1
 
-Gets the Partition Schemes for all databases except db1
+        Gets the Partition Schemes for all databases except db1
 
-.EXAMPLE
-'Sql1','Sql2/sqlexpress' | Get-DbaDbPartitionScheme
+    .EXAMPLE
+        PS C:\> 'Sql1','Sql2/sqlexpress' | Get-DbaDbPartitionScheme
 
-Gets the Partition Schemes for the databases on Sql1 and Sql2/sqlexpress
+        Gets the Partition Schemes for the databases on Sql1 and Sql2/sqlexpress
 
 #>
     [CmdletBinding()]
@@ -67,7 +67,6 @@ Gets the Partition Schemes for the databases on Sql1 and Sql2/sqlexpress
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {

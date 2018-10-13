@@ -1,63 +1,65 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Move-DbaCmsRegServerGroup {
-    <#
-        .SYNOPSIS
-             Moves registered server groups around SQL Server Central Management Server (CMS).
+<#
+    .SYNOPSIS
+        Moves registered server groups around SQL Server Central Management Server (CMS).
 
-        .DESCRIPTION
-            Moves registered server groups around SQL Server Central Management Server (CMS).
+    .DESCRIPTION
+        Moves registered server groups around SQL Server Central Management Server (CMS).
 
-        .PARAMETER SqlInstance
-            SQL Server name or SMO object representing the SQL Server to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Group
-            Specifies one or more groups to include from SQL Server Central Management Server.
+    .PARAMETER Group
+        Specifies one or more groups to include from SQL Server Central Management Server.
 
-        .PARAMETER InputObject
-            Allows results from Get-DbaCmsRegServerGroup to be piped in
+    .PARAMETER InputObject
+        Allows results from Get-DbaCmsRegServerGroup to be piped in
 
-        .PARAMETER Id
-            Get group by Id(s)
+    .PARAMETER Id
+        Get group by Id(s)
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER NewGroup
-            The new location.
+    .PARAMETER NewGroup
+        The new location.
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: RegisteredServer, CMS
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Tags: RegisteredServer, CMS
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .LINK
-            https://dbatools.io/Move-DbaCmsRegServerGroup
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Move-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR\Development -NewGroup AD\Prod
+    .LINK
+        https://dbatools.io/Move-DbaCmsRegServerGroup
 
-            Moves the Development group within HR to the Prod group within AD
+    .EXAMPLE
+        PS C:\> Move-DbaCmsRegServerGroup -SqlInstance sql2012 -Group HR\Development -NewGroup AD\Prod
 
-        .EXAMPLE
-            Get-DbaCmsRegServerGroup -SqlInstance sql2017 -Group HR\Development| Move-DbaCmsRegServer -NewGroup Web
+        Moves the Development group within HR to the Prod group within AD
 
-            Moves the Development group within HR to the Web group
-    #>
+    .EXAMPLE
+        PS C:\> Get-DbaCmsRegServerGroup -SqlInstance sql2017 -Group HR\Development| Move-DbaCmsRegServer -NewGroup Web
+
+        Moves the Development group within HR to the Web group
+
+#>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [Alias("ServerInstance", "SqlServer")]
@@ -79,7 +81,6 @@ function Move-DbaCmsRegServerGroup {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance to search for $group"
             $InputObject += Get-DbaCmsRegServerGroup -SqlInstance $instance -SqlCredential $SqlCredential -Group $Group
         }
 
@@ -112,7 +113,6 @@ function Move-DbaCmsRegServerGroup {
                     $newname = "$newname\$($regservergroup.Name)"
                     Write-Message -Level Verbose -Message "Executing $($regservergroup.ScriptMove($groupobject).GetScript())"
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptMove($groupobject).GetScript())
-                    Write-Message -Level Verbose -Message "Connecting to $instance to search for $newname"
                     Get-DbaCmsRegServerGroup -SqlInstance $server -Group $newname
                     $parentserver.ServerConnection.Disconnect()
                 }

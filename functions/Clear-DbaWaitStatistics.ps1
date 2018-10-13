@@ -1,5 +1,5 @@
-function Clear-DbaWaitStatistics {
-    <#
+﻿function Clear-DbaWaitStatistics {
+<#
     .SYNOPSIS
         Clears wait statistics
 
@@ -7,7 +7,7 @@ function Clear-DbaWaitStatistics {
         Reset the aggregated statistics - basically just executes DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR)
 
     .PARAMETER SqlInstance
-        Allows you to specify a comma separated list of servers to query.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -24,23 +24,27 @@ function Clear-DbaWaitStatistics {
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: WaitStatistic
+        Tags: WaitStatistic, Waits
         Author: Chrissy LeMaire (@cl)
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Clear-DbaWaitStatistics
 
     .EXAMPLE
-        Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012
+        PS C:\> Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012
+
         After confirmation, clears wait stats on servers sql2008 and sqlserver2012
 
     .EXAMPLE
-        Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false
+        PS C:\> Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false
+
         Clears wait stats on servers sql2008 and sqlserver2012, without prompting
-    #>
+
+#>
     [CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
@@ -52,7 +56,6 @@ function Clear-DbaWaitStatistics {
     )
     process {
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9

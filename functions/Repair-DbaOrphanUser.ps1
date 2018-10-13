@@ -1,95 +1,96 @@
-#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Repair-DbaOrphanUser {
-    <#
-        .SYNOPSIS
-            Finds orphan users with existing login and remaps them.
+<#
+    .SYNOPSIS
+        Finds orphan users with existing login and remaps them.
 
-        .DESCRIPTION
-            An orphan user is defined by a user that does not have a matching login (Login property = "").
+    .DESCRIPTION
+        An orphan user is defined by a user that does not have a matching login (Login property = "").
 
-            If the matching login exists it must be:
-                Enabled
-                Not a system object
-                Not locked
-                Have the same name that user
+        If the matching login exists it must be:
+        Enabled
+        Not a system object
+        Not locked
+        Have the same name that user
 
-            You can drop users that does not have their matching login by specifying the parameter -RemoveNotExisting.
+        You can drop users that does not have their matching login by specifying the parameter -RemoveNotExisting.
 
-        .PARAMETER SqlInstance
-            The SQL Server Instance to connect to.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+    .PARAMETER Database
+        Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-        .PARAMETER ExcludeDatabase
-            Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server
+    .PARAMETER ExcludeDatabase
+        Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server
 
-        .PARAMETER Users
-            Specifies the list of usernames to repair.
+    .PARAMETER Users
+        Specifies the list of usernames to repair.
 
-        .PARAMETER Force
+    .PARAMETER Force
         Forces alter schema to dbo owner so users can be dropped.
 
-        .PARAMETER RemoveNotExisting
-            If this switch is enabled, all users that do not have a matching login will be dropped from the database.
+    .PARAMETER RemoveNotExisting
+        If this switch is enabled, all users that do not have a matching login will be dropped from the database.
 
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .EXAMPLE
-            Repair-DbaOrphanUser -SqlInstance sql2005
+    .NOTES
+        Tags: Orphan
+        Author: Claudio Silva (@ClaudioESSilva) | Simone Bizzotto (@niphlod)
 
-            Finds and repairs all orphan users of all databases present on server 'sql2005'
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .EXAMPLE
-            Repair-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
+    .LINK
+        https://dbatools.io/Repair-DbaOrphanUser
 
-            Finds and repair all orphan users in all databases present on server 'sqlserver2014a'. SQL credentials are used to authenticate to the server.
+    .EXAMPLE
+        PS C:\> Repair-DbaOrphanUser -SqlInstance sql2005
 
-        .EXAMPLE
-            Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2
+        Finds and repairs all orphan users of all databases present on server 'sql2005'
 
-            Finds and repairs all orphan users in both db1 and db2 databases.
+    .EXAMPLE
+        PS C:\> Repair-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
 
-        .EXAMPLE
-            Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1 -Users OrphanUser
+        Finds and repair all orphan users in all databases present on server 'sqlserver2014a'. SQL credentials are used to authenticate to the server.
 
-            Finds and repairs user 'OrphanUser' in 'db1' database.
+    .EXAMPLE
+        PS C:\> Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2
 
-        .EXAMPLE
-            Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser
+        Finds and repairs all orphan users in both db1 and db2 databases.
 
-            Finds and repairs user 'OrphanUser' on all databases
+    .EXAMPLE
+        PS C:\> Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1 -Users OrphanUser
 
-        .EXAMPLE
-            Repair-DbaOrphanUser -SqlInstance sqlserver2014a -RemoveNotExisting
+        Finds and repairs user 'OrphanUser' in 'db1' database.
 
-            Finds all orphan users of all databases present on server 'sqlserver2014a'. Removes all users that do not have  matching Logins.
+    .EXAMPLE
+        PS C:\> Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser
 
-        .NOTES
-            Tags: Orphan
-            Author: Claudio Silva (@ClaudioESSilva)
-            Editor: Simone Bizzotto (@niphlod)
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Finds and repairs user 'OrphanUser' on all databases
 
-        .LINK
-            https://dbatools.io/Repair-DbaOrphanUser
-    #>
+    .EXAMPLE
+        PS C:\> Repair-DbaOrphanUser -SqlInstance sqlserver2014a -RemoveNotExisting
+
+        Finds all orphan users of all databases present on server 'sqlserver2014a'. Removes all users that do not have  matching Logins.
+
+#>
     [CmdletBinding(SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -110,7 +111,6 @@ function Repair-DbaOrphanUser {
         foreach ($instance in $SqlInstance) {
 
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {

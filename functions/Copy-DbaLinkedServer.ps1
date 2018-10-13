@@ -1,75 +1,75 @@
-function Copy-DbaLinkedServer {
-    <#
-        .SYNOPSIS
-            Copy-DbaLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
+﻿function Copy-DbaLinkedServer {
+<#
+    .SYNOPSIS
+        Copy-DbaLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.
 
-        .DESCRIPTION
-            By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.
+    .DESCRIPTION
+        By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.
 
-            Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
+        Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER Source
+        Source SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
 
-        .PARAMETER Source
-            Source SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
+    .PARAMETER SourceSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER SourceSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER Destination
+        Destination SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
 
-        .PARAMETER Destination
-            Destination SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
+    .PARAMETER DestinationSqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER DestinationSqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER LinkedServer
+        The linked server(s) to process - this list is auto-populated from the server. If unspecified, all linked servers will be processed.
 
-        .PARAMETER LinkedServer
-            The linked server(s) to process - this list is auto-populated from the server. If unspecified, all linked servers will be processed.
+    .PARAMETER ExcludeLinkedServer
+        The linked server(s) to exclude - this list is auto-populated from the server
 
-        .PARAMETER ExcludeLinkedServer
-            The linked server(s) to exclude - this list is auto-populated from the server
+    .PARAMETER UpgradeSqlClient
+        Upgrade any SqlClient Linked Server to the current Version
 
-        .PARAMETER UpgradeSqlClient
-            Upgrade any SqlClient Linked Server to the current Version
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
 
-        .PARAMETER WhatIf
-            Shows what would happen if the command were to run. No actions are actually performed.
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
 
-        .PARAMETER Confirm
-            Prompts you for confirmation before executing any changing operations within the command.
+    .PARAMETER Force
+        By default, if a Linked Server exists on the source and destination, the Linked Server is not copied over. Specifying -force will drop and recreate the Linked Server on the Destination server.
 
-        .PARAMETER Force
-            By default, if a Linked Server exists on the source and destination, the Linked Server is not copied over. Specifying -force will drop and recreate the Linked Server on the Destination server.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .NOTES
+        Tags: WSMan, Migration, LinkedServer
+        Author: Chrissy LeMaire (@cl), netnerds.net
 
-        .NOTES
-            Tags: WSMan, Migration, LinkedServer
-            Author: Chrissy LeMaire (@cl), netnerds.net
-            Requires: sysadmin access on SQL Servers, Remote Registry & Remote Administration enabled and accessible on source server.
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-            Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
-            This just copies the SQL portion. It does not copy files (ie. a local SQLite database, or Microsoft Access DB), nor does it configure ODBC entries.
+        Requires: sysadmin access on SQL Servers
+        Limitations: This just copies the SQL portion. It does not copy files (ie. a local SQLite database, or Microsoft Access DB), nor does it configure ODBC entries.
 
-        .LINK
-            https://dbatools.io/Copy-DbaLinkedServer
+    .LINK
+        https://dbatools.io/Copy-DbaLinkedServer
 
-        .EXAMPLE
-            Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster
+    .EXAMPLE
+        PS C:\> Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster
 
-            Copies all SQL Server Linked Servers on sqlserver2014a to sqlcluster. If Linked Server exists on destination, it will be skipped.
+        Copies all SQL Server Linked Servers on sqlserver2014a to sqlcluster. If Linked Server exists on destination, it will be skipped.
 
-        .EXAMPLE
-            Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServer SQL2K5,SQL2k -Force
+    .EXAMPLE
+        PS C:\> Copy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServer SQL2K5,SQL2k -Force
 
-            Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
-    #>
+        Copies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped.
+
+#>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-    Param (
+    param (
         [parameter(Mandatory)]
         [DbaInstanceParameter]$Source,
         [PSCredential]$SourceSqlCredential,
@@ -223,7 +223,6 @@ function Copy-DbaLinkedServer {
             Write-Message -Level Verbose -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
         }
         try {
-            Write-Message -Level Verbose -Message "Connecting to $Source"
             $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             return
         }
@@ -252,7 +251,6 @@ function Copy-DbaLinkedServer {
 
         foreach ($destinstance in $Destination) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $destinstance"
                 $destServer = Connect-SqlInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
             }
             catch {

@@ -1,5 +1,5 @@
-function Get-DbaStartupParameter {
-    <#
+﻿function Get-DbaStartupParameter {
+<#
     .SYNOPSIS
         Displays values for a detailed list of SQL Server Startup Parameters.
 
@@ -11,7 +11,7 @@ function Get-DbaStartupParameter {
         See https://msdn.microsoft.com/en-us/library/ms190737.aspx for more information.
 
     .PARAMETER SqlInstance
-        The SQL Server instance to connect to.
+        The target SQL Server instance or instances.
 
     .PARAMETER Credential
         Allows you to login to servers using alternate Windows credentials.
@@ -24,29 +24,32 @@ function Get-DbaStartupParameter {
     .PARAMETER EnableException
         If this switch is enabled, exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
 
-    .EXAMPLE
-        Get-DbaStartupParameter -SqlInstance sql2014
-
-        Logs into SQL WMI as the current user then displays the values for numerous startup parameters.
-
-    .EXAMPLE
-        $wincred = Get-Credential ad\sqladmin
-        Get-DbaStartupParameter -SqlInstance sql2014 -Credential $wincred -Simple
-
-        Logs in to WMI using the ad\sqladmin credential and gathers simplified information about the SQL Server Startup Parameters.
-
     .NOTES
         Tags: WSMan, SQLWMI, Memory
         Author: Chrissy LeMaire (@cl), netnerds.net
+
         Website: https://dbatools.io
-        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
         https://dbatools.io/Get-DbaStartupParameter
+
+    .EXAMPLE
+        PS C:\> Get-DbaStartupParameter -SqlInstance sql2014
+
+        Logs into SQL WMI as the current user then displays the values for numerous startup parameters.
+
+    .EXAMPLE
+        PS C:\> $wincred = Get-Credential ad\sqladmin
+        PS C:\> Get-DbaStartupParameter -SqlInstance sql2014 -Credential $wincred -Simple
+
+        Logs in to WMI using the ad\sqladmin credential and gathers simplified information about the SQL Server Startup Parameters.
+
 #>
     [CmdletBinding()]
-    param ([parameter(ValueFromPipeline, Mandatory)]
+    param (
+        [parameter(ValueFromPipeline, Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("SqlCredential")]
@@ -65,7 +68,6 @@ function Get-DbaStartupParameter {
 
                 $computerName = (Resolve-DbaNetworkName -ComputerName $computerName).FullComputerName
 
-                Write-Message -Level Verbose -message "Connecting to $computerName"
 
                 if ($instanceName.Length -eq 0) { $instanceName = "MSSQLSERVER" }
 

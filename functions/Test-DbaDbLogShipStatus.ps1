@@ -1,82 +1,83 @@
-function Test-DbaLogShippingStatus {
-    <#
-        .SYNOPSIS
-            Test-DbaLogShippingStatus returns the status of your log shipping databases
+﻿function Test-DbaDbLogShipStatus {
+<#
+    .SYNOPSIS
+        Test-DbaDbLogShipStatus returns the status of your log shipping databases
 
-        .DESCRIPTION
-            Most of the time your log shipping "just works".
-            Checking your log shipping status can be done really easy with this function.
+    .DESCRIPTION
+        Most of the time your log shipping "just works".
+        Checking your log shipping status can be done really easy with this function.
 
-            Make sure you're connecting to the monitoring instance of your log shipping infrastructure.
+        Make sure you're connecting to the monitoring instance of your log shipping infrastructure.
 
-            The function will return the status for a database. This can be one or more messages in a comma separated list.
-            If everything is OK with the database than you should only see the message "All OK".
+        The function will return the status for a database. This can be one or more messages in a comma separated list.
+        If everything is OK with the database than you should only see the message "All OK".
 
-        .PARAMETER SqlInstance
-            SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+    .PARAMETER SqlInstance
+        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-        .PARAMETER SqlCredential
-            Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
+    .PARAMETER SqlCredential
+        Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-        .PARAMETER Database
-            Allows you to filter the results to only return the databases you're interested in. This can be one or more values separated by commas.
-            This is not a wildcard and should be the exact database name. See examples for more info.
+    .PARAMETER Database
+        Allows you to filter the results to only return the databases you're interested in. This can be one or more values separated by commas.
+        This is not a wildcard and should be the exact database name. See examples for more info.
 
-        .PARAMETER ExcludeDatabase
-            Allows you to filter the results to only return the databases you're not interested in. This can be one or more values separated by commas.
-            This is not a wildcard and should be the exact database name.
+    .PARAMETER ExcludeDatabase
+        Allows you to filter the results to only return the databases you're not interested in. This can be one or more values separated by commas.
+        This is not a wildcard and should be the exact database name.
 
-        .PARAMETER Primary
-            Allows to filter the results to only return values that apply to the primary instance.
+    .PARAMETER Primary
+        Allows to filter the results to only return values that apply to the primary instance.
 
-        .PARAMETER Secondary
-            Allows to filter the results to only return values that apply to the secondary instance.
+    .PARAMETER Secondary
+        Allows to filter the results to only return values that apply to the secondary instance.
 
-        .PARAMETER Simple
-            By default all the information will be returned.
-            If this parameter is used you get an overview with the SQL Instance, Database, Instance Type and the status
+    .PARAMETER Simple
+        By default all the information will be returned.
+        If this parameter is used you get an overview with the SQL Instance, Database, Instance Type and the status
 
-        .PARAMETER EnableException
-            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-        .NOTES
-            Tags: LogShipping
-            Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .NOTES
+        Tags: LogShipping
+        Author: Sander Stad (@sqlstad), sqlstad.nl
 
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: MIT https://opensource.org/licenses/MIT
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
 
-        .LINK
-            https://dbatools.io/Test-DbaLogShippingStatus
+    .LINK
+        https://dbatools.io/Test-DbaDbLogShipStatus
 
-        .EXAMPLE
-            Test-DbaLogShippingStatus -SqlInstance sql1
+    .EXAMPLE
+        PS C:\> Test-DbaDbLogShipStatus -SqlInstance sql1
 
-            Retrieves the log ship information from sql1 and displays all the information present including the status.
+        Retrieves the log ship information from sql1 and displays all the information present including the status.
 
-        .EXAMPLE
-            Test-DbaLogShippingStatus -SqlInstance sql1 -Database AdventureWorks2014
+    .EXAMPLE
+        PS C:\> Test-DbaDbLogShipStatus -SqlInstance sql1 -Database AdventureWorks2014
 
-            Retrieves the log ship information for just the database AdventureWorks.
+        Retrieves the log ship information for just the database AdventureWorks.
 
-        .EXAMPLE
-            Test-DbaLogShippingStatus -SqlInstance sql1 -Primary
+    .EXAMPLE
+        PS C:\> Test-DbaDbLogShipStatus -SqlInstance sql1 -Primary
 
-            Retrieves the log ship information and only returns the information for the databases on the primary instance.
+        Retrieves the log ship information and only returns the information for the databases on the primary instance.
 
-        .EXAMPLE
-            Test-DbaLogShippingStatus -SqlInstance sql1 -Secondary
+    .EXAMPLE
+        PS C:\> Test-DbaDbLogShipStatus -SqlInstance sql1 -Secondary
 
-            Retrieves the log ship information and only returns the information for the databases on the secondary instance.
+        Retrieves the log ship information and only returns the information for the databases on the secondary instance.
 
-        .EXAMPLE
-            Test-DbaLogShippingStatus -SqlInstance sql1 -Simple
+    .EXAMPLE
+        PS C:\> Test-DbaDbLogShipStatus -SqlInstance sql1 -Simple
 
-            Retrieves the log ship information and only returns the columns SQL Instance, Database, Instance Type and Status
-    #>
+        Retrieves the log ship information and only returns the columns SQL Instance, Database, Instance Type and Status
+
+#>
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
@@ -93,10 +94,6 @@ function Test-DbaLogShippingStatus {
     )
 
     begin {
-
-        # Create array list to hold the results
-        $collection = New-Object System.Collections.ArrayList
-
         # Setup the query
         [string[]]$query = "
 IF ( OBJECT_ID('tempdb..#logshippingstatus') ) IS NOT NULL
@@ -165,7 +162,6 @@ EXEC master.sys.sp_help_log_shipping_monitor"
     process {
         foreach ($instance in $sqlinstance) {
             # Try connecting to the instance
-            Write-Message -Message "Connecting to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
@@ -243,53 +239,55 @@ EXEC master.sys.sp_help_log_shipping_monitor"
                         $lastBackup = "N/A"
                     }
                     else {
-                        $lastBackup = (Get-Date).AddMinutes( - $result.TimeSinceLastBackup)
+                        $lastBackup = (Get-Date).AddMinutes(- $result.TimeSinceLastBackup)
                     }
 
                     if ($result.TimeSinceLastCopy -eq [DBNull]::Value) {
                         $lastCopy = "N/A"
                     }
                     else {
-                        $lastCopy = (Get-Date).AddMinutes( - $result.TimeSinceLastCopy)
+                        $lastCopy = (Get-Date).AddMinutes(- $result.TimeSinceLastCopy)
                     }
 
                     if ($result.TimeSinceLastRestore -eq [DBNull]::Value) {
                         $lastRestore = "N/A"
                     }
                     else {
-                        $lastRestore = (Get-Date).AddMinutes( - $result.TimeSinceLastRestore)
+                        $lastRestore = (Get-Date).AddMinutes(- $result.TimeSinceLastRestore)
                     }
                 }
 
                 # Set up the custom object
-                $null = $collection.Add([PSCustomObject]@{
-                        ComputerName          = $server.ComputerName
-                        InstanceName          = $server.ServiceName
-                        SqlInstance           = $server.DomainInstanceName
-                        Database              = $result.DatabaseName
-                        InstanceType          = switch ($result.IsPrimary) { $true { "Primary Instance" } $false { "Secondary Instance" } }
-                        TimeSinceLastBackup   = $lastBackup
-                        LastBackupFile        = $result.LastBackupFile
-                        BackupThreshold       = $result.BackupThreshold
-                        IsBackupAlertEnabled  = $result.IsBackupAlertEnabled
-                        TimeSinceLastCopy     = $lastCopy
-                        LastCopiedFile        = $result.LastCopiedFile
-                        TimeSinceLastRestore  = $lastRestore
-                        LastRestoredFile      = $result.LastRestoredFile
-                        LastRestoredLatency   = $result.LastRestoredLatency
-                        RestoreThreshold      = $result.RestoreThreshold
-                        IsRestoreAlertEnabled = $result.IsRestoreAlertEnabled
-                        Status                = $statusDetails -join ","
-                    })
+                $object = [PSCustomObject]@{
+                    ComputerName = $server.ComputerName
+                    InstanceName = $server.ServiceName
+                    SqlInstance  = $server.DomainInstanceName
+                    Database     = $result.DatabaseName
+                    InstanceType = switch ($result.IsPrimary) { $true { "Primary Instance" } $false { "Secondary Instance" } }
+                    TimeSinceLastBackup = $lastBackup
+                    LastBackupFile = $result.LastBackupFile
+                    BackupThreshold = $result.BackupThreshold
+                    IsBackupAlertEnabled = $result.IsBackupAlertEnabled
+                    TimeSinceLastCopy = $lastCopy
+                    LastCopiedFile = $result.LastCopiedFile
+                    TimeSinceLastRestore = $lastRestore
+                    LastRestoredFile = $result.LastRestoredFile
+                    LastRestoredLatency = $result.LastRestoredLatency
+                    RestoreThreshold = $result.RestoreThreshold
+                    IsRestoreAlertEnabled = $result.IsRestoreAlertEnabled
+                    Status       = $statusDetails -join ","
+                }
 
-            }
-
-            if ($Simple) {
-                return $collection | Select-Object SqlInstance, Database, InstanceType, Status
-            }
-            else {
-                return $collection
+                if ($Simple) {
+                    $object | Select-DefaultView -Property SqlInstance, Database, InstanceType, Status
+                }
+                else {
+                    $object
+                }
             }
         }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-DbaLogShippingStatus
     }
 }
