@@ -84,8 +84,7 @@
             Stop-Function -Message "You must specify a server name if you did not pipe a database"
         }
 
-        $sqlStats = "
-            DECLARE @out TABLE(id INT IDENTITY(1,1), s SYSNAME, o SYSNAME, i SYSNAME, stats_stream VARBINARY(MAX), rows BIGINT, pages BIGINT)
+        $sqlStats = "DECLARE @out TABLE(id INT IDENTITY(1,1), s SYSNAME, o SYSNAME, i SYSNAME, stats_stream VARBINARY(MAX), rows BIGINT, pages BIGINT)
             DECLARE @dbcc TABLE(stats_stream VARBINARY(MAX), rows BIGINT, pages BIGINT)
             DECLARE c CURSOR FOR
                     SELECT OBJECT_SCHEMA_NAME(object_id) s, OBJECT_NAME(object_id) o, name i
@@ -122,9 +121,23 @@
                 + ') WITH stats_stream = ' + CONVERT(NVARCHAR(MAX), stats_stream, 1)
                 + ', rowcount = ' + CONVERT(NVARCHAR(MAX), rows) + ', pagecount = '  + CONVERT(NVARCHAR(MAX), pages)
                 FROM @out
-            END"
+            END
+        "
 
-        $sqlClone = ""
+        $noStats = "NO_STATISTICS"
+        $noQueryStore = "NO_QUERYSTORE"
+        if ( (Test-Bound 'ExcludeStatistics') -or (Test-Bound 'ExcludeQueryStore') ) {
+            $sqlWith = ""
+            if ($ExcludeStatistics) {
+                $sqlWith = "WITH $noStats"
+            }
+            if ($ExcludeQueryStore) {
+                $sqlWith = "WITH $noQueryStore"
+            }
+            if ($ExcludeStatistics -and $ExcludeQueryStore) {
+                $sqlWith = "WITH $noStats,$noQueryStore"
+            }
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -201,9 +214,10 @@
                 }
                 else {
                     try {
-                        $sql = "DBCC CLONEDATABASE('$dbName','$db')"
+                        $sql = "DBCC CLONEDATABASE('$dbName','$db') $sqlWith"
+                        Write-Message -Level Debug -Message "Sql Statement: $sql"
                         $null = $database.Query($sql)
-                        $server.Databases.Refresh()
+                        # $server.Databases.Refresh()
                         Get-DbaDatabase -SqlInstance $server -Database $db
                     }
                     catch {
