@@ -217,7 +217,6 @@
                         $sql = "DBCC CLONEDATABASE('$dbName','$db') $sqlWith"
                         Write-Message -Level Debug -Message "Sql Statement: $sql"
                         $null = $database.Query($sql)
-                        # $server.Databases.Refresh()
                         Get-DbaDatabase -SqlInstance $server -Database $db
                     }
                     catch {
