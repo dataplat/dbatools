@@ -26,6 +26,8 @@
 
         SQL Server needs permissions to write to the specified location. Path names are based on the SQL Server (C:\ is the C drive on the SQL Server, not the machine running the script).
 
+        Passing in NUL as the BackupFileName will backup to the NUL: device
+
     .PARAMETER TimeStampFormat
         By default the command timestamps backups using the format yyyyMMddHHmm. Using this parameter this can be overridden. The timestamp format should be defined using the Get-Date formats, illegal formats will cause an error to be thrown
 
@@ -152,10 +154,14 @@
         Performs a full backup of db1 into the folder \\filestore\backups\server1\prod\db1
 
     .EXAMPLE
-        PS C:\> Backup-DbaDatabse -SqlInstance Server1\Prod -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -BackupFileName dbname-backuptype-timestamp.ext -Type Log -ReplaceInName
+        PS C:\> Backup-DbaDatabse -SqlInstance Server1\Prod -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -BackupFileName dbname-backuptype-timestamp.trn -Type Log -ReplaceInName
 
         Performs a log backup for every database. For the database db1 this would results in backup files in \\filestore\backups\server1\prod\db1\Log\db1-log-31102018.trn
 
+    .EXAMPLE
+        PS C:\> Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName NUL
+
+        Performs a backup of master, but sends the output to the NUL device (ie; throws it away)
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
