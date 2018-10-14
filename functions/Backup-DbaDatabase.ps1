@@ -39,12 +39,11 @@
 
     .PARAMETER ReplaceInName
         If this switch is set, the following list of strings will be replaced in the BackupFileName and BackupDirectory strings:
-            instancename
-            servername
-            dbname
-            timestamp
-            extension
-            backuptype
+            instancename - will be replaced with the instance Name
+            servername - will be replaced with the server name
+            dbname - will be replaced with the database name
+            timestamp - will be replaced with the timestamp (either the default, or the format provided)
+            backuptype - will be replaced with Full, Log or Differential as appropriate
 
     .PARAMETER CopyOnly
         If this switch is enabled, CopyOnly backups will be taken. By default function performs a normal backup, these backups interfere with the restore chain of the database. CopyOnly backups will not interfere with the restore chain of the database.
@@ -372,6 +371,7 @@
 
             $BackupFinalName = ''
             $FinalBackupPath = @()
+            $timestamp = Get-Date -Format $TimeStampFormat
             if ('NUL' -eq $BackupFileName) {
                 $FinalBackupPath += 'NUL:'
                 $IgnoreFileChecks = $true
@@ -386,8 +386,7 @@
                 }
             }
             else {
-                $timestamp = Get-Date -Format $TimeStampFormat
-                Write-Message -Level VeryVerbose -Message "Setting filename - $timestamp - $timestampformat"
+                Write-Message -Level VeryVerbose -Message "Setting filename - $timestamp"
                 $BackupFinalName = "$($dbname)_$timestamp.$suffix"
             }
 
@@ -432,7 +431,6 @@
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('instancename', $SqlInstance.InstanceName)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('servername',$SqlInstance.ComputerName)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('timestamp',$timestamp)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('extension',$suffix)
                     $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('backuptype',$outputType)
                 }
             }
