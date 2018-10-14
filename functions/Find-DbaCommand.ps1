@@ -154,17 +154,17 @@ function Find-DbaCommand {
                 $thebase.MaximumVersion = $MaximumVersion.Trim()
             }
 
-			## fetch Parameters
-			$parameters = $thishelp.parameters.parameter
-			$command = Get-Command $commandName
-			$params = @()
-			foreach($p in $parameters) {
-				$paramAlias = $command.parameters[$p.Name].Aliases
-				$paramDescr = Get-DbaTrimmedString -Text ($p.Description | Out-String -Width 200)
-				$params += , @($p.Name, $paramDescr, ($paramAlias -Join ','), ($p.Required -eq $true), $p.PipelineInput, $p.DefaultValue)
-			}
+            ## fetch Parameters
+            $parameters = $thishelp.parameters.parameter
+            $command = Get-Command $commandName
+            $params = @()
+            foreach($p in $parameters) {
+                $paramAlias = $command.parameters[$p.Name].Aliases
+                $paramDescr = Get-DbaTrimmedString -Text ($p.Description | Out-String -Width 200)
+                $params += , @($p.Name, $paramDescr, ($paramAlias -Join ','), ($p.Required -eq $true), $p.PipelineInput, $p.DefaultValue)
+            }
 
-			$thebase.Params = $params
+            $thebase.Params = $params
 
             [pscustomobject]$thebase
         }
