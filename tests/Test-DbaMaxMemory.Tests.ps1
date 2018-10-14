@@ -2,10 +2,10 @@ $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Connects to multiple instances" {
         It 'Returns multiple objects' {
-            $results = Test-DbaMaxMemory -SqlInstance $script:instance2, $script:instance3
+            $results = Test-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2
             $results.Count | Should BeGreaterThan 1 # and ultimately not throw an exception
         }
     }
