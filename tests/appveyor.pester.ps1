@@ -292,9 +292,11 @@ if (-not $Finalize) {
     if ($env:PART) {
         try {
             [int]$num, [int]$denom = $env:PART.Split('/')
-            Write-Host -ForegroundColor DarkGreen "Test Parts   : part $($env:PART) on total $($AllScenarioTests.Count)"
-            $scenarioParts = Split-ArrayInParts -array $AllScenarioTests -parts $denom
-            $AllScenarioTests = $scenarioParts[$num-1]
+            Write-Host -ForegroundColor DarkGreen "Test Parts    : part $($env:PART) on total $($AllScenarioTests.Count)"
+            #shuffle things a bit (i.e. with natural sorting most of the *get* fall into the first part, all the *set* in the last, etc)
+            $AllScenarioTestsShuffled = $AllScenarioTests | Sort-Object -Property @{Expression={ $_.Name.Split('-')[-1].Replace('Dba', '') }; Ascending = $true}
+            $scenarioParts = Split-ArrayInParts -array $AllScenarioTestsShuffled -parts $denom
+            $AllScenarioTests = $scenarioParts[$num-1] | Sort-Object -Property Name
         } catch {
         }
     }
