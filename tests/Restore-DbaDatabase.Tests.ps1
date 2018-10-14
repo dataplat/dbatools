@@ -825,7 +825,6 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             }
         }
     }
-
     if ($env:azurelegacypasswd1) {
         Context "Restores to Azure" {
             BeforeAll {
@@ -846,3 +845,4 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 }
+# $script:instance3 to add to the 2016_2017 matrix
