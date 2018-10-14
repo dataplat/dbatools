@@ -30,6 +30,12 @@
     .PARAMETER InputObject
         Database object piped in from Get-DbaDatabase
 
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -61,7 +67,7 @@
         Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas\sqlbackups\keys directory.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -113,7 +119,7 @@
             }
 
             # If you pass a password param, then you will not be prompted for each database, but it wouldn't be a good idea to build in insecurity
-            if ((Test-Bound -ParameterName Password -Not) -and (Test-Bound -ParameterName Credential -Not)) {
+            if (-not $Password -and -not $Credential) {
                 $password = Read-Host -AsSecureString -Prompt "You must enter Service Key password for $instance"
                 $password2 = Read-Host -AsSecureString -Prompt "Type the password again"
 
@@ -128,23 +134,25 @@
             $fileinstance = $instance.ToString().Replace('\', '$')
             $filename = "$Path\$fileinstance-$dbname-$time.key"
 
-            try {
-                $masterkey.Export($filename, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
-                $status = "Success"
-            }
-            catch {
-                $status = "Failure"
-                Write-Message -Level Warning -Message "Backup failure: $($_.Exception.InnerException)"
-            }
+            if ($Pscmdlet.ShouldProcess($instance, "Backing up master key to $filename")) {
+                try {
+                    $masterkey.Export($filename, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
+                    $status = "Success"
+                }
+                catch {
+                    $status = "Failure"
+                    Write-Message -Level Warning -Message "Backup failure: $($_.Exception.InnerException)"
+                }
 
-            Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-            Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-            Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-            Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $dbname
-            Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $filename
-            Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Status -value $status
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $dbname
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $filename
+                Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Status -value $status
 
-            Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, 'Filename as Path', Status
+                Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, 'Filename as Path', Status
+            }
         }
     }
     end {

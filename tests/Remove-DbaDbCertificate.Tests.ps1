@@ -13,7 +13,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             if ($masterKey) { $masterkey | Remove-DbaDbMasterKey -Confirm:$false }
         }
 
-        $results = New-DbaDbCertificate -SqlInstance $script:instance1 | Remove-DbaDbCertificate -Confirm:$false
+        $results = New-DbaDbCertificate -SqlInstance $script:instance1 -Confirm:$false | Remove-DbaDbCertificate -Confirm:$false
 
         It "Successfully removes database certificate in master" {
             "$($results.Status)" -match 'Success' | Should Be $true
