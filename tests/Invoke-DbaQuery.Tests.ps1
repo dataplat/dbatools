@@ -3,6 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    # $script:instance3 to add to the 2016_2017 matrix
     It "supports pipable instances" {
         $results = $script:instance1, $script:instance2 | Invoke-DbaQuery -Database tempdb -Query "Select 'hello' as TestColumn"
         foreach ($result in $results) {
@@ -157,4 +158,3 @@ SELECT @@servername as dbname
         ($results | ForEach-Object { Get-Date -Date $_.FiredAt -Format s } | Get-Unique).Count | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
     }
 }
-# $script:instance3 to add to the 2016_2017 matrix

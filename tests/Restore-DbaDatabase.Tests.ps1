@@ -3,6 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+    # $script:instance3 to add to the 2016_2017 matrix
     #Setup variable for multiple contexts
     $DataFolder = 'c:\temp\datafiles'
     $LogFolder = 'C:\temp\logfiles'
@@ -845,4 +846,3 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
     }
 }
-# $script:instance3 to add to the 2016_2017 matrix

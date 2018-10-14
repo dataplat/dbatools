@@ -3,6 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+    # $script:instance3 to add to the 2016_2017 matrix
     Context "gets spn information" {
         Mock Resolve-DbaNetworkName {
             [pscustomobject]@{
@@ -31,4 +32,3 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
     }
 }
-# $script:instance3 to add to the 2016_2017 matrix
