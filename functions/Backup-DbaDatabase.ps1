@@ -426,6 +426,17 @@
                 }
             }
 
+            if ($True -eq $ReplaceInName) {
+                for ($i=0; $i -lt $FinalBackupPath.count; $i++){
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('dbname',$dbname)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('instancename', $SqlInstance.InstanceName)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('servername',$SqlInstance.ComputerName)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('timestamp',$timestamp)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('extension',$suffix)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('backuptype',$outputType)
+                }
+            }
+
             if (-not $IgnoreFileChecks -and -not $AzureBaseUrl) {
                 $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
                 foreach ($parentPath in $parentPaths) {
