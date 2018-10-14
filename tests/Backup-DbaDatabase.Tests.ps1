@@ -167,6 +167,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
+    Context "Test Backup-DbaDatabase can take pipe input"{
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -confirm:$false -WarningVariable warnvar
+        It "Should not warn" {
+            $warnvar | Should -Be ''
+        }
+        It "Should Complete Successfully" {
+            $results.BackupComplete | Should -Be $true
+        }
+
+    }
+
     Context "Should handle NUL as an input path" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName NUL
         It "Should return succesful backup" {
