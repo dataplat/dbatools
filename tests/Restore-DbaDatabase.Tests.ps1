@@ -348,7 +348,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         AfterAll {
             $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         }
-        $Should_Run = (Connect-DbaInstance -SqlInstance $script:instance2).Version.ToString() -like '10.50*'
+        $Should_Run = (Connect-DbaInstance -SqlInstance $script:instance2).Version.ToString() -like '13.*'
         if (-not ($Should_Run)) {
             It "The test can run" {
                 Set-TestInconclusive -Message "a 2008R2 is strictly needed"
@@ -384,7 +384,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         AfterAll {
             $null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
         }
-        $Should_Run = (Connect-DbaInstance -SqlInstance $script:instance2).Version.ToString() -like '10.50*'
+        $Should_Run = (Connect-DbaInstance -SqlInstance $script:instance2).Version.ToString() -like '13.*'
         if (-not ($Should_Run)) {
             It "The test can run" {
                 Set-TestInconclusive -Message "a 2008R2 is strictly needed"
