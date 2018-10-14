@@ -760,7 +760,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
         $null = Get-DbaBackupHistory -SqlInstance $script:instance2 -Database pagerestore -last | Restore-DbaDatabase -SqlInstance $script:instance2 -PageRestore (Get-DbaSuspectPage -SqlInstance $script:instance2 -Database PageRestore) -TrustDbBackupHistory -AllowContinue -DatabaseName PageRestore -PageRestoreTailFolder c:\temp -ErrorAction SilentlyContinue
         $sqlResults3 = Invoke-SqlCmd2 -ServerInstance $script:instance2 -Query "select * from pagerestore.dbo.testpage where filler like 'f%'" -ErrorVariable errvar3 -ErrorAction SilentlyContinue
-        It "Should work after page restore" {
+        It -Skip "Should work after page restore" {
             #($null -eq $errvar3) | Should Be $True
             ($null -eq $sqlResults3) | SHould be $False
         }
