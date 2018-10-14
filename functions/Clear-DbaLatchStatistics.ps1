@@ -57,7 +57,7 @@
 #>
     [CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
