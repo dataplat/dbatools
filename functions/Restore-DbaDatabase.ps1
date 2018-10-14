@@ -78,7 +78,7 @@
     .PARAMETER IgnoreLogBackup
         This switch tells the function to ignore transaction log backups. The process will restore to the latest full or differential backup point only
 
-    .PARAMETER useDestinationDefaultDirectories
+    .PARAMETER UseDestinationDefaultDirectories
         Switch that tells the restore to use the default Data and Log locations on the target server. If they don't exist, the function will try to create them
 
     .PARAMETER ReuseSourceFolderStructure
@@ -246,7 +246,7 @@
 
     .EXAMPLE
         PS C:\> $File = Get-ChildItem c:\backups, \\server1\backups -recurse
-        PS C:\> $File | Restore-DbaDatabase -SqlInstance Server1\Instance -useDestinationDefaultDirectories
+        PS C:\> $File | Restore-DbaDatabase -SqlInstance Server1\Instance -UseDestinationDefaultDirectories
 
         This will take all of the files found under the folders c:\backups and \\server1\backups, and pipeline them into
         Restore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included
@@ -352,7 +352,7 @@
         [parameter(ParameterSetName = "Restore")]
         [switch]$IgnoreLogBackup,
         [parameter(ParameterSetName = "Restore")]
-        [switch]$useDestinationDefaultDirectories,
+        [switch]$UseDestinationDefaultDirectories,
         [parameter(ParameterSetName = "Restore")]
         [switch]$ReuseSourceFolderStructure,
         [parameter(ParameterSetName = "Restore")]
@@ -428,7 +428,7 @@ $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
             return
         }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
-            $useDestinationDefaultDirectories = $true
+            $UseDestinationDefaultDirectories = $true
             $paramCount = 0
 
             if (!(Test-Bound "AllowContinue") -and $true -ne $AllowContinue) {
@@ -469,7 +469,7 @@ $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
                 return
             }
             if (($null -ne $FileMapping) -or $ReuseSourceFolderStructure -or ($DestinationDataDirectory -ne '')) {
-                $useDestinationDefaultDirectories = $false
+                $UseDestinationDefaultDirectories = $false
             }
             if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
                 Stop-Function -Category InvalidArgument -Message "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
@@ -516,14 +516,14 @@ $BackupHistory | Restore-DbaDatabse -SqlInstance sql2000 -TrustDbBackupHistory
 
         $isLocal = [dbavalidate]::IsLocalHost($SqlInstance.ComputerName)
 
-        if ($useDestinationDefaultDirectories) {
+        if ($UseDestinationDefaultDirectories) {
             $DefaultPath = (Get-DbaDefaultPath -SqlInstance $RestoreInstance)
             $DestinationDataDirectory = $DefaultPath.Data
             $DestinationLogDirectory = $DefaultPath.Log
         }
 
         $BackupHistory = @()
-        #$useDestinationDefaultDirectories = $true
+        #$UseDestinationDefaultDirectories = $true
     }
     process {
         if (Test-FunctionInterrupt) { return }
