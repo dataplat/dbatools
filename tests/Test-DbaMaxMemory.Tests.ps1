@@ -3,10 +3,9 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-    # $script:instance3 to add to the 2016_2017 matrix
     Context "Connects to multiple instances" {
         It 'Returns multiple objects' {
-            $results = Test-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2
+            $results = Test-DbaMaxMemory -SqlInstance $script:instance2, $script:instance3
             $results.Count | Should BeGreaterThan 1 # and ultimately not throw an exception
         }
     }

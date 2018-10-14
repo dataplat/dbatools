@@ -3,32 +3,31 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    # $script:instance3 to add to the 2016_2017 matrix
     It "supports pipable instances" {
-        $results = $script:instance1, $script:instance2 | Invoke-DbaQuery -Database tempdb -Query "Select 'hello' as TestColumn"
+        $results = $script:instance2, $script:instance3 | Invoke-DbaQuery -Database tempdb -Query "Select 'hello' as TestColumn"
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
         }
     }
     It "supports parameters" {
         $sqlParams = @{ testvalue = 'hello' }
-        $results = $script:instance1 | Invoke-DbaQuery -Database tempdb -Query "Select @testvalue as TestColumn" -SqlParameters $sqlParams
+        $results = $script:instance2 | Invoke-DbaQuery -Database tempdb -Query "Select @testvalue as TestColumn" -SqlParameters $sqlParams
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
         }
     }
     It "supports AppendServerInstance" {
-        $conn1 = Connect-DbaInstance $script:instance1
-        $conn2 = Connect-DbaInstance $script:instance2
+        $conn1 = Connect-DbaInstance $script:instance2
+        $conn2 = Connect-DbaInstance $script:instance3
         $serverInstances = $conn1.Name, $conn2.Name
-        $results = $script:instance1, $script:instance2 | Invoke-DbaQuery -Database tempdb -Query "Select 'hello' as TestColumn" -AppendServerInstance
+        $results = $script:instance2, $script:instance3 | Invoke-DbaQuery -Database tempdb -Query "Select 'hello' as TestColumn" -AppendServerInstance
         foreach ($result in $results) {
             $result.ServerInstance | Should -Not -Be Null
             $result.ServerInstance | Should -BeIn $serverInstances
         }
     }
     It "supports pipable databases" {
-        $dbs = Get-DbaDatabase -SqlInstance $script:instance1, $script:instance2
+        $dbs = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3
         $results = $dbs | Invoke-DbaQuery -Query "Select 'hello' as TestColumn, DB_NAME() as dbname"
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
@@ -36,13 +35,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         'tempdb' | Should -Bein $results.dbname
     }
     It "stops when piped databases and -Database" {
-        $dbs = Get-DbaDatabase -SqlInstance $script:instance1, $script:instance2
+        $dbs = Get-DbaDatabase -SqlInstance $script:instance2, $script:instance3
         { $dbs | Invoke-DbaQuery -Query "Select 'hello' as TestColumn, DB_NAME() as dbname" -Database tempdb -EnableException } | Should Throw "You can't"
     }
     It "supports reading files" {
         $testPath = "TestDrive:\dbasqlquerytest.txt"
         Set-Content $testPath -value "Select 'hello' as TestColumn, DB_NAME() as dbname"
-        $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -File $testPath
+        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -File $testPath
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
         }
@@ -54,7 +53,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         Set-Content "$testPath\dbasqlquerytest2.sql" -value "Select 'hello2' as TestColumn, DB_NAME() as dbname"
         Set-Content "$testPath\dbasqlquerytest2.txt" -value "Select 'hello3' as TestColumn, DB_NAME() as dbname"
         $pathinfo = Get-Item $testpath
-        $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -File $pathinfo
+        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -File $pathinfo
         'hello' | Should -Bein $results.TestColumn
         'hello2' | Should -Bein $results.TestColumn
         'hello3' | Should -Not -Bein $results.TestColumn
@@ -63,29 +62,29 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
     It "supports http files" {
         $cleanup = "IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')) DROP TABLE [dbo].[CommandLog]"
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query $cleanup
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $cleanup
         $CloudQuery = 'https://raw.githubusercontent.com/sqlcollaborative/appveyor-lab/master/sql2016-startup/ola/CommandLog.sql'
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -File $CloudQuery
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -File $CloudQuery
         $check = "SELECT name FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')"
-        $results = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query $check
+        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $check
         $results.Name | Should -Be 'CommandLog'
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query $cleanup
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $cleanup
     }
     It "supports smo objects" {
         $cleanup = "IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')) DROP TABLE [dbo].[CommandLog]"
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1, $script:instance2 -Database tempdb -Query $cleanup
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2, $script:instance3 -Database tempdb -Query $cleanup
         $CloudQuery = 'https://raw.githubusercontent.com/sqlcollaborative/appveyor-lab/master/sql2016-startup/ola/CommandLog.sql'
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -File $CloudQuery
-        $smoobj = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb | Where-Object Name -eq 'CommandLog'
-        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -SqlObject $smoobj
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -File $CloudQuery
+        $smoobj = Get-DbaDbTable -SqlInstance $script:instance2 -Database tempdb | Where-Object Name -eq 'CommandLog'
+        $null = Invoke-DbaQuery -SqlInstance $script:instance3 -Database tempdb -SqlObject $smoobj
         $check = "SELECT name FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')"
-        $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $check
+        $results = Invoke-DbaQuery -SqlInstance $script:instance3 -Database tempdb -Query $check
         $results.Name | Should Be 'CommandLog'
-        $null = Invoke-DbaQuery -SqlInstance $script:instance1, $script:instance2 -Database tempdb -Query $cleanup
+        $null = Invoke-DbaQuery -SqlInstance $script:instance2, $script:instance3 -Database tempdb -Query $cleanup
     }
     <#
     It "supports loose objects (with SqlInstance and database props)" {
-        $dbs = Get-DbaDbState -SqlInstance $script:instance1, $script:instance2
+        $dbs = Get-DbaDbState -SqlInstance $script:instance2, $script:instance3
         $results = $dbs | Invoke-DbaQuery -Query "Select 'hello' as TestColumn, DB_NAME() as dbname"
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
@@ -97,7 +96,7 @@ SELECT DB_NAME() as dbname
 GO
 SELECT @@servername as dbname
 '@
-        $results = $script:instance1, $script:instance2 | Invoke-DbaQuery -Database tempdb -Query $Query
+        $results = $script:instance2, $script:instance3 | Invoke-DbaQuery -Database tempdb -Query $Query
         $results.dbname -contains 'tempdb' | Should -Be $true
     }
     It "streams correctly 'messages' with Verbose" {
@@ -117,7 +116,7 @@ SELECT @@servername as dbname
         PRINT 'stmt_6|PRINT end|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
 '@
         $results = @()
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query $query -Verbose 4>&1 | ForEach-Object {
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $query -Verbose 4>&1 | ForEach-Object {
             $results += [pscustomobject]@{
                 FiredAt = (Get-Date).ToUniversalTime()
                 Out     = $_
@@ -148,7 +147,7 @@ SELECT @@servername as dbname
         PRINT 'stmt_6|PRINT end|' + CONVERT(VARCHAR(19), GETUTCDATE(), 126)
 '@
         $results = @()
-        Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query $query -MessagesToOutput | ForEach-Object {
+        Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $query -MessagesToOutput | ForEach-Object {
             $results += [pscustomobject]@{
                 FiredAt = (Get-Date).ToUniversalTime()
                 Out     = $_
