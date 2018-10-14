@@ -4,18 +4,18 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 5
         <#
             Get commands, Default count = 11
             Commands with SupportShouldProcess = 13
         #>
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Get-DbaAgReplica).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Replica', 'EnableException'
-        it "Should contain our specific parameters" {
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Replica', 'EnableException', 'InputObject'
+        $paramCount = $knownParameters.Count
+        It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
-        it "Should only contain $paramCount parameters" {
+        It "Should only contain $paramCount parameters" {
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
     }
@@ -28,8 +28,8 @@ InModuleScope dbatools {
             Import-Clixml $script:appveyorlabrepo\agserver.xml
         }
         Context "gets ag replicas" {
-            $results = Get-DbaAgReplica -SqlInstance sql2016c
-            It "returns results with proper data" {
+            It -Skip "returns results with proper data" {
+                $results = Get-DbaAgReplica -SqlInstance sql2016c
                 $results.ConnectionState | Should -Be 'Unknown', 'Unknown', 'Disconnected'
                 $results.EndPointUrl -contains 'TCP://sql2016c.base.local:5022'| Should -Be $true
             }

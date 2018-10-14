@@ -14,7 +14,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb) | Remove-DbaDbMasterKey -Confirm:$false
         }
 
-        $cert = New-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb
+        $cert = New-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb -Confirm:$false
         $results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert.Name -Database tempdb
         $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
 

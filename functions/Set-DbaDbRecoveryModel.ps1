@@ -138,8 +138,8 @@
                 Stop-Function -Message "Recovery Model for database $db is already set to $RecoveryModel" -Category ConnectionError -Target $instance -Continue
             }
             else {
-                $db.RecoveryModel = $RecoveryModel;
                 if ($Pscmdlet.ShouldProcess("$db on $instance", "ALTER DATABASE $db SET RECOVERY $RecoveryModel")) {
+                    $db.RecoveryModel = $RecoveryModel
                     $db.Alter()
                     Write-Message -Level Verbose -Message "Recovery Model set to $RecoveryModel for database $db"
                 }

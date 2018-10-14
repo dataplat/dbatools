@@ -2,20 +2,22 @@
 function Get-DbaEndpoint {
 <#
     .SYNOPSIS
-        Gets SQL Endpoint(s) information for each instance(s) of SQL Server.
+        Returns endpoint objects from a SQL Server instance.
 
     .DESCRIPTION
-        The Get-DbaEndpoint command gets SQL Endpoint(s) information for each instance(s) of SQL Server.
+        Returns endpoint objects from a SQL Server instance.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
-        to be executed against multiple SQL Server instances.
+        The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER EndPoint
-        Return only specific endpoint or endpoints
+    .PARAMETER Endpoint
+        Return only specific endpoints.
+
+    .PARAMETER Type
+        Return only specific types of endpoints. Options include: DatabaseMirroring, ServiceBroker, Soap, and TSql.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -36,12 +38,12 @@ function Get-DbaEndpoint {
     .EXAMPLE
         PS C:\> Get-DbaEndpoint -SqlInstance localhost
 
-        Returns all Endpoint(s) on the local default SQL Server instance
+        Returns all endpoints on the local default SQL Server instance
 
     .EXAMPLE
         PS C:\> Get-DbaEndpoint -SqlInstance localhost, sql2016
 
-        Returns all Endpoint(s) for the local and sql2016 SQL Server instances
+        Returns all endpoints for the local and sql2016 SQL Server instances
 
 #>
     [CmdletBinding()]
@@ -50,9 +52,10 @@ function Get-DbaEndpoint {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Endpoint,
+        [ValidateSet('DatabaseMirroring', 'ServiceBroker', 'Soap', 'TSql')]
+        [string[]]$Type,
         [switch]$EnableException
     )
-
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -69,11 +72,15 @@ function Get-DbaEndpoint {
 
             $endpoints = $server.Endpoints
 
-            if (Test-Bound -ParameterName EndPoint) {
+            if ($endpoint) {
                 $endpoints = $endpoints | Where-Object Name -in $endpoint
+            }
+            if ($Type) {
+                $endpoints = $endpoints | Where-Object EndpointType -in $Type
             }
 
             foreach ($end in $endpoints) {
+                Write-Message -Level Verbose -Message "Processing $($end.Name) on $($server.Name)"
                 if ($end.Protocol.Tcp.ListenerPort) {
                     if ($instance.ComputerName -match '\.') {
                         $dns = $instance.ComputerName
@@ -92,8 +99,13 @@ function Get-DbaEndpoint {
                 Add-Member -Force -InputObject $end -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $end -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Add-Member -Force -InputObject $end -MemberType NoteProperty -Name Fqdn -Value $fqdn
-
-                Select-DefaultView -InputObject $end -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointState, EndpointType, Owner, IsAdminEndpoint, Fqdn, IsSystemObject
+                Add-Member -Force -InputObject $end -MemberType NoteProperty -Name Port -Value $end.Protocol.Tcp.ListenerPort
+                if ($end.Protocol.Tcp.ListenerPort) {
+                    Select-DefaultView -InputObject $end -Property ComputerName, InstanceName, SqlInstance, ID, Name, Port, EndpointState, EndpointType, Owner, IsAdminEndpoint, Fqdn, IsSystemObject
+                }
+                else {
+                    Select-DefaultView -InputObject $end -Property ComputerName, InstanceName, SqlInstance, ID, Name, EndpointState, EndpointType, Owner, IsAdminEndpoint, Fqdn, IsSystemObject
+                }
             }
         }
     }

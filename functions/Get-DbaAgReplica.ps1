@@ -1,23 +1,27 @@
-﻿function Get-DbaAgReplica {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaAgReplica {
 <#
     .SYNOPSIS
-        Outputs the Availability Group(s)' Replica object found on the server.
+        Returns the availability group replica object found on the server.
 
     .DESCRIPTION
-        Default view provides most common set of properties for information on the Availability Group(s)' Replica.
+        Returns the availability group replica object found on the server.
 
-    .PARAMETER SqlInstance
+   .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
 
     .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER AvailabilityGroup
-        Specify the Availability Group name that you want to get information on.
+        Specify the availability groups to query.
 
     .PARAMETER Replica
-        Specify the replica to pull information on, is dependent up name that you want to get information on.
-
+        Return only specific replicas.
+    
+    .PARAMETER InputObject
+        Enables piped input from Get-DbaAvailabilityGroup.
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -25,7 +29,7 @@
 
     .NOTES
         Tags: AG, HA, AvailabilityGroup, Replica
-        Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
+        Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@cl)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -35,67 +39,49 @@
         https://dbatools.io/Get-DbaAgReplica
 
     .EXAMPLE
-        PS C:\> Get-DbaAgReplica -SqlInstance sqlserver2014a
+        PS C:\> Get-DbaAgReplica -SqlInstance sql2017a
 
-        Returns basic information on all the Availability Group(s) replica(s) found on sqlserver2014a
-
-    .EXAMPLE
-        PS C:\> Get-DbaAgReplica -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
-
-        Shows basic information on the replica(s) found on Availability Group AG-a on sqlserver2014a
+        Returns basic information on all the availability group replicas found on sql2017a
 
     .EXAMPLE
-        Get-DbaAgReplica -SqlInstance sqlserver2014a | Select-Object *
+        PS C:\> Get-DbaAgReplica -SqlInstance sql2017a -AvailabilityGroup SharePoint
 
-        PS C:\> Returns full object properties on all Availability Group(s) replica(s) on sqlserver2014a
+        Shows basic information on the replicas found on availability group SharePoint on sql2017a
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgReplica -SqlInstance sql2017a | Select-Object *
+
+        Returns full object properties on all availability group replicas found on sql2017a
 
 #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
+        [string[]]$AvailabilityGroup,
+        [string[]]$Replica,
         [parameter(ValueFromPipeline)]
-        [object[]]$AvailabilityGroup,
-        [object[]]$Replica,
-        [Alias('Silent')]
+        [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$EnableException
     )
-
     process {
-        foreach ($serverName in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $serverName -SqlCredential $SqlCredential -MinimumVersion 11
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            if ($server.IsHadrEnabled -eq $false) {
-                Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $serverName" -Target $serverName -Continue
-            }
-
-            $ags = $server.AvailabilityGroups
-            if ($AvailabilityGroup) {
-                $ags = $ags | Where-Object Name -in $AvailabilityGroup
-            }
-
-            foreach ($ag in $ags) {
-                $replicas = $ag.AvailabilityReplicas
-                foreach ($currentReplica in $replicas) {
-                    if ($Replica -and $currentReplica.Name -notmatch $Replica) {
-                        continue
-                    }
-
-                    Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-
-                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Parent as AvailabilityGroup', 'Name as Replica', 'Role', 'ConnectionState', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
-                    Select-DefaultView -InputObject $currentReplica -Property $defaults
-                }
-            }
+        if ($SqlInstance) {
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+        }
+        
+        if ($Replica) {
+            $InputObject = $InputObject | Where-Object { $_.AvailabilityReplicas.Name -contains $Replica }
+        }
+        
+        $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Parent as AvailabilityGroup', 'Name as Replica', 'Role', 'ConnectionState', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
+        
+        foreach ($agreplica in $InputObject.AvailabilityReplicas) {
+            $sever = $agreplica.Parent.Parent
+            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+            
+            Select-DefaultView -InputObject $agreplica -Property $defaults
         }
     }
 }

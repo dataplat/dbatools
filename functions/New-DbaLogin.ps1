@@ -109,7 +109,7 @@
         Creates a new Windows Authentication backed login on sql1. The login will be part of the public server role.
         
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Password")]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Password", ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory, Position = 1)]
         [Alias("ServerInstance", "SqlServer")]
