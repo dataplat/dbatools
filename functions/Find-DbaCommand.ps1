@@ -172,7 +172,7 @@ function Find-DbaCommand {
         function Get-DbaIndex() {
             if ($Pscmdlet.ShouldProcess($dest, "Recreating index")) {
                 $dbamodule = Get-Module -Name dbatools
-                $allCommands = $dbamodule.ExportedCommands.Values | Where-Object CommandType -EQ 'Function' | where name -like '*export*'
+                $allCommands = $dbamodule.ExportedCommands.Values | Where-Object CommandType -EQ 'Function'
 
                 $helpcoll = New-Object System.Collections.Generic.List[System.Object]
                 foreach ($command in $allCommands) {
