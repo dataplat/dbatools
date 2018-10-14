@@ -55,6 +55,18 @@ Import-Module "$ModuleBase\dbatools.psd1"
 Update-TypeData -AppendPath "$ModuleBase\xml\dbatools.types.ps1xml"
 Start-Sleep 5
 
+function Split-ArrayInParts($array, [int]$parts) {
+    #splits an array in "equal" parts
+    $size = $array.Length / $parts
+    $counter = [pscustomobject] @{ Value = 0 }
+    $groups = $array | Group-Object -Property { [math]::Floor($counter.Value++ / $size) }
+    $rtn = @()
+    foreach($g in $groups) {
+        $rtn += , @($g.Group)
+    }
+    $rtn
+}
+
 function Get-CoverageIndications($Path, $ModuleBase) {
     # takes a test file path and figures out what to analyze for coverage (i.e. dependencies)
     $CBHRex = [regex]'(?smi)<#(.*)#>'
@@ -275,8 +287,17 @@ if (-not $Finalize) {
     else {
         $AllScenarioTests = $AllTests
     }
-
     Write-Host -ForegroundColor DarkGreen "Test Groups   : Reduced to $($AllScenarioTests.Count) out of $($AllDbatoolsTests.Count) tests"
+    # do we have a part ? (1/2, 2/2, etc)
+    if ($env:PART) {
+        try {
+            [int]$num, [int]$denom = $env:PART.Split('/')
+            Write-Host -ForegroundColor DarkGreen "Test Parts   : part $($env:PART) on total $($AllScenarioTests.Count)"
+            $scenarioParts = Split-ArrayInParts -array $AllScenarioTests -parts $denom
+            $AllScenarioTests = $scenarioParts[$num-1]
+        } catch {
+        }
+    }
     if ($AllTests.Count -eq 0 -and $AllScenarioTests.Count -eq 0) {
         throw "something went wrong, nothing to test"
     }
