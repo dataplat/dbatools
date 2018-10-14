@@ -6,15 +6,15 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "gets spn information" {
         Mock Resolve-DbaNetworkName {
             [pscustomobject]@{
-                InputName         = $env:COMPUTERNAME
-                ComputerName      = $env:COMPUTERNAME
-                IPAddress         = "127.0.0.1"
-                DNSHostName       = $env:COMPUTERNAME
-                DNSDomain         = $env:COMPUTERNAME
-                Domain            = $env:COMPUTERNAME
-                DNSHostEntry      = $env:COMPUTERNAME
-                FQDN              = $env:COMPUTERNAME
-                FullComputerName  = $env:COMPUTERNAME
+                InputName        = $env:COMPUTERNAME
+                ComputerName     = $env:COMPUTERNAME
+                IPAddress        = "127.0.0.1"
+                DNSHostName      = $env:COMPUTERNAME
+                DNSDomain        = $env:COMPUTERNAME
+                Domain           = $env:COMPUTERNAME
+                DNSHostEntry     = $env:COMPUTERNAME
+                FQDN             = $env:COMPUTERNAME
+                FullComputerName = $env:COMPUTERNAME
             }
         }
         $results = Test-DbaSpn -ComputerName $env:COMPUTERNAME -WarningAction SilentlyContinue
@@ -31,3 +31,4 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         }
     }
 }
+# $script:instance3 to add to the 2016_2017 matrix

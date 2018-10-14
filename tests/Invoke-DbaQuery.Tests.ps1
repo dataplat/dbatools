@@ -2,7 +2,7 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     It "supports pipable instances" {
         $results = $script:instance1, $script:instance2 | Invoke-DbaQuery -Database tempdb -Query "Select 'hello' as TestColumn"
         foreach ($result in $results) {
@@ -10,7 +10,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
     }
     It "supports parameters" {
-        $sqlParams = @{testvalue = 'hello'}
+        $sqlParams = @{ testvalue = 'hello' }
         $results = $script:instance1 | Invoke-DbaQuery -Database tempdb -Query "Select @testvalue as TestColumn" -SqlParameters $sqlParams
         foreach ($result in $results) {
             $result.TestColumn | Should -Be 'hello'
@@ -58,7 +58,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         'hello2' | Should -Bein $results.TestColumn
         'hello3' | Should -Not -Bein $results.TestColumn
         'tempdb' | Should -Bein $results.dbname
-
+        
     }
     It "supports http files" {
         $cleanup = "IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')) DROP TABLE [dbo].[CommandLog]"
@@ -75,7 +75,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $null = Invoke-DbaQuery -SqlInstance $script:instance1, $script:instance2 -Database tempdb -Query $cleanup
         $CloudQuery = 'https://raw.githubusercontent.com/sqlcollaborative/appveyor-lab/master/sql2016-startup/ola/CommandLog.sql'
         $null = Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -File $CloudQuery
-        $smoobj = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb  | Where-Object Name -eq 'CommandLog'
+        $smoobj = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb | Where-Object Name -eq 'CommandLog'
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -SqlObject $smoobj
         $check = "SELECT name FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')"
         $results = Invoke-DbaQuery -SqlInstance $script:instance2 -Database tempdb -Query $check
@@ -119,11 +119,11 @@ SELECT @@servername as dbname
         Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query $query -Verbose 4>&1 | ForEach-Object {
             $results += [pscustomobject]@{
                 FiredAt = (Get-Date).ToUniversalTime()
-                Out = $_
+                Out     = $_
             }
         }
-        $results.Length | Should -Be 7  # 6 'messages' plus the actual resultset
-        ($results  | ForEach-Object { Get-Date -Date $_.FiredAt -f s } | Get-Unique).Count  | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
+        $results.Length | Should -Be 7 # 6 'messages' plus the actual resultset
+        ($results | ForEach-Object { Get-Date -Date $_.FiredAt -Format s } | Get-Unique).Count | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
         #($results[0..3]  | ForEach-Object { Get-Date -Date $_.FiredAt -f s } | Get-Unique).Count | Should -Be 1 # everything before stmt_4 is fired at the same time
         #$parsedstmt_1 = Get-Date -Date $results[0].Out.Message.split('|')[2]
         #(Get-Date -Date (Get-Date -Date $parsedstmt_1).AddSeconds(3) -f s) | Should -Be (Get-Date -Date $results[0].FiredAt -f s) # stmt_1 is fired 3 seconds after the logged date
@@ -150,10 +150,11 @@ SELECT @@servername as dbname
         Invoke-DbaQuery -SqlInstance $script:instance1 -Database tempdb -Query $query -MessagesToOutput | ForEach-Object {
             $results += [pscustomobject]@{
                 FiredAt = (Get-Date).ToUniversalTime()
-                Out = $_
+                Out     = $_
             }
         }
-        $results.Length | Should -Be 7  # 6 'messages' plus the actual resultset
-        ($results  | ForEach-Object { Get-Date -Date $_.FiredAt -f s } | Get-Unique).Count  | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
+        $results.Length | Should -Be 7 # 6 'messages' plus the actual resultset
+        ($results | ForEach-Object { Get-Date -Date $_.FiredAt -Format s } | Get-Unique).Count | Should -Not -Be 1 # the first WITH NOWAIT (stmt_4) and after
     }
 }
+# $script:instance3 to add to the 2016_2017 matrix
