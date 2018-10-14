@@ -18,18 +18,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
 Describe "$commandname Unit Test" -Tags Unittest {
     InModuleScope dbatools {
-        Context 'Validate input arguments' {
-            It 'SqlInstance parameter is empty' {
-                Mock Connect-SqlInstance { throw System.Data.SqlClient.SqlException }
-                { Get-DbaMaxMemory -SqlInstance '' -WarningAction Stop 3> $null } | Should Throw
-            }
-
-            It 'SqlInstance parameter host cannot be found' {
-                Mock Connect-SqlInstance { throw System.Data.SqlClient.SqlException }
-                { Get-DbaMaxMemory -SqlInstance 'ABC' -WarningAction Stop 3> $null } | Should Throw
-            }
-        }
-
         Context 'Validate functionality ' {
             It 'Server SqlInstance reported correctly' {
                 Mock Connect-SqlInstance {

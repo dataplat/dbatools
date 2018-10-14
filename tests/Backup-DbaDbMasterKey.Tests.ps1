@@ -13,7 +13,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             (Get-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb) | Remove-DbaDbMasterKey -Confirm:$false
         }
 
-        $results = Backup-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
+        $results = Backup-DbaDbMasterKey -SqlInstance $script:instance1 -Confirm:$false -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
         $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
 
         It "backs up the db cert" {
