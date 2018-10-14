@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        Get-DbaEndpoint -SqlInstance $script:instance2 -Endpoint 'TSQL Default TCP' | Stop-DbaEndpoint -Confirm:$false
+        Get-DbaEndpoint -SqlInstance $script:instance2 -Endpoint 'TSQL Default TCP' | Stop-DbaEndpoint
     }
     
     It "starts the endpoint" {

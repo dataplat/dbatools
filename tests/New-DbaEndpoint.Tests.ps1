@@ -6,10 +6,10 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $endpoint = Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring
         $create = $endpoint | Export-DbaScript -Passthru
-        Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+        Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint
     }
     AfterAll {
-        Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
+        Get-DbaEndpoint -SqlInstance $script:instance2 | Where-Object EndpointType -eq DatabaseMirroring | Remove-DbaEndpoint
         if ($create) {
             Invoke-DbaQuery -SqlInstance $script:instance2 -Query "$create"
         }

@@ -12,8 +12,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             $certificateName1 = "Cert_$(Get-random)"
             $certificateName2 = "Cert_$(Get-random)"
-            $cert1 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1 -Confirm:$false
-            $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName2 -Database "tempdb" -Confirm:$false
+            $cert1 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1
+            $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName2 -Database "tempdb"
         }
         AfterAll {
             $null = $cert1 | Remove-DbaDbCertificate -Confirm:$false
