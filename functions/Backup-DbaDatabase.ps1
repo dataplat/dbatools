@@ -204,7 +204,7 @@
     )
 
     begin {
-
+        $TimeStampFormat = "yyyyMMddHHmm"
         if ($SqlInstance.length -ne 0) {
             try {
                 $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
@@ -226,7 +226,7 @@
             }
 
             if ($null -eq $BackupDirectory -and $backupfileName -ne 'NUL') {
-                Write-Message -Message 'No backupfolder passed in, setting it to instance default'
+                Write-Message -Message 'No backupfolder passed in, setting it to instance default' -Level Verbose
                 $BackupDirectory = (Get-DbaDefaultPath -SqlInstance $SqlInstance).Backup
             }
 
@@ -236,7 +236,7 @@
             }
 
             if ($InputObject.Count -gt 1 -and $BackupFileName -ne '' -and $True -ne $ReplaceInFile) {
-                Stop-Function -Message "1 BackupFile specified, but more than 1 database."
+                Stop-Function -Message "1 BackupFile specified, but more than 1 database."  -Level Verbose
                 return
             }
 
@@ -258,10 +258,6 @@
                 $AzureBaseUrl = $AzureBaseUrl.Trim("/")
                 $FileCount = 1
                 $BackupDirectory = $AzureBaseUrl
-            }
-
-            if ('' -eq $TimeStampFormat){
-                $TimeStampFormat = "yyyyMMddHHmm"
             }
 
             if ($OutputScriptOnly) {
