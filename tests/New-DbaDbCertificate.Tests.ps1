@@ -18,12 +18,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             if ($masterKey) { $masterkey | Remove-DbaDbMasterKey -Confirm:$false }
         }
 
-        $cert1 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1
+        $cert1 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1 -Confirm:$false
         It "Successfully creates a new database certificate in default, master database" {
             "$($cert1.name)" -match $certificateName1 | Should Be $true
         }
 
-        $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName2 -Database tempdb
+        $cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName2 -Database tempdb -Confirm:$false
         It "Successfully creates a new database certificate in the tempdb database" {
             "$($cert2.Database)" -match "tempdb" | Should Be $true
         }
