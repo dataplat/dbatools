@@ -60,13 +60,11 @@
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [int]$Threshold = 95,
         [Alias('Silent')]
         [switch]$EnableException
     )
 
     BEGIN {
-
         $sql = "SELECT
                     [vfs].[database_id],
                     DB_NAME ([vfs].[database_id]) AS [DatabaseName],
