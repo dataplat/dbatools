@@ -23,71 +23,16 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         }
     }
 }
-<#
-    Integration test are custom to the command you are writing it for,
-        but something similar to below should be included if applicable.
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+    Context "Command actually works" {
+        It "Should return a result" {
+            $results = Test-DbaDiskAllocation -SqlInstance $script:instance2
+            $results | Should -Not -Be $null
+        }
 
-    The below examples are by no means set in stone and there are already
-        a number of test that you can pull examples from in how they are done.
-#>
-
-# # Add-DbaNoun
-# Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-#     Context "XYZ is added properly" {
-#         $results = Add-DbaXyz <# your specific parameters and values #> -Confirm:$false
-
-#         It "Should show the proper LMN has been added" {
-#             $results.Property1 | Should Be "daper dan"
-#         }
-
-#         It "Should be in SomeSpecificLocation" {
-#             $results.PSParentPath | Should Be "51??16'25.7 N + 30??13'37.7 E"
-#         }
-#     }
-# }
-
-# # New-DbaNoun
-# Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-#     Context "Can generate/create a new XYZ" {
-#         BeforeAll {
-#             $results = New-DbaXyz <# your specific parameters #> -Silent
-#         }
-#         AfterAll {
-#             Remove-DbaXyz <# your specific parameters #> -Confirm:$false
-#         }
-#         It "Returns the right UGY" {
-#             "$($results.Property1)" -match 'SqlServer' | Should Be $true
-#         }
-#     }
-# }
-
-# # Get-DbaNoun
-# Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-#     Context "Command actually works" {
-#         $results = Get-DbaXyz -ComputerName $script:instance1, $script:instance2
-#         It "Should have correct properties" {
-#             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Property1,Property2,Property3'.Split(',')
-#             ($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-#         }
-
-#         It "Shows only one type of value" {
-#             foreach ($result in $results) {
-#                 $result.Property1 | Should BeLike "*FilterValue*"
-#             }
-#         }
-#     }
-# }
-
-# # Invoke-DbaNoun
-# Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
-#     $results = Invoke-DbaXyz -SqlInstance $script:instance1 -Type SpecialValue
-#     Context "Validate output" {
-#         It "Should have correct properties" {
-#             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,LogType,IsSuccessful,Notes'.Split(',')
-#             ($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-#         }
-#         It "Should cycle instance error log" {
-#             $results.LogType | Should Be "instance"
-#         }
-#     }
-# }
+        It "Should return a result not using sql" {
+            $results = Test-DbaDiskAllocation -NoSqlCheck -SqlInstance $script:instance2
+            $results | Should -Not -Be $null
+        }
+    }
+}

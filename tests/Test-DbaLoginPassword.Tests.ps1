@@ -1,6 +1,7 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+. "$PSScriptRoot\..\internal\functions\Get-PasswordHash.ps1"
 
 Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
     Context "Validate parameters" {
@@ -13,7 +14,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
         #>
         $paramCount = 6
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Test-DbaDbCompatibility).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Test-DbaLoginPassword).Parameters.Keys
         $knownParameters = 'SqlInstance','SqlCredential','Dictionary','Login','InputObject','EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
