@@ -73,7 +73,9 @@
             $Password = $Credential.Password
         }
         else {
-            $Password = Read-Host "Password" -AsSecureString
+            if (-not $Password) {
+                $Password = Read-Host "Password" -AsSecureString
+            }
         }
     }
     process {
