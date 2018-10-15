@@ -14,7 +14,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         # Set the database name
         $dbname = "dbatoolscsi_balance"
 
-        # Create the databse
+        # Create the database
         $server.Query("CREATE DATABASE [$dbname]")
 
         # Refresh the database to get all the latest changes
