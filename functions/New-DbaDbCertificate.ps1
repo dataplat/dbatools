@@ -91,41 +91,40 @@ function New-DbaDbCertificate {
         }
         
         foreach ($db in $InputObject) {
-            
             if ((Test-Bound -Not -ParameterName Name)) {
-                Write-Message -Level Verbose -Message "Name is NULL, setting it to '$db'"
+                Write-Message -Level Verbose -Message "Name of certificate not specified, setting it to '$db'"
                 $Name = $db.Name
             }
-            if ($null -eq $subject) {
-                Write-Message -Level Verbose -Message "Subject is NULL, setting it to '$db Database Certificate'"
-                $subject = "$db Database Certificate"
+            
+            if ((Test-Bound -Not -ParameterName Subject)) {
+                Write-Message -Level Verbose -Message "Subject not specified, setting it to '$Name Database Certificate'"
+                $subject = "$Name Database Certificate"
             }
             
-            foreach ($cert in $name) {
-                if ($null -ne $currentdb.Certificates[$cert]) {
-                    Stop-Function -Message "Certificate '$cert' already exists in the $db database on $instance" -Target $currentdb -Continue
+            foreach ($cert in $Name) {
+                if ($null -ne $db.Certificates[$cert]) {
+                    Stop-Function -Message "Certificate '$cert' already exists in the $db database on $instance" -Target $db -Continue
                 }
                 
-                if ($Pscmdlet.ShouldProcess($instance, "Creating certificate for database '$db' on $instance")) {
+                if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating certificate for database '$db'")) {
                     try {
-                        $smocert = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Certificate $currentdb, $cert
-                        
+                        $smocert = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Certificate $db, $cert
                         $smocert.StartDate = $StartDate
                         $smocert.Subject = $Subject
                         $smocert.ExpirationDate = $ExpirationDate
                         $smocert.ActiveForServiceBrokerDialog = $ActiveForServiceBrokerDialog
                         
-                        if ($password.Length -gt 0) {
+                        if ($Password) {
                             $smocert.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
                         }
                         else {
                             $smocert.Create()
                         }
                         
-                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Database -value $currentdb.Name
+                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
+                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $db.Parent.ServiceName
+                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
+                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Database -value $db.Name
                         
                         Select-DefaultView -InputObject $smocert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
                     }
