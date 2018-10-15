@@ -13,6 +13,9 @@
         
     .PARAMETER Type
         Selecting the type of the export: Dacpac (default) or Bacpac.
+        
+    .PARAMETER Action
+        Choosing an intended action: Publish or Export.
 
     .NOTES
         Tags: Migration, Database, Dacpac
@@ -36,7 +39,10 @@
 #>
     Param (
         [ValidateSet('Dacpac', 'Bacpac')]
-        [string]$Type = 'Dacpac'
+        [string]$Type = 'Dacpac',
+        [Parameter(Mandatory)]
+        [ValidateSet('Publish', 'Export')]
+        [string]$Action
     )
     $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
     if ((Test-Path $dacfxPath) -eq $false) {
@@ -53,10 +59,21 @@
             return
         }
     }
-    if ($Type -eq 'Dacpac') {
-        New-Object -TypeName Microsoft.SqlServer.Dac.DacExtractOptions
+    # Pick proper option object depending on type and action
+    if ($Action -eq 'Export') {
+        if ($Type -eq 'Dacpac') {
+            New-Object -TypeName Microsoft.SqlServer.Dac.DacExtractOptions
+        }
+        elseif ($Type -eq 'Bacpac') {
+            New-Object -TypeName Microsoft.SqlServer.Dac.DacExportOptions
+        }
     }
-    elseif ($Type -eq 'Bacpac') {
-        New-Object -TypeName Microsoft.SqlServer.Dac.DacExportOptions
+    elseif ($Action -eq 'Publish') {
+        if ($Type -eq 'Dacpac') {
+            New-Object -TypeName Microsoft.SqlServer.Dac.PublishOptions
+        }
+        elseif ($Type -eq 'Bacpac') {
+            New-Object -TypeName Microsoft.SqlServer.Dac.DacImportOptions
+        }
     }
 }
