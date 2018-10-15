@@ -91,21 +91,6 @@
                 Stop-Function -Message "Failed to create directory $Path" -Continue
             }
         }
-
-        Function Remove-InvalidFileNameChars {
-            [CmdletBinding()]
-            param (
-                [Parameter(Mandatory,
-                    Position = 0,
-                    ValueFromPipeline,
-                    ValueFromPipelineByPropertyName = $true)]
-                [String]$Name
-            )
-            $Name = $Name.Replace(" ", "-")
-            $invalidChars = [IO.Path]::GetInvalidFileNameChars() -join ''
-            $re = "[{0}]" -f [RegEx]::Escape($invalidChars)
-            return ($Name -replace $re)
-        }
     }
 
     process {
