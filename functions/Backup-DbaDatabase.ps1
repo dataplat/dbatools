@@ -26,6 +26,11 @@
 
         SQL Server needs permissions to write to the specified location. Path names are based on the SQL Server (C:\ is the C drive on the SQL Server, not the machine running the script).
 
+        Passing in NUL as the BackupFileName will backup to the NUL: device
+
+    .PARAMETER TimeStampFormat
+        By default the command timestamps backups using the format yyyyMMddHHmm. Using this parameter this can be overridden. The timestamp format should be defined using the Get-Date formats, illegal formats will cause an error to be thrown
+
     .PARAMETER BackupDirectory
         Path in which to place the backup files. If not specified, the backups will be placed in the default backup location for SqlInstance.
         If multiple paths are specified, the backups will be striped across these locations. This will overwrite the FileCount option.
@@ -33,6 +38,14 @@
         If the path does not exist, Sql Server will attempt to create it. Folders are created by the Sql Instance, and checks will be made for write permissions.
 
         File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x ranges from 1 to y.
+
+    .PARAMETER ReplaceInName
+        If this switch is set, the following list of strings will be replaced in the BackupFileName and BackupDirectory strings:
+            instancename - will be replaced with the instance Name
+            servername - will be replaced with the server name
+            dbname - will be replaced with the database name
+            timestamp - will be replaced with the timestamp (either the default, or the format provided)
+            backuptype - will be replaced with Full, Log or Differential as appropriate
 
     .PARAMETER CopyOnly
         If this switch is enabled, CopyOnly backups will be taken. By default function performs a normal backup, these backups interfere with the restore chain of the database. CopyOnly backups will not interfere with the restore chain of the database.
@@ -135,6 +148,20 @@
 
         Performs a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql credential "dbatoolscred" registered on the sql2016 instance.
 
+    .EXAMPLE
+        PS C:\> Backup-DbaDatabse -SqlInstance Server1\Prod -Database db1 -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -Type Full -ReplaceInName
+
+        Performs a full backup of db1 into the folder \\filestore\backups\server1\prod\db1
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDatabse -SqlInstance Server1\Prod -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -BackupFileName dbname-backuptype-timestamp.trn -Type Log -ReplaceInName
+
+        Performs a log backup for every database. For the database db1 this would results in backup files in \\filestore\backups\server1\prod\db1\Log\db1-log-31102018.trn
+
+    .EXAMPLE
+        PS C:\> Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName NUL
+
+        Performs a backup of master, but sends the output to the NUL device (ie; throws it away)
 #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")] #For AzureCredential
@@ -147,6 +174,7 @@
         [object[]]$ExcludeDatabase,
         [string[]]$BackupDirectory,
         [string]$BackupFileName,
+        [switch]$ReplaceInName,
         [switch]$CopyOnly,
         [ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
         [string]$Type = 'Database',
@@ -167,6 +195,7 @@
         [switch]$WithFormat,
         [switch]$Initialize,
         [switch]$SkipTapeHeader,
+        [string]$TimeStampFormat,
         [switch]$IgnoreFileChecks,
         [switch]$OutputScriptOnly,
         [Alias('Silent')]
@@ -174,7 +203,10 @@
     )
 
     begin {
-
+        if (-not (Test-Bound 'TimeStampFormat')){
+            Write-Message -Message 'Setting Default timestampformat' -Level Verbose
+            $TimeStampFormat = "yyyyMMddHHmm"
+        }
         if ($SqlInstance.length -ne 0) {
             try {
                 $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
@@ -196,7 +228,7 @@
             }
 
             if ($null -eq $BackupDirectory -and $backupfileName -ne 'NUL') {
-                Write-Message -Message 'No backupfolder passed in, setting it to instance default'
+                Write-Message -Message 'No backupfolder passed in, setting it to instance default' -Level Verbose
                 $BackupDirectory = (Get-DbaDefaultPath -SqlInstance $SqlInstance).Backup
             }
 
@@ -205,8 +237,8 @@
                 $Filecount = $BackupDirectory.Count
             }
 
-            if ($InputObject.Count -gt 1 -and $BackupFileName -ne '') {
-                Stop-Function -Message "1 BackupFile specified, but more than 1 database."
+            if ($InputObject.Count -gt 1 -and $BackupFileName -ne '' -and $True -ne $ReplaceInFile) {
+                Stop-Function -Message "1 BackupFile specified, but more than 1 database."  -Level Verbose
                 return
             }
 
@@ -343,6 +375,7 @@
 
             $BackupFinalName = ''
             $FinalBackupPath = @()
+            $timestamp = Get-Date -Format $TimeStampFormat
             if ('NUL' -eq $BackupFileName) {
                 $FinalBackupPath += 'NUL:'
                 $IgnoreFileChecks = $true
@@ -357,8 +390,7 @@
                 }
             }
             else {
-                $timestamp = (Get-Date -Format yyyyMMddHHmm)
-                Write-Message -Level VeryVerbose -Message "Setting filename"
+                Write-Message -Level VeryVerbose -Message "Setting filename - $timestamp"
                 $BackupFinalName = "$($dbname)_$timestamp.$suffix"
             }
 
@@ -394,6 +426,16 @@
                     $parent = [IO.Path]::GetDirectoryName($FinalBackupPath[$i])
                     $leaf = [IO.Path]::GetFileName($FinalBackupPath[$i])
                     $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $dbname, $leaf)
+                }
+            }
+
+            if ($True -eq $ReplaceInName) {
+                for ($i=0; $i -lt $FinalBackupPath.count; $i++){
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('dbname',$dbname)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('instancename', $SqlInstance.InstanceName)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('servername',$SqlInstance.ComputerName)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('timestamp',$timestamp)
+                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace('backuptype',$outputType)
                 }
             }
 
