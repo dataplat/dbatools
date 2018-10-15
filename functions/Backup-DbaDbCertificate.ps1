@@ -1,4 +1,5 @@
-﻿function Backup-DbaDbCertificate {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Backup-DbaDbCertificate {
 <#
     .SYNOPSIS
         Exports database certificates from SQL Server using SMO.
@@ -34,7 +35,7 @@
         The suffix of the filename of the exported certificate.
 
     .PARAMETER InputObject
-        Certificate object
+        Enables piping from Get-DbaDbCertificate
 
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
@@ -132,45 +133,44 @@
         [Alias('Silent')]
         [switch]$EnableException
     )
-
+    
     begin {
-
-        if ($EncryptionPassword.Length -eq 0 -and $DecryptionPassword.Length -gt 0) {
+        if (-not $EncryptionPassword -and $DecryptionPassword) {
             Stop-Function -Message "If you specify an decryption password, you must also specify an encryption password" -Target $DecryptionPassword
         }
-
+        
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Backup-DbaDatabaseCertificate
-
+        
         function export-cert ($cert) {
             $certName = $cert.Name
             $db = $cert.Parent
             $server = $db.Parent
             $instance = $server.Name
             $actualPath = $Path
-
+            
             if ($null -eq $actualPath) {
                 $actualPath = Get-SqlDefaultPaths -SqlInstance $server -filetype Data
             }
-
+            
             $actualPath = "$actualPath".TrimEnd('\')
             $fullCertName = "$actualPath\$certName$Suffix"
             $exportPathKey = "$fullCertName.pvk"
-
+            
             if (!(Test-DbaPath -SqlInstance $server -Path $actualPath)) {
                 Stop-Function -Message "$SqlInstance cannot access $actualPath" -Target $actualPath
             }
-
+            
             if ($Pscmdlet.ShouldProcess($instance, "Exporting certificate $certName from $db on $instance to $actualPath")) {
                 Write-Message -Level Verbose -Message "Exporting Certificate: $certName to $fullCertName"
                 try {
-
+                    
                     $exportPathCert = "$fullCertName.cer"
-
+                    
                     # because the password shouldn't go to memory...
                     if ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -gt 0) {
-
+                        
                         Write-Message -Level Verbose -Message "Both passwords passed in. Will export both cer and pvk."
-
+                        
                         $cert.export(
                             $exportPathCert,
                             $exportPathKey,
@@ -180,7 +180,7 @@
                     }
                     elseif ($EncryptionPassword.Length -gt 0 -and $DecryptionPassword.Length -eq 0) {
                         Write-Message -Level Verbose -Message "Only encryption password passed in. Will export both cer and pvk."
-
+                        
                         $cert.export(
                             $exportPathCert,
                             $exportPathKey,
@@ -192,24 +192,24 @@
                         $exportPathKey = "Password required to export key"
                         $cert.export($exportPathCert)
                     }
-
+                    
                     [pscustomobject]@{
-                        ComputerName   = $server.ComputerName
-                        InstanceName   = $server.ServiceName
-                        SqlInstance    = $server.DomainInstanceName
-                        Database       = $db.Name
-                        Certificate    = $certName
-                        Path           = $exportPathCert
-                        Key            = $exportPathKey
-                        ExportPath     = $exportPathCert
-                        ExportKey      = $exportPathKey
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Database     = $db.Name
+                        Certificate  = $certName
+                        Path         = $exportPathCert
+                        Key          = $exportPathKey
+                        ExportPath   = $exportPathCert
+                        ExportKey    = $exportPathKey
                         exportPathCert = $exportPathCert
-                        exportPathKey  = $exportPathKey
-                        Status         = "Success"
+                        exportPathKey = $exportPathKey
+                        Status       = "Success"
                     } | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
                 }
                 catch {
-
+                    
                     if ($_.Exception.InnerException) {
                         $exception = $_.Exception.InnerException.ToString() -Split "System.Data.SqlClient.SqlException: "
                         $exception = ($exception[1] -Split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0]
@@ -218,59 +218,32 @@
                         $exception = $_.Exception
                     }
                     [pscustomobject]@{
-                        ComputerName   = $server.ComputerName
-                        InstanceName   = $server.ServiceName
-                        SqlInstance    = $server.DomainInstanceName
-                        Database       = $db.Name
-                        Certificate    = $certName
-                        Path           = $exportPathCert
-                        Key            = $exportPathKey
-                        ExportPath     = $exportPathCert
-                        ExportKey      = $exportPathKey
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Database     = $db.Name
+                        Certificate  = $certName
+                        Path         = $exportPathCert
+                        Key          = $exportPathKey
+                        ExportPath   = $exportPathCert
+                        ExportKey    = $exportPathKey
                         exportPathCert = $exportPathCert
-                        exportPathKey  = $exportPathKey
-                        Status         = "Failure: $exception"
+                        exportPathKey = $exportPathKey
+                        Status       = "Failure: $exception"
                     } | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
                     Stop-Function -Message "$certName from $db on $instance cannot be exported." -Continue -Target $cert -ErrorRecord $_
                 }
             }
         }
     }
-
+    
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                return
-            }
-            $databases = Get-DbaDatabase -SqlInstance $server | Where-Object IsAccessible
-
-            if ($Database) {
-                $databases = $databases | Where-Object Name -in $Database
-            }
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-            }
-            foreach ($db in $databases.Name) {
-                $DBInputObject = Get-DbaDbCertificate -SqlInstance $server -Database $db
-                if ($Certificate) {
-                    $InputObject += $DBInputObject | Where-Object Name -In $Certificate
-                }
-                else {
-                    $InputObject += $DBInputObject | Where-Object Name -NotLike "##*"
-                }
-                if (!$InputObject) {
-                    Write-Message -Level Output -Message "No certificates found to export in $db."
-                    continue
-                }
-            }
-
+        
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
-
+        
         foreach ($cert in $InputObject) {
             if ($cert.Name.StartsWith("##")) {
                 Write-Message -Level Output -Message "Skipping system cert $cert"

@@ -83,10 +83,8 @@ function New-DbaDbMasterKey {
         }
     }
     process {
-        process {
-            if ($SqlInstance) {
-                $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -Database $Database -ExcludeDatabase $ExcludeDatabase
-            }
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -Database $Database -ExcludeDatabase $ExcludeDatabase
         }
         
         foreach ($db in $InputObject) {
