@@ -149,12 +149,12 @@
         Performs a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql credential "dbatoolscred" registered on the sql2016 instance.
 
     .EXAMPLE
-        PS C:\> Backup-DbaDatabse -SqlInstance Server1\Prod -Database db1 -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -Type Full -ReplaceInName
+        PS C:\> Backup-Dbadatabase -SqlInstance Server1\Prod -Database db1 -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -Type Full -ReplaceInName
 
         Performs a full backup of db1 into the folder \\filestore\backups\server1\prod\db1
 
     .EXAMPLE
-        PS C:\> Backup-DbaDatabse -SqlInstance Server1\Prod -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -BackupFileName dbname-backuptype-timestamp.trn -Type Log -ReplaceInName
+        PS C:\> Backup-Dbadatabase -SqlInstance Server1\Prod -BackupDirectory \\filestore\backups\servername\instancename\dbname\backuptype -BackupFileName dbname-backuptype-timestamp.trn -Type Log -ReplaceInName
 
         Performs a log backup for every database. For the database db1 this would results in backup files in \\filestore\backups\server1\prod\db1\Log\db1-log-31102018.trn
 
