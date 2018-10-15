@@ -239,7 +239,8 @@ function Copy-DbaDbTableData {
                     $InputObject += $dbTable
                 }
                 else {
-                    Write-Message -Level Verbose -Message "The table $Table matches $($dbTable.Count) objects. Skipping"
+                    Write-Message -Level Warning -Message "The table $Table matches $($dbTable.Count) objects. Unable to determine which object to copy"
+                    continue
                 }
             }
             catch {
