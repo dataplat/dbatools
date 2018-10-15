@@ -83,9 +83,9 @@
     )
 
     process {
-        foreach ($servername in $SqlInstance) {
+        foreach ($instance in $SqlInstance) {
             #connect to the instance
-            $server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
+            $server = Connect-SqlInstance $instance -SqlCredential $SqlCredential
 
             # dynamic sa name for orgs who have changed their sa name
             if (!$Login) {
@@ -98,7 +98,7 @@
                     throw -Message "Invalid login: $Login."
                 }
                 else {
-                    Write-Message -Level Warning -Message "$Login is not a valid login on $servername. Moving on."
+                    Write-Message -Level Warning -Message "$Login is not a valid login on $instance. Moving on."
                     Continue
                 }
             }
@@ -126,9 +126,9 @@
             foreach ($j in $jobcollection) {
                 $jobname = $j.name
 
-                if ($PSCmdlet.ShouldProcess($servername, "Setting job owner for $jobname to $Login")) {
+                if ($PSCmdlet.ShouldProcess($instance, "Setting job owner for $jobname to $Login")) {
                     try {
-                        Write-Message -Level Verbose -Message "Setting job owner for $jobname to $Login on $servername."
+                        Write-Message -Level Verbose -Message "Setting job owner for $jobname to $Login on $instance."
                         #Set job owner to $TargetLogin (default 'sa')
                         $j.OwnerLoginName = $Login
                         $j.Alter()

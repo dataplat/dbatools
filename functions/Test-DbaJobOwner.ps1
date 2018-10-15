@@ -83,9 +83,9 @@
         $return = @()
     }
     process {
-        foreach ($servername in $SqlInstance) {
+        foreach ($instance in $SqlInstance) {
             #connect to the instance
-            $server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
+            $server = Connect-SqlInstance $instance -SqlCredential $SqlCredential
 
             #Validate login
             if ($Login -and ($server.Logins.Name) -notcontains $Login) {
@@ -94,7 +94,7 @@
                     return
                 }
                 else {
-                    Write-Message -Level Warning -Message "$Login is not a valid login on $servername. Moving on."
+                    Write-Message -Level Warning -Message "$Login is not a valid login on $instance. Moving on."
                     continue
                 }
             }
