@@ -1165,7 +1165,7 @@
                 else {
                     $setupResult = "Failed"
                     $comment = "Destination database is the same as source database"
-                    Stop-Function -Message "Destination database is the same as source database.`nPlease check the secondary server, database prefix or suffix or use -Force to set the secondary databse using a suffix." -Target $SourceSqlInstance
+                    Stop-Function -Message "Destination database is the same as source database.`nPlease check the secondary server, database prefix or suffix or use -Force to set the secondary database using a suffix." -Target $SourceSqlInstance
                     return
                 }
             }
