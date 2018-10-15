@@ -234,7 +234,13 @@ function Copy-DbaDbTableData {
             }
 
             try {
-                $InputObject += Get-DbaDbTable -SqlInstance $server -Table $Table -Database $Database -EnableException -Verbose:$false
+                $dbTable = Get-DbaDbTable -SqlInstance $server -Table $Table -Database $Database -EnableException -Verbose:$false
+                if ($dbTable.Count -eq 1) {
+                    $InputObject += $dbTable
+                }
+                else {
+                    Write-Message -Level Verbose -Message "The table $Table matches $($dbTable.Count) objects. Skipping"
+                }
             }
             catch {
                 Stop-Function -Message "Unable to determine source table : $Table"
