@@ -64,11 +64,10 @@ function Get-DbaAvailabilityGroup {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$AvailabilityGroup,
+        [string[]]$AvailabilityGroup,
         [switch]$IsPrimary,
         [switch]$EnableException
     )
-
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -78,7 +77,7 @@ function Get-DbaAvailabilityGroup {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($server.IsHadrEnabled -eq $false) {
+            if (-not $server.IsHadrEnabled) {
                 Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $instance." -Target $instance -Continue
             }
             

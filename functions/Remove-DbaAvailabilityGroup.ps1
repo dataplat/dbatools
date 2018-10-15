@@ -79,18 +79,17 @@ function Remove-DbaAvailabilityGroup {
         [switch]$EnableException
     )
     process {
-        if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName AvailabilityGroups, AllAvailabilityGroups)) {
+        if ((Test-Bound -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName AvailabilityGroup, AllAvailabilityGroups)) {
             Stop-Function -Message "You must specify AllAvailabilityGroups groups or AvailabilityGroups when using the SqlInstance parameter."
             return
         }
-        foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+        if ($SqlInstance) {
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
-
         foreach ($ag in $InputObject) {
             if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Removing availability group $ag")) {
                 # avoid enumeration issues
-                $ag.Parent.Query("DROP AVAILABILITY GROUP [$($ag.Name)]")
+                $ag.Parent.Query("DROP AVAILABILITY GROUP $ag")
                 try {
                     [pscustomobject]@{
                         ComputerName = $ag.ComputerName
