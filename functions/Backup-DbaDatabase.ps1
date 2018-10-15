@@ -175,7 +175,6 @@
         [string[]]$BackupDirectory,
         [string]$BackupFileName,
         [switch]$ReplaceInName,
-        [string]$TimeStampFormat,
         [switch]$CopyOnly,
         [ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
         [string]$Type = 'Database',
@@ -196,7 +195,7 @@
         [switch]$WithFormat,
         [switch]$Initialize,
         [switch]$SkipTapeHeader,
-        [string]$TimeStamFormat,
+        [string]$TimeStampFormat,
         [switch]$IgnoreFileChecks,
         [switch]$OutputScriptOnly,
         [Alias('Silent')]
@@ -204,7 +203,10 @@
     )
 
     begin {
-        $TimeStampFormat = "yyyyMMddHHmm"
+        if (-not (Test-Bound 'TimeStampFormat')){
+            Write-Message -Message 'Setting Default timestampformat' -Level Verbose
+            $TimeStampFormat = "yyyyMMddHHmm"
+        }
         if ($SqlInstance.length -ne 0) {
             try {
                 $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AzureUnsupported
