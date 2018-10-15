@@ -31,7 +31,7 @@ function Copy-DbaDbTableData {
         The database to copy the table to. If not specified, it is assumed to be the same of Database
 
     .PARAMETER Table
-        Define a specific table you would like to use as source. You can specify up to three-part name like db.sch.tbl.
+        Define a specific table you would like to use as source. You can specify a two-part name like sch.tbl.
         If the object has special characters please wrap them in square brackets [ ].
         This dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
         The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo.[First.Table]
@@ -40,7 +40,9 @@ function Copy-DbaDbTableData {
         The table you want to use as destination. If not specified, it is assumed to be the same of Table
 
     .PARAMETER Query
-        If you want to copy only a portion, specify the query (but please, select all the columns, or nasty things will happen)
+        If you want to copy only a portion of a table or selected tables, specify the query.
+        Ensure to select all required columns. Calculated Columns or columns with default values may be excluded.
+        The tablename should be a full three-part name in form [Database].[Schema].[Table]
 
     .PARAMETER BatchSize
         The BatchSize for the import defaults to 5000.
@@ -213,6 +215,11 @@ function Copy-DbaDbTableData {
                 return
             }
 
+            if ((Test-Bound -Not -ParameterName Destination, DestinationDatabase, DestinationTable)) {
+                Stop-Function -Message "Cannot copy $Table into itself. One of destination Server, Database or Table must be specified " -Target $Table
+                return
+            }
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             }
@@ -244,7 +251,7 @@ function Copy-DbaDbTableData {
             }
 
             if ((Test-Bound -Not -ParameterName DestinationTable)) {
-                $DestinationTable = $sqltable.Name
+                $DestinationTable = '[' + $sqltable.Schema + '].[' + $sqltable.Name + ']'
             }
 
             if ((Test-Bound -Not -ParameterName Destination)) {
@@ -283,6 +290,12 @@ function Copy-DbaDbTableData {
             $fqtnfrom = "$($server.Databases[$Database]).$sqltable"
             $fqtndest = "$($destServer.Databases[$DestinationDatabase]).$desttable"
 
+            if ($fqtndest -eq $fqtnfrom) {
+                Stop-Function -Message "Cannot copy $fqtnfrom into $fqtndest. Source and Destination must be different " -Target $Table
+                return
+            }
+
+
             if (Test-Bound -ParameterName Query -Not) {
                 $Query = "SELECT * FROM $fqtnfrom"
             }
@@ -292,24 +305,26 @@ function Copy-DbaDbTableData {
                         $null = $destServer.Databases[$DestinationDatabase].ExecuteNonQuery("TRUNCATE TABLE $fqtndest")
                     }
                 }
-                $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
-                $cmd.CommandText = $Query
-                if ($server.ConnectionContext.IsOpen -eq $false) {
-                    $server.ConnectionContext.SqlConnectionObject.Open()
-                }
-                $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$connstring;Database=$DestinationDatabase", $bulkCopyOptions)
-                $bulkCopy.DestinationTableName = $fqtndest
-                $bulkCopy.EnableStreaming = $true
-                $bulkCopy.BatchSize = $BatchSize
-                $bulkCopy.NotifyAfter = $NotifyAfter
-                $bulkCopy.BulkCopyTimeOut = $BulkCopyTimeOut
+                if ($Pscmdlet.ShouldProcess($server, "Copy data from $fqtnfrom")) {
+                    $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
+                    $cmd.CommandText = $Query
+                    if ($server.ConnectionContext.IsOpen -eq $false) {
+                        $server.ConnectionContext.SqlConnectionObject.Open()
+                    }
+                    $bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$connstring;Database=$DestinationDatabase", $bulkCopyOptions)
+                    $bulkCopy.DestinationTableName = $fqtndest
+                    $bulkCopy.EnableStreaming = $true
+                    $bulkCopy.BatchSize = $BatchSize
+                    $bulkCopy.NotifyAfter = $NotifyAfter
+                    $bulkCopy.BulkCopyTimeOut = $BulkCopyTimeOut
 
-                $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-                # Add RowCount output
-                $bulkCopy.Add_SqlRowsCopied({
-                        $RowsPerSec = [math]::Round($args[1].RowsCopied / $elapsed.ElapsedMilliseconds * 1000.0, 1)
-                        Write-Progress -id 1 -activity "Inserting rows" -Status ([System.String]::Format("{0} rows ({1} rows/sec)", $args[1].RowsCopied, $RowsPerSec))
-                    })
+                    $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
+                    # Add RowCount output
+                    $bulkCopy.Add_SqlRowsCopied({
+                            $RowsPerSec = [math]::Round($args[1].RowsCopied / $elapsed.ElapsedMilliseconds * 1000.0, 1)
+                            Write-Progress -id 1 -activity "Inserting rows" -Status ([System.String]::Format("{0} rows ({1} rows/sec)", $args[1].RowsCopied, $RowsPerSec))
+                        })
+                    }
 
                 if ($Pscmdlet.ShouldProcess($destServer, "Writing rows to $fqtndest")) {
                     $reader = $cmd.ExecuteReader()
@@ -320,21 +335,21 @@ function Copy-DbaDbTableData {
                     if ($rowCount -is [int]) {
                         Write-Progress -id 1 -activity "Inserting rows" -status "Complete" -Completed
                     }
-                }
 
-                $bulkCopy.Close()
-                $bulkCopy.Dispose()
-                $reader.Close()
+                    $bulkCopy.Close()
+                    $bulkCopy.Dispose()
+                    $reader.Close()
 
-                [pscustomobject]@{
-                    SourceInstance       = $server.Name
-                    SourceDatabase       = $Database
-                    SourceTable          = $sqltable.Name
-                    DestinationInstance  = $destServer.name
-                    DestinationDatabase  = $DestinationDatabase
-                    DestinationTable     = $desttable.Name
-                    RowsCopied           = $rowstotal
-                    Elapsed              = [prettytimespan]$elapsed.Elapsed
+                    [pscustomobject]@{
+                        SourceInstance       = $server.Name
+                        SourceDatabase       = $Database
+                        SourceTable          = $sqltable.Name
+                        DestinationInstance  = $destServer.name
+                        DestinationDatabase  = $DestinationDatabase
+                        DestinationTable     = $desttable.Name
+                        RowsCopied           = $rowstotal
+                        Elapsed              = [prettytimespan]$elapsed.Elapsed
+                    }
                 }
             }
             catch {
