@@ -88,19 +88,19 @@ function New-DbaDbMasterKey {
         }
         
         foreach ($db in $InputObject) {
-            if ($null -ne $smodb.MasterKey) {
-                Stop-Function -Message "Master key already exists in the $db database on $instance" -Target $smodb -Continue
+            if ($null -ne $db.MasterKey) {
+                Stop-Function -Message "Master key already exists in the $db database on $instance" -Target $db -Continue
             }
             
             if ($Pscmdlet.ShouldProcess($instance, "Creating master key for database '$db'")) {
                 try {
-                    $masterkey = New-Object Microsoft.SqlServer.Management.Smo.MasterKey $smodb
+                    $masterkey = New-Object Microsoft.SqlServer.Management.Smo.MasterKey $db
                     $masterkey.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
                     
                     Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $smodb.Name
+                    Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $db.Name
                     
                     Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
                 }
