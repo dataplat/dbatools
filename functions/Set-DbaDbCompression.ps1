@@ -168,8 +168,8 @@
                     if ($CompressionType -eq "Recommended") {
                         if ($Pscmdlet.ShouldProcess($db, "Applying suggested compression using results from Test-DbaDbCompression")) {
                             Write-Message -Level Verbose -Message "Applying suggested compression settings using Test-DbaDbCompression"
-                            $results += $compressionSuggestion | Select-Object *, @{l = 'AlreadyProcesssed'; e = {"False"}}
-                            foreach ($obj in ($results | Where-Object {$_.CompressionTypeRecommendation -ne 'NO_GAIN' -and $_.PercentCompression -ge $PercentCompression} | Sort-Object PercentCompression -Descending)) {
+                            $results += $compressionSuggestion | Select-Object *, @{l = 'AlreadyProcessed'; e = {"False"}}
+                            foreach ($obj in ($results | Where-Object {$_.CompressionTypeRecommendation -notin @('NO_GAIN','?') -and $_.PercentCompression -ge $PercentCompression} | Sort-Object PercentCompression -Descending)) {
                                 if ($MaxRunTime -ne 0 -and ($(get-date) - $starttime).TotalMinutes -ge $MaxRunTime) {
                                     Write-Message -Level Verbose -Message "Reached max run time of $MaxRunTime"
                                     break
@@ -179,14 +179,14 @@
                                     Write-Message -Level Verbose -Message "Applying $($obj.CompressionTypeRecommendation) compression to $($obj.Database).$($obj.Schema).$($obj.TableName)"
                                     $($server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $obj.Partition}).DataCompression = $($obj.CompressionTypeRecommendation)
                                     $server.Databases[$obj.Database].Tables[$obj.TableName, $($obj.Schema)].Rebuild()
-                                    $obj.AlreadyProcesssed = "True"
+                                    $obj.AlreadyProcessed = "True"
                                 }
                                 else {
                                     ##nonclustered indexes
                                     Write-Message -Level Verbose -Message "Applying $($obj.CompressionTypeRecommendation) compression to $($obj.Database).$($obj.Schema).$($obj.TableName).$($obj.IndexName)"
                                     $($server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].Indexes[$obj.IndexName].PhysicalPartitions | Where-Object {$_.PartitionNumber -eq $obj.Partition}).DataCompression = $($obj.CompressionTypeRecommendation)
                                     $server.Databases[$obj.Database].Tables[$obj.TableName, $obj.Schema].Indexes[$obj.IndexName].Rebuild()
-                                    $obj.AlreadyProcesssed = "True"
+                                    $obj.AlreadyProcessed = "True"
                                 }
                                 $obj
                             }
@@ -223,7 +223,7 @@
                                         SizeCurrent                   = $null
                                         SizeRequested                 = $null
                                         PercentCompression            = $null
-                                        AlreadyProcesssed             = "True"
+                                        AlreadyProcessed             = "True"
                                     }
                                 }
 
@@ -266,7 +266,7 @@
                                             SizeCurrent                   = $null
                                             SizeRequested                 = $null
                                             PercentCompression            = $null
-                                            AlreadyProcesssed             = "True"
+                                            AlreadyProcessed             = "True"
                                         }
                                     }
                                 }
@@ -307,7 +307,7 @@
                                         SizeCurrent                   = $null
                                         SizeRequested                 = $null
                                         PercentCompression            = $null
-                                        AlreadyProcesssed             = "True"
+                                        AlreadyProcessed             = "True"
                                     }
                                 }
                             }
