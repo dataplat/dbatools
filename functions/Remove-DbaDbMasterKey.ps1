@@ -1,16 +1,17 @@
-﻿function Remove-DbaDbMasterKey {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Remove-DbaDbMasterKey {
     <#
     .SYNOPSIS
         Deletes specified database master key
 
     .DESCRIPTION
-        Deletes specified database master key.
+        Deletes specified database master key
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
     .PARAMETER SqlCredential
-        Allows you to login to SQL Server using alternative credentials.
+        Allows you to login to SQL Server using alternative credentials
 
     .PARAMETER Database
         The database where the master key will be removed.
@@ -19,10 +20,10 @@
         List of databases to exclude from clearing all master keys
 
     .PARAMETER All
-        Purge the master keys from all databases on an instance.
+        Purge the master keys from all databases on an instance
 
     .PARAMETER InputObject
-        Internal parameter to support pipeline input
+        Enables pipeline input from Get-DbaDatabase
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -89,6 +90,7 @@
                 }
             }
         }
+        
         foreach ($masterkey in $InputObject) {
             $server = $masterkey.Parent.Parent
             $db = $masterkey.Parent

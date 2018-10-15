@@ -1,4 +1,5 @@
-﻿function New-DbaDbMasterKey {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function New-DbaDbMasterKey {
 <#
     .SYNOPSIS
         Creates a new database master key
@@ -20,7 +21,10 @@
 
     .PARAMETER Password
         Secure string used to create the key.
-
+    
+    .PARAMETER InputObject
+        Database object piped in from Get-DbaDatabase.
+    
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -57,15 +61,15 @@
         Suppresses all prompts to install but prompts in th console to securely enter your password and creates a master key in the 'db1' database
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$Credential,
-        [object[]]$Database = "master",
+        [string[]]$Database = "master",
         [Security.SecureString]$Password,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
     begin {
@@ -79,40 +83,31 @@
         }
     }
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+        process {
+            if ($SqlInstance) {
+                $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -Database $Database -ExcludeDatabase $ExcludeDatabase
             }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        }
+        
+        foreach ($db in $InputObject) {
+            if ($null -ne $smodb.MasterKey) {
+                Stop-Function -Message "Master key already exists in the $db database on $instance" -Target $smodb -Continue
             }
-
-            foreach ($db in $Database) {
-                $smodb = $server.Databases[$db]
-
-                if ($null -eq $smodb) {
-                    Stop-Function -Message "Database '$db' does not exist on $instance" -Target $smodb -Continue
+            
+            if ($Pscmdlet.ShouldProcess($instance, "Creating master key for database '$db'")) {
+                try {
+                    $masterkey = New-Object Microsoft.SqlServer.Management.Smo.MasterKey $smodb
+                    $masterkey.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
+                    
+                    Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+                    Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                    Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $smodb.Name
+                    
+                    Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
                 }
-
-                if ($null -ne $smodb.MasterKey) {
-                    Stop-Function -Message "Master key already exists in the $db database on $instance" -Target $smodb -Continue
-                }
-
-                if ($Pscmdlet.ShouldProcess($instance, "Creating master key for database '$db'")) {
-                    try {
-                        $masterkey = New-Object Microsoft.SqlServer.Management.Smo.MasterKey $smodb
-                        $masterkey.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
-
-                        Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                        Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                        Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                        Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $smodb.Name
-
-                        Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
-                    }
-                    catch {
-                        Stop-Function -Message "Failed to create master key in $db on $instance. Exception: $($_.Exception.InnerException)" -Target $masterkey -InnerErrorRecord $_ -Continue
-                    }
+                catch {
+                    Stop-Function -Message "Failed to create master key in $db on $instance. Exception: $($_.Exception.InnerException)" -Target $masterkey -ErrorRecord $_ -Continue
                 }
             }
         }
