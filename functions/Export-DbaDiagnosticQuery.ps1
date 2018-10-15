@@ -90,21 +90,6 @@ function Export-DbaDiagnosticQuery {
                 Stop-Function -Message "Failed to create directory $Path" -Continue
             }
         }
-
-        Function Remove-InvalidFileNameChars {
-            [CmdletBinding()]
-            param (
-                [Parameter(Mandatory = $true,
-                    Position = 0,
-                    ValueFromPipeline = $true,
-                    ValueFromPipelineByPropertyName = $true)]
-                [String]$Name
-            )
-            $Name = $Name.Replace(" ", "-")
-            $invalidChars = [IO.Path]::GetInvalidFileNameChars() -join ''
-            $re = "[{0}]" -f [RegEx]::Escape($invalidChars)
-            return ($Name -replace $re)
-        }
     }
 
     process {
@@ -116,7 +101,6 @@ function Export-DbaDiagnosticQuery {
             $SqlInstance = $row.SqlInstance.Replace("\", "$")
             $dbname = $row.Database
             $number = $row.Number
-            $note = $row.Note
 
             if ($null -eq $result) {
                 Stop-Function -Message "Result was empty for $name" -Target $result -Continue
