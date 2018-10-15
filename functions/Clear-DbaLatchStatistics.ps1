@@ -1,13 +1,13 @@
-﻿function Clear-DbaWaitStatistics {
+﻿function Clear-DbaLatchStatistics {
 <#
     .SYNOPSIS
-        Clears wait statistics
+        Clears Latch Statistics
 
     .DESCRIPTION
-        Reset the aggregated statistics - basically just executes DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR)
+        Reset the aggregated statistics - basically just executes DBCC SQLPERF (N'sys.dm_os_latch_stats', CLEAR)
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances.
+        Allows you to specify a comma separated list of servers to query.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
@@ -24,26 +24,36 @@
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
     .NOTES
-        Tags: WaitStatistic, Waits
-        Author: Chrissy LeMaire (@cl)
+        Tags: LatchStatistic, Waits
+        Author: Patrick Flynn (@sqllensman)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://dbatools.io/Clear-DbaWaitStatistics
+        https://dbatools.io/Clear-DbaLatchStatistics
 
     .EXAMPLE
-        PS C:\> Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012
+        PS C:\> Clear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012
 
-        After confirmation, clears wait stats on servers sql2008 and sqlserver2012
+        After confirmation, clears latch statistics on servers sql2008 and sqlserver2012
 
     .EXAMPLE
-        PS C:\> Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false
+        PS C:\> Clear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false
 
-        Clears wait stats on servers sql2008 and sqlserver2012, without prompting
+        Clears clears latch statistics on servers sql2008 and sqlserver2012, without prompting
 
+    .EXAMPLE
+        PS C:\> 'sql2008','sqlserver2012' | Clear-DbaLatchStatistics
+
+        After confirmation, clears latch statistics on servers sql2008 and sqlserver2012
+
+    .EXAMPLE
+        PS C:\> $cred = Get-Credential sqladmin
+        PS C:\> Clear-DbaLatchStatistics -SqlInstance sql2008 -SqlCredential $cred
+
+        Connects using sqladmin credential and clears latch statistics on servers sql2008 and sqlserver2012
 #>
     [CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
     param (
@@ -56,6 +66,7 @@
     )
     process {
         foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
@@ -64,9 +75,9 @@
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($Pscmdlet.ShouldProcess($instance, "Performing CLEAR of sys.dm_os_wait_stats")) {
+            if ($Pscmdlet.ShouldProcess($instance, "Performing CLEAR of sys.dm_os_latch_stats")) {
                 try {
-                    $server.Query("DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR);")
+                    $server.Query("DBCC SQLPERF (N'sys.dm_os_latch_stats' , CLEAR);")
                     $status = "Success"
                 }
                 catch {
@@ -74,7 +85,7 @@
                 }
 
                 [PSCustomObject]@{
-                    ComputerName = $server.ComputerName
+                    ComputerName = $server.NetName
                     InstanceName = $server.ServiceName
                     SqlInstance  = $server.DomainInstanceName
                     Status       = $status
