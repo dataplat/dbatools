@@ -20,7 +20,7 @@ function Get-DbaDbCertificate {
         Database(s) to ignore when retrieving certificates
     
     .PARAMETER InputObject
-        Allows piping from Get-DbaDatabase
+        Enables piping from Get-DbaDatabase
     
     .PARAMETER Certificate
         Get specific certificate by name
@@ -79,14 +79,16 @@ function Get-DbaDbCertificate {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseCertificate
     }
     process {
-        $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
+        }
         
         foreach ($db in $InputObject) {
             if (!$db.IsAccessible) {
                 Write-Message -Level Warning -Message "$db is not accessible, skipping"
                 continue
-
             }
+            
             $dbName = $db.Name
             $certs = $db.Certificates
             
