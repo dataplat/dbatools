@@ -953,6 +953,63 @@
         "Syntax":  "Clear-DbaConnectionPool [[-ComputerName] \u003cDbaInstanceParameter[]\u003e] [[-Credential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Clear-DbaLatchStatistics",
+        "Description":  "Reset the aggregated statistics - basically just executes DBCC SQLPERF (N\u0027sys.dm_os_latch_stats\u0027, CLEAR)",
+        "Tags":  [
+                     "LatchStatistic",
+                     "Waits"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "Allows you to specify a comma separated list of servers to query.",
+                           "ServerInstance,SqlServer,SqlServers",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "Silent",
+                           false,
+                           "false",
+                           "False"
+                       ],
+                       [
+                           "WhatIf",
+                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
+                           "wi",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Confirm",
+                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
+                           "cf",
+                           false,
+                           "false",
+                           ""
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Clears Latch Statistics",
+        "Name":  "Clear-DbaLatchStatistics",
+        "Links":  "https://dbatools.io/Clear-DbaLatchStatistics",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eClear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012\nAfter confirmation, clears latch statistics on servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eClear-DbaLatchStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false\nClears clears latch statistics on servers sql2008 and sqlserver2012, without prompting\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sqlserver2012\u0027 | Clear-DbaLatchStatistics\nAfter confirmation, clears latch statistics on servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Clear-DbaLatchStatistics -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and clears latch statistics on servers sql2008 and sqlserver2012",
+        "Syntax":  "Clear-DbaLatchStatistics [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Clear-DbaPlanCache",
         "Description":  "Checks ad-hoc and prepared plan cache for each database, if over 100 MBs removes from the cache.\n\nThis command automates that process.\n\nReferences: https://www.sqlskills.com/blogs/kimberly/plan-cache-adhoc-workloads-and-clearing-the-single-use-plan-cache-bloat/",
         "Tags":  "Memory",
@@ -1077,7 +1134,7 @@
         "Name":  "Clear-DbaWaitStatistics",
         "Links":  "https://dbatools.io/Clear-DbaWaitStatistics",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eClear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012\nAfter confirmation, clears wait stats on servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eClear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false\nClears wait stats on servers sql2008 and sqlserver2012, without prompting",
-        "Syntax":  "Clear-DbaWaitStatistics [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Clear-DbaWaitStatistics [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Connect-DbaInstance",
@@ -9878,6 +9935,52 @@
         "Syntax":  "Get-DbaConnection [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Get-DbaCpuRingBuffer",
+        "Description":  "This command is based off of Glen Berry\u0027s diagnostic query for average CPU\n\nThe sys.dm_os_ring_buffers stores the average CPU utilization history\nby the current instance of SQL Server, plus the summed average CPU utilization\nby all other processes on your machine are captured in one minute increments\nfor the past 256 minutes.\n\nReference: https://www.sqlskills.com/blogs/glenn/sql-server-diagnostic-information-queries-detailed-day-16//",
+        "Tags":  "CPU",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "Allows you to specify a comma separated list of servers to query.",
+                           "ServerInstance,SqlServer,SqlServers",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:\r\n$cred = Get-Credential, this pass this $cred to the param.\nWindows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "CollectionMinutes",
+                           "Allows you to specify a Collection Period in Minutes. Default is 60 minutes",
+                           "",
+                           false,
+                           "false",
+                           "60"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "Silent",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Collects CPU data from sys.dm_os_ring_buffers.  Works on SQL Server 2005 and above.",
+        "Name":  "Get-DbaCpuRingBuffer",
+        "Links":  "https://dbatools.io/Get-DbaCpuRingBuffer",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaCpuRingBuffer -SqlInstance sql2008, sqlserver2012\nGets CPU Statistics from sys.dm_os_ring_buffers for servers sql2008 and sqlserver2012 for last 60 minutes.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaCpuRingBuffer -SqlInstance sql2008 -CollectionMinutes 240\nGets CPU Statistics from sys.dm_os_ring_buffers for server sql2008 for last 240 minutes\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$output = Get-DbaCpuRingBuffer -SqlInstance sql2008 -CollectionMinutes 240 | Select * | ConvertTo-DbaDataTable\nGets CPU Statistics from sys.dm_os_ring_buffers for server sql2008 for last 240 minutes into a Data Table.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sql2012\u0027 | Get-DbaCpuRingBuffer\nGets CPU Statistics from sys.dm_os_ring_buffers for servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaCpuRingBuffer -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and returns CPU Statistics from sys.dm_os_ring_buffers from sql2008",
+        "Syntax":  "Get-DbaCpuRingBuffer [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-CollectionMinutes] \u003cInt32\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Get-DbaCpuUsage",
         "Description":  "\"If there are a lot of processes running on your instance and the CPU is very high,\nthen it\u0027s hard to find the exact process eating up your CPU using just the SQL Server\ntools. One way to correlate the data between what is running within SQL Server and at\nthe Windows level is to use SPID and KPID values to get the exact process.\"\n\nThis command automates that process.\n\nReferences: https://www.mssqltips.com/sqlservertip/2454/how-to-find-out-how-much-cpu-a-sql-server-process-is-really-using/\n\nNote: This command returns results from all SQL instances on the destination server but the process\ncolumn is specific to -SqlInstance passed.",
         "Tags":  "CPU",
@@ -13541,6 +13644,44 @@
         "Syntax":  "Get-DbaInstanceUserOption [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Get-DbaIoLatency",
+        "Description":  "This command is based off of Paul Randal\u0027s post \"Advanced SQL Server performance tuning\"\n\nReturns both raw and aggregate information\n\nReference:  https://www.sqlskills.com/blogs/paul/how-to-examine-io-subsystem-latencies-from-within-sql-server/\n            https://www.sqlskills.com/blogs/paul/capturing-io-latencies-period-time/",
+        "Tags":  "IOLatency",
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The SQL Server instance. Server version must be SQL Server version 2008 or higher.",
+                           "ServerInstance,SqlServer,SqlServers",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "Silent",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Displays IO subsystem latency statistics from sys.dm_io_virtual_file_stats.  Works on SQL Server 2005 and above.",
+        "Name":  "Get-DbaIoLatency",
+        "Links":  "https://dbatools.io/Get-DbaIoLatency",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaIoLatency -SqlInstance sql2008, sqlserver2012\nGet IO subsystem latency statistics for servers sql2008 and sqlserver2012.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$output = Get-DbaIoLatency -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable\nCollects all IO subsystem latency statistics on server sql2008 into a Data Table.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sqlserver2012\u0027 | Get-DbaIoLatency\nGet IO subsystem latency statistics for servers sql2008 and sqlserver2012 via pipline\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaIoLatency -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and returns IO subsystem latency statistics from sql2008",
+        "Syntax":  "Get-DbaIoLatency [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Get-DbaLastBackup",
         "Description":  "Retrieves and compares the date/time for the last known backups, as well as the creation date/time for the database.\n\nDefault output includes columns Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated.",
         "Tags":  [
@@ -13653,6 +13794,55 @@
         "Links":  "https://dbatools.io/Get-DbaLastGoodCheckDb",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLastGoodCheckDb -SqlInstance ServerA\\sql987\nReturns a custom object displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaLastGoodCheckDb -SqlInstance ServerA\\sql987 -SqlCredential sqladmin | Format-Table -AutoSize\nReturns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled. Authenticates using SQL Server \r\nauthentication.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaLastGoodCheckDb -SqlInstance sql2016 -ExcludeDatabase \"TempDB\" | Format-Table -AutoSize\nReturns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled. All databases except for \"TempDB\" \r\nwill be displayed in the output.",
         "Syntax":  "Get-DbaLastGoodCheckDb [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Database] \u003cObject[]\u003e] [[-ExcludeDatabase] \u003cObject[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
+        "CommandName":  "Get-DbaLatchStatistic",
+        "Description":  "This command is based off of Paul Randal\u0027s post \"Advanced SQL Server performance tuning\"\n\nReturns:\n        LatchClass\n        WaitSeconds\n        WaitCount\n        Percentage\n        AverageWaitSeconds\n        URL\n\nReference:  https://www.sqlskills.com/blogs/paul/advanced-performance-troubleshooting-waits-latches-spinlocks/\n            https://www.sqlskills.com/blogs/paul/most-common-latch-classes-and-what-they-mean/",
+        "Tags":  [
+                     "LatchStatistics",
+                     "Waits"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The SQL Server instance. Server version must be SQL Server version 2005 or higher.",
+                           "ServerInstance,SqlServer,SqlServers",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "Threshold",
+                           "Threshold, in percentage of all latch stats on the system. Default per Paul\u0027s post is 95%.",
+                           "",
+                           false,
+                           "false",
+                           "95"
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "Silent",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Displays latch statistics from sys.dm_os_latch_stats",
+        "Name":  "Get-DbaLatchStatistic",
+        "Links":  "https://dbatools.io/Get-DbaLatchStatistic",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaLatchStatistic -SqlInstance sql2008, sqlserver2012\nCheck latch statistics for servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaLatchStatistic -SqlInstance sql2008 -Threshold 98\nCheck latch statistics on server sql2008 for thresholds above 98%\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e$output = Get-DbaLatchStatistic -SqlInstance sql2008 -Threshold 100 | Select * | ConvertTo-DbaDataTable\nCollects all latch statistics on server sql2008 into a Data Table.\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sqlserver2012\u0027 | Get-DbaLatchStatistic\nGet latch statistics for servers sql2008 and sqlserver2012 via pipline\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaLatchStatistic -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and returns latch statistics from sql2008\n-------------------------- EXAMPLE 6 --------------------------\nPS C:\\\u003e$output = Get-DbaLatchStatistic -SqlInstance sql2008\nPS C:\\\u003e $output\r\nPS C:\\\u003e foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }\nDisplays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.",
+        "Syntax":  "Get-DbaLatchStatistic [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Threshold] \u003cInt32\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaLinkedServer",
@@ -16651,6 +16841,47 @@
         "Syntax":  "Get-DbaSpConfigure [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Name \u003cString[]\u003e] [-ExcludeName \u003cString[]\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
+        "CommandName":  "Get-DbaSpinLockStatistic",
+        "Description":  "This command is based off of Paul Randal\u0027s post \"Advanced SQL Server performance tuning\"\n\nReturns:\n        SpinLockName\n        Collisions\n        Spins\n        SpinsPerCollision\n        SleepTime\n        Backoffs\n\nReference:  https://www.sqlskills.com/blogs/paul/advanced-performance-troubleshooting-waits-latches-spinlocks/",
+        "Tags":  [
+                     "SpinLockStatistics",
+                     "Waits"
+                 ],
+        "Params":  [
+                       [
+                           "SqlInstance",
+                           "The SQL Server instance. Server version must be SQL Server version 2008 or higher.",
+                           "ServerInstance,SqlServer,SqlServers",
+                           true,
+                           "true (ByValue)",
+                           ""
+                       ],
+                       [
+                           "SqlCredential",
+                           "Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)",
+                           "",
+                           false,
+                           "false",
+                           ""
+                       ],
+                       [
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "Silent",
+                           false,
+                           "false",
+                           "False"
+                       ]
+                   ],
+        "Alias":  "",
+        "Author":  "Patrick Flynn (@sqllensman)",
+        "Synopsis":  "Displays information from sys.dm_os_spinlock_stats.  Works on SQL Server 2008 and above.",
+        "Name":  "Get-DbaSpinLockStatistic",
+        "Links":  "https://dbatools.io/Get-DbaSpinLockStatistic",
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaSpinLockStatistic -SqlInstance sql2008, sqlserver2012\nGet SpinLock Statistics for servers sql2008 and sqlserver2012.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003e$output = Get-DbaSpinLockStatistic -SqlInstance sql2008 | Select * | ConvertTo-DbaDataTable\nCollects all SpinLock Statistics on server sql2008 into a Data Table.\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003e\u0027sql2008\u0027,\u0027sqlserver2012\u0027 | Get-DbaSpinLockStatistic\nGet SpinLock Statistics for servers sql2008 and sqlserver2012 via pipline\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$cred = Get-Credential sqladmin\nPS C:\\\u003e Get-DbaSpinLockStatistic -SqlInstance sql2008 -SqlCredential $cred\nConnects using sqladmin credential and returns SpinLock Statistics from sql2008",
+        "Syntax":  "Get-DbaSpinLockStatistic [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
+    },
+    {
         "CommandName":  "Get-DbaSpn",
         "Description":  "Get a list of set SPNs. SPNs are set at the AD account level. You can either retrieve set SPNs for a computer, or any SPNs set for\na given active directory account. You can query one, or both. You\u0027ll get a list of every SPN found for either search term.",
         "Tags":  "SPN",
@@ -17711,7 +17942,7 @@
         "Name":  "Get-DbaWaitStatistic",
         "Links":  "https://dbatools.io/Get-DbaWaitStatistic",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008, sqlserver2012\nCheck wait statistics for servers sql2008 and sqlserver2012\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008 -Threshold 98 -IncludeIgnorable\nCheck wait statistics on server sql2008 for thresholds above 98% and include wait stats that are most often, but not always, ignorable\n-------------------------- EXAMPLE 3 --------------------------\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008 | Select *\nShows detailed notes, if available, from Paul\u0027s post\n-------------------------- EXAMPLE 4 --------------------------\nPS C:\\\u003e$output = Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 100 -IncludeIgnorable | Select-Object * | ConvertTo-DbaDataTable\nCollects all Wait Statistics (including ignorable waits) on server sql2008 into a Data Table.\n-------------------------- EXAMPLE 5 --------------------------\nPS C:\\\u003e$output = Get-DbaWaitStatistic -SqlInstance sql2008\nPS C:\\\u003e foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }\nDisplays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.",
-        "Syntax":  "Get-DbaWaitStatistic [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [-SqlCredential \u003cPSCredential\u003e] [-Threshold \u003cInt32\u003e] [-IncludeIgnorable] [-EnableException] [\u003cCommonParameters\u003e]"
+        "Syntax":  "Get-DbaWaitStatistic [-SqlInstance] \u003cDbaInstanceParameter[]\u003e [[-SqlCredential] \u003cPSCredential\u003e] [[-Threshold] \u003cInt32\u003e] [-IncludeIgnorable] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Get-DbaWindowsLog",
