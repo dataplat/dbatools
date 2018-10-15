@@ -230,11 +230,14 @@
                         Stop-Function -Message "Could not connect to the connection string $connstring" -Target $instance -Continue
                     }
                     if (!$DacOption) {
-                        $opts = New-DbaDacOption -Type $Type
+                        $opts = New-DbaDacOption -Type $Type -Action Export
                     }
                     else {
                         $opts = $DacOption
                     }
+                    $global:output = @()
+                    Register-ObjectEvent -InputObject $dacSvc -EventName "Message" -SourceIdentifier "msg" -Action { $global:output += $EventArgs.Message.Message } | Out-Null
+
                     if ($Type -eq 'Dacpac') {
                         Write-Message -Level Verbose -Message "Initiating Dacpac extract to $currentFileName"
                         #not sure how to extract that info from the existing DAC application, leaving 1.0.0.0 for now
@@ -245,6 +248,9 @@
                         catch {
                             Stop-Function -Message "DacServices extraction failure" -ErrorRecord $_ -Continue
                         }
+                        finally {
+                            Unregister-Event -SourceIdentifier "msg"
+                        }
                     }
                     elseif ($Type -eq 'Bacpac') {
                         Write-Message -Level Verbose -Message "Initiating Bacpac export to $currentFileName"
@@ -254,7 +260,11 @@
                         catch {
                             Stop-Function -Message "DacServices export failure" -ErrorRecord $_ -Continue
                         }
+                        finally {
+                            Unregister-Event -SourceIdentifier "msg"
+                        }
                     }
+                    $finalResult = ($global:output -join "`r`n" | Out-String).Trim()
                 }
                 elseif ($PsCmdlet.ParameterSetName -eq 'CMD') {
                     if ($Type -eq 'Dacpac') { $action = 'Extract' }
@@ -279,6 +289,7 @@
                         $stderr = $process.StandardError.ReadToEnd()
                         $process.WaitForExit()
                         Write-Message -level Verbose -Message "StandardOutput: $stdout"
+                        $finalResult = $stdout
                     }
                     catch {
                         Stop-Function -Message "SQLPackage Failure" -ErrorRecord $_ -Continue
@@ -295,6 +306,7 @@
                     Database     = $dbname
                     Path         = $currentFileName
                     Elapsed      = [prettytimespan]($resultstime.Elapsed)
+                    Result       = $finalResult
                 } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
             }
         }
