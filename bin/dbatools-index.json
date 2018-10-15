@@ -32979,8 +32979,8 @@
         "Params":  [
                        [
                            "SqlInstance",
-                           "The SQL Server whose filesystem you want to view.",
-                           "ServerInstance,SqlServer",
+                           "The target SQL Server instance or instances. Defaults to localhost.",
+                           "",
                            true,
                            "true (ByValue)",
                            ""
@@ -32994,20 +32994,12 @@
                            ""
                        ],
                        [
-                           "WhatIf",
-                           "If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.",
-                           "wi",
+                           "EnableException",
+                           "By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.\r\nThis avoids overwhelming you with \"sea of red\" exceptions, but is inconvenient because it basically disables advanced scripting.\r\nUsing this switch turns this \"nice by default\" feature off and enables you to catch exceptions with your own try/catch.",
+                           "",
                            false,
                            "false",
-                           ""
-                       ],
-                       [
-                           "Confirm",
-                           "If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.",
-                           "cf",
-                           false,
-                           "false",
-                           ""
+                           "False"
                        ]
                    ],
         "Alias":  "Show-SqlServerFileSystem",
@@ -33015,8 +33007,8 @@
         "Synopsis":  "Shows file system on remote SQL Server in a local GUI and returns the selected directory name",
         "Name":  "Show-DbaServerFileSystem",
         "Links":  "https://dbatools.io/Show-DbaServerFileSystem",
-        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eShow-DbaServerFileSystem -SqlInstance sqlserver2014a\nShows a list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected path.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eShow-DbaServerFileSystem -Source sqlserver2014a -SqlCredential $cred\nShows a list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected path.",
-        "Syntax":  "Show-DbaServerFileSystem [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cObject\u003e] [-WhatIf] [-Confirm] [\u003cCommonParameters\u003e]"
+        "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eShow-DbaServerFileSystem -SqlInstance sql2017\nShows a list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected path.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eShow-DbaServerFileSystem -Source sql2017 -SqlCredential $cred\nShows a list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected path.",
+        "Syntax":  "Show-DbaServerFileSystem [-SqlInstance] \u003cDbaInstanceParameter\u003e [[-SqlCredential] \u003cPSCredential\u003e] [-EnableException] [\u003cCommonParameters\u003e]"
     },
     {
         "CommandName":  "Start-DbaAgentJob",
