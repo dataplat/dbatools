@@ -1,8 +1,23 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Unit Test" -Tags Unittest {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 5
+        $defaultParamCount = 11
+        [object[]]$params = (Get-ChildItem function:\Get-DbaBuildReference).Parameters.Keys
+        $knownParameters = 'Build','SqlInstance','SqlCredential','Update','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
+
+Describe "$CommandName Unit Test" -Tags Unittest {
     $ModuleBase = (Get-Module -Name dbatools).ModuleBase
     $idxfile = "$ModuleBase\bin\dbatools-buildref-index.json"
     Context 'Validate data in json is correct' {
@@ -132,7 +147,7 @@ Describe "$commandname Unit Test" -Tags Unittest {
     }
 }
 
-Describe "$commandname Integration Tests" -Tags IntegrationTests {
+Describe "$commandname Integration Tests" -Tags 'IntegrationTests' {
     Context "Test retrieving version from instances" {
         $results = Get-DbaBuildReference -SqlInstance $script:instance1, $script:instance2
         It "Should return an exact match" {

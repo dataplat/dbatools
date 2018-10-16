@@ -1,6 +1,21 @@
 ﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 45
+        $defaultParamCount = 13
+        [object[]]$params = (Get-ChildItem function:\Restore-DbaDatabase).Parameters.Keys
+        $knownParameters = 'SqlInstance','SqlCredential','Path','DatabaseName','DestinationDataDirectory','DestinationLogDirectory','DestinationFileStreamDirectory','RestoreTime','NoRecovery','WithReplace','XpDirTree','OutputScriptOnly','VerifyOnly','MaintenanceSolutionBackup','FileMapping','IgnoreLogBackup','useDestinationDefaultDirectories','ReuseSourceFolderStructure','DestinationFilePrefix','RestoredDatabaseNamePrefix','TrustDbBackupHistory','MaxTransferSize','BlockSize','BufferCount','DirectoryRecurse','EnableException','StandbyDirectory','Continue','AzureCredential','ReplaceDbNameInFile','DestinationFileSuffix','Recover','KeepCDC','AllowContinue','GetBackupInformation','StopAfterGetBackupInformation','SelectBackupInformation','StopAfterSelectBackupInformation','FormatBackupInformation','StopAfterFormatBackupInformation','TestBackupInformation','StopAfterTestBackupInformation','PageRestore','PageRestoreTailFolder','StatementTimeout'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     # $script:instance3 to add to the 2016_2017 matrix
