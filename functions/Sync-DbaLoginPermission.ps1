@@ -123,7 +123,7 @@
                     continue
                 }
 
-                Update-SqlPermissions -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin
+                Update-SqlPermission -SourceServer $sourceServer -SourceLogin $sourceLogin -DestServer $destServer -DestLogin $destLogin
             }
         }
     }
