@@ -89,17 +89,17 @@ function New-DbaDbMasterKey {
         
         foreach ($db in $InputObject) {
             if ($null -ne $db.MasterKey) {
-                Stop-Function -Message "Master key already exists in the $db database on $instance" -Target $db -Continue
+                Stop-Function -Message "Master key already exists in the $db database on $($db.Parent.Name)" -Target $db -Continue
             }
             
-            if ($Pscmdlet.ShouldProcess($instance, "Creating master key for database '$db'")) {
+            if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating master key for database '$($db.Name)'")) {
                 try {
                     $masterkey = New-Object Microsoft.SqlServer.Management.Smo.MasterKey $db
                     $masterkey.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
                     
-                    Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                    Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
+                    Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $db.Parent.ServiceName
+                    Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
                     Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $db.Name
                     
                     Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer

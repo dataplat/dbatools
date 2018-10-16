@@ -106,7 +106,11 @@ function New-DbaDbCertificate {
                     Stop-Function -Message "Certificate '$cert' already exists in the $db database on $instance" -Target $db -Continue
                 }
                 
-                if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating certificate for database '$db'")) {
+                if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating certificate for database '$($db.Name)'")) {
+                    
+                    # something is up with .net, force a stop
+                    $eap = $ErrorActionPreference
+                    $ErrorActionPreference = 'Stop'
                     try {
                         $smocert = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Certificate $db, $cert
                         $smocert.StartDate = $StartDate
@@ -129,16 +133,10 @@ function New-DbaDbCertificate {
                         Select-DefaultView -InputObject $smocert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
                     }
                     catch {
-                        if ($_.Exception.InnerException) {
-                            $exception = $_.Exception.InnerException.ToString() -Split "System.Data.SqlClient.SqlException: "
-                            $exception = ($exception[1] -Split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0]
-                        }
-                        else {
-                            $exception = $_.Exception
-                        }
-                        
-                        Stop-Function -Message "Failed to create certificate in $db on $instance. Exception: $exception" -Target $smocert -ErrorRecord $_ -Continue
+                        $ErrorActionPreference = $eap
+                        Stop-Function -Message "Failed to create certificate in $($db.Name) on $($db.Parent.Name)" -Target $smocert -ErrorRecord $_ -Continue
                     }
+                    $ErrorActionPreference = $eap
                 }
             }
         }
