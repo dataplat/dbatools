@@ -1,17 +1,10 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 . "$PSScriptRoot\..\internal\functions\Get-PasswordHash.ps1"
 
 Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
     Context "Validate parameters" {
-        <#
-            The $paramCount is adjusted based on the parameters your command will have.
-
-            The $defaultParamCount is adjusted based on what type of command you are writing the test for:
-                - Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
-                - Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
-        #>
         $paramCount = 6
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Test-DbaLoginPassword).Parameters.Keys
