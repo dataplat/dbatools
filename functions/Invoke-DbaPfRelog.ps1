@@ -10,7 +10,7 @@ function Invoke-DbaPfRelog {
         Extracts performance counters from performance counter logs into other formats,
         such as text-TSV (for tab-delimited text), text-CSV (for comma-delimited text), binary-BIN, or SQL.
 
-        relog "C:\PerfLogs\Admin\System Correlation\WORKSTATIONX_20180112-000001\DataCollector01.blg" -o C:\temp\foo.csv -f tsv
+        `relog "C:\PerfLogs\Admin\System Correlation\WORKSTATIONX_20180112-000001\DataCollector01.blg" -o C:\temp\foo.csv -f tsv`
 
         If you find any input hangs, please send us the output so we can accommodate for it then use -Raw for an immediate solution.
 
@@ -101,9 +101,7 @@ function Invoke-DbaPfRelog {
 
     .EXAMPLE
         PS C:\> Invoke-DbaPfRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c -Raw
-
-        Creates the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg then outputs the raw results of the relog command.
-
+        ```
         [Invoke-DbaPfRelog][21:21:35] relog "C:\temp\perfmon.blg" -f csv -o C:\temp\a\b\c
 
         Input
@@ -126,6 +124,9 @@ function Invoke-DbaPfRelog {
         Samples:  2227
 
         The command completed successfully.
+        ```
+
+        Creates the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg then outputs the raw results of the relog command.
 
     .EXAMPLE
         PS C:\> Invoke-DbaPfRelog -Path 'C:\temp\perflog with spaces.blg' -Destination C:\temp\a\b\c -Type csv -BeginTime ((Get-Date).AddDays(-30)) -EndTime ((Get-Date).AddDays(-1))

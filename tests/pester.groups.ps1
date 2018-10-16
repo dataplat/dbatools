@@ -21,7 +21,9 @@ $TestsRunGroups = @{
     # do not run on appveyor
     # a bug in SMO prevents availability group scripting :(
     "appveyor_disabled"               = @(
-    'Export-DbaAvailabilityGroup'
+        'Export-DbaAvailabilityGroup',
+        'Get-DbaCpuRingBuffer',
+        'Get-DbaLatchStatistic'
     )
     # do not run everywhere
     "disabled"                  = @()
