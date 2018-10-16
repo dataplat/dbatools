@@ -306,8 +306,8 @@ function Copy-DbaDbTableData {
             $fqtnfrom = "$($server.Databases[$Database]).$sqltable"
             $fqtndest = "$($destServer.Databases[$DestinationDatabase]).$desttable"
 
-            if ($fqtndest -eq $fqtnfrom) {
-                Stop-Function -Message "Cannot copy $fqtnfrom into $fqtndest. Source and Destination must be different " -Target $Table
+            if ($fqtndest -eq $fqtnfrom -and $server.Name -eq $destServer.Name) {
+                Stop-Function -Message "Cannot copy $fqtnfrom on $($server.Name) into $fqtndest on ($destServer.Name). Source and Destination must be different " -Target $Table
                 return
             }
 

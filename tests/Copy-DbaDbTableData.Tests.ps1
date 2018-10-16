@@ -35,12 +35,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             SELECT top 10 1
             FROM sys.objects")
         $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example2 (id int)")
-        $null = $db2.Query("CREATE TABLE dbo.dbatoolsci_example3 (id int)")
+        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example3 (id int)")
         $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example4 (id int);
             INSERT dbo.dbatoolsci_example4
             SELECT top 13 1
             FROM sys.objects")
         $null = $db2.Query("CREATE TABLE dbo.dbatoolsci_example (id int)")
+        $null = $db2.Query("CREATE TABLE dbo.dbatoolsci_example3 (id int)")
         $null = $db2.Query("CREATE TABLE dbo.dbatoolsci_example4 (id int);
             INSERT dbo.dbatoolsci_example4
             SELECT top 13 2
@@ -49,8 +50,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
         $null = $db.Query("DROP TABLE dbo.dbatoolsci_example")
         $null = $db.Query("DROP TABLE dbo.dbatoolsci_example2")
-        $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example3")
+        $null = $db.Query("DROP TABLE dbo.dbatoolsci_example3")
         $null = $db.Query("DROP TABLE dbo.dbatoolsci_example4")
+        $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example3")
         $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example4")
         $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example")
     }
@@ -77,7 +79,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "supports piping more than one table" {
-        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example2
+        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example3
         $results.Count | Should -Be 2
     }
 
@@ -95,6 +97,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results[1].RowsCopied | Should -Be 13
         $table4db2check = $db2.Query("select id from dbo.dbatoolsci_example4 where id = 1")
         $table4db2check.Count | Should -Be 13
+    }
+
+    It "Should return nothing if Source and Destination are same" {
+        $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -Truncate
+        $result | Should Be $null
     }
 }
 
