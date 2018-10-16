@@ -4,10 +4,10 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $paramCount = 27
+        $paramCount = 29
         $defaultParamCount = 13
         [object[]]$params = (Get-ChildItem function:\Backup-DbaDatabase).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','BackupDirectory','BackupFileName','CopyOnly','Type','InputObject','CreateFolder','FileCount','CompressBackup','Checksum','Verify','MaxTransferSize','BlockSize','BufferCount','AzureBaseUrl','AzureCredential','NoRecovery','BuildPath','WithFormat','Initialize','SkipTapeHeader','IgnoreFileChecks','OutputScriptOnly','EnableException'
+        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','BackupDirectory','BackupFileName','ReplaceInName','CopyOnly','Type','InputObject','CreateFolder','FileCount','CompressBackup','Checksum','Verify','MaxTransferSize','BlockSize','BufferCount','AzureBaseUrl','AzureCredential','NoRecovery','BuildPath','WithFormat','Initialize','SkipTapeHeader','TimeStampFormat','IgnoreFileChecks','OutputScriptOnly','EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
