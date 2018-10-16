@@ -35,7 +35,7 @@ function Test-DbaConnection {
 
     .EXAMPLE
         PS C:\> Test-DbaConnection SQL2016
-
+        ```
         ComputerName         : SQL2016
         InstanceName         : MSSQLSERVER
         SqlInstance          : sql2016
@@ -56,6 +56,7 @@ function Test-DbaConnection {
         LocalSMOVersion      : 13.0.0.0
         LocalDomainUser      : True
         LocalRunAsAdmin      : False
+        ```
 
         Test connection to SQL2016 and outputs information collected
 #>

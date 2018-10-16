@@ -1,4 +1,4 @@
-function Update-SqlPermissions {
+function Update-SqlPermission {
     <#
         .SYNOPSIS
             Internal function. Updates permission sets, roles, database mappings on server and databases
