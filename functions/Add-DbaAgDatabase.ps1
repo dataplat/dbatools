@@ -94,6 +94,9 @@ function Add-DbaAgDatabase {
                     try {
                         $agdb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
                         $ag.AvailabilityDatabases.Add($agdb)
+                        $ag.AvailabilityDatabases.Alter()
+                        $db.Alter()
+                        $ag.Alter()
                         $db.Refresh()
                         $db
                     }

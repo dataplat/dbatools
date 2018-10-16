@@ -69,25 +69,23 @@ function Get-DbaAgDatabase {
         [switch]$EnableException
     )
     process {
-        foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $instance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
+        if ($SqlInstance) {
+            $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
         
         if (Test-Bound -ParameterName Database) {
-            $InputObject = $InputObject | Where-Object { $_.AvailabilityDatabases.Name -contains $Listener }
+            $InputObject = $InputObject | Where-Object { $_.AvailabilityDatabases.Name -contains $Database }
         }
-        
-        foreach ($ag in $InputObject.AvailabilityDatabases) {
-            $server = $ag.Parent.Parent
-            foreach ($db in $dbs) {
-                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                Add-Member -Force -InputObject $db -MemberType NoteProperty -Name Replica -value $server.ComputerName
-                
-                $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Parent as AvailabilityGroup', 'Replica', 'Name as DatabaseName', 'SynchronizationState', 'IsFailoverReady', 'IsJoined', 'IsSuspended'
-                Select-DefaultView -InputObject $db -Property $defaults
-            }
+
+        foreach ($db in $InputObject.AvailabilityDatabases) {
+            $server = $db.Parent.Parent
+            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
+            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name Replica -value $server.ComputerName
+            
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Parent as AvailabilityGroup', 'Replica', 'Name as DatabaseName', 'SynchronizationState', 'IsFailoverReady', 'IsJoined', 'IsSuspended'
+            Select-DefaultView -InputObject $db -Property $defaults
         }
     }
 }

@@ -65,6 +65,7 @@ function Remove-DbaAgDatabase {
         [string[]]$Database,
         [string[]]$AvailabilityGroup,
         # needs to accept db or agdb so generic object
+
         [parameter(ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$EnableException
@@ -72,8 +73,14 @@ function Remove-DbaAgDatabase {
     process {
         if ((Test-Bound -ParameterName SqlInstance)) {
             if ((Test-Bound -Not -ParameterName Database)) {
-               Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
-               return
+                Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
+                return
+            }
+        }
+        
+        if ($InputObject) {
+            if ($InputObject[0].GetType().Name -eq 'Database') {
+                $Database += $InputObject.Name
             }
         }
         
@@ -82,20 +89,15 @@ function Remove-DbaAgDatabase {
         }
         
         foreach ($db in $InputObject) {
-            $ags = Get-DbaAvailabilityGroup -SqlInstance $db.Parent -AvailabilityGroup $AvailabilityGroup
-            
-            foreach ($ag in $ags) {
-                if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Removing availability group $db to $($db.Parent)")) {
-                    try {
-                        $agdb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
-                        $db.Query("ALTER $db SET HADR OFF")
-                        $ag.AvailabilityDatabases.Drop($agdb)
-                        $db.Refresh()
-                        $db
-                    }
-                    catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
-                    }
+            if ($Pscmdlet.ShouldProcess($db.Parent.Parent.Name, "Removing availability group database $db")) {
+                try {
+                    $db.Query("ALTER $db SET HADR OFF")
+                    $db.Parent.AvailabilityDatabases.Drop($db.Name)
+                    $db.Refresh()
+                    $db
+                }
+                catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
             }
         }
