@@ -463,7 +463,7 @@
                     }
                 }
                 if ($Pscmdlet.ShouldProcess($destinstance, "Updating SQL login $userName permissions")) {
-                    Update-SqlPermissions -sourceserver $sourceServer -sourcelogin $sourceLogin -destserver $destServer -destlogin $destLogin
+                    Update-SqlPermission -sourceserver $sourceServer -sourcelogin $sourceLogin -destserver $destServer -destlogin $destLogin
                 }
 
                 if ($LoginRenameHashtable.Keys -contains $userName) {
