@@ -83,8 +83,9 @@ function Get-DbaAgDatabase {
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name Replica -value $server.ComputerName
+            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name AvailabilityGroup -value $db.Parent.Name
             
-            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Parent as AvailabilityGroup', 'Replica', 'Name as DatabaseName', 'SynchronizationState', 'IsFailoverReady', 'IsJoined', 'IsSuspended'
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Replica', 'Name', 'SynchronizationState', 'IsFailoverReady', 'IsJoined', 'IsSuspended'
             Select-DefaultView -InputObject $db -Property $defaults
         }
     }

@@ -23,42 +23,21 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        try {
-            $computername = ($script:instance3).Split("\")[0]
-            $null = Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-            $server = Connect-DbaInstance -SqlInstance $script:instance3
-            $dbname = "dbatoolsci_agroupdb"
-            $server.Query("create database $dbname")
-            $backup = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
-            $server.Query("IF NOT EXISTS (select * from sys.symmetric_keys where name like '%DatabaseMasterKey%') CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<StrongPassword>'")
-            Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
-            Get-DbaDbCertificate -SqlInstance $server -Certificate dbatoolsci_AGCert | Remove-DbaDbCertificate -Confirm:$false
-            New-DbaDbCertificate -SqlInstance $server -Database master -Name dbatoolsci_AGCert -Subject 'AG Certificate'
-            New-DbaEndpoint -SqlInstance $script:instance3 -Type DatabaseMirroring -Name dbatoolsci_AGEndpoint -Certificate dbatoolsci_AGCert | Start-DbaEndpoint
-            $server.Query("CREATE AVAILABILITY GROUP dbatoolsci_agroup
-                            WITH (DB_FAILOVER = OFF, DTC_SUPPORT = NONE, CLUSTER_TYPE = NONE)
-                            FOR DATABASE $dbname REPLICA ON N'$script:instance3'
-                            WITH (ENDPOINT_URL = N'TCP://$computername`:5022', FAILOVER_MODE = MANUAL, AVAILABILITY_MODE = SYNCHRONOUS_COMMIT)")
-        }
-        catch { }
+        $agname = "dbatoolsci_agroup"
+        $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
     }
     AfterAll {
-        Get-DbaAgDatabase -SqlInstance $server -Database $dbname | Remove-DbaAgDatabase -Confirm:$false
-        Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup dbatoolsci_agroup -Confirm:$false
-        Remove-DbaEndpoint -SqlInstance $server -Endpoint dbatoolsci_AGEndpoint -Confirm:$false
-        Get-DbaDbCertificate -SqlInstance $server -Certificate dbatoolsci_AGCert | Remove-DbaDbCertificate -Confirm:$false
-        Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
+        Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
     }
     Context "gets ags" {
-        $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3
         It "returns results with proper data" {
-            $results.AvailabilityGroup | Should -Contain 'dbatoolsci_agroup'
-            $results.AvailabilityDatabases.Name | Should -Contain $dbname
+            $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3
+            $results.AvailabilityGroup | Should -Contain $agname
         }
-        $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup dbatoolsci_agroup
+        
         It "returns a single result" {
-            $results.AvailabilityGroup | Should -Be 'dbatoolsci_agroup'
-            $results.AvailabilityDatabases.Name | Should -Be $dbname
+            $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname
+            $results.AvailabilityGroup | Should -Be $agname
         }
     }
 } #$script:instance2 for appveyor
