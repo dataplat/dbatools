@@ -23,13 +23,17 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        New-DbaAvailabilityGroup -Primary $script:instance3 -Name dbatoolsci_removeagroup -ClusterType None -FailoverMode Manual -Confirm:$false
+        $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name dbatoolsci_removeagroup -ClusterType None -FailoverMode Manual -Confirm:$false
     }
-    Context "removes an ag" {
+    Context "removes the newly created ag" {
         It "removes the ag" {
             $results = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup dbatoolsci_removeagroup -Confirm:$false
             $results.Status | Should -Be 'Removed'
             $results.AvailabilityGroup | Should -Be 'dbatoolsci_removeagroup'
+        }
+        It "really removed the ag" {
+            $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup dbatoolsci_removeagroup
+            $results | Should -BeNull
         }
     }
 } #$script:instance2 for appveyor
