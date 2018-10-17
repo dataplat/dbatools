@@ -64,7 +64,7 @@ function Remove-DbaAvailabilityGroup {
         Removes the ag1 and ag2 availability groups on sqlserver2012.  Does not prompt for confirmation.
 
     .EXAMPLE
-        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroups availability group1 | Remove-DbaAvailabilityGroup
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroups availabilitygroup1 | Remove-DbaAvailabilityGroup
 
         Removes the availability groups returned from the Get-DbaAvailabilityGroup function. Prompts for confirmation.
 #>
