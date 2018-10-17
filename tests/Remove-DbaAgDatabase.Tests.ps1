@@ -23,22 +23,22 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-            $computername = ($script:instance3).Split("\")[0]
-            $null = Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
-            $server = Connect-DbaInstance -SqlInstance $script:instance3
-            $dbname = "dbatoolsci_removeag_agroupdb"
-            $server.Query("create database $dbname")
-            $agname = "dbatoolsci_removeag_agroup"
-            $backup = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
-            $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false
+        $computername = ($script:instance3).Split("\")[0]
+        $null = Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
+        $server = Connect-DbaInstance -SqlInstance $script:instance3
+        $dbname = "dbatoolsci_removeag_agroupdb"
+        $server.Query("create database $dbname")
+        $agname = "dbatoolsci_removeag_agroup"
+        $null = New-DbaDbCertificate -SqlInstance $server -Database master -Name dbatoolsci_AGCert -Subject 'AG Certificate'
+        $null = New-DbaEndpoint -SqlInstance $script:instance3 -Type DatabaseMirroring -Name dbatoolsci_AGEndpoint -Certificate dbatoolsci_AGCert | Start-DbaEndpoint
+        $backup = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
+        $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert
     }
     AfterAll {
-        Get-DbaAgDatabase -SqlInstance $server -Database $dbname | Remove-DbaAgDatabase -Confirm:$false
-        Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
-        Remove-DbaEndpoint -SqlInstance $server -Endpoint dbatoolsci_AGEndpoint -Confirm:$false
-        Get-DbaDbCertificate -SqlInstance $server -Certificate dbatoolsci_AGCert | Remove-DbaDbCertificate -Confirm:$false
-        Get-DbaAgDatabase -SqlInstance $server -Database $dbname | Remove-DbaAgDatabase -Confirm:$false
-        Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
+        $null = Remove-DbaEndpoint -SqlInstance $server -Endpoint dbatoolsci_AGEndpoint -Confirm:$false
+        $null = Get-DbaDbCertificate -SqlInstance $server -Certificate dbatoolsci_AGCert | Remove-DbaDbCertificate -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
     }
     Context "removes ag db" {
         It "returns removed results" {
