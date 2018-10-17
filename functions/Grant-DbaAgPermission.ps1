@@ -141,6 +141,15 @@ function Grant-DbaAgPermission {
                         try {
                             $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
                             $endpoint.Grant($bigperms, $account.Name)
+                            [pscustomobject]@{
+                                ComputerName = $account.ComputerName
+                                InstanceName = $account.InstanceName
+                                SqlInstance  = $account.SqlInstance
+                                Name         = $account.Name
+                                Permission   = $perm
+                                Type         = "Grant"
+                                Status       = "Success"
+                            }
                         }
                         catch {
                             Stop-Function -Message "Failure" -ErrorRecord $_ -Target $ag -Continue
@@ -148,7 +157,7 @@ function Grant-DbaAgPermission {
                     }
                 }
             }
-
+            
             if ($Type -contains "AvailabilityGroup") {
                 $ags = Get-DbaAvailabilityGroup -SqlInstance $account.Parent -AvailabilityGroup $AvailabilityGroup
                 foreach ($ag in $ags) {
@@ -164,6 +173,15 @@ function Grant-DbaAgPermission {
                                 else {
                                     $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
                                     $ag.Grant($bigperms, $account.Name)
+                                    [pscustomobject]@{
+                                        ComputerName = $account.ComputerName
+                                        InstanceName = $account.InstanceName
+                                        SqlInstance  = $account.SqlInstance
+                                        Name         = $account.Name
+                                        Permission   = $perm
+                                        Type         = "Grant"
+                                        Status       = "Success"
+                                    }
                                 }
                             }
                             catch {
