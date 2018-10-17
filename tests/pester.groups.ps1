@@ -23,7 +23,9 @@ $TestsRunGroups = @{
     "appveyor_disabled"               = @(
         'Export-DbaAvailabilityGroup',
         'Get-DbaCpuRingBuffer',
-        'Get-DbaLatchStatistic'
+        'Get-DbaLatchStatistic',
+        'Remove-DbaAgDatabase',
+        'Remove-DbaAvailabilityGroup'
     )
     # do not run everywhere
     "disabled"                  = @()
