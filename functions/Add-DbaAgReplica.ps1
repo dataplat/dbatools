@@ -84,12 +84,12 @@ function Add-DbaAgReplica {
         https://dbatools.io/Add-DbaAgReplica
 
     .EXAMPLE
-        PS C:\> Get-AvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b
 
         Adds sql2017b to the SharePoint availability group on sql2017a
 
     .EXAMPLE
-        PS C:\> Get-AvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b -FailoverMode Manual
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017a -AvailabilityGroup SharePoint | Add-DbaAgReplica -SqlInstance sql2017b -FailoverMode Manual
 
         Adds sql2017b to the SharePoint availability group on sql2017a with a manual failover mode.
 #>

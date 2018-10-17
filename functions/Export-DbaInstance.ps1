@@ -433,9 +433,9 @@
                 $fileCounter++
                 Write-Message -Level Verbose -Message "Exporting availability group"
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting availability groups"
-                $null = Get-DbaAvailabilityGroup -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaScript -Path "$Path\$fileCounter-availabilitygroups.sql" -Append -BatchSeparator $BatchSeparator #-ScriptingOptionsObject $ScriptingOption
-                Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-availabilitygroups.sql"
-                if (-not (Test-Path "$Path\$fileCounter-availabilitygroups.sql")) {
+                $null = Get-DbaAvailabilityGroup -SqlInstance $server -WarningAction SilentlyContinue | Export-DbaScript -Path "$Path\$fileCounter-DbaAvailabilityGroups.sql" -Append -BatchSeparator $BatchSeparator #-ScriptingOptionsObject $ScriptingOption
+                Get-ChildItem -ErrorAction Ignore -Path "$Path\$fileCounter-DbaAvailabilityGroups.sql"
+                if (-not (Test-Path "$Path\$fileCounter-DbaAvailabilityGroups.sql")) {
                     $fileCounter--
                 }
             }

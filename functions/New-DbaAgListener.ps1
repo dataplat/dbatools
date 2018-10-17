@@ -61,7 +61,7 @@ function New-DbaAgListener {
         Creates a listener on 10.0.20.20 port 1433 for the SharePoint availability group on sql2017.
         
     .EXAMPLE
-        PS C:\> Get-AvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availability group1 | New-DbaAgListener -Dhcp
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availability group1 | New-DbaAgListener -Dhcp
         
         Creates a listener on port 1433 with a dynamic IP for the group1 availability group on sql2017.
 

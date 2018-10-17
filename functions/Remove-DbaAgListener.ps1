@@ -1,11 +1,11 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Remove-DbaAgDatabase {
+function Remove-DbaAgListener {
 <#
     .SYNOPSIS
-        Removes a database from an availability group on a SQL Server instance.
+        Removes a listener from an availability group on a SQL Server instance.
         
     .DESCRIPTION
-        Removes a database from an availability group on a SQL Server instance.
+        Removes a listener from an availability group on a SQL Server instance.
     
    .PARAMETER SqlInstance
         The target SQL Server instance or instances. Server version must be SQL Server version 2012 or higher.
@@ -13,11 +13,11 @@ function Remove-DbaAgDatabase {
     .PARAMETER SqlCredential
         Login to the SqlInstance instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
-    .PARAMETER Database
-        The database or databases to remove.
+    .PARAMETER Listener
+        The listener or listeners to remove.
     
     .PARAMETER AvailabilityGroup
-        Only remove databases from specific availability groups.
+        Only remove listeners from specific availability groups.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -26,7 +26,7 @@ function Remove-DbaAgDatabase {
         Prompts you for confirmation before executing any changing operations within the command.
 
     .PARAMETER InputObject
-        Enables piping from Get-DbaDatabase
+        Enables piping from Get-DbaListener
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -41,64 +41,56 @@ function Remove-DbaAgDatabase {
         License: MIT https://opensource.org/licenses/MIT
         
     .LINK
-        https://dbatools.io/Remove-DbaAgDatabase
+        https://dbatools.io/Remove-DbaAgListener
         
     .EXAMPLE
-        PS C:\> Remove-DbaAgDatabase -SqlInstance sqlserver2012 -AllAvailabilityGroup
+        PS C:\> Remove-DbaAgListener -SqlInstance sqlserver2012 -AllAvailabilityGroup
         
         Removes all availability groups on the sqlserver2014 instance. Prompts for confirmation.
         
     .EXAMPLE
-        PS C:\> Remove-DbaAgDatabase -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm:$false
+        PS C:\> Remove-DbaAgListener -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm:$false
         
-        Removes the ag1 and ag2 availability groups on sqlserver2012.  Does not prompt for confirmation.
+        Removes the ag1 and ag2 availability groups on sqlserver2012. Does not prompt for confirmation.
         
     .EXAMPLE
-        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup availability group1 | Remove-DbaAgDatabase
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2012 -AvailabilityGroup availability group1 | Remove-DbaAgListener
         
-        Removes the availability groups returned from the Get-DbaAvailabilityGroup function. Prompts for confirmation.
+        Removes the listeners returned from the Get-DbaAvailabilityGroup function. Prompts for confirmation.
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string[]]$Database,
+        [string[]]$Listener,
         [string[]]$AvailabilityGroup,
-        # needs to accept db or agdb so generic object
-
         [parameter(ValueFromPipeline)]
-        [object[]]$InputObject,
+        [Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener[]]$InputObject,
         [switch]$EnableException
     )
     process {
         if ((Test-Bound -ParameterName SqlInstance)) {
-            if ((Test-Bound -Not -ParameterName Database)) {
-                Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
+            if ((Test-Bound -Not -ParameterName Listener)) {
+                Stop-Function -Message "You must specify one or more listeners and one or more Availability Groups when using the SqlInstance parameter."
                 return
             }
         }
-        
-        if ($InputObject) {
-            if ($InputObject[0].GetType().Name -eq 'Database') {
-                $Database += $InputObject.Name
-            }
-        }
-        
+
         if ($SqlInstance) {
-            $InputObject += Get-DbaAgDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
+            $InputObject += Get-DbaAgListener -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Listener $Listener
         }
-        
-        foreach ($db in $InputObject) {
-            if ($Pscmdlet.ShouldProcess($db.Parent.Parent.Name, "Removing availability group database $db")) {
+
+        foreach ($listener in $InputObject) {
+            if ($Pscmdlet.ShouldProcess($listener.Parent.Parent.Name, "Removing availability group listener $listener")) {
                 try {
-                    $ag = $db.Parent.Name
-                    $db.Parent.AvailabilityDatabases[$db.Name].Drop()
+                    $ag = $listener.Parent.Name
+                    $listener.Parent.AvailabilityGroupListeners[$listener.Name].Drop()
                     [pscustomobject]@{
-                        ComputerName = $db.ComputerName
-                        InstanceName = $db.InstanceName
-                        SqlInstance  = $db.SqlInstance
+                        ComputerName = $listener.ComputerName
+                        InstanceName = $listener.InstanceName
+                        SqlInstance  = $listener.SqlInstance
                         AvailabilityGroup = $ag
-                        Database     = $db.Name
+                        Listener     = $listener.Name
                         Status       = "Removed"
                     }
                 }
