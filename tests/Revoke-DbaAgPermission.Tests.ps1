@@ -30,7 +30,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     AfterAll {
         $null = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
     }
-    Context "grants big perms" {
+    Context "revokes big perms" {
         It "returns results with proper data" {
             $results = Get-DbaLogin -SqlInstance $script:instance3 -Login tester | Revoke-DbaAgPermission -Type EndPoint
             $results.Status | Should -Be 'Success'
