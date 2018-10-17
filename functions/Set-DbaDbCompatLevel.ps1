@@ -114,24 +114,8 @@
 				default { 9 } # SQL Server 2005
 			}
 
-			#Write-Output 'I am in the foreach db'
-
-			#$ServerVersion
-			#$ogcompat
-			#$dbversion
-			#$CompatabilityLevel
-
-			# skip over databases at the correct level
-			#if ($dbversion -eq $ServerVersion) {
-				#Write-Message -Level VeryVerbose -Message "Skipping $db because compatibility is at the correct level."
-				#continue
-			#}
-
 			if (!$CompatabilityLevel) {
 				Write-Message -Level Verbose -Message "Updating $db compatibility to SQL Instance level"
-				#Write-Output 'In compat level 1'
-				#$dbversion
-				#$CompatabilityLevel
 				if ($dbversion -lt $ServerVersion) {
 					If ($Pscmdlet.ShouldProcess($server, "Updating $db version on $server from $dbversion to $ServerVersion")) {
 						$Comp = $ServerVersion * 10
@@ -151,16 +135,10 @@
 				}
 			}
 			else {
-				#Write-Output 'In compat level 2'
 				Write-Message -Level Verbose -Message "Updating $db compatibility to $CompatabilityLevel"
-				#$dbversion
-				#Write-Output "CompatabilityLevel - $CompatabilityLevel"
-				#if ($dbversion -ne $CompatabilityLevel) {
 					If ($Pscmdlet.ShouldProcess($server, "Updating $db version on $server from $dbversion to $CompatabilityLevel")) {
 						$Comp = $CompatabilityLevel * 10
-						#Write-Output "Set Comp Level value - $Comp"
 						$tsqlComp = "ALTER DATABASE $db SET COMPATIBILITY_LEVEL = $Comp"
-						#Write-Output "TSQL: $tsqlComp"
 						try {
 							$db.ExecuteNonQuery($tsqlComp)
 							$comResult = $Comp
@@ -170,10 +148,6 @@
 							$comResult = "Fail"
 						}
 					}
-				#}
-				#else {
-				#	$comResult = "No change"
-				#}
 			}
 			If ($Pscmdlet.ShouldProcess("console", "Outputting object")) {
 				$db.Refresh()
