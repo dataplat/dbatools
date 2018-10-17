@@ -91,10 +91,16 @@ function Remove-DbaAgDatabase {
         foreach ($db in $InputObject) {
             if ($Pscmdlet.ShouldProcess($db.Parent.Parent.Name, "Removing availability group database $db")) {
                 try {
-                    $db.Query("ALTER $db SET HADR OFF")
-                    $db.Parent.AvailabilityDatabases.Drop($db.Name)
-                    $db.Refresh()
-                    $db
+                    $ag = $db.Parent.Name
+                    $db.Parent.AvailabilityDatabases[$db.Name].Drop()
+                    [pscustomobject]@{
+                        ComputerName = $db.ComputerName
+                        InstanceName = $db.InstanceName
+                        SqlInstance  = $db.SqlInstance
+                        AvailabilityGroup = $ag
+                        Database     = $db.Name
+                        Status       = "Removed"
+                    }
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Continue

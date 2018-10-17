@@ -103,7 +103,7 @@ function New-DbaDbCertificate {
             
             foreach ($cert in $Name) {
                 if ($null -ne $db.Certificates[$cert]) {
-                    Stop-Function -Message "Certificate '$cert' already exists in the $db database on $instance" -Target $db -Continue
+                    Stop-Function -Message "Certificate '$cert' already exists in $($db.Name) on $($db.Parent.Name)" -Target $db -Continue
                 }
                 
                 if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating certificate for database '$($db.Name)'")) {

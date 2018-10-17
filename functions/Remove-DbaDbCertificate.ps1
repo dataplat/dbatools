@@ -57,8 +57,8 @@ function Remove-DbaDbCertificate {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$Database,
-        [object[]]$Certificate,
+        [string[]]$Database,
+        [string[]]$Certificate,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Certificate[]]$InputObject,
         [switch]$EnableException
@@ -68,16 +68,18 @@ function Remove-DbaDbCertificate {
     }
     process {
         if ($SqlInstance) {
+            Write-Warning hello
             $InputObject += Get-DbaDbCertificate -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Certificate $Certificate -Database $Database
         }
-        
         foreach ($cert in $InputObject) {
-            $server = $cert.Parent.Parent
             $db = $cert.Parent
+            $server = $db.Parent
+            
             if ($Pscmdlet.ShouldProcess($server.Name, "Dropping the certificate named $cert for database $db")) {
                 try {
+                    # erroractionprefs are not invoked for .net methods suddenly (??), so use Invoke-DbaQuery
                     # Avoids modifying the collection
-                    $cert.Parent.Query("DROP CERTIFICATE $cert")
+                    Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query "DROP CERTIFICATE $cert" -EnableException
                     Write-Message -Level Verbose -Message "Successfully removed certificate named $cert from the $db database on $server"
                     [pscustomobject]@{
                         ComputerName = $server.ComputerName
@@ -89,7 +91,7 @@ function Remove-DbaDbCertificate {
                     }
                 }
                 catch {
-                    Stop-Function -Message "Failed to drop certificate named $cert from $db on $server." -Target $smocert -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failed to drop certificate named $($cert.Name) from $($db.Name) on $($server.Name)." -Target $smocert -ErrorRecord $_ -Continue
                 }
             }
         }
