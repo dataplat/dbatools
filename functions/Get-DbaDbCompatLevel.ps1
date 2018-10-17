@@ -55,62 +55,62 @@
         Displays Database Compatability Level for database Test on server localhost\sql2017
 
 #>
-	[CmdletBinding(SupportsShouldProcess)]
-	param (
-		[parameter(Position = 0)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
-		[object[]]$Database,
-		[parameter(ValueFromPipeline)]
-		[Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
-		[Alias('Silent')]
-		[switch]$EnableException
-	)
-	process {
+    [CmdletBinding(SupportsShouldProcess)]
+    param (
+        [parameter(Position = 0)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [System.Management.Automation.PSCredential]$SqlCredential,
+        [object[]]$Database,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
+        [Alias('Silent')]
+        [switch]$EnableException
+    )
+    process {
 
-		if (Test-Bound -not 'SqlInstance', 'InputObject') {
-			Write-Message -Level Warning -Message "You must specify either a SQL instance or pipe a database collection"
-			continue
-		}
+        if (Test-Bound -not 'SqlInstance', 'InputObject') {
+            Write-Message -Level Warning -Message "You must specify either a SQL instance or pipe a database collection"
+            continue
+        }
 
-		foreach ($instance in $SqlInstance) {
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-				$server.ConnectionContext.StatementTimeout = [Int32]::MaxValue
-			}
-			catch {
-				Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
-			}
-			$InputObject += $server.Databases | Where-Object IsAccessible
-		}
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server.ConnectionContext.StatementTimeout = [Int32]::MaxValue
+            }
+            catch {
+                Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
+            }
+            $InputObject += $server.Databases | Where-Object IsAccessible
+        }
 
-		$InputObject = $InputObject | Where-Object { $_.IsSystemObject -eq $false }
-		if ($Database) {
-			$InputObject = $InputObject | Where-Object { $_.Name -contains $Database }
-		}
+        $InputObject = $InputObject | Where-Object { $_.IsSystemObject -eq $false }
+        if ($Database) {
+            $InputObject = $InputObject | Where-Object { $_.Name -contains $Database }
+        }
 
-		foreach ($db in $InputObject) {
-			$server = $db.Parent
-			$ServerVersion = $server.VersionMajor
-			Write-Message -Level Verbose -Message "SQL Server is using Version: $ServerVersion"
+        foreach ($db in $InputObject) {
+            $server = $db.Parent
+            $ServerVersion = $server.VersionMajor
+            Write-Message -Level Verbose -Message "SQL Server is using Version: $ServerVersion"
 
-			$compat = $db.CompatibilityLevel
+            $compat = $db.CompatibilityLevel
 
-			If ($Pscmdlet.ShouldProcess("console", "Outputting object")) {
-				$db.Refresh()
+            If ($Pscmdlet.ShouldProcess("console", "Outputting object")) {
+                $db.Refresh()
 
-				[PSCustomObject]@{
-					ComputerName  = $server.ComputerName
-					InstanceName  = $server.ServiceName
-					SqlInstance   = $server.DomainInstanceName
-					Database      = $db.name
-					Compatibility = $compat
-				}
-			}
-		}
-	}
-	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaDatabaseUpgrade
-	}
+                [PSCustomObject]@{
+                    ComputerName  = $server.ComputerName
+                    InstanceName  = $server.ServiceName
+                    SqlInstance   = $server.DomainInstanceName
+                    Database      = $db.name
+                    Compatibility = $compat
+                }
+            }
+        }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Invoke-DbaDatabaseUpgrade
+    }
 }
