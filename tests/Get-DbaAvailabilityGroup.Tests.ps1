@@ -34,12 +34,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring | Remove-DbaEndpoint -Confirm:$false
             Get-DbaDbCertificate -SqlInstance $server -Certificate dbatoolsci_AGCert | Remove-DbaDbCertificate -Confirm:$false
             New-DbaDbCertificate -SqlInstance $server -Database master -Name dbatoolsci_AGCert -Subject 'AG Certificate'
-            #$server.Query("CREATE CERTIFICATE dbatoolsci_AGCert WITH SUBJECT = 'AG Certificate'")
             New-DbaEndpoint -SqlInstance $script:instance3 -Type DatabaseMirroring -Name dbatoolsci_AGEndpoint -Certificate dbatoolsci_AGCert | Start-DbaEndpoint
-            #$server.Query("CREATE ENDPOINT dbatoolsci_AGEndpoint
-            #                STATE = STARTED
-            #                AS TCP (LISTENER_PORT = 5022,LISTENER_IP = ALL)
-            #                FOR DATABASE_MIRRORING (AUTHENTICATION = CERTIFICATE dbatoolsci_AGCert, ROLE = ALL)")
             $server.Query("CREATE AVAILABILITY GROUP dbatoolsci_agroup
                             WITH (DB_FAILOVER = OFF, DTC_SUPPORT = NONE, CLUSTER_TYPE = NONE)
                             FOR DATABASE $dbname REPLICA ON N'$script:instance3'

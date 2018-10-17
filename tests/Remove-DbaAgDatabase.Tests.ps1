@@ -23,13 +23,18 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
+        $computername = ($script:instance3).Split("\")[0]
         $null = Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
         $server = Connect-DbaInstance -SqlInstance $script:instance3
         $dbname = "dbatoolsci_removeag_agroupdb"
         $server.Query("create database $dbname")
         $agname = "dbatoolsci_agdb"
         $backup = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
-        New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false
+        # New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false
+        $server.Query("CREATE AVAILABILITY GROUP dbatoolsci_agroup
+                            WITH (DB_FAILOVER = OFF, DTC_SUPPORT = NONE, CLUSTER_TYPE = NONE)
+                            FOR DATABASE $dbname REPLICA ON N'$script:instance3'
+                            WITH (ENDPOINT_URL = N'TCP://$computername`:5022', FAILOVER_MODE = MANUAL, AVAILABILITY_MODE = SYNCHRONOUS_COMMIT)")
     }
     AfterAll {
         Remove-DbaAgDatabase -SqlInstance $server -Database $dbname -Confirm:$false
@@ -40,16 +45,18 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         Get-DbaAgDatabase -SqlInstance $server -Database $dbname | Remove-DbaAgDatabase -Confirm:$false
         Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
     }
-    Context "gets ags" {
-        It "returns results with proper data" {
-            $results = Remove-DbaAgDatabase -SqlInstance $script:instance3 -Database $dbname -Confirm:$false -Verbose
-            $results.AvailabilityGroup | Should -Contain 'dbatoolsci_agroup'
-            $results.AvailabilityDatabases.Name | Should -Contain $dbname
-        }
-        $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup dbatoolsci_agroup
-        It "returns a single result" {
+    Context "removes ag db" {
+        It "returns removed results" {
+            $results = Remove-DbaAgDatabase -SqlInstance $script:instance3 -Database $dbname -Confirm:$false
             $results.AvailabilityGroup | Should -Be 'dbatoolsci_agroup'
-            $results.AvailabilityDatabases.Name | Should -Be $dbname
+            $results.Database | Should -Be $dbname
+            $results.Status | Should -Be 'Removed'
+        }
+        
+        It "really removed the db from the ag" {
+            $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup dbatoolsci_agroup
+            $results.AvailabilityGroup | Should -Be 'dbatoolsci_agroup'
+            $results.AvailabilityDatabases.Name | Should -Not -Contain $dbname
         }
     }
 } #$script:instance2 for appveyor
