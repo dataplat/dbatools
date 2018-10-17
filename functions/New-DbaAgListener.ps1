@@ -94,35 +94,15 @@ function New-DbaAgListener {
             if ((Test-Bound -Not -ParameterName Name)) {
                 $Name = $ag.Name
             }
-            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding $IPAddress to $ag")) {
+            if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding $($IPAddress.IPAddressToString) to $($ag.Name)")) {
                 try {
-                    $aglistener = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener -ArgumentList $ag, $Name
-                    $aglistener.PortNumber = $Port
-                    
-                    $listenerip = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroupListenerIPAddress -ArgumentList $aglistener
-                    if (Test-Bound -ParameterName IPAddress) {
-                        $listenerip.IPAddress = $IPAddress.IPAddressToString
-                        $listenerip.SubnetMask = $SubnetMask.IPAddressToString
-                    }
-                    $listenerip.IsDHCP = $Dhcp
-                    $aglistener.AvailabilityGroupListenerIPAddresses.Add($listenerip)
-                    
-                    if ($Passthru) {
-                        return $aglistener
-                    }
-                    else {
-                        $aglistener.Create()
-                    }
-                    
-                    Get-DbaAgListener -SqlInstance $ag.Parent -AvailabilityGroup $ag.Name -Listener $Name
+                    # something is up with .net, force a stop
+                    New-Listener -ag $ag -Name $Name -Port $Port -IPAddress $IPAddress -SubnetMask $SubnetMask -Passthru:$Passthru -ErrorAction Stop
                 }
                 catch {
-                    $msg = $_.Exception.InnerException.InnerException.Message
-                    if (-not $msg) {
-                        $msg = $_
-                    }
-                    Stop-Function -Message $msg -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure" -ErrorRecord $_
                 }
+                Get-DbaAgListener -SqlInstance $ag.Parent -AvailabilityGroup $ag.Name -Listener $Name
             }
         }
     }
