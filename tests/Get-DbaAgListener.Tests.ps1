@@ -9,10 +9,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
             Commands with SupportShouldProcess = 13
         #>
         $defaultParamCount = 11
-        [object[]]$params = (Get-ChildItem function:\Get-DbaAgDatabase).Parameters.Keys
+        [object[]]$params = (Get-ChildItem function:\Get-DbaAgListener).Parameters.Keys
         $knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Listener','InputObject', 'EnableException'
         $paramCount = $knownParameters.Count
-        It -Skip "Should contain our specific parameters" {
+        It "Should contain our specific parameters" {
             ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
         }
         It "Should only contain $paramCount parameters" {
@@ -21,33 +21,19 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 
-InModuleScope dbatools {
-    . "$PSScriptRoot\constants.ps1"
-    $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-    Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
-        Mock Connect-SqlInstance {
-            Import-CliXml $script:appveyorlabrepo\agserver.xml
-        }
-        Context "gets ag databases" {
-            It -Skip "returns results with the right listener information" {
-                $results = Get-DbaAgListener -SqlInstance sql2016c
-                foreach ($result in $results) {
-                    $result.Name | Should -Be 'splistener'
-                    $result.PortNumber | Should -Be '20200'
-                }
-                
-                $results = Get-DbaAgListener -SqlInstance sql2016c -Listener splistener
-                foreach ($result in $results) {
-                    It "returns results with the right listener information for a single listener" {
-                        $result.Name | Should -Be 'splistener'
-                        $result.PortNumber | Should -Be '20200'
-                    }
-                }
-            }
-            It -Skip "does not return a non existent listener" {
-                $results = Get-DbaAgListener -SqlInstance sql2016c -Listener doesntexist
-                $results | Should -Be $null
-            }
+Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+    BeforeAll {
+        $agname = "dbatoolsci_ag_listener"
+        $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert |
+        New-DbaAgListener -IPAddress 127.0.20.1 -Confirm:$false
+    }
+    AfterAll {
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname -Confirm:$false
+    }
+    Context "gets ags" {
+        It "returns results with proper data" {
+            $results = Get-DbaAgListener -SqlInstance $script:instance3
+            $results.PortNumber | Should -Contain 1433
         }
     }
-}
+} #$script:instance2 for appveyor
