@@ -73,11 +73,10 @@ function Get-DbaAgDatabase {
             $InputObject += Get-DbaAvailabilityGroup -SqlInstance $SqlInstance -SqlCredential $SqlCredential -AvailabilityGroup $AvailabilityGroup
         }
         
-        if (Test-Bound -ParameterName Database) {
-            $InputObject = $InputObject | Where-Object { $_.AvailabilityDatabases.Name -contains $Database }
-        }
-
         foreach ($db in $InputObject.AvailabilityDatabases) {
+            if ($Database) {
+                if ($db.Name -notin $Database) { continue }
+            }
             $server = $db.Parent.Parent
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
