@@ -23,7 +23,6 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        try {
             $computername = ($script:instance3).Split("\")[0]
             $null = Get-DbaProcess -SqlInstance $script:instance3 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
             $server = Connect-DbaInstance -SqlInstance $script:instance3
@@ -31,12 +30,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $server.Query("create database $dbname")
             $agname = "dbatoolsci_removeag_agroup"
             $backup = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
-            # New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false
-            $server.Query("CREATE AVAILABILITY GROUP $agname
-                            WITH (DB_FAILOVER = OFF, DTC_SUPPORT = NONE, CLUSTER_TYPE = NONE)
-                            FOR DATABASE $dbname REPLICA ON N'$script:instance3'
-                            WITH (ENDPOINT_URL = N'TCP://$computername`:5022', FAILOVER_MODE = MANUAL, AVAILABILITY_MODE = SYNCHRONOUS_COMMIT)")
-        } catch {}
+            $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false
     }
     AfterAll {
         Get-DbaAgDatabase -SqlInstance $server -Database $dbname | Remove-DbaAgDatabase -Confirm:$false
