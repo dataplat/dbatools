@@ -82,6 +82,7 @@ function Get-DbaAgDatabase {
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name Replica -value $server.ComputerName
+            Add-Member -Force -InputObject $db -MemberType NoteProperty -Name DatabaseName -value $db.Name # for backwards compat
             Add-Member -Force -InputObject $db -MemberType NoteProperty -Name AvailabilityGroup -value $db.Parent.Name
             
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Replica', 'Name', 'SynchronizationState', 'IsFailoverReady', 'IsJoined', 'IsSuspended'
