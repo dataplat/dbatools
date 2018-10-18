@@ -27,6 +27,7 @@ function Revoke-DbaAgPermission {
             Alter
             Connect
             Control
+            CreateAnyDatabase
             CreateSequence
             Delete
             Execute
@@ -91,7 +92,7 @@ function Revoke-DbaAgPermission {
         [parameter(Mandatory)]
         [ValidateSet('Endpoint', 'AvailabilityGroup')]
         [string[]]$Type,
-        [ValidateSet('Alter', 'Connect', 'Control', 'CreateSequence', 'Delete', 'Execute', 'Impersonate', 'Insert', 'Receive', 'References', 'Select', 'Send', 'TakeOwnership', 'Update', 'ViewChangeTracking', 'ViewDefinition')]
+        [ValidateSet('Alter', 'Connect', 'Control', 'CreateAnyDatabase', 'CreateSequence', 'Delete', 'Execute', 'Impersonate', 'Insert', 'Receive', 'References', 'Select', 'Send', 'TakeOwnership', 'Update', 'ViewChangeTracking', 'ViewDefinition')]
         [string[]]$Permission = "Connect",
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Login[]]$InputObject,
@@ -127,21 +128,26 @@ function Revoke-DbaAgPermission {
                 
                 foreach ($perm in $Permission) {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Revoking $perm on $endpoint")) {
-                        $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
-                        try {
-                            $endpoint.Revoke($bigperms, $account.Name)
-                            [pscustomobject]@{
-                                ComputerName = $account.ComputerName
-                                InstanceName = $account.InstanceName
-                                SqlInstance  = $account.SqlInstance
-                                Name         = $account.Name
-                                Permission   = $perm
-                                Type         = "Revoke"
-                                Status       = "Success"
-                            }
+                        if ($perm -eq "CreateAnyDatabase") {
+                            $ag.Parent.Query("ALTER AVAILABILITY GROUP $ag REVOKE CREATE ANY DATABASE")
                         }
-                        catch {
-                            Stop-Function -Message "Failure" -ErrorRecord $_
+                        else {
+                            $bigperms = New-Object Microsoft.SqlServer.Management.Smo.ObjectPermissionSet([Microsoft.SqlServer.Management.Smo.ObjectPermission]::$perm)
+                            try {
+                                $endpoint.Revoke($bigperms, $account.Name)
+                                [pscustomobject]@{
+                                    ComputerName = $account.ComputerName
+                                    InstanceName = $account.InstanceName
+                                    SqlInstance  = $account.SqlInstance
+                                    Name         = $account.Name
+                                    Permission   = $perm
+                                    Type         = "Revoke"
+                                    Status       = "Success"
+                                }
+                            }
+                            catch {
+                                Stop-Function -Message "Failure" -ErrorRecord $_
+                            }
                         }
                     }
                 }

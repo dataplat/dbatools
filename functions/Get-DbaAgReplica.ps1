@@ -77,9 +77,9 @@ function Get-DbaAgReplica {
         
         foreach ($agreplica in $InputObject.AvailabilityReplicas) {
             $sever = $agreplica.Parent.Parent
-            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
+            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
+            Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -value $agreplica.Parent.Name
             Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -value $agreplica.Name # backwards compat
             

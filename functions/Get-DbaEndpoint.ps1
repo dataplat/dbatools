@@ -80,7 +80,7 @@ function Get-DbaEndpoint {
             }
 
             foreach ($end in $endpoints) {
-                Write-Message -Level Verbose -Message "Processing $($end.Name) on $($server.Name)"
+                Write-Message -Level Verbose -Message "Getting endpoint $($end.Name) on $($server.Name)"
                 if ($end.Protocol.Tcp.ListenerPort) {
                     if ($instance.ComputerName -match '\.') {
                         $dns = $instance.ComputerName

@@ -180,8 +180,9 @@ function Add-DbaAgReplica {
                     if ($Passthru) {
                         return $replica
                     }
-
+                    
                     $InputObject.AvailabilityReplicas.Add($replica)
+                    $InputObject.AvailabilityReplicas[$Name]
                 }
                 catch {
                     $msg = $_.Exception.InnerException.InnerException.Message
