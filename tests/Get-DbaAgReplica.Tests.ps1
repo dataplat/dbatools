@@ -37,7 +37,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
             $results.AvailabilityMode | Should -Contain 'SynchronousCommit'
         }
         It "returns just one result" {
-            $results = Get-DbaAgReplica -SqlInstance $script:instance3 -Replica $script:instance3 -AvailabilityGroup $agname
+            $server = Connect-DbaInstance -SqlInstance $script:instance3
+            $results = Get-DbaAgReplica -SqlInstance $script:instance3 -Replica $server.DomainInstanceName -AvailabilityGroup $agname
             $results.AvailabilityGroup | Should -Be $agname
             $results.Role | Should -Be 'Primary'
             $results.AvailabilityMode | Should -Be 'SynchronousCommit'

@@ -23,8 +23,8 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
-        $agname = "dbatoolsci_ag_newlistener"
-        $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
+        $agname = "dbatoolsci_ag_removelistener"
+        $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
         $aglistener = $ag | Add-DbaAgListener -IPAddress 127.0.20.1 -Confirm:$false
     }
     AfterAll {
