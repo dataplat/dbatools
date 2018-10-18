@@ -1,9 +1,12 @@
-﻿function Get-DbaAvailabilityGroup {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Get-DbaAvailabilityGroup {
 <#
     .SYNOPSIS
-        Outputs the Availability Group(s) object found on the server.
+        Returns availability group objects from a SQL Server instance.
 
     .DESCRIPTION
+        Returns availability group objects from a SQL Server instance.
+    
         Default view provides most common set of properties for information on the Availability Group(s).
 
     .PARAMETER SqlInstance
@@ -13,7 +16,7 @@
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
     .PARAMETER AvailabilityGroup
-        Specifies the Availability Group name that you want to get information on.
+        Return only specific availability groups.
 
     .PARAMETER IsPrimary
         If this switch is enabled, a boolean indicating whether SqlInstance is the Primary replica in the AG is returned.
@@ -25,7 +28,7 @@
 
     .NOTES
         Tags: Hadr, HA, AG, AvailabilityGroup
-        Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
+        Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@cl)
 
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
@@ -66,26 +69,25 @@
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [object[]]$AvailabilityGroup,
+        [string[]]$AvailabilityGroup,
         [switch]$IsPrimary,
-        [Alias('Silent')]
         [switch]$EnableException
     )
-
     process {
-        foreach ($serverName in $SqlInstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $serverName -SqlCredential $SqlCredential -MinimumVersion 11
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
             }
             catch {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($server.IsHadrEnabled -eq $false) {
-                Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $serverName." -Target $serverName -Continue
+            if (-not $server.IsHadrEnabled) {
+                Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $instance." -Target $instance -Continue
             }
-
+            
             $ags = $server.AvailabilityGroups
+            
             if ($AvailabilityGroup) {
                 $ags = $ags | Where-Object Name -in $AvailabilityGroup
             }
@@ -97,11 +99,7 @@
 
                 if ($IsPrimary) {
                     $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name as AvailabilityGroup', 'IsPrimary'
-                    $value = $false
-                    if ($ag.PrimaryReplicaServerName -eq $server.Name) {
-                        $value = $true
-                    }
-                    Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name IsPrimary -Value $value
+                    Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name IsPrimary -Value ($ag.PrimaryReplicaServerName -eq $server.Name)
                     Select-DefaultView -InputObject $ag -Property $defaults
                 }
                 else {
