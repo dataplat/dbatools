@@ -62,18 +62,21 @@
     # Pick proper option object depending on type and action
     if ($Action -eq 'Export') {
         if ($Type -eq 'Dacpac') {
-            New-Object -TypeName Microsoft.SqlServer.Dac.DacExtractOptions
+            New-Object -TypeName Microsoft.SqlServer.Dac.DacExtractOptions
         }
         elseif ($Type -eq 'Bacpac') {
-            New-Object -TypeName Microsoft.SqlServer.Dac.DacExportOptions
+            New-Object -TypeName Microsoft.SqlServer.Dac.DacExportOptions
         }
     }
     elseif ($Action -eq 'Publish') {
         if ($Type -eq 'Dacpac') {
-            New-Object -TypeName Microsoft.SqlServer.Dac.PublishOptions
+            $output = New-Object -TypeName Microsoft.SqlServer.Dac.PublishOptions
+            $output.DeployOptions = New-Object -TypeName Microsoft.SqlServer.Dac.DacDeployOptions
+            $output.GenerateDeploymentScript = $false
+            $output
         }
         elseif ($Type -eq 'Bacpac') {
-            New-Object -TypeName Microsoft.SqlServer.Dac.DacImportOptions
+            New-Object -TypeName Microsoft.SqlServer.Dac.DacImportOptions
         }
     }
 }
