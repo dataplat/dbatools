@@ -358,7 +358,6 @@
         [parameter(ParameterSetName = "Restore")]
         [string]$DestinationFilePrefix = '',
         [parameter(ParameterSetName = "Restore")]
-        [Alias("RestoredDatababaseNamePrefix")]
         [string]$RestoredDatabaseNamePrefix,
         [parameter(ParameterSetName = "Restore")]
         [parameter(ParameterSetName = "RestorePage")]
