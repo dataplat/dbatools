@@ -25,14 +25,14 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $agname = "dbatoolsci_ag_newlistener"
         $null = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
-        $null = $ag | New-DbaAgListener -IPAddress 127.0.20.1 -Confirm:$false
+        $aglistener = $ag | Add-DbaAgListener -IPAddress 127.0.20.1 -Confirm:$false
     }
     AfterAll {
         $null = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
     }
-    Context "creates a listener" {
+    Context "removes a listener" {
         It "returns results with proper data" {
-            $results = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
+            $results = Remove-DbaAgListener -SqlInstance $script:instance3 -Listener $aglistener.Name -Confirm:$false
             $results.Status | Should -Be 'Removed'
         }
     }

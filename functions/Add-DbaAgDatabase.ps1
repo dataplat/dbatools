@@ -93,7 +93,8 @@ function Add-DbaAgDatabase {
                 if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding availability group $db to $($db.Parent.Name)")) {
                     try {
                         $agdb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
-                        $agdb.Create()
+                        # something is up with .net create(), force a stop
+                        Invoke-Create -Object $agdb
                         Get-DbaAgDatabase -SqlInstance $ag.Parent -Database $db.Name
                     }
                     catch {

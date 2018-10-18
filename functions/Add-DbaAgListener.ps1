@@ -1,5 +1,5 @@
 ﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function New-DbaAgListener {
+function Add-DbaAgListener {
 <#
     .SYNOPSIS
         Adds a listener to an availability group on a SQL Server instance.
@@ -53,15 +53,15 @@ function New-DbaAgListener {
         License: MIT https://opensource.org/licenses/MIT
         
     .LINK
-        https://dbatools.io/New-DbaAgListener
+        https://dbatools.io/Add-DbaAgListener
         
     .EXAMPLE
-        PS C:\> New-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -IPAddress 10.0.20.20
+        PS C:\> Add-DbaAgListener -SqlInstance sql2017 -AvailabilityGroup SharePoint -IPAddress 10.0.20.20
     
         Creates a listener on 10.0.20.20 port 1433 for the SharePoint availability group on sql2017.
         
     .EXAMPLE
-        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availabilitygroup1 | New-DbaAgListener -Dhcp
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2017 -AvailabilityGroup availabilitygroup1 | Add-DbaAgListener -Dhcp
         
         Creates a listener on port 1433 with a dynamic IP for the group1 availability group on sql2017.
 
@@ -96,8 +96,25 @@ function New-DbaAgListener {
             }
             if ($Pscmdlet.ShouldProcess($ag.Parent.Name, "Adding $($IPAddress.IPAddressToString) to $($ag.Name)")) {
                 try {
-                    # something is up with .net, force a stop
-                    New-Listener -ag $ag -Name $Name -Port $Port -IPAddress $IPAddress -SubnetMask $SubnetMask -Passthru:$Passthru -ErrorAction Stop
+                    $aglistener = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroupListener -ArgumentList $ag, $Name
+                    $aglistener.PortNumber = $Port
+                    $listenerip = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroupListenerIPAddress -ArgumentList $aglistener
+                    
+                    if (Test-Bound -ParameterName IPAddress) {
+                        $listenerip.IPAddress = $IPAddress.IPAddressToString
+                        $listenerip.SubnetMask = $SubnetMask.IPAddressToString
+                    }
+                    
+                    $listenerip.IsDHCP = $Dhcp
+                    $aglistener.AvailabilityGroupListenerIPAddresses.Add($listenerip)
+                    
+                    if ($Passthru) {
+                        return $aglistener
+                    }
+                    else {
+                        # something is up with .net create(), force a stop
+                        Invoke-Create -Object $aglistener
+                    }
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_

@@ -377,9 +377,10 @@ function New-DbaAvailabilityGroup {
                     ReadonlyRoutingConnectionUrl  = $ReadonlyRoutingConnectionUrl
                     Certificate                   = $Certificate
                 }
-
+                
                 $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $server
-                $ag.Create()
+                # something is up with .net create(), force a stop
+                Invoke-Create -Object $ag
             }
             catch {
                 $msg = $_.Exception.InnerException.InnerException.Message
@@ -463,13 +464,13 @@ function New-DbaAvailabilityGroup {
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
 
         if ($IPAddress) {
-            $null = New-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
+            $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
         }
         elseif ($Dhcp) {
-            $null = New-DbaAgListener -InputObject $ag -Port $Port -Dhcp:$Dhcp
+            $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp:$Dhcp
             foreach ($second in $secondaries) {
                 $secag = Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name
-                $null = New-DbaAgListener -InputObject $secag -Port $Port -Dhcp:$Dhcp
+                $null = Add-DbaAgListener -InputObject $secag -Port $Port -Dhcp:$Dhcp
             }
         }
 

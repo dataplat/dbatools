@@ -31,7 +31,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     Context "creates a listener" {
         It "returns results with proper data" {
             $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
-            $results = $ag | New-DbaAgListener -IPAddress 127.0.20.1 -Confirm:$false
+            $results = $ag | Add-DbaAgListener -IPAddress 127.0.20.1 -Confirm:$false
             $results.PortNumber | Should -Be 1433
         }
     }

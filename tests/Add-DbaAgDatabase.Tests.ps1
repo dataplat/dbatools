@@ -27,6 +27,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $server = Connect-DbaInstance -SqlInstance $script:instance3
         $agname = "dbatoolsci_addagdb_agroup"
         $dbname = "dbatoolsci_addagdb_agroupdb"
+        $newdbname = "dbatoolsci_addag_agroupdb_2"
         $server.Query("create database $dbname")
         $backup = Get-DbaDatabase -SqlInstance $script:instance3 -Database $dbname | Backup-DbaDatabase
         $ag = New-DbaAvailabilityGroup -Primary $script:instance3 -Name $agname -ClusterType None -FailoverMode Manual -Database $dbname -Confirm:$false -Certificate dbatoolsci_AGCert
@@ -37,7 +38,6 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
     }
     Context "adds ag db" {
         It "returns proper results" {
-            $newdbname = "dbatoolsci_addag_agroupdb_2"
             $server.Query("create database $newdbname")
             $backup = Get-DbaDatabase -SqlInstance $script:instance3 -Database $newdbname | Backup-DbaDatabase
             $results = Add-DbaAgDatabase -SqlInstance $script:instance3 -AvailabilityGroup $agname -Database $newdbname -Confirm:$false
