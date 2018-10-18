@@ -199,7 +199,7 @@
 
             if (-not $Database) {
                 if ($PSCmdlet.ShouldProcess($instance, "Prompting with GUI list of databases")) {
-                    $Database = Show-DbaDatabaseList -SqlInstance $server -Title "Install sp_WhoisActive" -Header "To deploy sp_WhoisActive, select a database or hit cancel to quit." -DefaultDb "master"
+                    $Database = Show-DbaDbList -SqlInstance $server -Title "Install sp_WhoisActive" -Header "To deploy sp_WhoisActive, select a database or hit cancel to quit." -DefaultDb "master"
 
                     if (-not $Database) {
                         Stop-Function -Message "You must select a database to install the procedure." -Target $Database
