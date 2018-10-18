@@ -19,9 +19,6 @@ if (-not $env:appveyor) {
         AfterAll {
             Remove-DbaDatabase -SqlInstance $script:instance1, $script:instance2 -Database $dbname -Confirm:$false
             Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue
-            if (Test-Path $dacpac.Path) {
-                Remove-Item -Confirm:$false -Path ($dacpac).Path -ErrorAction SilentlyContinue
-            }
         }
         AfterEach {
             Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
@@ -31,6 +28,11 @@ if (-not $env:appveyor) {
                 $extractOptions = New-DbaDacOption -Action Export
                 $extractOptions.ExtractAllTableData = $true
                 $dacpac = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -DacOption $extractOptions
+            }
+            AfterAll {
+                if (Test-Path $dacpac.Path) {
+                    Remove-Item -Confirm:$false -Path ($dacpac).Path -ErrorAction SilentlyContinue
+                }
             }
             It "Performs an xml-based deployment" {
                 $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance $script:instance2
@@ -50,6 +52,11 @@ if (-not $env:appveyor) {
             BeforeAll {
                 $extractOptions = New-DbaDacOption -Action Export -Type Bacpac
                 $bacpac = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -DacOption $extractOptions -Type Bacpac
+            }
+            AfterAll {
+                if (Test-Path $bacpac.Path) {
+                    Remove-Item -Confirm:$false -Path ($bacpac).Path -ErrorAction SilentlyContinue
+                }
             }
             It "Performs an SMO-based deployment" {
                 $options = New-DbaDacOption -Action Publish -Type Bacpac
