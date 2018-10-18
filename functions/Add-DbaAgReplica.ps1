@@ -156,7 +156,7 @@ function Add-DbaAgReplica {
             }
 
             if ((Test-Bound -Not -ParameterName Name)) {
-                $Name = $server.Name
+                $Name = $server.DomainInstanceName
             }
 
             if ($Pscmdlet.ShouldProcess($server.Name, "Creating a replica for $($InputObject.Name) named $Name")) {
