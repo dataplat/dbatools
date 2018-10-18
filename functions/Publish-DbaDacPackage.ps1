@@ -107,7 +107,6 @@
         [switch]$GenerateDeploymentScript,
         [parameter(ParameterSetName = 'Xml')]
         [switch]$GenerateDeploymentReport,
-        [parameter(ParameterSetName = 'Xml')]
         [Switch]$ScriptOnly,
         [ValidateSet('Dacpac', 'Bacpac')]
         [string]$Type = 'Dacpac',
@@ -298,6 +297,12 @@
                     #Perform proper action depending on the Type
                     if ($Type -eq 'Dacpac') {
                         if ($ScriptOnly) {
+                            if (!$options.GenerateDeploymentScript) {
+                                Stop-Function -Message "GenerateDeploymentScript option should be specified when running with -ScriptOnly" -EnableException $true
+                            }
+                            if (!$options.DatabaseScriptPath) {
+                                Stop-Function -Message "DatabaseScriptPath option should be specified when running with -ScriptOnly" -EnableException $true
+                            }
                             Write-Message -Level Verbose -Message "Generating script."
                             $result = $dacServices.Script($dacPackage, $dbname, $options)
                         }
@@ -312,7 +317,7 @@
                     }
                 }
                 catch [Microsoft.SqlServer.Dac.DacServicesException] {
-                    Stop-Function -Message "Deployment failed" -ErrorRecord $_ -EnableException $true
+                    Stop-Function -Message "Deployment failed" -ErrorRecord $_ -Continue
                 }
                 finally {
                     Unregister-Event -SourceIdentifier "msg"
@@ -322,7 +327,7 @@
                     }
                     if ($GenerateDeploymentScript) {
                         Write-Message -Level Verbose -Message "Database change script - $DatabaseScriptPath."
-                        if ((Test-Path $MasterDbScriptPath)) {
+                        if ((Test-Path $options.MasterDbScriptPath)) {
                             Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)."
                         }
                     }
