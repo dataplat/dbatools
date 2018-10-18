@@ -15,6 +15,7 @@ if (-not $env:appveyor) {
                 SELECT top 100 object_id
                 FROM sys.objects")
             $publishprofile = New-DbaDacProfile -SqlInstance $script:instance1 -Database $dbname -Path C:\temp
+            $outputScript = "C:\temp\$dbname.sql"
         }
         AfterAll {
             Remove-DbaDatabase -SqlInstance $script:instance1, $script:instance2 -Database $dbname -Confirm:$false
@@ -30,22 +31,36 @@ if (-not $env:appveyor) {
                 $dacpac = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -DacOption $extractOptions
             }
             AfterAll {
-                if (Test-Path $dacpac.Path) {
-                    Remove-Item -Confirm:$false -Path ($dacpac).Path -ErrorAction SilentlyContinue
-                }
+                if ($dacpac.Path) { Remove-Item -Confirm:$false -Path $dacpac.Path -ErrorAction SilentlyContinue }
+                Remove-Item -Confirm:$false -Path $outputScript -ErrorAction SilentlyContinue
             }
             It "Performs an xml-based deployment" {
                 $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance $script:instance2
-                $results.Result -match 'Update complete.' | Should Be $true
+                $results.Result | Should -BeLike '*Update complete.*'
                 $ids = Invoke-DbaQuery -Database $dbname -SqlInstance $script:instance2 -Query 'SELECT id FROM dbo.example'
                 $ids.id | Should -Not -BeNullOrEmpty
             }
             It "Performs an SMO-based deployment" {
                 $options = New-DbaDacOption -Action Publish
                 $results = $dacpac | Publish-DbaDacPackage -DacOption $options -Database $dbname -SqlInstance $script:instance2
-                $results.Result -match 'Update complete.' | Should Be $true
+                $results.Result | Should -BeLike '*Update complete.*'
                 $ids = Invoke-DbaQuery -Database $dbname -SqlInstance $script:instance2 -Query 'SELECT id FROM dbo.example'
                 $ids.id | Should -Not -BeNullOrEmpty
+            }
+            It "Performs a script generation without deployment" {
+                $results = $dacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $script:instance2 -ScriptOnly -GenerateDeploymentScript -PublishXml $publishprofile.FileName
+                $results.Result | Should -BeLike '*Reporting and scripting deployment plan (Complete)*'
+                $results.DatabaseScriptPath | Should -Not -BeNullOrEmpty
+                Test-Path ($results.DatabaseScriptPath) | Should -Be $true
+                Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Should -BeNullOrEmpty
+            }
+            It "Should throw when the script output is not specified" {
+                $opts = New-DbaDacOption -Action Publish
+                # GenerateDeploymentScript is false
+                { $dacpac | Publish-DbaDacPackage -DacOption $opts -Database $dbname -SqlInstance $script:instance2 -ScriptOnly -EnableException } | Should -Throw
+                $opts.GenerateDeploymentScript = $true
+                # GenerateDeploymentScript is true, but no path specified
+                { $dacpac | Publish-DbaDacPackage -DacOption $opts -Database $dbname -SqlInstance $script:instance2 -ScriptOnly -EnableException } | Should -Throw
             }
         }
         Context "Bacpac tests" {
@@ -54,16 +69,17 @@ if (-not $env:appveyor) {
                 $bacpac = Export-DbaDacPackage -SqlInstance $script:instance1 -Database $dbname -DacOption $extractOptions -Type Bacpac
             }
             AfterAll {
-                if (Test-Path $bacpac.Path) {
-                    Remove-Item -Confirm:$false -Path ($bacpac).Path -ErrorAction SilentlyContinue
-                }
+                if ($bacpac.Path) { Remove-Item -Confirm:$false -Path $bacpac.Path -ErrorAction SilentlyContinue }
             }
             It "Performs an SMO-based deployment" {
                 $options = New-DbaDacOption -Action Publish -Type Bacpac
                 $results = $bacpac | Publish-DbaDacPackage -Type Bacpac -DacOption $options -Database $dbname -SqlInstance $script:instance2
-                $results.Result -match 'Updating database \(Complete\)' | Should Be $true
+                $results.Result | Should -BeLike '*Updating database (Complete)*'
                 $ids = Invoke-DbaQuery -Database $dbname -SqlInstance $script:instance2 -Query 'SELECT id FROM dbo.example'
                 $ids.id | Should -Not -BeNullOrEmpty
+            }
+            It "Should throw when ScriptOnly is used" {
+                { $bacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $script:instance2 -ScriptOnly -Type Bacpac -EnableException } | Should -Throw
             }
         }
     }
