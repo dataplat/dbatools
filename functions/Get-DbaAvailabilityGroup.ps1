@@ -50,6 +50,11 @@
         Returns full object properties on all Availability Group(s) on sqlserver2014a.
 
     .EXAMPLE
+        PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select-Object -ExpandProperty PrimaryReplicaServerName
+
+        Returns the SQL Server instancename of the primary replica as a string
+
+    .EXAMPLE
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
 
         Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group.
