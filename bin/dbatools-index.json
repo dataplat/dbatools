@@ -5788,7 +5788,7 @@
     },
     {
         "CommandName":  "Export-DbaInstance",
-        "Description":  "Export-DbaInstance consolidates most of the export scripts in dbatools into one command.\n\nThis is useful when you\u0027re looking to Export entire instances. It less flexible than using the underlying functions.\nThink of it as an easy button. Unless an -Exclude is specified, it exports:\n\nAll databases.\nAll logins.\nAll database mail objects.\nAll credentials.\nAll objects within the Job Server (SQL Agent).\nAll linked servers.\nAll groups and servers within Central Management Server.\nAll SQL Server configuration objects (everything in sp_configure).\nAll user objects in system databases.\nAll system triggers.\nAll system backup devices.\nAll Audits.\nAll Endpoints.\nAll Extended Events.\nAll Policy Management objects.\nAll Resource Governor objects.\nAll Server Audit Specifications.\nAll Custom Errors (User Defined Messages).\nAll Server Roles.\nAll Availability Groups.",
+        "Description":  "Export-DbaInstance consolidates most of the export scripts in dbatools into one command.\n\nThis is useful when you\u0027re looking to Export entire instances. It less flexible than using the underlying functions.\nThink of it as an easy button. Unless an -Exclude is specified, it exports:\n\nAll database restore scripts.\nAll logins.\nAll database mail objects.\nAll credentials.\nAll objects within the Job Server (SQL Agent).\nAll linked servers.\nAll groups and servers within Central Management Server.\nAll SQL Server configuration objects (everything in sp_configure).\nAll user objects in system databases.\nAll system triggers.\nAll system backup devices.\nAll Audits.\nAll Endpoints.\nAll Extended Events.\nAll Policy Management objects.\nAll Resource Governor objects.\nAll Server Audit Specifications.\nAll Custom Errors (User Defined Messages).\nAll Server Roles.\nAll Availability Groups.",
         "Tags":  "Export",
         "Params":  [
                        [
@@ -5874,7 +5874,7 @@
                    ],
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Exports SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,\nCentral Management Server objects, server configuration settings (sp_configure), user objects in systems databases,\nsystem triggers and backup devices from one SQL Server to another.\n\nFor more granular control, please use one of the -Exclude parameters and use the other functions available within the dbatools module.",
+        "Synopsis":  "Exports SQL Server *ALL* database restore scripts, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,\nCentral Management Server objects, server configuration settings (sp_configure), user objects in systems databases,\nsystem triggers and backup devices from one SQL Server to another.\n\nFor more granular control, please use one of the -Exclude parameters and use the other functions available within the dbatools module.",
         "Name":  "Export-DbaInstance",
         "Links":  "https://dbatools.io/Export-DbaInstance",
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlserver\\instance\nAll databases, logins, job objects and sp_configure options will be exported from\r\nsqlserver\\instance to an automatically generated folder name in Documents.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eExport-DbaInstance -SqlInstance sqlcluster -Exclude Databases, Logins -Path C:\\dr\\sqlcluster\nExports everything but logins and database restore scripts to C:\\dr\\sqlcluster",
@@ -15465,7 +15465,7 @@
     },
     {
         "CommandName":  "Get-DbaPlanCache",
-        "Description":  "Checks ahoc and prepared plan cache for each database, if over 100 MBS you should consider you using Remove-DbaQueryPlan to clear the plan caches or turning on optimize for adhoc workloads configuration is running 2008 or later.\n\nReferences: https://www.sqlskills.com/blogs/kimberly/plan-cache-adhoc-workloads-and-clearing-the-single-use-plan-cache-bloat/\n\nNote: This command returns results from all SQL server instances on the destination server but the process column is specific to -SqlInstance passed.",
+        "Description":  "Checks adhoc and prepared plan cache for each database, if over 100 MB you should consider using Remove-DbaQueryPlan to clear the plan caches or turning on \"optimize for adhoc workloads\" configuration if running 2008 or later.\n\nReferences: https://www.sqlskills.com/blogs/kimberly/plan-cache-adhoc-workloads-and-clearing-the-single-use-plan-cache-bloat/\n\nNote: This command returns results from all SQL server instances on the destination server but the process column is specific to -SqlInstance passed.",
         "Tags":  "Memory",
         "Params":  [
                        [
@@ -18446,7 +18446,7 @@
     },
     {
         "CommandName":  "Get-DbaXEObject",
-        "Description":  "This function returns a list of Traces on the specified SQL Server instance(s) and identifies the default Trace File",
+        "Description":  "This function returns a list of extended events objects exposed by event packages from specified SQL Server instance(s).",
         "Tags":  [
                      "ExtendedEvent",
                      "XE",
@@ -18488,7 +18488,7 @@
                    ],
         "Alias":  "",
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Gets a list of trace(s) from specified SQL Server instance(s).",
+        "Synopsis":  "Gets a list of extended events objects exposed by event packages from specified SQL Server instance(s).",
         "Name":  "Get-DbaXEObject",
         "Links":  null,
         "Examples":  "-------------------------- EXAMPLE 1 --------------------------\nPS C:\\\u003eGet-DbaXEObject -SqlInstance sql2016\nLists all the XE Objects on the sql2016 SQL Server.\n-------------------------- EXAMPLE 2 --------------------------\nPS C:\\\u003eGet-DbaXEObject -SqlInstance sql2017 -Type Action, Event\nLists all the XE Objects of type Action and Event on the sql2017 SQL Server.",
@@ -29533,7 +29533,7 @@
                        [
                            "RestoredDatabaseNamePrefix",
                            "A string which will be prefixed to the start of the restore Database\u0027s Name\r\nUseful if restoring a copy to the same sql server for testing.",
-                           "RestoredDatababaseNamePrefix",
+                           "",
                            false,
                            "false",
                            ""
