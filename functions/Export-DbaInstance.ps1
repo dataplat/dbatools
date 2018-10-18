@@ -1,7 +1,7 @@
 ﻿function Export-DbaInstance {
 <#
     .SYNOPSIS
-        Exports SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,
+        Exports SQL Server *ALL* database restore scripts, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,
         Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
         system triggers and backup devices from one SQL Server to another.
 
@@ -13,7 +13,7 @@
         This is useful when you're looking to Export entire instances. It less flexible than using the underlying functions.
         Think of it as an easy button. Unless an -Exclude is specified, it exports:
 
-        All databases.
+        All database restore scripts.
         All logins.
         All database mail objects.
         All credentials.
