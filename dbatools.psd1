@@ -541,7 +541,18 @@
         'Get-DbaCpuRingBuffer',
         'Get-DbaIoLatency',
         'Get-DbaLatchStatistic',
-        'Get-DbaSpinLockStatistic'
+        'Get-DbaSpinLockStatistic',
+        'Add-DbaAgDatabase',
+        'Add-DbaAgListener',
+        'Add-DbaAgReplica',
+        'Grant-DbaAgPermission',
+        'Invoke-DbaAgFailover',
+        'Join-DbaAvailabilityGroup',
+        'New-DbaAvailabilityGroup',
+        'Remove-DbaAgDatabase',
+        'Remove-DbaAgListener',
+        'Remove-DbaAvailabilityGroup',
+        'Revoke-DbaAgPermission'
     )
 
     # Cmdlets to export from this module
