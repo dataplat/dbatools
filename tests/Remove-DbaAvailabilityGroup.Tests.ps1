@@ -30,7 +30,7 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         It "removes the ag" {
             $results = Remove-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname -Confirm:$false
             $results.Status | Should -Be 'Removed'
-            $results.AvailabilityGroup | Should -Be 'dbatoolsci_removewholegroup'
+            $results.AvailabilityGroup | Should -Be $agname
         }
         It "really removed the ag" {
             $results = Get-DbaAvailabilityGroup -SqlInstance $script:instance3 -AvailabilityGroup $agname
