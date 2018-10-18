@@ -1,6 +1,21 @@
 ﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 13
+        $defaultParamCount = 11
+        [object[]]$params = (Get-ChildItem function:\Invoke-DbaQuery).Parameters.Keys
+        $knownParameters = 'SqlInstance','SqlCredential','Database','Query','QueryTimeout','File','SqlObject','As','SqlParameters','AppendServerInstance','MessagesToOutput','InputObject','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
 
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     It "supports pipable instances" {
@@ -58,7 +73,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         'hello2' | Should -Bein $results.TestColumn
         'hello3' | Should -Not -Bein $results.TestColumn
         'tempdb' | Should -Bein $results.dbname
-        
+
     }
     It "supports http files" {
         $cleanup = "IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CommandLog]') AND type in (N'U')) DROP TABLE [dbo].[CommandLog]"

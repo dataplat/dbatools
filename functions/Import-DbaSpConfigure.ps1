@@ -154,7 +154,7 @@
     process {
         if ($Path.length -eq 0) {
             if ($Pscmdlet.ShouldProcess($destination, "Export sp_configure")) {
-                $sqlfilename = Export-SqlSpConfigure $sourceserver
+                $sqlfilename = Export-DbaSpConfigure $sourceserver
             }
 
             if ($sourceserver.versionMajor -ne $destserver.versionMajor -and $force -eq $false) {

@@ -2,6 +2,21 @@
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 14
+        $defaultParamCount = 13
+        [object[]]$params = (Get-ChildItem function:\Remove-DbaDatabaseSafely).Parameters.Keys
+        $knownParameters = 'SqlInstance','SqlCredential','Database','Destination','DestinationCredential','NoDbccCheckDb','BackupFolder','CategoryName','JobOwner','AllDatabases','BackupCompression','ReuseSourceFolderStructure','Force','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
+
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     BeforeAll {
         $null = Get-DbaProcess -SqlInstance $script:instance1, $script:instance2 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess -WarningAction SilentlyContinue
@@ -27,7 +42,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results | Should -Be $null
             $warn -match 'Failure starting SQL Agent' | Should -Be $true
         }
-        
+
         # Add back after rewrite, this should work
         It -Skip "Should restore to another server" {
             Remove-DbaAgentJob -Confirm:$false -SqlInstance $script:instance2 -Job 'Rationalised Database Restore Script for dbatoolsci_safely'

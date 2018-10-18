@@ -1,25 +1,16 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Destination', 'DestinationSqlCredential', 'Database', 'DestinationDatabase', 'Table', 'Query', 'BatchSize', 'NotifyAfter', 'DestinationTable','NoTableLock', 'CheckConstraints', 'FireTriggers', 'KeepIdentity', 'KeepNulls', 'Truncate', 'bulkCopyTimeOut', 'InputObject', 'EnableException'
-        $paramCount = $knownParameters.Count
-        $SupportShouldProcess = $true
-        if ($SupportShouldProcess) {
-            $defaultParamCount = 13
-        }
-        else {
-            $defaultParamCount = 11
-        }
-        $command = Get-Command -Name $CommandName
-        [object[]]$params = $command.Parameters.Keys
-
+        $paramCount = 20
+        $defaultParamCount = 13
+        [object[]]$params = (Get-ChildItem function:\Copy-DbaDbTableData).Parameters.Keys
+        $knownParameters = 'SqlInstance','SqlCredential','Destination','DestinationSqlCredential','Database','DestinationDatabase','Table','Query','BatchSize','NotifyAfter','DestinationTable','NoTableLock','CheckConstraints','FireTriggers','KeepIdentity','KeepNulls','Truncate','bulkCopyTimeOut','InputObject','EnableException'
         It "Should contain our specific parameters" {
-            ((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
-
         It "Should only contain $paramCount parameters" {
             $params.Count - $defaultParamCount | Should Be $paramCount
         }
@@ -35,12 +26,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             SELECT top 10 1
             FROM sys.objects")
         $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example2 (id int)")
-        $null = $db2.Query("CREATE TABLE dbo.dbatoolsci_example3 (id int)")
+        $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example3 (id int)")
         $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example4 (id int);
             INSERT dbo.dbatoolsci_example4
             SELECT top 13 1
             FROM sys.objects")
         $null = $db2.Query("CREATE TABLE dbo.dbatoolsci_example (id int)")
+        $null = $db2.Query("CREATE TABLE dbo.dbatoolsci_example3 (id int)")
         $null = $db2.Query("CREATE TABLE dbo.dbatoolsci_example4 (id int);
             INSERT dbo.dbatoolsci_example4
             SELECT top 13 2
@@ -49,8 +41,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
         $null = $db.Query("DROP TABLE dbo.dbatoolsci_example")
         $null = $db.Query("DROP TABLE dbo.dbatoolsci_example2")
-        $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example3")
+        $null = $db.Query("DROP TABLE dbo.dbatoolsci_example3")
         $null = $db.Query("DROP TABLE dbo.dbatoolsci_example4")
+        $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example3")
         $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example4")
         $null = $db2.Query("DROP TABLE dbo.dbatoolsci_example")
     }
@@ -77,7 +70,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     It "supports piping more than one table" {
-        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example2
+        $results = Get-DbaDbTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaDbTableData -DestinationTable dbatoolsci_example3
         $results.Count | Should -Be 2
     }
 
@@ -96,5 +89,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $table4db2check = $db2.Query("select id from dbo.dbatoolsci_example4 where id = 1")
         $table4db2check.Count | Should -Be 13
     }
-}
 
+    It "Should return nothing if Source and Destination are same" {
+        $result = Copy-DbaDbTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -Truncate
+        $result | Should Be $null
+    }
+}
