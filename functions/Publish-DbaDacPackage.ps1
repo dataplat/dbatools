@@ -331,7 +331,6 @@
                         Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
                     }
                     $server = [dbainstance]$instance
-                    $deployOptions = $options.DeployOptions | Select-Object -Property * -ExcludeProperty "SqlCommandVariableValues"
                     if ($Type -eq 'Dacpac') {
                         $output = [pscustomobject]@{
                             ComputerName         = $server.ComputerName
@@ -345,7 +344,7 @@
                             DatabaseScriptPath   = $options.DatabaseScriptPath
                             MasterDbScriptPath   = $options.MasterDbScriptPath
                             DeploymentReport     = $DeploymentReport
-                            DeployOptions        = $deployOptions
+                            DeployOptions        = $options.DeployOptions | Select-Object -Property * -ExcludeProperty "SqlCommandVariableValues"
                             SqlCmdVariableValues = $options.DeployOptions.SqlCommandVariableValues.Keys
                         }
                     }
@@ -358,7 +357,7 @@
                             Result           = $resultoutput
                             Bacpac           = $Path
                             ConnectionString = $connstring
-                            DeployOptions    = $deployOptions
+                            DeployOptions    = $options
                         }
                     }
                     $output | Select-DefaultView -Property $defaultcolumns
