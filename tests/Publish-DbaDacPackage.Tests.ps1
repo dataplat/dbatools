@@ -53,6 +53,7 @@ if (-not $env:appveyor) {
                 $results.DatabaseScriptPath | Should -Not -BeNullOrEmpty
                 Test-Path ($results.DatabaseScriptPath) | Should -Be $true
                 Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Should -BeNullOrEmpty
+                Remove-Item $results.DatabaseScriptPath
             }
             It "Should throw when the script output is not specified" {
                 $opts = New-DbaDacOption -Action Publish
