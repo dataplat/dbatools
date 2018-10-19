@@ -86,9 +86,19 @@ function Get-DbaEndpoint {
                         $dns = $instance.ComputerName
                     }
                     else {
-                        $dns = [System.Net.Dns]::GetHostEntry($instance.ComputerName).HostName
+                        try {
+                            $dns = [System.Net.Dns]::GetHostEntry($instance.ComputerName).HostName
+                        }
+                        catch {
+                            try {
+                                $dns = [System.Net.Dns]::GetHostAddresses($instance.ComputerName)
+                            }
+                            catch {
+                                $dns = $instance.ComputerName
+                            }
+                        }
                     }
-
+                    
                     $fqdn = "TCP://" + $dns + ":" + $end.Protocol.Tcp.ListenerPort
                 }
                 else {
