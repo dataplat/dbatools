@@ -478,23 +478,25 @@
             }
 
             foreach ($db in $databases) {
-                try {
-                    Write-Message -Level Verbose -Message "Getting indexes from database '$db'."
+                if($PSCmdlet.ShouldProcess("$db","Getting indexes")){
+                    try {
+                        Write-Message -Level Verbose -Message "Getting indexes from database '$db'."
 
-                    $query = if ($server.versionMajor -eq 9) {
-                        if ($IncludeOverlapping) { $overlappingQuery2005 }
-                        else { $exactDuplicateQuery2005 }
+                        $query = if ($server.versionMajor -eq 9) {
+                            if ($IncludeOverlapping) { $overlappingQuery2005 }
+                            else { $exactDuplicateQuery2005 }
+                        }
+                        else {
+                            if ($IncludeOverlapping) { $overlappingQuery }
+                            else { $exactDuplicateQuery }
+                        }
+
+                        $db.Query($query)
+
                     }
-                    else {
-                        if ($IncludeOverlapping) { $overlappingQuery }
-                        else { $exactDuplicateQuery }
+                    catch {
+                        Stop-Function -Message "Query failure" -Target $db
                     }
-
-                    $db.Query($query)
-
-                }
-                catch {
-                    Stop-Function -Message "Query failure" -Target $db
                 }
             }
         }

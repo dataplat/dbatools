@@ -15,7 +15,7 @@ function New-DbaServiceMasterKey {
 
     .PARAMETER Password
         Secure string used to create the key.
-    
+
     .PARAMETER Credential
         Enables easy creation of a secure password.
 
@@ -44,7 +44,7 @@ function New-DbaServiceMasterKey {
         You will be prompted to securely enter your Service Key password, then a master key will be created in the master database on server1 if it does not exist.
 
 #>
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,
@@ -56,7 +56,9 @@ function New-DbaServiceMasterKey {
 
     process {
         foreach ($instance in $SqlInstance) {
-            New-DbaDbMasterKey -SqlInstance $instance -Database master -Password $password -Credential $Credential
+            if($PSCmdlet.ShouldProcess("$instance","Creating New MasterKey")){
+                New-DbaDbMasterKey -SqlInstance $instance -Database master -Password $password -Credential $Credential
+            }
         }
     }
 }
