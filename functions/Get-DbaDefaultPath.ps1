@@ -63,7 +63,7 @@
 
             $dataPath = $server.DefaultFile
             if ($dataPath.Length -eq 0) {
-                $dataPath = $server.ConnectionContext.ExecuteScalar("SELECT SERVERPROPERTY('InstanceDefaultdataPath')")
+                $dataPath = $server.Query("SELECT SERVERPROPERTY('InstanceDefaultdataPath') as Data").Data
             }
 
             if ($dataPath -eq [System.DBNull]::Value -or $dataPath.Length -eq 0) {
@@ -77,7 +77,7 @@
             $logPath = $server.DefaultLog
 
             if ($logPath.Length -eq 0) {
-                $logPath = $server.ConnectionContext.ExecuteScalar("SELECT SERVERPROPERTY('InstanceDefaultLogPath')")
+                $logPath = $server.Query("SELECT SERVERPROPERTY('InstanceDefaultLogPath') as Log").Log
             }
 
             if ($logPath -eq [System.DBNull]::Value -or $logPath.Length -eq 0) {
