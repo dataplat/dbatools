@@ -65,6 +65,13 @@
         https://dbatools.io/Publish-DbaDacPackage
 
     .EXAMPLE
+        PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Publish
+        PS C:\> $options.DeployOptions.DropObjectsNotInSource = $true
+        PS C:\> Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options -Path c:\temp\db.dacpac
+
+        Uses DacOption object to set Deployment Options and updates DB1 database on sql2016 from the db.dacpac dacpac file, dropping objects that are missing from source
+
+    .EXAMPLE
         PS C:\> Publish-DbaDacPackage -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml
 
         Updates WideWorldImporters on sql2017 from the sql2016-WideWorldImporters.dacpac using the sql2016-WideWorldImporters-publish.xml publish profile
@@ -111,7 +118,6 @@
         [ValidateSet('Dacpac', 'Bacpac')]
         [string]$Type = 'Dacpac',
         [string]$OutputPath = "$home\Documents",
-        [parameter(ParameterSetName = 'Xml')]
         [switch]$IncludeSqlCmdVars,
         [Parameter(ParameterSetName = 'Obj')]
         [object]$DacOption,
@@ -122,6 +128,7 @@
     begin {
         if ((Test-Bound -Not -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName ConnectionString)) {
             Stop-Function -Message "You must specify either SqlInstance or ConnectionString."
+            return
         }
         if ($Type -eq 'Dacpac') {
             if ((Test-Bound -ParameterName GenerateDeploymentScript) -or (Test-Bound -ParameterName GenerateDeploymentReport)) {
@@ -141,6 +148,7 @@
 
         if ((Test-Bound -ParameterName ScriptOnly) -and (Test-Bound -Not -ParameterName GenerateDeploymentScript) -and (Test-Bound -Not -ParameterName GenerateDeploymentScript)) {
             Stop-Function -Message "You must at least one of GenerateDeploymentScript or GenerateDeploymentReport when using ScriptOnly"
+            return
         }
 
         function Get-ServerName ($connstring) {
@@ -160,6 +168,7 @@
 
         if ((Test-Path $dacfxPath) -eq $false) {
             Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
+            return
         }
         else {
             try {
@@ -232,16 +241,25 @@
         #Load XML profile when used
         if ($PsCmdlet.ParameterSetName -eq 'Xml') {
             try {
-                $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($PublishXml)
+                $options = New-DbaDacOption -Type $Type -Action Publish -PublishXml $PublishXml -EnableException
             }
             catch {
                 Stop-Function -Message "Could not load profile." -ErrorRecord $_
                 return
             }
-
-            if ($IncludeSqlCmdVars) {
-                Get-SqlCmdVars -SqlCommandVariableValues $dacProfile.DeployOptions.SqlCommandVariableValues
+        }
+        #Create/re-use deployment options object
+        elseif ($PsCmdlet.ParameterSetName -eq 'Obj') {
+            if (!$DacOption) {
+                $options = New-DbaDacOption -Type $Type -Action Publish
             }
+            else {
+                $options = $DacOption
+            }
+        }
+        #Replace variables if defined
+        if ($IncludeSqlCmdVars) {
+            Get-SqlCmdVars -SqlCommandVariableValues $options.DeployOptions.SqlCommandVariableValues
         }
 
         foreach ($connstring in $ConnectionString) {
@@ -249,31 +267,19 @@
             $instance = $cleaninstance.ToString().Replace('--', '\')
 
             foreach ($dbname in $database) {
-                #Create deployment options object of a proper type
-                if (!$DacOption) {
-                    $options = New-DbaDacOption -Type $Type -Action Publish
-                }
-                else {
-                    $options = $DacOption
-                }
                 #Set deployment properties when specified
-                if ($GenerateDeploymentScript -or $GenerateDeploymentReport) {
-                    $timeStamp = (Get-Date).ToString("yyMMdd_HHmmss_f")
-                    $DeploymentReport = Join-Path $OutputPath "$cleaninstance-$dbname`_Result.DeploymentReport_$timeStamp.xml"
-                    if (!$options.DatabaseScriptPath) {
-                        $options.DatabaseScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname`_DeployScript_$timeStamp.sql"
-                    }
-                    if (!$options.MasterDbScriptPath) {
-                        $options.MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname`_Master.DeployScript_$timeStamp.sql"
-                    }
-                }
                 if (Test-Bound -ParameterName GenerateDeploymentScript) {
                     $options.GenerateDeploymentScript = $GenerateDeploymentScript
                 }
                 if (Test-Bound -ParameterName GenerateDeploymentReport) {
                     $options.GenerateDeploymentReport = $GenerateDeploymentReport
                 }
-
+                #Set output file paths when needed
+                $timeStamp = (Get-Date).ToString("yyMMdd_HHmmss_f")
+                if ($GenerateDeploymentScript) {
+                    $options.DatabaseScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname`_DeployScript_$timeStamp.sql"
+                    $options.MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname`_Master.DeployScript_$timeStamp.sql"
+                }
                 if ($connstring -notmatch 'Database=') {
                     $connstring = "$connstring;Database=$dbname"
                 }
@@ -285,12 +291,6 @@
                 catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
                 }
-
-                #Assign deployment options when loaded from Xml
-                if ($PsCmdlet.ParameterSetName -eq 'Xml') {
-                    $options.DeployOptions = $dacProfile.DeployOptions
-                }
-
                 try {
                     $global:output = @()
                     Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -Action { $global:output += $EventArgs.Message.Message } | Out-Null
@@ -321,18 +321,19 @@
                 }
                 finally {
                     Unregister-Event -SourceIdentifier "msg"
-                    if ($GenerateDeploymentReport) {
-                        $result.DeploymentReport | Out-File $DeploymentReport
-                        Write-Message -Level Verbose -Message "Deployment Report - $DeploymentReport."
+                    if ($options.GenerateDeploymentReport) {
+                        $deploymentReport = Join-Path $OutputPath "$cleaninstance-$dbname`_Result.DeploymentReport_$timeStamp.xml"
+                        $result.DeploymentReport | Out-File $deploymentReport
+                        Write-Message -Level Verbose -Message "Deployment Report - $deploymentReport."
                     }
-                    if ($GenerateDeploymentScript) {
-                        Write-Message -Level Verbose -Message "Database change script - $DatabaseScriptPath."
+                    if ($options.GenerateDeploymentScript) {
+                        Write-Message -Level Verbose -Message "Database change script - $($options.DatabaseScriptPath)."
                         if ((Test-Path $options.MasterDbScriptPath)) {
                             Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)."
                         }
                     }
                     $resultoutput = ($global:output -join "`r`n" | Out-String).Trim()
-                    if ($resultoutput -match "Failed" -and ($GenerateDeploymentReport -or $GenerateDeploymentScript)) {
+                    if ($resultoutput -match "Failed" -and ($options.GenerateDeploymentReport -or $options.GenerateDeploymentScript)) {
                         Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
                     }
                     $server = [dbainstance]$instance

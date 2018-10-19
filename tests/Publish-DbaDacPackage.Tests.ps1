@@ -10,7 +10,7 @@ if (-not $env:appveyor) {
             $server = Connect-DbaInstance -SqlInstance $script:instance1
             $null = $server.Query("Create Database [$dbname]")
             $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
-			$null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
+            $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
                 INSERT dbo.example
                 SELECT top 100 object_id
                 FROM sys.objects")

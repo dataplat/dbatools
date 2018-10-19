@@ -17,6 +17,14 @@
     .PARAMETER Action
         Choosing an intended action: Publish or Export.
 
+    .PARAMETER PublishXml
+        Specifies the publish profile which will include options and sqlCmdVariables.
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
     .NOTES
         Tags: Migration, Database, Dacpac
         Author: Kirill Kravtsov (@nvarscar), nvarscar.wordpress.com
@@ -29,12 +37,19 @@
         https://dbatools.io/New-DbaScriptingOption
 
     .EXAMPLE
-        PS C:\> $options = New-DbaDacOption -Type Dacpac
+        PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Export
         PS C:\> $options.ExtractAllTableData = $true
         PS C:\> $options.CommandTimeout = 0
-        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options
+        PS C:\> Export-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options
 
         Uses DacOption object to set the CommandTimeout to 0 then extracts the dacpac for SharePoint_Config on sql2016 to C:\temp\SharePoint_Config.dacpac including all table data.
+
+    .EXAMPLE
+        PS C:\> $options = New-DbaDacOption -Type Dacpac -Action Publish
+        PS C:\> $options.DeployOptions.DropObjectsNotInSource = $true
+        PS C:\> Publish-DbaDacPackage -SqlInstance sql2016 -Database DB1 -Options $options -Path c:\temp\db.dacpac
+
+        Uses DacOption object to set Deployment Options and publish the db.dacpac dacpac file as DB1 on sql2016
 
 #>
     Param (
@@ -42,7 +57,9 @@
         [string]$Type = 'Dacpac',
         [Parameter(Mandatory)]
         [ValidateSet('Publish', 'Export')]
-        [string]$Action
+        [string]$Action,
+        [string]$PublishXml,
+        [switch]$EnableException
     )
     $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
     if ((Test-Path $dacfxPath) -eq $false) {
@@ -71,7 +88,19 @@
     elseif ($Action -eq 'Publish') {
         if ($Type -eq 'Dacpac') {
             $output = New-Object -TypeName Microsoft.SqlServer.Dac.PublishOptions
-            $output.DeployOptions = New-Object -TypeName Microsoft.SqlServer.Dac.DacDeployOptions
+            if ($PublishXml) {
+                try {
+                    $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($PublishXml)
+                    $output.DeployOptions = $dacProfile.DeployOptions
+                }
+                catch {
+                    Stop-Function -Message "Could not load profile." -ErrorRecord $_
+                    return
+                }
+            }
+            else {
+                $output.DeployOptions = New-Object -TypeName Microsoft.SqlServer.Dac.DacDeployOptions
+            }
             $output.GenerateDeploymentScript = $false
             $output
         }
