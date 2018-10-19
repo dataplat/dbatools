@@ -33,8 +33,8 @@ function Read-DbaTraceFile {
     .PARAMETER ObjectType
         Search for results only with specific ObjectTypes. Uses IN for comparisons.
 
-    .PARAMETER Error
-        Search for results only with specific Errors. Uses IN for comparisons.
+    .PARAMETER ErrorID
+        Search for results only with specific Errors. Filters 'Error in ($ErrorID)'  Uses IN for comparisons.
 
     .PARAMETER EventSequence
         Search for results only with specific EventSequences. Uses IN for comparisons.
@@ -168,7 +168,7 @@ function Read-DbaTraceFile {
         [int[]]$Spid,
         [string[]]$EventClass,
         [string[]]$ObjectType,
-        [int[]]$Error,
+        [int[]]$ErrorID,
         [int[]]$EventSequence,
         [string[]]$TextData,
         [string[]]$ApplicationName,
@@ -182,7 +182,7 @@ function Read-DbaTraceFile {
         if ($where) {
             $Where = "where $where"
         }
-        elseif ($Database -or $Login -or $Spid -or $ApplicationName -or $EventClass -or $ObjectName -or $ObjectType -or $EventSequence -or $Error) {
+        elseif ($Database -or $Login -or $Spid -or $ApplicationName -or $EventClass -or $ObjectName -or $ObjectType -or $EventSequence -or $ErrorID) {
 
             $tempwhere = @()
 
@@ -211,8 +211,8 @@ function Read-DbaTraceFile {
                 $tempwhere += "ObjectType in ($where)"
             }
 
-            if ($Error) {
-                $where = $Error -join ","
+            if ($ErrorID) {
+                $where = $ErrorID -join ","
                 $tempwhere += "Error in ($where)"
             }
 
