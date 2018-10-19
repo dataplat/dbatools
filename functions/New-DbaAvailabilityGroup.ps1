@@ -325,7 +325,7 @@ function New-DbaAvailabilityGroup {
                 }
             }
             if ($SeedingMode -eq "Automatic") {
-            $primarypath = Get-DbaDefaultPath -SqlInstance $primary
+            $primarypath = Get-DbaDefaultPath -SqlInstance $server
                 foreach ($second in $secondaries) {
                     $secondarypath = Get-DbaDefaultPath -SqlInstance $second
                     if ($primarypath.Data -ne $secondarypath.Data) {
