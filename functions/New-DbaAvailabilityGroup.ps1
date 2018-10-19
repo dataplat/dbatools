@@ -324,6 +324,18 @@ function New-DbaAvailabilityGroup {
                     return
                 }
             }
+            if ($SeedingMode -eq "Automatic") {
+            $primarypath = Get-DbaDefaultPath -SqlInstance $primary
+                foreach ($second in $secondaries) {
+                    $secondarypath = Get-DbaDefaultPath -SqlInstance $second
+                    if ($primarypath.Data -ne $secondarypath.Data) {
+                        Write-Message -Level Warning -Message "Primary and secondary ($second) default data paths do not match. Trying anyway."
+                    }
+                    if ($primarypath.Log -ne $secondarypath.Log) {
+                        Write-Message -Level Warning -Message "Primary and secondary ($second) default log paths do not match. Trying anyway."
+                    }
+                }
+            }
         }
         
         # database checks
@@ -347,6 +359,10 @@ function New-DbaAvailabilityGroup {
                 else {
                     Set-DbaDbRecoveryModel -SqlInstance $server -Database $primarydb.Name -RecoveryModel Full
                 }
+            }
+            
+            if ($SeedingMode -eq "Automatic") {
+                $null = $primarydb | Backup-DbaDatabase -BackupFileName NUL
             }
         }
         
@@ -516,8 +532,11 @@ function New-DbaAvailabilityGroup {
         # Get results
         Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name
         
+        <#
+        # Maybe later
         foreach ($second in $secondaries) {
             Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name
         }
+        #>
     }
 }
