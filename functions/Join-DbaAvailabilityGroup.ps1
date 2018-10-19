@@ -63,25 +63,39 @@ function Join-DbaAvailabilityGroup {
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
-        [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$AvailabilityGroup,
-        [parameter(ValueFromPipeline, Mandatory)]
+        [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$EnableException
     )
     process {
-        foreach ($ag in $InputObject) {
-            $server = $ag.Parent
-            if ($Pscmdlet.ShouldProcess($server.Name, "Joining $($ag.Name)")) {
-                try {
-                    $server.JoinAvailabilityGroup($ag.Name)
-                    $ag.Refresh()
-                    $ag
-                }
-                catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+        if ($InputObject) {
+            $AvailabilityGroup += $InputObject.Name
+        }
+        
+        if (-not $AvailabilityGroup) {
+            Stop-Function -Message "No availability group to add"
+            return
+        }
+        
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+            
+            foreach ($ag in $AvailabilityGroup) {
+                if ($Pscmdlet.ShouldProcess($server.Name, "Joining $ag")) {
+                    try {
+                        $server.JoinAvailabilityGroup($ag)
+                    }
+                    catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
+                    }
                 }
             }
         }
