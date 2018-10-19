@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 15
         $defaultParamCount = 11
         [object[]]$params = (Get-ChildItem function:\Read-DbaTraceFile).Parameters.Keys
-        $knownParameters = 'SqlInstance','SqlCredential','Path','Database','Login','Spid','EventClass','ObjectType','ErrorID','EventSequence','TextData','ApplicationName','ObjectName','Where','EnableException'
+        $knownParameters = 'SqlInstance','SqlCredential','Path','Database','Login','Spid','EventClass','ObjectType','ErrorId','EventSequence','TextData','ApplicationName','ObjectName','Where','EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
@@ -57,8 +57,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             $results = $script:instance1, $script:instance2 | Get-DbaTrace -Id 1 | Read-DbaTraceFile -Database Master -Login sa -Spid 7 -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Be $null
         }
-        It "Should execute using paramters EventClass, ObjectType, ErrorID" {
-            $results = $script:instance1, $script:instance2 | Get-DbaTrace -Id 1 | Read-DbaTraceFile -EventClass 4 -ObjectType 4 -ErrorID 4 -WarningAction SilentlyContinue -WarningVariable warn
+        It "Should execute using paramters EventClass, ObjectType, ErrorId" {
+            $results = $script:instance1, $script:instance2 | Get-DbaTrace -Id 1 | Read-DbaTraceFile -EventClass 4 -ObjectType 4 -ErrorId 4 -WarningAction SilentlyContinue -WarningVariable warn
             $warn | Should -Be $null
         }
         It "Should execute using paramters EventSequence, TextData, ApplicationName, ObjectName" {
