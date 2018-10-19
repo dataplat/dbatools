@@ -126,7 +126,7 @@ function Read-DbaXEFile {
             $columns = ($columns += $newcolumns) | Select-Object -Unique
 
             # Make it selectable, otherwise it's a weird enumeration
-            foreach ($event in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
+            foreach ($event in $enum) {
                 $hash = [ordered]@{ }
 
                 foreach ($column in $columns) {
@@ -143,6 +143,7 @@ function Read-DbaXEFile {
 
                 [pscustomobject]$hash
             }
+            $enum.Dispose()
         }
     }
 }

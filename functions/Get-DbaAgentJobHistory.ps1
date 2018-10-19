@@ -187,7 +187,7 @@ function Get-DbaAgentJobHistory {
                     }
                     elseif ($tok -eq 'JOBID') {
                         # convert(binary(16), ?)
-                        $repl = @('0x') + @($exec.JobID.ToByteArray() | foreach { $_.ToString('X2') }) -join ''
+                        $repl = @('0x') + @($exec.JobID.ToByteArray() | ForEach-Object -Process { $_.ToString('X2') }) -join ''
                         $repl = Resolve-TokenEscape -method $EscMethod -value $repl
                         $outfile = $outfile.Replace($x.Value, $repl)
                     }

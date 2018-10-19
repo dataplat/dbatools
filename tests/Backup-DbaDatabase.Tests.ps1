@@ -1,6 +1,21 @@
 ﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 29
+        $defaultParamCount = 13
+        [object[]]$params = (Get-ChildItem function:\Backup-DbaDatabase).Parameters.Keys
+        $knownParameters = 'SqlInstance','SqlCredential','Database','ExcludeDatabase','BackupDirectory','BackupFileName','ReplaceInName','CopyOnly','Type','InputObject','CreateFolder','FileCount','CompressBackup','Checksum','Verify','MaxTransferSize','BlockSize','BufferCount','AzureBaseUrl','AzureCredential','NoRecovery','BuildPath','WithFormat','Initialize','SkipTapeHeader','TimeStampFormat','IgnoreFileChecks','OutputScriptOnly','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     <#
@@ -167,6 +182,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
+    Context "Test Backup-DbaDatabase can take pipe input"{
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -confirm:$false -WarningVariable warnvar
+        It "Should not warn" {
+            '' -eq $warnvar | Should -Be $True
+        }
+        It "Should Complete Successfully" {
+            $results.BackupComplete | Should -Be $true
+        }
+
+    }
+
     Context "Should handle NUL as an input path" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName NUL
         It "Should return succesful backup" {
@@ -223,6 +249,22 @@ go
 "@
         $null = Invoke-DbaQuery -SqlInstance $script:instance2 -Query $sqldrop -Database Master
     }
+
+    Context "Custom TimeStamp" {
+        # Test relies on DateFormat bobob returning bobob as the values aren't interpreted, check here in case .Net rules change
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir -TimeStampFormat bobob
+        It "Should apply the corect custom Timestamp" {
+            ($results | Where-Object {$_.BackupPath -like '*bobob*'}).count | Should -Be $results.count
+        }
+    }
+
+    Context "Test Backup templating" {
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupDirectory $DestBackupDir\dbname\instancename\backuptype\  -BackupFileName dbname-backuptype.bak -ReplaceInName -BuildPath
+        It "Should have replaced the markers" {
+            $results.BackupPath | Should -BeLike "$DestBackupDir\master\$(($script:instance1).split('\')[1])\Full\master-Full.bak"
+        }
+    }
+
     if ($env:azurepasswd1) {
         Context "Azure works" {
             BeforeAll {

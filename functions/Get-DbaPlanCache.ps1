@@ -4,7 +4,7 @@
         Provides information about adhoc and prepared plan cache usage
 
     .DESCRIPTION
-        Checks ahoc and prepared plan cache for each database, if over 100 MBS you should consider you using Remove-DbaQueryPlan to clear the plan caches or turning on optimize for adhoc workloads configuration is running 2008 or later.
+        Checks adhoc and prepared plan cache for each database, if over 100 MB you should consider using Remove-DbaQueryPlan to clear the plan caches or turning on "optimize for adhoc workloads" configuration if running 2008 or later.
 
         References: https://www.sqlskills.com/blogs/kimberly/plan-cache-adhoc-workloads-and-clearing-the-single-use-plan-cache-bloat/
 
@@ -31,11 +31,6 @@
 
     .LINK
         https://dbatools.io/Get-DbaPlanCache
-
-    .EXAMPLE
-        PS C:\> Get-DbaPlanCache -SqlInstance sql2017
-
-        Returns the single use plan cache usage information for SQL Server instance 2017
 
     .EXAMPLE
         PS C:\> Get-DbaPlanCache -SqlInstance sql2017

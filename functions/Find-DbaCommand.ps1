@@ -154,6 +154,18 @@ function Find-DbaCommand {
                 $thebase.MaximumVersion = $MaximumVersion.Trim()
             }
 
+            ## fetch Parameters
+            $parameters = $thishelp.parameters.parameter
+            $command = Get-Command $commandName
+            $params = @()
+            foreach($p in $parameters) {
+                $paramAlias = $command.parameters[$p.Name].Aliases
+                $paramDescr = Get-DbaTrimmedString -Text ($p.Description | Out-String -Width 200)
+                $params += , @($p.Name, $paramDescr, ($paramAlias -Join ','), ($p.Required -eq $true), $p.PipelineInput, $p.DefaultValue)
+            }
+
+            $thebase.Params = $params
+
             [pscustomobject]$thebase
         }
 
@@ -169,7 +181,7 @@ function Find-DbaCommand {
                 }
                 # $dest = Get-DbatoolsConfigValue -Name 'Path.TagCache' -Fallback "$(Resolve-Path $PSScriptRoot\..)\dbatools-index.json"
                 $dest = "$moduleDirectory\bin\dbatools-index.json"
-                $helpcoll | ConvertTo-Json | Out-File $dest -Encoding UTF8
+                $helpcoll | ConvertTo-Json -Depth 4 | Out-File $dest -Encoding UTF8
             }
         }
 
