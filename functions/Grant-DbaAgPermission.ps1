@@ -28,6 +28,7 @@ function Grant-DbaAgPermission {
             Connect
             Control
             CreateSequence
+            CreateAnyDatabase
             Delete
             Execute
             Impersonate
@@ -93,7 +94,7 @@ function Grant-DbaAgPermission {
         [parameter(Mandatory)]
         [ValidateSet('Endpoint', 'AvailabilityGroup')]
         [string[]]$Type,
-        [ValidateSet('Alter', 'Connect', 'Control', 'CreateSequence', 'Delete', 'Execute', 'Impersonate', 'Insert', 'Receive', 'References', 'Select', 'Send', 'TakeOwnership', 'Update', 'ViewChangeTracking', 'ViewDefinition')]
+        [ValidateSet('Alter', 'Connect', 'Control', 'CreateAnyDatabase', 'CreateSequence', 'Delete', 'Execute', 'Impersonate', 'Insert', 'Receive', 'References', 'Select', 'Send', 'TakeOwnership', 'Update', 'ViewChangeTracking', 'ViewDefinition')]
         [string[]]$Permission = "Connect",
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Login[]]$InputObject,
@@ -128,7 +129,9 @@ function Grant-DbaAgPermission {
         foreach ($account in $InputObject) {
             $server = $account.Parent
             if ($Type -contains "Endpoint") {
-                $endpoint = Get-DbaEndpoint -SqlInstance $server -Type DatabaseMirroring
+                $server.Endpoints.Refresh()
+                $endpoint = $server.Endpoints | Where-Object EndpointType -eq DatabaseMirroring
+                
                 if (-not $endpoint) {
                     Stop-Function -Message "DatabaseMirroring endpoint does not exist on $server" -Target $server -Continue
                 }

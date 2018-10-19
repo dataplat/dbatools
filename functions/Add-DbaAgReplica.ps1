@@ -180,8 +180,18 @@ function Add-DbaAgReplica {
                     if ($Passthru) {
                         return $replica
                     }
-
+                    
+                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'AvailabilityGroup', 'Name', 'Role', 'RollupSynchronizationState', 'AvailabilityMode', 'BackupPriority', 'EndpointUrl', 'SessionTimeout', 'FailoverMode', 'ReadonlyRoutingList'
+                    
                     $InputObject.AvailabilityReplicas.Add($replica)
+                    $agreplica = $InputObject.AvailabilityReplicas[$Name]
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name ComputerName -value $agreplica.Parent.ComputerName
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name InstanceName -value $agreplica.Parent.InstanceName
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name SqlInstance -value $agreplica.Parent.SqlInstance
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name AvailabilityGroup -value $agreplica.Parent.Name
+                    Add-Member -Force -InputObject $agreplica -MemberType NoteProperty -Name Replica -value $agreplica.Name # backwards compat
+                    
+                    Select-DefaultView -InputObject $agreplica -Property $defaults
                 }
                 catch {
                     $msg = $_.Exception.InnerException.InnerException.Message
