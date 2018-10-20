@@ -1,5 +1,5 @@
 #ValidationTags#CodeStyle,Messaging,FlowControl,Pipeline#
-function Install-DbaSQLWATCH{
+function Install-DbaSQLWATCH {
     <#
         .SYNOPSIS
             Installs or updates SQLWATCH.
@@ -95,80 +95,102 @@ function Install-DbaSQLWATCH{
     )
 
     begin {
-        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
 
-        $url = "https://github.com/marcingminski/sqlwatch/archive/$Branch.zip"
+        $DbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"        
+        $tempFolder = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+        $zipfile = "$tempFolder\SQLWATCH.zip"
+        
+        $oldSslSettings = [System.Net.ServicePointManager]::SecurityProtocol
+        [System.Net.ServicePointManager]::SecurityProtocol = "Tls12"
 
-        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-        $zipfile = "$temp\SQLWATCH-$Branch.zip"
-        $zipfolder = "$temp\SQLWATCH-$Branch\"
-        $sqwLocation = "SQLWATCH_$Branch"
-        $LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $sqwLocation
-        if ($LocalFile) {
-            if (-not(Test-Path $LocalFile)) {
-                Stop-Function -Message "$LocalFile doesn't exist"
-                return
+        if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
+
+            if ($PSCmdlet.ShouldProcess($env:computername, "Downloading latest release from GitHub")) {
+        
+                # query the releases to find the latest, check and see if its cached
+                $ReleasesUrl = "https://api.github.com/repos/marcingminski/sqlwatch/releases"
+                $DownloadBase = "https://github.com/marcingminski/sqlwatch/releases/download/"
+            
+                Write-Message -Level Verbose -Message "Checking GitHub for the latest release."
+                $LatestReleaseUrl = (Invoke-WebRequest -UseBasicParsing -Uri $ReleasesUrl | ConvertFrom-Json)[0].assets[0].browser_download_url
+            
+                Write-Message -Level VeryVerbose -Message "Latest release is available at $LatestReleaseUrl"
+                $LocallyCachedZip = Join-Path -Path $DbatoolsData -ChildPath $($LatestReleaseUrl -replace $DownloadBase, '');
+            
+                # if local cached copy exists, use it, otherwise download a new one
+                if (-not $Force) {
+                
+                    # download from github
+                    Write-Message -Level Verbose "Downloading $LatestReleaseUrl"
+                    try {
+                        Invoke-WebRequest $LatestReleaseUrl -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                    }
+                    catch {
+                        #try with default proxy and usersettings
+                        (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+                        Invoke-WebRequest $LatestReleaseUrl -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
+                    }
+
+                    # copy the file from temp to local cache
+                    Write-Message -Level Verbose "Copying $zipfile to $LocallyCachedZip"
+                    try {
+                        New-Item -Path $LocallyCachedZip -ItemType File -Force | Out-Null
+                        Copy-Item -Path $zipfile -Destination $LocallyCachedZip -Force
+                    }
+                    catch {
+                        # should we stop the function if the file copy fails?
+                    }
+                }
             }
-            if (-not($LocalFile.EndsWith('.zip'))) {
-                Stop-Function -Message "$LocalFile should be a zip file"
-                return
+        }
+        else {
+
+            # $LocalFile was passed, so use it
+            if ($PSCmdlet.ShouldProcess($env:computername, "Copying local file to temp directory")) {
+                
+                if ($LocalFile.EndsWith("zip")) {
+                    $LocallyCachedZip = $zipfile
+                    Copy-Item -Path $LocalFile -Destination $LocallyCachedZip -Force
+                }
+                else {
+                    $LocallyCachedZip = (Join-Path -path $tempFolder -childpath "SQLWATCH.zip")
+                    Copy-Item -Path $LocalFile -Destination $LocallyCachedZip -Force
+                }
             }
         }
 
-        if ($Force -or -not(Test-Path -Path $LocalCachedCopy -PathType Container) -or $LocalFile) {
-            # Force was passed, or we don't have a local copy, or $LocalFile was passed
-            if ($zipfile | Test-Path) {
-                Remove-Item -Path $zipfile -ErrorAction SilentlyContinue
-            }
-            if ($zipfolder | Test-Path) {
-                Remove-Item -Path $zipfolder -Recurse -ErrorAction SilentlyContinue
-            }
+        # expand the zip file
+        if ($PSCmdlet.ShouldProcess($env:computername, "Unpacking zipfile")) {
 
-            $null = New-Item -ItemType Directory -Path $zipfolder -ErrorAction SilentlyContinue
-            if ($LocalFile) {
-                Unblock-File $LocalFile -ErrorAction SilentlyContinue
-                Expand-Archive -Path $LocalFile -DestinationPath $zipfolder -Force
-            }
-            else {
-                Write-Message -Level Verbose -Message "Downloading and unzipping the SQLWATCH zip file."
+            Write-Message -Level VeryVerbose "Unblocking $LocallyCachedZip"
+            Unblock-File $LocallyCachedZip -ErrorAction SilentlyContinue
+            $LocalCacheFolder = Split-Path $LocallyCachedZip -Parent
 
+            Write-Message -Level Verbose "Extracting $LocallyCachedZip to $LocalCacheFolder"
+            if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
                 try {
-                    $oldSslSettings = [System.Net.ServicePointManager]::SecurityProtocol
-                    [System.Net.ServicePointManager]::SecurityProtocol = "Tls12"
-                    try {
-                        $wc = New-Object System.Net.WebClient
-                        $wc.DownloadFile($url, $zipfile)
-                    }
-                    catch {
-                        # Try with default proxy and usersettings
-                        $wc = New-Object System.Net.WebClient
-                        $wc.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-                        $wc.DownloadFile($url, $zipfile)
-                    }
-                    [System.Net.ServicePointManager]::SecurityProtocol = $oldSslSettings
-
-                    # Unblock if there's a block
-                    Unblock-File $zipfile -ErrorAction SilentlyContinue
-
-                    Expand-Archive -Path $zipfile -DestinationPath $zipfolder -Force
-
-                    Remove-Item -Path $zipfile
+                    Expand-Archive -Path $LocallyCachedZip -DestinationPath $LocalCacheFolder -Force
                 }
                 catch {
-                    Stop-Function -Message "Couldn't download SQLWATCH. Download and install manually from https://github.com/marcingminski/sqlwatch/archive/$Branch.zip." -ErrorRecord $_
+                    Stop-Function -Message "Unable to extract $LocallyCachedZip. Archive may not be valid." -ErrorRecord $_
                     return
                 }
             }
-
-            ## Copy it into local area
-            if (Test-Path -Path $LocalCachedCopy -PathType Container) {
-                Remove-Item -Path (Join-Path $LocalCachedCopy '*') -Recurse -ErrorAction SilentlyContinue
-            }
             else {
-                $null = New-Item -Path $LocalCachedCopy -ItemType Container
+                # Keep it backwards compatible
+                $shell = New-Object -ComObject Shell.Application
+                $zipPackage = $shell.NameSpace($LocallyCachedZip)
+                $destinationFolder = $shell.NameSpace($LocalCacheFolder)
+                Get-ChildItem "$LocalCacheFolder\SQLWATCH.zip" | Remove-Item
+                $destinationFolder.CopyHere($zipPackage.Items())
             }
-            Copy-Item -Path $zipfolder -Destination $LocalCachedCopy -Recurse
+
+            Write-Message -Level VeryVerbose "Deleting $LocallyCachedZip"
+            Remove-Item -Path $LocallyCachedZip
         }
+
+        [System.Net.ServicePointManager]::SecurityProtocol = $oldSslSettings
+        
     }
 
 
@@ -179,42 +201,44 @@ function Install-DbaSQLWATCH{
 
         foreach ($instance in $SqlInstance) {
             try {
-                Write-Message -Level Verbose -Message "Connecting to $instance."
+                #Write-Message -Level Verbose -Message "Connecting to $instance."
+                Write-Message -Level VeryVerbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            #Write-Message -Level Verbose -Message "Starting installing/updating SQLWATCH in $database on $instance."
             Write-Message -Level Verbose -Message "Starting installing/updating SQLWATCH in $database on $instance."
 
             try {
 
                 # create a publish profile and publish DACPAC
-                $DacPacPath = Get-ChildItem -Filter "SQLWATCH.dacpac" -Path $LocalCachedCopy -Recurse | Select-Object -ExpandProperty FullName
+                $DacPacPath = Get-ChildItem -Filter "SQLWATCH.dacpac" -Path $LocalCacheFolder -Recurse | Select-Object -ExpandProperty FullName
                 $PublishOptions = @{
                     RegisterDataTierApplication = $true
                 }
-                $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCachedCopy -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
+                $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $LocalCacheFolder -PublishOptions $PublishOptions | Select-Object -ExpandProperty FileName
                 $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile
                 
                 # parse results
                 $parens = Select-String -InputObject $PublishResults.Result -Pattern "\(([^\)]+)\)" -AllMatches
                 if ($parens.matches) {
-                    $ExtractedResult = $parens.matches | Select-Object -Last 1 | ForEach-Object{ $_.value -replace '(','' -replace ')','' }
+                    $ExtractedResult = $parens.matches | Select-Object -Last 1 #| ForEach-Object { $_.value -replace '(', '' -replace ')', '' }
                 }                
                 [PSCustomObject]@{
-                    ComputerName = $PublishResults.ComputerName
-                    InstanceName = $PublishResults.InstanceName
-                    SqlInstance = $PublishResults.SqlInstance
-                    Database = $PublishResults.Database
-                    Dacpac = $PublishResults.Dacpac
-                    PublishXml = $PublishResults.PublishXml
-                    Result = $ExtractedResult
-                    FullResult = $PublishResults.Result
-                    DeployOptions = $PublishResults.DeployOptions
+                    ComputerName         = $PublishResults.ComputerName
+                    InstanceName         = $PublishResults.InstanceName
+                    SqlInstance          = $PublishResults.SqlInstance
+                    Database             = $PublishResults.Database
+                    Dacpac               = $PublishResults.Dacpac
+                    PublishXml           = $PublishResults.PublishXml
+                    Result               = $ExtractedResult
+                    FullResult           = $PublishResults.Result
+                    DeployOptions        = $PublishResults.DeployOptions
                     SqlCmdVariableValues = $PublishResults.SqlCmdVariableValues
-                } | Select-DefaultView -ExcludeProperty Dacpac,PublishXml,FullResult,DeployOptions,SqlCmdVariableValues
+                } | Select-DefaultView -ExcludeProperty Dacpac, PublishXml, FullResult, DeployOptions, SqlCmdVariableValues
             }
             catch {
                 Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
@@ -222,8 +246,8 @@ function Install-DbaSQLWATCH{
 
             Write-PSFMessage -Level Verbose -Message "Finished installing/updating SQLWATCH in $database on $instance."
             #notify user of location to PowerBI file
-            $pbitLocation = Get-ChildItem $LocalCachedCopy -Recurse -include *.pbit | Select-Object -ExpandProperty Directory -Unique
-            #Write-PSFMessage -Level Host -Message "SQLWATCH installed successfully. Power BI dashboard files can be found at $($pbitLocation.FullName)"
+            #$pbitLocation = Get-ChildItem $tempFolder -Recurse -include *.pbit | Select-Object -ExpandProperty Directory -Unique
+            #Write-PSFMessage -Level Output -Message "SQLWATCH installed successfully. Power BI dashboard files can be found at $($pbitLocation.FullName)"
         }
     }
 
