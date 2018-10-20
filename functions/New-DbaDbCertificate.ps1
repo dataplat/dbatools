@@ -1,4 +1,5 @@
-﻿function New-DbaDbCertificate {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function New-DbaDbCertificate {
 <#
     .SYNOPSIS
         Creates a new database certificate
@@ -33,6 +34,9 @@
     .PARAMETER Password
         Optional password - if no password is supplied, the password will be protected by the master key
 
+    .PARAMETER InputObject
+        Enables piping from Get-DbaDatabase
+    
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -63,91 +67,76 @@
         Suppresses all prompts to install but prompts to securely enter your password and creates a certificate in the 'db1' database
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low")]
     param (
-        [parameter(Mandatory, ValueFromPipeline)]
-        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Name,
-        [object[]]$Database = "master",
+        [string[]]$Database = "master",
         [string[]]$Subject,
         [datetime]$StartDate = (Get-Date),
         [datetime]$ExpirationDate = $StartDate.AddYears(5),
         [switch]$ActiveForServiceBrokerDialog,
         [Security.SecureString]$Password,
-        [Alias('Silent')]
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias New-DbaDatabaseCertificate
     }
     process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+        if ($SqlInstance) {
+            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
+        }
+        
+        foreach ($db in $InputObject) {
+            if ((Test-Bound -Not -ParameterName Name)) {
+                Write-Message -Level Verbose -Message "Name of certificate not specified, setting it to '$db'"
+                $Name = $db.Name
             }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            
+            if ((Test-Bound -Not -ParameterName Subject)) {
+                Write-Message -Level Verbose -Message "Subject not specified, setting it to '$Name Database Certificate'"
+                $subject = "$Name Database Certificate"
             }
-
-            foreach ($db in $Database) {
-
-                $currentdb = $server.Databases[$db] | Where-Object IsAccessible
-
-                if ($null -eq $currentdb) {
-                    Stop-Function -Message "Database '$db' does not exist on $instance" -Target $server -Continue
+            
+            foreach ($cert in $Name) {
+                if ($null -ne $db.Certificates[$cert]) {
+                    Stop-Function -Message "Certificate '$cert' already exists in $($db.Name) on $($db.Parent.Name)" -Target $db -Continue
                 }
-
-                if ($null -eq $name) {
-                    Write-Message -Level Verbose -Message "Name is NULL, setting it to '$db'"
-                    $name = $db
-                }
-                if ($null -eq $subject) {
-                    Write-Message -Level Verbose -Message "Subject is NULL, setting it to '$db Database Certificate'"
-                    $subject = "$db Database Certificate"
-                }
-
-                foreach ($cert in $name) {
-                    if ($null -ne $currentdb.Certificates[$cert]) {
-                        Stop-Function -Message "Certificate '$cert' already exists in the $db database on $instance" -Target $currentdb -Continue
-                    }
-
-                    if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating certificate for database '$db' on $instance")) {
-                        try {
-                            $smocert = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Certificate $currentdb, $cert
-
-                            $smocert.StartDate = $StartDate
-                            $smocert.Subject = $Subject
-                            $smocert.ExpirationDate = $ExpirationDate
-                            $smocert.ActiveForServiceBrokerDialog = $ActiveForServiceBrokerDialog
-
-                            if ($password.Length -gt 0) {
-                                $smocert.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
-                            }
-                            else {
-                                $smocert.Create()
-                            }
-
-                            Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
-                            Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                            Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                            Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Database -value $currentdb.Name
-
-                            Select-DefaultView -InputObject $smocert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
+                
+                if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Creating certificate for database '$($db.Name)'")) {
+                    
+                    # something is up with .net, force a stop
+                    $eap = $ErrorActionPreference
+                    $ErrorActionPreference = 'Stop'
+                    try {
+                        $smocert = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Certificate $db, $cert
+                        $smocert.StartDate = $StartDate
+                        $smocert.Subject = $Subject
+                        $smocert.ExpirationDate = $ExpirationDate
+                        $smocert.ActiveForServiceBrokerDialog = $ActiveForServiceBrokerDialog
+                        
+                        if ($Password) {
+                            $smocert.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
                         }
-                        catch {
-                            if ($_.Exception.InnerException) {
-                                $exception = $_.Exception.InnerException.ToString() -Split "System.Data.SqlClient.SqlException: "
-                                $exception = ($exception[1] -Split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0]
-                            }
-                            else {
-                                $exception = $_.Exception
-                            }
-
-                            Stop-Function -Message "Failed to create certificate in $db on $instance. Exception: $exception" -Target $smocert -InnerErrorRecord $_ -Continue
+                        else {
+                            $smocert.Create()
                         }
+                        
+                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name ComputerName -value $db.Parent.ComputerName
+                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $db.Parent.ServiceName
+                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $db.Parent.DomainInstanceName
+                        Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Database -value $db.Name
+                        
+                        Select-DefaultView -InputObject $smocert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
                     }
+                    catch {
+                        $ErrorActionPreference = $eap
+                        Stop-Function -Message "Failed to create certificate in $($db.Name) on $($db.Parent.Name)" -Target $smocert -ErrorRecord $_ -Continue
+                    }
+                    $ErrorActionPreference = $eap
                 }
             }
         }

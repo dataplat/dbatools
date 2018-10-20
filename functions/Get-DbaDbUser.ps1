@@ -103,7 +103,7 @@
                     $users = $users | Where-Object { $_.IsSystemObject -eq $false }
                 }
 
-                $users | foreach {
+                $users | ForEach-Object {
 
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.ComputerName
                     Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName

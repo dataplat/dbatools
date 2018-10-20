@@ -78,7 +78,7 @@
 #>
     [CmdletBinding()]
     param (
-        [parameter(Position = 0, Mandatory, ValueFromPipeline)]
+        [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
@@ -128,7 +128,7 @@
             SQLTRACE_LOCK                    = "Part of SQL Trace. I would add this to the list of waits to filter out and re-run the wait stats query."
         }
 
-        # Thanks Brentg Ozar via https://gist.github.com/BrentOzar/42e82ee0603a1917c17d74c3fca26d34
+        # Thanks Brent Ozar via https://gist.github.com/BrentOzar/42e82ee0603a1917c17d74c3fca26d34
         # Thanks Marcin Gminski‏ via https://www.dropbox.com/s/x3zr7u18tc1ojey/WaitStats.sql?dl=0
 
         $category = [pscustomobject]@{
@@ -808,7 +808,7 @@
                     ([wait_time_ms] - [signal_wait_time_ms]) / 1000.0 AS [ResourceS],
                     [signal_wait_time_ms] / 1000.0 AS [SignalS],
                     [waiting_tasks_count] AS [WaitCount],
-                    100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() AS [Percentage],
+                    Case WHEN SUM ([wait_time_ms]) OVER() = 0 THEN NULL ELSE 100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() END AS [Percentage],
                     ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
                 FROM sys.dm_os_wait_stats
                 WHERE [waiting_tasks_count] > 0
@@ -838,7 +838,7 @@
                     ([wait_time_ms] - [signal_wait_time_ms]) / 1000.0 AS [ResourceS],
                     [signal_wait_time_ms] / 1000.0 AS [SignalS],
                     [waiting_tasks_count] AS [WaitCount],
-                    100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() AS [Percentage],
+                    Case WHEN SUM ([wait_time_ms]) OVER() = 0 THEN NULL ELSE 100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() END AS [Percentage],
                     ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
                 FROM sys.dm_os_wait_stats
                 WHERE [waiting_tasks_count] > 0

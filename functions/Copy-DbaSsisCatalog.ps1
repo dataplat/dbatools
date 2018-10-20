@@ -130,7 +130,7 @@ function Copy-DbaSsisCatalog {
                 [String]$Folder
             )
             $sqlConn = New-Object System.Data.SqlClient.SqlConnection
-            $sqlConn.ConnectionString = $sourceConnection.ConnectionContext.ConnectionString
+            $sqlConn.ConnectionString = $sourceServer.ConnectionContext.ConnectionString
             if ($sqlConn.State -eq "Closed") {
                 $sqlConn.Open()
             }
@@ -253,10 +253,10 @@ function Copy-DbaSsisCatalog {
         }
 
         try {
-            $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceConnection
+            $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceServer
         }
         catch {
-            Stop-Function -Message "There was an error connecting to the source integration services." -Target $sourceConnection -ErrorRecord $_
+            Stop-Function -Message "There was an error connecting to the source integration services." -Target $sourceServer -ErrorRecord $_
             return
         }
 

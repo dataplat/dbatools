@@ -1,8 +1,21 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+. "$PSScriptRoot\..\internal\functions\Get-PasswordHash.ps1"
 
 Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
+    Context "Validate parameters" {
+        $paramCount = 6
+        $defaultParamCount = 11
+        [object[]]$params = (Get-ChildItem function:\Test-DbaLoginPassword).Parameters.Keys
+        $knownParameters = 'SqlInstance','SqlCredential','Dictionary','Login','InputObject','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
     Context "$Command Name Input" {
         $Params = (Get-Command Get-DbaLogin).Parameters
         It "Should have a mandatory parameter SQLInstance" {
@@ -19,6 +32,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
             $Params['EnableException'].Count | Should Be 1
         }
     }
+
 }
 
 Describe "$commandname Integration Tests" -Tag "IntegrationTests" {

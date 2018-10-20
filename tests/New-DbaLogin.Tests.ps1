@@ -1,11 +1,26 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 . "$PSScriptRoot\..\internal\functions\Connect-SqlInstance.ps1"
 . "$PSScriptRoot\..\internal\functions\Get-PasswordHash.ps1"
 . "$PSScriptRoot\..\internal\functions\Convert-HexStringToByte.ps1"
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        $paramCount = 19
+        $defaultParamCount = 13
+        [object[]]$params = (Get-ChildItem function:\New-DbaLogin).Parameters.Keys
+        $knownParameters = 'SqlInstance','SqlCredential','Login','InputObject','LoginRenameHashtable','Password','HashedPassword','MapToCertificate','MapToAsymmetricKey','MapToCredential','Sid','DefaultDatabase','Language','PasswordExpiration','PasswordPolicy','Disabled','NewSid','Force','EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+        }
+        It "Should only contain $paramCount parameters" {
+            $params.Count - $defaultParamCount | Should Be $paramCount
+        }
+    }
+}
+
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     $credLogin = 'credologino'
     $certificateName = 'DBAToolsPesterlogincertificate'
@@ -18,7 +33,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     $computerName = $server1.NetName
     $winLogin = "$computerName\$credLogin"
     $logins = "claudio", "port", "tester", "certifico", $winLogin
-    
+
     #cleanup
     try {
         foreach ($instance in $servers) {
@@ -37,7 +52,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     catch {<#nbd#> }
-    
+
     #create Windows login
     $computer = [ADSI]"WinNT://$computerName"
     try {
@@ -59,7 +74,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     if (!($mkey = Get-DbaDbMasterKey -SqlInstance $server1 -Database master)) {
         $null = New-DbaDbMasterKey -SqlInstance $server1 -Database master -Password $securePassword -Confirm:$false
     }
-    
+
     try {
         #create certificate
         if ($crt = $server1.Databases['master'].Certificates[$certificateName]) {
@@ -67,7 +82,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     catch {<#nbd#> }
-    $null = New-DbaDbCertificate $server1 -Name $certificateName -Password $null
+    $null = New-DbaDbCertificate $server1 -Name $certificateName -Password $null -Confirm:$false
 
     Context "Create new logins" {
         It "Should be created successfully - Hashed password" {
@@ -162,7 +177,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $login1.Sid | Should Not be $login2.Sid
         }
     }
-    
+
     if ((Connect-DbaInstance -SqlInstance $script:instance1).LoginMode -eq "Mixed") {
         Context "Connect with a new login" {
             It "Should login with newly created Sql Login, get instance name and kill the process" {
@@ -173,14 +188,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
     }
-    
+
     Context "No overwrite" {
         $null = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -WarningAction SilentlyContinue -WarningVariable warning 3>&1
         It "Should not attempt overwrite" {
             $warning | Should Match "Login tester already exists"
         }
     }
-    
+
     try {
         foreach ($instance in $servers) {
             foreach ($login in $logins) {
@@ -196,7 +211,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 }
             }
         }
-        
+
         $computer.Delete('User', $credLogin)
         $server1.Credentials[$credLogin].Drop()
         $server1.Databases['master'].Certificates[$certificateName].Drop()

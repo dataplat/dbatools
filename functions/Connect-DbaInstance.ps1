@@ -384,8 +384,8 @@
                     }
                     Add-Member -InputObject $server -NotePropertyName ComputerName -NotePropertyValue $parsedcomputername -Force
                 }
-                return $server
             }
+            $server
         }
     }
 }

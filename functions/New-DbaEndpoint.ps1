@@ -1,16 +1,15 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaEndpoint {
 <#
     .SYNOPSIS
-        Creates SQL Server endpoints.
+        Creates endpoints on a SQL Server instance.
 
     .DESCRIPTION
-        Creates SQL Server endpoints.
+        Creates endpoints on a SQL Server instance.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function
-        to be executed against multiple SQL Server instances.
-
+        The target SQL Server instance or instances.
+    
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Windows and SQL Authentication supported. Accepts credential objects (Get-Credential)
 
@@ -32,16 +31,17 @@ function New-DbaEndpoint {
     .PARAMETER SslPort
         Port for SSL
 
+    .PARAMETER Certificate
+        Database certificate used for authentication.
+    
     .PARAMETER EndpointEncryption
         Used to specify the state of encryption on the endpoint. Defaults to required.
         Disabled
         Required
         Supported
 
-        Required by default.
-
     .PARAMETER EncryptionAlgorithm
-        Specifies an encryption algorithm used on an endpoint.
+        Specifies an encryption algorithm used on an endpoint. Defaults to Aes.
 
         Options are:
         AesRC4
@@ -49,8 +49,6 @@ function New-DbaEndpoint {
         None
         RC4
         RC4Aes
-
-        RC4 by default.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -66,8 +64,7 @@ function New-DbaEndpoint {
     .NOTES
         Tags: Endpoint
         Author: Chrissy LeMaire (@cl), netnerds.net
-
-        Website: https://dbatools.io
+        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
@@ -88,7 +85,7 @@ function New-DbaEndpoint {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Name,
         [ValidateSet('DatabaseMirroring', 'ServiceBroker', 'Soap', 'TSql')]
@@ -100,12 +97,12 @@ function New-DbaEndpoint {
         [ValidateSet('Disabled', 'Required', 'Supported')]
         [string]$EndpointEncryption = 'Required',
         [ValidateSet('Aes', 'AesRC4', 'None', 'RC4', 'RC4Aes')]
-        [string]$EncryptionAlgorithm = 'RC4',
+        [string]$EncryptionAlgorithm = 'Aes',
+        [string]$Certificate,
         [int]$Port,
         [int]$SslPort,
         [switch]$EnableException
     )
-
     process {
         if ((Test-Bound -ParameterName Name -Not)) {
             $name = "endpoint-" + [DateTime]::Now.ToString('s').Replace(":", "-")
@@ -119,15 +116,22 @@ function New-DbaEndpoint {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            if ($Certificate) {
+                $cert = Get-DbaDbCertificate -SqlInstance $server -Certificate $Certificate
+                if (-not $cert) {
+                    Stop-Function -Message "Certificate $Certificate does not exist on $instance" -ErrorRecord $_ -Target $Certificate -Continue
+                }
+            }
+
             # Thanks to https://github.com/mmessano/PowerShell/blob/master/SQL-ConfigureDatabaseMirroring.ps1
-            if (Test-Bound -ParameterName Port) {
+            if ($Port) {
                 $tcpPort = $port
             }
             else {
                 $thisport = (Get-DbaEndPoint -SqlInstance $server).Protocol.Tcp
                 $measure = $thisport | Measure-Object ListenerPort -Maximum
 
-                if ($null -eq $thisport) {
+                if ($thisport.ListenerPort -eq 0) {
                     $tcpPort = 5022
                 }
                 elseif ($measure.Maximum) {
@@ -158,7 +162,15 @@ function New-DbaEndpoint {
                         $endpoint.Payload.DatabaseMirroring.EndpointEncryptionAlgorithm = [Microsoft.SqlServer.Management.Smo.EndpointEncryptionAlgorithm]::$EncryptionAlgorithm
 
                     }
-                    $null = $endpoint.Create()
+                    if ($Certificate) {
+                        $outscript = $endpoint.Script()
+                        $outscript = $outscript.Replace("ROLE = ALL,", "ROLE = ALL, AUTHENTICATION = CERTIFICATE $cert,")
+                        $server.Query($outscript)
+                    }
+                    else {
+                        $null = $endpoint.Create()
+                    }
+
                     $server.Endpoints.Refresh()
                     Get-DbaEndpoint -SqlInstance $server -Endpoint $name
                 }
