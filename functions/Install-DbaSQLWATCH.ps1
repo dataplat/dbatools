@@ -86,7 +86,6 @@ function Install-DbaSQLWATCH {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [ValidateSet('master', 'development')]
-        [string]$Branch = "master",
         [object]$Database = "master",
         [string]$LocalFile,
         [switch]$Force,
