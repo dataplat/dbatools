@@ -201,7 +201,6 @@ function Install-DbaSQLWATCH {
 
         foreach ($instance in $SqlInstance) {
             try {
-                #Write-Message -Level Verbose -Message "Connecting to $instance."
                 Write-Message -Level VeryVerbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
@@ -209,7 +208,6 @@ function Install-DbaSQLWATCH {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            #Write-Message -Level Verbose -Message "Starting installing/updating SQLWATCH in $database on $instance."
             Write-Message -Level Verbose -Message "Starting installing/updating SQLWATCH in $database on $instance."
 
             try {
