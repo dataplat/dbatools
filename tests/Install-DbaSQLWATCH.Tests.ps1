@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         $paramCount = 7
         $commonParamCount = ([System.Management.Automation.PSCmdlet]::CommonParameters).Count + 2
         [object[]]$params = (Get-ChildItem function:\Install-DbaSQLWATCH).Parameters.Keys
-        $knownParameters = 'SqlInstance', 'SqlCredential', 'Branch', 'Database', 'Force', 'LocalFile', 'EnableException', 'ConnectionString'
+        $knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Force', 'LocalFile', 'EnableException', 'ConnectionString'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
         }
