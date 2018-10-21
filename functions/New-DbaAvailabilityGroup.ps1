@@ -2,26 +2,29 @@
 function New-DbaAvailabilityGroup {
 <#
     .SYNOPSIS
-        Automates the creation of database mirrors.
+        Automates the creation of availaibility groups.
 
     .DESCRIPTION
-        Automates the creation of database mirrors.
+        Automates the creation of availaibility groups.
 
-        * Verifies that a secondary is possible
-        * Sets the recovery model to Full if needed
-        * If the database does not exist on secondary or witness, a backup/restore is performed
-        * Sets up endpoints if necessary
-        * Creates a login and grants permissions to service accounts if needed
-        * Starts endpoints if needed
-        * Sets up partner for secondary
-        * Sets up partner for primary
-        * Sets up witness if one is specified
+    	* Checks prerequisites
+    	* Creates Availability Group and adds primary replica
+    	* Grants cluster permissions if necessary
+    	* Adds secondary replica if supplied
+    	* Grants endpoint connect permissions to service accounts
+    	* Grants CreateAnyDatabase permissions if seeding mode is automatic
+    	* Adds databases if supplied
+    		- Performs backup/restore if seeding mode is manual
+    		- Performs backup to NUL if seeding mode is automatic
+    	* Adds listener to primary if supplied
+    	* Joins secondaries to availability group
+    	* Returns Availability Group object from primary
 
-        NOTE: If a backup / restore is performed, the backups will be left in tact on the network share.
+        NOTE: If a backup / restore is performed, the backups will be left intact on the network share.
 
         Thanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/
 
-        Notes from shawn to add in:
+        Notes:
         (1) the NT AUTHORITY account has to be given rights to each replica, with rights to alter/connect to the endpoint
         (2) the service account for each instance has to be explicitly created (the link to the NT SERVICE account won't be sufficient), connect access to the endpoint on the instance
 
@@ -150,7 +153,7 @@ function New-DbaAvailabilityGroup {
     .NOTES
         Tags: HA
         Author: Chrissy LeMaire (@cl), netnerds.net
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
