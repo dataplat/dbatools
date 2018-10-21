@@ -14,8 +14,8 @@ function New-DbaAvailabilityGroup {
     	* Grants endpoint connect permissions to service accounts
     	* Grants CreateAnyDatabase permissions if seeding mode is automatic
     	* Adds databases if supplied
-    		- Performs backup/restore if seeding mode is manual
-    		- Performs backup to NUL if seeding mode is automatic
+    		* Performs backup/restore if seeding mode is manual
+    		* Performs backup to NUL if seeding mode is automatic
     	* Adds listener to primary if supplied
     	* Joins secondaries to availability group
     	* Returns Availability Group object from primary
@@ -23,12 +23,6 @@ function New-DbaAvailabilityGroup {
         NOTE: If a backup / restore is performed, the backups will be left intact on the network share.
 
         Thanks for this, Thomas Stringer! https://blogs.technet.microsoft.com/heyscriptingguy/2013/04/29/set-up-an-alwayson-availability-group-with-powershell/
-
-        Notes:
-        (1) the NT AUTHORITY account has to be given rights to each replica, with rights to alter/connect to the endpoint
-        (2) the service account for each instance has to be explicitly created (the link to the NT SERVICE account won't be sufficient), connect access to the endpoint on the instance
-
-        So if there is no domain account, on step 2 you would have to add the computer account for everything.
 
     .PARAMETER Primary
         The primary SQL Server instance. Server version must be SQL Server version 2012 or higher.
@@ -168,12 +162,12 @@ function New-DbaAvailabilityGroup {
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2016a -Name SharePoint -Secondary sql2016b
 
-        Creates a new availability group on sql2016b named SharePoint with a secondary on sql2016b
+        Creates a new availability group on sql2016b named SharePoint with a secondary replica, sql2016b
 
     .EXAMPLE
         PS C:\> New-DbaAvailabilityGroup -Primary sql2017 -Name SharePoint -ClusterType None -FailoverMode Manual
 
-        Creates a new availability group on sql2017 named SharePoint
+        Creates a new availability group on sql2017 named SharePoint with a cluster type of non and a failover mode of manual
 
     .EXAMPLE
         PS C:\> $params = @{
@@ -186,12 +180,7 @@ function New-DbaAvailabilityGroup {
 
         PS C:\> New-DbaAvailabilityGroup @params
 
-        Performs a bunch of checks to ensure the pubs database on sql2017a
-        can be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a
-        using Windows credentials and sql2017b using a SQL credential.
-
-        Prompts for confirmation for most changes. To avoid confirmation, use -Confirm:$false or
-        use the syntax in the second example.
+        This needs to be updated
 
     .EXAMPLE
         PS C:\> $params = @{
@@ -207,14 +196,7 @@ function New-DbaAvailabilityGroup {
 
         PS C:\> Invoke-DbaDbMirror @params
 
-        Performs a bunch of checks to ensure the pubs database on sql2017a
-        can be mirrored from sql2017a to sql2017b. Logs in to sql2019 and sql2017a
-        using Windows credentials and sql2017b using a SQL credential.
-
-        Drops existing pubs database on Secondary and Witness and restores them with
-        a fresh backup.
-
-        Does all the things in the decription, does not prompt for confirmation.
+        This needs to be updated
 
 #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
@@ -469,11 +451,53 @@ function New-DbaAvailabilityGroup {
             return
         }
         
+        # Grant permissions, but first, get all necessary service accounts
+        $primaryserviceaccount = $server.ServiceAccount
+        $saname = ([DbaInstanceParameter]($server.DomainInstanceName)).ComputerName
+        
+        if ($primaryserviceaccount) {
+            if ($primaryserviceaccount.StartsWith("NT ")) {
+                $primaryserviceaccount = "$saname`$"
+            }
+            if ($primaryserviceaccount.StartsWith("$saname")) {
+                $primaryserviceaccount = "$saname`$"
+            }
+            if ($primaryserviceaccount.StartsWith(".")) {
+                $primaryserviceaccount = "$saname`$"
+            }
+        }
+        
+        $serviceaccounts = @($primaryserviceaccount)
+        
         foreach ($second in $secondaries) {
-            if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts")) {
-                $serviceaccounts = $server.ServiceAccount, $second.ServiceAccount | Select-Object -Unique
+            # If service account is empty, add the computer account instead
+            $secondaryserviceaccount = $second.ServiceAccount
+            $saname = ([DbaInstanceParameter]($second.DomainInstanceName)).ComputerName
+            
+            if ($secondaryserviceaccount) {
+                if ($secondaryserviceaccount.StartsWith("NT ")) {
+                    $secondaryserviceaccount = "$saname`$"
+                }
+                if ($secondaryserviceaccount.StartsWith("$saname")) {
+                    $secondaryserviceaccount = "$saname`$"
+                }
+                if ($secondaryserviceaccount.StartsWith(".")) {
+                    $secondaryserviceaccount = "$saname`$"
+                }
+            }
+            
+            if (-not $secondaryserviceaccount) {
+                $secondaryserviceaccount = "$saname`$"
+            }
+            
+            $serviceaccounts += $secondaryserviceaccount
+        }
+        
+        $serviceaccounts = $serviceaccounts | Select-Object -Unique
+        
+        foreach ($second in $secondaries) {
+            if ($Pscmdlet.ShouldProcess($second.Name, "Granting Connect permissions to service accounts: $serviceaccounts")) {
                 $null = Grant-DbaAgPermission -SqlInstance $server, $second -Login $serviceaccounts -Type Endpoint -Permission Connect
-                
             }
             if ($SeedingMode -eq 'Automatic') {
                 if ($Pscmdlet.ShouldProcess($second.Name, "Seeding mode is automatic. Adding CreateAnyDatabase permissions to service accounts.")) {
@@ -534,12 +558,12 @@ function New-DbaAvailabilityGroup {
         Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Adding endpoint connect permissions"
         
         if ($IPAddress) {
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name")) {
+            if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the Primary replica")) {
                 $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port -Dhcp:$Dhcp
             }
         }
         elseif ($Dhcp) {
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name")) {
+            if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to all replicas")) {
                 $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp:$Dhcp
                 foreach ($second in $secondaries) {
                     $secag = Get-DbaAvailabilityGroup -SqlInstance $second -AvailabilityGroup $Name
