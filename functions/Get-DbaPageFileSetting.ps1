@@ -34,9 +34,9 @@ function Get-DbaPageFileSetting {
         https://dbatools.io/Get-DbaPageFileSetting
 
     .EXAMPLE
-        PS C:\> Get-DbaPageFileSetting -ComputerName ServerA,ServerB
+        PS C:\> Get-DbaPageFileSetting -ComputerName ServerA
 
-        Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status, LastModified, LastAccessed, AllocatedBaseSize, InitialSize, MaximumSize, PeakUsage, CurrentUsage  for ServerA and ServerB
+        Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status, LastModified, LastAccessed, AllocatedBaseSize, InitialSize, MaximumSize, PeakUsage, CurrentUsage  for ServerA
 
     .EXAMPLE
         PS C:\> 'ServerA' | Get-DbaPageFileSetting
