@@ -42,12 +42,7 @@ function Remove-DbaAgListener {
         
     .LINK
         https://dbatools.io/Remove-DbaAgListener
-        
-    .EXAMPLE
-        PS C:\> Remove-DbaAgListener -SqlInstance sqlserver2012 -AllAvailabilityGroup
-        
-        Removes all availability groups on the sqlserver2014 instance. Prompts for confirmation.
-        
+            
     .EXAMPLE
         PS C:\> Remove-DbaAgListener -SqlInstance sqlserver2012 -AvailabilityGroup ag1, ag2 -Confirm:$false
         
