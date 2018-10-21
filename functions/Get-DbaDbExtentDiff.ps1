@@ -47,7 +47,8 @@
         Get the changes for the DBA database.
 
     .EXAMPLE
-        PS C:\> Get-DbaDbExtentDiff -SqlInstance $SQL2017N1, $SQL2017N2, $SQL2016 -Database DB01 -SqlCredential $Cred
+        PS C:\> $Cred = Get-Credential sqladmin
+        PS C:\> Get-DbaDbExtentDiff -SqlInstance SQL2017N1, SQL2017N2, SQL2016 -Database DB01 -SqlCredential $Cred
 
         Get the changes for the DB01 database on multiple servers.
 
