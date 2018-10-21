@@ -43,8 +43,8 @@ function New-DbaAvailabilityGroup {
         Indicates whether the DtcSupport is enabled
 
     .PARAMETER ClusterType
-        Cluster type of the Availability Group.
-        Options include: External, Wsfc or None. External by default.
+        Cluster type of the Availability Group. Only supported in SQL Server 2017 and above.
+        Options include: External, Wsfc or None. None by default.
 
     .PARAMETER AutomatedBackupPreference
         Specifies how replicas in the primary role are treated in the evaluation to pick the desired replica to perform a backup.
@@ -301,6 +301,24 @@ function New-DbaAvailabilityGroup {
             return
         }
         
+        if ($server.HostPlatform -eq "Linux") {
+            # New to SQL Server 2017 (14.x) is the introduction of a cluster type for AGs. For Linux, there are two valid values: External and None. 
+            if ($ClusterType -notin "External", "None") {
+                Stop-Function -Continue -Message "Linux only supports ClusterType of External or None"
+                return
+            }
+            # Microsoft Distributed Transaction Coordinator (DTC) is not supported under Linux in SQL Server 2017
+            if ($DtcSupport) {
+                Stop-Function -Continue -Message "Microsoft Distributed Transaction Coordinator (DTC) is not supported under Linux"
+                return
+            }
+        }
+        
+        if ((Test-Bound -ParameterName ClusterType) -and $server.VersionMajor -lt 14) {
+            Stop-Function -Message "ClusterType only supported in SQL Server 2017 and above"
+            return
+        }
+
         if ($Secondary) {
             $secondaries = @()
             foreach ($computer in $Secondary) {
