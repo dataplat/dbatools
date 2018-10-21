@@ -38,7 +38,7 @@
         Shows a GUI list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected database.
 
     .EXAMPLE
-        PS C:\> Show-DbaDbList -Source sqlserver2014a -SqlCredential $cred
+        PS C:\> Show-DbaDbList -SqlInstance sqlserver2014a -SqlCredential $cred
 
         Shows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected database.
     
