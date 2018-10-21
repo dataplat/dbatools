@@ -101,7 +101,7 @@ function Add-DbaAgReplica {
         [string]$Name,
         [ValidateSet('AsynchronousCommit', 'SynchronousCommit')]
         [string]$AvailabilityMode = "SynchronousCommit",
-        [ValidateSet('Automatic', 'Manual')]
+        [ValidateSet('Automatic', 'Manual', 'External')]
         [string]$FailoverMode = "Automatic",
         [int]$BackupPriority = 50,
         [ValidateSet('AllowAllConnections', 'AllowReadWriteConnections')]
