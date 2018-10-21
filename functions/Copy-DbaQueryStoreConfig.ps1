@@ -147,23 +147,25 @@
 
                     Write-Message -Message "Executing Set-DbaQueryStoreConfig." -Level Verbose
                     # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
-                    try {
-                        $null = Set-DbaDbQueryStoreOption -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential `
-                                                        -Database $db.name `
-                                                        -State $SourceQSConfig.ActualState `
-                                                        -FlushInterval $SourceQSConfig.FlushInterval `
-                                                        -CollectionInterval $SourceQSConfig.CollectionInterval `
-                                                        -MaxSize $SourceQSConfig.MaxSize `
-                                                        -CaptureMode $SourceQSConfig.CaptureMode `
-                                                        -CleanupMode $SourceQSConfig.CleanupMode `
-                                                        -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
-                        $copyQueryStoreStatus.Status = "Successful"
+                    if($PSCmdlet.ShouldProcess("$db","Copying QueryStoreConfig")){
+                        try {
+                            $null = Set-DbaDbQueryStoreOption -SqlInstance $destinationServer -SqlCredential $DestinationSqlCredential `
+                                                            -Database $db.name `
+                                                            -State $SourceQSConfig.ActualState `
+                                                            -FlushInterval $SourceQSConfig.FlushInterval `
+                                                            -CollectionInterval $SourceQSConfig.CollectionInterval `
+                                                            -MaxSize $SourceQSConfig.MaxSize `
+                                                            -CaptureMode $SourceQSConfig.CaptureMode `
+                                                            -CleanupMode $SourceQSConfig.CleanupMode `
+                                                            -StaleQueryThreshold $SourceQSConfig.StaleQueryThreshold
+                            $copyQueryStoreStatus.Status = "Successful"
+                        }
+                        catch {
+                            $copyQueryStoreStatus.Status = "Failed"
+                            Stop-Function -Message "Issue setting Query Store on $db." -Target $db -ErrorRecord $_ -Continue
+                        }
+                        $copyQueryStoreStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-                    catch {
-                        $copyQueryStoreStatus.Status = "Failed"
-                        Stop-Function -Message "Issue setting Query Store on $db." -Target $db -ErrorRecord $_ -Continue
-                    }
-                    $copyQueryStoreStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
             }
         }
