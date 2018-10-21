@@ -302,7 +302,7 @@ function New-DbaAvailabilityGroup {
         }
         
         if ($server.HostPlatform -eq "Linux") {
-            # New to SQL Server 2017 (14.x) is the introduction of a cluster type for AGs. For Linux, there are two valid values: External and None. 
+            # New to SQL Server 2017 (14.x) is the introduction of a cluster type for AGs. For Linux, there are two valid values: External and None.
             if ($ClusterType -notin "External", "None") {
                 Stop-Function -Continue -Message "Linux only supports ClusterType of External or None"
                 return
