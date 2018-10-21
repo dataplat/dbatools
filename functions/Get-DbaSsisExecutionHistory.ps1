@@ -57,9 +57,9 @@ function Get-DbaSsisExecutionHistory {
         Gets all failed or canceled executions for SMTQ01.
 
     .EXAMPLE
-        PS C:\> Get-DbaSsisExecutionHistory -SqlInstance SMTQ01,SMTQ02 -Status Failed,Cancelled -Whatif
+        PS C:\> Get-DbaSsisExecutionHistory -SqlInstance SMTQ02 -Status Failed,Cancelled -Whatif
 
-        Shows what would happen if the command were executed and would return the SQL statement that would be executed per instance.
+        Shows what would happen if the command were executed and would return the SQL statement that would be executed against the SMTQ02 instance.
 
 #>
     [CmdletBinding()]
