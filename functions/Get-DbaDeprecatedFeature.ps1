@@ -36,7 +36,7 @@
     .EXAMPLE
         PS C:\> Get-DbaDeprecatedFeature -SqlInstance sql2008
 
-        Check deprecated features on server sql2008.    
+        Check deprecated features on server sql2008.
 
 #>
     [CmdletBinding()]
