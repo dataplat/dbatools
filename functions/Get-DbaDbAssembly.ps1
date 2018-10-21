@@ -36,7 +36,7 @@ function Get-DbaDbAssembly {
         Returns all Database Assembly on the local default SQL Server instance
 
     .EXAMPLE
-        PS C:\> Get-DbaDbAssembly -SqlInstance localhost, sql2016
+        PS C:\> Get-DbaDbAssembly -SqlInstance sql2016
 
         Returns all Database Assembly for the local and sql2016 SQL Server instances
 
