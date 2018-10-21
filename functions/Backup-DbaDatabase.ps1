@@ -159,7 +159,7 @@
         Performs a log backup for every database. For the database db1 this would results in backup files in \\filestore\backups\server1\prod\db1\Log\db1-log-31102018.trn
 
     .EXAMPLE
-        PS C:\> Backup-DbaDatabase -SqlInstance $script:instance1 -Database master -BackupFileName NUL
+        PS C:\> Backup-DbaDatabase -SqlInstance Sql2017 -Database master -BackupFileName NUL
 
         Performs a backup of master, but sends the output to the NUL device (ie; throws it away)
 #>
