@@ -49,12 +49,12 @@ function Remove-DbaEndpoint {
         Removes all endpoints on the sqlserver2014 instance. Prompts for confirmation.
         
     .EXAMPLE
-        PS C:\> Remove-DbaEndpoint -SqlInstance sqlserver2012 -DbaEndpoint endpoint1,endpoint2 -Confirm:$false
+        PS C:\> Remove-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1,endpoint2 -Confirm:$false
         
         Removes the endpoint1 and endpoint2 endpoints. Does not prompt for confirmation.
         
     .EXAMPLE
-        PS C:\> Get-DbaEndpoint -SqlInstance sqlserver2012 -DbaEndpoint endpoint1 | Remove-DbaEndpoint
+        PS C:\> Get-DbaEndpoint -SqlInstance sqlserver2012 -Endpoint endpoint1 | Remove-DbaEndpoint
         
         Removes the endpoints returned from the Get-DbaEndpoint function. Prompts for confirmation.
 #>
