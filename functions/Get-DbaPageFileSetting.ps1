@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Get-DbaPageFileSetting {
 <#
@@ -34,9 +34,9 @@ function Get-DbaPageFileSetting {
         https://dbatools.io/Get-DbaPageFileSetting
 
     .EXAMPLE
-        PS C:\> Get-DbaPageFileSetting -ComputerName ServerA
+        PS C:\> Get-DbaPageFileSetting -ComputerName ServerA,ServerB
 
-        Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status, LastModified, LastAccessed, AllocatedBaseSize, InitialSize, MaximumSize, PeakUsage, CurrentUsage  for ServerA
+        Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status, LastModified, LastAccessed, AllocatedBaseSize, InitialSize, MaximumSize, PeakUsage, CurrentUsage  for ServerA and ServerB
 
     .EXAMPLE
         PS C:\> 'ServerA' | Get-DbaPageFileSetting
@@ -48,7 +48,7 @@ function Get-DbaPageFileSetting {
     param (
         [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName = $true)]
         [Alias("cn", "host", "ServerInstance", "Server", "SqlServer")]
-        [DbaInstance]$ComputerName = $env:COMPUTERNAME,
+        [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
         [Alias('Silent')]
         [switch]$EnableException
