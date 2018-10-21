@@ -67,12 +67,12 @@
         Finds all processes for base\ctrlb and sa on sqlserver2014a, then kills them. Uses Windows Authentication to login to sqlserver2014a.
 
     .EXAMPLE
-        PS C:\> Stop-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spids 56, 77
+        PS C:\> Stop-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spid 56, 77
 
         Finds processes for spid 56 and 57, then kills them. Uses alternative (SQL or Windows) credentials to login to sqlserver2014a.
 
     .EXAMPLE
-        PS C:\> Stop-DbaProcess -SqlInstance sqlserver2014a -Programs 'Microsoft SQL Server Management Studio'
+        PS C:\> Stop-DbaProcess -SqlInstance sqlserver2014a -Program 'Microsoft SQL Server Management Studio'
 
         Finds processes that were created in Microsoft SQL Server Management Studio, then kills them.
 
@@ -87,7 +87,7 @@
         Shows what would happen if the command were executed.
 
     .EXAMPLE
-        PS C:\> Get-DbaProcess -SqlInstance sql2016 -Programs 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess
+        PS C:\> Get-DbaProcess -SqlInstance sql2016 -Program 'dbatools PowerShell module - dbatools.io' | Stop-DbaProcess
 
         Finds processes that were created with dbatools, then kills them.
 
