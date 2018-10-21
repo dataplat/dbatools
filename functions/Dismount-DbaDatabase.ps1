@@ -50,7 +50,7 @@
         https://dbatools.io/Dismount-DbaDatabase
 
     .EXAMPLE
-        PS C:\> Detach-DbaDatabase -SqlInstance sql2016b -Database SharePoint_Config, WSS_Logging
+        PS C:\> Detach-DbaDatabase -SqlInstance sql2016b -Database SharePoint_Config
 
         Detaches SharePoint_Config and WSS_Logging from sql2016b
 
