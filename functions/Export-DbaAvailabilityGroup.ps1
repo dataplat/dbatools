@@ -58,7 +58,7 @@ function Export-DbaAvailabilityGroup {
         Exports all Availability Groups from SQL server "sql2012". Output scripts are written to the C:\temp\availability_group_exports directory.
 
     .EXAMPLE
-        PS C:\> Export-DbaAvailabilityGroup -SqlInstance sql2012 -Path 'C:\dir with spaces\availability_group_exports' -AvailabilityGroups AG1,AG2
+        PS C:\> Export-DbaAvailabilityGroup -SqlInstance sql2012 -Path 'C:\dir with spaces\availability_group_exports' -AvailabilityGroup AG1,AG2
 
         Exports Availability Groups AG1 and AG2 from SQL server "sql2012". Output scripts are written to the C:\dir with spaces\availability_group_exports directory.
 
