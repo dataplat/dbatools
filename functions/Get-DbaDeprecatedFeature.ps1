@@ -36,12 +36,7 @@
     .EXAMPLE
         PS C:\> Get-DbaDeprecatedFeature -SqlInstance sql2008
 
-        Check deprecated features on server sql2008.
-
-    .EXAMPLE
-        PS C:\> Get-DbaDeprecatedFeature -SqlInstance sql2008 -Threshold 20
-
-        Check deprecated features on server sql2008 and limiting results to 20% utilization of seed range or higher
+        Check deprecated features on server sql2008.    
 
 #>
     [CmdletBinding()]
