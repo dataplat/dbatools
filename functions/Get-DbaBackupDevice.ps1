@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging#
+#ValidationTags#Messaging#
 function Get-DbaBackupDevice {
 <#
     .SYNOPSIS
@@ -36,7 +36,7 @@ function Get-DbaBackupDevice {
         Returns all Backup Devices on the local default SQL Server instance
 
     .EXAMPLE
-        PS C:\> Get-DbaBackupDevice -SqlInstance sql2016
+        PS C:\> Get-DbaBackupDevice -SqlInstance localhost, sql2016
 
         Returns all Backup Devices for the local and sql2016 SQL Server instances
 
@@ -44,7 +44,7 @@ function Get-DbaBackupDevice {
     [CmdletBinding()]
     param (
         [parameter(Position = 0, Mandatory, ValueFromPipeline)]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [Alias('Silent')]
         [switch]$EnableException
