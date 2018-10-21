@@ -1,4 +1,4 @@
-﻿#ValidationTags#FlowControl,Pipeline#
+#ValidationTags#FlowControl,Pipeline#
 function Find-DbaOrphanedFile {
 <#
     .SYNOPSIS
@@ -75,7 +75,7 @@ function Find-DbaOrphanedFile {
         Returns only the remote file path for orphaned files.
 
     .EXAMPLE
-        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014 -FileType fsf, mld
+        PS C:\> Find-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld
 
         Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
 
@@ -84,9 +84,9 @@ function Find-DbaOrphanedFile {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter] $SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [parameter(Mandatory = $false)]
-        [object]$SqlCredential,
+        [pscredential]$SqlCredential,
         [parameter(Mandatory = $false)]
         [string[]]$Path,
         [string[]]$FileType,
