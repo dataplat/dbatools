@@ -1,4 +1,4 @@
-﻿#ValidationTags#FlowControl,Pipeline#
+#ValidationTags#FlowControl,Pipeline#
 function Find-DbaOrphanedFile {
 <#
     .SYNOPSIS
@@ -84,9 +84,9 @@ function Find-DbaOrphanedFile {
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [parameter(Mandatory = $false)]
-        [object]$SqlCredential,
+        [pscredential]$SqlCredential,
         [parameter(Mandatory = $false)]
         [string[]]$Path,
         [string[]]$FileType,
