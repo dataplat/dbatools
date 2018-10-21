@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging#
+#ValidationTags#Messaging#
 function Get-DbaSsisExecutionHistory {
 <#
     .SYNOPSIS
@@ -65,7 +65,7 @@ function Get-DbaSsisExecutionHistory {
     [CmdletBinding()]
     param (
         [parameter(Mandatory)]
-        [DbaInstanceParameter]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [datetime]$Since,
         [ValidateSet("Created", "Running", "Cancelled", "Failed", "Pending", "Halted", "Succeeded", "Stopping", "Completed")]
