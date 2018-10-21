@@ -44,7 +44,7 @@ function New-DbaServiceMasterKey {
         You will be prompted to securely enter your Service Key password, then a master key will be created in the master database on server1 if it does not exist.
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [DbaInstanceParameter[]]$SqlInstance,

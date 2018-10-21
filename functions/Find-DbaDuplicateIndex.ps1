@@ -5,11 +5,10 @@
 
     .DESCRIPTION
         This command will help you to find duplicate and overlapping indexes on a database or a list of databases.
+    
         On SQL Server 2008 and higher, the IsFiltered property will also be checked
-        Also tells how much space you can save by dropping the index.
-        We show the type of compression so you can make a more considered decision.
-        For now only supports CLUSTERED and NONCLUSTERED indexes.
-        You can select the indexes you want to drop on the grid view and when clicking OK, the DROP statement will be generated.
+
+        Only supports CLUSTERED and NONCLUSTERED indexes.
 
         Output:
         TableName
@@ -43,9 +42,6 @@
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-    .PARAMETER Force
-        If this switch is enabled, the DROP statement(s) will be executed instead of being written to the output file.
-
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -63,32 +59,27 @@
         https://dbatools.io/Find-DbaDuplicateIndex
 
     .EXAMPLE
-        PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2005 | Out-File -FilePath C:\temp\sql2005-DuplicateIndexes.sql
+        PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2005
+    
+        Returns duplicate indexes found on sql2005
+    
+    .EXAMPLE
+        PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2017 -SqlCredential sqladmin
 
-        Generates SQL statements to drop the selected duplicate indexes in server "sql2005" and writes them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
+        Finds exact duplicate indexes on all user databases present on sql2017, using SQL authentication.
 
     .EXAMPLE
-        PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2005 | Out-File -FilePath C:\temp\sql2005-DuplicateIndexes.sql -Append
-
-        Generates SQL statements to drop the selected duplicate indexes and writes/appends them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
-
-    .EXAMPLE
-        PS C:\> Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -SqlCredential $cred
-
-        Finds exact duplicate indexes on all user databases present on sqlserver2014a, using SQL authentication.
-
-    .EXAMPLE
-        PS C:\> Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -Database db1, db2
+        PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2017 -Database db1, db2
 
         Finds exact duplicate indexes on the db1 and db2 databases.
 
     .EXAMPLE
-        PS C:\> Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -IncludeOverlapping
+        PS C:\> Find-DbaDuplicateIndex -SqlInstance sql2017 -IncludeOverlapping
 
         Finds both duplicate and overlapping indexes on all user databases.
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -99,7 +90,7 @@
         [switch]$IncludeOverlapping,
         [switch]$EnableException
     )
-
+    
     begin {
         $exactDuplicateQuery2005 = "
             WITH CTE_IndexCols
@@ -185,7 +176,7 @@
                         AND CI1.IncludedColumns = CI2.IncludedColumns
                         AND CI1.IndexName <> CI2.IndexName
                     )"
-
+        
         $overlappingQuery2005 = "
             WITH CTE_IndexCols
             AS (
@@ -278,7 +269,7 @@
                             )
                         AND CI1.IndexName <> CI2.IndexName
                     )"
-
+        
         # Support Compression 2008+
         $exactDuplicateQuery = "
             WITH CTE_IndexCols
@@ -370,7 +361,7 @@
                         AND CI1.IsFiltered = CI2.IsFiltered
                         AND CI1.IndexName <> CI2.IndexName
                     )"
-
+        
         $overlappingQuery = "
             WITH CTE_IndexCols AS
             (
@@ -461,7 +452,7 @@
     }
     process {
         if (Test-FunctionInterrupt) { return }
-
+        
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
@@ -469,34 +460,32 @@
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
+            
             if ($database) {
                 $databases = $server.Databases | Where-Object Name -in $database
             }
             else {
                 $databases = $server.Databases | Where-Object IsAccessible -eq $true
             }
-
+            
             foreach ($db in $databases) {
-                if($PSCmdlet.ShouldProcess("$db","Getting indexes")){
-                    try {
-                        Write-Message -Level Verbose -Message "Getting indexes from database '$db'."
-
-                        $query = if ($server.versionMajor -eq 9) {
-                            if ($IncludeOverlapping) { $overlappingQuery2005 }
-                            else { $exactDuplicateQuery2005 }
-                        }
-                        else {
-                            if ($IncludeOverlapping) { $overlappingQuery }
-                            else { $exactDuplicateQuery }
-                        }
-
-                        $db.Query($query)
-
+                try {
+                    Write-Message -Level Verbose -Message "Getting indexes from database '$db'."
+                    
+                    $query = if ($server.versionMajor -eq 9) {
+                        if ($IncludeOverlapping) { $overlappingQuery2005 }
+                        else { $exactDuplicateQuery2005 }
                     }
-                    catch {
-                        Stop-Function -Message "Query failure" -Target $db
+                    else {
+                        if ($IncludeOverlapping) { $overlappingQuery }
+                        else { $exactDuplicateQuery }
                     }
+                    
+                    $db.Query($query)
+                    
+                }
+                catch {
+                    Stop-Function -Message "Query failure" -Target $db
                 }
             }
         }
