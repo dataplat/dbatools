@@ -1,4 +1,4 @@
-﻿function Dismount-DbaDatabase {
+function Dismount-DbaDatabase {
 <#
     .SYNOPSIS
         Detach a SQL Server Database.
@@ -50,7 +50,7 @@
         https://dbatools.io/Dismount-DbaDatabase
 
     .EXAMPLE
-        PS C:\> Detach-DbaDatabase -SqlInstance sql2016b -Database SharePoint_Config
+        PS C:\> Detach-DbaDatabase -SqlInstance sql2016b -Database SharePoint_Config, WSS_Logging
 
         Detaches SharePoint_Config and WSS_Logging from sql2016b
 
@@ -74,7 +74,7 @@
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [parameter(Mandatory, ParameterSetName = 'SqlInstance')]
-        [string]$Database,
+        [string[]]$Database,
         [parameter(Mandatory, ParameterSetName = 'Pipeline', ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [Switch]$UpdateStatistics,
