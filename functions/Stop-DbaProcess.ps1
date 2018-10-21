@@ -77,9 +77,9 @@
         Finds processes that were created in Microsoft SQL Server Management Studio, then kills them.
 
     .EXAMPLE
-        PS C:\> Stop-DbaProcess -SqlInstance sqlserver2014a -Hosts workstationx, server100
+        PS C:\> Stop-DbaProcess -SqlInstance sqlserver2014a -Hostname workstationx, server100
 
-        Finds processes that were initiated by hosts (computers/clients) workstationx and server 1000, then kills them.
+        Finds processes that were initiated (computers/clients) workstationx and server 1000, then kills them.
 
     .EXAMPLE
         PS C:\> Stop-DbaProcess -SqlInstance sqlserver2014  -Database tempdb -WhatIf
