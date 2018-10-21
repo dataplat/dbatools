@@ -36,7 +36,7 @@ function Get-DbaBackupDevice {
         Returns all Backup Devices on the local default SQL Server instance
 
     .EXAMPLE
-        PS C:\> Get-DbaBackupDevice -SqlInstance localhost, sql2016
+        PS C:\> Get-DbaBackupDevice -SqlInstance sql2016
 
         Returns all Backup Devices for the local and sql2016 SQL Server instances
 
