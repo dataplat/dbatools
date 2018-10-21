@@ -36,7 +36,7 @@ function Get-DbaCustomError {
         Returns all Custom Error Message(s) on the local default SQL Server instance
 
     .EXAMPLE
-        PS C:\> Get-DbaCustomError -SqlInstance localhost, sql2016
+        PS C:\> Get-DbaCustomError -SqlInstance sql2016
 
         Returns all Custom Error Message(s) for the local and sql2016 SQL Server instances
 
