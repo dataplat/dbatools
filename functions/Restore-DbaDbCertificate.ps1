@@ -53,7 +53,7 @@ function Restore-DbaDbCertificate {
         Restores all the certificates in the specified path, password is used to both decrypt and encrypt the private key.
 
     .EXAMPLE
-        PS C:\> Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates\DatabaseTDE.cer -EncryptionType MasterKey -Password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+        PS C:\> Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates\DatabaseTDE.cer -Password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
 
         Restores the DatabaseTDE certificate to Server1 and uses the MasterKey to encrypt the private key.
 
