@@ -1,5 +1,5 @@
 function Update-ServiceStatus {
-	<#
+    <#
     .SYNOPSIS
         Internal function. Sends start/stop request to a SQL Server service and wait for the result.
 
@@ -50,26 +50,26 @@ function Update-ServiceStatus {
 
         Stops SQL services on sql1 and waits indefinitely for them to stop. Uses $credential to authorize on the server.
 #>
-	[CmdletBinding(SupportsShouldProcess)]
-	param(
-		[parameter(ValueFromPipeline, Mandatory)]
-		[object[]]$InputObject,
-		[parameter(Mandatory)]
-		[string[]]$Action,
-		[int]$Timeout = 60,
-		[PSCredential] $Credential,
-		[bool][Alias('Silent')]$EnableException
-	)
-	begin {
-		$callStack = Get-PSCallStack
-		if ($callStack.Length -gt 1) {
-			$callerName = $callStack[1].Command
-		}
-		else {
-			$callerName = $callStack[0].Command
-		}
-		#Prepare the service control script block
-		$svcControlBlock = {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [parameter(ValueFromPipeline, Mandatory)]
+        [object[]]$InputObject,
+        [parameter(Mandatory)]
+        [string[]]$Action,
+        [int]$Timeout = 60,
+        [PSCredential] $Credential,
+        [bool][Alias('Silent')]$EnableException
+    )
+    begin {
+        $callStack = Get-PSCallStack
+        if ($callStack.Length -gt 1) {
+            $callerName = $callStack[1].Command
+        }
+        else {
+            $callerName = $callStack[0].Command
+        }
+        #Prepare the service control script block
+        $svcControlBlock = {
             foreach ($groupItem in $_) {
                 $group = $groupItem.Group
                 $computerName = $group.Name
@@ -187,14 +187,14 @@ function Update-ServiceStatus {
                     }
                 }
             }
-		}
+        }
 
         $actionText = switch ($action) { stop { 'stopped' }; start { 'started' }; restart { 'restarted' } }
         $errorCodes = Get-DbaServiceErrorMessage
-	}
+    }
 
-	process {
-		#Group services for each computer
+    process {
+        #Group services for each computer
         $serviceComputerGroup = $InputObject | Group-Object -Property ComputerName
         foreach ($group in $serviceComputerGroup) {
             Write-Message -Message "Getting CIM objects from computer $($group.Name)"
@@ -205,7 +205,7 @@ function Update-ServiceStatus {
             catch {
                 Stop-Function -EnableException $EnableException -FunctionName $callerName -Message ("The attempt to get CIM session for the service $($service.ServiceName) on $($service.ComputerName) returned the following error: " + ($_.Exception.Message -join ' ')) -Category ConnectionError -ErrorRecord $_
             }
-			foreach ($service in $group.Group) {
+            foreach ($service in $group.Group) {
                 if ($cimObject = ($svcCim | Where-Object Name -eq $service.ServiceName)) {
                     Add-Member -Force -InputObject $service -NotePropertyName _CimObject -NotePropertyValue $cimObject
                 }
@@ -220,7 +220,7 @@ function Update-ServiceStatus {
                 Select-DefaultView -Property ComputerName, ServiceName, State, Status, Message
             }
         }
-	}
-	end {
-	}
+    }
+    end {
+    }
 }
