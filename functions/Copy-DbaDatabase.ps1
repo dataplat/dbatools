@@ -259,10 +259,15 @@
                 [string]$ChildPath
             )
             process {
-                [IO.Path]::Combine($Path, $ChildPath)
+                try {
+                    [IO.Path]::Combine($Path, $ChildPath)
+                }
+                catch {
+                    "$Path\$ChildPath"
+                }
             }
         }
-
+        
         function Join-AdminUnc {
             <#
         .SYNOPSIS
