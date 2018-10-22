@@ -62,7 +62,7 @@ function Get-DbaSsisExecutionHistory {
         Shows what would happen if the command were executed and would return the SQL statement that would be executed per instance.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory)]
         [DbaInstanceParameter[]]$SqlInstance,
