@@ -61,7 +61,7 @@ function Stop-DbaPfDataCollectorSet {
         Stops the 'System Correlation' Collector.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
@@ -107,14 +107,16 @@ function Stop-DbaPfDataCollectorSet {
             if ($status -ne "Running") {
                 Stop-Function -Message "$setname on $computer is already stopped." -Continue
             }
-            try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
-            }
-            catch {
-                Stop-Function -Message "Failure stopping $setname on $computer." -ErrorRecord $_ -Target $computer -Continue
-            }
+            if ($Pscmdlet.ShouldProcess($computer, "Stoping Performance Monitor collection set")) {
+                try {
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
+                }
+                catch {
+                    Stop-Function -Message "Failure stopping $setname on $computer." -ErrorRecord $_ -Target $computer -Continue
+                }
 
-            Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $setname
+                Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $setname
+            }
         }
     }
 }

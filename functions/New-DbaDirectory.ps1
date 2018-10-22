@@ -47,7 +47,7 @@
         If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false. Uses a SqlCredential to connect
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [Parameter(Mandatory)]
         [Alias("ServerInstance", "SqlServer")]
@@ -78,20 +78,21 @@
 
         $sql = "EXEC master.dbo.xp_create_subdir'$path'"
         Write-Message -Level Debug -Message $sql
+        if ($Pscmdlet.ShouldProcess($path,"Creating a new path on $($server.name)")) {
+            try {
+                $query = $server.Query($sql)
+                $Created = $true
+            }
+            catch {
+                $Created = $false
+                Stop-Function -Message "Failure" -ErrorRecord $_
+            }
 
-        try {
-            $query = $server.Query($sql)
-            $Created = $true
-        }
-        catch {
-            $Created = $false
-            Stop-Function -Message "Failure" -ErrorRecord $_
-        }
-
-        [pscustomobject]@{
-            Server  = $SqlInstance
-            Path    = $Path
-            Created = $Created
+            [pscustomobject]@{
+                Server  = $SqlInstance
+                Path    = $Path
+                Created = $Created
+            }
         }
     }
 }

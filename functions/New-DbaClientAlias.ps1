@@ -54,7 +54,7 @@
         Creates a new NamedPipes alias on the local workstation called sp, which points sqlcluster\sharepoint
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,

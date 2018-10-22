@@ -45,7 +45,7 @@
         Creates a large support pack in order to help us troubleshoot stuff.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [string]
         $Path = "$($env:USERPROFILE)\Desktop",
@@ -117,8 +117,10 @@
         #endregion Helper functions
     }
     process {
-        $filePathXml = "$($Path.Trim('\'))\dbatools_support_pack_$(Get-Date -Format "yyyy_MM_dd-HH_mm_ss").xml"
-        $filePathZip = $filePathXml -replace "\.xml$", ".zip"
+        if ($Pscmdlet.ShouldProcess("Creating a Support Package for diagnosing Dbatools")) {
+
+            $filePathXml = "$($Path.Trim('\'))\dbatools_support_pack_$(Get-Date -Format "yyyy_MM_dd-HH_mm_ss").xml"
+            $filePathZip = $filePathXml -replace "\.xml$", ".zip"
 
         Write-Message -Level Critical -Message @"
 Gathering information...
@@ -132,50 +134,51 @@ Ideally start a new console, perform the minimal steps required to reproduce the
 This will make it easier for us to troubleshoot and you won't be sending us the keys to your castle.
 "@
 
-        $hash = @{ }
-        Write-Message -Level Output -Message "Collecting dbatools logged messages (Get-DbatoolsLog)"
-        $hash["Messages"] = Get-DbatoolsLog
-        Write-Message -Level Output -Message "Collecting dbatools logged errors (Get-DbatoolsLog -Errors)"
-        $hash["Errors"] = Get-DbatoolsLog -Errors
-        Write-Message -Level Output -Message "Collecting copy of console buffer (what you can see on your console)"
-        $hash["ConsoleBuffer"] = Get-ShellBuffer
-        Write-Message -Level Output -Message "Collecting Operating System information (Win32_OperatingSystem)"
-        $hash["OperatingSystem"] = Get-DbaCmObject -ClassName Win32_OperatingSystem
-        Write-Message -Level Output -Message "Collecting CPU information (Win32_Processor)"
-        $hash["CPU"] = Get-DbaCmObject -ClassName Win32_Processor
-        Write-Message -Level Output -Message "Collecting Ram information (Win32_PhysicalMemory)"
-        $hash["Ram"] = Get-DbaCmObject -ClassName Win32_PhysicalMemory
-        Write-Message -Level Output -Message "Collecting PowerShell & .NET Version (`$PSVersionTable)"
-        $hash["PSVersion"] = $PSVersionTable
-        Write-Message -Level Output -Message "Collecting Input history (Get-History)"
-        $hash["History"] = Get-History
-        Write-Message -Level Output -Message "Collecting list of loaded modules (Get-Module)"
-        $hash["Modules"] = Get-Module
-        Write-Message -Level Output -Message "Collecting list of loaded snapins (Get-PSSnapin)"
-        $hash["SnapIns"] = Get-PSSnapin
-        Write-Message -Level Output -Message "Collecting list of loaded assemblies (Name, Version, and Location)"
-        $hash["Assemblies"] = [appdomain]::CurrentDomain.GetAssemblies() | Select-Object CodeBase, FullName, Location, ImageRuntimeVersion, GlobalAssemblyCache, IsDynamic
+            $hash = @{ }
+            Write-Message -Level Output -Message "Collecting dbatools logged messages (Get-DbatoolsLog)"
+            $hash["Messages"] = Get-DbatoolsLog
+            Write-Message -Level Output -Message "Collecting dbatools logged errors (Get-DbatoolsLog -Errors)"
+            $hash["Errors"] = Get-DbatoolsLog -Errors
+            Write-Message -Level Output -Message "Collecting copy of console buffer (what you can see on your console)"
+            $hash["ConsoleBuffer"] = Get-ShellBuffer
+            Write-Message -Level Output -Message "Collecting Operating System information (Win32_OperatingSystem)"
+            $hash["OperatingSystem"] = Get-DbaCmObject -ClassName Win32_OperatingSystem
+            Write-Message -Level Output -Message "Collecting CPU information (Win32_Processor)"
+            $hash["CPU"] = Get-DbaCmObject -ClassName Win32_Processor
+            Write-Message -Level Output -Message "Collecting Ram information (Win32_PhysicalMemory)"
+            $hash["Ram"] = Get-DbaCmObject -ClassName Win32_PhysicalMemory
+            Write-Message -Level Output -Message "Collecting PowerShell & .NET Version (`$PSVersionTable)"
+            $hash["PSVersion"] = $PSVersionTable
+            Write-Message -Level Output -Message "Collecting Input history (Get-History)"
+            $hash["History"] = Get-History
+            Write-Message -Level Output -Message "Collecting list of loaded modules (Get-Module)"
+            $hash["Modules"] = Get-Module
+            Write-Message -Level Output -Message "Collecting list of loaded snapins (Get-PSSnapin)"
+            $hash["SnapIns"] = Get-PSSnapin
+            Write-Message -Level Output -Message "Collecting list of loaded assemblies (Name, Version, and Location)"
+            $hash["Assemblies"] = [appdomain]::CurrentDomain.GetAssemblies() | Select-Object CodeBase, FullName, Location, ImageRuntimeVersion, GlobalAssemblyCache, IsDynamic
 
-        if (Test-Bound "Variables") {
-            Write-Message -Level Output -Message "Adding variables specified for export: $($Variables -join ", ")"
-            $hash["Variables"] = $Variables | Get-Variable -ErrorAction Ignore
+            if (Test-Bound "Variables") {
+                Write-Message -Level Output -Message "Adding variables specified for export: $($Variables -join ", ")"
+                $hash["Variables"] = $Variables | Get-Variable -ErrorAction Ignore
+            }
+
+            $data = [pscustomobject]$hash
+
+            try { $data | Export-Clixml -Path $filePathXml -ErrorAction Stop }
+            catch {
+                Stop-Function -Message "Failed to export dump to file!" -ErrorRecord $_ -Target $filePathXml
+                return
+            }
+
+            try { Compress-Archive -Path $filePathXml -DestinationPath $filePathZip -ErrorAction Stop }
+            catch {
+                Stop-Function -Message "Failed to pack dump-file into a zip archive. Please do so manually before submitting the results as the unpacked xml file will be rather large." -ErrorRecord $_ -Target $filePathZip
+                return
+            }
+
+            Remove-Item -Path $filePathXml -ErrorAction Ignore
         }
-
-        $data = [pscustomobject]$hash
-
-        try { $data | Export-Clixml -Path $filePathXml -ErrorAction Stop }
-        catch {
-            Stop-Function -Message "Failed to export dump to file!" -ErrorRecord $_ -Target $filePathXml
-            return
-        }
-
-        try { Compress-Archive -Path $filePathXml -DestinationPath $filePathZip -ErrorAction Stop }
-        catch {
-            Stop-Function -Message "Failed to pack dump-file into a zip archive. Please do so manually before submitting the results as the unpacked xml file will be rather large." -ErrorRecord $_ -Target $filePathZip
-            return
-        }
-
-        Remove-Item -Path $filePathXml -ErrorAction Ignore
     }
     end {
         Write-Message -Level InternalComment -Message "Ending"

@@ -81,7 +81,7 @@ function Start-DbaXESmartTarget {
         Writes Extended Events to the deadlocktracker table in dbadb on sql2017.
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
@@ -98,7 +98,7 @@ function Start-DbaXESmartTarget {
     )
     begin {
         function Start-SmartFunction {
-            [CmdletBinding()]
+            [CmdletBinding(SupportsShouldProcess)]
             param (
                 [parameter(Mandatory, ValueFromPipeline)]
                 [Alias("ServerInstance", "SqlServer")]
@@ -147,17 +147,19 @@ function Start-DbaXESmartTarget {
                         $target.Responses.Add($response)
                     }
 
-                    try {
-                        $target.Start()
-                    }
-                    catch {
-                        $message = $_.Exception.InnerException.InnerException | Out-String
-
-                        if ($message) {
-                            Stop-Function -Message $message -Target "XESmartTarget" -Continue
+                    if ($Pscmdlet.ShouldProcess("$instance", "Starting SmartTarget on $($server.name)")) {
+                        try {
+                            $target.Start()
                         }
-                        else {
-                            Stop-Function -Message "Failure" -Target "XESmartTarget" -ErrorRecord $_ -Continue
+                        catch {
+                            $message = $_.Exception.InnerException.InnerException | Out-String
+
+                            if ($message) {
+                                Stop-Function -Message $message -Target "XESmartTarget" -Continue
+                            }
+                            else {
+                                Stop-Function -Message "Failure" -Target "XESmartTarget" -ErrorRecord $_ -Continue
+                            }
                         }
                     }
                 }
@@ -175,49 +177,50 @@ function Start-DbaXESmartTarget {
                 return
             }
         }
-
-        if ($NotAsJob) {
-            Start-SmartFunction @PSBoundParameters
-        }
-        else {
-            $date = (Get-Date -UFormat "%H%M%S") #"%m%d%Y%H%M%S"
-            Start-Job -Name "XESmartTarget-$session-$date" -ArgumentList $PSBoundParameters, $script:PSModuleRoot -ScriptBlock {
-                param (
-                    $Parameters,
-                    $ModulePath
-                )
-                Import-Module "$ModulePath\dbatools.psd1"
-                Add-Type -Path "$ModulePath\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
-                $params = @{
-                    SqlInstance    = $Parameters.SqlInstance.InputObject
-                    Database       = $Parameters.Database
-                    Session        = $Parameters.Session
-                    Responder      = @()
-                }
-                if ($Parameters.SqlCredential) {
-                    $params["SqlCredential"] = $Parameters.SqlCredential
-                }
-                foreach ($responder in $Parameters.Responder) {
-                    $typename = $responder.PSObject.TypeNames[0] -replace "^Deserialized\.", ""
-                    $newResponder = New-Object -TypeName $typename
-                    foreach ($property in $responder.PSObject.Properties) {
-                        if ($property.Value) {
-                            if($property.Value -is [Array]) {
-                                $name = $property.Name
-                                $newResponder.$name = [object[]]$property.Value
-                            }
-                            else {
-                                $name = $property.Name
-                                $newResponder.$name = $property.Value
-                            }
-                        }
-
+        if ($Pscmdlet.ShouldProcess("$instance", "Configuring SmartTarget to start")) {
+            if ($NotAsJob) {
+                Start-SmartFunction @PSBoundParameters
+            }
+            else {
+                $date = (Get-Date -UFormat "%H%M%S") #"%m%d%Y%H%M%S"
+                Start-Job -Name "XESmartTarget-$session-$date" -ArgumentList $PSBoundParameters, $script:PSModuleRoot -ScriptBlock {
+                    param (
+                        $Parameters,
+                        $ModulePath
+                    )
+                    Import-Module "$ModulePath\dbatools.psd1"
+                    Add-Type -Path "$ModulePath\bin\XESmartTarget\XESmartTarget.Core.dll" -ErrorAction Stop
+                    $params = @{
+                        SqlInstance    = $Parameters.SqlInstance.InputObject
+                        Database       = $Parameters.Database
+                        Session        = $Parameters.Session
+                        Responder      = @()
                     }
-                    $params["Responder"] += $newResponder
-                }
+                    if ($Parameters.SqlCredential) {
+                        $params["SqlCredential"] = $Parameters.SqlCredential
+                    }
+                    foreach ($responder in $Parameters.Responder) {
+                        $typename = $responder.PSObject.TypeNames[0] -replace "^Deserialized\.", ""
+                        $newResponder = New-Object -TypeName $typename
+                        foreach ($property in $responder.PSObject.Properties) {
+                            if ($property.Value) {
+                                if($property.Value -is [Array]) {
+                                    $name = $property.Name
+                                    $newResponder.$name = [object[]]$property.Value
+                                }
+                                else {
+                                    $name = $property.Name
+                                    $newResponder.$name = $property.Value
+                                }
+                            }
 
-                Start-DbaXESmartTarget @params -NotAsJob -FailOnProcessingError
-            } | Select-Object -Property ID, Name, State
+                        }
+                        $params["Responder"] += $newResponder
+                    }
+
+                    Start-DbaXESmartTarget @params -NotAsJob -FailOnProcessingError
+                } | Select-Object -Property ID, Name, State
+            }
         }
     }
 }

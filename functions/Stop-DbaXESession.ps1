@@ -54,7 +54,7 @@ function Stop-DbaXESession {
         Stops the sessions returned from the Get-DbaXESession function.
 
 #>
-    [CmdletBinding(DefaultParameterSetName = 'Session')]
+    [CmdletBinding(SupportsShouldProcess,DefaultParameterSetName = 'Session')]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
@@ -80,7 +80,7 @@ function Stop-DbaXESession {
     begin {
         # Stop each XESession
         function Stop-XESessions {
-            [CmdletBinding()]
+            [CmdletBinding(SupportsShouldProcess)]
             param ([Microsoft.SqlServer.Management.XEvent.Session[]]$xeSessions)
 
             foreach ($xe in $xeSessions) {
@@ -88,11 +88,13 @@ function Stop-DbaXESession {
                 $session = $xe.Name
                 if ($xe.isRunning) {
                     Write-Message -Level Verbose -Message "Stopping XEvent Session $session on $instance."
-                    try {
-                        $xe.Stop()
-                    }
-                    catch {
-                        Stop-Function -Message "Could not stop XEvent Session on $instance" -Target $session -ErrorRecord $_ -Continue
+                    if ($Pscmdlet.ShouldProcess("$instance", "Stopping XEvent Session $session")) {
+                        try {
+                            $xe.Stop()
+                        }
+                        catch {
+                            Stop-Function -Message "Could not stop XEvent Session on $instance" -Target $session -ErrorRecord $_ -Continue
+                        }
                     }
                 }
                 else {
@@ -105,7 +107,9 @@ function Stop-DbaXESession {
 
     process {
         if ($InputObject) {
-            Stop-XESessions $InputObject
+            if ($Pscmdlet.ShouldProcess("Configuring XEvent Sessions to stop")) {
+                Stop-XESessions $InputObject
+            }
         }
         else {
             foreach ($instance in $SqlInstance) {
@@ -120,7 +124,9 @@ function Stop-DbaXESession {
                     $xeSessions = $xeSessions | Where-Object { $_.Name -notin $systemSessions }
                 }
 
-                Stop-XESessions $xeSessions
+                if ($Pscmdlet.ShouldProcess("$instance", "Configuring XEvent Session $xeSessions to Stop")) {
+                    Stop-XESessions $xeSessions
+                }
             }
         }
     }
