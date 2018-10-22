@@ -47,7 +47,7 @@ function Remove-DbaDbMasterKey {
         https://dbatools.io/Remove-DbaMasterKey
 
     .EXAMPLE
-        PS C:\> Remove-DbaDbMasterKey -SqlInstance sql2017, sql2016 -Databse pubs
+        PS C:\> Remove-DbaDbMasterKey -SqlInstance sql2017, sql2016 -Database pubs
 
         The master key in the pubs database on sql2017 and sql2016 will be removed if it exists.
 
