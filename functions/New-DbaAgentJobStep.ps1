@@ -47,7 +47,7 @@ function New-DbaAgentJobStep {
         The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
     .PARAMETER OnFailStepId
-        The ID of the step in this job to execute if the step fails and OnFailAction is "GoToNextStep".
+        The ID of the step in this job to execute if the step fails and OnFailAction is "GoToStep".
 
     .PARAMETER Database
         The name of the database in which to execute a Transact-SQL step. The default is 'master'.
@@ -154,7 +154,7 @@ function New-DbaAgentJobStep {
         [int]$OnSuccessStepId = 0,
         [ValidateSet('QuitWithSuccess', 'QuitWithFailure', 'GoToNextStep', 'GoToStep')]
         [string]$OnFailAction = 'QuitWithFailure',
-        [int]$OnFailStepId,
+        [int]$OnFailStepId = 0,
         [object]$Database,
         [string]$DatabaseUser,
         [int]$RetryAttempts,
@@ -170,13 +170,13 @@ function New-DbaAgentJobStep {
 
     begin {
         # Check the parameter on success step id
-        if (($OnSuccessAction -notin 'GoToStep', 'GoToNextStep') -and ($OnSuccessStepId -ge 1)) {
+        if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
             Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'." -Target $SqlInstance
             return
         }
 
         # Check the parameter on fail step id
-        if (($OnFailAction -notin 'GoToStep', 'GoToNextStep') -and ($OnFailStepId -ge 1)) {
+        if (($OnFailAction -ne 'GoToStep') -and ($OnFailStepId -ge 1)) {
             Stop-Function -Message "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'." -Target $SqlInstance
             return
         }
